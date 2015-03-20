@@ -84,8 +84,8 @@ acGetUserByDN(*arg,*OUT) { }
 # which was requested by ARCS (Sean Fleming).  See rsGenQuery.c for more
 # information on $userNameClient.  But the typical use is to just set it
 # strict or not for all users:
-acAclPolicy { }
-#acAclPolicy {msiAclPolicy("STRICT"); }
+#acAclPolicy { }
+acAclPolicy {msiAclPolicy("STRICT"); }
 # When choosing a "STRICT" ACL policy you should consider setting the 
 # following permissions if you are using the PHP web browser:
 # ichmod -M read public /ZONE_NAME
@@ -334,8 +334,8 @@ acSetChkFilePathPerm {msiSetChkFilePathPerm("disallowPathReg"); }
 # should be used. The default policy is the trash can will be used. Only
 # one function can be called.
 #    msiNoTrashCan() - Set the policy to no trash can.
-acTrashPolicy { }
-# acTrashPolicy {msiNoTrashCan; }
+#acTrashPolicy { }
+acTrashPolicy {msiNoTrashCan; }
 #
 # 14) acSetPublicUserPolicy - This rule set the policy for the set of 
 # operations that are allowable for the user "public" Only one function can 
@@ -694,18 +694,18 @@ acPostProcForDataObjRead(*ReadBuffer) { }
 #     in server/bin/cmd 
 #     parameter contains the command to be executed, arguments, execution address, hint path.
 #     if a parameter is not provided, then it is the empty string
-acPreProcForExecCmd(*cmd, *args, *addr, *hint) { }
+#acPreProcForExecCmd(*cmd, *args, *addr, *hint) { }
 # Rule for pre and post processing when establishing a parallel connection
 acPreProcForServerPortal(*oprType, *lAddr, *lPort, *pAddr, *pPort, *load) { }
 acPostProcForServerPortal(*oprType, *lAddr, *lPort, *pAddr, *pPort, *load) { }
 # ----------------------------------------------------------------------------
 # These rules are for testing only
 #acDataObjCreate {acSetCreateConditions; acDOC; }
-acSetCreateConditions {msiGetNewObjDescriptor ::: recover_msiGetNewObjDescriptor; acSetResourceList; }
-acDOC {msiPhyDataObjCreate ::: recover_msiPhyDataObjCreate; acRegisterData ::: msiRollback; msiCommit; }
-acSetResourceList {msiSetResourceList; }
-acSetCopyNumber {msiSetCopyNumber; }
-acRegisterData {msiRegisterData ::: msiRollback; }
+#acSetCreateConditions {msiGetNewObjDescriptor ::: recover_msiGetNewObjDescriptor; acSetResourceList; }
+#acDOC {msiPhyDataObjCreate ::: recover_msiPhyDataObjCreate; acRegisterData ::: msiRollback; msiCommit; }
+#acSetResourceList {msiSetResourceList; }
+#acSetCopyNumber {msiSetCopyNumber; }
+#acRegisterData {msiRegisterData ::: msiRollback; }
 #
 #These are actions for getting iCAT results for performing iRODS operations.
 #These rules generate the genQueryOut_ structure for each action for the given condition
