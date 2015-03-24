@@ -6,10 +6,11 @@
 #
 #test() {
 #	*user = "bert#tsm";
-#	*group = "yoda";
+#   *group = "yoda";
 #	uuGroupUserExists(*group, *user, *membership);
 #	writeLine("stdout","*user membership of group *group : *membership");
 #	uuGroupMemberships(*user, *groups);
+#	writeLine("stdout","allgroups=*groups");
 #	foreach (*grp in split(*groups,',')){
 #		writeLine("stdout","grp = *grp");
 #	}
@@ -69,6 +70,7 @@ uuGroupMemberships(*user, *groups) {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
 		*groups = "*groups,*group";
 	}
+	*groups=triml(*groups,",");
 }
 #input *group="grp-yc-intake"
 #output ruleExecOut
