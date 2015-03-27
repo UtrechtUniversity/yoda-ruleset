@@ -17,9 +17,9 @@
 # \brief uuLock  obtain a lock on a collection
 # 
 # \param[in] collection  name of the collection to be locked 
-# \param[out] result     true = locked, false = lock failed (e.g. in use) 
+# \param[out] status     0 = locked, nonzero  = lock failed (e.g. in use) 
 #
-uuLock(*collection, *result) {
+uuLock(*collection, *status) {
 	msiGetIcatTime(*dateTime, "unix");
 	*lockId = $userNameClient ++ ":" ++ *dateTime;
 	# let everyone know we need a lock	
@@ -76,7 +76,7 @@ uuLock(*collection, *result) {
 		}
 	}
 	if (*lockFound) {
-		*result = false;
+		*status = 1;
 		# retract our lock request, someone else got a lock
 		msiRemoveKeyValuePairsFromObj(*kvLockRequest, *collection, "-C");
 	} else {
@@ -84,7 +84,7 @@ uuLock(*collection, *result) {
 		msiString2KeyValPair("uuLocked=*lockId",*kvLock);
 		msiAssociateKeyValuePairsToObj(*kvLock, *collection, "-C");
 		msiRemoveKeyValuePairsFromObj(*kvLockRequest, *collection, "-C");
-		*result = true;
+		*status = 0;
 	}
 }
 
@@ -108,10 +108,10 @@ uuUnlock(*collection) {
 # \brief see if a collection has a lock on it
 #
 # \param[in] collection  name of the collection
-# \param[out] result     true if collection has a lock(request)
-uuLockExists(*collection, *result) {
+# \param[out] isLocked     true if collection has a lock(request)
+uuLockExists(*collection, *isLocked) {
 	# NB: reports true for both existing locks and lock requests
-	*result = false;
+	*isLocked = false;
 	msiGetIcatTime(*currentTime, "unix");
 	foreach (*row in SELECT META_COLL_ATTR_NAME,META_COLL_ATTR_VALUE
 			WHERE COLL_NAME = *collection
@@ -133,7 +133,7 @@ uuLockExists(*collection, *result) {
 		   msiRemoveKeyValuePairsFromObj(*kvExpiredLock, *collection, "-C");
 		} else {
 			# there is a valid existing lock 
-			*result = true;
+			*isLocked = true;
 		}
 	}
 }
