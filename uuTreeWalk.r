@@ -9,11 +9,13 @@
 #	writeLine("stdout","result treewalk = *error");
 #}
 
-#uuTreeWalkTestrule(*itemPath, *itemName, *itemIsCollection, *buffer) {
-#	writeLine("stdout","*itemPath - *itemName - *itemIsCollection");
+# here is an example of a rule that can be processed via uuTreeWalk:
+#
+#uuTreeWalkTestrule(*itemParent, *itemName, *itemIsCollection, *buffer) {
+#	writeLine("stdout","*itemParent - *itemName - *itemIsCollection");
 #	*buffer."error" = "0"; # zero means no error 
 #   if (*itemName == "tree.r" ) {
-#		*buffer."error" = "1";
+#		*buffer."error" = "0";
 #	}
 #}
 
@@ -29,8 +31,8 @@
 # \param[in] ruleToProcess       name of the rule that can perform an action on tree items
 #                                Requirement: rule must be preloaded in rulebase
 #                                The rule should expect the following parameters:
-#                                  itemPath  = full iRODS path to the collection/object
-#                                  itemName  = last part of the itemPath
+#                                  itemParent  = full iRODS path to the parent of this object
+#                                  itemName  = basename of collection or dataobject
 #                                  itemIsCollection = true if the item is a collection
 #                                  buffer = in/out Key-Value variable
 #                                       the buffer is maintained by treewalk and passed
@@ -56,13 +58,6 @@ uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess,*error) {
 	);
 	*error = *buffer."error";
 }
-# \brief       return last segment of a pathname
-# \param [in]  pathName 
-# \param [out] rightMostSegment
-uuTreeGetLastSegment(*path, *segment) {
-	*pathPart = trimr(*path, "/");
-	*segment = substr(*path, strlen(*pathPart) + 1, strlen(*path));
-}
 
 # \brief walk a subtree 
 # \param [in] direction   can be "forward" or "reverse"
@@ -75,12 +70,12 @@ uuTreeWalkCollection(
 			*buffer, 
 			*ruleToProcess
 	) {
-	uuTreeGetLastSegment(*path, *collection);
+	msiSplitPath(*path, *parentCollection, *collection);
 	if (*direction == "forward") {
 		# first process this collection itself
 		if (*buffer."error" == "0") {
 			# ugly: need to use many if's, irods offers no means to break to end of action
-			eval("{ *ruleToProcess(\*path,\*collection,true,\*buffer); }");
+			eval("{ *ruleToProcess(\*parentCollection,\*collection,true,\*buffer); }");
 		}
 		# and the dataobjects located directly within the collection
 		if (*buffer."error" == "0" ) {
@@ -130,7 +125,7 @@ uuTreeWalkCollection(
 		}
 		# and lastly process the collection itself
 		if (*buffer."error" == "0") {
-			eval("{ *ruleToProcess(\*path,\*collection,true,\*buffer); }");
+			eval("{ *ruleToProcess(\*parentCollection,\*collection,true,\*buffer); }");
 		}
 	}
 }
