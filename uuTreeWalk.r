@@ -27,7 +27,7 @@
 #                                reverse means process childs first
 #                                reverse is useful e.g. to delete collection trees
 # \param[in] topLevelCollection  pathname of the root of the tree, must be collection
-#                                NB: the root itself will not be processed, only children
+#                                NB: the root itself is also processed
 # \param[in] ruleToProcess       name of the rule that can perform an action on tree items
 #                                Requirement: rule must be preloaded in rulebase
 #                                The rule should expect the following parameters:
