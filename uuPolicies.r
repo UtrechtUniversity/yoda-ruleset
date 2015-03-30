@@ -24,7 +24,7 @@ acPreProcForExecCmd(*cmd) {
 		}
 	}
 	if (*accessAllowed == false) {
-		msiOprDisallowd;
+		msiOprDisallowed;
 	}
 }
 
