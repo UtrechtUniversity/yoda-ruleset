@@ -33,11 +33,9 @@ uuLock(*collection, *status) {
 	*lockFound = false;
 	foreach (*segment in split(*collection, '/')) { 
 		*path = "*path/*segment";
-		writeLine("stdout","testing for lock in path=*path=");
 		if (*path != *collection) {
 			uuLockExists(*path, *lockFound);
 			if (*lockFound) {
-				writeLine("stdout","lock found upstream at *path");
 				break;
 			}
 		} else {
@@ -69,7 +67,6 @@ uuLock(*collection, *status) {
 			msiGetValByKey(*rows, "COLL_NAME", *thisCollection);
 			if (*thisCollection like "*collection/\*") {
 				# we have an existing lock
-				writeLine("stdout","downstream lock found");
 				*lockFound = true;
 				break;
 			}
@@ -121,14 +118,13 @@ uuLockExists(*collection, *isLocked) {
 		# our last hope is that this is an expired request that we can ignore 
 		msiGetValByKey(*row,"META_COLL_ATTR_NAME",*lockKey);
 		msiGetValByKey(*row,"META_COLL_ATTR_VALUE",*lockValue);
-		writeLine("stdout","x=*lockKey and y=*lockValue");
 		*lockTime = double(uuLockGetDateTime(*lockValue));
 		if ( 
 			    ((*lockTime + 5 * 60) < *currentTime)
-			 && (*lockKey == "lockRequest")
+					#	remove locks/requests after expire time of 5 minutes
+				 	#			 && (*lockKey == "lockRequest")
 			) {
 			# cleanup lock requests older than 5 minutes
-			writeLine("stdout","need to cleanup lock *lockKey=*lockValue");
 		   msiString2KeyValPair("*lockKey=*lockValue",*kvExpiredLock);
 		   msiRemoveKeyValuePairsFromObj(*kvExpiredLock, *collection, "-C");
 		} else {
