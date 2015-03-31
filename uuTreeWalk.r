@@ -70,7 +70,7 @@ uuTreeWalkCollection(
 			*buffer, 
 			*ruleToProcess
 	) {
-	msiSplitPath(*path, *parentCollection, *collection);
+	uuChopPath(*path, *parentCollection, *collection);
 	if (*direction == "forward") {
 		# first process this collection itself
 		if (*buffer."error" == "0") {
