@@ -3,7 +3,7 @@
 # \author Ton Smeele
 # \copyright Copyright (c) 2015, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
-#
+
 #test() {
 #	*user = "bert#tsm";
 #   *group = "yoda";
@@ -15,8 +15,6 @@
 #		writeLine("stdout","grp = *grp");
 #	}
 #}
-
-
 
 # \brief uuGetUserAndZone extract username and zone in separate fields
 # 
@@ -72,5 +70,62 @@ uuGroupMemberships(*user, *groups) {
 	}
 	*groups=triml(*groups,",");
 }
+
+# \brief Get a list of group categories.
+#
+# \param[out] categories a list of category names
+#
+uuGroupGetCategories(*categories) {
+	*categoriesString = "";
+	foreach (
+		*category
+		in SELECT META_COLL_ATTR_VALUE
+		   WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
+		     AND  META_COLL_ATTR_NAME  = 'category'
+	) {
+		*categoriesString = "*categoriesString," ++ *category."META_COLL_ATTR_VALUE";
+	}
+	*categories = split(*categoriesString, ",");
+}
+
+# \brief Get a list of group subcategories.
+#
+# \param[in]  category      a category name
+# \param[out] subcategories a list of subcategory names
+#
+uuGroupGetSubcategories(*category, *subcategories) {
+	*subcategoriesString = "";
+	foreach (
+		*categoryGroupColl
+		in SELECT COLL_NAME
+		   WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
+		     AND  META_COLL_ATTR_NAME  = 'category'
+		     AND  META_COLL_ATTR_VALUE = '*category'
+	) {
+		*collName = *categoryGroupColl."COLL_NAME";
+		foreach (
+			*subcategory
+			in SELECT META_COLL_ATTR_VALUE
+			   WHERE  COLL_NAME            = '*collName'
+			     AND  META_COLL_ATTR_NAME  = 'subcategory'
+		) {
+			*subcategoryName = *subcategory."META_COLL_ATTR_VALUE";
+			if (!(
+				   (*subcategoriesString == *subcategoryName)
+				|| (*subcategoriesString like "*,*subcategoryName")
+				|| (*subcategoriesString like   "*subcategoryName,*")
+				|| (*subcategoriesString like "*,*subcategoryName,*")
+			)) {
+				if (strlen(*subcategoriesString) > 0) {
+					*subcategoriesString = "*subcategoriesString,*subcategoryName";
+				} else {
+					*subcategoriesString = *subcategoryName;
+				}
+			}
+		}
+	}
+	*subcategories = split(*subcategoriesString, ",");
+}
+
 #input *group="grp-yc-intake"
 #output ruleExecOut
