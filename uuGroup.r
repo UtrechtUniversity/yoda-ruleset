@@ -127,5 +127,22 @@ uuGroupGetSubcategories(*category, *subcategories) {
 	*subcategories = split(*subcategoriesString, ",");
 }
 
+# \brief Get a list of users.
+#
+# \param[out] users a list of user names
+#
+uuGetUsers(*users) {
+	*usersString = "";
+	#AND  COL_USER_NAME LIKE '%@%'
+	foreach (
+		*user
+		in SELECT USER_NAME
+		   WHERE  USER_TYPE = 'rodsuser'
+	) {
+		*usersString = "*usersString," ++ *user."USER_NAME";
+	}
+	*users = split(*usersString, ",");
+}
+
 #input *group="grp-yc-intake"
 #output ruleExecOut
