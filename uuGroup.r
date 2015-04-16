@@ -10,8 +10,7 @@
 #	uuGroupUserExists(*group, *user, *membership);
 #	writeLine("stdout","*user membership of group *group : *membership");
 #	uuGroupMemberships(*user, *groups);
-#	writeLine("stdout","allgroups=*groups");
-#	foreach (*grp in split(*groups,',')){
+#	foreach (*grp in *groups){
 #		writeLine("stdout","grp = *grp");
 #	}
 #}
@@ -60,20 +59,21 @@ uuGroupUserExists(*group, *user, *membership) {
 # \param[in] user     name of the irods user
 #                     username can optionally include zone ('user#zone')
 #                     default is to use the local zone
-# \param[out] groups  comma separated list of groupnames
+# \param[out] groups  irods list of groupnames
 #
-uuGroupMemberships(*user, *groups) {
+uuGroupMemberships(*user, *groupList) {
 	uuGetUserAndZone(*user,*userName,*userZone);
-	*groups="";
+	*groups = "";
 	foreach (*row in SELECT USER_GROUP_NAME, USER_GROUP_ID 
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
 		# workasround needed: iRODS returns username also as a group !! 
 		if (*group != *userName) {
-			*groups = "*groups,*group";
+			*groups = "*groups:*group";
 		}
 	}
-	*groups=triml(*groups,",");
+	*groups = triml(*groups,":");
+	*groupList = split(*groups, ":");
 }
 #input *group="grp-yc-intake"
 #output ruleExecOut
