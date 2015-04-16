@@ -5,8 +5,8 @@
 # \license GPLv3, see LICENSE
 #
 #test() {
-#	*user = "bert#tsm";
-#   *group = "yoda";
+#	*user = "ton#nluu1ot";
+#   *group = "groupyoda";
 #	uuGroupUserExists(*group, *user, *membership);
 #	writeLine("stdout","*user membership of group *group : *membership");
 #	uuGroupMemberships(*user, *groups);
@@ -65,10 +65,13 @@ uuGroupUserExists(*group, *user, *membership) {
 uuGroupMemberships(*user, *groups) {
 	uuGetUserAndZone(*user,*userName,*userZone);
 	*groups="";
-	foreach (*row in SELECT USER_GROUP_NAME 
+	foreach (*row in SELECT USER_GROUP_NAME, USER_GROUP_ID 
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
-		*groups = "*groups,*group";
+		# workasround needed: iRODS returns username also as a group !! 
+		if (*group != *userName) {
+			*groups = "*groups,*group";
+		}
 	}
 	*groups=triml(*groups,",");
 }
