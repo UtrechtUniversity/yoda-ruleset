@@ -1,8 +1,9 @@
 # \file
-# \brief functions for group management and group queries
-# \author Ton Smeele
-# \copyright Copyright (c) 2015, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \brief     Functions for group management and group queries.
+# \author    Ton Smeele
+# \author    Chris Smeele
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved
+# \license   GPLv3, see LICENSE
 
 #test() {
 #	*user = "bert#tsm";
@@ -16,8 +17,8 @@
 #	}
 #}
 
-# \brief uuGetUserAndZone extract username and zone in separate fields
-# 
+# \brief Extract username and zone in separate fields.
+#
 # \param[in] user       name of the irods user
 #                       username can optionally include zone ('user#zone')
 #                       default is to use the local zone
@@ -33,8 +34,61 @@ uuGetUserAndZone(*user,*userName,*userZone) {
 		*userZone = $rodsZoneClient;
 	}
 }
-# \brief uuGroupUserExists check if user if member of a group
-# 
+
+# \brief Check if a group category exists.
+#
+# \param[in]  categoryName
+# \param[out] exists
+#
+uuGroupCategoryExists(*categoryName, *exists) {
+	*exists = false;
+	foreach (
+		*row in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
+		  AND  META_COLL_ATTR_NAME  = 'category'
+		  AND  META_COLL_ATTR_VALUE = '*categoryName'
+	) {
+		*exists = true;
+	}
+}
+
+# \brief Check if a rodsgroup with the given name exists.
+#
+# \param[in]  groupName
+# \param[out] exists
+#
+uuGroupExists(*groupName, *exists) {
+	*exists = false;
+	foreach (
+		*row in
+		SELECT USER_GROUP_NAME, USER_TYPE
+		WHERE  USER_GROUP_NAME = '*groupName'
+		  AND  USER_TYPE       = 'rodsgroup'
+	) {
+		*exists = true;
+	}
+}
+
+# \brief Check if a rodsuser with the given name exists.
+#
+# \param[in]  userName
+# \param[out] exists
+#
+uuUserExists(*groupName, *exists) {
+	*exists = false;
+	foreach (
+		*row in
+		SELECT USER_NAME, USER_TYPE
+		WHERE  USER_NAME = '*userName'
+		  AND  USER_TYPE = 'rodsuser'
+	) {
+		*exists = true;
+	}
+}
+
+# \brief Check if a user is a member of the given group.
+#
 # \param[in] group        name of the irods group
 # \param[in] user         name of the irods user
 #                         username can optionally include zone ('user#zone')
@@ -53,7 +107,38 @@ uuGroupUserExists(*group, *user, *membership) {
 	}
 }
 
-# \brief uuGroupMemberships lists all groups the user belongs to
+# \brief Check if a name is available in the iRODS username namespace.
+#
+# The username namespace includes names of the following user types:
+#
+# - rodsgroup
+# - rodsadmin
+# - rodsuser
+# - domainadmin
+# - groupadmin
+# - storageadmin
+# - rodscurators
+#
+# \param[in]  name
+# \param[out] available
+# \param[out] existingType set to the USER_TYPE if the name is unavailable
+#
+uuUserNameIsAvailable(*name, *available, *existingType) {
+	*available    = true;
+	*existingType = ".";
+
+	foreach (
+		*row in
+		SELECT USER_NAME, USER_TYPE
+		WHERE  USER_NAME = '*name'
+	) {
+		*available    = false;
+		*existingType = *row."USER_TYPE";
+		break;
+	}
+}
+
+# \brief List all groups the user belongs to.
 #
 # \param[in] user     name of the irods user
 #                     username can optionally include zone ('user#zone')
