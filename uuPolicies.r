@@ -14,7 +14,7 @@
 #
 # \param[in]		cmd  name of executable
 #
-acPreProcForExecCmd(*cmd) {
+acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 	*accessAllowed = false;
 	foreach (*rows in SELECT USER_GROUP_NAME WHERE USER_NAME='$userNameClient'
 		             AND USER_ZONE='$rodsZoneClient') {
@@ -24,6 +24,7 @@ acPreProcForExecCmd(*cmd) {
 		}
 	}
 	if (*accessAllowed == false) {
+		cut;
 		msiOprDisallowed;
 	}
 }
