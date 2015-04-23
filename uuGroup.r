@@ -75,7 +75,7 @@ uuGroupExists(*groupName, *exists) {
 # \param[in]  userName
 # \param[out] exists
 #
-uuUserExists(*groupName, *exists) {
+uuUserExists(*userName, *exists) {
 	*exists = false;
 	foreach (
 		*row in
