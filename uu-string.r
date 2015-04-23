@@ -71,7 +71,7 @@ uuJoin(*delimiter, *list, *str) {
 	*str = "";
 	foreach (*item in *list) {
 		if (strlen(*str) > 0) {
-			*str = "*str,*item";
+			*str = *str ++ *delimiter ++ *item;
 		} else {
 			*str = *item;
 		}
