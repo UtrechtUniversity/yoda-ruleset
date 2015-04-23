@@ -148,32 +148,17 @@ uuUserNameIsAvailable(*name, *available, *existingType) {
 uuGroupMemberships(*user, *groups) {
 	uuGetUserAndZone(*user,*userName,*userZone);
 	*groups="";
-	foreach (*row in SELECT USER_GROUP_NAME 
+	foreach (*row in SELECT USER_GROUP_NAME, USER_GROUP_ID
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
-		*groups = "*groups,*group";
+		if (*group != *userName) {
+			*groups = "*groups,*group";
+		}
 	}
 	*groups=triml(*groups,",");
 }
 
-# \brief Get a list of group categories.
-#
-# \param[out] categories a list of category names
-#
-uuGroupGetCategories(*categories) {
-	*categoriesString = "";
-	foreach (
-		*category
-		in SELECT META_COLL_ATTR_VALUE
-		   WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
-		     AND  META_COLL_ATTR_NAME  = 'category'
-	) {
-		*categoriesString = "*categoriesString," ++ *category."META_COLL_ATTR_VALUE";
-	}
-	*categories = split(*categoriesString, ",");
-}
-
-# \brief Get a list of group subcategories.
+# \brief Get a list of group subcategories for the given category.
 #
 # \param[in]  category      a category name
 # \param[out] subcategories a list of subcategory names
@@ -181,11 +166,11 @@ uuGroupGetCategories(*categories) {
 uuGroupGetSubcategories(*category, *subcategories) {
 	*subcategoriesString = "";
 	foreach (
-		*categoryGroupColl
-		in SELECT COLL_NAME
-		   WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
-		     AND  META_COLL_ATTR_NAME  = 'category'
-		     AND  META_COLL_ATTR_VALUE = '*category'
+		*categoryGroupColl in
+		SELECT COLL_NAME
+		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
+		  AND  META_COLL_ATTR_NAME  = 'category'
+		  AND  META_COLL_ATTR_VALUE = '*category'
 	) {
 		*collName = *categoryGroupColl."COLL_NAME";
 		foreach (
@@ -212,22 +197,191 @@ uuGroupGetSubcategories(*category, *subcategories) {
 	*subcategories = split(*subcategoriesString, ",");
 }
 
-# \brief Get a list of users.
+# \brief Get a list of group categories.
+#
+# \param[out] categories a list of category names
+#
+uuGroupGetCategories(*categories) {
+	*categoriesString = "";
+	foreach (
+		*category in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
+		  AND  META_COLL_ATTR_NAME  = 'category'
+	) {
+		*categoriesString = "*categoriesString," ++ *category."META_COLL_ATTR_VALUE";
+	}
+	*categories = split(*categoriesString, ",");
+}
+
+# \brief Get a group's category and subcategory.
+#
+# \param[in]  groupName
+# \param[out] category
+# \param[out] subcategory
+#
+uuGroupGetCategory(*groupName, *category, *subcategory) {
+	*category    = "";
+	*subcategory = "";
+	foreach (
+		*item in
+		SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME            = '/$rodsZoneClient/group/*groupName'
+		  AND  META_COLL_ATTR_NAME  LIKE '%category'
+	) {
+		if (*item."META_COLL_ATTR_NAME" == 'category') {
+			*category = *item."META_COLL_ATTR_VALUE";
+		} else if (*item."META_COLL_ATTR_NAME" == 'subcategory') {
+			*subcategory = *item."META_COLL_ATTR_VALUE";
+		}
+	}
+}
+
+# \brief Get a group's desription.
+#
+# \param[in]  groupName
+# \param[out] decsription
+#
+uuGroupGetDescription(*groupName, *description) {
+	*description = "";
+	foreach (
+		*item in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = '/$rodsZoneClient/group/*groupName'
+		  AND  META_COLL_ATTR_NAME = 'description'
+	) {
+		*description = *item."META_COLL_ATTR_VALUE";
+	}
+}
+
+# \brief Get a list of both manager and non-manager members of a group.
+#
+# \param[out] users a list of user names
+#
+uuGroupGetMembers(*groupName, *members) {
+	*membersString = "";
+	foreach (
+		*member in
+		SELECT USER_NAME
+		WHERE  USER_GROUP_NAME = '*groupName'
+	) {
+		if (*member."USER_NAME" != *groupName) {
+			*membersString = "*membersString;" ++ *member."USER_NAME";
+		}
+	}
+	*members = split(*membersString, ";");
+}
+
+# \brief Get a list of managers for the given group.
+#
+# \param[in]  groupName
+# \param[out] managers
+#
+uuGroupGetManagers(*groupName, *managers) {
+	*managersString = "";
+	foreach (
+		*manager in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = '/$rodsZoneClient/group/*groupName'
+		  AND  META_COLL_ATTR_NAME = 'administrator'
+	) {
+		*managersString = "*managersString;" ++ *manager."META_COLL_ATTR_VALUE";
+	}
+	*managers = split(*managersString, ";");
+}
+
+# \brief Get a list of all irods users.
 #
 # \param[out] users a list of user names
 #
 uuGetUsers(*users) {
 	*usersString = "";
-	#AND  COL_USER_NAME LIKE '%@%'
 	foreach (
-		*user
-		in SELECT USER_NAME
-		   WHERE  USER_TYPE = 'rodsuser'
+		*user in
+		SELECT USER_NAME
+		WHERE  USER_TYPE = 'rodsuser'
 	) {
-		*usersString = "*usersString," ++ *user."USER_NAME";
+		*usersString = "*usersString;" ++ *user."USER_NAME";
 	}
-	*users = split(*usersString, ",");
+	*users = split(*usersString, ";");
 }
+
+# \brief Find users matching a pattern.
+#
+# \param[in]  query
+# \param[out] users a list of user names
+#
+uuFindUsers(*query, *users) {
+	*usersString = "";
+	foreach (
+		*user in
+		SELECT USER_NAME
+		WHERE  USER_TYPE = 'rodsuser'
+		  AND  USER_NAME LIKE '%*query%'
+	) {
+		*usersString = "*usersString;" ++ *user."USER_NAME";
+	}
+	*users = split(*usersString, ";");
+}
+
+# \brief Check if a user is a member of the given group.
+#
+# \param[in]  groupName
+# \param[in]  userName
+# \param[out] isMember
+#
+uuGroupUserIsMember(*groupName, *userName, *isMember) {
+	*isMember = false;
+	uuGetUserAndZone(*userName, *name, *zone);
+
+	foreach (
+		*row in
+		SELECT USER_GROUP_NAME
+		WHERE USER_NAME = '*name'
+		  AND USER_ZONE = '*zone'
+		  AND USER_GROUP_NAME = '*groupName'
+	) {
+		*isMember = true;
+	}
+}
+
+# \brief Check if a user is a manager in the given group.
+#
+# \param[in]  groupName
+# \param[in]  userName
+# \param[out] isManager
+#
+uuGroupUserIsManager(*groupName, *userName, *isManager) {
+	*isManager = false;
+
+	uuGroupUserIsMember(*groupName, *userName, *isMember);
+	if (*isMember) {
+		foreach (
+			*manager in
+			SELECT META_COLL_ATTR_VALUE
+			WHERE  COLL_NAME            = '/$rodsZoneClient/group/*groupName'
+			  AND  META_COLL_ATTR_NAME  = 'administrator'
+			  AND  META_COLL_ATTR_VALUE = '*userName'
+		) {
+			*isManager = true;
+		}
+	}
+}
+
+# Privileged group management functions {{{
+
+uuGroupAdd(*groupName, *status) {
+	msiExecCmd(
+		"group-manager",
+		"add *groupName",
+		"null", "null", "null",
+		*result
+	);
+
+	# TODO.
+}
+
+# }}}
 
 #input *group="grp-yc-intake"
 #output ruleExecOut
