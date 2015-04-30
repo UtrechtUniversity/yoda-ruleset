@@ -170,16 +170,19 @@ class GroupManager(object):
 
             return (out.rstrip('\n\r').split(outputBoundary))
 
-    def requireAccess(self, checkName, *args):
+    def requireAccess(self, actionDescription, checkName, *args):
         """
         Check if the client passes the given policy check.
 
         Raises an exception with a descriptive error message when access is denied
         by the check rule.
 
-        param checkName: The name of the check to execute. Will be prefixed with
-                         'uuGroupPolicyCan'.
-        param *args:     A list of arguments to the check function
+        param actionDescription: A human readable short description of the action,
+                                 to be used in an error message prefixed with
+                                 'Could not ' ...
+        param checkName:         The name of the check to execute. Will be prefixed with
+                                 'uuGroupPolicyCan'.
+        param *args:             A list of arguments to the check function
 
         returns: Nothing. The function returning indicates that access is granted.
         """
@@ -191,7 +194,7 @@ class GroupManager(object):
         if allowed != 'true':
             raise GmException(
                 'Action disallowed by policy check \'' + ruleName + '\'',
-                'Action disallowed: ' + reason
+                'Could not ' + actionDescription + ': ' + reason
             )
 
     # Group manager actions {{{
@@ -202,7 +205,7 @@ class GroupManager(object):
 
         param groupName: The name of the group to create
         """
-        self.requireAccess('GroupAdd', groupName)
+        self.requireAccess('create group', 'GroupAdd', groupName)
 
         self.icommand('iadmin', ['mkgroup', groupName])
 
@@ -233,7 +236,7 @@ class GroupManager(object):
         param groupName: The name of the group
         param userName: The name of the user to add to the group
         """
-        self.requireAccess('GroupUserAdd', groupName, userName)
+        self.requireAccess('add user to group', 'GroupUserAdd', groupName, userName)
 
         (userExists,) = self.rule('uuUserExists', [userName], ['userExists'])
         if userExists != 'true':
