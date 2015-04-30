@@ -49,13 +49,13 @@ uuUserNameIsValid(*name)
 # Group names must:
 #
 # - be prefixed with 'grp-'
-# - contain only lowercase characters and hyphens
+# - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``grp-([a-z]|[a-z][a-z-]*[a-z])``;
+	= *name like regex ``grp-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a (sub)category name is valid.
 #
@@ -91,7 +91,12 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 			if (*nameAvailable) {
 				*allowed = true;
 			} else {
-				*reason = "The name '*groupName' is already in use by a *existingType.";
+				if (*existingType == "rodsuser") {
+					*existingType = "user";
+				} else if (*existingType == "rodsgroup") {
+					*existingType = "group";
+				}
+				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
 			*reason = "Group names must start with 'grp-' and may only contain lowercase letters (a-z) and hyphens (-).";
