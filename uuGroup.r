@@ -250,7 +250,9 @@ uuGroupGetDescription(*groupName, *description) {
 		WHERE  COLL_NAME           = '/$rodsZoneClient/group/*groupName'
 		  AND  META_COLL_ATTR_NAME = 'description'
 	) {
-		*description = *item."META_COLL_ATTR_VALUE";
+		if (*item."META_COLL_ATTR_VALUE" != ".") {
+			*description = *item."META_COLL_ATTR_VALUE";
+		}
 	}
 }
 
@@ -370,15 +372,45 @@ uuGroupUserIsManager(*groupName, *userName, *isManager) {
 
 # Privileged group management functions {{{
 
-uuGroupAdd(*groupName, *status) {
-	msiExecCmd(
-		"group-manager",
-		"add *groupName",
+uuGroupManagerCall(*args, *status, *message) {
+	*status = errorcode(msiExecCmd(
+		"group-manager.py",
+		*args,
 		"null", "null", "null",
-		*result
-	);
+		*cmdOut
+	));
 
-	# TODO.
+	if (*status == 0) {
+		*status = 1;
+		msiGetStdoutInExecCmdOut(*cmdOut, *cmdStdout);
+		msiGetStderrInExecCmdOut(*cmdOut, *cmdStderr);
+
+		if (*cmdStderr like "Error:*") {
+			*status  = 1;
+			*message = *cmdStdout;
+			writeLine(
+				"serverLog",
+				   "uuGroupAdd by $userNameClient failed with the following message on STDERR: "
+				++ substr(*cmdStderr, 7, strlen(*cmdStderr))
+				++ " // Command output (STDOUT) was: "
+				++ *cmdStdout
+			);
+		} else {
+			*status  = 0;
+			*message = *cmdStdout;
+		}
+	} else {
+		*status  = 1;
+		*message = "An internal error occurred.";
+	}
+}
+
+uuGroupAdd(*groupName, *status, *message) {
+	uuGroupManagerCall("add *groupName", *status, *message);
+}
+
+uuGroupUserAdd(*groupName, *userName, *status, *message) {
+	uuGroupManagerCall("add-user *groupName *userName", *status, *message);
 }
 
 # }}}
