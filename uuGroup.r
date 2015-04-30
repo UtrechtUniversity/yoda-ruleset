@@ -406,11 +406,19 @@ uuGroupManagerCall(*args, *status, *message) {
 }
 
 uuGroupAdd(*groupName, *status, *message) {
-	uuGroupManagerCall("add *groupName", *status, *message);
+	uuGroupManagerCall("add \"*groupName\"", *status, *message);
+}
+
+uuGroupModify(*groupName, *property, *value, *status, *message) {
+	uuGroupManagerCall("set \"*groupName\" \"*property\" \"*value\"", *status, *message);
 }
 
 uuGroupUserAdd(*groupName, *userName, *status, *message) {
-	uuGroupManagerCall("add-user *groupName *userName", *status, *message);
+	uuGroupManagerCall("add-user \"*groupName\" \"*userName\"", *status, *message);
+}
+
+uuGroupUserRemove(*groupName, *userName, *status, *message) {
+	uuGroupManagerCall("remove-user \"*groupName\" \"*userName\"", *status, *message);
 }
 
 # }}}
