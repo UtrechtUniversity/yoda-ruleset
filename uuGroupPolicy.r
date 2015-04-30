@@ -12,18 +12,14 @@
 # \param[in] hint
 #
 acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
-	ON(*cmd == "group-manager") {
-		*allowed = false;
-
-		uuGroupMemberships($userNameClient, *groups)
-
-		# TODO: Parse command strings, call policy checks.
-		# TODO: Test these patterns.
-
-		if        (*args like regex "add [^\\\\'\" ]+") {
-		} else if (*args like regex "set [^\\\\'\" ]+ [^\\\\'\" ]+ '[^\\\\'\"]+'") {
-		} else if (*args like regex "add-user [^\\\\'\" ]+ [^'\\\\'\" ]+") {
-		} else if (*args like regex "remove-user [^\\\\'\" ]+ [^'\\\\'\" ]+") {
+	ON(*cmd == "group-manager.py") {
+		if (
+			   *args like regex "add [^\\\\'\" ]+"
+			|| *args like regex "set [^\\\\'\" ]+ [^\\\\'\" ]+ '[^\\\\'\"]+'"
+			|| *args like regex "add-user [^\\\\'\" ]+ [^'\\\\'\" ]+"
+			|| *args like regex "remove-user [^\\\\'\" ]+ [^'\\\\'\" ]+"
+		) {
+			*allowed = true;
 		}
 
 		if (!*allowed) {
@@ -86,6 +82,7 @@ uuGroupCategoryNameIsValid(*name)
 #
 uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 	*allowed = false;
+	*reason  = "";
 
 	uuGroupUserExists("priv-group-add", *actor, *hasPriv);
 	if (*hasPriv) {
@@ -113,6 +110,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 #
 uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 	*allowed = false;
+	*reason  = "";
 
 	uuGroupCategoryExists(*categoryName, *categoryExists);
 	if (*categoryExists) {
@@ -161,6 +159,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *reason) {
 	*allowed = false;
+	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
@@ -205,13 +204,19 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 #
 uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) {
 	*allowed = false;
+	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
-		if (uuUserNameIsValid(*newMember)) {
-			*allowed = true;
+		uuGroupUserExists(*groupName, *newMember, *isAlreadyAMember);
+		if (*isAlreadyAMember) {
+			*reason = "User '*newMember' is already a member of group '*groupName'.";
 		} else {
-			*reason = "The new member's name is invalid.";
+			if (uuUserNameIsValid(*newMember)) {
+				*allowed = true;
+			} else {
+				*reason = "The new member's name is invalid.";
+			}
 		}
 	} else {
 		*reason = "You (*actor) are not a manager of group *groupName.";
@@ -228,6 +233,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 #
 uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) {
 	*allowed = false;
+	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
