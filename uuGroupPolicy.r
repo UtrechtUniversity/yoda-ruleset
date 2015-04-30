@@ -102,7 +102,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 			*reason = "Group names must start with 'grp-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
-		*reason = "You (*actor) are not a member of the priv-group-add group.";
+		*reason = "You are not a member of the priv-group-add group.";
 	}
 }
 
@@ -134,7 +134,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 		if (*isManagerInCategory) {
 			*allowed = true;
 		} else {
-			*reason = "You (*actor) are not a group manager in the *categoryName group category.";
+			*reason = "You are not a group manager in the *categoryName group category.";
 		}
 	} else {
 		uuGroupUserExists("priv-category-add", *actor, *hasPriv);
@@ -145,7 +145,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 				*reason = "The new category name is invalid.";
 			}
 		} else {
-			*reason = "You (*actor) are not a member of the priv-category-add group.";
+			*reason = "You are not a member of the priv-category-add group.";
 		}
 	}
 }
@@ -180,14 +180,28 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 				*reason = "The new subcategory name is invalid.";
 			}
 		} else if (*property == "managers") {
-
 			*newManagers = split(*value, ";");
-			uuListContains(*actor, *newManagers, *hasNotChangedOwnRole);
 
-			if (*hasNotChangedOwnRole) {
-				*allowed = true;
+			uuGroupGetMembers(*groupName, *members);
+
+			*managerListContainsNonMembers = false;
+			foreach (*newManager in *newManagers) {
+				uuListContains(*newManager, *members, *newManagerIsMember);
+				if (!*newManagerIsMember) {
+					*managerListContainsNonMembers = true;
+					break;
+				}
+			}
+			if (*managerListContainsNonMembers) {
+				*reason = "Non-members cannot be made group managers";
 			} else {
-				*reason = "You cannot demote yourself in group *groupName.";
+				uuListContains(*actor, *newManagers, *hasNotChangedOwnRole);
+
+				if (*hasNotChangedOwnRole) {
+					*allowed = true;
+				} else {
+					*reason = "You cannot demote yourself in group *groupName.";
+				}
 			}
 		} else if (*property == "description") {
 			*allowed = true;
@@ -195,7 +209,7 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 			*reason = "Invalid group property name.";
 		}
 	} else {
-		*reason = "You (*actor) are not a manager of group *groupName.";
+		*reason = "You are not a manager of group *groupName.";
 	}
 }
 
@@ -224,7 +238,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 			}
 		}
 	} else {
-		*reason = "You (*actor) are not a manager of group *groupName.";
+		*reason = "You are not a manager of group *groupName.";
 	}
 }
 
@@ -248,6 +262,6 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 			*allowed = true;
 		}
 	} else {
-		*reason = "You (*actor) are not a manager of group *groupName.";
+		*reason = "You are not a manager of group *groupName.";
 	}
 }
