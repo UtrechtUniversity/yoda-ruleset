@@ -58,7 +58,6 @@ __author__  = 'Chris Smeele'
 __version__ = '0.1'
 
 # TODO: GroupManager action: remove user.
-# TODO: GroupManager action: modify group.
 
 import json
 import sys
@@ -123,16 +122,21 @@ class GroupManager(object):
 
         return (out, err) if critical else (out, err, status)
 
-    def rule(self, ruleName, inputParams, outputParams):
+    def rule(self, ruleName, inputParams, outputTypes):
         """
         Call a rule with irule and return output parameters.
 
-        For simplicity's sake, only string-type input parameters are supported,
-        and output parameters are returned as they are printed by writeLine().
+        Only string-type input parameters are supported.
+
+        Output parameter types must be one of the following:
+        - string
+        - int
+        - bool
+        - list
 
         param ruleName:     The name of the rule to call
         param inputParams:  A list of input parameter values
-        param outputParams: A list of output parameter names
+        param outputTypes:  A list of output parameter types
 
         returns: A tuple of the given output parameters
         """
@@ -141,6 +145,7 @@ class GroupManager(object):
 
         # Use a string that should not occur in the rule's output parameters.
         outputBoundary = '%032x' % random.getrandbits(128)
+        listBoundary   = '%032x' % random.getrandbits(128)
 
         with tempfile.NamedTemporaryFile(suffix = '.r') as ruleFile:
             ruleFile.write(tempRuleName + '() {\n')
@@ -149,17 +154,47 @@ class GroupManager(object):
                 + ruleName + '('
                     + ', '.join([
                         ', '.join(['"' + val + '"' for val  in  inputParams]),
-                        ', '.join(['*' + name      for name in outputParams])
+                        ', '.join(['*_outParam' + str(i) for i, paramType in enumerate(outputTypes)])
                       ])
                 + ');\n'
             )
 
             ruleFile.write('\t*_outputBoundary = "' + outputBoundary + '";\n')
 
-            ruleFile.write(
-                  '\twriteLine("stdout", '
-                    + ' ++ *_outputBoundary ++ '.join(['*' + name for name in outputParams])
-                + ');\n')
+            if 'list' in outputTypes:
+                ruleFile.write('\t*_listBoundary   = "' + listBoundary + '";\n')
+
+            ruleFile.write('\t*_output = "";\n')
+
+            for i, paramType in enumerate(outputTypes):
+                paramCode = ''
+                paramName = '*_outParam' + str(i)
+
+                if i > 0:
+                    paramCode += '\t*_output = *_output ++ *_outputBoundary;\n'
+
+                if   paramType in ('string', 'int'):
+                    paramCode += '\t*_output = *_output ++ ' + paramName + ';\n'
+
+                elif paramType == 'bool':
+                    paramCode += '\t*_output = *_output ++ (if ' + paramName + ' then "true" else "false");\n'
+
+                elif paramType == 'list':
+                    paramCode += '\t*_i = 0;\n'
+                    paramCode += '\tforeach(*_item in ' + paramName + ') {\n'
+                    paramCode += '\t\tif (*_i > 0) {\n'
+                    paramCode += '\t\t\t*_output = *_output ++ *_listBoundary;\n'
+                    paramCode += '\t\t}\n'
+                    paramCode += '\t\t*_output = *_output ++ *_item;\n'
+                    paramCode += '\t\t*_i = *_i + 1;\n'
+                    paramCode += '\t}\n'
+
+                else:
+                    raise GmException('Invalid output parameter type', 'An internal error occurred. Please contact a Yoda administrator if problems persist.')
+
+                ruleFile.write(paramCode)
+
+            ruleFile.write('\twriteLine("stdout", *_output);\n')
 
             ruleFile.write('}\n')
             ruleFile.write('input *ruleName="' + tempRuleName + '"\n')
@@ -168,7 +203,19 @@ class GroupManager(object):
 
             (out, err) = self.icommand('irule', ['-F', ruleFile.name])
 
-            return (out.rstrip('\n\r').split(outputBoundary))
+            # Extract output parameter values from the rule output string and
+            # convert them to the matching python type.
+            return [
+                (
+                    strValue                     if paramType == 'string' else
+                    int(strValue)                if paramType == 'int'    else
+                    (strValue == 'true')         if paramType == 'bool'   else
+                    strValue.split(listBoundary) if paramType == 'list'   else
+                    None
+                )
+                    for paramType, strValue
+                        in zip(outputTypes, out.rstrip('\n\r').split(outputBoundary))
+            ]
 
     def requireAccess(self, actionDescription, checkName, *args):
         """
@@ -189,9 +236,9 @@ class GroupManager(object):
         ruleName = 'uuGroupPolicyCan' + checkName
         args = (self.clientUsername,) + args
 
-        (allowed, reason) = self.rule(ruleName, args, 'allowed reason'.split())
+        (allowed, reason) = self.rule(ruleName, args, ['bool', 'string'])
 
-        if allowed != 'true':
+        if not allowed:
             raise GmException(
                 'Action disallowed by policy check \'' + ruleName + '\'',
                 'Could not ' + actionDescription + ': ' + reason
@@ -212,7 +259,7 @@ class GroupManager(object):
         groupDir = '/%s/group/%s' % (self.zone, groupName)
 
         try:
-            self.icommand('imkdir', [groupDir])
+            self.icommand('imkdir', [groupDir], critical = False)
             self.icommand('iadmin', ['atg', groupName, self.clientUsername])
 
             self.icommand('imeta',  ['set', '-C', groupDir, 'category',      'uncategorized'    ])
@@ -238,8 +285,8 @@ class GroupManager(object):
         """
         self.requireAccess('add user to group', 'GroupUserAdd', groupName, userName)
 
-        (userExists,) = self.rule('uuUserExists', [userName], ['userExists'])
-        if userExists != 'true':
+        (userExists,) = self.rule('uuUserExists', [userName], ['bool'])
+        if not userExists:
             self.icommand('iadmin', ['mkuser', userName, 'rodsuser'])
 
         try:
@@ -251,6 +298,38 @@ class GroupManager(object):
                 # Remove the orphan user.
                 self.icommand('iadmin', ['rmuser', userName], critical = False)
             raise
+
+    def groupModify(self, groupName, propertyName, value):
+        """
+        Modify group properties.
+
+        propertyName must be one of 'category', 'subcategory', 'description', and 'managers'.
+
+        param groupName:    The name of the group
+        param propertyName: The property to modify
+        param value:        The new property value
+        """
+        self.requireAccess('change group properties', 'GroupModify', groupName, propertyName, value)
+
+        groupDir = '/%s/group/%s' % (self.zone, groupName)
+
+        if propertyName == 'managers':
+            newManagers     = set(value.split(';'))
+            currentManagers = set(self.rule('uuGroupGetManagers', [groupName], ['list'])[0]);
+
+            for manager in currentManagers - newManagers:
+                self.icommand('imeta',  ['rm',  '-C', groupDir, 'administrator', manager])
+            for manager in newManagers - currentManagers:
+                self.icommand('imeta',  ['add', '-C', groupDir, 'administrator', manager])
+
+        elif propertyName in ('category', 'subcategory'):
+            self.icommand('imeta', [
+                'set', '-C', groupDir, propertyName, value if len(value) else 'uncategorized'
+            ])
+        else:
+            self.icommand('imeta', [
+                'set', '-C', groupDir, propertyName, value if len(value) else '.'
+            ])
 
     # }}}
 
@@ -340,7 +419,7 @@ if __name__ == '__main__':
             except KeyError:
                 raise GmException(
                     'spClient{User,RodsZone} environment variables missing',
-                    'An internal error occurred'
+                    'An internal error occurred. Please contact a Yoda administrator if problems persist.'
                 )
 
             # Require the manager action initiating user to be in the same iRODS
@@ -361,14 +440,14 @@ if __name__ == '__main__':
                         mgr.groupAdd(sys.argv[2])
                     elif sys.argv[1] == 'add-user'    and len(sys.argv) == 4:
                         mgr.groupUserAdd(sys.argv[2], sys.argv[3])
-                    elif sys.argv[1] == 'set'         and len(sys.argv) == 4:
-                        pass
+                    elif sys.argv[1] == 'set'         and len(sys.argv) == 5:
+                        mgr.groupModify(sys.argv[2], sys.argv[3], sys.argv[4])
                     elif sys.argv[1] == 'remove-user' and len(sys.argv) == 3:
                         pass
                     else:
-                        raise GmException('Invalid group-manager command', 'An internal error occurred')
+                        raise GmException('Invalid group-manager command', 'An internal error occurred. Please contact a Yoda administrator if problems persist.')
                 else:
-                    raise GmException('Incorrect parameter count', 'An internal error occurred')
+                    raise GmException('Incorrect parameter count', 'An internal error occurred. Please contact a Yoda administrator if problems persist.')
     except GmException, ex:
         fail(ex)
     except:

@@ -59,19 +59,14 @@ uuGroupNameIsValid(*name)
 
 # \brief Check if a (sub)category name is valid.
 #
-# (sub)Category names must:
+# Category names must:
 #
-# - contain only letters, numbers, spaces, hyphens and underscores
-# - not start or end in whitespace
-# - not contain consecutive whitespace characters
+# - contain only letters, numbers, spaces, commas, periods, underscores and hyphens
 #
 # \param[in] name
 #
 uuGroupCategoryNameIsValid(*name)
-	=      *name like regex "[a-zA-Z0-9 _-]+"
-	  && !(*name like regex ".*[ ]{2,}.*")
-	  &&   *name like regex ".*[^ ]"
-	  &&   *name like regex   "[^ ].*";
+	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
 # \brief Group Policy: Can the user create a new group?
 #
@@ -142,7 +137,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 			if (uuGroupCategoryNameIsValid(*categoryName)) {
 				*allowed = true;
 			} else {
-				*reason = "The new category name is invalid.";
+				*reason = "(Sub)category names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
 			}
 		} else {
 			*reason = "You are not a member of the priv-category-add group.";
@@ -177,7 +172,7 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 			if (uuGroupCategoryNameIsValid(*value)) {
 				*allowed = true;
 			} else {
-				*reason = "The new subcategory name is invalid.";
+				*reason = "Subcategory names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
 			}
 		} else if (*property == "managers") {
 			*newManagers = split(*value, ";");
