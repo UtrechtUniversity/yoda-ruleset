@@ -390,7 +390,8 @@ uuGroupManagerCall(*args, *status, *message) {
 			*message = *cmdStdout;
 			writeLine(
 				"serverLog",
-				   "uuGroupAdd by $userNameClient failed with the following message on STDERR: "
+				   "Group manager call by $userNameClient with args '"
+				++ *args ++ "' failed with the following message on STDERR: "
 				++ substr(*cmdStderr, 7, strlen(*cmdStderr))
 				++ " // Command output (STDOUT) was: "
 				++ *cmdStdout

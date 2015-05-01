@@ -42,7 +42,7 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 # \param[in] name
 #
 uuUserNameIsValid(*name)
-	= *name like regex ``[a-z-]+|[a-z_.-]+@([a-z_-]+|[a-z_-][a-z_.-]*[a-z_-])``;
+	= *name like regex ``([a-z-]+|[a-z_.-]+@([a-z_-]+|[a-z_-][a-z_.-]*[a-z_-]))``;
 
 # \brief Check if a group name is valid.
 #
