@@ -281,7 +281,7 @@ class GroupManager(object):
         policy check functions allow it.
 
         param groupName: The name of the group
-        param userName: The name of the user to add to the group
+        param userName:  The name of the user to add to the group
         """
         self.requireAccess('add user to group', 'GroupUserAdd', groupName, userName)
 
@@ -298,6 +298,17 @@ class GroupManager(object):
                 # Remove the orphan user.
                 self.icommand('iadmin', ['rmuser', userName], critical = False)
             raise
+
+    def groupUserRemove(self, groupName, userName):
+        """
+        Remove a user from a group.
+
+        param groupName: The name of the group
+        param userName:  The name of the user to remove from the group
+        """
+        self.requireAccess('remove user from group', 'GroupUserRemove', groupName, userName)
+
+        self.icommand('iadmin', ['rfg', groupName, userName])
 
     def groupModify(self, groupName, propertyName, value):
         """
@@ -438,12 +449,12 @@ if __name__ == '__main__':
                 if len(sys.argv) >= 2:
                     if   sys.argv[1] == 'add'         and len(sys.argv) == 3:
                         mgr.groupAdd(sys.argv[2])
-                    elif sys.argv[1] == 'add-user'    and len(sys.argv) == 4:
-                        mgr.groupUserAdd(sys.argv[2], sys.argv[3])
                     elif sys.argv[1] == 'set'         and len(sys.argv) == 5:
                         mgr.groupModify(sys.argv[2], sys.argv[3], sys.argv[4])
-                    elif sys.argv[1] == 'remove-user' and len(sys.argv) == 3:
-                        pass
+                    elif sys.argv[1] == 'add-user'    and len(sys.argv) == 4:
+                        mgr.groupUserAdd(sys.argv[2], sys.argv[3])
+                    elif sys.argv[1] == 'remove-user' and len(sys.argv) == 4:
+                        mgr.groupUserRemove(sys.argv[2], sys.argv[3])
                     else:
                         raise GmException('Invalid group-manager command', 'An internal error occurred. Please contact a Yoda administrator if problems persist.')
                 else:
