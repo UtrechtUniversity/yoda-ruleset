@@ -306,6 +306,14 @@ class GroupManager(object):
         """
         self.requireAccess('remove user from group', 'GroupUserRemove', groupName, userName)
 
+        (isManager,) = self.rule('uuGroupUserIsManager', [groupName, userName], ['bool'])
+        if isManager:
+            # We need to remove the user from the manager list first.
+            # We bypass the groupModify policy check here, since being allowed to remove a
+            # user from a group implies that we also have the right to demote them.
+            groupDir = '/%s/group/%s' % (self.zone, groupName)
+            self.icommand('imeta',  ['rm',  '-C', groupDir, 'administrator', userName])
+
         self.icommand('iadmin', ['rfg', groupName, userName])
 
     def groupModify(self, groupName, propertyName, value):
