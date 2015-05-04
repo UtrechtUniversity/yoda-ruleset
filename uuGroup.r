@@ -395,11 +395,18 @@ uuGroupManagerCall(*args, *status, *message) {
 			*message = *cmdStdout;
 		}
 	} else {
-		*status  = 1;
-		*message = "An internal error occurred.";
 		# Python returned non-zero. There's nothing we can do - the cmdOut
 		# variable contains a null pointer somewhere and causes a segfault if
 		# we try to read its stdout and stderr properties.
+		writeLine(
+			"serverLog",
+			   "Group manager call by $userNameClient with args '"
+			++ *args ++ "' failed with exit code *status. "
+			++ "Command STDOUT and STDERR could not be recovered."
+		);
+
+		*status  = 1;
+		*message = "An internal error occurred.";
 	}
 }
 
@@ -445,6 +452,52 @@ uuGroupUserAdd(*groupName, *userName, *status, *message) {
 #
 uuGroupUserRemove(*groupName, *userName, *status, *message) {
 	uuGroupManagerCall("remove-user \"*groupName\" \"*userName\"", *status, *message);
+}
+
+# Shorthand group manager functions.
+
+# \brief Promote or demote a group user.
+#
+# \param[in]  groupName
+# \param[in]  userName  the user to promote or demote
+# \param[in]  newRole   the new role, either 'manager' or 'user'
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuGroupUserChangeRole(*groupName, *userName, *newRole, *status, *message) {
+	uuGroupGetManagers(*groupName, *managers);
+	uuListContains(*managers, *userName, *isCurrentlyManager);
+
+	if (*newRole == "manager") {
+		if (*isCurrentlyManager) {
+			# Nothing to do.
+			*status  = 0;
+			*message = "";
+		} else {
+			# Append the user to the managers list.
+			uuJoin(";", *managers, *newManagersString);
+			*newManagersString = *newManagersString ++ ";*userName";
+			uuGroupManagerCall("set \"*groupName\" \"managers\" \"*newManagersString\"", *status, *message);
+		}
+	} else if (*newRole == "user") {
+		if (*isCurrentlyManager) {
+			# Remove the user from the managers list.
+			uuListFilter(*managers, *userName, false, false, *newManagers);
+			uuJoin(";", *newManagers, *newManagersString);
+			uuGroupManagerCall("set \"*groupName\" \"managers\" \"*newManagersString\"", *status, *message);
+		} else {
+			# Nothing to do.
+			*status  = 0;
+			*message = "";
+		}
+	} else {
+		writeLine(
+			"serverLog",
+			"Invalid group manager call by $userNameClient: User tried to set invalid user role '*newRole'"
+		);
+		*status  = 1;
+		*message = "An internal error occurred.";
+	}
 }
 
 # }}}

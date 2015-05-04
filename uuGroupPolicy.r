@@ -181,16 +181,26 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 
 			*managerListContainsNonMembers = false;
 			foreach (*newManager in *newManagers) {
-				uuListContains(*newManager, *members, *newManagerIsMember);
+				uuListContains(*members, *newManager, *newManagerIsMember);
 				if (!*newManagerIsMember) {
 					*managerListContainsNonMembers = true;
 					break;
 				}
 			}
 			if (*managerListContainsNonMembers) {
+				# NOTE: This may indicate an inconsistency in current group metadata,
+				#       possibly introduced by someone manually using 'iadmin rfg'
+				#       instead of using group-manager.py calls.
+				#
+				#       This error may be prevented by doing additional checks
+				#       in uuGroupUserChangeRole.
+				#       Manual group management using iadmin calls, as would
+				#       probably be the cause of this error, should never be
+				#       allowed however.
+				#
 				*reason = "Non-members cannot be made group managers";
 			} else {
-				uuListContains(*actor, *newManagers, *hasNotChangedOwnRole);
+				uuListContains(*newManagers, *actor, *hasNotChangedOwnRole);
 
 				if (*hasNotChangedOwnRole) {
 					*allowed = true;
