@@ -57,8 +57,6 @@ from __future__ import print_function
 __author__  = 'Chris Smeele'
 __version__ = '0.1'
 
-# TODO: GroupManager action: remove user.
-
 import json
 import sys
 import os

@@ -252,6 +252,7 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		if (*member == *actor) {
+			# This also ensures that groups always have at least one manager.
 			*reason = "You cannot remove yourself from group *groupName.";
 		} else {
 			*allowed = true;

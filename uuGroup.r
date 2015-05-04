@@ -5,18 +5,6 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
-#test() {
-#	*user = "bert#tsm";
-#   *group = "yoda";
-#	uuGroupUserExists(*group, *user, *membership);
-#	writeLine("stdout","*user membership of group *group : *membership");
-#	uuGroupMemberships(*user, *groups);
-#	writeLine("stdout","allgroups=*groups");
-#	foreach (*grp in split(*groups,',')){
-#		writeLine("stdout","grp = *grp");
-#	}
-#}
-
 # \brief Extract username and zone in separate fields.
 #
 # \param[in] user       name of the irods user
@@ -372,6 +360,12 @@ uuGroupUserIsManager(*groupName, *userName, *isManager) {
 
 # Privileged group management functions {{{
 
+# \brief Call a group manager action.
+#
+# \param[in]  args    arguments to the group manager program
+# \param[out] status  zero on success, non-zero on failure
+# \param[out] message a user friendly error message, may contain the reason why an action was disallowed
+#
 uuGroupManagerCall(*args, *status, *message) {
 	*status = errorcode(msiExecCmd(
 		"group-manager.py",
@@ -403,26 +397,54 @@ uuGroupManagerCall(*args, *status, *message) {
 	} else {
 		*status  = 1;
 		*message = "An internal error occurred.";
+		# Python returned non-zero. There's nothing we can do - the cmdOut
+		# variable contains a null pointer somewhere and causes a segfault if
+		# we try to read its stdout and stderr properties.
 	}
 }
 
+# \brief Create a group.
+#
+# \param[in]  groupName
+# \param[out] status  zero on success, non-zero on failure
+# \param[out] message a user friendly error message, may contain the reason why an action was disallowed
+#
 uuGroupAdd(*groupName, *status, *message) {
 	uuGroupManagerCall("add \"*groupName\"", *status, *message);
 }
 
+# \brief Modify a group.
+#
+# \param[in]  groupName
+# \param[in]  property  the property to change
+# \param[in]  value     the new property value
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
 uuGroupModify(*groupName, *property, *value, *status, *message) {
 	uuGroupManagerCall("set \"*groupName\" \"*property\" \"*value\"", *status, *message);
 }
 
+# \brief Add a user to a group.
+#
+# \param[in]  groupName
+# \param[in]  userName  the user to add to the group
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
 uuGroupUserAdd(*groupName, *userName, *status, *message) {
 	uuGroupManagerCall("add-user \"*groupName\" \"*userName\"", *status, *message);
 }
 
+# \brief Remove a user from a group.
+#
+# \param[in]  groupName
+# \param[in]  userName  the user to remove from the group
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
 uuGroupUserRemove(*groupName, *userName, *status, *message) {
 	uuGroupManagerCall("remove-user \"*groupName\" \"*userName\"", *status, *message);
 }
 
 # }}}
-
-#input *group="grp-yc-intake"
-#output ruleExecOut
