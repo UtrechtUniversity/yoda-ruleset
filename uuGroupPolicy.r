@@ -116,8 +116,8 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 	if (*categoryExists) {
 		*isManagerInCategory = false;
 
-		uuGroupMemberships(*actor, *groupsString);
-		foreach (*actorGroup in split(*groupsString, ",")) {
+		uuGroupMemberships(*actor, *groups);
+		foreach (*actorGroup in *groups) {
 			uuGroupGetCategory(*actorGroup, *agCategory, *agSubcategory);
 			if (*agCategory == *categoryName) {
 				uuGroupUserIsManager(*actorGroup, *actor, *isManagerInCategory);
