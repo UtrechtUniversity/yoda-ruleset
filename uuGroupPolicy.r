@@ -4,32 +4,6 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
-# \brief ExecCmd policy for group manager commands.
-#
-# \param[in] cmd
-# \param[in] args
-# \param[in] addr
-# \param[in] hint
-#
-acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
-	ON(*cmd == "group-manager.py") {
-		if (
-			   *args like regex "add [^\\\\'\" ]+"
-			|| *args like regex "set [^\\\\'\" ]+ [^\\\\'\" ]+ '[^\\\\'\"]+'"
-			|| *args like regex "add-user [^\\\\'\" ]+ [^'\\\\'\" ]+"
-			|| *args like regex "remove-user [^\\\\'\" ]+ [^'\\\\'\" ]+"
-		) {
-			*allowed = true;
-		}
-
-		if (!*allowed) {
-			cut;
-			msiOprDisallowed;
-			fail;
-		}
-	}
-}
-
 # \brief Check if a user name is valid.
 #
 # User names must:
