@@ -468,4 +468,4 @@ if __name__ == '__main__':
     except GmException, ex:
         fail(ex)
     except:
-        fail(GmException(sys.exc_info()[1], 'Unknown error'))
+        fail(GmException(sys.exc_info()[1], 'An internal error occurred, please contact a Yoda administrator.'))
