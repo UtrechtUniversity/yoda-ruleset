@@ -60,20 +60,3 @@ uuChopPath(*path, *parent, *baseName) {
 		uuChop(*path, *parent, *baseName, "/", false);
 	}
 }
-
-# \brief Join a list.
-#
-# \param[in]  delimiter
-# \param[in]  list
-# \param[out] str contains all elements in `list`, separated by `delimiter`
-#
-uuJoin(*delimiter, *list, *str) {
-	*str = "";
-	foreach (*item in *list) {
-		if (strlen(*str) > 0) {
-			*str = *str ++ *delimiter ++ *item;
-		} else {
-			*str = *item;
-		}
-	}
-}
