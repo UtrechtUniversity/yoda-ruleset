@@ -17,6 +17,7 @@
 #
 acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 	ON(*cmd == "group-manager.py") {
+		*allowed = false;
 		if (
 			   *args like regex "add [^\\\\'\" ]+"
 			|| *args like regex "set [^\\\\'\" ]+ [^\\\\'\" ]+ '[^\\\\'\"]+'"
