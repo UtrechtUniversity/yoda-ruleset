@@ -20,7 +20,7 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 		*allowed = false;
 		if (
 			   *args like regex "add \"[^\\\\'\" ]+\""
-			|| *args like regex "set \"[^\\\\'\" ]+\" \"[^\\\\'\" ]+\" \"[^\\\\'\"]+\""
+			|| *args like regex "set \"[^\\\\'\" ]+\" \"[^\\\\'\" ]+\" \"[^\\\\'\"]*\""
 			|| *args like regex "add-user \"[^\\\\'\" ]+\" \"[^'\\\\'\" ]+\""
 			|| *args like regex "remove-user \"[^\\\\'\" ]+\" \"[^'\\\\'\" ]+\""
 		) {
