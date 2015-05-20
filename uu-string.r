@@ -60,3 +60,58 @@ uuChopPath(*path, *parent, *baseName) {
 		uuChop(*path, *parent, *baseName, "/", false);
 	}
 }
+
+# \brief Convert a string to uppercase characters
+# \param[in]	strIn
+# \param[out]	strOut
+#
+uuStrToUpper(*strIn, *strOut) {
+	uuStrShift(*strIn, *strOut, "upper");
+}
+
+# \brief Convert a string to lowercase characters
+# \param[in]	strIn
+# \param[out]	strOut
+#
+uuStrToLower(*strIn, *strOut) {
+	uuStrShift(*strIn, *strOut, "lower");
+}
+
+# \brief (internal function) Convert a string to lowercase or uppercase
+# \param[in]	strIn
+# \param[out]	strOut
+# \param[in]	toCase	should be either "lower" or "upper"
+#
+uuStrShift(*strIn, *strOut, *toCase) {
+	*strOut = ''; 
+	for (*pos = 0; *pos < strlen(*strIn); *pos = *pos + 1) {
+		*c = substr(*strIn, *pos, *pos + 1);
+		uuChrShift(*c, *toCase);
+		*strOut = *strOut ++ *c;
+	}
+}
+
+# \brief Convert a single characterstring to lowercase or uppercase
+# \param[in/out]	strIn
+# \param[in]		toCase	should be either "lower" or "upper"	
+#
+uuChrShift(*c, *toCase) {
+	*a1 = split("a b c d e f g h i j k l m n o p q r s t u v w x y z", " ");
+	*a2 = split("A B C D E F G H I J K L M N O P Q R S T U V W X Y Z", " ");
+	# assume transformation to uppercase
+	*aSource = *a1;
+	*aDestination = *a2;
+	if (*toCase == "lower") {
+		*aSource = *a2;
+		*aDestination = *a1;
+	}
+	*element = 0;
+	foreach (*source in *aSource) {
+		if (*c == *source) {
+			*c = elem(*aDestination, *element);
+			break;
+		}
+		*element = *element + 1;
+	}
+} 
+
