@@ -83,6 +83,18 @@ uuUserExists(*userName, *exists) {
 		  AND  USER_TYPE = 'rodsuser'
 	) {
 		*exists = true;
+		break;
+	}
+	if (!*exists) {
+		foreach (
+			*row in
+			SELECT USER_NAME, USER_TYPE
+			WHERE  USER_NAME = '*userName'
+			  AND  USER_TYPE = 'rodsadmin'
+		) {
+			*exists = true;
+			break;
+		}
 	}
 }
 
@@ -306,6 +318,14 @@ uuGetUsers(*users) {
 	) {
 		*usersString = "*usersString;" ++ *user."USER_NAME";
 	}
+	foreach (
+		*user in
+		SELECT USER_NAME
+		WHERE  USER_TYPE = 'rodsadmin'
+	) {
+		*usersString = "*usersString;" ++ *user."USER_NAME";
+	}
+
 	*users = split(*usersString, ";");
 }
 
@@ -324,6 +344,15 @@ uuFindUsers(*query, *users) {
 	) {
 		*usersString = "*usersString;" ++ *user."USER_NAME";
 	}
+	foreach (
+		*user in
+		SELECT USER_NAME
+		WHERE  USER_TYPE = 'rodsadmin'
+		  AND  USER_NAME LIKE '%*query%'
+	) {
+		*usersString = "*usersString;" ++ *user."USER_NAME";
+	}
+
 	*users = split(*usersString, ";");
 }
 
