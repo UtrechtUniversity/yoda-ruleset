@@ -191,6 +191,43 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 	}
 }
 
+# \brief Group Policy: Can the user remove a group?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  groupName the group name
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
+	*allowed = false;
+	*reason  = "";
+
+	uuGroupUserIsManager(*groupName, *actor, *isManager);
+	if (*isManager) {
+		if (*groupName like "grp-*") {
+			*homeCollection = "/$rodsZoneClient/home/*groupName";
+			*homeCollectionIsEmpty = true;
+
+			foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = '*homeCollection') {
+				*homeCollectionIsEmpty = false; break;
+			}
+			foreach (*row in SELECT COLL_ID WHERE COLL_PARENT_NAME LIKE '*homeCollection') {
+				*homeCollectionIsEmpty = false; break;
+			}
+
+			if (*homeCollectionIsEmpty) {
+				*allowed = true;
+			} else {
+				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
+			}
+		} else {
+			*reason = "*groupName is not a regular yoda group. You can only remove groups that have a 'grp-' prefix.";
+		}
+	} else {
+		*reason = "You are not a manager of group *groupName.";
+	}
+}
+
 # \brief Group Policy: Can the user add a new user to a certain group?
 #
 # \param[in]  actor     the user whose privileges are checked
