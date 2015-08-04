@@ -1,19 +1,23 @@
-# Makefile to build and install iRODS ruleset
+# Makefile for building and installing the Utrecht University iRODS ruleset
 #
 # Please note the following:
-# - the directory in which this makefile resides should have been
-#   created via a "git clone" command (or something similar) referencing a
-#   repository master branch that will always provide a working release
-#   (e.g. latest production release)
 #
-# - it relies on parent directory being: ../server/config/reConfigs
-#   and the ruleset (see filename defined in RULESET variable) incuded
-#   in the ruleset list in file ../server/config/server.config
+# - To make use of the 'update' make target, this ruleset directory needs to
+#   have a .git directory (i.e. you should clone this repository using git,
+#   rather than download a source tarball).
 #
-#   make upgrade   - download latest release from origin git repository
-#   make install   - combine rules and copy it to the "reConfigs" dir
-#   make all       - all of the above
+# - The 'update' target simply does a git pull. Make sure to checkout the
+#   correct branch for your environment first. That is, 'master' for a
+#   production environment, 'release-*' for acceptance environments, and
+#   'development' for dev/test environments.
 #
+# - For the 'install' make target to work, you should place this ruleset
+#   directory in the folder 'iRODS/server/config/reConfigs'. Don't forget to
+#   append the ruleset name ($RULESET_NAME minus the '.re' extension) to the
+#   reRuleSet line in server/config/server.config.
+#
+# make update  - pull changes from git remote, updates .r files
+# make install - install ruleset (concatenated .r files) into the parent directory
 
 # Input files.
 
