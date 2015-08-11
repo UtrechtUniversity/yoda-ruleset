@@ -23,6 +23,7 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 			|| *args like regex "set \"[^\\\\'\" ]+\" \"[^\\\\'\" ]+\" \"[^\\\\'\"]*\""
 			|| *args like regex "add-user \"[^\\\\'\" ]+\" \"[^'\\\\'\" ]+\""
 			|| *args like regex "remove-user \"[^\\\\'\" ]+\" \"[^'\\\\'\" ]+\""
+			|| *args like regex "remove-group \"[^\\\\'\" ]+\""
 		) {
 			*allowed = true;
 		}

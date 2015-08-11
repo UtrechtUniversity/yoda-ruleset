@@ -151,7 +151,7 @@ class GroupManager(object):
                 '\t'
                 + ruleName + '('
                     + ', '.join([
-                        ', '.join(['"' + val + '"' for val  in  inputParams]),
+                        ', '.join(['"' + val.replace('"', '\\"') + '"' for val in inputParams]),
                         ', '.join(['*_outParam' + str(i) for i, paramType in enumerate(outputTypes)])
                       ])
                 + ');\n'
@@ -246,7 +246,7 @@ class GroupManager(object):
 
     def groupAdd(self, groupName):
         """
-        Create a new iRODS group.
+        Create a new Yoda group.
 
         param groupName: The name of the group to create
         """
@@ -270,6 +270,18 @@ class GroupManager(object):
             self.icommand('irm',    ['-r',      groupDir ], critical = False)
             self.icommand('iadmin', ['rmgroup', groupName], critical = False)
             raise
+
+    def groupRemove(self, groupName):
+        """
+        Remove a group.
+
+        param groupName: The name of the group to delete
+        """
+        self.requireAccess('remove group', 'GroupRemove', groupName)
+        self.icommand('iadmin', ['rmgroup', groupName])
+
+        groupDir = '/%s/group/%s' % (self.zone, groupName)
+        self.icommand('irm', ['-r', groupDir])
 
     def groupUserAdd(self, groupName, userName):
         """
@@ -450,7 +462,7 @@ if __name__ == '__main__':
                 zone           = config['zone'],
                 clientUsername = clientUsername,
                 adminUsername  = config['admin']['username'],
-                adminPassword  = config['admin']['password']
+                adminPassword  = config['admin']['password'],
             ) as mgr:
                 if len(sys.argv) >= 2:
                     if   sys.argv[1] == 'add'         and len(sys.argv) == 3:
@@ -461,6 +473,8 @@ if __name__ == '__main__':
                         mgr.groupUserAdd(sys.argv[2], sys.argv[3])
                     elif sys.argv[1] == 'remove-user' and len(sys.argv) == 4:
                         mgr.groupUserRemove(sys.argv[2], sys.argv[3])
+                    elif sys.argv[1] == 'remove-group' and len(sys.argv) == 3:
+                        mgr.groupRemove(sys.argv[2])
                     else:
                         raise GmException('Invalid group-manager command', 'An internal error occurred. Please contact a Yoda administrator if problems persist.')
                 else:

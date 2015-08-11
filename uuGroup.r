@@ -474,6 +474,16 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 	uuGroupManagerCall("set \"*groupName\" \"*property\" \"*value\"", *status, *message);
 }
 
+# \brief Remove a group.
+#
+# \param[in]  groupName
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuGroupRemove(*groupName, *status, *message) {
+	uuGroupManagerCall("remove-group \"*groupName\"", *status, *message);
+}
+
 # \brief Add a user to a group.
 #
 # \param[in]  groupName
