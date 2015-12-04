@@ -9,13 +9,13 @@
 # User names must:
 #
 # - contain zero or one '@' signs, but not at the beginning or the end of the name
-# - contain only lowercase letters if no '@' sign is present
+# - contain only lowercase letters and dots if no '@' sign is present
 # - contain only lowercase letters, numbers, hyphens, underscores and dots if an '@' sign is present
 #
 # \param[in] name
 #
 uuUserNameIsValid(*name)
-	= *name like regex ``([a-z]+|[a-z0-9_.-]+@[a-z0-9_.-]+)``;
+	= *name like regex ``([a-z.]+|[a-z0-9_.-]+@[a-z0-9_.-]+)``;
 
 # \brief Check if a group name is valid.
 #
