@@ -164,6 +164,7 @@ class GroupManager(object):
 
             ruleFile.write('\t*_output = "";\n')
 
+            # Generate code for concatenating each output parameter value into *_output.
             for i, paramType in enumerate(outputTypes):
                 paramCode = ''
                 paramName = '*_outParam' + str(i)
@@ -171,6 +172,7 @@ class GroupManager(object):
                 if i > 0:
                     paramCode += '\t*_output = *_output ++ *_outputBoundary;\n'
 
+                # Handle different parameter datatypes.
                 if   paramType in ('string', 'int'):
                     paramCode += '\t*_output = *_output ++ ' + paramName + ';\n'
 
@@ -465,13 +467,13 @@ if __name__ == '__main__':
                 adminPassword  = config['admin']['password'],
             ) as mgr:
                 if len(sys.argv) >= 2:
-                    if   sys.argv[1] == 'add'         and len(sys.argv) == 3:
+                    if   sys.argv[1] == 'add'          and len(sys.argv) == 3:
                         mgr.groupAdd(sys.argv[2])
-                    elif sys.argv[1] == 'set'         and len(sys.argv) == 5:
+                    elif sys.argv[1] == 'set'          and len(sys.argv) == 5:
                         mgr.groupModify(sys.argv[2], sys.argv[3], sys.argv[4])
-                    elif sys.argv[1] == 'add-user'    and len(sys.argv) == 4:
+                    elif sys.argv[1] == 'add-user'     and len(sys.argv) == 4:
                         mgr.groupUserAdd(sys.argv[2], sys.argv[3])
-                    elif sys.argv[1] == 'remove-user' and len(sys.argv) == 4:
+                    elif sys.argv[1] == 'remove-user'  and len(sys.argv) == 4:
                         mgr.groupUserRemove(sys.argv[2], sys.argv[3])
                     elif sys.argv[1] == 'remove-group' and len(sys.argv) == 3:
                         mgr.groupRemove(sys.argv[2])
