@@ -13,13 +13,11 @@
 #  locked and silently ignored
 #
 
-iiRunCreateSnapshots {
-        # intake areas can be added to the grouplist as needed
-        # *grouplist = list ("youth","vijfmnd");
-        *zone = $rodsZoneClient;
-        foreach (*row in SELECT COLL_NAME WHERE COLL_NAME like "/*zone/group/grp-intake-%") {
-                uuChopPath(*row.COLL_NAME, *parent, *intake_basepath);
-                *grp = substr(*intake_basepath, strlen("grp-intake-"), strlen(*intake_basepath));
+uuIiRunCreateSnapshots {
+        *user = "$userNameClient#$rodsZoneClient";
+        uuGetUserAndZone(*user, *userName, *userZone);
+        uuGroupMemberships(*user, *grouplist);
+        foreach(*grp in *grouplist) {
                 writeLine("stdout", "Found group '*grp'");
                 *intakeRoot = "/*zone/home/grp-intake-*grp";
                 *vaultRoot = "/*zone/home/grp-vault-*grp";
