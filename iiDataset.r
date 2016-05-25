@@ -10,7 +10,7 @@
 # \param[in] collection 		Collection name (full path)
 # \param[out] buffer 			All usernames and times
 #
-iiGetSnapshotHistory(*collection) {
+uuIiGetSnapshotHistory(*collection) {
 	*buffer = list();
 	foreach(*row in SELECT META_COLL_ATTR_VALUE 
 			WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
@@ -22,9 +22,4 @@ iiGetSnapshotHistory(*collection) {
 		*elem = (*datetime, *userName, *userZone);
 		cons(*elem, *buffer);
 	}
-}
-
-uuIiListVaultDatasets {
-	*user = "$userNameClient#$rodsZoneClient";
-	uuGroupMemberships(*user, *groupList);
 }
