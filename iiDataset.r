@@ -13,7 +13,7 @@
 uuIiGetSnapshotHistory(*collection) {
 	*buffer = list();
 	foreach(*row in SELECT META_COLL_ATTR_VALUE 
-			WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
+			WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
 			AND COLL_NAME = '*collection') {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
 		*datetimeAndUser = split(*value, ":");
