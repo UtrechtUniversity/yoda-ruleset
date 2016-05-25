@@ -14,7 +14,9 @@
 #
 
 uuIiRunCreateSnapshots {
-        *user = "$userNameClient#$rodsZoneClient";
+        *zone = $rodsZoneClient;
+        *username = $userNameClient;
+        *user = "*username#*zone";
         uuGetUserAndZone(*user, *userName, *userZone);
         uuGroupMemberships(*user, *grouplist);
         foreach(*grp in *grouplist) {
