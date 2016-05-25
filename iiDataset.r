@@ -23,3 +23,8 @@ iiGetSnapshotHistory(*collection) {
 		cons(*elem, *buffer);
 	}
 }
+
+uuIiListVaultDatasets {
+	*user = "$userNameClient#$rodsZoneClient";
+	uuGroupMemberships(*user, *groupList);
+}

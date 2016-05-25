@@ -19,14 +19,19 @@ uuIiRunCreateSnapshots {
         *user = "*username#*zone";
         uuGetUserAndZone(*user, *userName, *userZone);
         uuGroupMemberships(*user, *grouplist);
+        uuIiGetIntakePrefix(*intk);
+        uuIiGetVaultPrefix(*vlt);
         foreach(*grp in *grouplist) {
-                writeLine("stdout", "Found group '*grp'");
-                *intakeRoot = "/*zone/home/grp-intake-*grp";
-                *vaultRoot = "/*zone/home/grp-vault-*grp";
+                if(*grp like "*intk\*"){
+                        *grp = substr(*grp, strlen(*intk), strlen(*grp))
+                        writeLine("stdout", "Found group '*grp'");
+                        *intakeRoot = "/*zone/home/*intk*grp";
+                        *vaultRoot = "/*zone/home/*vlt*grp";
 
-                uuIi2Vault(*intakeRoot, *vaultRoot, *status);
-                if (*status == 0 ) then *result = "ok" else *result = "ERROR (*status)";
-                writeLine("serverLog","RunIntake2Vault for *intakeRoot result = *result");
+                        uuIi2Vault(*intakeRoot, *vaultRoot, *status);
+                        if (*status == 0 ) then *result = "ok" else *result = "ERROR (*status)";
+                        writeLine("serverLog","RunIntake2Vault for *intakeRoot result = *result");
+                }
         }
 }
 

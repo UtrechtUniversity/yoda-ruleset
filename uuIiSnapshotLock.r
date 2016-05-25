@@ -156,7 +156,7 @@ iiDatasetSnapshotLock(*collection, *datasetId, *status) {
 	# was prepared for snapshotting
 	if(*status == 0) {
 		msiGetIcatTime(*dateTime,"unix");
-		msiString2KeyValPair("dataset_snapshotlock_toplevel=*dateTime:$rodsZoneClient#$userNameClient", *kvPair);
+		msiString2KeyValPair("dataset_snapshotlock_toplevel=*dateTime:$userNameClient#$rodsZoneClient", *kvPair);
 		*status = errorcode(
 			msiSetKeyValuePairsToObj(*kvPair, "*collection/*datasetId", "-C")
 		);

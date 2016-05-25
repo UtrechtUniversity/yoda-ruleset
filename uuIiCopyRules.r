@@ -24,6 +24,7 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 	# - add error to intake dataset metadata
 	# - remove locks on intake dataset (to_vault_freeze, to_vault_lock)
 	*status = 0; # 0 is success, nonzero is error
+
 	foreach (*row in SELECT COLL_NAME, META_COLL_ATTR_VALUE
 				WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
 				  AND COLL_NAME like '*intakeRoot/%') {
@@ -38,7 +39,6 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 			if(*lockStatus == 0) {
 				iiDatasetSnapshotFreeze(*intakeRoot, *datasetId, *status);
 				# datset frozen, now move to fault and remove from intake area
-				writeLine("stdout", "\n\nVaultroot before uuIiDatasetCollectionCopy2Vault: '*vaultRoot'");
 				uuIiDatasetCollectionCopy2Vault(
 						*intakeRoot, 
 						*topLevelCollection,
@@ -46,10 +46,9 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 						*vaultRoot,
 						*status
 					);
-				writeLine("stdout", "Vaultroot after uuIiDatasetCollectionCopy2Vault: '*vaultRoot'\n\n");
 
 				if(*status == 0) {
-					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId);
+					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId, *status);
 					iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
 					iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
 				}
