@@ -138,6 +138,9 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
 			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
+			iiDatasetSnapshotMelt(*topLevelCollection, *datasetId, *status);
+			iiDatasetSnapshotUnlock(*topLevelCollection, *datasetId, *status);
+
 			uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
 			uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
 			*status = 1; # duplicate dataset version error
@@ -146,8 +149,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 		writeLine("serverLog", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
-		uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
-		uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
+		iiDatasetSnapshotMelt(*topLevelCollection, *datasetId, *status);
+		iiDatasetSnapshotUnlock(*topLevelCollection, *datasetId, *status);
 		*status = 1; # duplicate dataset version error
 	}
 }
