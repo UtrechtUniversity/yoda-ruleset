@@ -18,10 +18,13 @@ uuIiRunCreateSnapshots {
         *username = $userNameClient;
         *user = "*username#*zone";
         uuGetUserAndZone(*user, *userName, *userZone);
-        uuGroupMemberships(*user, *grouplist);
+        # uuGroupMemberships(*user, *grouplist);
         uuIiGetIntakePrefix(*intk);
         uuIiGetVaultPrefix(*vlt);
-        foreach(*grp in *grouplist) {
+
+        # foreach(*grp in *grouplist) {
+        foreach(*row in SELECT USER_GROUP_NAME WHERE USER_TYPE = 'rodsgroup') {
+                *grp = *row.USER_GROUP_NAME;
                 if(*grp like "*intk\*"){
                         *grp = substr(*grp, strlen(*intk), strlen(*grp))
                         writeLine("stdout", "Found group '*grp'");
