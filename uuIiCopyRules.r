@@ -87,62 +87,70 @@ uuIiAddSnapshotLogToCollection(*collection, *datasetId, *status){
 # \param[in] datasetId				The base name of the dataset that is to be copied to
 #										the vault
 # \param[in] vaultRoot 				The full path to the root of the vault for a group,
-#										e.g. /{zone}/{home}/grp-intake-{goup}
+#										e.g. /{zone}/{home}/grp-vault-{goup}
 # \param[out] status 				Integer exitcode, non-zero means fail (see logs)
 #
 uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
 	writeLine("serverLog","\nCreating snapshot of dataset *datasetId from *topLevelCollection to vault");
 	*status = 0;
 	iiGetOwner(*topLevelCollection, *owner);
-	uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath)
-	iiCollectionExists(*vaultPath, *exists);
-	if (!*exists) {
-		# create the in-between levels of the path to the toplevel collection
-		uuChopPath(*vaultPath, *vaultParent, *vaultCollection);
-		*status = errorcode(msiCollCreate(*vaultParent, "1", *status));	
-		if (*status >= 0) {
-			# copy the dataset tree to the vault
-			uuChopPath(*topLevelCollection, *intakeParent, *intakeCollection);
-			*buffer."source" = *topLevelCollection;
-			*buffer."destination" = *vaultPath;
-			uuTreeWalk(
-					"forward", 
-					*topLevelCollection,
-					"uuIiVaultWalkIngestObject",
-					*buffer,
-					*status
-				);
-			uuKvClear(*buffer);
-			if (*status == 0) {
-				# stamp the vault dataset collection with additional metadata
-				msiGetIcatTime(*date, "unix");
-				msiAddKeyVal(*kv, "snapshot_date_created", *date);
-				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
-				uuChopPath(*vaultPath, *vaultDatasetRoot, *vaultBase)
-				iiDatasetSnapshotMelt(*vaultDatasetRoot, *vaultBase, *status);
-				iiDatasetSnapshotUnlock(*vaultDatasetRoot, *vaultBase, *status);
-				uuUnlock(*vaultPath);
-			} else {
-				# move failed (partially), cleanup vault
-				# NB: keep the dataset in the vault queue so we can retry some other time
-				writeLine("serverLog","ERROR: Ingest failed for *datasetId error = *status");
+	iiCollectionExists(*vaultRoot, *vaultRootExists);
+	if(*vaultRootExists) {
+		uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath)
+		iiCollectionExists(*vaultPath, *exists);
+		if (!*exists) {
+			# create the in-between levels of the path to the toplevel collection
+			uuChopPath(*vaultPath, *vaultParent, *vaultCollection);
+			*status = errorcode(msiCollCreate(*vaultParent, "1", *status));	
+			if (*status >= 0) {
+				# copy the dataset tree to the vault
+				uuChopPath(*topLevelCollection, *intakeParent, *intakeCollection);
+				*buffer."source" = *topLevelCollection;
+				*buffer."destination" = *vaultPath;
+				uuTreeWalk(
+						"forward", 
+						*topLevelCollection,
+						"uuIiVaultWalkIngestObject",
+						*buffer,
+						*status
+					);
+				uuKvClear(*buffer);
+				if (*status == 0) {
+					# stamp the vault dataset collection with additional metadata
+					msiGetIcatTime(*date, "unix");
+					msiAddKeyVal(*kv, "snapshot_date_created", *date);
+					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
+					uuChopPath(*vaultPath, *vaultDatasetRoot, *vaultBase)
+					iiDatasetSnapshotMelt(*vaultDatasetRoot, *vaultBase, *status);
+					iiDatasetSnapshotUnlock(*vaultDatasetRoot, *vaultBase, *status);
+					uuUnlock(*vaultPath);
+				} else {
+					# move failed (partially), cleanup vault
+					# NB: keep the dataset in the vault queue so we can retry some other time
+					writeLine("serverLog","ERROR: Ingest failed for *datasetId error = *status");
 
-				# TODO
-				uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
+					# TODO
+					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
+				}
 			}
+		} else {
+			writeLine("serverLog","INFO: version already exists in vault: *datasetId");
+			# duplicate dataset, signal error and throw out of vault queue
+			*message = "Duplicate dataset, version already exists in vault";
+			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
+			uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
+			uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
+			*status = 1; # duplicate dataset version error
 		}
 	} else {
-		writeLine("serverLog","INFO: version already exists in vault: *datasetId");
-		# duplicate dataset, signal error and throw out of vault queue
-		*message = "Duplicate dataset, version already exists in vault";
+		writeLine("serverLog", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
+		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
 		uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
 		*status = 1; # duplicate dataset version error
 	}
 }
-
-
 
 # \brief uuIiVaultWalkIngestObject 	Treewalkrule, that calculates the objectPath and
 # 									vaultPath for each object it is called on, and calls
