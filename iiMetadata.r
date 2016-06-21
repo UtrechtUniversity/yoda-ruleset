@@ -195,3 +195,58 @@ uuIiGetValuesForKey(*key, *object, *type, *values) {
 		}
 	}
 }
+
+# \brief getAllAvailableValuesForKey
+# 			Returns a string of all values that exist for a key in the ICAT
+#			database. Items are seperated with "#;#"
+#
+# \param[in] key 			The key to search on
+# \param[in] isCollection	Boolean indicating wether the values should be search on
+# 							collection metadata (if true) or on data object metadata
+# \param[out] values 		String containing all possible values for the key, 
+# 							separated by "#;#"
+#
+uuIiGetAllAvailableValuesForKey(*key, *isCollection, *values) {
+	*values = "";
+	
+	if(*isCollection) {
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = '*key') {
+			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+			*values = "*values#;#*value";
+		}
+	} else {
+		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = '*key') {
+			msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *value);
+			*values = "*values"
+		}
+	}
+}
+
+# \brief getAllAvailableValuesForKey
+# 			Returns a string of all values that exist for a key in the ICAT
+#			database that match the given search string.
+#			Items are seperated with "#;#"
+#
+# \param[in] key 			The key to search on
+# \param[in] isCollection	Boolean indicating wether the values should be search on
+# 							collection metadata (if true) or on data object metadata
+# \param[in] searchString 	The string to be searched on (LIKE keyword is used, search
+# 							string is enclosed in percentage signs)
+# \param[out] values 		String containing all possible values for the key, 
+# 							separated by "#;#"
+#
+uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values) {
+	*values = "";
+	
+	if(*isCollection) {
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = '*key' AND META_COLL_ATTR_VALUE like "%*searchString%") {
+			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+			*values = "*values#;#*value";
+		}
+	} else {
+		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = '*key' AND META_COLL_ATTR_VALUE like "%*searchString%") {
+			msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *value);
+			*values = "*values"
+		}
+	}
+}

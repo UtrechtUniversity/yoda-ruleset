@@ -55,3 +55,23 @@ uuIiGetLatestSnapshotInfo(*collection, *time, *userName, *userZone) {
                 *userZone = "";
         }
 }
+
+# \brief getFilteredMembers     Returns a list of members of a group, filtered by role
+#
+# \param[in] groupName          Name of the group
+# \param[in] showAdmins         Boolean, indicating wether to include group administrators
+# \param[in] showUsers          Boolean, indicating wether to include users w/ read/write access
+# \param[in] showReadonly       Boolean, indicating wether to include users w/ readonly access
+# \param[out] memberList        List of group members, filtered by means of argument values
+#
+uuIiGetFilteredMembers(*groupName, *showAdmins, *showUsers, *showReadonly, *memberList) {
+        uuGroupGetMembers(*groupName, *members);
+        *buffer = "";
+        foreach(*userName in *members) {
+                uuGroupUserIsManager(*groupName, *userName, *isManager)
+                if(*showAdmins && *isManager || *showUsers && !*isManager) {
+                        *buffer = "*buffer;*userName";
+                }
+        }
+        *memberList = split(*buffer, ";");
+}
