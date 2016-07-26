@@ -100,7 +100,7 @@ uuIiGetDirectories(
 		uuIiGetIntakePrefix(*intakePrefix);
 		foreach(*group in *groups) {
 			uuGroupUserIsManager(*group, *user, *isManager);
-			if(!*requireManager || *isManager){
+			if(!*requiresManager || *isManager){
 				#TODO: adapt for readonly role addition
 				writeLine("stdout", *group);
 				writeLine("stdout", *intakePrefix);
