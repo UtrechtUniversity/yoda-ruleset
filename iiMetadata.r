@@ -195,3 +195,75 @@ uuIiGetValuesForKey(*key, *object, *type, *values) {
 		}
 	}
 }
+
+# \brief uuIiGetValuesForKeys 	Extracts the values (multiple if available) for a
+# 								list of keys in string format separated by a custom
+# 								other string.
+#
+# \param[in] object 			Object to get meta data from
+# \param[in] keys 				List of keys to get values for, seperated with *keySepChar
+# \param[in] keySepChar 		String that is used as separator between keys in *keys and
+# 								between key-value pairs in *result
+# \param[in] valueSepChar 		String that is used as separator in between values for a
+# 								certain key.
+# \param[out] result 			String that contains key-value pairs for all values for
+# 								all keys from *keys, where the key-value pairs are 
+# 								separated from each other with *keySepChar and the values
+# 								for a single key are separated with *valueSepChar
+#
+uuIiGetValuesForKeys(*object, *keys, *keySepChar, *valueSepChar, *result) {
+	msiGetObjType(*object, *type);
+
+	*tail = *keys;
+	*currentKey = "";
+	*currentValues = "";
+	*result = "";
+
+	uuExplode(*keys, *keySepChar, *keyList);
+
+	foreach(*item in *keyList){
+		if(*type == "-d") {
+			*query = SELECT META_DATA_ATTR_VALUE WHERE DATA_NAME = '*object' AND META_DATA_ATTR_NAME = '*item';
+		} else if(*type == "-c") {
+			*query = SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = '*object' AND META_COLL_ATTR_NAME = '*item';
+		} else {
+			*result = "Object must be collection or data object";
+			return;
+		}
+
+		foreach(*row in *query) {
+			if(*type == "-d") {
+				msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *value);
+			} else {
+				msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+			}
+			if(*currentKey == *item) {
+				*currentValues = "*currentValues*valueSepChar*value";
+			} else {
+				*result = "*result*keySepChar*currentKey*valueSepChar*currentValues";
+				*currentKey = *item;
+				*currentValues = *value;
+			}
+		}
+	}
+}
+
+# \brief uuExplode 	Explode a string based on a random seprator string
+#
+# \param[in] string 		String that contains items
+# \param[in] separator		separator char or string (any length)
+# \param[out] resultList 	List of items that appear in string separated
+# 							by *separator
+#
+uuExplode(*string, *separator, *resultList) {
+	*tail = *string;
+	*result = list();
+	while(strlen(*tail) > strlen(*separator)) {
+		*newTail = trimr(*tail, *separator);
+		*head = substr(*tail, strlen(*newTail) + strlen(*separator), strlen(*tail));
+		*result = cons(*head, *result);
+		*tail = *newTail;
+	}
+
+	*resultList = cons(*tail, *result);
+}
