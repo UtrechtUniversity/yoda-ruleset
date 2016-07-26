@@ -94,6 +94,8 @@ uuIiGetDirectories(
 	*requiresContribute, 
 	*requiresManager,
 	*directoryList ) {
+
+	*directories = "";
 	if((*showProjects || *showStudies || *showDatasets)) {
 		*user = "$userNameClient#$rodsZoneClient";
 		uuGroupMemberships(*user, *groups);
