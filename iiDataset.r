@@ -111,20 +111,22 @@ uuIiGetDirectories(
 				if(*group like "*intakePrefix*") {
 					foreach(*project in SELECT COLL_NAME WHERE COLL_NAME like '%/*group') {
 						*cn = *project.COLL_NAME;
-						if(*showProjects){
-							*directories = "*directories:*cn";
-						}
-						if(*showStudies || *showDatasets) {
-							foreach(*study in SELECT COLL_NAME WHERE COLL_PARENT_NAME = '*cn') {
-								*sn = *study.COLL_NAME;
-								if(*showStudies) {
-									*directories = "*directories:*sn";
-								}
-								if(*showDatasets) {
-									foreach(*dataset in SELECT COLL_NAME WHERE COLL_PARENT_NAME = '*sn') {
-										*dn = *dataset.COLL_NAME;
-										if(*showDatasets) {
-											*directories = "*directories:*dn";
+						if(*cn like "/$rodsZoneClient/home/*") {
+							if(*showProjects){
+								*directories = "*directories:*cn";
+							}
+							if(*showStudies || *showDatasets) {
+								foreach(*study in SELECT COLL_NAME WHERE COLL_PARENT_NAME = '*cn') {
+									*sn = *study.COLL_NAME;
+									if(*showStudies) {
+										*directories = "*directories:*sn";
+									}
+									if(*showDatasets) {
+										foreach(*dataset in SELECT COLL_NAME WHERE COLL_PARENT_NAME = '*sn') {
+											*dn = *dataset.COLL_NAME;
+											if(*showDatasets) {
+												*directories = "*directories:*dn";
+											}
 										}
 									}
 								}
