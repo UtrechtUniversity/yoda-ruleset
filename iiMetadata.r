@@ -278,7 +278,7 @@ uuExplode(*string, *separator, *resultList) {
 # \param[in] *isCollection 				Wether to look in collection or data 
 # \param[out] *values 					List of possible values for the given key
 # 										where the given search string is a substring of
-uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values);
+uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	*values = list();
 
 	if(*isCollection){
@@ -287,6 +287,7 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values);
 			META_COLL_ATTR_VALUE like '%*searchString%') {
 			writeLine("stdout", *row.META_COLL_ATTR_VALUE);
 			*values = cons(*row.META_COLL_ATTR_VALUE,*values);
+			writeLine("serverLog", *row.META_COLL_ATTR_VALUE);
 		}
 	} else {
 		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE 
