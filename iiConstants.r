@@ -30,3 +30,9 @@ uuIiGetVaultPrefix(*vaultPrefix) {
 	uuIiGetGroupPrefix(*grp);
 	*vaultPrefix = *grp ++ "vault-";
 }
+
+# \breif uuIiGetMetadataPrefix 	Get prefix for metadata which the portal uses
+# \param[out] metadataPrefix 	The prefix used for metadata by the portal
+uuIiGetMetadataPrefix(*metadataPrefix) {
+	*metadataPrefix = "ilab_intake_metadata_";
+}
