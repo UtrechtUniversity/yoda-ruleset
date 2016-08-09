@@ -123,7 +123,7 @@ iiDatasetWalkSnapshotFreezeUnlock(*itemCollection, *itemName, *itemIsCollection,
 # \param[in] lockIt 			Boolean, true iff the object should be locked.
 # 									if false, the lock is removed (if allowed)
 # \param[out] status 			Zero if no errors, non-zero otherwise
-iiDatasetSnapshotLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *status){
+iiDatasetSnapshotLockChange(*rootCollection, *lockName, *lockIt, *status){
    	*set="uuYc";
    	*lockProcedure = "Vault";
    	*vault="";
@@ -139,7 +139,7 @@ iiDatasetSnapshotLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *st
 		*lockProcedure = "Freeze";
 	} 
 	*buffer = "dummy";
-	uuTreeWalk("forward", "*rootCollection/*datasetId", "*set" ++ "DatasetWalk" ++ "*vault*lockProcedure*lock", *buffer, *error);
+	uuTreeWalk("forward", "*rootCollection", "*set" ++ "DatasetWalk" ++ "*vault*lockProcedure*lock", *buffer, *error);
 	*status = str(*error);
 }
 
@@ -149,8 +149,8 @@ iiDatasetSnapshotLockChange(*rootCollection, *datasetId, *lockName, *lockIt, *st
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
 #
-iiDatasetSnapshotLock(*collection, *datasetId, *status) {
-	iiDatasetSnapshotLockChange(*collection, *datasetId,"to_snapshot_lock", true, *status);
+iiDatasetSnapshotLock(*collection, *status) {
+	iiDatasetSnapshotLockChange(*collection, "to_snapshot_lock", true, *status);
 
 	# Set meta data value to indicate this is the toplevel of the dataset that
 	# was prepared for snapshotting
@@ -158,7 +158,7 @@ iiDatasetSnapshotLock(*collection, *datasetId, *status) {
 		msiGetIcatTime(*dateTime,"unix");
 		msiString2KeyValPair("dataset_snapshotlock_toplevel=*dateTime:$userNameClient#$rodsZoneClient", *kvPair);
 		*status = errorcode(
-			msiSetKeyValuePairsToObj(*kvPair, "*collection/*datasetId", "-C")
+			msiSetKeyValuePairsToObj(*kvPair, "*collection", "-C")
 		);
 	}
 }
@@ -170,8 +170,8 @@ iiDatasetSnapshotLock(*collection, *datasetId, *status) {
 # \param[out] result     "true" upon success, otherwise "false"
 # \param[out] status     0 upon success, otherwise nonzero
 #
-iiDatasetSnapshotUnlock(*collection, *datasetId, *status) {
-	iiDatasetSnapshotLockChange(*collection, *datasetId, "to_snapshot_lock", false, *status);
+iiDatasetSnapshotUnlock(*collection, *status) {
+	iiDatasetSnapshotLockChange(*collection, "to_snapshot_lock", false, *status);
 
 
 	# Remove meta data value that was set to indicate this is the toplevel 
@@ -179,11 +179,11 @@ iiDatasetSnapshotUnlock(*collection, *datasetId, *status) {
 	if(*status == 0){
 		foreach(*row in SELECT META_COLL_ATTR_VALUE 
 			WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
-			AND COLL_NAME = "*collection/*datasetId") {
+			AND COLL_NAME = "*collection") {
 			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
 			msiString2KeyValPair("dataset_snapshotlock_toplevel=*value", *kvPair);
 			*status = errorcode(
-					msiRemoveKeyValuePairsFromObj(*kvPair, "*collection/*datasetId", "-C")
+					msiRemoveKeyValuePairsFromObj(*kvPair, "*collection", "-C")
 				)
 		}
 	}
@@ -195,8 +195,8 @@ iiDatasetSnapshotUnlock(*collection, *datasetId, *status) {
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
 #
-iiDatasetSnapshotFreeze(*collection, *datasetId, *status) {
-	iiDatasetSnapshotLockChange(*collection, *datasetId,"to_snapshot_freeze", true, *status);
+iiDatasetSnapshotFreeze(*collection, *status) {
+	iiDatasetSnapshotLockChange(*collection,"to_snapshot_freeze", true, *status);
 }
 
 # \brief iiDatasetSnapshotMelt  undo freeze-locks (all objects of) a dataset
@@ -205,8 +205,8 @@ iiDatasetSnapshotFreeze(*collection, *datasetId, *status) {
 # \param[in]  datasetId  identifier to depict the dataset
 # \param[out] status     0 upon success, otherwise nonzero
 #
-iiDatasetSnapshotMelt(*collection, *datasetId, *status) {
-	iiDatasetSnapshotLockChange(*collection, *datasetId, "to_snapshot_freeze", false, *status);
+iiDatasetSnapshotMelt(*collection, *status) {
+	iiDatasetSnapshotLockChange(*collection, "to_snapshot_freeze", false, *status);
 }
 
 # \brief iiObjectIsSnapshotLocked  query an object to see if it is locked
