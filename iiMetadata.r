@@ -282,16 +282,8 @@ uuIiGetAllAvailableValuesForKey(*key, *isCollection, *values) {
 # 							by *separator
 #
 uuExplode(*string, *separator, *resultList) {
-	*tail = *string;
-	*result = list();
-	while(strlen(*tail) > strlen(*separator)) {
-		*newTail = trimr(*tail, *separator);
-		*head = substr(*tail, strlen(*newTail) + strlen(*separator), strlen(*tail));
-		*result = cons(*head, *result);
-		*tail = *newTail;
-	}
-
-	*resultList = cons(*tail, *result);
+	writeLine("serverLog", "DEPRICATED: use of uuExplode is depricated. Use split() instead");
+	fail;
 }
 
 # \brief GetAvailableValuesForKeyLike Returns list of values that exist in the

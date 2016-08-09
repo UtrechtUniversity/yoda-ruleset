@@ -38,6 +38,37 @@ acPreprocForCollCreate {
         }
 }
 
+# This policy is fired after a collection is created.
+# The policy checks if the new collection is on the datapackage level, 
+# i.e. if it should be initialized with the version number 0
+acPostProcForCollCreate {
+        uuIiGetIntakePrefix(*intakePrefix);
+        *pathStart = "/"++$rodsZoneClient++"/home/"++*intakePrefix;
+        if($collName like "*pathStart\*") {
+                uuIiIntakeLevel(*level);
+                uuChop($collName, *head, *tail, *pathStart, true);
+                *segments = split(*tail, "/");
+                if(size(*segments) == *level) {
+                        uuIiVersionKey(*versionKey, *dependsKey);
+                        *alreadyHasVersion = false;
+                        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE
+                                COLL_NAME = "$collName" AND 
+                                META_COLL_ATTR_NAME = *versionKey) {
+                                *alreadyHasVersion = true;
+                                break;
+                        }
+                        if(!*alreadyHasVersion) {
+                                writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
+                                msiAddKeyVal(*kv, *versionKey, str(0));
+                                *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-c"));
+                                if(*err != 0) {
+                                        writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
+                                }
+                        }
+                }
+        }
+}
+
 # This policy is fired before a data object is renamed or moved
 # The policy disallows renaming or moving the data object, if the
 # object is locked, or if the collection that will be the new parent
