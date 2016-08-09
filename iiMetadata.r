@@ -248,6 +248,32 @@ uuIiGetValuesForKeys(*object, *keys, *keySepChar, *valueSepChar, *result) {
 	}
 }
 
+# \brief getAllAvailableValuesForKey
+# 			Returns a string of all values that exist for a key in the ICAT
+#			database. Items are seperated with "#;#"
+#
+# \param[in] key 			The key to search on
+# \param[in] isCollection	Boolean indicating wether the values should be search on
+# 							collection metadata (if true) or on data object metadata
+# \param[out] values 		String containing all possible values for the key, 
+# 							separated by "#;#"
+#
+uuIiGetAllAvailableValuesForKey(*key, *isCollection, *values) {
+	*values = "";
+	
+	if(*isCollection) {
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = '*key') {
+			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+			*values = "*values#;#*value";
+		}
+	} else {
+		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = '*key') {
+			msiGetValByKey(*row, "META_DATA_ATTR_VALUE", *value);
+			*values = "*values"
+		}
+	}
+}
+
 # \brief uuExplode 	Explode a string based on a random seprator string
 #
 # \param[in] string 		String that contains items
@@ -297,3 +323,4 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 		}
 	}
 }
+
