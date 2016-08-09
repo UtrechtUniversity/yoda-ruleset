@@ -66,14 +66,14 @@ uuIiGetLatestSnapshotInfo(*collection, *time, *userName, *userZone) {
 #
 uuIiGetFilteredMembers(*groupName, *showAdmins, *showUsers, *showReadonly, *memberList) {
 	uuGroupGetMembers(*groupName, *members);
-	*buffer = "";
-	foreach(*userName in *members) {
-		uuGroupUserIsManager(*groupName, *userName, *isManager)
-		if(*showAdmins && *isManager || *showUsers && !*isManager) {
-				*buffer = "*buffer;*userName";
-		}
-	}
-	*memberList = split(*buffer, ";");
+    *buffer = "";
+    foreach(*userName in *members) {
+            uuGroupUserIsManager(*groupName, *userName, *isManager)
+            if(*showAdmins && *isManager || *showUsers && !*isManager) {
+                    *buffer = "*buffer;*userName";
+            }
+    }
+    *memberList = split(*buffer, ";");
 }
 
 # \brief getDirectories         Returns all collections that match the criteria. Requires
