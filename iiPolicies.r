@@ -1,59 +1,84 @@
-# Policies go in here!
+acPreprocForRmColl {
+        uuIiObjectActionAllowed($collName, *collAllows);
+        uuIiObjectActionAllowed($collParentName, *parentAllows);
+        writeLine("serverLog", "Requesting deleting of collection '$collName'. Can delete? *collAllows. Parent allows? *parentAllows");
+        if(!(*collAllows && *parentAllows)) {
+                writeLine("serverLog", "Disallowing deleting $collName");
+                cut;
+                msiDeleteDisallowed();
+        }
+}
 
 acDataDeletePolicy {
-	uuIiDisallowOperationIfLockedOrFrozen($collParentName, true);
-	uuIiDisallowOperationIfLockedOrFrozen($collName, true);
+        writeLine("serverLog", "Requested deleting of file:");
+        uuIiObjectActionAllowed($objPath, *allow);
+        if(!*allow) {
+                writeLine("serverLog", "Deleting $objPath not allowed");
+                cut;
+                msiDeleteDisallowed();
+        }
 }
 
-
-acPreProcForCollCreate {
-	uuIiDisallowOperationIfLockedOrFrozen($collParentName, true);
-	uuIiDisallowOperationIfLockedOrFrozen($collName, true);
+acPreprocForCollCreate {
+        uuIiObjectActionAllowed($collParentName, *allowed);
+        writeLine("serverLog", "Requesting creating collection $collName. Allowed = *allowed");
+        if(!*allowed) {
+                writeLine("serverLog", "Disallowing creating $collName collection");
+                cut;
+                msiOprDisallowed;
+        }
 }
 
-# only SuserAndConn available. Need information on object as well
-# acPreProcForModifyAccessControl {
-
-# }
-
-# only SuserAndConn available. Need information on object as well
-#acPreProcForModifyAVUMetadata {
-#
-#}
-
-acPreProcForModifyCollMeta {
-	uuIiDisallowOperationIfLockedOrFrozen($collParentName, true);
-	uuIiDisallowOperationIfLockedOrFrozen($collName, true);
+acPreProcForObjRename(*source, *destination) {
+        uuChopPath(*source, *sourceParent, *sourceBase);
+        uuChopPath(*destination, *destParent, *destBase);
+        uuIiObjectActionAllowed(*source, *sourceAllows);
+        uuIiObjectActionAllowed(*sourceParent, *sourceParentAllows);
+        uuIiObjectActionAllowed(*destParent, *destAllows);
+        writeLine("serverLog", "Requesting moving *source to *destination. Source allows = *sourceAllows, parent allows = *sourceParentAllows, destination allows = *destAllows");
+        if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
+                writeLine("serverLog", "Disallowing moving *source to *destination");
+                cut;
+                msiOprDisallowed;
+        }
 }
 
-acPreProcForModifyDataObjMeta {
-	uuIiDisallowOperationIfLockedOrFrozen($objPath, false);
+acPreprocForDataObjOpen {
+        ON ($writeFlag == "1") {
+                uuIiObjectActionAllowed($objPath, *objAllows);
+                if(!*objAllows) {
+                        writeLine("serverLog", "Disallowing opening $objPath for writing");
+                        cut;
+                        msiOprDisallowed;
+                }
+        }
 }
 
-acPreProcForObjRename {
-	uuIiDisallowOperationIfLockedOrFrozen($objPath, false);
+acSetRescSchemeForCreate {
+        uuChopPath($objPath, *parent, *base);
+        uuIiObjectActionAllowed(*parent, *allowed);
+        if(!*allowed) {
+                writeLine("serverLog", "Creating data object $objPath not allowed");
+                cut;
+                msiOprDisallowed;
+        }
+        msiSetDefaultResc("$destRescName", "null");
 }
 
-acPreProcForRmColl {
-	uuIiDisallowOperationIfLockedOrFrozen($collParentName, true);
-	uuIiDisallowOperationIfLockedOrFrozen($collName, true);
-}
-
-acPreProcForDataObjOpen {
-	ON ($writeFlag == "1") {
-		uuIiDisallowOperationIfLockedOrFrozen($objectPath, false);
-	}
-}
-
-uuIiDisallowOperationIfLockedOrFrozen(*objectPath, *isCollection) {
-	uuYcObjectIsLocked(*objPath, *locked);
-	iiObjectIsSnapshotLocked(*objPath, *isCollection, *snaplocked, *frozen);
-
-	if(*locked || *snaplocked || *frozen) {
-		uuYcIsAdminUser(*isAdminUser);
-		if(!*isAdminUser) {
-			cut;
-			msiOprDisallowed;
-		}
-	}
+uuIiObjectActionAllowed(*objPath, *allowed) {
+        *allowed = true;
+        msiGetObjType(*objPath, *type);
+        *isCollection = false;
+        if (*type == "-c") {
+                *isCollection = true;
+        }
+        uuLockExists(*objPath, *locked);
+        iiObjectIsSnapshotLocked(*objPath, *isCollection, *snaplocked, *frozen);
+        writeLine("serverLog", "*objPath (isCollection=*isCollection) is snapshotLocked=*snaplocked, frozen=*frozen");
+        if(*locked || *snaplocked || *frozen) {
+                uuYcIsAdminUser(*isAdminUser);
+                if(!*isAdminUser) {
+                        *allowed = false;
+                }
+        }
 }
