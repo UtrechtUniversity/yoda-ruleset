@@ -60,7 +60,7 @@ acPostProcForCollCreate {
                         if(!*alreadyHasVersion) {
                                 writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
                                 msiAddKeyVal(*kv, *versionKey, str(0));
-                                *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-c"));
+                                *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
                                 if(*err != 0) {
                                         writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
                                 }

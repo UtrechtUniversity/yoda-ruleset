@@ -117,6 +117,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 				uuKvClear(*buffer);
 				if (*status == 0) {
 					# stamp the vault dataset collection with additional metadata
+					uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *parentMetaStatus);
+					uuIiUpdateVersion(*topLevelCollection, *vaultPath, *versionBumbStatus);
 					msiGetIcatTime(*date, "unix");
 					msiAddKeyVal(*kv, "snapshot_date_created", *date);
 					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
@@ -153,6 +155,76 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 		iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
 		*status = 1; # duplicate dataset version error
 	}
+}
+
+# \brief uuIiCopyParentsMetadata 	Crawls over all parents of a collection and
+# 									adds the meta data of all those collections
+# 									from which they keys start with the metadata
+# 									prefix to vault version of the collection
+#
+# \param[in] topLevelCollection 	The collecting which has parents from which
+# 									the metadata should be extracted
+# \param[in] vaultPath 				The path to the collection to which the 
+# 									metadata should be added
+# \param[out] Status 				Error code. 0 indicating success, -100 indicating
+# 									the logs should be checked
+#
+uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
+	*status = 0;
+	msiSplitPath(*topLevelCollection, *parent, *base);
+	*pathStart = "/"++$rodsZoneClient++"/home/";
+	uuIiGetMetadataPrefix(*prfx);
+	while(*parent like "*pathStart\*" && *parent != *pathStart) {
+		foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+			WHERE COLL_NAME = "*parent" AND 
+			META_COLL_ATTR_NAME like "*prfx%"
+		) {
+			*key = "";
+			*value = "";
+			*s1 = errorcode(msiGetValByKey(*row, "META_COLL_ATTR_NAME", *key));
+			*s2 = errorcode(msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value));
+			*s3 = errorcode(msiString2KeyValPair("*key=*value",*kv));
+			*s4 = errorcode(msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C"));
+			if(*s1 != 0 || *s2 != 0 || *s3 != 0 || *s4 != 0) {
+				*msg = "WARNING: Something went wrong in extracing or updating the medatadata";
+				*msg = "*msg from '*parent'. The extracted key was '*key' and the extracted value was '*value'";
+				writeLine("serverLog", *msg);
+				*status = -100;
+			}
+			msiSplitPath(*parent, *parent, *base);
+		}
+	}
+}
+
+# \brief uuIiUpdateVersion 	Increments the version number of the collection
+# 							by one, and sets the depends metadata value to
+#							the unique ID of the dataset belonging to the
+# 							vaultPath
+#
+# \param[in] topLevelCollection 	Collection name of the top level collection
+# \param[in] vaultPath 				Collection name of the vault collection, 
+# 									from which the collection ID is used
+# \param[out] status 				The error code of updating the metadata
+#
+uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
+	uuIiVersionKey(*versionKey, *dependsKey);
+	*version = 0;
+	*depends = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE 
+		COLL_NAME = "*topLevelCollection"
+	) {
+		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+		*version = int(*value) + 1;
+		break;
+	}
+
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = "*vaultPath") {
+		*msiGetValByKey(*row, "COLL_ID", *depends);
+	}
+
+	msiAddKeyVal(*kv, *versionKey, str(*version));
+	msiAddKeyVal(*kv, *dependsKey, *depends);
+    *status = errorcode(msiSetKeyValuePairsToObj(*kv, *topLevelCollection, "-C"));
 }
 
 # \brief uuIiVaultWalkIngestObject 	Treewalkrule, that calculates the objectPath and
