@@ -30,14 +30,18 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 				  AND COLL_NAME like '*intakeRoot/%') {
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 
-		writeLine("serverLog", "\nFound dataset '*topLevelCollection' which will be snapshotted now");
+		writeLine("serverLog", "\nFound dataset '*topLevelCollection' which will be snapshotted now by user $userNameClient");
 
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
+		writeLine("serverLog", "*topLevelCollection has snapshotlocked status *locked (frozen = *frozen)");
 		if (*locked) {
 			uuLock(*topLevelCollection, *lockStatus);
+			writeLine("serverLog", "uu-lock status = *lockStatus");
 			if(*lockStatus == 0) {
-				iiDatasetSnapshotFreeze(*intakeRoot, *datasetId, *status);
+				writeLine("serverLog", "Freezing snapshot");
+				iiDatasetSnapshotFreeze(*topLevelCollection, *status);
+				writeLine("serverLog", "Freeze status = *status");
 				# datset frozen, now move to fault and remove from intake area
 				uuIiDatasetCollectionCopy2Vault(
 						*intakeRoot, 
@@ -47,14 +51,18 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 						*status
 					);
 
+				writeLine("serverLog", "Copy collection to vault exit status = *status");
+
 				if(*status == 0) {
 					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId, *status);
-					iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-					iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+					iiDatasetSnapshotMelt(*topLevelCollection, *status);
+					iiDatasetSnapshotUnlock(*itopLevelCollection, *status);
+					writeLine("serverLog", "Logging, unlocking and melting complete");
 				}
 			}
 		}
 		uuUnlock(*topLevelCollection);
+		writeLine("serverLog", "Dissolved UU-lock for *topLevelCollection");
 	}
 }
 
@@ -123,8 +131,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 					msiAddKeyVal(*kv, "snapshot_date_created", *date);
 					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 					uuChopPath(*vaultPath, *vaultDatasetRoot, *vaultBase)
-					iiDatasetSnapshotMelt(*vaultDatasetRoot, *vaultBase, *status);
-					iiDatasetSnapshotUnlock(*vaultDatasetRoot, *vaultBase, *status);
+					iiDatasetSnapshotMelt(*vaultPath, *status);
+					iiDatasetSnapshotUnlock(*vaultPath, *status);
 					uuUnlock(*vaultPath);
 				} else {
 					# move failed (partially), cleanup vault
@@ -140,8 +148,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
 			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
-			iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-			iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+			iiDatasetSnapshotMelt(*topLevelCollection, *status);
+			iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 
 			# uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
 			# uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
@@ -151,8 +159,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 		writeLine("serverLog", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
-		iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-		iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+		iiDatasetSnapshotMelt(*topLevelCollection, *status);
+		iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 		*status = 1; # duplicate dataset version error
 	}
 }
@@ -219,7 +227,8 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 	}
 
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = "*vaultPath") {
-		*msiGetValByKey(*row, "COLL_ID", *depends);
+		msiGetValByKey(*row, "COLL_ID", *depends);
+		break;
 	}
 
 	msiAddKeyVal(*kv, *versionKey, str(*version));
