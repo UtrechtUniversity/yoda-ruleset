@@ -35,8 +35,10 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
 		writeLine("serverLog", "*topLevelCollection has snapshotlocked status *locked (frozen = *frozen)");
+		uuUnlock(*topLevelCollection);
 		if (*locked) {
-			uuLock(*topLevelCollection, *lockStatus);
+			#uuLock(*topLevelCollection, *lockStatus);
+			*lockStatus = 0;
 			writeLine("serverLog", "uu-lock status = *lockStatus");
 			if(*lockStatus == 0) {
 				writeLine("serverLog", "Freezing snapshot");
@@ -61,7 +63,7 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 				}
 			}
 		}
-		uuUnlock(*topLevelCollection);
+		#uuUnlock(*topLevelCollection);
 		writeLine("serverLog", "Dissolved UU-lock for *topLevelCollection");
 	}
 }
@@ -222,7 +224,9 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 		COLL_NAME = "*topLevelCollection"
 	) {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+		writeLine("stdout", "Found version *value");
 		*version = int(*value) + 1;
+		writeLine("stdout", "New version is *version");
 		break;
 	}
 
@@ -231,9 +235,12 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 		break;
 	}
 
+	writeLine("stdout", "Going to set version to *version, and depends to *depends");
+
 	msiAddKeyVal(*kv, *versionKey, str(*version));
 	msiAddKeyVal(*kv, *dependsKey, *depends);
     *status = errorcode(msiSetKeyValuePairsToObj(*kv, *topLevelCollection, "-C"));
+    writeLine("stdout", "Finished updating version with status *status");
 }
 
 # \brief uuIiVaultWalkIngestObject 	Treewalkrule, that calculates the objectPath and
@@ -294,8 +301,10 @@ uuIiVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 		}
 	} else {   # its not a collection but a data object
 		# first chksum the orginal file then use it to verify the vault copy
+		writeLine("serverLog", "Creating checksum for *objectPath"); #debug
 		msiDataObjChksum(*objectPath, "forceChksum=", *checksum);
-		msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status);
+		writeLine("serverLog", "Checksum is *checksum");
+		*status = errorcode(msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status));
 		if (*status == 0) {
 			uuChopPath(*objectPath, *collection, *dataName);
 			foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE

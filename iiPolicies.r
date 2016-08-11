@@ -127,11 +127,10 @@ acSetRescSchemeForCreate {
 # if the object the meta data is modified on is locked
 acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
         uuIiObjectActionAllowed(*ItemName, *allowed);
+        # Thought the Portal didn't fire this. TUrns out not to be true, so *startAllowed not checked
         uuIiGetMetadataPrefix(*prfx);
         *startAllowed = *AName not like "*prfx\*";
-        # Thought the Portal didn't fire this. TUrns out not to be true, so *startAllowed not checked
-        #if(!(*allowed && *startAllowed)) {
-        if(!*allowed) {
+        if(!(*allowed || *startAllowed)) {
                 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
                 cut;
                 msiOprDisallowed;
