@@ -111,16 +111,20 @@ acPreprocForDataObjOpen {
 # The policy also sets the default rescource to the resource
 # it would choose either way, because the policy is required
 # to set a resource
-acSetRescSchemeForCreate {
-        uuChopPath($objPath, *parent, *base);
-        uuIiObjectActionAllowed(*parent, *allowed);
-        if(!*allowed) {
-                writeLine("serverLog", "Creating data object $objPath not allowed");
-                cut;
-                msiOprDisallowed;
-        }
-        msiSetDefaultResc("$destRescName", "null");
-}
+
+#DOES NOT WORK
+#acSetRescSchemeForCreate {
+#        uuChopPath($objPath, *parent, *base);
+#        uuIiObjectActionAllowed(*parent, *allowed);
+#        if(!*allowed) {
+#                writeLine("serverLog", "Creating data object $objPath not allowed");
+#                cut;
+#                msiOprDisallowed;
+#        }
+#        writeLine("serverLog", "Created resource. ObjPath = *objPath");
+#        fail;
+#        #msiSetDefaultResc("$destRescName", "null");
+#}
 
 # This policy is fired if the AVU meta data (AVU metadata is the non-system metadata)
 # is modified in any way except for copying. The modification of meta data is prohibited

@@ -30,20 +30,16 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 				  AND COLL_NAME like '*intakeRoot/%') {
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 
-		writeLine("serverLog", "\nFound dataset '*topLevelCollection' which will be snapshotted now by user $userNameClient");
-
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
-		writeLine("serverLog", "*topLevelCollection has snapshotlocked status *locked (frozen = *frozen)");
+
 		uuUnlock(*topLevelCollection);
 		if (*locked) {
-			#uuLock(*topLevelCollection, *lockStatus);
+			uuLock(*topLevelCollection, *lockStatus);
 			*lockStatus = 0;
-			writeLine("serverLog", "uu-lock status = *lockStatus");
 			if(*lockStatus == 0) {
-				writeLine("serverLog", "Freezing snapshot");
 				iiDatasetSnapshotFreeze(*topLevelCollection, *status);
-				writeLine("serverLog", "Freeze status = *status");
+				
 				# datset frozen, now move to fault and remove from intake area
 				uuIiDatasetCollectionCopy2Vault(
 						*intakeRoot, 
@@ -53,18 +49,14 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 						*status
 					);
 
-				writeLine("serverLog", "Copy collection to vault exit status = *status");
-
 				if(*status == 0) {
 					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId, *status);
 					iiDatasetSnapshotMelt(*topLevelCollection, *status);
-					iiDatasetSnapshotUnlock(*itopLevelCollection, *status);
-					writeLine("serverLog", "Logging, unlocking and melting complete");
+					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 				}
 			}
 		}
-		#uuUnlock(*topLevelCollection);
-		writeLine("serverLog", "Dissolved UU-lock for *topLevelCollection");
+		uuUnlock(*topLevelCollection);
 	}
 }
 
@@ -101,7 +93,6 @@ uuIiAddSnapshotLogToCollection(*collection, *datasetId, *status){
 # \param[out] status 				Integer exitcode, non-zero means fail (see logs)
 #
 uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
-	writeLine("serverLog","\nCreating snapshot of dataset *datasetId from *topLevelCollection to vault");
 	*status = 0;
 	iiGetOwner(*topLevelCollection, *owner);
 	iiCollectionExists(*vaultRoot, *vaultRootExists);
@@ -181,7 +172,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 #
 uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 	*status = 0;
-	msiSplitPath(*topLevelCollection, *parent, *base);
+	uuChopPath(*topLevelCollection, *parent, *base);
 	*pathStart = "/"++$rodsZoneClient++"/home/";
 	uuIiGetMetadataPrefix(*prfx);
 	while(*parent like "*pathStart\*" && *parent != *pathStart) {
@@ -201,8 +192,9 @@ uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 				writeLine("serverLog", *msg);
 				*status = -100;
 			}
-			msiSplitPath(*parent, *parent, *base);
 		}
+		uuChopPath(*parent, *parent_new, *base);
+		*parent = *parent_new;
 	}
 }
 
@@ -221,7 +213,8 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 	*version = 0;
 	*depends = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE 
-		COLL_NAME = "*topLevelCollection"
+		COLL_NAME = "*topLevelCollection" AND 
+		META_COLL_ATTR_NAME = "*versionKey"
 	) {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
 		writeLine("stdout", "Found version *value");

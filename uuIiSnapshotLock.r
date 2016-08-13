@@ -196,7 +196,7 @@ iiDatasetSnapshotUnlock(*collection, *status) {
 # \param[out] status     0 upon success, otherwise nonzero
 #
 iiDatasetSnapshotFreeze(*collection, *status) {
-	iiDatasetSnapshotLockChange(*collection,"to_snapshot_freeze", true, *status);
+	iiDatasetSnapshotLockChange(*collection, "to_snapshot_freeze", true, *status);
 }
 
 # \brief iiDatasetSnapshotMelt  undo freeze-locks (all objects of) a dataset
