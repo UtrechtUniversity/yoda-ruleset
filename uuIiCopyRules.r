@@ -30,14 +30,16 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 				  AND COLL_NAME like '*intakeRoot/%') {
 		msiGetValByKey(*row, "COLL_NAME", *topLevelCollection);
 
-		writeLine("serverLog", "\nFound dataset '*topLevelCollection' which will be snapshotted now");
-
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
+
+		uuUnlock(*topLevelCollection);
 		if (*locked) {
 			uuLock(*topLevelCollection, *lockStatus);
+			*lockStatus = 0;
 			if(*lockStatus == 0) {
-				iiDatasetSnapshotFreeze(*intakeRoot, *datasetId, *status);
+				iiDatasetSnapshotFreeze(*topLevelCollection, *status);
+				
 				# datset frozen, now move to fault and remove from intake area
 				uuIiDatasetCollectionCopy2Vault(
 						*intakeRoot, 
@@ -49,8 +51,8 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 
 				if(*status == 0) {
 					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId, *status);
-					iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-					iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+					iiDatasetSnapshotMelt(*topLevelCollection, *status);
+					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 				}
 			}
 		}
@@ -91,7 +93,6 @@ uuIiAddSnapshotLogToCollection(*collection, *datasetId, *status){
 # \param[out] status 				Integer exitcode, non-zero means fail (see logs)
 #
 uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
-	writeLine("serverLog","\nCreating snapshot of dataset *datasetId from *topLevelCollection to vault");
 	*status = 0;
 	iiGetOwner(*topLevelCollection, *owner);
 	iiCollectionExists(*vaultRoot, *vaultRootExists);
@@ -117,12 +118,14 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 				uuKvClear(*buffer);
 				if (*status == 0) {
 					# stamp the vault dataset collection with additional metadata
+					uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *parentMetaStatus);
+					uuIiUpdateVersion(*topLevelCollection, *vaultPath, *versionBumbStatus);
 					msiGetIcatTime(*date, "unix");
 					msiAddKeyVal(*kv, "snapshot_date_created", *date);
 					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
 					uuChopPath(*vaultPath, *vaultDatasetRoot, *vaultBase)
-					iiDatasetSnapshotMelt(*vaultDatasetRoot, *vaultBase, *status);
-					iiDatasetSnapshotUnlock(*vaultDatasetRoot, *vaultBase, *status);
+					iiDatasetSnapshotMelt(*vaultPath, *status);
+					iiDatasetSnapshotUnlock(*vaultPath, *status);
 					uuUnlock(*vaultPath);
 				} else {
 					# move failed (partially), cleanup vault
@@ -138,8 +141,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
 			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
-			iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-			iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+			iiDatasetSnapshotMelt(*topLevelCollection, *status);
+			iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 
 			# uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
 			# uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
@@ -149,10 +152,88 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 		writeLine("serverLog", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
-		iiDatasetSnapshotMelt(*intakeRoot, *datasetId, *status);
-		iiDatasetSnapshotUnlock(*intakeRoot, *datasetId, *status);
+		iiDatasetSnapshotMelt(*topLevelCollection, *status);
+		iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 		*status = 1; # duplicate dataset version error
 	}
+}
+
+# \brief uuIiCopyParentsMetadata 	Crawls over all parents of a collection and
+# 									adds the meta data of all those collections
+# 									from which they keys start with the metadata
+# 									prefix to vault version of the collection
+#
+# \param[in] topLevelCollection 	The collecting which has parents from which
+# 									the metadata should be extracted
+# \param[in] vaultPath 				The path to the collection to which the 
+# 									metadata should be added
+# \param[out] Status 				Error code. 0 indicating success, -100 indicating
+# 									the logs should be checked
+#
+uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
+	*status = 0;
+	uuChopPath(*topLevelCollection, *parent, *base);
+	*pathStart = "/"++$rodsZoneClient++"/home/";
+	uuIiGetMetadataPrefix(*prfx);
+	while(*parent like "*pathStart\*" && *parent != *pathStart) {
+		foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+			WHERE COLL_NAME = "*parent" AND 
+			META_COLL_ATTR_NAME like "*prfx%"
+		) {
+			*key = "";
+			*value = "";
+			*s1 = errorcode(msiGetValByKey(*row, "META_COLL_ATTR_NAME", *key));
+			*s2 = errorcode(msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value));
+			*s3 = errorcode(msiString2KeyValPair("*key=*value",*kv));
+			*s4 = errorcode(msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C"));
+			if(*s1 != 0 || *s2 != 0 || *s3 != 0 || *s4 != 0) {
+				*msg = "WARNING: Something went wrong in extracing or updating the medatadata";
+				*msg = "*msg from '*parent'. The extracted key was '*key' and the extracted value was '*value'";
+				writeLine("serverLog", *msg);
+				*status = -100;
+			}
+		}
+		uuChopPath(*parent, *parent_new, *base);
+		*parent = *parent_new;
+	}
+}
+
+# \brief uuIiUpdateVersion 	Increments the version number of the collection
+# 							by one, and sets the depends metadata value to
+#							the unique ID of the dataset belonging to the
+# 							vaultPath
+#
+# \param[in] topLevelCollection 	Collection name of the top level collection
+# \param[in] vaultPath 				Collection name of the vault collection, 
+# 									from which the collection ID is used
+# \param[out] status 				The error code of updating the metadata
+#
+uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
+	uuIiVersionKey(*versionKey, *dependsKey);
+	*version = 0;
+	*depends = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE 
+		COLL_NAME = "*topLevelCollection" AND 
+		META_COLL_ATTR_NAME = "*versionKey"
+	) {
+		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+		writeLine("stdout", "Found version *value");
+		*version = int(*value) + 1;
+		writeLine("stdout", "New version is *version");
+		break;
+	}
+
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = "*vaultPath") {
+		msiGetValByKey(*row, "COLL_ID", *depends);
+		break;
+	}
+
+	writeLine("stdout", "Going to set version to *version, and depends to *depends");
+
+	msiAddKeyVal(*kv, *versionKey, str(*version));
+	msiAddKeyVal(*kv, *dependsKey, *depends);
+    *status = errorcode(msiSetKeyValuePairsToObj(*kv, *topLevelCollection, "-C"));
+    writeLine("stdout", "Finished updating version with status *status");
 }
 
 # \brief uuIiVaultWalkIngestObject 	Treewalkrule, that calculates the objectPath and
@@ -213,8 +294,10 @@ uuIiVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 		}
 	} else {   # its not a collection but a data object
 		# first chksum the orginal file then use it to verify the vault copy
+		writeLine("serverLog", "Creating checksum for *objectPath"); #debug
 		msiDataObjChksum(*objectPath, "forceChksum=", *checksum);
-		msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status);
+		writeLine("serverLog", "Checksum is *checksum");
+		*status = errorcode(msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status));
 		if (*status == 0) {
 			uuChopPath(*objectPath, *collection, *dataName);
 			foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE

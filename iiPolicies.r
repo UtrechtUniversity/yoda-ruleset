@@ -60,7 +60,7 @@ acPostProcForCollCreate {
                         if(!*alreadyHasVersion) {
                                 writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
                                 msiAddKeyVal(*kv, *versionKey, str(0));
-                                *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-c"));
+                                *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
                                 if(*err != 0) {
                                         writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
                                 }
@@ -111,27 +111,33 @@ acPreprocForDataObjOpen {
 # The policy also sets the default rescource to the resource
 # it would choose either way, because the policy is required
 # to set a resource
-acSetRescSchemeForCreate {
-        uuChopPath($objPath, *parent, *base);
-        uuIiObjectActionAllowed(*parent, *allowed);
-        if(!*allowed) {
-                writeLine("serverLog", "Creating data object $objPath not allowed");
-                cut;
-                msiOprDisallowed;
-        }
-        msiSetDefaultResc("$destRescName", "null");
-}
+
+#DOES NOT WORK
+#acSetRescSchemeForCreate {
+#        uuChopPath($objPath, *parent, *base);
+#        uuIiObjectActionAllowed(*parent, *allowed);
+#        if(!*allowed) {
+#                writeLine("serverLog", "Creating data object $objPath not allowed");
+#                cut;
+#                msiOprDisallowed;
+#        }
+#        writeLine("serverLog", "Created resource. ObjPath = *objPath");
+#        fail;
+#        #msiSetDefaultResc("$destRescName", "null");
+#}
 
 # This policy is fired if the AVU meta data (AVU metadata is the non-system metadata)
 # is modified in any way except for copying. The modification of meta data is prohibited
 # if the object the meta data is modified on is locked
 acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
         uuIiObjectActionAllowed(*ItemName, *allowed);
+        # Thought the Portal didn't fire this. TUrns out not to be true, so *startAllowed not checked
+        writeLine("serverLog", "Updating Metadata of '*ItemName' to *AName=*AValue");
         uuIiGetMetadataPrefix(*prfx);
         *startAllowed = *AName not like "*prfx\*";
-        # Thought the Portal didn't fire this. TUrns out not to be true, so *startAllowed not checked
-        #if(!(*allowed && *startAllowed)) {
-        if(!*allowed) {
+        uuIiVersionKey(*versionKey, *dependsKey);
+        uuYcIsAdminUser(*isAdminUser);
+        if(!(*allowed || *startAllowed) || (!*isAdminUser && (*AName == *versionKey || *AName == *dependsKey))) {
                 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
                 cut;
                 msiOprDisallowed;
