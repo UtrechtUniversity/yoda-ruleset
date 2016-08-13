@@ -132,9 +132,12 @@ acPreprocForDataObjOpen {
 acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
         uuIiObjectActionAllowed(*ItemName, *allowed);
         # Thought the Portal didn't fire this. TUrns out not to be true, so *startAllowed not checked
+        writeLine("serverLog", "Updating Metadata of '*ItemName' to *AName=*AValue");
         uuIiGetMetadataPrefix(*prfx);
         *startAllowed = *AName not like "*prfx\*";
-        if(!(*allowed || *startAllowed)) {
+        uuIiVersionKey(*versionKey, *dependsKey);
+        uuYcIsAdminUser(*isAdminUser);
+        if(!(*allowed || *startAllowed) || (!*isAdminUser && (*AName == *versionKey || *AName == *dependsKey))) {
                 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
                 cut;
                 msiOprDisallowed;
