@@ -7,7 +7,6 @@
 # \license GPLv3, see LICENSE
 #
 
-
 # \brief iiFileCount 		Obtain a count of all files in a collection
 #
 # \param[in] path 			The full path to a collection (not a file). This
@@ -29,17 +28,22 @@
 #							No user action can be taken on this object if this is true
 #
 iiFileCount(*path, *totalSize, *dircount, *filecount) {
-	*direction = "forward";
-	*ruleToProcess = "iiTreeFileCountRule";
-	*buffer."dircount" = "0";
-	*buffer."filecount" = "0";
-	*buffer."totalSize" = "0";
-	uuTreeWalk(*direction, *path, *ruleToProcess, *buffer, *error);
-	*error = str(*error);
-	*dircount = *buffer."dircount";
-	*filecount = *buffer."filecount";
-	*totalSize = *buffer."totalSize";
+    *dircount = 0;
+    *filecount = 0;
+    *totalSize = 0;
+
+    foreach(*row in SELECT sum(DATA_SIZE), count(DATA_ID) WHERE COLL_NAME like '*path%') {
+            *totalSize = *row.DATA_SIZE;
+            *filecount = *row.DATA_ID;
+            break;
+    }
+
+    foreach(*row in SELECT count(COLL_ID) WHERE COLL_NAME like "*path/%") {
+            *dircount = *row.COLL_ID;
+            break;
+    }
 }
+
 
 # \brief iiTreeFileCountRule Treewalk rule for the iiFileCount function. 
 #							 Adds the correct values to the number of 
