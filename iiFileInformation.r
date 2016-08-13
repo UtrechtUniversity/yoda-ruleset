@@ -7,7 +7,6 @@
 # \license GPLv3, see LICENSE
 #
 
-
 # \brief iiFileCount 		Obtain a count of all files in a collection
 #
 # \param[in] path 			The full path to a collection (not a file). This
@@ -29,40 +28,22 @@
 #							No user action can be taken on this object if this is true
 #
 iiFileCount(*path, *totalSize, *dircount, *filecount) {
-	*direction = "forward";
-	*ruleToProcess = "iiTreeFileCountRule";
-	*buffer."dircount" = "0";
-	*buffer."filecount" = "0";
-	*buffer."totalSize" = "0";
-	uuTreeWalk(*direction, *path, *ruleToProcess, *buffer, *error);
-	*error = str(*error);
-	*dircount = *buffer."dircount";
-	*filecount = *buffer."filecount";
-	*totalSize = *buffer."totalSize";
+    *dircount = 0;
+    *filecount = 0;
+    *totalSize = 0;
+
+    foreach(*row in SELECT sum(DATA_SIZE), count(DATA_ID) WHERE COLL_NAME like '*path%') {
+        *totalSize = *row.DATA_SIZE;
+        *filecount = *row.DATA_ID;
+        break;
+    }
+
+    foreach(*row in SELECT count(COLL_ID) WHERE COLL_NAME like "*path/%") {
+        *dircount = *row.COLL_ID;
+        break;
+    }
 }
 
-# \brief iiTreeFileCountRule Treewalk rule for the iiFileCount function. 
-#							 Adds the correct values to the number of 
-#							 directories, files, or total file size 
-# 							 observed
-#
-# \param[in] itemParent 	 Parent collection of this item
-# \param[in] itemName 		 name of this item
-# \param[in] itemIsCollection Bool, true if and only if item is collection
-# \param[in\out] buffer 	 The buffer, that contains key/values for dircount,
-#							 filecount and size
-# \param[out] error 		 Non-zero if an error occured
-# 				
-iiTreeFileCountRule(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
-	*error = 0;
-	if(*itemIsCollection) {
-		*buffer."dircount" = str( int(*buffer."dircount") + 1);
-	} else {
-		*buffer."filecount" = str( int(*buffer."filecount") + 1);
-		iiGetFileAttrs(*itemParent, *itemName, *size, *comment);
-		*buffer."totalSize" = str( int(*buffer."totalSize") + int(*size));
-	}
-}
 
 # \brief iiGetFileAttrs 	Obtain useful file attributes for the general intake,
 #							such as item size, comment, and lock status
