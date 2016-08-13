@@ -33,7 +33,6 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
 
-		uuUnlock(*topLevelCollection);
 		if (*locked) {
 			uuLock(*topLevelCollection, *lockStatus);
 			*lockStatus = 0;
@@ -50,7 +49,7 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 					);
 
 				if(*status == 0) {
-					uuIiAddSnapshotLogToCollection(*intakeRoot, *datasetId, *status);
+					uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
 					iiDatasetSnapshotMelt(*topLevelCollection, *status);
 					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 				}
@@ -68,15 +67,19 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 # 										be extracted from the metadata later
 # \param[in] collection 				Dataset parent collection
 # \param[in] datasetId 					Dataset name
-uuIiAddSnapshotLogToCollection(*collection, *datasetId, *status){
+uuIiAddSnapshotLogToCollection(*collection, *status) {
+	writeLine("serverLog", "Finding metadata for '*collection'");
 	foreach(*row in SELECT META_COLL_ATTR_VALUE 
 			WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
-			AND COLL_NAME = "*collection/*datasetId") {
+			AND COLL_NAME = "*collection"
+		) {
+			writeLine("serverLog", "Found *row");
 			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
 			msiString2KeyValPair("dataset_snapshot_createdAtBy=*value", *kvPair);
 			*status = errorcode(
-					msiAssociateKeyValuePairsToObj(*kvPair, "*collection/*datasetId", "-C")
-				)
+					msiAssociateKeyValuePairsToObj(*kvPair, "*collection", "-C")
+				);
+			writeLine("serverLog", "Finished updating createdAtBy (*value) with status *status");
 		}
 }
 
@@ -97,7 +100,8 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 	iiGetOwner(*topLevelCollection, *owner);
 	iiCollectionExists(*vaultRoot, *vaultRootExists);
 	if(*vaultRootExists) {
-		uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath)
+		# uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath)
+		uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath);
 		iiCollectionExists(*vaultPath, *exists);
 		if (!*exists) {
 			# create the in-between levels of the path to the toplevel collection
@@ -294,9 +298,7 @@ uuIiVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 		}
 	} else {   # its not a collection but a data object
 		# first chksum the orginal file then use it to verify the vault copy
-		writeLine("serverLog", "Creating checksum for *objectPath"); #debug
 		msiDataObjChksum(*objectPath, "forceChksum=", *checksum);
-		writeLine("serverLog", "Checksum is *checksum");
 		*status = errorcode(msiDataObjCopy(*objectPath, *vaultPath, "verifyChksum=", *status));
 		if (*status == 0) {
 			uuChopPath(*objectPath, *collection, *dataName);
@@ -338,6 +340,15 @@ uuIiVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath) {
 	msiGetIcatTime(*time, "unix");
    	*vaultPath = str("*vaultRoot/*owner/*datasetId/*time");
+}
+
+uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
+	msiGetIcatTime(*time, "human");
+	*pathStart = "/$rodsZoneClient/home";
+	*segmentsWithRoot = substr(*topLevelCollection, strlen(*pathStart), strlen(*topLevelCollection));
+	uuChop(*segmentsWithRoot, *group, *segments, "/", true);
+
+	*vaultPath = "*vaultRoot/*segments/*time";
 }
 
 # \brief iiCollectionExists Checks if a collection exists

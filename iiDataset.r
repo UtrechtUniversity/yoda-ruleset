@@ -13,7 +13,7 @@
 #
 uuIiGetSnapshotHistory(*collection, *buffer) {
 	*buffer = list();
-	foreach(*row in SELECT order_desc(META_COLL_ATTR_VALUE)
+	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE)
 		WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
 		AND COLL_NAME = '*collection') {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
