@@ -52,7 +52,11 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 					uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
 					iiDatasetSnapshotMelt(*topLevelCollection, *status);
 					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
+				} else {
+					# TODO: add error message?
+					iiDatasetSnapshotMelt(*topLevelCollection, *status);
 				}
+
 			}
 		}
 		uuUnlock(*topLevelCollection);
@@ -68,19 +72,31 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 # \param[in] collection 				Dataset parent collection
 # \param[in] datasetId 					Dataset name
 uuIiAddSnapshotLogToCollection(*collection, *status) {
-	writeLine("serverLog", "Finding metadata for '*collection'");
-	foreach(*row in SELECT META_COLL_ATTR_VALUE 
-			WHERE META_COLL_ATTR_NAME = 'dataset_snapshotlock_toplevel'
-			AND COLL_NAME = "*collection"
-		) {
-			writeLine("serverLog", "Found *row");
-			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
-			msiString2KeyValPair("dataset_snapshot_createdAtBy=*value", *kvPair);
-			*status = errorcode(
-					msiAssociateKeyValuePairsToObj(*kvPair, "*collection", "-C")
-				);
-			writeLine("serverLog", "Finished updating createdAtBy (*value) with status *status");
+	writeLine("stdout", "Creating a log entry after a succesful new version creation for *collection");
+
+	uuIiVersionKey(*versionKey, *dependsKey);
+	*value = "";
+	*version = "";
+	*depends = "";
+
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE
+		COLL_NAME = "*collection"
+	) {
+		if(*row.META_COLL_ATTR_NAME == 'dataset_snapshotlock_toplevel') {
+			*value = *row.META_COLL_ATTR_VALUE;
+		} else if(*row.META_COLL_ATTR_NAME == '*versionKey') {
+			*version = *row.META_COLL_ATTR_VALUE;
+		} else if(*row.META_COLL_ATTR_NAME == '*dependsKey') {
+			*depends = *row.META_COLL_ATTR_VALUE;
 		}
+	}
+
+	*logMessage = "*version:*depends:*value";
+	msiString2KeyValPair("dataset_snapshot_createdAtBy=*logMessage", *kvPair);
+	*status = errorcode(
+		msiAssociateKeyValuePairsToObj(*kvPair, "*collection", "-C")
+	);
+	writeLine("serverLog", "Finished updating createdAtBy (*value) with status *status");
 }
 
 # \brief uuIiDatasetCollectionCopy2Vault Copies a dataset recursively to the vault

@@ -17,6 +17,17 @@ uuIiGetSnapshotHistory(*collection, *buffer) {
 		WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
 		AND COLL_NAME = '*collection') {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+		*segments = split(*value, ":");
+		*datasetID = elem(*segments, 1);
+		if(size(*segments) > 2) { #legacy bug
+			foreach(*row in SELECT COLL_NAME WHERE COLL_ID = '*datasetID') {
+				*name = *row.COLL_NAME;
+				*value = "*name#*value";
+				break;
+			}
+		} else {
+				*value = "#::*value";
+			}
 		*buffer = cons(*value, *buffer);
 	}
 }
@@ -28,7 +39,7 @@ uuIiGetSnapshotHistory(*collection, *buffer) {
 # \param[out] userName                  Username of user who created latest snapshot
 # \param[out] userZone                  Zone of user who created latest snapshot
 #
-uuIiGetLatestSnapshotInfo(*collection, *time, *userName, *userZone) {
+uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time, *userName, *userZone) {
 	*buffer = "";
 	*time = 0;
 	foreach(*row in SELECT order_desc(META_COLL_ATTR_VALUE) WHERE
@@ -37,9 +48,41 @@ uuIiGetLatestSnapshotInfo(*collection, *time, *userName, *userZone) {
 	) {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *val);
 		*timeAndUser = split(*val, ":");
-		*time = elem(*timeAndUser, 0);
-		uuGetUserAndZone(elem(*timeAndUser, 1), *userName, *userZone);
+		if(size(*timeAndUser) == 2) {
+			*timeAndUser = cons("0", *timeAndUser);
+			*timeAndUser = cons("-1", *timeAndUser);
+		}
+		*version = elem(*timeAndUser, 0);
+		*datasetID = elem(*timeAndUser, 1)
+		*time = elem(*timeAndUser, 2);
+		uuGetUserAndZone(elem(*timeAndUser, 3), *userName, *userZone);
+
+		*datasetPath = "";
+		foreach(*row in SELECT COLL_NAME WHERE COLL_ID = "*datasetID") {
+			*datasetPath = *row.COLL_NAME;
+			break;
+		}
+
 		break;
+	}
+}
+
+uuIiGetVersionAndBasedOn(*collection, *version, *basedOn) {
+	*version = "";
+	*basedOn = "";
+	uuIiVersionKey(*versionKey, *dependsKey)
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = '*collection'
+	) {
+		if(*row.META_COLL_ATTR_NAME == '*versionKey') {
+			*version = *row.META_COLL_ATTR_VALUE;
+		} else if(*row.META_COLL_ATTR_NAME == '*dependsKey') {
+			*dId = *row.META_COLL_ATTR_VALUE;
+			foreach(*newRow in SELECT COLL_NAME WHERE COLL_ID = '*dId') {
+				*basedOn = *newRow.COLL_NAME;
+				break;
+			}
+		}
 	}
 }
 
