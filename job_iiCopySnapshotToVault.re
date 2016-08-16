@@ -27,13 +27,12 @@ uuIiRunCreateSnapshots {
                 *grp = *row.USER_GROUP_NAME;
                 if(*grp like "*intk\*"){
                         *grp = substr(*grp, strlen(*intk), strlen(*grp))
-                        writeLine("stdout", "Found group '*grp'");
                         *intakeRoot = "/*zone/home/*intk*grp";
                         *vaultRoot = "/*zone/home/*vlt*grp";
 
                         uuIi2Vault(*intakeRoot, *vaultRoot, *status);
                         if (*status == 0 ) then *result = "ok" else *result = "ERROR (*status)";
-                        writeLine("serverLog","RunIntake2Vault for *intakeRoot result = *result");
+                        writeLine("stdout","RunIntake2Vault for *intakeRoot result = *result");
                 }
         }
 }

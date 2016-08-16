@@ -96,7 +96,7 @@ uuIiAddSnapshotLogToCollection(*collection, *status) {
 	*status = errorcode(
 		msiAssociateKeyValuePairsToObj(*kvPair, "*collection", "-C")
 	);
-	writeLine("serverLog", "Finished updating createdAtBy (*value) with status *status");
+	writeLine("stdout", "Finished updating createdAtBy (*value) with status *status");
 }
 
 # \brief uuIiDatasetCollectionCopy2Vault Copies a dataset recursively to the vault
@@ -150,14 +150,14 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 				} else {
 					# move failed (partially), cleanup vault
 					# NB: keep the dataset in the vault queue so we can retry some other time
-					writeLine("serverLog","ERROR: Ingest failed for *datasetId error = *status");
+					writeLine("stdout","ERROR: Ingest failed for *datasetId error = *status");
 
 					# TODO
 					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
 				}
 			}
 		} else {
-			writeLine("serverLog","INFO: version already exists in vault: *datasetId");
+			writeLine("stdout","INFO: version already exists in vault: *datasetId");
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
 			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
@@ -169,7 +169,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 			*status = 1; # duplicate dataset version error
 		}
 	} else {
-		writeLine("serverLog", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
+		writeLine("stdout", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		iiDatasetSnapshotMelt(*topLevelCollection, *status);
@@ -209,7 +209,7 @@ uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 			if(*s1 != 0 || *s2 != 0 || *s3 != 0 || *s4 != 0) {
 				*msg = "WARNING: Something went wrong in extracing or updating the medatadata";
 				*msg = "*msg from '*parent'. The extracted key was '*key' and the extracted value was '*value'";
-				writeLine("serverLog", *msg);
+				writeLine("stdout", *msg);
 				*status = -100;
 			}
 		}
