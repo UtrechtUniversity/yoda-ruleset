@@ -15,7 +15,7 @@ It consists of:
 
 Prerequisite: 
 - [irods-ruleset-uu](https://github.com/UtrechtUniversity/irods-ruleset-uu)
-- [irods-ruleset-youth-cohort][https://github.com/UtrechtUniversity/irods-ruleset-youth-cohort]
+- [irods-ruleset-youth-cohort](https://github.com/UtrechtUniversity/irods-ruleset-youth-cohort)
 - Yoda rules require an iRODS 3.3.1+ server release.
 
 INSTALLATION
