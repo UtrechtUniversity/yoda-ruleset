@@ -43,8 +43,8 @@ INSTALLATION
     
 7) Create a symlink from `job_iiCopySnapshotToVault.re` in the repository to `/etc/irods/job_iiCreateSnapshots.r`
     From the directory you cloned this repository to:
-```
-ln -sv /etc/irods/job_iiCreateSnapshots.r job_iiCopySnapshotToVault.re
+``````sh
+$ ln -sv /etc/irods/job_iiCreateSnapshots.r job_iiCopySnapshotToVault.re
 ```
     
 8) Using crontab -e, add the following cron job to a user with rodsadmin rights (this cronjob assumes the user has admin rights within iRODS and ``iinit`` has been executed after login):
