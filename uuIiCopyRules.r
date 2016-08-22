@@ -360,7 +360,7 @@ uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath) {
 
 uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
 	msiGetIcatTime(*time, "human");
-	*humanTime = trimr(*time, ":") ++ "h" ++ triml(triml(*time, ":"), ":");
+	*humanTime = trimr(trimr(*time, ":"), ":") ++ "h" ++ triml(trimr(*time, ":"), ":");
 	*pathStart = "/$rodsZoneClient/home";
 	*segmentsWithRoot = substr(*topLevelCollection, strlen(*pathStart), strlen(*topLevelCollection));
 	# uuChop(*segmentsWithRoot, *group, *segments, "/", true);
