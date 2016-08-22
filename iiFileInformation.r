@@ -21,25 +21,25 @@
 #							number is determined recursively, so this does include
 #							all subfiles and not just those directly under the 
 #							given collection.
-# \param[out] locked 		Bool, true if and only if locked for vault or for snapshot.
-#							If locked, a user can unlock, but can do nothing else until
-#							unlocked.
-# \param[out] frozen		Bool, true if and only if frozen for vault or for snapshot.
-#							No user action can be taken on this object if this is true
-#
-iiFileCount(*path, *totalSize, *dircount, *filecount) {
-    *dircount = 0;
-    *filecount = 0;
-    *totalSize = 0;
+# \param[out] modified      Unix timestamp of the modify datetime of the file that
+#                           was modified last
+iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
+    *dircount = "0";
+    *filecount = "0";
+    *totalSize = "0";
+    *modified = "0";
 
-    foreach(*row in SELECT sum(DATA_SIZE), count(DATA_ID) WHERE COLL_NAME like '*path%') {
-        *totalSize = *row.DATA_SIZE;
-        *filecount = *row.DATA_ID;
+    msiMakeGenQuery("sum(DATA_SIZE), count(DATA_ID), max(DATA_MODIFY_TIME)", "COLL_NAME like '*path%'", *GenQInp);
+    msiExecGenQuery(*GenQInp, *GenQOut);
+    foreach(*GenQOut) {
+        msiGetValByKey(*GenQOut, "DATA_SIZE", *totalSize);
+        msiGetValByKey(*GenQOut, "DATA_ID", *filecount);
+        msiGetValByKey(*GenQOut, "DATA_MODIFY_TIME", *modified);
         break;
     }
 
     foreach(*row in SELECT count(COLL_ID) WHERE COLL_NAME like "*path/%") {
-        *dircount = *row.COLL_ID;
+        msiGetValByKey(*row, "COLL_ID", *dircount);
         break;
     }
 }
@@ -52,12 +52,6 @@ iiFileCount(*path, *totalSize, *dircount, *filecount) {
 # \param[in] fileName 		Filename of the to be observed item
 # \param[out] size 			Integer giving size of file in bytes
 # \param[out] comment 		string giving comments if they exist for this item
-# \param[out] locked 		Bool, true if and only if locked for vault or for snapshot.
-#							If locked, a user can unlock, but can do nothing else until
-#							unlocked.
-# \param[out] frozen		Bool, true if and only if frozen for vault or for snapshot.
-#							No user action can be taken on this object if this is true
-#
 iiGetFileAttrs(*collectionName, *fileName, *size, *comment) {
 	foreach(*row in SELECT DATA_SIZE, DATA_COMMENTS WHERE COLL_NAME = *collectionName AND DATA_NAME = *fileName) {
 		*size = *row.DATA_SIZE;
