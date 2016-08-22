@@ -367,7 +367,7 @@ uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
 	if(*segmentsWithRoot like '/*') {
 		*segmentsWithRoot = triml(*segmentsWithRoot, '/');
 	}
-	*segments = triml(*segmentsWithRoot, '/');
+	uuStrToLower(triml(*segmentsWithRoot, '/'), *segments);
 	*vaultPath = "*vaultRoot/*segments/*humanTime";
 }
 
