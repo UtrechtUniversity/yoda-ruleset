@@ -360,11 +360,15 @@ uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath) {
 
 uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
 	msiGetIcatTime(*time, "human");
+	*humanTime = trimr(*time, ":") ++ "h" ++ triml(triml(*time, ":"), ":");
 	*pathStart = "/$rodsZoneClient/home";
 	*segmentsWithRoot = substr(*topLevelCollection, strlen(*pathStart), strlen(*topLevelCollection));
-	uuChop(*segmentsWithRoot, *group, *segments, "/", true);
-
-	*vaultPath = "*vaultRoot/*segments/*time";
+	# uuChop(*segmentsWithRoot, *group, *segments, "/", true);
+	if(*segmentsWithRoot like '/*') {
+		*segmentsWithRoot = triml(*segmentsWithRoot, '/');
+	}
+	*segments = triml(*segmentsWithRoot, '/');
+	*vaultPath = "*vaultRoot/*segments/*humanTime";
 }
 
 # \brief iiCollectionExists Checks if a collection exists
