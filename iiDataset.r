@@ -41,25 +41,19 @@ uuIiGetIntakeRootFromIntakePath(*path, *intakeRoot) {
 
 uuIiGetSnapshotHistory(*collection, *buffer) {
 	uuIiGetIntakeRootFromIntakePath(*collection, *intakeRoot);
-	writeLine("serverLog", "Help, nothing is working! (dataset = '*collection')");
 	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
-	writeLine("serverLog", "Got vaultRoot '*vaultRoot'");
 	uuIiSnapshotGetVaultParent(*vaultRoot, *collection, *vaultParent);
 
-	writeLine("serverLog", "Vault parent: '*vaultParent'");
 	*buffer = list();
 	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE), META_COLL_ATTR_NAME, COLL_NAME WHERE
 		COLL_PARENT_NAME = '*vaultParent' 
 	) {
-		writeLine("serverLog", "Found *row");
 		if(*row.META_COLL_ATTR_NAME == 'snapshot_version_information') {
 			*coll = *row.COLL_NAME;
 			*info = *row.META_COLL_ATTR_VALUE;
 			*buffer = cons("*coll#*info", *buffer);
 		}
 	}
-
-	writeLine("serverLog", "Returning buffer list");
 }
 
 # \brief getSnapshotHistory     Gets a history of all snapshots created
@@ -72,27 +66,26 @@ uuIiGetSnapshotHistory(*collection, *buffer) {
 uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time, *userName, *userZone) {
 	*buffer = "";
 	*time = 0;
-	foreach(*row in SELECT order_desc(META_COLL_ATTR_VALUE) WHERE
-		META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy' AND 
-		COLL_NAME = '*collection'
+	
+	uuIiGetIntakeRootFromIntakePath(*collection, *intakeRoot);
+	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
+	uuIiSnapshotGetVaultParent(*vaultRoot, *collection, *vaultParent);
+
+	foreach(*row in SELECT order_desc(META_COLL_ATTR_VALUE) WHERE 
+		META_COLL_ATTR_NAME = 'snapshot_version_information'
+		AND COLL_PARENT_NAME = '*vaultParent'
 	) {
-		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *val);
-		*timeAndUser = split(*val, ":");
-		if(size(*timeAndUser) == 2) {
-			*timeAndUser = cons("0", *timeAndUser);
-			*timeAndUser = cons("-1", *timeAndUser);
-		}
-		*version = elem(*timeAndUser, 0);
-		*datasetID = elem(*timeAndUser, 1)
-		*time = elem(*timeAndUser, 2);
-		uuGetUserAndZone(elem(*timeAndUser, 3), *userName, *userZone);
+		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *log);
+		*values = split(*log, "#");
 
-		*datasetPath = "";
-		foreach(*row in SELECT COLL_NAME WHERE COLL_ID = "*datasetID") {
-			*datasetPath = *row.COLL_NAME;
-			break;
-		}
+		writeLine("serverLog", "Found values *log, which splits into *values");
 
+		*version = elem(*values, 0);
+		*datasetID = elem(*values, 4);
+		*datasetPath = elem(*values, 5);
+		*time = elem(*values, 1);
+		*userName = elem(*values, 2);
+		*userZone = elem(*values, 3);
 		break;
 	}
 }
