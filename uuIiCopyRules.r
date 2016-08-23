@@ -282,7 +282,7 @@ uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 #
 uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 	uuIiVersionKey(*versionKey, *dependsKey);
-	*version = 0;
+	*version = 1;
 	*depends = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE 
 		COLL_NAME = "*topLevelCollection" AND 
