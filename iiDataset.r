@@ -195,3 +195,16 @@ uuIiGetDirectories(
 		*directoryList = list();
 	}
 }
+
+uuIiIntakerStudies(*studies){
+	uuGroupMemberships($userNameClient,*groups);
+	*studies="";
+	uuIiGetIntakePrefix(*prefix)
+	foreach (*group in *groups) {
+		if (*group like "*prefix*") {
+			*study = triml(*group,*prefix);
+			*studies="*studies,*study";
+		}
+	}
+	*studies=triml(*studies,",");
+}

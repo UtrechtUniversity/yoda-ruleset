@@ -19,7 +19,7 @@ uuIiGetGroupPrefix(*grpPrefix) {
 # 								the group prefix
 uuIiGetIntakePrefix(*intakePrefix) {
 	uuIiGetGroupPrefix(*grp);
-	*intakePrefix = *grp ++ "intake-"
+	*intakePrefix = *grp ++ "project-"
 }
 
 # \brief uuIiGetVaultPrefix 	Get prefix for vault collection
@@ -36,7 +36,7 @@ uuIiGetVaultPrefix(*vaultPrefix) {
 # 								the PHP Portal config
 # \param[out] metadataPrefix 	The prefix used for metadata by the portal
 uuIiGetMetadataPrefix(*metadataPrefix) {
-	*metadataPrefix = "ilab_intake_metadata_";
+	*metadataPrefix = "ilab_";
 }
 
 # \brief uuIiIntakeLevel 		Get the depth at which level the intake
