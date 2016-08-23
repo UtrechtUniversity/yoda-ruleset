@@ -11,25 +11,55 @@
 # \param[out] buffer                    String of values split by commas, where
 #                                                               each value is of format <unix>:userName#userZone
 #
+# uuIiGetSnapshotHistory(*collection, *buffer) {
+# 	*buffer = list();
+# 	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE)
+# 		WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
+# 		AND COLL_NAME = '*collection') {
+# 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
+# 		*segments = split(*value, ":");
+# 		*datasetID = elem(*segments, 1);
+# 		if(size(*segments) > 2) { #legacy bug
+# 			foreach(*row in SELECT COLL_NAME WHERE COLL_ID = '*datasetID') {
+# 				*name = *row.COLL_NAME;
+# 				*value = "*name#*value";
+# 				break;
+# 			}
+# 		} else {
+# 				*value = "#::*value";
+# 			}
+# 		*buffer = cons(*value, *buffer);
+# 	}
+# }
+
+uuIiGetIntakeRootFromIntakePath(*path, *intakeRoot) {
+	uuIiGetIntakePrefix(*intakePrefix);
+    uuChop(*path, *head, *tail, *intakePrefix, true);
+    uuChop(*tail, *groupName, *leftover, "/", true);
+    *intakeRoot = *head ++ substr(*intakePrefix, strlen(*intakePrefix) - 1, strlen(*intakePrefix)) ++ *groupName;
+}
+
 uuIiGetSnapshotHistory(*collection, *buffer) {
+	uuIiGetIntakeRootFromIntakePath(*collection, *intakeRoot);
+	writeLine("serverLog", "Help, nothing is working! (dataset = '*collection')");
+	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
+	writeLine("serverLog", "Got vaultRoot '*vaultRoot'");
+	uuIiSnapshotGetVaultParent(*vaultRoot, *collection, *vaultParent);
+
+	writeLine("serverLog", "Vault parent: '*vaultParent'");
 	*buffer = list();
-	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE)
-		WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
-		AND COLL_NAME = '*collection') {
-		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
-		*segments = split(*value, ":");
-		*datasetID = elem(*segments, 1);
-		if(size(*segments) > 2) { #legacy bug
-			foreach(*row in SELECT COLL_NAME WHERE COLL_ID = '*datasetID') {
-				*name = *row.COLL_NAME;
-				*value = "*name#*value";
-				break;
-			}
-		} else {
-				*value = "#::*value";
-			}
-		*buffer = cons(*value, *buffer);
+	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE), META_COLL_ATTR_NAME, COLL_NAME WHERE
+		COLL_PARENT_NAME = '*vaultParent' 
+	) {
+		writeLine("serverLog", "Found *row");
+		if(*row.META_COLL_ATTR_NAME == 'snapshot_version_information') {
+			*coll = *row.COLL_NAME;
+			*info = *row.META_COLL_ATTR_VALUE;
+			*buffer = cons("*coll#*info", *buffer);
+		}
 	}
+
+	writeLine("serverLog", "Returning buffer list");
 }
 
 # \brief getSnapshotHistory     Gets a history of all snapshots created

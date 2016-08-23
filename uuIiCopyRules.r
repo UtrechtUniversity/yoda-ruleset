@@ -49,7 +49,8 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 					);
 
 				if(*status == 0) {
-					uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
+					# Log could disappear, information is now extracted from the vault
+					#uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
 					iiDatasetSnapshotMelt(*topLevelCollection, *status);
 					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 				} else {
@@ -61,6 +62,56 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 		}
 		uuUnlock(*topLevelCollection);
 	}
+}
+
+uuIiAddSnapshotInformationToVault(*vaultPath, *status) {
+	*snapshotInfoKey = "snapshot_version_information";
+
+	writeLine("stdout", "Setting snapshot information");
+	uuIiVersionKey(*versionKey, *dependsKey);
+	writeLine("stdout", "Vault path is '*vaultPath");
+	msiMakeGenQuery(
+		"META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+		"COLL_NAME = '*vaultPath' AND META_COLL_ATTR_NAME in ('*versionKey', '*dependsKey', 'dataset_snapshotlock_toplevel')",
+		*versionAndDependsQuery
+	);
+	msiExecGenQuery(*versionAndDependsQuery, *versionAndDependsOut);
+
+	*version = "";
+	*depends = "";
+	*userZone = "";
+	*created = "";
+
+	foreach(*versionAndDependsOut) {
+		msiGetValByKey(*versionAndDependsOut, "META_COLL_ATTR_NAME", *name);
+		msiGetValByKey(*versionAndDependsOut, "META_COLL_ATTR_VALUE", *value);
+		if(*name == *versionKey) {
+			*version = *value;
+		} else if(*name == *dependsKey) {
+			*depends = *value;
+		} else if(*name == "dataset_snapshotlock_toplevel") {
+			*created = trimr(*value, ":");
+			*userZone = triml(*value, ":");
+		}
+	}
+
+	*dependsVersion = "";
+	*dependsCollName = "";
+	if(*depends != "") {
+		foreach(*row in SELECT COLL_NAME, META_COLL_ATTR_VALUE 
+			WHERE COLL_ID = '*depends' 
+			AND META_COLL_ATTR_NAME = '*versionKey'
+		) {
+			msiGetValByKey(*row, "COLL_NAME", *dependsCollName);
+			msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *dependsVersion);
+		}
+	}
+
+	*snapshotInfo = "*version#*created#*userZone#*depends#*dependsCollName#*dependsVersion";
+
+	msiAddKeyVal(*kv, *snapshotInfoKey, *snapshotInfo);
+	*status = errorcode(msiSetKeyValuePairsToObj(*kv, *vaultPath, "-C"));
+
 }
 
 # \brief uuIiAddSnapshotLogToCollection Adds the metadata value from 
@@ -140,6 +191,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 					# stamp the vault dataset collection with additional metadata
 					uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *parentMetaStatus);
 					uuIiUpdateVersion(*topLevelCollection, *vaultPath, *versionBumbStatus);
+					uuIiAddSnapshotInformationToVault(*vaultPath, *snapInfoStatus);
 					msiGetIcatTime(*date, "unix");
 					msiAddKeyVal(*kv, "snapshot_date_created", *date);
 					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
@@ -358,9 +410,7 @@ uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath) {
    	*vaultPath = str("*vaultRoot/*owner/*datasetId/*time");
 }
 
-uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
-	msiGetIcatTime(*time, "human");
-	*humanTime = trimr(trimr(*time, ":"), ":") ++ "h" ++ triml(trimr(*time, ":"), ":");
+uuIiSnapshotGetVaultParent(*vaultRoot, *topLevelCollection, *vaultParent) {
 	*pathStart = "/$rodsZoneClient/home";
 	*segmentsWithRoot = substr(*topLevelCollection, strlen(*pathStart), strlen(*topLevelCollection));
 	# uuChop(*segmentsWithRoot, *group, *segments, "/", true);
@@ -368,7 +418,15 @@ uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
 		*segmentsWithRoot = triml(*segmentsWithRoot, '/');
 	}
 	uuStrToLower(triml(*segmentsWithRoot, '/'), *segments);
-	*vaultPath = "*vaultRoot/*segments/*humanTime";
+
+	*vaultParent = "*vaultRoot/*segments";
+}
+
+uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
+	msiGetIcatTime(*time, "human");
+	*humanTime = trimr(trimr(*time, ":"), ":") ++ "h" ++ triml(trimr(*time, ":"), ":");
+	uuIiSnapshotGetVaultParent(*vaultRoot, *topLevelCollection, *vaultParent);
+	*vaultPath = "*vaultParent/*humanTime";
 }
 
 # \brief iiCollectionExists Checks if a collection exists
@@ -393,4 +451,23 @@ iiGetOwner(*path, *owner) {
 		AND META_COLL_ATTR_NAME = "dataset_owner") {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *owner);
 	}
+}
+
+uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot) {
+	uuIiGetIntakePrefix(*intakePrfx);
+    uuIiGetVaultPrefix(*vaultPrfx);
+
+    *home = trimr(*intakeRoot, "/");
+    *group = substr(*intakeRoot, strlen(*home), strlen(*intakeRoot));
+    if(*group like '/*') {
+            *group = triml(*group, "/");
+    }
+
+    writeLine("serverLog", "Got home = '*home' and group = '*group' (matching latter against '*intakePrfx'");
+    if(*group like '*intakePrfx*') {
+            *groupName = substr(*group, strlen(*intakePrfx), strlen(*group));
+            *vaultRoot = *home ++ "/" ++ *vaultPrfx ++ *groupName;
+    } else {
+            *vaultRoot = false;
+    }
 }
