@@ -44,7 +44,7 @@ acPreprocForCollCreate {
 acPostProcForCollCreate {
         uuIiGetIntakePrefix(*intakePrefix);
         *pathStart = "/"++$rodsZoneClient++"/home/"++*intakePrefix;
-        if($collName like "*pathStart\*") {
+        if($collName like "*pathStart*") {
                 uuIiIntakeLevel(*level);
                 uuChop($collName, *head, *tail, *pathStart, true);
                 *segments = split(*tail, "/");
@@ -57,9 +57,10 @@ acPostProcForCollCreate {
                                 *alreadyHasVersion = true;
                                 break;
                         }
+                        writeLine("serverLog", "Already has version is *alreadyHasVersion");
                         if(!*alreadyHasVersion) {
                                 writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
-                                msiAddKeyVal(*kv, *versionKey, str(0));
+                                msiAddKeyVal(*kv, *versionKey, str(1));
                                 *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
                                 if(*err != 0) {
                                         writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
@@ -137,7 +138,7 @@ acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
         uuYcIsAdminUser(*isAdminUser);
         if(!(*allowed || *startAllowed) || (
                 !*isAdminUser && (
-                        *AName == *versionKey || 
+                        (*AName == *versionKey && *AValue != "1") || 
                         *AName == *dependsKey || 
                         *AName == "dataset_snapshot_createdAtBy"
                 )
