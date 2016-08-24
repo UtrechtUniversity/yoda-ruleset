@@ -1,9 +1,0 @@
-{
-	"host": "localhost",
-	"port": 1247,
-	"zone": "nlcjsmeele01",
-	"admin": {
-		"username": "rods",
-		"password": "rods"
-	}
-}
