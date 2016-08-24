@@ -3,7 +3,7 @@
 # \file
 # \brief     UU - Group manager setup script.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
 set -e
@@ -22,19 +22,16 @@ if ! [[ "$RODS_ZONE$RODS_USER" =~ ^[a-zA-Z0-9@._-]+$ ]]; then
 fi
 
 for GROUP_NAME in priv-group-add priv-category-add ; do
+	# TODO: Replace this script with a rule file that calls the Sudo microservices.
 	echo "Setting up group $GROUP_NAME"
 	set -x
 	iadmin mkgroup "$GROUP_NAME"
 	iadmin atg "$GROUP_NAME" "$RODS_USER"
 	ichmod -M own "$RODS_USER" "/$RODS_ZONE/home/$GROUP_NAME"
 	irm -r "/$RODS_ZONE/home/$GROUP_NAME"
-	imkdir -p "/$RODS_ZONE/group"
-	ichmod -M inherit "/$RODS_ZONE/group"
-	ichmod -M read public "/$RODS_ZONE/group"
-	imkdir -p "/$RODS_ZONE/group/$GROUP_NAME"
-	imeta set -C "/$RODS_ZONE/group/$GROUP_NAME" administrator "$RODS_USER"
-	imeta set -C "/$RODS_ZONE/group/$GROUP_NAME" category      "System"
-	imeta set -C "/$RODS_ZONE/group/$GROUP_NAME" subcategory   "Privileges"
-	imeta set -C "/$RODS_ZONE/group/$GROUP_NAME" description   "."
+	imeta set -u "$GROUP_NAME" manager       "$RODS_USER"
+	imeta set -u "$GROUP_NAME" category      "System"
+	imeta set -u "$GROUP_NAME" subcategory   "Privileges"
+	imeta set -u "$GROUP_NAME" description   "."
 	set +x
 done

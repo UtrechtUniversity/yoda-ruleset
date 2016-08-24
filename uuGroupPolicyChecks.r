@@ -1,7 +1,7 @@
 # \file
 # \brief     Group operation policy checks.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015, Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 # \brief Check if a user name is valid.
@@ -43,13 +43,16 @@ uuGroupCategoryNameIsValid(*name)
 
 # \brief Group Policy: Can the user create a new group?
 #
-# \param[in]  actor     the user whose privileges are checked
-# \param[in]  groupName the new group name
-# \param[out] allowed   whether the action is allowed
-# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+# \param[in]  actor       the user whose privileges are checked
+# \param[in]  groupName   the new group name
+# \param[in]  category
+# \param[in]  subcategory
+# \param[in]  description
+# \param[out] allowed     whether the action is allowed
+# \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
-	*allowed = false;
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *allowed, *reason) {
+	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserExists("priv-group-add", *actor, *hasPriv);
@@ -57,7 +60,8 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 		if (uuGroupNameIsValid(*groupName)) {
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
-				*allowed = true;
+				uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+				# *allowed = 1;
 			} else {
 				if (*existingType == "rodsuser") {
 					*existingType = "user";
@@ -70,7 +74,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 			*reason = "Group names must start with 'grp-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
-		*reason = "You are not a member of the priv-group-add group.";
+		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
 	}
 }
 
@@ -82,8 +86,11 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *allowed, *reason) {
 # \param[out] reason       the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
-	*allowed = false;
+	*allowed = 0;
 	*reason  = "";
+
+	uuGetUserType($userNameClient, *userType);
+	if (*userType == "rodsadmin") { *allowed = 1; succeed; }
 
 	uuGroupCategoryExists(*categoryName, *categoryExists);
 	if (*categoryExists) {
@@ -100,91 +107,126 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 			}
 		}
 		if (*isManagerInCategory) {
-			*allowed = true;
+			*allowed = 1;
 		} else {
-			*reason = "You are not a group manager in the *categoryName group category.";
+			*reason = "You cannot use this group category because you are not a group manager in the *categoryName category.";
 		}
 	} else {
 		uuGroupUserExists("priv-category-add", *actor, *hasPriv);
 		if (*hasPriv) {
 			if (uuGroupCategoryNameIsValid(*categoryName)) {
-				*allowed = true;
+				*allowed = 1;
 			} else {
 				*reason = "(Sub)category names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
 			}
 		} else {
-			*reason = "You are not a member of the priv-category-add group.";
+			*reason = "You cannot use this group category because you are not a member of the priv-category-add group.";
 		}
 	}
 }
 
-# \brief Group Policy: Can the user set a certain group property to a certain value?
+# \brief Group Policy: Can the user change a group member's role to 'manager'?
 #
-# Note: The 'administrator' group metadata field is represented in the 'managers'
-#       property as a semicolon-separated list of usernames.
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  groupName
+# \param[in]  userName  the target group member
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuGroupPolicyCanAddManager(*actor, *groupName, *userName, *allowed, *reason) {
+	*allowed = 0;
+	*reason  = "";
+
+	uuGroupUserIsManager(*groupName, *actor, *actorIsManager);
+	if (*actorIsManager) {
+		if (*userName == *actor) {
+			*reason  = "You cannot change your own role in a group.";
+		} else {
+			uuGroupUserIsMember(*groupName, *userName, *isMember);
+			if (*isMember) {
+				uuGroupUserIsManager(*groupName, *userName, *isCurrentlyManager);
+				if (*isCurrentlyManager) {
+					*reason  = "This user is already a manager in *groupName.";
+				} else {
+					*allowed = 1;
+				}
+			} else {
+				*reason = "This user is not a member of group *groupName.";
+			}
+		}
+	} else {
+		*reason = "You are not a manager of group *groupName.";
+	}
+}
+
+# \brief Group Policy: Can the user remove a group member's 'manager' status?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  groupName
+# \param[in]  userName  the target group member
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuGroupPolicyCanRemoveManager(*actor, *groupName, *userName, *allowed, *reason) {
+	*allowed = 0;
+	*reason  = "";
+
+	uuGroupUserIsManager(*groupName, *actor, *actorIsManager);
+	if (*actorIsManager) {
+		if (*userName == *actor) {
+			*reason  = "You cannot change your own role in a group.";
+		} else {
+			uuGroupUserIsMember(*groupName, *userName, *isMember);
+			if (*isMember) {
+				uuGroupUserIsManager(*groupName, *userName, *isCurrentlyManager);
+				if (*isCurrentlyManager) {
+					*allowed = 1;
+				} else {
+					*reason  = "This user is not a manager in *groupName.";
+				}
+			} else {
+				*reason = "This user is not a member of group *groupName.";
+			}
+		}
+	} else {
+		*reason = "You are not a manager of group *groupName.";
+	}
+}
+
+# \brief Group Policy: Can the user set a certain group attribute to a certain value?
+#
+# Available attributes are: category, subcategory and description.
 #
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  groupName the group name
-# \param[in]  property  the group property to set (one of 'category', 'subcategory', 'description', 'managers')
+# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description')
 # \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *reason) {
-	*allowed = false;
+
+uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *reason) {
+	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
-		if (*property == "category") {
+		if (*attribute == "category") {
 			*reason = ""; # The rule engine seems to require us to have our parameters
 			              # initialized before passing them to other functions.
-			# Defer.
+
 			uuGroupPolicyCanUseCategory(*actor, *value, *allowed, *reason);
-		} else if (*property == "subcategory") {
+
+		} else if (*attribute == "subcategory") {
 			if (uuGroupCategoryNameIsValid(*value)) {
-				*allowed = true;
+				*allowed = 1;
 			} else {
 				*reason = "Subcategory names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
 			}
-		} else if (*property == "managers") {
-			*newManagers = split(*value, ";");
-
-			uuGroupGetMembers(*groupName, *members);
-
-			*managerListContainsNonMembers = false;
-			foreach (*newManager in *newManagers) {
-				uuListContains(*members, *newManager, *newManagerIsMember);
-				if (!*newManagerIsMember) {
-					*managerListContainsNonMembers = true;
-					break;
-				}
-			}
-			if (*managerListContainsNonMembers) {
-				# NOTE: This may indicate an inconsistency in current group metadata,
-				#       possibly introduced by someone manually using 'iadmin rfg'
-				#       instead of using group-manager.py calls.
-				#
-				#       This error may be prevented by doing additional checks
-				#       in uuGroupUserChangeRole.
-				#       Manual group management using iadmin calls, as would
-				#       probably be the cause of this error, should never be
-				#       allowed however.
-				#
-				*reason = "Non-members cannot be made group managers";
-			} else {
-				uuListContains(*newManagers, *actor, *hasNotChangedOwnRole);
-
-				if (*hasNotChangedOwnRole) {
-					*allowed = true;
-				} else {
-					*reason = "You cannot demote yourself in group *groupName.";
-				}
-			}
-		} else if (*property == "description") {
-			*allowed = true;
+		} else if (*attribute == "description") {
+			*allowed = 1;
 		} else {
-			*reason = "Invalid group property name.";
+			*reason = "Invalid group attribute name.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
@@ -199,7 +241,7 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *property, *value, *allowed, *re
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
-	*allowed = false;
+	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
@@ -216,12 +258,12 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 			}
 
 			if (*homeCollectionIsEmpty) {
-				*allowed = true;
+				*allowed = 1;
 			} else {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "*groupName is not a regular yoda group. You can only remove groups that have a 'grp-' prefix.";
+			*reason = "*groupName is not a regular group. You can only remove groups that have a 'grp-' prefix.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
@@ -237,23 +279,46 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) {
-	*allowed = false;
+	*allowed = 0;
 	*reason  = "";
 
-	uuGroupUserIsManager(*groupName, *actor, *isManager);
-	if (*isManager) {
-		uuGroupUserExists(*groupName, *newMember, *isAlreadyAMember);
-		if (*isAlreadyAMember) {
-			*reason = "User '*newMember' is already a member of group '*groupName'.";
+	uuGroupGetMembers(*groupName, *members);
+	if (size(*members) == 0 && *newMember == *actor) {
+		# Special case for empty groups.
+		# This is run if a group has just been created. We then allow
+		# the group creator (already set in the 'manager' field by the
+		# postproc of GroupAdd) to add himself to the group.
+		*isCreator = false;
+		foreach (
+			*manager in
+			SELECT META_USER_ATTR_VALUE
+			WHERE  USER_GROUP_NAME      = '*groupName'
+			  AND  META_USER_ATTR_NAME  = 'manager'
+			  AND  META_USER_ATTR_VALUE = '*newMember'
+		) {
+			*isCreator = true;
+		}
+		if (*isCreator) {
+			*allowed = 1;
 		} else {
-			if (uuUserNameIsValid(*newMember)) {
-				*allowed = true;
-			} else {
-				*reason = "The new member's name is invalid.";
-			}
+			*reason = "You are not a manager of group '*groupName'.";
 		}
 	} else {
-		*reason = "You are not a manager of group *groupName.";
+		uuGroupUserIsManager(*groupName, *actor, *isManager);
+		if (*isManager) {
+			uuGroupUserExists(*groupName, *newMember, *isAlreadyAMember);
+			if (*isAlreadyAMember) {
+				*reason = "User '*newMember' is already a member of group '*groupName'.";
+			} else {
+				if (uuUserNameIsValid(*newMember)) {
+					*allowed = 1;
+				} else {
+					*reason = "The new member's name is invalid.";
+				}
+			}
+		} else {
+			*reason = "You are not a manager of group *groupName.";
+		}
 	}
 }
 
@@ -266,7 +331,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) {
-	*allowed = false;
+	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
@@ -275,7 +340,7 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 			# This also ensures that groups always have at least one manager.
 			*reason = "You cannot remove yourself from group *groupName.";
 		} else {
-			*allowed = true;
+			*allowed = 1;
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";

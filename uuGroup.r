@@ -2,7 +2,7 @@
 # \brief     Functions for group management and group queries.
 # \author    Ton Smeele
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015, Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 #test() {
@@ -15,6 +15,19 @@
 #		writeLine("stdout","grp = *grp");
 #	}
 #}
+
+uuGetUserType(*userName, *userType) {
+	# XXX: TODO: Split username, zonename. etc.
+	*userType = "";
+	foreach (
+		*row in
+		SELECT USER_TYPE
+		WHERE  USER_NAME = '*userName'
+	) {
+		*userType = *row."USER_TYPE";
+		break;
+	}
+}
 
 # \brief Extract username and zone in separate fields.
 #
@@ -43,10 +56,10 @@ uuGroupCategoryExists(*categoryName, *exists) {
 	*exists = false;
 	foreach (
 		*row in
-		SELECT META_COLL_ATTR_VALUE
-		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
-		  AND  META_COLL_ATTR_NAME  = 'category'
-		  AND  META_COLL_ATTR_VALUE = '*categoryName'
+		SELECT META_USER_ATTR_VALUE
+		WHERE  USER_TYPE            = 'rodsgroup'
+		  AND  META_USER_ATTR_NAME  = 'category'
+		  AND  META_USER_ATTR_VALUE = '*categoryName'
 	) {
 		*exists = true;
 	}
@@ -69,7 +82,7 @@ uuGroupExists(*groupName, *exists) {
 	}
 }
 
-# \brief Check if a rodsuser with the given name exists.
+# \brief Check if a rodsuser or rodsadmin with the given name exists.
 #
 # \param[in]  userName
 # \param[out] exists
@@ -163,6 +176,7 @@ uuGroupMemberships(*user, *groupList) {
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
 		# workasround needed: iRODS returns username also as a group !! 
+		# TODO: -> no it doesn't, add USER_TYPE to query.
 		if (*group != *userName) {
 			*groups = "*groups:*group";
 		}
@@ -171,28 +185,54 @@ uuGroupMemberships(*user, *groupList) {
 	*groupList = split(*groups, ":");
 }
 
+# \brief Get a list of all rodsgroups.
+#
+# \param[out] groupList list of groupnames
+#
+uuGetAllGroups(*groupList) {
+	*groups = "";
+	foreach (
+		*row in
+		SELECT USER_GROUP_NAME
+		WHERE  USER_TYPE = 'rodsgroup'
+	) {
+		*groupName = *row."USER_GROUP_NAME";
+
+		if (strlen(*groups) > 0) {
+			*groups = "*groups,*groupName";
+		} else {
+			*groups = *groupName;
+		}
+	}
+	*groupList = split(*groups, ",");
+}
+
 # \brief Get a list of group subcategories for the given category.
 #
 # \param[in]  category      a category name
 # \param[out] subcategories a list of subcategory names
 #
 uuGroupGetSubcategories(*category, *subcategories) {
+
 	*subcategoriesString = "";
 	foreach (
-		*categoryGroupColl in
-		SELECT COLL_NAME
-		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
-		  AND  META_COLL_ATTR_NAME  = 'category'
-		  AND  META_COLL_ATTR_VALUE = '*category'
+		# Get groups that belong to this category...
+		*categoryGroupRow in
+		SELECT USER_GROUP_NAME
+		WHERE  USER_TYPE            = 'rodsgroup'
+		AND    META_USER_ATTR_NAME  = 'category'
+		AND    META_USER_ATTR_VALUE = '*category'
 	) {
-		*collName = *categoryGroupColl."COLL_NAME";
+		*groupName = *categoryGroupRow."USER_GROUP_NAME";
 		foreach (
-			*subcategory
-			in SELECT META_COLL_ATTR_VALUE
-			   WHERE  COLL_NAME            = '*collName'
-			     AND  META_COLL_ATTR_NAME  = 'subcategory'
+			# ... and collect their subcategories.
+			*subcategoryRow in
+			SELECT META_USER_ATTR_VALUE
+			WHERE  USER_TYPE           = 'rodsgroup'
+			AND    USER_GROUP_NAME     = '*groupName'
+			AND    META_USER_ATTR_NAME = 'subcategory'
 		) {
-			*subcategoryName = *subcategory."META_COLL_ATTR_VALUE";
+			*subcategoryName = *subcategoryRow."META_USER_ATTR_VALUE";
 			if (!(
 				   (*subcategoriesString == *subcategoryName)
 				|| (*subcategoriesString like "*,*subcategoryName")
@@ -218,11 +258,11 @@ uuGroupGetCategories(*categories) {
 	*categoriesString = "";
 	foreach (
 		*category in
-		SELECT META_COLL_ATTR_VALUE
-		WHERE  COLL_PARENT_NAME     = '/$rodsZoneClient/group'
-		  AND  META_COLL_ATTR_NAME  = 'category'
+		SELECT META_USER_ATTR_VALUE
+		WHERE  USER_TYPE           = 'rodsgroup'
+		  AND  META_USER_ATTR_NAME = 'category'
 	) {
-		*categoriesString = "*categoriesString," ++ *category."META_COLL_ATTR_VALUE";
+		*categoriesString = "*categoriesString," ++ *category."META_USER_ATTR_VALUE";
 	}
 	*categories = split(*categoriesString, ",");
 }
@@ -238,14 +278,14 @@ uuGroupGetCategory(*groupName, *category, *subcategory) {
 	*subcategory = "";
 	foreach (
 		*item in
-		SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
-		WHERE  COLL_NAME            = '/$rodsZoneClient/group/*groupName'
-		  AND  META_COLL_ATTR_NAME  LIKE '%category'
+		SELECT META_USER_ATTR_NAME, META_USER_ATTR_VALUE
+		WHERE  USER_GROUP_NAME = '*groupName'
+		  AND  META_USER_ATTR_NAME LIKE '%category'
 	) {
-		if (*item."META_COLL_ATTR_NAME" == 'category') {
-			*category = *item."META_COLL_ATTR_VALUE";
-		} else if (*item."META_COLL_ATTR_NAME" == 'subcategory') {
-			*subcategory = *item."META_COLL_ATTR_VALUE";
+		if (*item."META_USER_ATTR_NAME" == 'category') {
+			*category = *item."META_USER_ATTR_VALUE";
+		} else if (*item."META_USER_ATTR_NAME" == 'subcategory') {
+			*subcategory = *item."META_USER_ATTR_VALUE";
 		}
 	}
 }
@@ -259,19 +299,19 @@ uuGroupGetDescription(*groupName, *description) {
 	*description = "";
 	foreach (
 		*item in
-		SELECT META_COLL_ATTR_VALUE
-		WHERE  COLL_NAME           = '/$rodsZoneClient/group/*groupName'
-		  AND  META_COLL_ATTR_NAME = 'description'
+		SELECT META_USER_ATTR_VALUE
+		WHERE  USER_GROUP_NAME     = '*groupName'
+		  AND  META_USER_ATTR_NAME = 'description'
 	) {
-		if (*item."META_COLL_ATTR_VALUE" != ".") {
-			*description = *item."META_COLL_ATTR_VALUE";
+		if (*item."META_USER_ATTR_VALUE" != ".") {
+			*description = *item."META_USER_ATTR_VALUE";
 		}
 	}
 }
 
 # \brief Get a list of both manager and non-manager members of a group.
 #
-# \param[out] users a list of user names
+# \param[out] members a list of user names
 #
 uuGroupGetMembers(*groupName, *members) {
 	*membersString = "";
@@ -296,11 +336,11 @@ uuGroupGetManagers(*groupName, *managers) {
 	*managersString = "";
 	foreach (
 		*manager in
-		SELECT META_COLL_ATTR_VALUE
-		WHERE  COLL_NAME           = '/$rodsZoneClient/group/*groupName'
-		  AND  META_COLL_ATTR_NAME = 'administrator'
+		SELECT META_USER_ATTR_VALUE
+		WHERE  USER_GROUP_NAME     = '*groupName'
+		  AND  META_USER_ATTR_NAME = 'manager'
 	) {
-		*managersString = "*managersString;" ++ *manager."META_COLL_ATTR_VALUE";
+		*managersString = "*managersString;" ++ *manager."META_USER_ATTR_VALUE";
 	}
 	*managers = split(*managersString, ";");
 }
@@ -390,10 +430,10 @@ uuGroupUserIsManager(*groupName, *userName, *isManager) {
 	if (*isMember) {
 		foreach (
 			*manager in
-			SELECT META_COLL_ATTR_VALUE
-			WHERE  COLL_NAME            = '/$rodsZoneClient/group/*groupName'
-			  AND  META_COLL_ATTR_NAME  = 'administrator'
-			  AND  META_COLL_ATTR_VALUE = '*userName'
+			SELECT META_USER_ATTR_VALUE
+			WHERE  USER_GROUP_NAME      = '*groupName'
+			  AND  META_USER_ATTR_NAME  = 'manager'
+			  AND  META_USER_ATTR_VALUE = '*userName'
 		) {
 			*isManager = true;
 		}
@@ -402,64 +442,45 @@ uuGroupUserIsManager(*groupName, *userName, *isManager) {
 
 # Privileged group management functions {{{
 
-# \brief Call a group manager action.
-#
-# \param[in]  args    arguments to the group manager program
-# \param[out] status  zero on success, non-zero on failure
-# \param[out] message a user friendly error message, may contain the reason why an action was disallowed
-#
-uuGroupManagerCall(*args, *status, *message) {
-	*status = errorcode(msiExecCmd(
-		"group-manager.py",
-		*args,
-		"null", "null", "null",
-		*cmdOut
-	));
-
-	if (*status == 0) {
-		*status = 1;
-		msiGetStdoutInExecCmdOut(*cmdOut, *cmdStdout);
-		msiGetStderrInExecCmdOut(*cmdOut, *cmdStderr);
-
-		if (*cmdStderr like "Error:*") {
-			*status  = 1;
-			*message = *cmdStdout;
-			writeLine(
-				"serverLog",
-				   "Group manager call by $userNameClient with args '"
-				++ *args ++ "' failed with the following message on STDERR: "
-				++ substr(*cmdStderr, 7, strlen(*cmdStderr))
-				++ " // Command output (STDOUT) was: "
-				++ *cmdStdout
-			);
-		} else {
-			*status  = 0;
-			*message = *cmdStdout;
-		}
-	} else {
-		# Python returned non-zero. There's nothing we can do - the cmdOut
-		# variable contains a null pointer somewhere and causes a segfault if
-		# we try to read its stdout and stderr properties.
-		writeLine(
-			"serverLog",
-			   "Group manager call by $userNameClient with args '"
-			++ *args ++ "' failed with exit code *status. "
-			++ "Command STDOUT and STDERR could not be recovered."
-		);
-
-		*status  = 1;
-		*message = "An internal error occurred.";
-	}
-}
-
 # \brief Create a group.
 #
 # \param[in]  groupName
 # \param[out] status  zero on success, non-zero on failure
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupAdd(*groupName, *status, *message) {
-	uuGroupManagerCall("add \"*groupName\"", *status, *message);
+uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*kv."category"    = *category;
+	*kv."subcategory" = *subcategory;
+	*kv."description" = *description;
+
+	# Shoot first, ask questions later.
+	*status = errorcode(msiSudoGroupAdd(*groupName, "manager", $userNameClient, "", *kv));
+
+	if (*status == 0) {
+		*message = "";
+	} else {
+		# Why didn't you allow me to do that?
+		uuGroupPolicyCanGroupAdd(
+			$userNameClient,
+			*groupName,
+			*category,
+			*subcategory,
+			*description,
+			*allowed,
+			*reason
+		);
+		if (*allowed == 0) {
+			# We were too impolite.
+			*message = *reason;
+		} else {
+			# There were actually no objections. Something else must
+			# have gone wrong.
+			# The *message set in the start of this rule is returned.
+		}
+	}
 }
 
 # \brief Modify a group.
@@ -471,7 +492,18 @@ uuGroupAdd(*groupName, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupModify(*groupName, *property, *value, *status, *message) {
-	uuGroupManagerCall("set \"*groupName\" \"*property\" \"*value\"", *status, *message);
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*status = errorcode(msiSudoObjMetaSet(*groupName, "-u", *property, *value, "", ""));
+	if (*status == 0) {
+		*message = "";
+	} else {
+		uuGroupPolicyCanGroupModify($userNameClient, *groupName, *property, *value, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
 }
 
 # \brief Remove a group.
@@ -481,7 +513,18 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupRemove(*groupName, *status, *message) {
-	uuGroupManagerCall("remove-group \"*groupName\"", *status, *message);
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*status = errorcode(msiSudoGroupRemove(*groupName, ""));
+	if (*status == 0) {
+		*message = "";
+	} else {
+		uuGroupPolicyCanGroupRemove($userNameClient, *groupName, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
 }
 
 # \brief Add a user to a group.
@@ -492,7 +535,31 @@ uuGroupRemove(*groupName, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserAdd(*groupName, *userName, *status, *message) {
-	uuGroupManagerCall("add-user \"*groupName\" \"*userName\"", *status, *message);
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	uuUserExists(*userName, *exists);
+	if (!*exists) {
+		*kv."forGroup" = *groupName;
+		*status = errorcode(msiSudoUserAdd(*userName, "", "", "", *kv));
+		if (*status != 0) {
+			uuGroupPolicyCanGroupUserAdd($userNameClient, *groupName, *userName, *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed; # Return here (don't fail as that would ruin the status and error message).
+		}
+	}
+	# User exists, now add them to the group.
+	*status = errorcode(msiSudoGroupMemberAdd(*groupName, *userName, ""));
+	if (*status == 0) {
+		*message = "";
+	} else {
+		uuGroupPolicyCanGroupUserAdd($userNameClient, *groupName, *userName, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
 }
 
 # \brief Remove a user from a group.
@@ -503,12 +570,21 @@ uuGroupUserAdd(*groupName, *userName, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserRemove(*groupName, *userName, *status, *message) {
-	uuGroupManagerCall("remove-user \"*groupName\" \"*userName\"", *status, *message);
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*status = errorcode(msiSudoGroupMemberRemove(*groupName, *userName, ""));
+	if (*status == 0) {
+		*message = "";
+	} else {
+		uuGroupPolicyCanGroupUserRemove($userNameClient, *groupName, *userName, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
 }
 
-# Shorthand group manager functions.
-
-# \brief Promote or demote a group user.
+# \brief Promote or demote a group member.
 #
 # \param[in]  groupName
 # \param[in]  userName  the user to promote or demote
@@ -517,6 +593,9 @@ uuGroupUserRemove(*groupName, *userName, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserChangeRole(*groupName, *userName, *newRole, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
 	uuGroupGetManagers(*groupName, *managers);
 	uuListContains(*managers, *userName, *isCurrentlyManager);
 
@@ -527,16 +606,28 @@ uuGroupUserChangeRole(*groupName, *userName, *newRole, *status, *message) {
 			*message = "";
 		} else {
 			# Append the user to the managers list.
-			uuJoin(";", *managers, *newManagersString);
-			*newManagersString = *newManagersString ++ ";*userName";
-			uuGroupManagerCall("set \"*groupName\" \"managers\" \"*newManagersString\"", *status, *message);
+			*status = errorcode(msiSudoObjMetaAdd(*groupName, "-u", "manager", *userName, "", ""));
+			if (*status == 0) {
+				*message = "";
+			} else {
+				uuGroupPolicyCanAddManager($userNameClient, *groupName, *userName, *allowed, *reason);
+				if (*allowed == 0) {
+					*message = *reason;
+				}
+			}
 		}
 	} else if (*newRole == "user") {
 		if (*isCurrentlyManager) {
 			# Remove the user from the managers list.
-			uuListFilter(*managers, *userName, false, false, *newManagers);
-			uuJoin(";", *newManagers, *newManagersString);
-			uuGroupManagerCall("set \"*groupName\" \"managers\" \"*newManagersString\"", *status, *message);
+			*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *userName, "", ""));
+			if (*status == 0) {
+				*message = "";
+			} else {
+				uuGroupPolicyCanRemoveManager($userNameClient, *groupName, *userName, *allowed, *reason);
+				if (*allowed == 0) {
+					*message = *reason;
+				}
+			}
 		} else {
 			# Nothing to do.
 			*status  = 0;
@@ -547,8 +638,6 @@ uuGroupUserChangeRole(*groupName, *userName, *newRole, *status, *message) {
 			"serverLog",
 			"Invalid group manager call by $userNameClient: User tried to set invalid user role '*newRole'"
 		);
-		*status  = 1;
-		*message = "An internal error occurred.";
 	}
 }
 
