@@ -4,7 +4,6 @@
 acPreprocForRmColl {
         uuIiObjectActionAllowed($collName, *collAllows);
         uuIiObjectActionAllowed($collParentName, *parentAllows);
-        writeLine("serverLog", "Requesting deleting of collection '$collName'. Can delete? *collAllows. Parent allows? *parentAllows");
         if(!(*collAllows && *parentAllows)) {
                 writeLine("serverLog", "Disallowing deleting $collName");
                 cut;
@@ -16,7 +15,6 @@ acPreprocForRmColl {
 # The policy prohibits deleting the data object if the data object
 # is locked. The parent collection is not checked
 acDataDeletePolicy {
-        writeLine("serverLog", "Requested deleting of file:");
         uuIiObjectActionAllowed($objPath, *allow);
         if(!*allow) {
                 writeLine("serverLog", "Deleting $objPath not allowed");
@@ -30,7 +28,6 @@ acDataDeletePolicy {
 # parent collection is locked
 acPreprocForCollCreate {
         uuIiObjectActionAllowed($collParentName, *allowed);
-        writeLine("serverLog", "Requesting creating collection $collName. Allowed = *allowed");
         if(!*allowed) {
                 writeLine("serverLog", "Disallowing creating $collName collection");
                 cut;
@@ -80,7 +77,6 @@ acPreProcForObjRename(*source, *destination) {
         uuIiObjectActionAllowed(*source, *sourceAllows);
         uuIiObjectActionAllowed(*sourceParent, *sourceParentAllows);
         uuIiObjectActionAllowed(*destParent, *destAllows);
-        writeLine("serverLog", "Requesting moving *source to *destination. Source allows = *sourceAllows, parent allows = *sourceParentAllows, destination allows = *destAllows");
         if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
                 writeLine("serverLog", "Disallowing moving *source to *destination");
                 cut;
@@ -152,7 +148,6 @@ acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-        writeLine("serverLog", "Copying metadata *Option from *SourceItemName to *TargetItemName");
         uuIiObjectActionAllowed(*TargetItemName, *allowed);
         if(!*allowed) {
                 writeLine("serverLog", "Metadata could not be copied from *SourceItemName to *TargetItemName because the latter is locked");

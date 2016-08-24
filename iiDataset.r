@@ -66,6 +66,13 @@ uuIiGetSnapshotHistory(*collection, *buffer) {
 uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time, *userName, *userZone) {
 	*buffer = "";
 	*time = 0;
+
+	*version = "";
+	*time = "";
+	*userName = "";
+	*userZone = "";
+	*datasetID = "";
+	*datasetPath = "";
 	
 	uuIiGetIntakeRootFromIntakePath(*collection, *intakeRoot);
 	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
@@ -75,13 +82,21 @@ uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time
 		META_COLL_ATTR_NAME = 'snapshot_version_information'
 		AND COLL_PARENT_NAME = '*vaultParent'
 	) {
+		*log = "";
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *log);
-		
-		uuChop(*log, 	*version, 		*rest1, 	"#", 	true);
-		uuChop(*rest1, 		*userName, 		*rest2, 	"#", 	true);
-		uuChop(*rest2, 		*userZone, 		*rest3, 	"#", 	true);
-		uuChop(*rest3, 		*datasetID,		*rest4, 	"#", 	true);
-		uuChop(*rest4, 		*datasetPath, 	*tail, 		"#", 	true);
+
+		writeLine("serverLog", "*log");
+
+
+
+		uuChop(*log, 		*version, 		*rest1, 	"#", 	true);
+		uuChop(*rest1,		*time, 			*rest2,		"#",	true);
+		uuChop(*rest2, 		*userName, 		*rest3, 	"#", 	true);
+		uuChop(*rest3, 		*userZone, 		*rest4, 	"#", 	true);
+		uuChop(*rest4, 		*datasetID,		*rest5, 	"#", 	true);
+		uuChop(*rest5, 		*datasetPath, 	*tail, 		"#", 	true);
+
+		writeLine("serverLog", "Found version=*version, username=*userName, userzone=*userZone, datasetID=*datasetID, datasetPath=*datasetPath");
 
 		break;
 	}

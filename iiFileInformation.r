@@ -43,7 +43,6 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     msiMakeGenQuery("count(COLL_ID), max(COLL_MODIFY_TIME), max(META_COLL_MODIFY_TIME)", "COLL_NAME like '*path%'", *GenQInp2);
     msiExecGenQuery(*GenQInp2, *GenQOut2);
     foreach(*GenQOut2) {
-        writeLine("serverLog", *GenQOut2);
         msiGetValByKey(*GenQOut2, "COLL_ID", *dircount);
         msiGetValByKey(*GenQOut2, "COLL_MODIFY_TIME", *coll_modified);
         msiGetValByKey(*GenQOut2, "META_COLL_MODIFY_TIME", *meta_coll_modified);
@@ -71,13 +70,76 @@ iiGetFileAttrs(*collectionName, *fileName, *size, *comment) {
 	}
 }
 
+uuIiGetDirInformation(*collection, *l, *o, *searchval, *buffer, *f, *i, *canSnapshot) {
+    *buffer = "";
+    *i = 0;
+    *s = 0; #selected
+    *p = 0; #passed
+    *f = 0; #found if filter
+
+    *hasMore = 1;
+
+    msiMakeGenQuery(
+        "order_asc(COLL_NAME), COLL_CREATE_TIME",
+        "COLL_PARENT_NAME = '*collection'",
+        *dirQuery
+    );
+
+    msiExecGenQuery(*dirQuery, *result);
+    msiGetContInxFromGenQueryOut(*result, *resultSetIndex);
+
+    while(*hasMore > 0) {
+        if(*resultSetIndex == 0) {*hasMore = 0; }
+
+        foreach(*result) {
+            msiGetValByKey(*result, "COLL_NAME", *dir);
+            msiGetValByKey(*result, "COLL_CREATE_TIME", *created)
+
+            *name = triml(*dir, "*collection/");
+
+            *add = false;
+            if(*searchval == "") {
+                if(*i >= *o && *s < *l) {
+                    *add = true;
+                }
+            } else {
+                if(*name like '**searchval*') {
+                    *f = *f + 1;
+                    if(*p >= *o && *s < *l) {
+                        *add = true;
+                    } else {
+                        *p = *p + 1;
+                    }
+                }
+            }
+
+            if(*add) {
+                iiFileCount(*dir, *totalSize, *dircount, *filecount, *modified);
+                if(*canSnapshot) {
+                    uuIiGetLatestSnapshotInfo(*dir, *version, *datasetID, *datasetPath, *time, *userName, *userZone);
+                    *snapinf = "*version+=+*userName+=+*time";
+                } else {
+                    *snapinf = "+=++=+";
+                }
+
+                *buffer = "*buffer++++====++++*name+=+*totalSize+=+*dircount+=+*filecount+=+*created+=+*modified+=+*snapinf"; 
+                *s = *s + 1;
+            }
+
+            *i = *i + 1;
+        }
+        if(*hasMore > 0) {msiGetMoreRows(*dirQuery, *result, *resultSetIndex); }
+    }
+}
+#
+# \param[in] collectionName name of parent collection
 # \param[in] l      limit (int)
 # \param[in] o      offset (int)
 # \param[in] s      searchstring (string)
 # \param[out] buffer l files starting at o
 # \param[out] f (int) amount of items that are filtered
 # \param[out] i     (int)  total size of data
-uuIiGetFilesInformation(*l, *o, *searchval, *buffer, *f, *i) {
+uuIiGetFilesInformation(*collectionName, *l, *o, *searchval, *buffer, *f, *i) {
     *buffer = "";
 
     *i = 0;
@@ -87,23 +149,16 @@ uuIiGetFilesInformation(*l, *o, *searchval, *buffer, *f, *i) {
 
     *hasMore = 1;
 
-    writeLine("serverLog", "Executing query, with limit=*l, offset=*o and searchval=*searchval");
-
     msiMakeGenQuery(
         "order_asc(DATA_NAME), DATA_SIZE, DATA_CREATE_TIME, DATA_MODIFY_TIME",
         "COLL_NAME = '*collectionName'",
         *fileQuery
     );
 
-    writeLine("serverLog", "Created general query");
-
     msiExecGenQuery(*fileQuery, *result);
 
-    writeLine("serverLog", "Executed general query");
     msiGetContInxFromGenQueryOut(*result, *resultSetIndex);
-    writeLine("serverLog", "Got cont inx from general query: *resultSetIndex");
     while(*hasMore > 0) {
-        writeLine("serverLog", "hasMore is 1, not 0, so continuing");
         if(*resultSetIndex == 0) { *hasMore = 0; }
         foreach(*result) {
             msiGetValByKey(*result, "DATA_NAME", *name);

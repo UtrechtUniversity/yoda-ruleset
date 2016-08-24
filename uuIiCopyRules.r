@@ -34,10 +34,10 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
 
 		if (*locked) {
+			*recover = false;
 			uuLock(*topLevelCollection, *lockStatus);
-			*lockStatus = 0;
 			if(*lockStatus == 0) {
-				iiDatasetSnapshotFreeze(*topLevelCollection, *status);
+				iiDatasetSnapshotFreeze(*topLevelCollection, *status) ::: *recover = true;
 				
 				# datset frozen, now move to fault and remove from intake area
 				uuIiDatasetCollectionCopy2Vault(
@@ -46,30 +46,34 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 						*datasetId,
 						*vaultRoot,
 						*status
-					);
+					) ::: *recover = true;
 
 				if(*status == 0) {
 					# Log could disappear, information is now extracted from the vault
 					#uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
-					iiDatasetSnapshotMelt(*topLevelCollection, *status);
-					iiDatasetSnapshotUnlock(*topLevelCollection, *status);
+					iiDatasetSnapshotMelt(*topLevelCollection, *status) ::: *recover = true;
+					iiDatasetSnapshotUnlock(*topLevelCollection, *status) ::: *recover = true;
 				} else {
 					# TODO: add error message?
-					iiDatasetSnapshotMelt(*topLevelCollection, *status);
+					iiDatasetSnapshotMelt(*topLevelCollection, *status) ::: *recover = true;
 				}
-
+				uuUnlock(*topLevelCollection);
 			}
 		}
-		uuUnlock(*topLevelCollection);
+		if(*recover) {
+			msiGetIcatTime(*time, "human");
+			writeLine("stdout", "[*time] Recovering *topLevelCollection");
+			uuUnlock(*topLevelCollection)
+		}
 	}
 }
 
 uuIiAddSnapshotInformationToVault(*vaultPath, *status) {
 	*snapshotInfoKey = "snapshot_version_information";
-
-	writeLine("stdout", "Setting snapshot information");
+	msiGetIcatTime(*time, "human");
+	writeLine("stdout", "[*time] Setting snapshot information");
 	uuIiVersionKey(*versionKey, *dependsKey);
-	writeLine("stdout", "Vault path is '*vaultPath");
+	writeLine("stdout", "[*time] Vault path is '*vaultPath");
 	msiMakeGenQuery(
 		"META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
 		"COLL_NAME = '*vaultPath' AND META_COLL_ATTR_NAME in ('*versionKey', '*dependsKey', 'dataset_snapshotlock_toplevel')",
@@ -123,7 +127,8 @@ uuIiAddSnapshotInformationToVault(*vaultPath, *status) {
 # \param[in] collection 				Dataset parent collection
 # \param[in] datasetId 					Dataset name
 uuIiAddSnapshotLogToCollection(*collection, *status) {
-	writeLine("stdout", "Creating a log entry after a succesful new version creation for *collection");
+	msiGetIcatTime(*time, "human");
+	writeLine("stdout", "[*time] Creating a log entry after a succesful new version creation for *collection");
 
 	uuIiVersionKey(*versionKey, *dependsKey);
 	*value = "";
@@ -147,7 +152,7 @@ uuIiAddSnapshotLogToCollection(*collection, *status) {
 	*status = errorcode(
 		msiAssociateKeyValuePairsToObj(*kvPair, "*collection", "-C")
 	);
-	writeLine("stdout", "Finished updating createdAtBy (*value) with status *status");
+	writeLine("stdout", "[*time] Finished updating createdAtBy (*value) with status *status");
 }
 
 # \brief uuIiDatasetCollectionCopy2Vault Copies a dataset recursively to the vault
@@ -164,6 +169,7 @@ uuIiAddSnapshotLogToCollection(*collection, *status) {
 #
 uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
 	*status = 0;
+	msiGetIcatTime(*time, "human");
 	iiGetOwner(*topLevelCollection, *owner);
 	iiCollectionExists(*vaultRoot, *vaultRootExists);
 	if(*vaultRootExists) {
@@ -202,14 +208,14 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 				} else {
 					# move failed (partially), cleanup vault
 					# NB: keep the dataset in the vault queue so we can retry some other time
-					writeLine("stdout","ERROR: Ingest failed for *datasetId error = *status");
+					writeLine("stdout","[*time] ERROR: Ingest failed for *datasetId error = *status");
 
 					# TODO
 					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
 				}
 			}
 		} else {
-			writeLine("stdout","INFO: version already exists in vault: *datasetId");
+			writeLine("stdout","[*time] INFO: version already exists in vault: *datasetId");
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
 			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
@@ -221,7 +227,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 			*status = 1; # duplicate dataset version error
 		}
 	} else {
-		writeLine("stdout", "INFO: Vault root *vaultRoot does not exist. Snapshot failed");
+		writeLine("stdout", "[*time] INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
 		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		iiDatasetSnapshotMelt(*topLevelCollection, *status);
@@ -243,6 +249,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 # 									the logs should be checked
 #
 uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
+	msiGetIcatTime(*time, "human");
 	*status = 0;
 	uuChopPath(*topLevelCollection, *parent, *base);
 	*pathStart = "/"++$rodsZoneClient++"/home/";
@@ -259,7 +266,7 @@ uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 			*s3 = errorcode(msiString2KeyValPair("*key=*value",*kv));
 			*s4 = errorcode(msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C"));
 			if(*s1 != 0 || *s2 != 0 || *s3 != 0 || *s4 != 0) {
-				*msg = "WARNING: Something went wrong in extracing or updating the medatadata";
+				*msg = "[*time] WARNING: Something went wrong in extracing or updating the medatadata";
 				*msg = "*msg from '*parent'. The extracted key was '*key' and the extracted value was '*value'";
 				writeLine("stdout", *msg);
 				*status = -100;
@@ -281,6 +288,7 @@ uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *status) {
 # \param[out] status 				The error code of updating the metadata
 #
 uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
+	msiGetIcatTime(*time, "human");
 	uuIiVersionKey(*versionKey, *dependsKey);
 	*version = 1;
 	*depends = "";
@@ -289,9 +297,9 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 		META_COLL_ATTR_NAME = "*versionKey"
 	) {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
-		writeLine("stdout", "Found version *value");
+		writeLine("stdout", "[*time] Found version *value");
 		*version = int(*value) + 1;
-		writeLine("stdout", "New version is *version");
+		writeLine("stdout", "[*time] ew version is *version");
 		break;
 	}
 
@@ -300,12 +308,12 @@ uuIiUpdateVersion(*topLevelCollection, *vaultPath, *status) {
 		break;
 	}
 
-	writeLine("stdout", "Going to set version to *version, and depends to *depends");
+	writeLine("stdout", "[*time] Going to set version to *version, and depends to *depends");
 
 	msiAddKeyVal(*kv, *versionKey, str(*version));
 	msiAddKeyVal(*kv, *dependsKey, *depends);
     *status = errorcode(msiSetKeyValuePairsToObj(*kv, *topLevelCollection, "-C"));
-    writeLine("stdout", "Finished updating version with status *status");
+    writeLine("stdout", "[*time] Finished updating version with status *status");
 }
 
 # \brief uuIiVaultWalkIngestObject 	Treewalkrule, that calculates the objectPath and
@@ -463,7 +471,6 @@ uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot) {
             *group = triml(*group, "/");
     }
 
-    writeLine("serverLog", "Got home = '*home' and group = '*group' (matching latter against '*intakePrfx'");
     if(*group like '*intakePrfx*') {
             *groupName = substr(*group, strlen(*intakePrfx), strlen(*group));
             *vaultRoot = *home ++ "/" ++ *vaultPrfx ++ *groupName;

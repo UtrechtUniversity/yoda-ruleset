@@ -21,7 +21,8 @@ uuIiRunCreateSnapshots {
         # uuGroupMemberships(*user, *grouplist);
         uuIiGetIntakePrefix(*intk);
         uuIiGetVaultPrefix(*vlt);
-
+        msiGetIcatTime(*time, "human");
+        writeLine("stdout", "[*time] Checking for datapackages to process");
         # foreach(*grp in *grouplist) {
         foreach(*row in SELECT USER_GROUP_NAME WHERE USER_TYPE = 'rodsgroup') {
                 *grp = *row.USER_GROUP_NAME;
@@ -32,7 +33,6 @@ uuIiRunCreateSnapshots {
 
                         uuIi2Vault(*intakeRoot, *vaultRoot, *status);
                         if (*status == 0 ) then *result = "ok" else *result = "ERROR (*status)";
-                        writeLine("stdout","RunIntake2Vault for *intakeRoot result = *result");
                 }
         }
 }
