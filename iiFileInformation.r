@@ -70,3 +70,71 @@ iiGetFileAttrs(*collectionName, *fileName, *size, *comment) {
 		*comment = *row.DATA_COMMENTS;
 	}
 }
+
+# \param[in] l      limit (int)
+# \param[in] o      offset (int)
+# \param[in] s      searchstring (string)
+# \param[out] buffer l files starting at o
+# \param[out] f (int) amount of items that are filtered
+# \param[out] i     (int)  total size of data
+uuIiGetFilesInformation(*l, *o, *searchval, *buffer, *f, *i) {
+    *buffer = "";
+
+    *i = 0;
+    *s = 0; #selected
+    *p = 0; #passed
+    *f = 0; #found if filter
+
+    *hasMore = 1;
+
+    writeLine("serverLog", "Executing query, with limit=*l, offset=*o and searchval=*searchval");
+
+    msiMakeGenQuery(
+        "order_asc(DATA_NAME), DATA_SIZE, DATA_CREATE_TIME, DATA_MODIFY_TIME",
+        "COLL_NAME = '*collectionName'",
+        *fileQuery
+    );
+
+    writeLine("serverLog", "Created general query");
+
+    msiExecGenQuery(*fileQuery, *result);
+
+    writeLine("serverLog", "Executed general query");
+    msiGetContInxFromGenQueryOut(*result, *resultSetIndex);
+    writeLine("serverLog", "Got cont inx from general query: *resultSetIndex");
+    while(*hasMore > 0) {
+        writeLine("serverLog", "hasMore is 1, not 0, so continuing");
+        if(*resultSetIndex == 0) { *hasMore = 0; }
+        foreach(*result) {
+            msiGetValByKey(*result, "DATA_NAME", *name);
+            msiGetValByKey(*result, "DATA_SIZE", *size);
+            msiGetValByKey(*result, "DATA_CREATE_TIME", *created);
+            msiGetValByKey(*result, "DATA_MODIFY_TIME", *modified);
+            *searchstring = "*name*size*created*modified";
+
+            *add = false;
+            if(*searchval == "") {
+                if(*i >= *o && *s < *l) {
+                    *add = true;
+                }
+            } else {
+                if(*searchstring like "**searchval*") {
+                    *f = *f + 1;
+                    if(*p >= *o && *s < *l) {
+                        *add = true;
+                    } else {
+                        *p = *p + 1;
+                    }
+                }
+            }
+
+            if(*add) {
+                *buffer = "*buffer++++====++++*size+=+*name+=+*created+=+*modified";
+                *s = *s + 1;
+            }
+
+            *i = *i + 1;
+        }
+        if(*hasMore > 0) {msiGetMoreRows(*fileQuery, *result, *resultSetIndex); }
+    }
+}

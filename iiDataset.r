@@ -76,16 +76,13 @@ uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time
 		AND COLL_PARENT_NAME = '*vaultParent'
 	) {
 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *log);
-		*values = split(*log, "#");
+		
+		uuChop(*log, 	*version, 		*rest1, 	"#", 	true);
+		uuChop(*rest1, 		*userName, 		*rest2, 	"#", 	true);
+		uuChop(*rest2, 		*userZone, 		*rest3, 	"#", 	true);
+		uuChop(*rest3, 		*datasetID,		*rest4, 	"#", 	true);
+		uuChop(*rest4, 		*datasetPath, 	*tail, 		"#", 	true);
 
-		writeLine("serverLog", "Found values *log, which splits into *values");
-
-		*version = elem(*values, 0);
-		*datasetID = elem(*values, 4);
-		*datasetPath = elem(*values, 5);
-		*time = elem(*values, 1);
-		*userName = elem(*values, 2);
-		*userZone = elem(*values, 3);
 		break;
 	}
 }
