@@ -78,7 +78,7 @@ uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time
 	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
 	uuIiSnapshotGetVaultParent(*vaultRoot, *collection, *vaultParent);
 
-	foreach(*row in SELECT order_desc(META_COLL_ATTR_VALUE) WHERE 
+	foreach(*row in SELECT order_desc(COLL_NAME), META_COLL_ATTR_VALUE WHERE 
 		META_COLL_ATTR_NAME = 'snapshot_version_information'
 		AND COLL_PARENT_NAME = '*vaultParent'
 	) {
