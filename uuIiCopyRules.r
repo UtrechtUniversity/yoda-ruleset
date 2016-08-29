@@ -32,13 +32,14 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 
 		uuChopPath(*topLevelCollection, *parent, *datasetId);
 		iiObjectIsSnapshotLocked(*topLevelCollection, true, *locked, *frozen);
+		*recover = false;
 
 		if (*locked) {
-			*recover = false;
 			uuLock(*topLevelCollection, *lockStatus);
 			if(*lockStatus == 0) {
 				iiDatasetSnapshotFreeze(*topLevelCollection, *status) ::: *recover = true;
-				
+				msiGetIcatTime(*time, "human");
+				writeLine("stdout", "[*time] Finished freezing dataset");
 				# datset frozen, now move to fault and remove from intake area
 				uuIiDatasetCollectionCopy2Vault(
 						*intakeRoot, 
@@ -48,14 +49,24 @@ uuIi2Vault(*intakeRoot, *vaultRoot, *status) {
 						*status
 					) ::: *recover = true;
 
+				msiGetIcatTime(*time, "human");
+				writeLine("stdout", "[*time] Finished copying collection with status *status");
 				if(*status == 0) {
 					# Log could disappear, information is now extracted from the vault
 					#uuIiAddSnapshotLogToCollection(*topLevelCollection, *status);
-					iiDatasetSnapshotMelt(*topLevelCollection, *status) ::: *recover = true;
-					iiDatasetSnapshotUnlock(*topLevelCollection, *status) ::: *recover = true;
+					iiDatasetSnapshotMelt(*topLevelCollection, *statusm) ::: *recover = true;
+					msiGetIcatTime(*time, "human");
+					writeLine("stdout", "[*time] Finished melting *topLevelCollection with status *statusm");
+					iiDatasetSnapshotUnlock(*topLevelCollection, *statusu) ::: *recover = true;
+					msiGetIcatTime(*time, "human");
+					writeLine("stdout", "[*time] Finished unlocking *topLevelCollection with status *statusu");
+
 				} else {
 					# TODO: add error message?
+					writeLine("stdout", "[*time] Copying to vault exited with code *status. Now melting.");
 					iiDatasetSnapshotMelt(*topLevelCollection, *status) ::: *recover = true;
+					msiGetIcatTime(*time, "human");
+					writeLine("stdout", "[*time] Finished melting after error on creating version *topLevelCollection with status *status");
 				}
 				uuUnlock(*topLevelCollection);
 			}
@@ -195,9 +206,10 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 				uuKvClear(*buffer);
 				if (*status == 0) {
 					# stamp the vault dataset collection with additional metadata
-					uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *parentMetaStatus);
-					uuIiUpdateVersion(*topLevelCollection, *vaultPath, *versionBumbStatus);
-					uuIiAddSnapshotInformationToVault(*vaultPath, *snapInfoStatus);
+					msiGetIcatTime(*time, "human");
+					uuIiCopyParentsMetadata(*topLevelCollection, *vaultPath, *parentMetaStatus)::: writeLine("stdout", "[*time] Could not copy parents metadata of *topLevelCollection to *vaultPath");
+					uuIiUpdateVersion(*topLevelCollection, *vaultPath, *versionBumbStatus)::: writeLine("stdout", "[*time] Could not bump version of *topLevelCollection");
+					uuIiAddSnapshotInformationToVault(*vaultPath, *snapInfoStatus) ::: writeLine("stdout", "[*time] Could not update snapshot information to *vaultPath");
 					msiGetIcatTime(*date, "unix");
 					msiAddKeyVal(*kv, "snapshot_date_created", *date);
 					msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
@@ -209,16 +221,15 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 					# move failed (partially), cleanup vault
 					# NB: keep the dataset in the vault queue so we can retry some other time
 					writeLine("stdout","[*time] ERROR: Ingest failed for *datasetId error = *status");
-
 					# TODO
-					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error);
+					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error) ::: writeLine("stdout", "[*time] Failed reversing *vaultPath");
 				}
 			}
 		} else {
 			writeLine("stdout","[*time] INFO: version already exists in vault: *datasetId");
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
-			uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
+			#uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 			iiDatasetSnapshotMelt(*topLevelCollection, *status);
 			iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 
@@ -229,7 +240,7 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 	} else {
 		writeLine("stdout", "[*time] INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
-		uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
+		#uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		iiDatasetSnapshotMelt(*topLevelCollection, *status);
 		iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 		*status = 1; # duplicate dataset version error

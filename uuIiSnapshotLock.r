@@ -132,14 +132,16 @@ iiDatasetSnapshotLockChange(*rootCollection, *lockName, *lockIt, *status){
    		*vault="Snapshot";
    	}
 	*lock = "Unlock";
+	*direction = "reverse";
 	if (*lockIt) {
 		*lock = "Lock";
+		*direction = "forward";
 	}
 	if (*lockName == "to_vault_freeze" || *lockName == "to_snapshot_freeze") {
 		*lockProcedure = "Freeze";
 	} 
 	*buffer = "dummy";
-	uuTreeWalk("forward", "*rootCollection", "*set" ++ "DatasetWalk" ++ "*vault*lockProcedure*lock", *buffer, *error);
+	uuTreeWalk(*direction, "*rootCollection", "*set" ++ "DatasetWalk" ++ "*vault*lockProcedure*lock", *buffer, *error);
 	*status = str(*error);
 }
 
