@@ -45,7 +45,7 @@ uuIiGetSnapshotHistory(*collection, *buffer) {
 	uuIiSnapshotGetVaultParent(*vaultRoot, *collection, *vaultParent);
 
 	*buffer = list();
-	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE), META_COLL_ATTR_NAME, COLL_NAME WHERE
+	foreach(*row in SELECT META_COLL_ATTR_VALUE, META_COLL_ATTR_NAME, order_asc(COLL_NAME) WHERE
 		COLL_PARENT_NAME = '*vaultParent' 
 	) {
 		if(*row.META_COLL_ATTR_NAME == 'snapshot_version_information') {
