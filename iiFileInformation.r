@@ -87,50 +87,52 @@ uuIiGetStudiesInformation(*l, *o, *searchval, *buffer, *f, *i) {
             *projectPaths = cons("'/$rodsZoneClient/home/*project'", *projectPaths);
     }
 
-    uuJoin(",", *projectPaths, *projectsString);
+    if(size(*projectPaths) > 0) {
 
-    msiMakeGenQuery(
-            "order_asc(COLL_NAME), COLL_CREATE_TIME",
-            "COLL_NAME in (*projectsString)",
-            *studyQuery
-    );
+        uuJoin(",", *projectPaths, *projectsString);
 
-    msiExecGenQuery(*studyQuery, *result);
-    msiGetContInxFromGenQueryOut(*result, *resultSetIndex);
+        msiMakeGenQuery(
+                "order_asc(COLL_NAME), COLL_CREATE_TIME",
+                "COLL_NAME in (*projectsString)",
+                *studyQuery
+        );
 
-    while(*hasMore > 0) {
-        if(*resultSetIndex == 0) {*hasMore = 0; }
-        foreach(*result) {
-            msiGetValByKey(*result, "COLL_NAME", *study);
-            msiGetValByKey(*result, "COLL_CREATE_TIME", *created);
-            *name = triml(*study, "/$rodsZoneClient/home/*prefix");
-            *add = false;
-            if(*searchval == "") {
-                if(*i >= *o && *s < *l) {
-                    *add = true;
-                }
-            } else {
-                if(*name like '**searchval*') {
-                    *f = *f + 1;
-                    if(*p >= *o && *s < *l) {
+        msiExecGenQuery(*studyQuery, *result);
+        msiGetContInxFromGenQueryOut(*result, *resultSetIndex);
+
+        while(*hasMore > 0) {
+            if(*resultSetIndex == 0) {*hasMore = 0; }
+            foreach(*result) {
+                msiGetValByKey(*result, "COLL_NAME", *study);
+                msiGetValByKey(*result, "COLL_CREATE_TIME", *created);
+                *name = triml(*study, "/$rodsZoneClient/home/*prefix");
+                *add = false;
+                if(*searchval == "") {
+                    if(*i >= *o && *s < *l) {
                         *add = true;
-                    } else {
-                        *p = *p + 1;
+                    }
+                } else {
+                    if(*name like '**searchval*') {
+                        *f = *f + 1;
+                        if(*p >= *o && *s < *l) {
+                            *add = true;
+                        } else {
+                            *p = *p + 1;
+                        }
                     }
                 }
-            }
 
-            if(*add) {
-                iiFileCount(*study, *totalSize, *dircount, *filecount, *modified);
-                *buffer = "*buffer++++====++++*name+=+*totalSize+=+*dircount+=+*filecount+=+*created+=+*modified"; 
-                *s = *s + 1;
-            }
+                if(*add) {
+                    iiFileCount(*study, *totalSize, *dircount, *filecount, *modified);
+                    *buffer = "*buffer++++====++++*name+=+*totalSize+=+*dircount+=+*filecount+=+*created+=+*modified"; 
+                    *s = *s + 1;
+                }
 
-            *i = *i + 1;
+                *i = *i + 1;
+            }
+            if(*hasMore > 0) {msiGetMoreRows(*dirQuery, *result, *resultSetIndex); }
         }
-        if(*hasMore > 0) {msiGetMoreRows(*dirQuery, *result, *resultSetIndex); }
     }
-
 }
 
 uuIiGetDirInformation(*collection, *l, *o, *searchval, *buffer, *f, *i, *canSnapshot) {
