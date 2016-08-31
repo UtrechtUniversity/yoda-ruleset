@@ -5,33 +5,13 @@
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 
-# \brief getSnapshotHistory     Gets a history of all snapshots created
-#                                                               for the current dataset
-# \param[in] collection                 Collection name (full path)
-# \param[out] buffer                    String of values split by commas, where
-#                                                               each value is of format <unix>:userName#userZone
-#
-# uuIiGetSnapshotHistory(*collection, *buffer) {
-# 	*buffer = list();
-# 	foreach(*row in SELECT order_asc(META_COLL_ATTR_VALUE)
-# 		WHERE META_COLL_ATTR_NAME = 'dataset_snapshot_createdAtBy'
-# 		AND COLL_NAME = '*collection') {
-# 		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *value);
-# 		*segments = split(*value, ":");
-# 		*datasetID = elem(*segments, 1);
-# 		if(size(*segments) > 2) { #legacy bug
-# 			foreach(*row in SELECT COLL_NAME WHERE COLL_ID = '*datasetID') {
-# 				*name = *row.COLL_NAME;
-# 				*value = "*name#*value";
-# 				break;
-# 			}
-# 		} else {
-# 				*value = "#::*value";
-# 			}
-# 		*buffer = cons(*value, *buffer);
-# 	}
-# }
-
+# \brief getIntakeRootFromIntakePath 	Uses the defined intake prefix
+# 										to try and find the root of a
+#										group
+# 
+# \param[in] path 						The path to a collection
+# \param[out] intakeRoot 				The path to the groups rot
+# 
 uuIiGetIntakeRootFromIntakePath(*path, *intakeRoot) {
 	uuIiGetIntakePrefix(*intakePrefix);
     uuChop(*path, *head, *tail, *intakePrefix, true);
@@ -39,6 +19,14 @@ uuIiGetIntakeRootFromIntakePath(*path, *intakeRoot) {
     *intakeRoot = *head ++ substr(*intakePrefix, strlen(*intakePrefix) - 1, strlen(*intakePrefix)) ++ *groupName;
 }
 
+# \brief getSnapshotHistory 	Queries the vault for a certain collection
+# 								for existing versions, and concats some
+# 								information about all versions to a string
+#
+# \param[in] collection 		The path to a collection
+# \param[out] buffer 			Strings separated by hashtags that contain
+# 								information about existing versions
+#
 uuIiGetSnapshotHistory(*collection, *buffer) {
 	uuIiGetIntakeRootFromIntakePath(*collection, *intakeRoot);
 	uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot);
@@ -102,6 +90,16 @@ uuIiGetLatestSnapshotInfo(*collection, *version, *datasetID, *datasetPath, *time
 	}
 }
 
+# \brief GetVersionAndBasedOn 		Queries a collection to see if it has
+# 									version information. If so, it extracts
+# 									the version and the ID of the collection
+# 									this version was based on from the meta data
+#
+# \param[in] collection 			Path to a collection
+# \param[out] version 				Version number of *collection
+# \param[out] basedOn 				The collection ID of the collection 
+# 									*collection was based on
+#
 uuIiGetVersionAndBasedOn(*collection, *version, *basedOn) {
 	*version = "";
 	*basedOn = "";
@@ -208,6 +206,15 @@ uuIiGetDirectories(
 	}
 }
 
+# \brief IntakerStudies 	Finds all groups a user is
+# 							a member of and which have
+# 							the intake prefix
+#
+# \param[out] 				String containing all group
+# 							names the current user has
+# 							access to, stripped of the
+#							intake prefix and separated
+# 							by commas
 uuIiIntakerStudies(*studies){
 	uuGroupMemberships($userNameClient,*groups);
 	*studies="";
