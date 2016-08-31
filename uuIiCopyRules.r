@@ -181,11 +181,9 @@ uuIiAddSnapshotLogToCollection(*collection, *status) {
 uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *vaultRoot, *status) {
 	*status = 0;
 	msiGetIcatTime(*time, "human");
-	iiGetOwner(*topLevelCollection, *owner);
 	iiCollectionExists(*vaultRoot, *vaultRootExists);
 	if(*vaultRootExists) {
-		# uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath)
-		uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath);
+		uuIiVaultSnapshotGetPath(*vaultRoot, *topLevelCollection, *vaultPath);
 		iiCollectionExists(*vaultPath, *exists);
 		if (!*exists) {
 			# create the in-between levels of the path to the toplevel collection
@@ -415,20 +413,15 @@ uuIiVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 	}
 }
 
-
-# \brief get the path of the study in the vault, which is always of the from
-# 	{zone}/home/grp-vault-{studyID}/{ownername}/{datasetname}/{unixtime}
+# \brief SnapshotGetVaultParent 	Finds the vault parent given the vault root
+# 									of a group and a subcollection of a group
 #
-# \param[in]	vaultRoot 	The root path of the vault (zone + grp-vault-<study>)
-# \param[in]	datasetId	The name of the dataset itself (the name of the directory
-#							inside the intake study)
-# \param[in] 	owner 		Name of owner of dataset
-# \param[out]	vaultPath 	The full path to the vault for this dataset and version
-uuIiVaultSnapshotGetPath(*vaultRoot, *datasetId, *owner, *vaultPath) {
-	msiGetIcatTime(*time, "unix");
-   	*vaultPath = str("*vaultRoot/*owner/*datasetId/*time");
-}
-
+# \param[in] vaultRoot 				The vault root for a group
+# \param[in] topLevelCollection 	A collection in the group for which the
+# 									vault path is required
+# \param[out] vaultParent 			The path to the collection wherein subcollections
+# 									should be previous versions of *topLevelCollection
+#
 uuIiSnapshotGetVaultParent(*vaultRoot, *topLevelCollection, *vaultParent) {
 	*pathStart = "/$rodsZoneClient/home";
 	*segmentsWithRoot = substr(*topLevelCollection, strlen(*pathStart), strlen(*topLevelCollection));
@@ -441,7 +434,17 @@ uuIiSnapshotGetVaultParent(*vaultRoot, *topLevelCollection, *vaultParent) {
 	*vaultParent = "*vaultRoot/*segments";
 }
 
-uuIiVaultSnapshotGetSecondPath(*vaultRoot, *topLevelCollection, *vaultPath) {
+# \brief VaultSnapshotGetPath 		Finds the complete path to a location in the vault
+# 									for a collection, where a new version of the given
+# 									collection should be saved
+#
+# \param[in] vaultRoot 				The path to the root of the vault for the group
+# \param[in] topLevelCollection 	A collection in the group for which the vault path
+# 									is required
+# \param[out] vaultPath 			The complete path to the to be created version in
+# 									the vault
+#
+uuIiVaultSnapshotGetPath(*vaultRoot, *topLevelCollection, *vaultPath) {
 	msiGetIcatTime(*time, "human");
 	*humanTime = trimr(trimr(*time, ":"), ":") ++ "h" ++ triml(trimr(*time, ":"), ":");
 	uuIiSnapshotGetVaultParent(*vaultRoot, *topLevelCollection, *vaultParent);
@@ -460,18 +463,13 @@ iiCollectionExists(*collectionName, *exists) {
 	}
 }
 
-iiGetOwner(*path, *owner) {
-	foreach(*row in SELECT COLL_OWNER_NAME WHERE COLL_NAME = "*path") {
-		*owner = *row.COLL_OWNER_NAME;
-	}
-
-	foreach(*row in SELECT META_COLL_ATTR_VALUE 
-		WHERE COLL_NAME = "*path" 
-		AND META_COLL_ATTR_NAME = "dataset_owner") {
-		msiGetValByKey(*row, "META_COLL_ATTR_VALUE", *owner);
-	}
-}
-
+# \brief getVaultRootFromIntake 	Finds the root of the vault based on a group
+# 									path, the group name of which starts with
+# 									the defined intake prefix
+#
+# \param[in] intakeRoot 			The root of the intake-prefixed group
+# \param[out] vaultPath 			The path to the vault for the group
+#
 uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot) {
 	uuIiGetIntakePrefix(*intakePrfx);
     uuIiGetVaultPrefix(*vaultPrfx);
