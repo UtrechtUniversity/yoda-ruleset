@@ -16,6 +16,10 @@
 #	}
 #}
 
+# \brief Get the usertype for a given user
+# \param[in] user      name of the irods user(#zone)
+# \param[out] type     usertype e.g. rodsuser, rodsgroup, rodsadmin
+
 uuGetUserType(*user, *userType) {
 	*userType = "";
 	uuGetUserAndZone(*user, *userName, *userZone);
@@ -85,15 +89,17 @@ uuGroupExists(*groupName, *exists) {
 
 # \brief Check if a rodsuser or rodsadmin with the given name exists.
 #
-# \param[in]  userName
+# \param[in]  userName	 username(#zone)
 # \param[out] exists
 #
-uuUserExists(*userName, *exists) {
+uuUserExists(*user, *exists) {
 	*exists = false;
+	uuGetUserAndZone(*user, *userName, *userZone);
 	foreach (
 		*row in
 		SELECT USER_NAME, USER_TYPE
 		WHERE  USER_NAME = '*userName'
+		  AND  USER_ZONE = '*userZone'
 		  AND  USER_TYPE = 'rodsuser'
 	) {
 		*exists = true;
@@ -104,6 +110,7 @@ uuUserExists(*userName, *exists) {
 			*row in
 			SELECT USER_NAME, USER_TYPE
 			WHERE  USER_NAME = '*userName'
+			  AND  USER_ZONE = '*userZone'
 			  AND  USER_TYPE = 'rodsadmin'
 		) {
 			*exists = true;
