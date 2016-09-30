@@ -16,13 +16,14 @@
 #	}
 #}
 
-uuGetUserType(*userName, *userType) {
-	# XXX: TODO: Split username, zonename. etc.
+uuGetUserType(*user, *userType) {
 	*userType = "";
+	uuGetUserAndZone(*user, *userName, *userZone);
 	foreach (
 		*row in
 		SELECT USER_TYPE
 		WHERE  USER_NAME = '*userName'
+		AND    USER_ZONE = '*userZone'
 	) {
 		*userType = *row."USER_TYPE";
 		break;
