@@ -1,6 +1,7 @@
 # \file
 # \brief     Group operation policy checks.
 # \author    Chris Smeele
+# \author    Ton Smeele
 # \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
@@ -89,7 +90,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 	*allowed = 0;
 	*reason  = "";
 
-	uuGetUserType($userNameClient, *userType);
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { *allowed = 1; succeed; }
 
 	uuGroupCategoryExists(*categoryName, *categoryExists);

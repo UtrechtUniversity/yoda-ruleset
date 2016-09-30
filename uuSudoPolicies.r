@@ -8,8 +8,8 @@
 
 acPreSudoUserAdd(*userName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoUserAdd, user is <*userName>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoUserAdd, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	if (*initialAttr != "") { fail; }
@@ -30,8 +30,8 @@ acPreSudoUserAdd(*userName, *initialAttr, *initialValue, *initialUnit, *policyKv
 
 acPreSudoUserRemove(*userName, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoUserRemove, user is <*userName>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoUserRemove, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	# Do not allow this.
@@ -41,8 +41,8 @@ acPreSudoUserRemove(*userName, *policyKv) {
 
 acPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoGroupAdd, group is <*groupName>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoGroupAdd, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	if (*initialAttr != "manager" || *initialValue != $userNameClient) {
@@ -64,8 +64,8 @@ acPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *policy
 
 acPreSudoGroupRemove(*groupName, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoGroupRemove, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	uuGroupPolicyCanGroupRemove($userNameClient, *groupName, *allowed, *reason);
@@ -77,8 +77,8 @@ acPreSudoGroupRemove(*groupName, *policyKv) {
 
 acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoGroupMemberAdd, group is <*groupName>, user is <*userName>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoGroupMemberAdd, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	uuGroupPolicyCanGroupUserAdd(
@@ -95,7 +95,7 @@ acPreSudoGroupMemberAdd(*groupName, *userName, *policyKv) {
 
 acPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoGroupMemberRemove, group is <*groupName>, user is <*userName>, actor is <$userNameClient>");
+	writeLine("serverLog", "In acPreSudoGroupMemberRemove, group is <*groupName>, user is <*userName>, actor is <$userNameClient#$rodsZoneClient>");
 
 	uuGroupPolicyCanGroupUserRemove(
 		$userNameClient,
@@ -103,7 +103,7 @@ acPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 		*userName,
 		*allowed, *reason
 	);
-	uuGetUserType($userNameClient, *userType);
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { *allowed = 1; }
 
 	if (*allowed == 1) {
@@ -120,8 +120,8 @@ acPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 
 acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoObjAclSet, recursive is <*recursive>, access level is <*accessLevel>, other name is <*otherName>, object path is <*objPath>, actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoObjAclSet, recursive is <*recursive>, access level is <*accessLevel>, other name is <*otherName>, object path is <*objPath>, actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	fail;
@@ -129,8 +129,8 @@ acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 
 acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoObjMetaSet, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoObjMetaSet, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	if (*objType == "-u") {
@@ -151,8 +151,8 @@ acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
 acPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoObjMetaAdd, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoObjMetaAdd, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	if (*objType == "-u") {
@@ -171,8 +171,8 @@ acPreSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
 acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
 	cut;
-	writeLine("serverLog", "In acPreSudoObjMetaRemove, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient>");
-	uuGetUserType($userNameClient, *userType);
+	writeLine("serverLog", "In acPreSudoObjMetaRemove, objname is <*objName>, objType is <*objType>, attribute is <*attribute>, value is <*value>, unit is <*unit> actor is <$userNameClient#$rodsZoneClient>");
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
 	if (*userType == "rodsadmin") { succeed; }
 
 	if (*objType == "-u") {
@@ -197,7 +197,7 @@ acPostSudoUserAdd(*userName, *initialAttr, *initialValue, *initialUnit, *policyK
 acPostSudoUserRemove(*userName, *policyKv) { }
 
 acPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
-	writeLine("serverLog", "In acPostSudoGroupAdd, group is <*groupName>, actor is <$userNameClient>");
+	writeLine("serverLog", "In acPostSudoGroupAdd, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
 	# Note: These should not fail.
 	errorcode(msiSudoGroupMemberAdd(*groupName, $userNameClient, ""));
 	errorcode(msiSudoObjMetaSet(*groupName, "-u", "category",      *policyKv."category",    "", ""));
