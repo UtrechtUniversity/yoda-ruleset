@@ -19,7 +19,7 @@ uuIiGetGroupPrefix(*grpPrefix) {
 # 								the group prefix
 uuIiGetIntakePrefix(*intakePrefix) {
 	uuIiGetGroupPrefix(*grp);
-	*intakePrefix = *grp ++ "project-"
+	*intakePrefix = *grp
 }
 
 # \brief uuIiGetVaultPrefix 	Get prefix for vault collection
@@ -28,7 +28,7 @@ uuIiGetIntakePrefix(*intakePrefix) {
 # 								the group prefix
 uuIiGetVaultPrefix(*vaultPrefix) {
 	uuIiGetGroupPrefix(*grp);
-	*vaultPrefix = *grp ++ "vault-";
+	*vaultPrefix = "vault-";
 }
 
 # \brief uuIiGetMetadataPrefix 	Get prefix for metadata which the portal uses
