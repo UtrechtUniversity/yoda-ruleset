@@ -49,7 +49,7 @@ uuIiGetMetadataPrefix(*metadataPrefix) {
 # \param[out] *level 			The depth of the datapackage counted from
 # 								anything below /<zone>/home/<level1>/<level2>...
 uuIiIntakeLevel(*level) {
-	*level = 3;
+	*level = 2;
 }
 
 # \breif uuIiVersionPrefix 		Get the prefix used for versions (on top
