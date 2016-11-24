@@ -58,7 +58,7 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 # \param[in,out] kvp	key-value-pair to add the metadata to
 uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 	*ContInxOld = 1;
-	msiMakeGenQuery("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "DATA_ID = '*data_id'", *GenQInp);
+	msiMakeGenQuery("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_ID = '*coll_id'", *GenQInp);
 	if (*prefix != "") {
 		#| writeLine("stdout", "prefix is *prefix");
 		msiAddConditionToGenQuery("META_COLL_ATTR_NAME", " like ", "'*prefix%%'", *GenQInp);
