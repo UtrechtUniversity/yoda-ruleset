@@ -29,16 +29,13 @@ uuCollectionExists(*collectionname) {
 # \brief uuObjectMetadataKvp return a key-value-pair of metadata associated with a dataobject
 # \param[in]  data_id	Unique DataObject ID. Used because it is Unique
 # \param[in]  prefix	Only include metadata with this prefix
-# \param[out] kvp	key-value-pair of the metadata found
+# \param[in,out] kvp	key-value-pair to add the metadata to
 uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
-	# initialize a new empty KeyValPair
-	msiString2KeyValPair("", *kvp);
-
 	*ContInxOld = 1;
 	msiMakeGenQuery("META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_ID = '*data_id'", *GenQInp);
 	if (*prefix != "") {
 		writeLine("stdout", "prefix is *prefix");
-		msiAddConditionToGenQuery("META_DATA_ATTR_NAME", " like ", "'*prefix%'", *GenQInp);
+		msiAddConditionToGenQuery("META_DATA_ATTR_NAME", " like ", "'*prefix%%'", *GenQInp);
 	}
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
