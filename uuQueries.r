@@ -27,6 +27,7 @@ uuCollectionExists(*collectionname) {
 }
 
 # \brief uuObjectMetadataKvp return a key-value-pair of metadata associated with a dataobject
+#				If a key is defined multiple times, the last found will be returned
 # \param[in]  data_id	Unique DataObject ID. Used because it is Unique
 # \param[in]  prefix	Only include metadata with this prefix
 # \param[in,out] kvp	key-value-pair to add the metadata to

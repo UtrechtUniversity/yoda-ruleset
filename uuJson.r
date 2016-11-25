@@ -6,7 +6,7 @@ uuKvpList2JSON(*kvpList, *json_str, *size) {
 	*json_str = "[]";
 	*size = 0;
 	*listsize = size(*kvpList);
-	writeLine("stdout", *listsize);
+	#| writeLine("stdout", *listsize);
 
 	foreach(*kvp in *kvpList) {	
 		*json_obj = "";	
