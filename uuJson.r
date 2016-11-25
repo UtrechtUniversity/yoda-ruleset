@@ -1,4 +1,4 @@
-# \brief uuKvList2JSON convert a list of keyvalue objects into JSON string
+# \brief uuKvList2JSON convert a list of key-value-pair objects into a JSON string
 # \param[in] kvpList	list of key-value-pairs to convert to JSON
 # \param[out] json_str	String containing JSON
 # \param[out] size	Number of JSON objects in JSON array
