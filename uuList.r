@@ -84,3 +84,14 @@ uuJoin(*delimiter, *list, *str) {
 		}
 	}
 }
+
+# \brief Return a reversed list
+# \param[in] list to reverse
+# \returnvalue reversed list
+uuListReverse(*lst) {
+	*newlst = list();
+	foreach(*el in *lst){
+		*newlst = cons(*el, *newlst);
+	}
+	*newlst;
+}
