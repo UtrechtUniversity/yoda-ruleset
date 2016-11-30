@@ -36,7 +36,7 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 	msiMakeGenQuery("META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_ID = '*data_id'", *GenQInp);
 	if (*prefix != "") {
 		#| writeLine("stdout", "prefix is *prefix");
-		msiAddConditionToGenQuery("META_DATA_ATTR_NAME", " like ", "'*prefix%%'", *GenQInp);
+		msiAddConditionToGenQuery("META_DATA_ATTR_NAME", " like ", "*prefix%%", *GenQInp);
 	}
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
@@ -62,7 +62,7 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 	msiMakeGenQuery("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_ID = '*coll_id'", *GenQInp);
 	if (*prefix != "") {
 		#| writeLine("stdout", "prefix is *prefix");
-		msiAddConditionToGenQuery("META_COLL_ATTR_NAME", " like ", "'*prefix%%'", *GenQInp);
+		msiAddConditionToGenQuery("META_COLL_ATTR_NAME", " like ", "*prefix%%", *GenQInp);
 	}
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
