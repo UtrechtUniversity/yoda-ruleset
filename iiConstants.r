@@ -60,3 +60,13 @@ uuIiVersionKey(*versionKey, *dependsKey) {
 	*versionKey = *prfx ++ "version";
 	*dependsKey = *prfx ++ "depends_on";
 }
+
+# \brief constants		Use constants for constants
+# \author Paul Frederiks
+# \constant IIMETADATAPREFIX	Prefix for metadata in ilab
+IIMETADATAPREFIX = "ilab_"
+# \constants IIGROUPPREFIX	Prefix for groups in ilab
+IIGROUPPREFIX = "grp-"
+
+# \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
+GENQMAXROWS = 256
