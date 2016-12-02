@@ -4,7 +4,7 @@
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			
 orderclause(*column, *orderby, *ascdesc) = if *column == *orderby then orderdirection(*ascdesc) else ""
-orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER_ASC"
+orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER"
 
 iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
