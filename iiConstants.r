@@ -68,5 +68,9 @@ IIMETADATAPREFIX = "ilab_"
 # \constants IIGROUPPREFIX	Prefix for groups in ilab
 IIGROUPPREFIX = "grp-"
 
+# \constants ORGMETADATAPREFIX Prefix for organisational metadata
+ORGMETADATAPREFIX = "org_"
+
+
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256

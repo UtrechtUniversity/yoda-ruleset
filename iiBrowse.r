@@ -83,7 +83,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 					*kvp."create_time" = *row.COLL_CREATE_TIME;
 					*kvp."modify_time" = *row.COLL_MODIFY_TIME;
 					# Add collection metadata with ilab prefix 	
-					uuCollectionMetadataKvp(*coll_id, IIMETADATAPREFIX, *kvp);
+					uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
 				} else {
 					*name = *row.DATA_NAME;
 					*kvp.basename = *name;
@@ -94,7 +94,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 					*kvp."modify_time" = *row.DATA_MODIFY_TIME;
 					*kvp."irods_type" = "DataObject";
 					# Add Dataobject metadata with ilab prefix
-					uuObjectMetadataKvp(*data_id, IIMETADATAPREFIX, *kvp);
+					uuObjectMetadataKvp(*data_id, ORGMETADATAPREFIX, *kvp);
 				}
 				#! writeLine("stdout", *kvp);
 				*kvpList = cons(*kvp, *kvpList);
@@ -161,15 +161,21 @@ iiCollectionDetails(*path, *result) {
 		*coll_id = *row.COLL_ID;
 		*kvp.id = *coll_id;
 		*kvp."irods_type" = "Collection";
-		*kvp."create_time" = *row.COLL_CREATE_TIME;
-		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
-		# Add collection metadata with ilab prefix 	
-		uuCollectionMetadataKvp(*coll_id, IIMETADATAPREFIX, *kvp);
+		*kvp."coll_create_time" = *row.COLL_CREATE_TIME;
+		*kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
 	}
-	msi_json_objops(*result, *kvp, "set");
+	iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
+	*kvp.dircount = *dircount;
+	*kvp.totalSize = *totalSize;
+	*kvp.filecount = *filecount;
+	*kvp.content_modify_time = *modified;
+	uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+
+	uuKvp2JSON(*kvp, *json_str);
+	*result = *json_str;
 }
 
-iiSetCollectionType(*path, *ilabtype) {
-	msiString2KeyValPair("ilab_type=*ilabtype", *kvp);
+iiSetCollectionType(*path, *orgtype) {
+	msiString2KeyValPair("org_type=*orgtype", *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *path, "-C");
 }
