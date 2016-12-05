@@ -131,7 +131,7 @@ acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
 	   uuIiGetMetadataPrefix(*prfx);
 	   *startAllowed = *AName not like "*prfx\*";
 	   uuIiVersionKey(*versionKey, *dependsKey);
-	   uuYcIsAdminUser(*isAdminUser);
+	   uuIiIsAdminUser(*isAdminUser);
 	   if(!(*allowed || *startAllowed) || (
 			 !*isAdminUser && (
 				    (*AName == *versionKey && *AValue != "1") || 
@@ -172,9 +172,18 @@ uuIiObjectActionAllowed(*objPath, *allowed) {
 	   }
 	   iiObjectIsSnapshotLocked(*objPath, *isCollection, *snaplocked, *frozen);
 	   if(*snaplocked || *frozen) {
-			 uuYcIsAdminUser(*isAdminUser);
+			 uuIiIsAdminUser(*isAdminUser);
 			 if(!*isAdminUser) {
 				    *allowed = false;
 			 }
 	   }
 }
+
+uuIiIsAdminUser(*isAdminUser) {
+	*isAdminUser = false;
+	if ($userNameClient == 'rods') {
+		*isAdminUser = true;
+	}
+}
+
+

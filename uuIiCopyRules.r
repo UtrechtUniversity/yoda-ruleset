@@ -220,25 +220,21 @@ uuIiDatasetCollectionCopy2Vault(*intakeRoot, *topLevelCollection, *datasetId, *v
 					# NB: keep the dataset in the vault queue so we can retry some other time
 					writeLine("stdout","[*time] ERROR: Ingest failed for *datasetId error = *status");
 					# TODO
-					uuTreeWalk("reverse", *vaultPath, "uuYcVaultWalkRemoveObject", *buffer, *error) ::: writeLine("stdout", "[*time] Failed reversing *vaultPath");
+					uuTreeWalk("reverse", *vaultPath, "iiVaultWalkRemoveObject", *buffer, *error) ::: writeLine("stdout", "[*time] Failed reversing *vaultPath");
 				}
 			}
 		} else {
 			writeLine("stdout","[*time] INFO: version already exists in vault: *datasetId");
 			# duplicate dataset, signal error and throw out of vault queue
 			*message = "Duplicate dataset, version already exists in vault";
-			#uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 			iiDatasetSnapshotMelt(*topLevelCollection, *status);
 			iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 
-			# uuYcDatasetMelt(*topLevelCollection, *datasetId, *status);
-			# uuYcDatasetUnlock(*topLevelCollection, *datasetId, *status);
 			*status = 1; # duplicate dataset version error
 		}
 	} else {
 		writeLine("stdout", "[*time] INFO: Vault root *vaultRoot does not exist. Snapshot failed");
 		*message = "Vault root *vaultRoot does not exist.";
-		#uuYcDatasetErrorAdd(*intakeRoot, *datasetId,*message);
 		iiDatasetSnapshotMelt(*topLevelCollection, *status);
 		iiDatasetSnapshotUnlock(*topLevelCollection, *status);
 		*status = 1; # duplicate dataset version error
@@ -487,3 +483,14 @@ uuIiGetVaultrootFromIntake(*intakeRoot, *vaultRoot) {
             *vaultRoot = false;
     }
 }
+
+# copied from uuYcVaultWalkRemoveObject
+iiVaultWalkRemoveObject(*itemParent, *itemName, *itemIsCollection, *buffer, *status) {
+#	writeLine("serverLog", "...removing *itemParent/*itemName");
+	if (*itemIsCollection) {
+		msiRmColl("*itemParent/*itemName", "forceFlag=", *status);
+	} else {
+		msiDataObjUnlink("objPath=*itemParent/*itemName++++forceFlag=", *status);
+	}
+}
+
