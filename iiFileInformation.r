@@ -3,6 +3,7 @@
 #			Functions in this file extract statistics from files
 #			and collections
 # \author Jan de Mooij
+# \author Paul Frederiks
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 #
@@ -29,7 +30,6 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *totalSize = "0";
     *data_modified = "0";
     *coll_modified = "0";
-    *meta_coll_modified = "0";
 
     msiMakeGenQuery("sum(DATA_SIZE), count(DATA_ID), max(DATA_MODIFY_TIME)", "COLL_NAME like '*path%'", *GenQInp);
     msiExecGenQuery(*GenQInp, *GenQOut);
@@ -40,19 +40,17 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
         break;
     }
 
-    msiMakeGenQuery("count(COLL_ID), max(COLL_MODIFY_TIME), max(META_COLL_MODIFY_TIME)", "COLL_NAME like '*path%'", *GenQInp2);
+    msiMakeGenQuery("count(COLL_ID), max(COLL_MODIFY_TIME)", "COLL_NAME like '*path%'", *GenQInp2);
     msiExecGenQuery(*GenQInp2, *GenQOut2);
     foreach(*GenQOut2) {
         msiGetValByKey(*GenQOut2, "COLL_ID", *dircount);
         msiGetValByKey(*GenQOut2, "COLL_MODIFY_TIME", *coll_modified);
-        msiGetValByKey(*GenQOut2, "META_COLL_MODIFY_TIME", *meta_coll_modified);
         break;
     }
 
     *data_modified = int(*data_modified);
     *coll_modified = int(*coll_modified);
-    *meta_coll_modified = int(*meta_coll_modified);
-    *modified = str(max(*data_modified, *coll_modified, *meta_coll_modified));
+    *modified = str(max(*data_modified, *coll_modified));
 }
 
 
