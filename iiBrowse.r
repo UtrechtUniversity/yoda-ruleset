@@ -4,7 +4,7 @@
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			
 orderclause(*column, *orderby, *ascdesc) = if *column == *orderby then orderdirection(*ascdesc) else ""
-orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER"
+orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER_ASC"
 
 iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
@@ -146,6 +146,27 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 	*kvpList = cons(*summary, *kvpList);
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
+}
+
+
+# \ brief iiCollectionDetails return a json object containing the details of a collection
+iiCollectionDetails(*path, *result) {
+	*result = "";
+	msiString2KeyValPair("", *kvp);
+
+	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
+		*name =	*row.COLL_NAME;
+		*kvp."path" = *name;
+		*kvp.basename = triml(*name, *path);
+		*coll_id = *row.COLL_ID;
+		*kvp.id = *coll_id;
+		*kvp."irods_type" = "Collection";
+		*kvp."create_time" = *row.COLL_CREATE_TIME;
+		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
+		# Add collection metadata with ilab prefix 	
+		uuCollectionMetadataKvp(*coll_id, IIMETADATAPREFIX, *kvp);
+	}
+	msi_json_objops(*result, *kvp, "set");
 }
 
 iiSetCollectionType(*path, *ilabtype) {
