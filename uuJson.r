@@ -14,3 +14,11 @@ uuKvpList2JSON(*kvpList, *json_str, *size) {
         	msi_json_arrayops(*json_str, *json_obj, "add", *size);
 	}
 }
+
+# \brief uuKvp2JSON  convert a key-value-pair object into a JSON string
+# \param[in] kvp  a key-value-pair object
+# \param[out] json_str string containing JSON result
+uuKvp2JSON(*kvp, *json_str) {
+	*json_str = "";
+	msi_json_objops(*json_str, *kvp, "set");
+}
