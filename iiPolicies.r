@@ -179,9 +179,12 @@ uuIiObjectActionAllowed(*objPath, *allowed) {
 	   }
 }
 
+# \brief uuIiIsAdminUser Check if current user is of type rodsadmin
+# \param[out] isAdminUser	 true if user is rodsadmin else false
+
 uuIiIsAdminUser(*isAdminUser) {
 	*isAdminUser = false;
-	if ($userNameClient == 'rods') {
+	foreach(*row in SELECT USER_TYPE WHERE USER_NAME = '$userNameClient' AND USER_TYPE = 'rodsadmin') {
 		*isAdminUser = true;
 	}
 }
