@@ -149,8 +149,18 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 }
 
 
-# \ brief iiCollectionDetails return a json object containing the details of a collection
+# \brief iiCollectionDetails return a json object containing the details of a collection
+# \param[in] path	path of collection (COLL_NAME)
+# \param[out] result	JSON object containing Details of the Collection
 iiCollectionDetails(*path, *result) {
+
+	# First check if path exists and fail if not
+	if (!uuCollectionExists(*path)) {
+		# class USER_INPUT_PATH_ERR(UserInputException):
+		# code = -317000
+		fail(-317000);
+	}
+
 	*result = "";
 	msiString2KeyValPair("", *kvp);
 
