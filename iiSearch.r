@@ -59,9 +59,10 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 				if (*iscollection) {
 					*name =	*row.COLL_NAME;
 					*kvp."path" = *name;
-					uuChopPath(*name, *parent, *basename);
-					*kvp.basename = *basename;
+					*parent = *row.COLL_PARENT_NAME;
 					*kvp.parent = *parent;
+					*basename = triml(*name, *parent ++ "/");
+					*kvp.basename = *basename;
 					*coll_id = *row.COLL_ID;
 					*kvp.id = *coll_id;
 					*kvp."irods_type" = "Collection";
