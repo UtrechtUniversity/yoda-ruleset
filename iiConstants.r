@@ -71,6 +71,8 @@ IIGROUPPREFIX = "grp-"
 # \constants ORGMETADATAPREFIX Prefix for organisational metadata
 ORGMETADATAPREFIX = "org_"
 
-
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
+
+# \constant DPTXTNAME	Name of text file that marks datapackages  
+DPTXTNAME = ".yoda-datapackage.txt"

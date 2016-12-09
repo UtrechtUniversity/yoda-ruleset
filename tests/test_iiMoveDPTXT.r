@@ -1,4 +1,13 @@
 testMoveDPTXT {
+	if (*testPath == "") {
+		*testPath = "/" ++ $rodsZoneClient ++ "/home/grp-test/mvtest";
+	}
+	uuChopPath(*testPath, *parent, *basename);
+
+	if (!uuCollectionExists(*parent)) {
+		failmsg(-317000, "*parent does not exist or is not a collection or is hidden from current user");
+	}
+
 	*err = errorcode(msiCollCreate(*testPath, 0, *status));
 	if (*err < 0) {
 		writeLine("stdout", "Failed to create *testPath. errorcode=*err");
@@ -47,8 +56,10 @@ testMoveDPTXT {
 	iiGetCollectionType(*dst, *orgtype);
 	writeLine("stdout","*dst is now a *orgtype");
 	*src_obj = *src ++ "/" ++ DPTXTNAME;
-	msiRmColl(*testPath, "forceFlag=", *status);
+	if (bool(*cleanup)) {
+		msiRmColl(*testPath, "forceFlag=", *status);
+	}
 }
 
-INPUT *testPath="/nluu1paul/home/grp-test/mvtest"
+INPUT *testPath="", *cleanup=1
 OUTPUT ruleExecOut
