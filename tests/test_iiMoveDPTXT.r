@@ -23,7 +23,7 @@ testMoveDPTXT {
 	}
 	iiGetCollectionType(*src, *orgtype);
 	writeLine("stdout", "*src is now a *orgtype");
-	iiCreateDataPackage(*src, *status);
+	iiCreateDatapackage(*src, *status);
 	writeLine("stdout", DPTXTNAME ++ " created in *src");
 	iiGetCollectionType(*src, *orgtype);
 	writeLine("stdout", "*src is now: *orgtype");

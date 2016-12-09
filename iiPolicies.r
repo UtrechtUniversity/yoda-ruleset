@@ -193,15 +193,11 @@ uuIiIsAdminUser(*isAdminUser) {
 # \brief pep_resource_modified_post  Policy to set the datapackage flag in case a DPTXTNAME file appears. This dynamic PEP was chosen because it works the same no matter if the file is created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) {
-			writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		if ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-			writeLine("serverLog", "A datapackage is created.");
-			uuChopPath($KVPairs.logical_path, *parent, *basename);	
-			iiSetCollectionType(*parent, "Datapackage");
-		} else {
-			writeLine("serverLog", "pep_resource_modified_post: does not concern a .yoda-datapackage.txt inside user visible space.");
-	        }
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+#		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		uuChopPath($KVPairs.logical_path, *parent, *basename);	
+		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Promoting to Datapackage");
+		iiSetCollectionType(*parent, "Datapackage");
 	}
 }
 
@@ -214,7 +210,7 @@ pep_resource_rename_post(*out) {
         # This rule only needs to handle the degradation of the Datapackage to a folder when it's moved or renamed.
 
 	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
-		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		# writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		# the logical_path in $KVPairs is that of the destination
 		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);
 		# The physical_path is that of the source, but includes the path of the vault. If the vault path includes a home folder, we are screwed.
@@ -234,6 +230,7 @@ pep_resource_rename_post(*out) {
 		uuJoin("/", *src_parent_lst, *src_parent);
 		*src_parent = "/" ++ *src_parent;
 		writeLine("serverLog", "pep_resource_rename_post: \*src_parent = *src_parent");
+
 		if (*dest_basename != DPTXTNAME && *src_parent == *dest_parent) {
 			writeLine("serverLog", "pep_resource_rename_post: .yoda-datapackage.txt was renamed to *dest_basename. *src_parent loses datapackage flag.");
 			iiSetCollectionType(*parent, "Folder");
@@ -252,8 +249,15 @@ pep_resource_rename_post(*out) {
 # \brief pep_resource_unregistered_post	Policy to act upon the removal of a DPTXTNAME file.
 # \param[in,out] out 	This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_unregistered_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) {
-			writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		uuChopPath($KVPairs.logical_path, *parent, *basename);
+		if (uuCollectionExists(*parent)) {
+			writeLine("serverLog", "pep_resource_unregistered_post: Demoting *parent to Folder after removal of *basename");
+			iiSetCollectionType(*parent, "Folder");
+		} else {
+			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
+		}			
 	}
 }
 

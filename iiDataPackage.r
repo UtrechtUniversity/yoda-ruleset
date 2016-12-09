@@ -4,13 +4,18 @@
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 
-# \brief iiCreatePackage	write a marker file to path. Policy rules should handle rest
-# \param[in] path	path of Datapackage
+# \brief iiCreateDataPackage	write a marker file to path. Policy rules should handle rest
+# \param[in] path	path of Folder within a resource team grp-
 # \param[out] status	status of the DPTXTNAME copy action
-iiCreateDataPackage(*path, *status) {
+iiCreateDatapackage(*path, *status) {
 
-	if (!uuCollectionExists(*path)) {
-		fail(-30100);
+	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
+		if (!uuCollectionExists(*path)) {
+			# *path does not exist or is not a collection
+			fail(-30100);
+		}
+	} else {
+		failmsg(-31700, "iiCreateDatapackage: Only call this rule for Folders in the working space of a Research team." );
 	}
 
 	*dptxt = *path ++ '/' ++ DPTXTNAME;
@@ -31,6 +36,31 @@ iiCreateDataPackage(*path, *status) {
 		}
 	}
 }
+
+# \brief iiDemoteDatapackage  Remove DPTXTNAME from Datapackage to demote it to a Folder
+# \param[in] path	path of Datapackage
+# \param[out] status 	Status of remove action
+iiDemoteDatapackage (*path, *status) {
+
+	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
+		if (!uuCollectionExists(*path)) {
+			# *path does not exist or is not a collection
+			fail(-30100);
+		}
+	} else {
+		# Only call this rule for Folders in the working space of a Research team.
+		failmsg(-31700, "iiDemoteDatapackage: Only call this rule for Folders in the working space of a Research team." );
+	}
+
+	*args = "";
+	msiAddKeyValToMspStr("objPath", *path ++ "/" ++ DPTXTNAME, *args);
+	# Force delete, don't move to trash
+	msiAddKeyValToMspStr("forceFlag", "", *args);
+
+	msiDataObjUnlink(*args, *status);	
+	
+}
+
 
 # \brief iiGetDPtxtPrototype	 Return the location of a DPTXTNAME prototype
 # \param[out] prototype	 path of the prototype
