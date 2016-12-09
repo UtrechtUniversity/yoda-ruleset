@@ -20,6 +20,25 @@ uuListContains(*list, *value, *inList) {
 	}
 }
 
+# \brief Return the index of a value within a list or -1 when not in list
+#
+# \param[in] list
+# \param[in] value
+# \param[out] indexOf
+#
+uuListIndexOf(*list, *value, *indexOf) {
+	*indexOf = 0;
+	foreach (*item in *list) {
+		if (*item == *value) {
+			break;
+		}
+		*indexOf = *indexOf + 1;
+	}
+	if (*indexOf == size(*list)) {
+		*indexOf = -1;
+	}
+}
+
 # \brief Check if an item in list matches a certain regex.
 #
 # \param list
