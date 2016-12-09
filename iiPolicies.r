@@ -182,15 +182,22 @@ uuIiObjectActionAllowed(*objPath, *allowed) {
 
 # \brief uuIiIsAdminUser Check if current user is of type rodsadmin
 # \param[out] isAdminUser	 true if user is rodsadmin else false
-
 uuIiIsAdminUser(*isAdminUser) {
+	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
+	if (*userType == "rodsadmin") {
+		*isAdminUser = true;
+	} else {
+		*isAdminUser = false;
+	}
 	*isAdminUser = false;
 	foreach(*row in SELECT USER_TYPE WHERE USER_NAME = '$userNameClient' AND USER_TYPE = 'rodsadmin') {
 		*isAdminUser = true;
 	}
 }
 
-# \brief pep_resource_modified_post  Policy to set the datapackage flag in case a DPTXTNAME file appears. This dynamic PEP was chosen because it works the same no matter if the file is created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
+# \brief pep_resource_modified_post  	Policy to set the datapackage flag in case a DPTXTNAME file appears. This
+#					dynamic PEP was chosen because it works the same no matter if the file is
+#					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
 	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
@@ -202,7 +209,7 @@ pep_resource_modified_post(*out) {
 }
 
 # \brief pep_resource_rename_post	This policy is created to support the moving, renaming and trashing of the .yoda-datapackage.txt file
-# \param[in,out] out 	This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
+# \param[in,out] out			This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_rename_post(*out) {
 	# run only at the top of the resource hierarchy and when a DPTXTNAME file is found inside a research group.
 	# Unfortunately the source logical_path is not amongst the available data in $KVPairs. The physical_path does include the old path, but not in a convenient format.
@@ -246,8 +253,8 @@ pep_resource_rename_post(*out) {
 	}
 }
 
-# \brief pep_resource_unregistered_post	Policy to act upon the removal of a DPTXTNAME file.
-# \param[in,out] out 	This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
+# \brief pep_resource_unregistered_post		Policy to act upon the removal of a DPTXTNAME file.
+# \param[in,out] out 				This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_unregistered_post(*out) {
 	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
 		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
@@ -261,7 +268,7 @@ pep_resource_unregistered_post(*out) {
 	}
 }
 
-# \brief acPostProcForCollCreate 	Policy to mark Collections as Folder or Research Team when created.
+# \brief acPostProcForCollCreate 		Policy to mark Collections as Folder or Research Team when created.
 acPostProcForCollCreate {
 	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+\$") {
 		writeLine("serverLog", "acPostProcForCollCreate: A Research team is created at $collName");
