@@ -69,93 +69,108 @@ iiCreateDPtxtPrototype (*path) {
 #}
 
 pep_resource_rename_post(*out) {
-	# run at the top of the resource hierarchy and when a DPTXTNAME file is found inside a research group.
+	# run only at the top of the resource hierarchy and when a DPTXTNAME file is found inside a research group.
+	# Unfortunately the source logical_path is not amongst the available data in $KVPairs. The physical_path does include the old path, but not in a convenient format.
+	# When a DPTXTNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post. So we don't need to set the Datapackage flag here.
+        # This rule only needs to handle the degradation of the Datapackage to a folder when it's moved or renamed.
+
 	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
 		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		uuChopPath($KVPairs.logical_path, *parent, *basename);
-		if (*basename != DPTXTNAME) {
-			writeLine("serverLog", "pep_resource_rename_post: .yoda-datapackage.txt was renamed to *basename. *parent loses datapackage flag.");
+		# the logical_path in $KVPairs is that of the destination
+		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);
+		# The physical_path is that of the source, but includes the path of the vault. If the vault path includes a home folder, we are screwed.
+		*src_parent = trimr($KVPairs.physical_path, "/");
+		*src_parent_lst = split(*src_parent, "/");
+		# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
+		uuListIndexOf(*src_parent_lst, "home", *idx);
+		if (*idx < 0) {
+			failmsg(-1,"pep_resource_rename_post: Could not find home in $KVPairs.physical_path. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
+		}
+		# skip to the part of the path starting from ../home/..
+		for( *el = 0; *el < *idx; *el = *el + 1){
+			*src_parent_lst = tl(*src_parent_lst);
+		}
+		# Prepend with the zone and rejoin to a src_path
+		*src_parent_lst	= cons($KVPairs.client_user_zone, *src_parent_lst);
+		uuJoin("/", *src_parent_lst, *src_parent);
+		*src_parent = "/" ++ *src_parent;
+		writeLine("serverLog", "pep_resource_rename_post: \*src_parent = *src_parent");
+		if (*dest_basename != DPTXTNAME && *src_parent == *dest_parent) {
+			writeLine("serverLog", "pep_resource_rename_post: .yoda-datapackage.txt was renamed to *dest_basename. *src_parent loses datapackage flag.");
 			iiSetCollectionType(*parent, "Folder");
-		} else {
-			*parent = trimr($KVPairs.logical_path, "/");
-			*parent_lst = split(*parent, "/");
-			if (elem(*src_path, 2) == "trash") {
-				*ori_path_lst = cons(hd(*parent_lst), tl(tl(*parent_lst)));
-				uuJoin("/", *ori_path_lst, *ori_path);
-				iiSetCollectionType(*ori_path, "Folder");
-
+		} else if (*src_parent != *dest_parent) {
+			# The DPTXTNAME file was moved to another folder or trashed. Check if src_parent still exists and degrade it.
+			if (uuCollectionExists(*src_parent)) {
+				iiSetCollectionType(*src_parent, "Folder");
+				writeLine("serverLog", "pep_resource_rename_post: " ++ DPTXTNAME ++ " was moved to *dest_parent. *src_parent became an ordinary Folder.");
 			} else {
-				iiSetCollectionType(*parent, "Datapackage");
-				*ori_path = trimr($KVPairs.physical_path, "/");
-				*ori_path_lst = split(*ori_path, "/");
-				uuListIndexOf(*ori_path_lst, "home", *idx);
-				for( *el = 0; *el < *idx; *el = *el + 1){
-					*ori_path_lst = tl(*ori_path_lst);
-				}
-				*ori_path_lst = cons($KVPairs.client_user_zone, *ori_path_lst);
-				uuJoin("/", *ori_path_lst, *ori_path); 
-				iiSetCollectionType(*ori_path, "Folder");	
+				writeLine("serverLog", "pep_resource_rename_post: " ++ DPTXTNAME ++ " was moved to *dest_parent and *src_parent is gone.");
 			}
 		}
 	}
+}
 
+pep_resource_unregistered_post(*out) {
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) {
+			writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+	}
 }
 
 pep_resource_modified_post(*out) {
 	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) {
-		if ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
 			writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		if ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
 			writeLine("serverLog", "A datapackage is created.");
 			uuChopPath($KVPairs.logical_path, *parent, *basename);	
 			iiSetCollectionType(*parent, "Datapackage");
 		} else {
-			writeLine("serverLog", "pep_resource_modified_post: regex failed");
+			writeLine("serverLog", "pep_resource_modified_post: does not concern a .yoda-datapackage.txt inside user visible space.");
 	        }
 	}
 }
 
-pep_resource_modified_post(*out) {
-	writeLine("serverLog", hd(split($KVPairs.resc_hier, ";")));
-	writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-}
+#pep_resource_modified_post(*out) {
+#	writeLine("serverLog", hd(split($KVPairs.resc_hier, ";")));
+#	writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+#}
 
 
-acPostProcForOpen {
-	writeLine("serverLog", "acPostProcForOpen: \$objPath=$objPath, \$writeFlag=$writeFlag");
+#acPostProcForOpen {
+#	writeLine("serverLog", "acPostProcForOpen: \$objPath=$objPath, \$writeFlag=$writeFlag");
 #	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
 #		writeLine("serverLog", "A datapackage is created by $objPath. acPostProcForOpen called");
 #		uuChopPath($objPath, *coll, *obj);	
 #		iiSetCollectionType(*coll, "Datapackage");
 #	}
-}	
+#}	
 
-acPostProcForPut {
-	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
+#acPostProcForPut {
+#	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
 #	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
 #		writeLine("serverLog", "A datapackage is created by $objPath.");
 #		uuChopPath($objPath, *coll, *obj);	
 #		iiSetCollectionType(*coll, "Datapackage");
 #	}
-}
+#}
 
-acPostProcForCreate {
-	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
+#acPostProcForCreate {
+#	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
 #	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
 #		writeLine("serverLog", "A datapackage is created by $objPath.");
 #		uuChopPath($objPath, *coll, *obj);	
 #		iiSetCollectionType(*coll, "Datapackage");
 #	}
-}
+#}
 
 
-acTrashPolicy {
-	on ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-		writeLine("serverLog", "A datapackage is losing its marker $objPath. acTrashPolicy called");
+#acTrashPolicy {
+#	on ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
+#		writeLine("serverLog", "A datapackage is losing its marker $objPath. acTrashPolicy called");
 	#	uuChopPath($objPath, *coll, *obj);
 	#	iiSetCollectionType(*coll, "Folder");
 	#	# msiNoTrashCan();
-	}
-}
+#	}
+#}
 
 acCreateUserZoneCollections {
 	writeLine("stdout", "acCreateUserZoneCollections was triggered");

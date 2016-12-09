@@ -189,3 +189,11 @@ iiSetCollectionType(*path, *orgtype) {
 	msiString2KeyValPair("org_type=*orgtype", *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *path, "-C");
 }
+
+iiGetCollectionType(*path, *orgtype) {
+	*orgtype = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = "*path" AND META_COLL_ATTR_NAME = "org_type") {
+		*orgtype = *row.META_COLL_ATTR_VALUE;
+	}
+}
+
