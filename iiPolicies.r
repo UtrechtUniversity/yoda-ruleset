@@ -38,34 +38,35 @@ acPreprocForCollCreate {
 # This policy is fired after a collection is created.
 # The policy checks if the new collection is on the datapackage level, 
 # i.e. if it should be initialized with the version number 0
-acPostProcForCollCreate {
-	   uuIiGetIntakePrefix(*intakePrefix);
-	   *pathStart = "/"++$rodsZoneClient++"/home/"++*intakePrefix;
-	   if($collName like "*pathStart*") {
-			 uuIiIntakeLevel(*level);
-			 uuChop($collName, *head, *tail, *pathStart, true);
-			 *segments = split(*tail, "/");
-			 if(size(*segments) == *level) {
-				    uuIiVersionKey(*versionKey, *dependsKey);
-				    *alreadyHasVersion = false;
-				    foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE
-						  COLL_NAME = "$collName" AND 
-						  META_COLL_ATTR_NAME = *versionKey) {
-						  *alreadyHasVersion = true;
-						  break;
-				    }
-				    writeLine("serverLog", "Already has version is *alreadyHasVersion");
-				    if(!*alreadyHasVersion) {
-						  writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
-						  msiAddKeyVal(*kv, *versionKey, str(1));
-						  *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
-						  if(*err != 0) {
-								writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
-						  }
-				    }
-			 }
-	   }
-}
+#acPostProcForCollCreate {
+#	   writeLine("serverLog", "Jan's policy is getriggerd");
+#	   uuIiGetIntakePrefix(*intakePrefix);
+#	   *pathStart = "/"++$rodsZoneClient++"/home/"++*intakePrefix;
+#	   if($collName like "*pathStart*") {
+#			 uuIiIntakeLevel(*level);
+#			 uuChop($collName, *head, *tail, *pathStart, true);
+#			 *segments = split(*tail, "/");
+#			 if(size(*segments) == *level) {
+#				    uuIiVersionKey(*versionKey, *dependsKey);
+#				    *alreadyHasVersion = false;
+#				    foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE
+#						  COLL_NAME = "$collName" AND 
+#						  META_COLL_ATTR_NAME = *versionKey) {
+#						  *alreadyHasVersion = true;
+#						  break;
+#				    }
+#				    writeLine("serverLog", "Already has version is *alreadyHasVersion");
+#				    if(!*alreadyHasVersion) {
+#						  writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
+#						  msiAddKeyVal(*kv, *versionKey, str(1));
+#						  *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
+#						  if(*err != 0) {
+#								writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
+#						  }
+#				    }
+#			 }
+#	   }
+#}
 
 # This policy is fired before a data object is renamed or moved
 # The policy disallows renaming or moving the data object, if the
@@ -126,24 +127,24 @@ acPreprocForDataObjOpen {
 # This policy is fired if the AVU meta data (AVU metadata is the non-system metadata)
 # is modified in any way except for copying. The modification of meta data is prohibited
 # if the object the meta data is modified on is locked
-acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
-	   uuIiObjectActionAllowed(*ItemName, *allowed);
-	   uuIiGetMetadataPrefix(*prfx);
-	   *startAllowed = *AName not like "*prfx\*";
-	   uuIiVersionKey(*versionKey, *dependsKey);
-	   uuIiIsAdminUser(*isAdminUser);
-	   if(!(*allowed || *startAllowed) || (
-			 !*isAdminUser && (
-				    (*AName == *versionKey && *AValue != "1") || 
-				    *AName == *dependsKey || 
-				    *AName == "dataset_snapshot_createdAtBy"
-			 )
-	   )) {
-			 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
-			 cut;
-			 msiOprDisallowed;
-	   }
-}
+#acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
+#	   uuIiObjectActionAllowed(*ItemName, *allowed);
+#	   uuIiGetMetadataPrefix(*prfx);
+#	   *startAllowed = *AName not like "*prfx\*";
+#	   uuIiVersionKey(*versionKey, *dependsKey);
+#	   uuIiIsAdminUser(*isAdminUser);
+#	   if(!(*allowed || *startAllowed) || (
+#			 !*isAdminUser && (
+#				    (*AName == *versionKey && *AValue != "1") || 
+#				    *AName == *dependsKey || 
+#				    *AName == "dataset_snapshot_createdAtBy"
+#			 )
+#	   )) {
+#			 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
+#			 cut;
+#			 msiOprDisallowed;
+#	   }
+#}
 
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
