@@ -10,7 +10,11 @@ testCreateDataPackage {
 
 	*err = errorcode(msiCollCreate(*testPath, 0, *status));
 	if (*err < 0) {
-		writeLine("stdout", "Failed to create *testPath. errorcode=*err");
+		if (*err == -809000) {
+			writeLine("stdout", "*testPath already exists. Reusing..");
+		} else {
+			writeLine("stdout", "Failed to create *testPath. errorcode=*err");
+		}
 	} else {
 		writeLine("stdout", "Created *testPath");
 	}

@@ -74,7 +74,7 @@ iiCreateDPtxtPrototype (*path) {
 	msiDataObjCreate(*path, *options, *fd);
 
 	*msg = "This file marks this folder as a datapackage.\nRemoving it, will remove the datapackage status.\nMoving this directory with this file will set the datapackage status in the new location.\nThe contents of this file is of no consequence.\n"
-	msiStrlen(*msg, *len);	
+	*len = strlen(*msg);	
 	msiDataObjWrite(*fd, *msg, *len);
 	msiDataObjClose(*fd,*status);
 }
