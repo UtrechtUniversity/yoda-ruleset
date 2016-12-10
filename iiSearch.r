@@ -24,13 +24,11 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(makelikecondition("COLL_NAME", *searchstring));
-		*totalquery = SELECT count(COLL_ID) WHERE COLL_PARENT_NAME like "%*startpath%" AND COLL_NAME like "%*searchstring%";
-		iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
+		iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
 		*conditions = list(makelikecondition("DATA_NAME", *searchstring));
-		*totalquery = SELECT count(DATA_ID) WHERE COLL_NAME like "%*startpath%" AND DATA_NAME like "%*searchstring%";
-		iiSearchDataObjectsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
+		iiSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
 	}
 
 	uuKvpList2JSON(*kvpList, *json_str, *size);
@@ -53,8 +51,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(makelikecondition("META_COLL_ATTR_VALUE", *searchstring));
 		*conditions = cons(condition("META_COLL_ATTR_NAME", "like", *likeprefix), *conditions);
-		*totalquery = SELECT count(COLL_ID) WHERE COLL_PARENT_NAME like '%*startpath%' AND META_COLL_ATTR_VALUE like "%*searchstring%";
-		iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+		iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
 		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
 			*kvp = elem(*kvpList, *i);
@@ -72,8 +69,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
 		*conditions = list(makelikecondition("META_DATA_ATTR_VALUE", *searchstring));
 		*conditions = cons(condition("META_COLL_ATTR_NAME", "like", USERMETADATAPREFIX ++ "%%"), *conditions);
-		*totalquery = SELECT count(DATA_ID) WHERE COLL_NAME like "%*startpath%" AND META_DATA_ATTR_VALUE like "%*searchstring%";
-		iiSearchDataObjectsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+		iiSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
 		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
 			*kvp = elem(*kvpList, *i);
@@ -109,8 +105,7 @@ iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, 
 	*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 	*conditions = list(makelikecondition("META_COLL_ATTR_VALUE", *searchstring));
 	*conditions = cons(condition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
-	*totalquery = SELECT count(COLL_ID) WHERE COLL_PARENT_NAME like '%*startpath%' AND META_COLL_ATTR_NAME = *attr AND META_COLL_ATTR_VALUE like "%*searchstring%";
-	iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
+	iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
 
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
@@ -121,14 +116,13 @@ iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, 
 # \brief iiSearchCollectionsTemplate	Every Search only differs on a few key points. This is a Template for a search in Collections.
 # \param[in] fields		A list of fields to include in the results
 # \param[in] conditions		A list of search condition. Should be of datatype condition
-# \param[in] totalquery		A query giving the total number of rows returned 	
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] kvpList		List of results in the form of a key-value-pair list
-iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
+iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
 	
 	if (*startpath == "") {
 		*startpath = "/" ++ $rodsZoneClient ++ "/home";
@@ -214,7 +208,20 @@ iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orde
 		*kvpList = uuListReverse(*kvpList);	
 		if (*ContInxNew > 0) {
 			# Query for total number of rows to include in summary
-			foreach(*row in *totalquery) { *total = *row.COLL_ID; }
+			# Do a count on DATA_ID with the same conditions as the main query
+			msiAddSelectFieldToGenQuery("COLL_ID", "COUNT", *TotalQInp);
+			msiAddConditionToGenQuery("COLL_PARENT_NAME", "like", "%%*startpath%%", *TotalQInp);
+
+			foreach(*condition in *conditions) {
+				# deconstruct condition into its parts
+				condition(*column, *comparison, *expression) =  *condition;
+				msiAddConditionToGenQuery(*column, *comparison, *expression, *TotalQInp);
+			}
+
+			msiExecGenQuery(*TotalQInp, *TotalQOut);
+
+			foreach(*row in *TotalQOut) { *total = *row.COLL_ID; }
+
 			msiAddKeyVal(*summary, "total", *total);
 			# there are *more rows after the offset and returned rows point
 			*more = int(*total) - *offset - *count;
@@ -238,14 +245,13 @@ iiSearchCollectionsTemplate(*fields, *conditions, *totalquery, *startpath, *orde
 # \brief iiSearchDataObjectsTemplate	Every Search only differs on a few key points. This is a Template for a search in DataObjects
 # \param[in] fields		A list of fields to include in the results
 # \param[in] conditions		A list of condition. Each element should be of datatype condition
-# \param[in] totalquery		A query giving the total number of rows returned 	
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] kvpList		List of results in the form of a key-value-pair list
-iiSearchDataObjectsTemplate(*fields, *conditions, *totalquery, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
+iiSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
 	
 	if (*startpath == "") {
 		*startpath = "/" ++ $rodsZoneClient ++ "/home";
@@ -329,7 +335,19 @@ iiSearchDataObjectsTemplate(*fields, *conditions, *totalquery, *startpath, *orde
 		*kvpList = uuListReverse(*kvpList);	
 		if (*ContInxNew > 0) {
 			# Query for total number of rows to include in summary
-			foreach(*row in *totalquery) { *total = *row.DATA_ID; }
+			# Do a count on DATA_ID with the same conditions as the main query
+			msiAddSelectFieldToGenQuery("DATA_ID", "COUNT", *TotalQInp);
+			msiAddConditionToGenQuery("COLL_NAME", "like", "%%*startpath%%", *TotalQInp);
+
+			foreach(*condition in *conditions) {
+				# deconstruct condition into its parts
+				condition(*column, *comparison, *expression) =  *condition;
+				msiAddConditionToGenQuery(*column, *comparison, *expression, *TotalQInp);
+			}
+
+			msiExecGenQuery(*TotalQInp, *TotalQOut);
+
+			foreach(*row in *TotalQOut) { *total = *row.DATA_ID; }
 			msiAddKeyVal(*summary, "total", *total);
 			# there are *more rows after the offset and returned rows point
 			*more = int(*total) - *offset - *count;
