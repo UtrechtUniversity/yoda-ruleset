@@ -56,14 +56,18 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
 			*kvp = elem(*kvpList, *i);
 			*coll_id = *kvp.id;
-			*matches = list();
+			*matches = "[]";
+			*msize = 0;
 			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix AND META_COLL_ATTR_VALUE like "%*searchstring%") {
+				msiString2KeyValPair("", *match);
 				*name = triml(*row.META_COLL_ATTR_NAME, USERMETADATAPREFIX);
 				*val = *row.META_COLL_ATTR_VALUE;
-				*matches = cons("*name: *val", *matches);
+				msiAddKeyVal(*match, *name, *val);
+				*match_json = "";
+				msi_json_objops(*match_json, *match, "set");
+				msi_json_arrayops(*matches, *match_json, "add", *msize);
 			}
-			uuJoin("; ", *matches, *matches_str);
-			*kvp.matches = *matches_str;
+			*kvp.matches = *matches;
 		}	
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
@@ -74,14 +78,18 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
 			*kvp = elem(*kvpList, *i);
 			*data_id = *kvp.id;
-			*matches = list();
+			*matches = "[]";
+			*msize = 0;
 			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix AND META_DATA_ATTR_VALUE like "%*searchstring%") {
+				msiString2KeyValPair("", *match);
 				*name = triml(*row.META_DATA_ATTR_NAME, USERMETADATAPREFIX);
 				*val = *row.META_DATA_ATTR_VALUE;
-				*matches = cons("*name: *val", *matches);
+				msiAddKeyVal(*match, *name, *val);
+				*match_json = "";
+				msi_json_objops(*match_json, *match, "set");
+				msi_json_arrayops(*matches, *match_json, "add", *msize);
 			}
-			uuJoin("; ", *matches, *matches_str);
-			*kvp.matches = *matches_str;
+			*kvp.matches = *matches;
 		}	
 
 	}
