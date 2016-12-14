@@ -24,7 +24,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(makelikecondition("COLL_NAME", *searchstring));
-		iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
+		iiSearchCollectionsTemplate(*fields, *condition, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList); 
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
 		*conditions = list(makelikecondition("DATA_NAME", *searchstring));

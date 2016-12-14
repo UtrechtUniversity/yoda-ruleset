@@ -1,6 +1,6 @@
-testCreateDataPackage {
+testCreateDatapackage {
 	if (*testPath == "") {
-		*testPath = "/" ++ $rodsZoneClient ++ "/home/grp-test/testCreateDataPackage";
+		*testPath = "/" ++ $rodsZoneClient ++ "/home/grp-test/testCreateDatapackage";
 	}
 	uuChopPath(*testPath, *parent, *basename);
 
