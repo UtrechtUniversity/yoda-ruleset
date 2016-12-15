@@ -15,7 +15,7 @@ It consists of:
 
 Prerequisite: 
 - [irods-ruleset-uu](https://github.com/UtrechtUniversity/irods-ruleset-uu)
-- [irods-ruleset-youth-cohort](https://github.com/UtrechtUniversity/irods-ruleset-youth-cohort)
+- [MaastrichtUniversity/irods-microservices](https://github.com/MaastrichtUniversity/irods-microservices)
 - Yoda rules require an iRODS 3.3.1+ server release.
 
 INSTALLATION
@@ -30,12 +30,11 @@ INSTALLATION
 
 5) Use the make file to compile and install the rules: ``Make install``
 
-6) Add the generated `rules-ii.re` (as well as the requisite `rules-uu.re` and `rules-yc.re`) to the `server_config.json` the _re_rulebase_set_, above `core` in `/etc/irods/server_config.json`:
+6) Add the generated `rules-ii.re` (as well as the requisite `rules-uu.re`) to the `server_config.json` the _re_rulebase_set_, above `core` in `/etc/irods/server_config.json`:
 
 ```javascript
 "re_rulebase_set": [
     {  "filename":  "rules-ii" },
-    {  "filename":  "rules-yc" },
     {  "filename":  "rules-uu" },
     { "filename": "core"}
 ]
