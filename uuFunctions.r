@@ -14,8 +14,17 @@ uuiscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collect
 data uucondition =
 	| uucondition : string * string * string -> uucondition
 
-# \function uumakelikecondition	Helper function to crete the most used condition
+# \function uumakelikecondition	Helper function to create the most used condition. A searchstring
+#				surrounded by wildcards
 # \param[in] column		The irods column to search
 # \param[in] searchstring	Part of the string to search on.
+# \returnvalue	uucondition	A triple of strings of type uucondition
 uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*searchstring%%")
+
+# \function uumakestartswithcondition	Helper function to create a condition for strings starting
+#					with the searchstring
+# \param[in] column		The irods column to search
+# \param[in] searchstring	Part of the string to search on.
+# \returnvalue uucondition	A triple of strings of type uucondition
+uumakestartswithcondition(*column, *searchstring = uucondition(*column, "like", "*searchstring%%")
 
