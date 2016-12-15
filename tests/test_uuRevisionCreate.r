@@ -15,18 +15,21 @@ testRevisionCreate {
 	*path = *testPath ++ "/revisiontest.txt";	
 	*options = "";
 	*err = errorcode(msiDataObjCreate(*path, *options, *fd));
-        if (*err < 0) {
-		writeLine("stdout", "Failed to create *path. errorcode=*err");
+        if (*err == -312000) {
+		writeLine("stdout", "*path already exists. Opening for write");
 		msiAddKeyValToMspStr("objPath", *path, *options);
-		msiAddKeyValToMspStr("openFlags", "O_WRONLYO_TRUNC", *options);
+		msiAddKeyValToMspStr("openFlags", "O_WRONLY", *options);
 		msiDataObjOpen(*options, *fd);
+		msiDataObjLseek(*fd, 0, "SEEK_END", *status);
+	} else if (*err < 0) {
+		writeLine("stdout", "Failed to create *path. errorcode=*err");
 	} else {
 		writeLine("stdout", "Created *path");
 	}
-
-
-	*msg = "First line of revisions.txt"
-	*len = strlen(*msg);	
+	msiGetIcatTime(*datetime, "human");
+	#msiGetFormattedSystemTime(*datetime, "human", "%%A %%Y-%%m-%%d %%H:%%M:%%S %%Z");
+	*msg = "Line added at *datetime\n";
+	*len = strlen(*msg);
 	msiDataObjWrite(*fd, *msg, *len);
 	msiDataObjClose(*fd,*status);
 

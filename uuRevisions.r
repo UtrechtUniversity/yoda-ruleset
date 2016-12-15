@@ -222,7 +222,7 @@ uuRevisionList2(*originalPath, *orderby, *ascdesc, *limit, *offset, *result) {
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *originalPath), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
-	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath);
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
 	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
@@ -235,7 +235,7 @@ uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *resu
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(makelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
-	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath);
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
 	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
@@ -248,7 +248,7 @@ uuRevisionSearchById(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
-	*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath);
+	*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
 
 	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
