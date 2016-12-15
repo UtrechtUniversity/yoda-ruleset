@@ -26,5 +26,5 @@ uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*s
 # \param[in] column		The irods column to search
 # \param[in] searchstring	Part of the string to search on.
 # \returnvalue uucondition	A triple of strings of type uucondition
-uumakestartswithcondition(*column, *searchstring = uucondition(*column, "like", "*searchstring%%")
+uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like", "*searchstring%%")
 

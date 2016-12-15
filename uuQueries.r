@@ -82,32 +82,19 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 # \brief uuSearchCollectionsTemplate	This is a Template to search for Collections including pagination.
 # \param[in] fields		A list of fields to include in the results
 # \param[in] conditions		A list of search condition. Should be of datatype condition
-# \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] kvpList		List of results in the form of a key-value-pair list
-uuSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
-	
-	if (*startpath == "") {
-		*startpath = "/" ++ $rodsZoneClient ++ "/home";
-	} else {
-		if (!uuCollectionExists(*startpath)) {
-			fail(-317000);
-		}
-	}
+uuSearchCollectionsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList) {
 
-	if (*orderby == "") {*orderby = "COLL_NAME";}
-	
 	*kvpList = list();
 
 	foreach(*field in *fields) {
 		*orderclause =	uuorderclause(*field, *orderby, *ascdesc);
 		msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
 	}
-
-	msiAddConditionToGenQuery("COLL_PARENT_NAME", "like", "%%*startpath%%", *GenQInp);
 
 	foreach(*condition in *conditions) {
 		# deconstruct condition to its parts.
@@ -174,9 +161,8 @@ uuSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc
 		*kvpList = uuListReverse(*kvpList);	
 		if (*ContInxNew > 0) {
 			# Query for total number of rows to include in summary
-			# Do a count on DATA_ID with the same conditions as the main query
+			# Do a count on COLL_ID with the same conditions as the main query
 			msiAddSelectFieldToGenQuery("COLL_ID", "COUNT", *TotalQInp);
-			msiAddConditionToGenQuery("COLL_PARENT_NAME", "like", "%%*startpath%%", *TotalQInp);
 
 			foreach(*condition in *conditions) {
 				# deconstruct condition into its parts
@@ -211,23 +197,12 @@ uuSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc
 # \brief uuSearchDataObjectsTemplate	This is a Template to perform a search in DataObjects including pagination
 # \param[in] fields		A list of fields to include in the results
 # \param[in] conditions		A list of condition. Each element should be of datatype condition
-# \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] kvpList		List of results in the form of a key-value-pair list
-uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList) {
-	
-	if (*startpath == "") {
-		*startpath = "/" ++ $rodsZoneClient ++ "/home";
-	} else {
-		if (!uuCollectionExists(*startpath)) {
-			fail(-317000);
-		}
-	}
-
-	if (*orderby == "") {*orderby = "DATA_NAME";}
+uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList) {
 	
 	*kvpList = list();
 
@@ -235,8 +210,6 @@ uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc
 		*orderclause =	orderclause(*field, *orderby, *ascdesc);
 		msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
 	}
-
-	msiAddConditionToGenQuery("COLL_NAME", "like", "%%*startpath%%", *GenQInp);
 
 	foreach(*condition in *conditions) {
 		# deconstruct condition into its parts
@@ -303,7 +276,6 @@ uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc
 			# Query for total number of rows to include in summary
 			# Do a count on DATA_ID with the same conditions as the main query
 			msiAddSelectFieldToGenQuery("DATA_ID", "COUNT", *TotalQInp);
-			msiAddConditionToGenQuery("COLL_NAME", "like", "%%*startpath%%", *TotalQInp);
 
 			foreach(*condition in *conditions) {
 				# deconstruct condition into its parts

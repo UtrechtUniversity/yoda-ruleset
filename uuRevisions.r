@@ -222,8 +222,9 @@ uuRevisionList2(*originalPath, *orderby, *ascdesc, *limit, *offset, *result) {
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *originalPath), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath);
 
-	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
@@ -234,8 +235,9 @@ uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *resu
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(makelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath);
 
-	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
@@ -246,8 +248,9 @@ uuRevisionSearchById(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+	*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath);
 
-	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuSearchDataObjectsTemplate(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
 	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
