@@ -19,9 +19,9 @@
 # make update  - pull changes from git remote, updates .r files
 # make install - install ruleset (concatenated .r files) into the parent directory
 
-# Input files.
+# Input files. Exclude all test rules in ./tests
 
-RULE_FILES ?= $(shell find . -type f -iname '*.r')
+RULE_FILES ?= $(shell find . -path "./tests" -prune -o -type f -iname '*.r' -print)
 
 # Output files.
 

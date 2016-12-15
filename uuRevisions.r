@@ -1,30 +1,3 @@
-#| testRevisionsRules() {
-#| 	uuRevisionLast(*testPath, *isfound, *revision);
-#| 
-#| 	if (*isfound) {
-#| 		writeLine("stdout", "Last revision was:");
-#| 		writeLine("stdout", *revision);
-#| 		*json_obj="";
-#| 		msi_json_objops(*json_obj, *revision, "set");
-#| 		writeLine("stdout", *json_obj);
-#| 	} else {
-#| 		writeLine("stdout", "No revision found for *testPath");	
-#| 	}
-#| 
-#| 	#! uuRevisionCreate(*testPath, "grp-madebyrods", *status);
-#| 	#| writeLine("stdout", "Status of uuRevisionCreate is *status");
-#| 	uuRevisionList(*testPath, "grp-madebyrods", *revisions);
-#| 	writeLine("stdout", "Found " ++ str(size(*revisions)) ++ " revisions.");
-#| 	uuKvpList2JSON(*revisions, *json_str, *size);
-#| 	writeLine("stdout", "Return JSON object with *size revisions");
-#| 	writeLine("stdout", *json_str);
-#| 	*restoreme = elem(*revisions, 2);
-#| 	*revid = *restoreme.id;
-#| 	writeLine("stdout", "Restoring revision: *revid");
-#| 	uuRevisionRestore(*revid, *status);
-#| 	writeLine("stdout", "Restore ended with status: *status");
-#| }
-
 # \file
 # \brief Revision management
 # \author Paul Frederiks
@@ -37,30 +10,32 @@
 # \param[in] path		path of data object to create a revision for
 # \param[out] id		object id of revision
 # \param[out] status		return failure or success
-uuRevisionCreate(*path, *grp, *status) {
+uuRevisionCreate(*path, *id, *status) {
 	*status = 0
 	#| writeLine("stdout", "Create a revision of a file");
 	#| writeLine("stdout", "Current User: $userNameClient");
 	# Step 1: Check requisites:
 	# - path should return a dataObject
-	uuChopPath(*path, *parent, *baseName);
-	#| writeLine("stdout", "*parent   *baseName");
+	uuChopPath(*path, *parent, *basename);
 	msiGetIcatTime(*timestamp, "unix");
 	#| writeLine("stdout", *timestamp);
-	*revkv."original_path" = *path;
-	*revkv."original_collection_name" = *parent;
-	*revkv."original_data_name" = *baseName;
-	*revkv."revision_created_by_user" = $userNameClient;
+	msiString2KeyValPair("", *revkv);
+	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
+	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_collection_name", *parent);
+	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
+	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "revision_created_by_user", $userNameClient);
 
 	*objectId = 0;
 	*found = false;
-	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_OWNER_NAME WHERE DATA_NAME = *baseName AND COLL_NAME = *parent) {
+	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, USER_NAME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, COLL_OWNER_NAME WHERE DATA_NAME = *basename AND COLL_NAME = *parent) {
 		if (!*found) {
 	#| 		writeLine("stdout", *row);
 			*found = true;
 			*objectId = *row.DATA_ID;
 			*lastModified = *row.DATA_MODIFY_TIME;
 			*dataSize = *row.DATA_SIZE;
+			*collId = *row.COLL_ID;
+			*userName = *row.USER_NAME;
 			*collOwner = *row.COLL_OWNER_NAME;
 			*dataOwner = *row.DATA_OWNER_NAME;
 		} else {
@@ -73,10 +48,12 @@ uuRevisionCreate(*path, *grp, *status) {
 		failmsg(-1, "DataObject was not found or path was collection");
 	} else {
 	#| 	writeLine("stdout", "Found Data object with id: *objectId modified: *lastModified");
-		*revkv."original_coll_owner_name" = *collOwner;
-		*revkv."original_data_owner_name" = *dataOwner;
-		*revkv."original_data_id" = *objectId;
-		*revkv."lastModified" = *lastModified;
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_user_name", *userName);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_owner_name", *collOwner);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *objectId);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "lastModified", *lastModified);
 	}
 	# - Parent collection is not locked or freezed
 
@@ -87,8 +64,7 @@ uuRevisionCreate(*path, *grp, *status) {
 	#| 	writeLine("stdout", "Collection *parent is not locked");
 	}
 
-	# - There is a Collection of the group in /zone/revisions/*grp
-	*revisionStore = "/$rodsZoneClient/revisions/*grp";
+	*revisionStore = "/$rodsZoneClient/revisions/*userName";
 	#| writeLine("stdout", *revisionStore);
 	# - Object is owned by current active group or user
 	# - Object is not larger than 500MiB
@@ -109,10 +85,9 @@ uuRevisionCreate(*path, *grp, *status) {
 	# Step 3: create new data object:
 	# Create a temporary file within in the /zone/revisions store
 	# Collection is /zone/revisions/*grp
-	*tmpFileName = *baseName ++ "_" ++ $userNameClient ++ "_" ++ *timestamp;
+	*tmpFileName = *basename ++ "_" ++ *collId ++ "_" ++ $userNameClient ++ "_" ++ *timestamp;
 	*tmpPath = *revisionStore ++ "/" ++ *tmpFileName;
 	#| writeLine("stdout", *tmpFileName);
-	# Name is "*ori-filename_*requester_*timestamp"
 	# Copy of data
 	msiDataObjChksum(*path, "forceChksum=", *checksum);
 	msiDataObjCopy(*path, *tmpPath, "verifyChksum=", *status);
@@ -210,12 +185,12 @@ uuRevisionLast(*originalPath, *isfound, *revision) {
 
 
 # \brief uuRevisionList list revisions of path
-uuRevisionList(*path, *owner, *revisions) {
+uuRevisionList(*path, *revisions) {
 	#| writeLine("stdout", "List revisions of path");
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_asc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'original_path' AND META_DATA_ATTR_VALUE = *path) {
+	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_asc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
@@ -242,6 +217,42 @@ uuRevisionList(*path, *owner, *revisions) {
 	#	- checksum
 }
 
+uuRevisionList2(*originalPath, *orderby, *ascdesc, *limit, *offset, *result) {
+	*fields = list("COLL_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
+        *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *originalPath), *conditions);	
+	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+
+	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	
+	uuKvpList2JSON(*kvpList, *json_str, *size);
+	*result = *json_str;
+}
+
+uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
+	*fields = list("COLL_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
+        *conditions = cons(makelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
+	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+
+	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	
+	uuKvpList2JSON(*kvpList, *json_str, *size);
+	*result = *json_str;
+}
+
+uuRevisionSearchById(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
+	*fields = list("COLL_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
+        *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	
+	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+
+	uuSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	
+	uuKvpList2JSON(*kvpList, *json_str, *size);
+	*result = *json_str;
+}
+
 uuRevisionVacuum(*status) {
 	writeLine("stdout", "Vacuuming revisions store");
 	# Step 1: Check if store exceeds 50% of total storage available
@@ -253,5 +264,3 @@ uuRevisionVacuum(*status) {
 	# Step 6: If not, repeat process with 90 days treshold (and 60, then 30)
 }
 
-#| INPUT *testPath="/nluu1paul/home/grp-madebyrods/testfile.txt"
-#| OUTPUT ruleExecOut
