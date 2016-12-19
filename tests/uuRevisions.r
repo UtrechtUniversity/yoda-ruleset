@@ -10,12 +10,14 @@
 # \param[in] path		path of data object to create a revision for
 # \param[out] id		object id of revision
 uuRevisionCreate(*path, *id) {
+	*id = "";
 	#| writeLine("stdout", "Create a revision of a file");
 	#| writeLine("stdout", "Current User: $userNameClient");
 	# Step 1: Check requisites:
 	# - path should return a dataObject
 	uuChopPath(*path, *parent, *basename);
-       #| writeLine("stdout", *timestamp);
+	msiGetIcatTime(*timestamp, "unix");
+	#| writeLine("stdout", *timestamp);
 	msiString2KeyValPair("", *revkv);
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
@@ -26,7 +28,7 @@ uuRevisionCreate(*path, *id) {
 	*found = false;
 	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID WHERE DATA_NAME = *basename AND COLL_NAME = *parent) {
 		if (!*found) {
-       #| 		writeLine("stdout", *row);
+	#| 		writeLine("stdout", *row);
 			*found = true;
 			*dataId = *row.DATA_ID;
 			*modifyTime = *row.DATA_MODIFY_TIME;
@@ -59,6 +61,8 @@ uuRevisionCreate(*path, *id) {
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
 
+
+
 	uuLockExists(*parent, *isLocked);
 	if (*isLocked) {
 		failmsg(-818000, "Collection *parent is Locked");
@@ -71,9 +75,8 @@ uuRevisionCreate(*path, *id) {
        	}
 
 	if (*revisionStoreExists) {
-		msiGetIcatTime(*timestamp, "icat");
-		*revFileName = *basename ++ "_" ++ *timestamp ++ $userNameClient;
-		*revPath = *revisionStore ++ "/" ++ *collId ++ "/" ++ *revFileName;
+		*revFileName = *basename ++ "_" ++ *collId ++ "_" ++ $userNameClient ++ "_" ++ *timestamp;
+		*revPath = *revisionStore ++ "/" ++ *revFileName;
 		msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus);
 		foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revisionStore) {
 			*id = *row.DATA_ID;
@@ -85,41 +88,17 @@ uuRevisionCreate(*path, *id) {
 }
 
 
-# \brief uuRevisionRemove
-# \param[in] revision_id
-uuRevisionRemove(*revision_id) {
-	*isfound = false;
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = "*revision_id" AND COLL_NAME like "/$rodsZoneClient/revisions/%") {
-		if (!*isfound) {
-			*isfound = true;
-			*objPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-			*args = "";
-			msiAddKeyValToMspStr("objPath", *objPath, *args);
-			msiAddKeyValToMspStr("forceFlag", "", *args);
-			msiDataObjUnlink(*args, *status);
-		} else {
-			failmsg(-54000, "revision_id returned multiple results");
-		}
-	}
-	if (*isfound) {
-		writeLine("serverLog", "uuRevisionRemove('*revision_id'): Removed *objPath from revision store");
-	} else {
-		failmsg(-808000, "uuRevisionRemove: Revision_id not found or permission denied.");
-	}
-}
-
 # \brief uuRevisionRestore
 # \param[in] revision_id	id of revision data object
 # \param[in] overwrite		1 = overwrite old path with revision, 0 = put file next to original file.
 uuRevisionRestore(*revision_id, *overwrite) {
-      #| writeLine("stdout", "Restore a revision");
+	#| writeLine("stdout", "Restore a revision");
 	*isfound = false;
-	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = "*revision_id") {
+	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revision_id) {
 		if (!*isfound) {
 			*isfound = true;
 			*revName = *rev.DATA_NAME;
-			*revCollName = *rev.COLL_NAME;
-			*src =  *revCollName ++ "/" ++ *revName;
+			*src = *rev.COLL_NAME ++ "/" ++ *revName;
 			} else {
 	#| 			writeLine("stdout", "original_path is set more than once");
 				fail;
@@ -130,19 +109,17 @@ uuRevisionRestore(*revision_id, *overwrite) {
 		failmsg(-1, "Could not find revision");
 	}
 
-       # Get MetaData
-	msiString2KeyValPair("", *kvp);
+	# Get MetaData
 	uuObjectMetadataKvp(*revision_id, UUORGMETADATAPREFIX, *kvp);
-       # Check if original_coll_name exists
+	# Check if original_coll_name exists
 	msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_coll_name", *collName);
 
-	if (!uuCollectionExists(*collName)) {
-	 	#writeLine("serverLog", "uuRevisionRestore: (re)creating *collName");
-		msiCollCreate(*collName, 1, *status);
-     #| 	writeLine("stdout", "Status of msiCollCreate is *status");	
+	if (!*uuCollectionExists(*collName)) {
+	 	writeLine("serverLog", "uuRevisionRestore: (re)creating *collName");
+		msiCollCreate(*collName, "1", *status);
+	#| 	writeLine("stdout", "Status of msiCollCreate is *status");	
 	}
-	*options = "";
-	if (*overwrite == 1) {
+	if (*overwrite) {
 		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_path", *dst);
 		msiAddKeyValToMspStr("forceFlag", "", *options);
 	} else {
@@ -212,40 +189,27 @@ uuRevisionList(*path, *revisions) {
 }
 
 uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("COLL_NAME","DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
+	*fields = list("COLL_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchstring), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
-
-	foreach(*kvp in tl(*kvpList)) {
-		*id = *kvp.DATA_ID;
-		msiString2KeyValPair("", *meta);
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *meta);
-		*json_obj_str = "";
-		msi_json_objops(*json_obj_str, *meta, "add");
-		*kvp.METADATA = *json_obj_str;
-	}
-
+	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }
 
 uuRevisionSearchById(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("COLL_NAME", "DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
+	*fields = list("COLL_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
 	*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
-
-	foreach(*kvp in tl(*kvpList)) {
-		*id = *kvp.DATA_ID;
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *kvp);
-	}
+	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }
