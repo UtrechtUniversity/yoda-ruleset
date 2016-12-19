@@ -124,7 +124,7 @@ iiDatasetWalkSnapshotFreezeUnlock(*itemCollection, *itemName, *itemIsCollection,
 # 									if false, the lock is removed (if allowed)
 # \param[out] status 			Zero if no errors, non-zero otherwise
 iiDatasetSnapshotLockChange(*rootCollection, *lockName, *lockIt, *status){
-   	*set="uuYc";
+   	*set="uu";
    	*lockProcedure = "Vault";
    	*vault="";
    	if(*lockName == "to_snapshot_freeze" || *lockName == "to_snapshot_lock") {

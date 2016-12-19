@@ -211,7 +211,7 @@ pep_resource_modified_post(*out) {
 pep_resource_modified_post(*out) {
 	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]/.\*" )) {
 		*path = $KVPairs.logical_path;	
-		*err = errorcode(uuRevisionCreate(*path, *id, *status));
+		*err = errorcode(uuRevisionCreate(*path, *id));
 		if (*err < 0) {
 			writeLine("serverLog", "pep_resource_modified_post: uuRevisionCreate failed with errorcode=*err");
 		} else {
