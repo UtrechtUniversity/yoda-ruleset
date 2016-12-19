@@ -21,7 +21,6 @@ uuRevisionCreate(*path, *id) {
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
 	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "revision_created_by_user", $userNameClient);
 
 	*objectId = 0;
 	*found = false;
@@ -49,8 +48,9 @@ uuRevisionCreate(*path, *id) {
 	}	
 
 
-	foreach(*row in SELECT USER_NAME WHERE DATA_ID = *dataId AND USER_TYPE = "rodsgroup" AND DATA_ACCESS_NAME ="own") {
+	foreach(*row in SELECT USER_NAME, USER_ZONE WHERE DATA_ID = *dataId AND USER_TYPE = "rodsgroup" AND DATA_ACCESS_NAME = "own") {
 	       *groupName = *row.USER_NAME;
+		*userZone = *row.USER_ZONE;
 	}
 
 
@@ -65,7 +65,7 @@ uuRevisionCreate(*path, *id) {
 		failmsg(-818000, "Collection *parent is Locked");
 	}
 
-	*revisionStore = "/$rodsZoneClient/revisions/*groupName";
+	*revisionStore = "/*userZone/revisions/*groupName";
 
 	foreach(*row in SELECT COUNT(COLL_ID) WHERE COLL_NAME = *revisionStore) {
 	       	*revisionStoreExists = bool(int(*row.COLL_ID));
@@ -73,7 +73,7 @@ uuRevisionCreate(*path, *id) {
 
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
-		*revFileName = *basename ++ "_" ++ *timestamp ++ $userNameClient;
+		*revFileName = *basename ++ "_" ++ *timestamp ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		*revPath = *revColl ++ "/" ++ *revFileName;
 		msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus);
