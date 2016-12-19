@@ -6,6 +6,19 @@
 #
 #####################################################
 #
+uuRevisionCreateAsynchronously(*path) {
+	remote("localhost", "") {
+		delay("<PLUSET>1s</PLUSET>") {
+			*err = errorcode(uuRevisionCreate(*path, *id));
+			if (*err < 0) {
+				writeLine("serverLog", "uuRevisionCreate: failed with errorcode=*err");
+			} else {
+				writeLine("serverLog", "uuRevisionCreate: Revision created for *path ID=*id");
+			}
+		}
+	}
+}
+
 # \brief uuRevisionCreate create a revision of a dataobject in a revision folder
 # \param[in] path		path of data object to create a revision for
 # \param[out] id		object id of revision
