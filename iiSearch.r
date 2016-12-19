@@ -53,8 +53,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*conditions = cons(condition("META_COLL_ATTR_NAME", "like", *likeprefix), *conditions);
 		iiSearchCollectionsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
-		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
-			*kvp = elem(*kvpList, *i);
+		foreach(*kvp in tl(*kvpList)) {
 			*coll_id = *kvp.id;
 			*matches = "[]";
 			*msize = 0;
@@ -75,8 +74,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*conditions = cons(condition("META_COLL_ATTR_NAME", "like", USERMETADATAPREFIX ++ "%%"), *conditions);
 		iiSearchDataObjectsTemplate(*fields, *conditions, *startpath, *orderby, *ascdesc, *limit, *offset, *kvpList);
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
-		for(*i = 1;*i < size(*kvpList);*i = *i + 1) {
-			*kvp = elem(*kvpList, *i);
+		foreach(*kvp in tl(*kvpList)) {
 			*data_id = *kvp.id;
 			*matches = "[]";
 			*msize = 0;
