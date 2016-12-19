@@ -14,6 +14,7 @@ uuRevisionCreate(*path, *id) {
 	#| writeLine("stdout", "Current User: $userNameClient");
 	# Step 1: Check requisites:
 	# - path should return a dataObject
+	*id = "";
 	uuChopPath(*path, *parent, *basename);
        #| writeLine("stdout", *timestamp);
 	msiString2KeyValPair("", *revkv);
@@ -73,9 +74,10 @@ uuRevisionCreate(*path, *id) {
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
 		*revFileName = *basename ++ "_" ++ *timestamp ++ $userNameClient;
-		*revPath = *revisionStore ++ "/" ++ *collId ++ "/" ++ *revFileName;
+		*revColl = *revisionStore ++ "/" ++ *collId;
+		*revPath = *revColl ++ "/" ++ *revFileName;
 		msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus);
-		foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revisionStore) {
+		foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
 			*id = *row.DATA_ID;
 		}
 		msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
@@ -211,7 +213,7 @@ uuRevisionList(*path, *revisions) {
 	#	- checksum
 }
 
-uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
+uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("COLL_NAME","DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchstring), *conditions);	
@@ -222,18 +224,14 @@ uuRevisionSearchByName(*searchstring, *orderby, *ascdesc, *limit, *offset, *resu
 
 	foreach(*kvp in tl(*kvpList)) {
 		*id = *kvp.DATA_ID;
-		msiString2KeyValPair("", *meta);
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *meta);
-		*json_obj_str = "";
-		msi_json_objops(*json_obj_str, *meta, "add");
-		*kvp.METADATA = *json_obj_str;
+		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *kvp);
 	}
 
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }
 
-uuRevisionSearchById(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
+uuRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("COLL_NAME", "DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	

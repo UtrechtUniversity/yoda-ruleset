@@ -151,7 +151,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 
 			foreach(*condition in *conditions) {
 				# deconstruct condition into its parts
-				uucondition(*column, *comparison, *expression) =  *condition;
+				uucondition(*column, *comparison, *expression) = *condition;
 				msiAddConditionToGenQuery(*column, *comparison, *expression, *TotalQInp);
 			}
 

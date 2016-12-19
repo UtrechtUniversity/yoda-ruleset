@@ -35,14 +35,13 @@ testRevisionCreate {
 	 msiDataObjClose(*fd,*status);
 
 	 *err = errorcode(uuRevisionCreate(*path, *id));
-	 writeLine("stdout", "uuRevisionCreate: errorcode=*err");
-
-	writeLine("stdout", "Calling uuRevisionSearchByName");
-
-	uuRevisionSearchByName(*path, "DATA_CREATE_TIME", "desc", 10, 0, *result);
-	writeLine("stdout", *result);
+	 if (*err < 0) {
+		 writeLine("stdout", "uuRevisionCreate: errorcode=*err");
+	 } else {
+		 writeLine("stdout", "uuRevisionCreate: id=*id");
+	 }
 }
 
 
-INPUT *testPath="", *fileName="revisiontext3"
+INPUT *testPath="", *fileName="revisiontest.txt"
 OUTPUT ruleExecOut
