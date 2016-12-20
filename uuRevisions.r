@@ -6,15 +6,13 @@
 #
 #####################################################
 #
+# \brief uuRevisionCreateAsynchronously  Asynchronous call to uuRevisionCreate
+# \param[in] path	The path of the added or modified file.
 uuRevisionCreateAsynchronously(*path) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
-			*err = errorcode(uuRevisionCreate(*path, *id));
-			if (*err < 0) {
-				writeLine("serverLog", "uuRevisionCreate: failed with errorcode=*err");
-			} else {
-				writeLine("serverLog", "uuRevisionCreate: Revision created for *path ID=*id");
-			}
+			uuRevisionCreate(*path, *id);
+			writeLine("serverLog", "uuRevisionCreate: Revision created for *path ID=*id");
 		}
 	}
 }
@@ -30,11 +28,6 @@ uuRevisionCreate(*path, *id) {
 	*id = "";
 	uuChopPath(*path, *parent, *basename);
        #| writeLine("stdout", *timestamp);
-	msiString2KeyValPair("", *revkv);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
-
 	*objectId = 0;
 	*found = false;
 	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID WHERE DATA_NAME = *basename AND COLL_NAME = *parent) {
@@ -66,13 +59,6 @@ uuRevisionCreate(*path, *id) {
 		*userZone = *row.USER_ZONE;
 	}
 
-
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
-	msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
-
 	uuLockExists(*parent, *isLocked);
 	if (*isLocked) {
 		failmsg(-818000, "Collection *parent is Locked");
@@ -86,13 +72,26 @@ uuRevisionCreate(*path, *id) {
 
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
-		*revFileName = *basename ++ "_" ++ *timestamp ++ *dataOwner;
+		*iso8601 = timestrf(datetime(int(*timestamp)), "%FT%H.%M.%S%z");
+		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		*revPath = *revColl ++ "/" ++ *revFileName;
 		msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus);
 		foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
 			*id = *row.DATA_ID;
 		}
+
+		msiString2KeyValPair("", *revkv);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
+		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
+
+
 		msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
 	} else {
 		failmsg(-814000, "*revisionStore does not exists or is inaccessible for current client.");
