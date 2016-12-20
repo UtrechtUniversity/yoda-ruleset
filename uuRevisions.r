@@ -72,7 +72,7 @@ uuRevisionCreate(*path, *id) {
 
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
-		*iso8601 = timestrf(datetime(int(*timestamp)), "%FT%H.%M.%S%z");
+		*iso8601 = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z");
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		*revPath = *revColl ++ "/" ++ *revFileName;
