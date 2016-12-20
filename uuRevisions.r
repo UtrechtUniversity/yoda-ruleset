@@ -76,23 +76,36 @@ uuRevisionCreate(*path, *id) {
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		*revPath = *revColl ++ "/" ++ *revFileName;
-		msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus);
-		foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
-			*id = *row.DATA_ID;
+		*err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
+		if (*err < 0) {
+			if (*err == -312000) {
+			# -312000 OVERWRITE_WITHOUT_FORCE_FLAG
+				writeLine("serverLog", "uuRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
+			} else if (*err == -814000) {
+			# -814000 CAT_UNKNOWN_COLLECTION
+				writeLine("serverLog", "uuRevisionCreate: Could not access or create *revColl. Please check permissions");
+			} else {
+				failmsg(*err, "uuRevisionCreate failed");
+			}
+		} else {
+			foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
+				*id = *row.DATA_ID;
+			}
+
+			msiString2KeyValPair("", *revkv);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
+
+
+			msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
 		}
 
-		msiString2KeyValPair("", *revkv);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
-		msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
-
-
-		msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
 	} else {
 		failmsg(-814000, "*revisionStore does not exists or is inaccessible for current client.");
 	}
