@@ -21,7 +21,7 @@
 
 # Input files. Exclude all test rules in ./tests
 
-RULE_FILES ?= $(shell find . -path "./tests" -prune -o -type f -iname '*.r' -print)
+RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print)
 
 # Output files.
 
