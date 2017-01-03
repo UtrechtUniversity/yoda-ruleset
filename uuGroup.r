@@ -2,7 +2,7 @@
 # \brief     Functions for group management and group queries.
 # \author    Ton Smeele
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 #test() {
@@ -16,10 +16,11 @@
 #	}
 #}
 
-# \brief Get the usertype for a given user
-# \param[in] user      name of the irods user(#zone)
+# \brief Get the user type for a given user
+#
+# \param[in]  user     name of the irods user(#zone)
 # \param[out] type     usertype e.g. rodsuser, rodsgroup, rodsadmin
-
+#
 uuGetUserType(*user, *userType) {
 	*userType = "";
 	uuGetUserAndZone(*user, *userName, *userZone);
@@ -319,20 +320,78 @@ uuGroupGetDescription(*groupName, *description) {
 
 # \brief Get a list of both manager and non-manager members of a group.
 #
+# This function ignores zone names, this is usually a bad idea.
+#
+# \deprecated Use uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) instead
+#
+# \param[in]  groupName
 # \param[out] members a list of user names
 #
 uuGroupGetMembers(*groupName, *members) {
-	*membersString = "";
+	uuGroupGetMembers(*groupName, false, false, *m);
+	*members = list();
+	foreach (*member in *m) {
+		# Throw away the zone name.
+		uuChop(*member, *name, *_, "#", true);
+		*members = cons(*name, *members);
+	}
+}
+
+# \brief Get a list of members of a group.
+#
+# \param[in]  groupName
+# \param[in]  includeRo     whether to include members with read-only access
+# \param[in]  addTypePrefix whether to prefix user names with the type of member they are (see below)
+# \param[out] members       a list of user names
+#
+# If addTypePrefix is true, usernames will be prefixed with 'r:', 'n:',
+# or 'm:', if they are, respectively, a read-only member, normal
+# member, or a manager of the given group.
+#
+uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
+
+	*members = list();
+
+	uuGroupGetManagers(*groupName, *managers);
+
+	foreach (*manager in *managers) {
+		*members = cons(if *addTypePrefix then "m:*manager" else "*manager", *members);
+	}
+
 	foreach (
 		*member in
-		SELECT USER_NAME
+		SELECT USER_NAME,
+		       USER_ZONE
 		WHERE  USER_GROUP_NAME = '*groupName'
+		  AND  USER_TYPE != 'rodsgroup'
 	) {
-		if (*member."USER_NAME" != *groupName) {
-			*membersString = "*membersString;" ++ *member."USER_NAME";
+		*name = *member."USER_NAME";
+		*zone = *member."USER_ZONE";
+
+		uuListMatches(*members, "(m:)?*name#*zone", *isAlsoManager);
+		if (!*isAlsoManager) {
+			*members = cons(if *addTypePrefix then "n:*name#*zone" else "*name#*zone", *members);
 		}
 	}
-	*members = split(*membersString, ";");
+
+	if (*includeRo && *groupName like regex ``(research|intake)-.+``) {
+		uuChop(*groupName, *_, *groupBaseName, '-', true);
+		foreach (
+			*member in
+			SELECT USER_NAME,
+			       USER_ZONE
+			WHERE  USER_GROUP_NAME == 'read-*groupBaseName'
+			AND    USER_TYPE != 'rodsgroup'
+		) {
+			*name = *member."USER_NAME";
+			*zone = *member."USER_ZONE";
+
+			uuListMatches(*members, "([mn]:)?*name#*zone", *isNonRoMember);
+			if (!*isNonRoMember) {
+				*members = cons(if *addTypePrefix then "r:*name#*zone" else "*name#*zone", *members);
+			}
+		}
+	}
 }
 
 # \brief Get a list of managers for the given group.
@@ -341,16 +400,18 @@ uuGroupGetMembers(*groupName, *members) {
 # \param[out] managers
 #
 uuGroupGetManagers(*groupName, *managers) {
-	*managersString = "";
+	*managers = list();
 	foreach (
 		*manager in
 		SELECT META_USER_ATTR_VALUE
-		WHERE  USER_GROUP_NAME     = '*groupName'
+		WHERE  USER_GROUP_NAME	   = '*groupName'
 		  AND  META_USER_ATTR_NAME = 'manager'
 	) {
-		*managersString = "*managersString;" ++ *manager."META_USER_ATTR_VALUE";
+		# For backward compatibility, let zone be $rodsZoneClient if
+		# it's not present in metadata.
+		uuGetUserAndZone(*manager."META_USER_ATTR_VALUE", *name, *zone);
+		*managers = cons("*name#*zone", *managers);
 	}
-	*managers = split(*managersString, ";");
 }
 
 # \brief Get a list of all irods users.
