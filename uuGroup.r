@@ -173,6 +173,9 @@ uuUserNameIsAvailable(*name, *available, *existingType) {
 
 # \brief List all groups the user belongs to.
 #
+# This result list will include any 'read-*' groups that the user is a member
+# of. If this is not desirable, use uuUserGetGroups() instead.
+#
 # \param[in] user     name of the irods user
 #                     username can optionally include zone ('user#zone')
 #                     default is to use the local zone
@@ -185,13 +188,69 @@ uuGroupMemberships(*user, *groupList) {
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
 		# workasround needed: iRODS returns username also as a group !! 
-		# TODO: -> no it doesn't, add USER_TYPE to query.
 		if (*group != *userName) {
 			*groups = "*groups:*group";
 		}
 	}
 	*groups = triml(*groups,":");
 	*groupList = split(*groups, ":");
+}
+
+# \brief List all groups the user belongs to.
+#
+# This function has special handling for 'read-*' groups:
+#
+# If *includeRo is true, any groups that the user is a read-only member of will
+# be returned.  E.g. if the user is a member of 'read-test', either
+# 'intake-test' or 'research-test' will be returned.
+#
+# The 'read-...' group names themselves are never included in the result list,
+# regardless of the *includeRo parameter.
+#
+# \param[in]  user      name of the irods user
+# \param[in]  includeRo whether to include groups that the user has read-only access to
+# \param[out] groups    list of group names
+#
+uuUserGetGroups(*user, *includeRo, *groups) {
+
+	uuGetUserAndZone(*user, *userName, *userZone);
+
+	*groups     = list();
+	*readGroups = list(); # Groups that start with 'read-'.
+
+	foreach (*row in
+	         SELECT USER_GROUP_NAME
+	         WHERE  USER_NAME = '*userName'
+	           AND  USER_ZONE = '*userZone'){
+
+		*groupName = *row.'USER_GROUP_NAME';
+		if (*groupName != *userName) {
+			if (*groupName like "read-*") {
+				# Save 'read-' groups for later processing.
+				*readGroups = cons(*groupName, *readGroups);
+			} else {
+				*groups = cons(*groupName, *groups);
+			}
+		}
+	}
+
+	if (*includeRo) {
+		# Map 'read-' groups to their non-read names.
+		foreach (*roGroupName in *readGroups) {
+			uuChop(*roGroupName, *_, *baseName, "-", true);
+
+			foreach (*row in
+			         SELECT USER_GROUP_NAME
+			         WHERE  USER_GROUP_NAME LIKE '%-*baseName'){
+
+				*groupName = *row.'USER_GROUP_NAME';
+				if (*groupName like regex "(intake|research)-*baseName") {
+					*groups = cons(*groupName, *groups);
+					break;
+				}
+			}
+		}
+	}
 }
 
 # \brief Get a list of all rodsgroups.
