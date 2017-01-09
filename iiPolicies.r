@@ -206,12 +206,17 @@ pep_resource_modified_post(*out) {
 
 # \brief pep_resource_modified_post 	Create revisions on file modifications
 # \description				This policy should trigger whenever a new file is added or modified
-#					in the workspace of a Research team. This should be done asynchronously in the future
+#					in the workspace of a Research team. This should be done asynchronously
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
 	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/grp-*") ) {
 		*path = $KVPairs.logical_path;
-		uuRevisionCreateAsynchronously(*path);
+		uuChopPath(*path, *parent, *basename);
+		if (*basename like "._*") {
+			writeLine("serverLog", "pep_resource_modified_post: Ignore *basename for revision store. This is littering by Mac OS");
+		} else {
+			uuRevisionCreateAsynchronously(*path);
+		}
 	}
 }
 
