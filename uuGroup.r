@@ -49,9 +49,13 @@ uuGetUserAndZone(*user,*userName,*userZone) {
 	if (size(*userAndZone) > 1) {
 		*userZone = elem(*userAndZone,1);
 	} else {
+		# FIXME: This is not necessarily the local zone.
+		#        The local zone could be queried (ZONE_TYPE='local').
 		*userZone = $rodsZoneClient;
 	}
 }
+
+uuClientFullName() = "$userNameClient#$rodsZoneClient";
 
 # \brief Check if a group category exists.
 #
@@ -101,19 +105,8 @@ uuUserExists(*user, *exists) {
 		SELECT USER_NAME, USER_TYPE
 		WHERE  USER_NAME = '*userName'
 		  AND  USER_ZONE = '*userZone'
-		  AND  USER_TYPE = 'rodsuser'
 	) {
-		*exists = true;
-		break;
-	}
-	if (!*exists) {
-		foreach (
-			*row in
-			SELECT USER_NAME, USER_TYPE
-			WHERE  USER_NAME = '*userName'
-			  AND  USER_ZONE = '*userZone'
-			  AND  USER_TYPE = 'rodsadmin'
-		) {
+		if (*row."USER_TYPE" == "rodsuser" || *row."USER_TYPE" == "rodsadmin") {
 			*exists = true;
 			break;
 		}
@@ -122,6 +115,8 @@ uuUserExists(*user, *exists) {
 
 # \brief Check if a user is a member of the given group.
 #
+# \deprecated Use uuGroupUserExists(*group, *user, *includeRo, *membership) instead.
+#
 # \param[in] group        name of the irods group
 # \param[in] user         name of the irods user
 #                         username can optionally include zone ('user#zone')
@@ -129,6 +124,24 @@ uuUserExists(*user, *exists) {
 # \param[out] membership  true if user is a member of this group
 #
 uuGroupUserExists(*group, *user, *membership) {
+	uuGroupUserExists(*group, *user, false, *membership);
+}
+
+# \brief Check if a user is a member of the given group.
+#
+# If includeRo is true, membership of a group's read-only shadow group will be
+# considered as well. Otherwise, the user must be a normal member or manager of
+# the given group.
+#
+# \param[in] group        name of the irods group
+# \param[in] user         name of the irods user
+#                         username can optionally include zone ('user#zone')
+#                         default is to use the local zone
+# \param[in] includeRo    whether to account for read-only memberships
+# \param[out] membership  true if user is a member of this group
+#
+uuGroupUserExists(*group, *user, *includeRo, *membership) {
+
 	*membership = false;
 	uuGetUserAndZone(*user,*userName,*userZone);
 	foreach (*row in SELECT USER_NAME,USER_ZONE WHERE USER_GROUP_NAME=*group) {
@@ -136,6 +149,23 @@ uuGroupUserExists(*group, *user, *membership) {
 		msiGetValByKey(*row, "USER_ZONE", *memberZone);
 		if ((*member == *userName) && (*memberZone == *userZone)) {
 			*membership = true;
+			succeed;
+		}
+	}
+
+	if (*includeRo && *group like regex "(research|intake)-.*") {
+		uuChop(*group, *_, *baseName, "-", true);
+		*roName = "read-*baseName";
+
+		foreach (
+			*row in
+			SELECT USER_GROUP_NAME
+			WHERE USER_NAME = '*userName'
+			  AND USER_ZONE = '*userZone'
+			  AND USER_GROUP_NAME = '*roName'
+		) {
+			*membership = true;
+			break;
 		}
 	}
 }
@@ -160,10 +190,13 @@ uuUserNameIsAvailable(*name, *available, *existingType) {
 	*available    = true;
 	*existingType = ".";
 
+	uuGetUserAndZone(*name, *userName, *userZone);
+
 	foreach (
 		*row in
-		SELECT USER_NAME, USER_TYPE
-		WHERE  USER_NAME = '*name'
+		SELECT USER_NAME, USER_ZONE, USER_TYPE
+		WHERE  USER_NAME = '*userName'
+		  AND  USER_ZONE = '*userZone'
 	) {
 		*available    = false;
 		*existingType = *row."USER_TYPE";
@@ -237,19 +270,41 @@ uuUserGetGroups(*user, *includeRo, *groups) {
 	if (*includeRo) {
 		# Map 'read-' groups to their non-read names.
 		foreach (*roGroupName in *readGroups) {
-			uuChop(*roGroupName, *_, *baseName, "-", true);
+			uuGetBaseGroup(*roGroupName, *baseGroup);
+			*groups = cons(*baseGroup, *groups);
+		}
+	}
+}
 
-			foreach (*row in
-			         SELECT USER_GROUP_NAME
-			         WHERE  USER_GROUP_NAME LIKE '%-*baseName'){
+# \brief Map 'read-|vault-' groups to their 'intake-|research-' counterparts.
+#
+# If no base group exists, the input *groupName is returned as *baseGroup.
+#
+# \param[in]  groupName
+# \param[out] baseGroup the base group name
+#
+uuGetBaseGroup(*groupName, *baseGroup) {
 
-				*groupName = *row.'USER_GROUP_NAME';
-				if (*groupName like regex "(intake|research)-*baseName") {
-					*groups = cons(*groupName, *groups);
-					break;
-				}
+	*baseGroup = "";
+
+	if (*groupName like regex "(read|vault)-.*") {
+		uuChop(*groupName, *_, *baseName, "-", true);
+
+		foreach (*row in
+				 SELECT USER_GROUP_NAME
+				 WHERE  USER_GROUP_NAME LIKE '%-*baseName'){
+
+			*baseLikeGroup = *row.'USER_GROUP_NAME';
+			if (*baseLikeGroup like regex "(intake|research)-*baseName") {
+				*baseGroup = *baseLikeGroup;
+				break;
 			}
 		}
+	}
+	if (*baseGroup == "") {
+		# Apparently this group has no counterpart.
+		# (or perhaps this isn't a read-|vault- group after all)
+		*baseGroup = *groupName;
 	}
 }
 
@@ -282,7 +337,8 @@ uuGetAllGroups(*groupList) {
 #
 uuGroupGetSubcategories(*category, *subcategories) {
 
-	*subcategoriesString = "";
+	*subcategories = list();
+
 	foreach (
 		# Get groups that belong to this category...
 		*categoryGroupRow in
@@ -292,6 +348,7 @@ uuGroupGetSubcategories(*category, *subcategories) {
 		AND    META_USER_ATTR_VALUE = '*category'
 	) {
 		*groupName = *categoryGroupRow."USER_GROUP_NAME";
+
 		foreach (
 			# ... and collect their subcategories.
 			*subcategoryRow in
@@ -301,21 +358,12 @@ uuGroupGetSubcategories(*category, *subcategories) {
 			AND    META_USER_ATTR_NAME = 'subcategory'
 		) {
 			*subcategoryName = *subcategoryRow."META_USER_ATTR_VALUE";
-			if (!(
-				   (*subcategoriesString == *subcategoryName)
-				|| (*subcategoriesString like "*,*subcategoryName")
-				|| (*subcategoriesString like   "*subcategoryName,*")
-				|| (*subcategoriesString like "*,*subcategoryName,*")
-			)) {
-				if (strlen(*subcategoriesString) > 0) {
-					*subcategoriesString = "*subcategoriesString,*subcategoryName";
-				} else {
-					*subcategoriesString = *subcategoryName;
-				}
+			uuListContains(*subcategories, *subcategoryName, *seen);
+			if (!*seen) {
+				*subcategories = cons(*subcategoryName, *subcategories);
 			}
 		}
 	}
-	*subcategories = split(*subcategoriesString, ",");
 }
 
 # \brief Get a list of group categories.
@@ -323,16 +371,15 @@ uuGroupGetSubcategories(*category, *subcategories) {
 # \param[out] categories a list of category names
 #
 uuGroupGetCategories(*categories) {
-	*categoriesString = "";
+	*categories = list();
 	foreach (
 		*category in
 		SELECT META_USER_ATTR_VALUE
 		WHERE  USER_TYPE           = 'rodsgroup'
 		  AND  META_USER_ATTR_NAME = 'category'
 	) {
-		*categoriesString = "*categoriesString," ++ *category."META_USER_ATTR_VALUE";
+		*categories = cons(*category."META_USER_ATTR_VALUE", *categories);
 	}
-	*categories = split(*categoriesString, ",");
 }
 
 # \brief Get a group's category and subcategory.
@@ -390,33 +437,35 @@ uuGroupGetMembers(*groupName, *members) {
 	uuGroupGetMembers(*groupName, false, false, *m);
 	*members = list();
 	foreach (*member in *m) {
-		# Throw away the zone name.
+		# Throw away the zone name for backward compat.
 		uuChop(*member, *name, *_, "#", true);
 		*members = cons(*name, *members);
 	}
 }
 
-# \brief Get a list of members of a group.
-#
-# \param[in]  groupName
-# \param[in]  includeRo     whether to include members with read-only access
-# \param[in]  addTypePrefix whether to prefix user names with the type of member they are (see below)
-# \param[out] members       a list of user names
+# \brief Get a list of a group's members.
 #
 # If addTypePrefix is true, usernames will be prefixed with 'r:', 'n:',
 # or 'm:', if they are, respectively, a read-only member, normal
 # member, or a manager of the given group.
 #
+# \param[in]  groupName
+# \param[in]  includeRo     whether to include members with read-only access
+# \param[in]  addTypePrefix whether to prefix user names with the type of member they are (see below)
+# \param[out] members       a list of user names, including their zone names
+#
 uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
 
 	*members = list();
 
+	# Fetch managers.
 	uuGroupGetManagers(*groupName, *managers);
 
 	foreach (*manager in *managers) {
 		*members = cons(if *addTypePrefix then "m:*manager" else "*manager", *members);
 	}
 
+	# Fetch normal members.
 	foreach (
 		*member in
 		SELECT USER_NAME,
@@ -433,6 +482,7 @@ uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
 		}
 	}
 
+	# Fetch read-only members.
 	if (*includeRo && *groupName like regex ``(research|intake)-.+``) {
 		uuChop(*groupName, *_, *groupBaseName, '-', true);
 		foreach (
@@ -463,38 +513,22 @@ uuGroupGetManagers(*groupName, *managers) {
 	foreach (
 		*manager in
 		SELECT META_USER_ATTR_VALUE
-		WHERE  USER_GROUP_NAME	   = '*groupName'
+		WHERE  USER_GROUP_NAME     = '*groupName'
 		  AND  META_USER_ATTR_NAME = 'manager'
 	) {
 		# For backward compatibility, let zone be $rodsZoneClient if
 		# it's not present in metadata.
 		uuGetUserAndZone(*manager."META_USER_ATTR_VALUE", *name, *zone);
-		*managers = cons("*name#*zone", *managers);
-	}
-}
 
-# \brief Get a list of all irods users.
-#
-# \param[out] users a list of user names
-#
-uuGetUsers(*users) {
-	*usersString = "";
-	foreach (
-		*user in
-		SELECT USER_NAME
-		WHERE  USER_TYPE = 'rodsuser'
-	) {
-		*usersString = "*usersString;" ++ *user."USER_NAME";
-	}
-	foreach (
-		*user in
-		SELECT USER_NAME
-		WHERE  USER_TYPE = 'rodsadmin'
-	) {
-		*usersString = "*usersString;" ++ *user."USER_NAME";
-	}
+		# Verify that this manager is actually a member of the group.
+		# (this is necessary for a.o. the groupUserAdd policy to work correctly
+		# when creating a new group)
+		uuGroupUserExists(*groupName, "*name#*zone", false, *isMember);
 
-	*users = split(*usersString, ";");
+		if (*isMember) {
+			*managers = cons("*name#*zone", *managers);
+		}
+	}
 }
 
 # \brief Find users matching a pattern.
@@ -503,67 +537,122 @@ uuGetUsers(*users) {
 # \param[out] users a list of user names
 #
 uuFindUsers(*query, *users) {
-	*usersString = "";
+	*users = list();
+
+	*queryUser = *query;
+	*queryZone = "";
+
+	if (*query like "*#*") {
+		# Use the user and zone part as separate wildcard-surrounded query
+		# parts.
+		uuChop(*query, *queryUser, *queryZone, "#", true);
+	}
+
 	foreach (
 		*user in
-		SELECT USER_NAME
+		SELECT USER_NAME, USER_ZONE
 		WHERE  USER_TYPE = 'rodsuser'
-		  AND  USER_NAME LIKE '%*query%'
+		  AND  USER_NAME LIKE '%*queryUser%'
+		  AND  USER_ZONE LIKE '%*queryZone%'
 	) {
-		*usersString = "*usersString;" ++ *user."USER_NAME";
+		*users = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *users);
 	}
 	foreach (
 		*user in
-		SELECT USER_NAME
+		SELECT USER_NAME, USER_ZONE
 		WHERE  USER_TYPE = 'rodsadmin'
-		  AND  USER_NAME LIKE '%*query%'
+		  AND  USER_NAME LIKE '%*queryUser%'
+		  AND  USER_ZONE LIKE '%*queryZone%'
 	) {
-		*usersString = "*usersString;" ++ *user."USER_NAME";
-	}
-
-	*users = split(*usersString, ";");
-}
-
-# \brief Check if a user is a member of the given group.
-#
-# \param[in]  groupName
-# \param[in]  userName
-# \param[out] isMember
-#
-uuGroupUserIsMember(*groupName, *userName, *isMember) {
-	*isMember = false;
-	uuGetUserAndZone(*userName, *name, *zone);
-
-	foreach (
-		*row in
-		SELECT USER_GROUP_NAME
-		WHERE USER_NAME = '*name'
-		  AND USER_ZONE = '*zone'
-		  AND USER_GROUP_NAME = '*groupName'
-	) {
-		*isMember = true;
+		*users = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *users);
 	}
 }
 
 # \brief Check if a user is a manager in the given group.
 #
 # \param[in]  groupName
-# \param[in]  userName
+# \param[in]  user
 # \param[out] isManager
 #
-uuGroupUserIsManager(*groupName, *userName, *isManager) {
+uuGroupUserIsManager(*groupName, *user, *isManager) {
 	*isManager = false;
 
-	uuGroupUserIsMember(*groupName, *userName, *isMember);
-	if (*isMember) {
-		foreach (
-			*manager in
-			SELECT META_USER_ATTR_VALUE
-			WHERE  USER_GROUP_NAME      = '*groupName'
-			  AND  META_USER_ATTR_NAME  = 'manager'
-			  AND  META_USER_ATTR_VALUE = '*userName'
-		) {
-			*isManager = true;
+	uuGetUserAndZone(*user, *name, *zone);
+	*fullName = "*name#*zone";
+
+	if (*groupName like "read-*") {
+		uuGetBaseGroup(*groupName, *baseGroup);
+		if (*baseGroup != *groupName) {
+			# Check manager status on the base group instead.
+			uuGroupUserIsManager(*baseGroup, *fullName, *isManager);
+		}
+
+	} else {
+		uuGroupUserExists(*groupName, *fullName, false, *isMember);
+		if (*isMember) {
+			foreach (
+				*manager in
+				SELECT META_USER_ATTR_VALUE
+				WHERE  USER_GROUP_NAME      = '*groupName'
+				  AND  META_USER_ATTR_NAME  = 'manager'
+				  AND  META_USER_ATTR_VALUE = '*fullName'
+			) {
+				*isManager = true;
+			}
+		}
+	}
+}
+
+# \brief Get a user's member role type.
+#
+# \param[in]  groupName the group name
+# \param[in]  user      the member name, optionally including their zone name
+# \param[out] type      the type of member, one of 'none', 'reader', 'normal' or 'manager'
+#
+uuGroupGetMemberType(*groupName, *user, *type) {
+
+	# {{{
+
+	# For some great inexplicable reason, the following is completely broken:
+
+	# {
+	#uuGetUserAndZone(*user, *userName, *userZone);
+	#writeLine("serverLog", "*user -> *userName # *userZone");
+
+	#uuGroupGetMembers(*groupName, true, true, *members);
+	#writeLine("serverLog", "*user -> *userName # *userZone");
+	# }
+
+	# The above call to uuGroupGetMembers OVERWRITES *userName with a different
+	# one, even though *userName is not even a parameter to that function.
+	# This has happened consistently when this rule is called as part of
+	# demoting a user (normal -> reader) from the group management portal.
+	# Unfortunately, I can't reproduce it via irule when calling this rule
+	# directly.
+
+	# As a workaround..... use a different variable name for userName and userZone.
+	# Yes. That fixes it. Don't ask me why.
+
+	# {
+	uuGetUserAndZone(*user, *userName1, *userZone1);
+
+	uuGroupGetMembers(*groupName, true, true, *members);
+
+	*userName = *userName1;
+	*userZone = *userZone1;
+	# }
+
+	# }}}
+
+	*type = "none";
+
+	foreach (*member in *members) {
+		uuChop(*member, *typeLetter, *member, ":", true);
+		if (*member == "*userName#*userZone") {
+			     if (*typeLetter == "r") { *type = "reader";  }
+			else if (*typeLetter == "m") { *type = "manager"; }
+			else                         { *type = "normal";  }
+			break;
 		}
 	}
 }
@@ -585,14 +674,14 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message)
 	*kv."description" = *description;
 
 	# Shoot first, ask questions later.
-	*status = errorcode(msiSudoGroupAdd(*groupName, "manager", $userNameClient, "", *kv));
+	*status = errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv));
 
 	if (*status == 0) {
 		*message = "";
 	} else {
 		# Why didn't you allow me to do that?
 		uuGroupPolicyCanGroupAdd(
-			$userNameClient,
+			uuClientFullName,
 			*groupName,
 			*category,
 			*subcategory,
@@ -613,6 +702,9 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message)
 
 # \brief Modify a group.
 #
+# This is mostly a shortcut for setting single-value attributes on a group
+# object. Allowed properties are: 'category', 'subcategory' and 'description'.
+#
 # \param[in]  groupName
 # \param[in]  property  the property to change
 # \param[in]  value     the new property value
@@ -627,7 +719,7 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 	if (*status == 0) {
 		*message = "";
 	} else {
-		uuGroupPolicyCanGroupModify($userNameClient, *groupName, *property, *value, *allowed, *reason);
+		uuGroupPolicyCanGroupModify(uuClientFullName, *groupName, *property, *value, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
@@ -648,7 +740,7 @@ uuGroupRemove(*groupName, *status, *message) {
 	if (*status == 0) {
 		*message = "";
 	} else {
-		uuGroupPolicyCanGroupRemove($userNameClient, *groupName, *allowed, *reason);
+		uuGroupPolicyCanGroupRemove(uuClientFullName, *groupName, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
@@ -658,20 +750,23 @@ uuGroupRemove(*groupName, *status, *message) {
 # \brief Add a user to a group.
 #
 # \param[in]  groupName
-# \param[in]  userName  the user to add to the group
+# \param[in]  user      the user to add to the group
 # \param[out] status    zero on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupUserAdd(*groupName, *userName, *status, *message) {
+uuGroupUserAdd(*groupName, *user, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	uuUserExists(*userName, *exists);
+	uuGetUserAndZone(*user, *userName, *userZone);
+	*fullName = "*userName#*userZone";
+
+	uuUserExists(*fullName, *exists);
 	if (!*exists) {
 		*kv."forGroup" = *groupName;
-		*status = errorcode(msiSudoUserAdd(*userName, "", "", "", *kv));
+		*status = errorcode(msiSudoUserAdd(*fullName, "", "", "", *kv));
 		if (*status != 0) {
-			uuGroupPolicyCanGroupUserAdd($userNameClient, *groupName, *userName, *allowed, *reason);
+			uuGroupPolicyCanGroupUserAdd(uuClientFullName, *groupName, *fullName, *allowed, *reason);
 			if (*allowed == 0) {
 				*message = *reason;
 			}
@@ -679,11 +774,11 @@ uuGroupUserAdd(*groupName, *userName, *status, *message) {
 		}
 	}
 	# User exists, now add them to the group.
-	*status = errorcode(msiSudoGroupMemberAdd(*groupName, *userName, ""));
+	*status = errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, ""));
 	if (*status == 0) {
 		*message = "";
 	} else {
-		uuGroupPolicyCanGroupUserAdd($userNameClient, *groupName, *userName, *allowed, *reason);
+		uuGroupPolicyCanGroupUserAdd(uuClientFullName, *groupName, *fullName, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
@@ -693,19 +788,30 @@ uuGroupUserAdd(*groupName, *userName, *status, *message) {
 # \brief Remove a user from a group.
 #
 # \param[in]  groupName
-# \param[in]  userName  the user to remove from the group
+# \param[in]  user      the user to remove from the group
 # \param[out] status    zero on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupUserRemove(*groupName, *userName, *status, *message) {
+uuGroupUserRemove(*groupName, *user, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	*status = errorcode(msiSudoGroupMemberRemove(*groupName, *userName, ""));
+	uuGetUserAndZone(*user, *userName, *userZone);
+	*fullName = "*userName#*userZone";
+
+	uuGroupGetMemberType(*groupName, *fullName, *role);
+	*actualGroupToRemoveUserFrom = *groupName;
+
+	if (*role == "reader") {
+		uuChop(*groupName, *_, *baseName, "-", true);
+		*actualGroupToRemoveUserFrom = "read-*baseName";
+	}
+
+	*status = errorcode(msiSudoGroupMemberRemove(*actualGroupToRemoveUserFrom, *fullName, ""));
 	if (*status == 0) {
 		*message = "";
 	} else {
-		uuGroupPolicyCanGroupUserRemove($userNameClient, *groupName, *userName, *allowed, *reason);
+		uuGroupPolicyCanGroupUserRemove(uuClientFullName, *groupName, *fullName, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
@@ -715,57 +821,156 @@ uuGroupUserRemove(*groupName, *userName, *status, *message) {
 # \brief Promote or demote a group member.
 #
 # \param[in]  groupName
-# \param[in]  userName  the user to promote or demote
-# \param[in]  newRole   the new role, either 'manager' or 'user'
+# \param[in]  user      the user to promote or demote
+# \param[in]  newRole   the new role, one of 'reader', 'normal', or 'manager'
 # \param[out] status    zero on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupUserChangeRole(*groupName, *userName, *newRole, *status, *message) {
+uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	uuGroupGetManagers(*groupName, *managers);
-	uuListContains(*managers, *userName, *isCurrentlyManager);
+	uuGetUserAndZone(*user, *userName, *userZone);
+	*fullName = "*userName#*userZone";
 
-	if (*newRole == "manager") {
-		if (*isCurrentlyManager) {
-			# Nothing to do.
-			*status  = 0;
-			*message = "";
-		} else {
-			# Append the user to the managers list.
-			*status = errorcode(msiSudoObjMetaAdd(*groupName, "-u", "manager", *userName, "", ""));
-			if (*status == 0) {
-				*message = "";
-			} else {
-				uuGroupPolicyCanAddManager($userNameClient, *groupName, *userName, *allowed, *reason);
-				if (*allowed == 0) {
-					*message = *reason;
-				}
+	uuGroupGetMemberType(*groupName, *fullName, *oldRole);
+
+	if (*newRole == *oldRole) {
+		# Nothing to do.
+		*status  = 0;
+		*message = "";
+
+		succeed;
+	}
+
+	# Since changing a user's role within a group can be a multi-step process,
+	# we need to check for permission before we try to change things.
+	# For example: When changing a role from 'normal' to 'reader', the client may be
+	# allowed to remove the user from the base group, but there might not be a
+	# read group defined for the base group at all.
+	uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+	if (*allowed == 0) {
+		*message = *reason;
+		succeed;
+	}
+
+	# Readers can only be promoted, managers can only be demoted.
+	# The first step if the user is of either type is to promote / demote them
+	# one step to the "normal" member role.
+	if (*oldRole == "reader") {
+		uuChop(*groupName, *_, *baseName, "-", true);
+		*roGroup = "read-*baseName";
+		*status = errorcode(msiSudoGroupMemberRemove(*roGroup, *fullName, ""));
+
+		if (*status != 0) {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
 			}
+			succeed;
 		}
-	} else if (*newRole == "user") {
-		if (*isCurrentlyManager) {
-			# Remove the user from the managers list.
-			*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *userName, "", ""));
-			if (*status == 0) {
-				*message = "";
-			} else {
-				uuGroupPolicyCanRemoveManager($userNameClient, *groupName, *userName, *allowed, *reason);
-				if (*allowed == 0) {
-					*message = *reason;
-				}
-			}
-		} else {
-			# Nothing to do.
-			*status  = 0;
+
+		# Add the user to the group to make them a normal member.
+
+		*status = errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, ""));
+		if (*status == 0) {
 			*message = "";
+		} else {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed;
+		}
+
+	} else if (*oldRole == "manager") {
+		*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *fullName, "", ""));
+		if (*status != 0) {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed;
+		}
+
+	} else if (*oldRole == "none") {
+		# For the sake of clear error reporting, we must detect the situation
+		# in which the user is not a member of the group at all.
+
+		# We delegate the generation of the appropriate error message to the
+		# policy check function.
+
+		uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+
+		if (*allowed == 0) {
+			*message = *reason;
+		} else {
+			*status = 1; # This shouldn't be allowed, abort abort!
+		}
+		succeed;
+	}
+
+	# The user is now a normal member.
+
+	if (*newRole == "normal") {
+
+		# Nothing to do :)
+		*message = "";
+
+	} else if (*newRole == "reader") {
+
+		# Remove the user from the normal group.
+
+		*status = errorcode(msiSudoGroupMemberRemove(*groupName, *fullName, ""));
+
+		if (*status != 0) {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed;
+		}
+
+		# Add the user to the read group.
+
+		uuChop(*groupName, *_, *baseName, "-", true);
+		*roGroup = "read-*baseName";
+
+		*status = errorcode(msiSudoGroupMemberAdd(*roGroup, *fullName, ""));
+		if (*status == 0) {
+			*message = "";
+		} else {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed;
+		}
+	} else if (*newRole == "manager") {
+
+		# Add manager metadata.
+
+		*status = errorcode(msiSudoObjMetaAdd(*groupName, "-u", *newRole, *fullName, "", ""));
+		if (*status == 0) {
+			*message = "";
+		} else {
+			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+			if (*allowed == 0) {
+				*message = *reason;
+			}
+			succeed;
 		}
 	} else {
-		writeLine(
-			"serverLog",
-			"Invalid group manager call by $userNameClient: User tried to set invalid user role '*newRole'"
-		);
+
+		# We do not recognize this role - let the policy check function figure it out.
+		uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		} else {
+			# An unimplemented but allowed role, this should not happen.
+			*status = 1;
+		}
+		succeed;
 	}
 }
 

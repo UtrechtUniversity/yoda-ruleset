@@ -1,9 +1,23 @@
 # \file
-# \brief     Group operation policy checks.
+# \brief     Group operation policy check rules.
 # \author    Chris Smeele
 # \author    Ton Smeele
-# \copyright Copyright (c) 2015, 2016, Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015 - 2017, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
+
+# For every Group Management action (GroupAdd, GroupUserChangeRole, etc.) there
+# is a corresponding function in this file that will tell you if someone (the
+# *actor) is allowed to perform that action with the supplied parameters.
+#
+# The result is returned in the output parameters *allowed and *reason. For
+# calling rules to be able to receive these output parameters, it is imperative
+# that the rules in this file DO NOT FAIL.
+#
+# Context: The rules in this file are called by:
+# - Group Manager implementations of Sudo policies (see uuGroupPolicies.r)
+# - Group Manager actions, to figure out the reason for denying a Sudo action.
+
+# Utility functions {{{
 
 # \brief Check if a user name is valid.
 #
@@ -12,24 +26,25 @@
 # - contain zero or one '@' signs, but not at the beginning or the end of the name
 # - contain only lowercase letters and dots if no '@' sign is present
 # - contain only lowercase letters, numbers, hyphens, underscores and dots if an '@' sign is present
+# - may contain a zone name after a '#' sign
 #
 # \param[in] name
 #
 uuUserNameIsValid(*name)
-	= *name like regex ``([a-z.]+|[a-z0-9_.-]+@[a-z0-9_.-]+)``;
+	= *name like regex ``([a-z.]+|[a-z0-9_.-]+@[a-z0-9_.-]+)(#[a-zA-Z0-9_-]+)?``;
 
 # \brief Check if a group name is valid.
 #
 # Group names must:
 #
-# - be prefixed with 'grp-'
+# - be prefixed with 'intake-' or 'research-'
 # - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``grp-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a (sub)category name is valid.
 #
@@ -42,6 +57,8 @@ uuGroupNameIsValid(*name)
 uuGroupCategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
+# }}}
+
 # \brief Group Policy: Can the user create a new group?
 #
 # \param[in]  actor       the user whose privileges are checked
@@ -53,6 +70,10 @@ uuGroupCategoryNameIsValid(*name)
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *allowed, *reason) {
+    # Rodsadmin exception.
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
 
@@ -61,8 +82,18 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 		if (uuGroupNameIsValid(*groupName)) {
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
-				uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-				# *allowed = 1;
+
+				uuChop(*groupName, *_, *base, "-", true);
+				*roName = "read-*base";
+				uuGroupExists(*roName, *roExists);
+
+				if (*roExists) {
+					*reason = "This group name is not available.";
+				} else {
+					# Last check.
+					uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+				}
+
 			} else {
 				if (*existingType == "rodsuser") {
 					*existingType = "user";
@@ -72,7 +103,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with 'grp-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanagers-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -81,23 +112,27 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 
 # \brief Group Policy: Can the user create a group with / modify a group to use a certain category?
 #
+# This is a utility function for other check functions, there is no
+# corresponding group action for this rule.
+#
 # \param[in]  actor        the user whose privileges are checked
 # \param[in]  categoryName the category name
 # \param[out] allowed      whether the action is allowed
 # \param[out] reason       the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
-
-	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
-	if (*userType == "rodsadmin") { *allowed = 1; succeed; }
 
 	uuGroupCategoryExists(*categoryName, *categoryExists);
 	if (*categoryExists) {
 		*isManagerInCategory = false;
 
-		uuGroupMemberships(*actor, *groups);
+		uuUserGetGroups(*actor, false, *groups);
+
 		foreach (*actorGroup in *groups) {
 			uuGroupGetCategory(*actorGroup, *agCategory, *agSubcategory);
 			if (*agCategory == *categoryName) {
@@ -126,74 +161,6 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 	}
 }
 
-# \brief Group Policy: Can the user change a group member's role to 'manager'?
-#
-# \param[in]  actor     the user whose privileges are checked
-# \param[in]  groupName
-# \param[in]  userName  the target group member
-# \param[out] allowed   whether the action is allowed
-# \param[out] reason    the reason why the action was disallowed, set if allowed is false
-#
-uuGroupPolicyCanAddManager(*actor, *groupName, *userName, *allowed, *reason) {
-	*allowed = 0;
-	*reason  = "";
-
-	uuGroupUserIsManager(*groupName, *actor, *actorIsManager);
-	if (*actorIsManager) {
-		if (*userName == *actor) {
-			*reason  = "You cannot change your own role in a group.";
-		} else {
-			uuGroupUserIsMember(*groupName, *userName, *isMember);
-			if (*isMember) {
-				uuGroupUserIsManager(*groupName, *userName, *isCurrentlyManager);
-				if (*isCurrentlyManager) {
-					*reason  = "This user is already a manager in *groupName.";
-				} else {
-					*allowed = 1;
-				}
-			} else {
-				*reason = "This user is not a member of group *groupName.";
-			}
-		}
-	} else {
-		*reason = "You are not a manager of group *groupName.";
-	}
-}
-
-# \brief Group Policy: Can the user remove a group member's 'manager' status?
-#
-# \param[in]  actor     the user whose privileges are checked
-# \param[in]  groupName
-# \param[in]  userName  the target group member
-# \param[out] allowed   whether the action is allowed
-# \param[out] reason    the reason why the action was disallowed, set if allowed is false
-#
-uuGroupPolicyCanRemoveManager(*actor, *groupName, *userName, *allowed, *reason) {
-	*allowed = 0;
-	*reason  = "";
-
-	uuGroupUserIsManager(*groupName, *actor, *actorIsManager);
-	if (*actorIsManager) {
-		if (*userName == *actor) {
-			*reason  = "You cannot change your own role in a group.";
-		} else {
-			uuGroupUserIsMember(*groupName, *userName, *isMember);
-			if (*isMember) {
-				uuGroupUserIsManager(*groupName, *userName, *isCurrentlyManager);
-				if (*isCurrentlyManager) {
-					*allowed = 1;
-				} else {
-					*reason  = "This user is not a manager in *groupName.";
-				}
-			} else {
-				*reason = "This user is not a member of group *groupName.";
-			}
-		}
-	} else {
-		*reason = "You are not a manager of group *groupName.";
-	}
-}
-
 # \brief Group Policy: Can the user set a certain group attribute to a certain value?
 #
 # Available attributes are: category, subcategory and description.
@@ -207,6 +174,9 @@ uuGroupPolicyCanRemoveManager(*actor, *groupName, *userName, *allowed, *reason) 
 #
 
 uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
 
@@ -242,12 +212,15 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
-		if (*groupName like "grp-*") {
+		if (*groupName like regex "(grp|intake|research|vault)-.*") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -264,7 +237,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "*groupName is not a regular group. You can only remove groups that have a 'grp-' prefix.";
+			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
@@ -280,10 +253,14 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
 
-	uuGroupGetMembers(*groupName, *members);
+	uuGroupGetMembers(*groupName, true, false, *members);
+
 	if (size(*members) == 0 && *newMember == *actor) {
 		# Special case for empty groups.
 		# This is run if a group has just been created. We then allow
@@ -332,6 +309,9 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
 uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
 	*allowed = 0;
 	*reason  = "";
 
@@ -345,5 +325,45 @@ uuGroupPolicyCanGroupUserRemove(*actor, *groupName, *member, *allowed, *reason) 
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
+	}
+}
+
+# \brief Group Policy: Can the user change a group member's role?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  groupName
+# \param[in]  member    the target group member
+# \param[in]  newRole   the member's new role
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
+	*allowed = 0;
+	*reason = "";
+
+	uuGroupUserExists(*groupName, *member, true, *exists);
+
+	if (*exists) {
+		if (   (*newRole == "normal" || *newRole == "manager")
+			|| (*newRole == "reader" && *groupName like regex "(intake|research)-.*")) {
+
+			uuGroupUserIsManager(*groupName, *actor, *isManager);
+			if (*isManager) {
+				if (*member == *actor) {
+					*reason = "You cannot change your own role in group *groupName.";
+				} else {
+					*allowed = 1;
+				}
+			} else {
+				*reason = "You are not a manager of group *groupName.";
+			}
+		} else {
+			*reason = "'*newRole' is not a valid member role for group *groupName.";
+		}
+	} else {
+		*reason = "'*member' is not a member of group *groupName.";
 	}
 }

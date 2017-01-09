@@ -31,9 +31,12 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 # acCreateUserZoneCollections extended to also set inherit on the home coll
 # this is needed for groupcollections to allow users to share objects 
 acCreateUserZoneCollections {
-	acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
-	acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
-	msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName); 
+	uuGetUserType($otherUserName, *type);
+	if (*type != "rodsgroup" || !($otherUserName like "read-*")) {
+		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
+		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
+		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
+	}
 }
 
 #input null
