@@ -140,8 +140,6 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	*count = size(*kvpList);
 	msiString2KeyValPair("returned=*count", *summary);
 	if (*count > 0) {
-		# because lists grow at the front, we need to reverse the list to correct order.
-		*kvpList = uuListReverse(*kvpList);	
 		if (*ContInxNew > 0) {
 			# Query for total number of rows to include in summary
 			# Add count to every field. Should yield the same number, but hopefully assures we get the same implicit joins
