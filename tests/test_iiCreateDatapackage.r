@@ -19,13 +19,13 @@ testCreateDatapackage {
 		writeLine("stdout", "Created *testPath");
 	}
 
-	iiCreateDatapackage(*testPath, *status);
+	iiCreateDatapackage(*testPath);
 	writeLine("stdout", "iiCreateDatapackage: status=*status");
 	iiGetCollectionType(*testPath, *orgtype);
 	writeLine("stdout", "*testPath is now a *orgtype");
 
 	if (bool(*demote)) {	
-		iiDemoteDatapackage(*testPath, *status);
+		iiDemoteDatapackage(*testPath);
 		writeLine("stdout", "iiDemoteDatapackage: status=*status");
 		iiGetCollectionType(*testPath, *orgtype);
 		writeLine("stdout", "*testPath is now a *orgtype");

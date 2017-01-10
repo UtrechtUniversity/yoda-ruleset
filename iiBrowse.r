@@ -8,6 +8,35 @@ orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER_A
 
 iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
+# \brief iiBrowseResearchTeams browse through the available research teams
+# \param[in] orderby		which column to sort on 
+# \param[in] ascdesc		Order Ascending or Descending: "asc" or "desc"
+# \param[in] limit		limit the list of results. Cast to int
+#\ param[in] offset		Start returning results from offset. Cast to int
+# \param[out] result 		JSON output of subcollections and their flags
+iiBrowseResearchTeams(*orderby, *ascdesc, *limit, *offset, *result) {
+	*fields = list("COLL_ID","COLL_NAME", "COLL_CREATE_TIME", "COLL_MODIFY_TIME");
+	*conditions = list(uucondition("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "type"), uucondition("META_COLL_ATTR_VALUE", "=", "Research Team"));
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	*result = list();
+	foreach(*row in tl(*kvpList)) {
+		msiString2KeyValPair("", *kvp);
+		*name =	*row.COLL_NAME;
+		*kvp."path" = *name;
+		*coll_id = *row.COLL_ID;
+		*kvp.id = *coll_id;
+		*kvp."irods_type" = "Collection";
+		*kvp."create_time" = *row.COLL_CREATE_TIME;
+		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
+		# Add collection metadata with ilab prefix 	
+		uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+		*result = cons(*kvp, *result_list);
+	}
+	*result = uuListReverse(*result);
+	*result = cons(hd(*kvpList), *result);
+	
+}
+	
 # \brief iiBrowse	return list of subcollections or dataobjects with ilab specific information attached
 # \param[in] path		requested path of parent collection
 # \param[in] collectionOrDataObject	Set to "Collection" if you want collections or "DataObject" (Or anything else) if you want dataobjects
@@ -76,7 +105,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 				if (*iscollection) {
 					*name =	*row.COLL_NAME;
 					*kvp."path" = *name;
-					*kvp.basename = triml(*name, *path);
+					*kvp.basename = triml(*name, *path ++ "/");
 					*coll_id = *row.COLL_ID;
 					*kvp.id = *coll_id;
 					*kvp."irods_type" = "Collection";
@@ -164,10 +193,12 @@ iiCollectionDetails(*path, *result) {
 	*result = "";
 	msiString2KeyValPair("", *kvp);
 
-	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
+	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
 		*name =	*row.COLL_NAME;
 		*kvp."path" = *name;
-		*kvp.basename = triml(*name, *path);
+		*parent = *row.COLL_PARENT_NAME;
+		*kvp.parent = *parent;
+		*kvp.basename = triml(*name, *parent ++ "/");
 		*coll_id = *row.COLL_ID;
 		*kvp.id = *coll_id;
 		*kvp."irods_type" = "Collection";
