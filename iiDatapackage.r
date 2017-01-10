@@ -6,8 +6,7 @@
 
 # \brief iiCreateDataPackage	write a marker file to path. Policy rules should handle rest
 # \param[in] path	path of Folder within a resource team grp-
-# \param[out] status	status of the DPTXTNAME copy action
-iiCreateDatapackage(*path, *status) {
+iiCreateDatapackage(*path) {
 
 	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
 		if (!uuCollectionExists(*path)) {
@@ -39,8 +38,7 @@ iiCreateDatapackage(*path, *status) {
 
 # \brief iiDemoteDatapackage  Remove DPTXTNAME from Datapackage to demote it to a Folder
 # \param[in] path	path of Datapackage
-# \param[out] status 	Status of remove action
-iiDemoteDatapackage (*path, *status) {
+iiDemoteDatapackage (*path) {
 
 	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
 		if (!uuCollectionExists(*path)) {
