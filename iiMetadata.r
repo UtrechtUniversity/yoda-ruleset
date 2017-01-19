@@ -42,7 +42,7 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath) {
 	iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, $rodsZoneClient);
 }
 
-# /brief iiXSDfroMetadataxml	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
+# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
 # /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
 # /param[out] xsdpath		path of the XSD to use for validation
 # /param[in] rodsZone		irods zone to use
@@ -71,13 +71,13 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 	}
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*xsdcoll = "/*rodsZone/" ++ IIXSDCOLLECTION;
+	*xsdcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
 	*xsdname = "*category.xsd";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
 		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 	
 	if (*xsdpath == "") {
-		*xsdpath = "/*rodsZone/" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
 }
