@@ -79,3 +79,10 @@ GENQMAXROWS = 256
 
 # \constant DPTXTNAME	Name of text file that marks datapackages  
 DPTXTNAME = ".yoda-datapackage.txt"
+
+# \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
+IIXSDDEFAULTNAME = "default.xsd"
+
+# \constant IIXSDCOLLECTION
+IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "xsd"
+

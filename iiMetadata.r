@@ -35,3 +35,49 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	}
 }
 
+# /brief iiXSDfroMetadataxml	Locate the XSD to use for a metadata path. Assume $rodsZoneClient is available
+# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
+# /param[out] xsdpath		path of the XSD to use for validation
+iiXSDforMetadataxml(*metadataxmlpath, *xsdpath) {
+	iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, $rodsZoneClient);
+}
+
+# /brief iiXSDfroMetadataxml	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
+# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
+# /param[out] xsdpath		path of the XSD to use for validation
+# /param[in] rodsZone		irods zone to use
+iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
+	*xsdpath = "";
+	*isfound = false;
+	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
+	foreach(*row in
+	       	SELECT USER_GROUP_NAME
+	       	WHERE COLL_NAME = *metadataxml_coll
+	          AND DATA_NAME = *metadataxml_basename
+	          AND USER_GROUP_NAME like "research-%"
+		  ) {
+		if(!*isfound) {
+			*groupName = *row.USER_GROUP_NAME;
+			*isfound = true;
+	 	} else {
+			# Too many query results. More than one group associated with file.
+			fail(-54000);
+		}
+	}
+
+	if (!*isfound) {
+		# No results found. Not a research group
+		fail(-808000);
+	}
+
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*xsdcoll = "/*rodsZone/" ++ IIXSDCOLLECTION;
+	*xsdname = "*category.xsd";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
+		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+	
+	if (*xsdpath == "") {
+		*xsdpath = "/*rodsZone/" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	}
+}
