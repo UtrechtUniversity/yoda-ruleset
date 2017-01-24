@@ -100,7 +100,8 @@ iiSetCollectionType(*path, *orgtype) {
 
 iiGetCollectionType(*path, *orgtype) {
 	*orgtype = "";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = "*path" AND META_COLL_ATTR_NAME = "org_type") {
+	*attrname = UUORGMETADATAPREFIX ++ "type";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attrname) {
 		*orgtype = *row.META_COLL_ATTR_VALUE;
 	}
 }
@@ -128,6 +129,26 @@ iiCollectionDetails(*path, *result) {
 		       *kvp."irods_type" = "Collection";
 		       *kvp."coll_create_time" = *row.COLL_CREATE_TIME;
 		       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
+       }
+
+       if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
+	       *kvp.user_metadata = "true";
+	       *pathelems = split(*path, "/");
+
+	       *nelems = size(*pathelems);
+
+	       if (*nelems > 4) {
+		  *ancestor = "/" ++ elem(*pathelems, 0) ++ "/" ++ elem(*pathelems, 1) ++ "/" ++ elem(*pathelems, 2);
+	          *parentelem = *nelems - 1;
+	          for(*i = 3; *i < *parentelem; *i = *i + 1) {
+			  *ancestor = *ancestor ++ "/" ++ elem(*pathelems, *i);
+			  iiGetCollectionType(*ancestor, *colltype)
+			  if (*colltype == "Datapackage") {
+				  *kvp.enclosing_datapackage = *ancestor;
+				  break;
+			  }
+		  }
+	       }
        }
 
        iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
