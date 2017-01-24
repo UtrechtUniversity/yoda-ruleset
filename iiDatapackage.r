@@ -8,7 +8,7 @@
 # \param[in] path	path of Folder within a resource team grp-
 iiCreateDatapackage(*path) {
 
-	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
+	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+$") {
 		if (!uuCollectionExists(*path)) {
 			# *path does not exist or is not a collection
 			fail(-30100);
@@ -40,7 +40,7 @@ iiCreateDatapackage(*path) {
 # \param[in] path	path of Datapackage
 iiDemoteDatapackage (*path) {
 
-	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+$") {
+	if (*path like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+$") {
 		if (!uuCollectionExists(*path)) {
 			# *path does not exist or is not a collection
 			fail(-30100);
@@ -76,69 +76,3 @@ iiCreateDPtxtPrototype (*path) {
 	msiDataObjWrite(*fd, *msg, *len);
 	msiDataObjClose(*fd,*status);
 }
-
-#  The PEP's below where part of my search to determine which PEP was run in case of creation, modification, removal and moving
-#  of the DPTXTNAME file. The static PEP's where not triggered in the case of rule initiated action. Dynamic PEP's where underdocumented.
-#  These might be useful in the future.
-#
-#pep_database_reg_data_obj_post(*out) {
-#	writeLine("serverLog", "pep_database_reg_data_obj_post:\n  \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-#}
-
-#pep_resource_create_post(*out) {
-#	on (($pluginInstanceName == "irodsResc") && ($KVPairs.logical_path like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
-#		writeLine("serverLog", "pep_resource_create_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-#		writeLine("serverLog", "Marking as datapackage");
-#		uuChopPath($objPath, *coll, *obj);	
-#		iiSetCollectionType(*coll, "Datapackage");
-#	}
-	
-#}
-
-#pep_resource_open_post(*out) {
-#	writeLine("serverLog", "pep_resource_open_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-#}
-
-#pep_resource_modified_post(*out) {
-#	writeLine("serverLog", hd(split($KVPairs.resc_hier, ";")));
-#	writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-#}
-
-
-#acPostProcForOpen {
-#	writeLine("serverLog", "acPostProcForOpen: \$objPath=$objPath, \$writeFlag=$writeFlag");
-#	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-#		writeLine("serverLog", "A datapackage is created by $objPath. acPostProcForOpen called");
-#		uuChopPath($objPath, *coll, *obj);	
-#		iiSetCollectionType(*coll, "Datapackage");
-#	}
-#}	
-
-#acPostProcForPut {
-#	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
-#	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-#		writeLine("serverLog", "A datapackage is created by $objPath.");
-#		uuChopPath($objPath, *coll, *obj);	
-#		iiSetCollectionType(*coll, "Datapackage");
-#	}
-#}
-
-#acPostProcForCreate {
-#	writeLine("serverLog", "acPostProcForPut: \$objPath=$objPath, \$writeFlag=$writeFlag");
-#	if ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-#		writeLine("serverLog", "A datapackage is created by $objPath.");
-#		uuChopPath($objPath, *coll, *obj);	
-#		iiSetCollectionType(*coll, "Datapackage");
-#	}
-#}
-
-
-#acTrashPolicy {
-#	on ($objPath like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$") {
-#		writeLine("serverLog", "A datapackage is losing its marker $objPath. acTrashPolicy called");
-	#	uuChopPath($objPath, *coll, *obj);
-	#	iiSetCollectionType(*coll, "Folder");
-	#	# msiNoTrashCan();
-#	}
-#}
-

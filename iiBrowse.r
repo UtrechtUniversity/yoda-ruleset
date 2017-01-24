@@ -30,7 +30,7 @@ iiBrowseResearchTeams(*orderby, *ascdesc, *limit, *offset, *result) {
 		*kvp."create_time" = *row.COLL_CREATE_TIME;
 		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
 		# Add collection metadata with ilab prefix 	
-		uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+		uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 		*result = cons(*kvp, *result_list);
 	}
 	*result_list = cons(hd(*kvpList), *result_list);
@@ -69,7 +69,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 			*kvp."create_time" = *row.COLL_CREATE_TIME;
 			*kvp."modify_time" = *row.COLL_MODIFY_TIME;
 			# Add collection metadata with ilab prefix 	
-			uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+			uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 			*kvpList = cons(*kvp, *kvpList);
 		}
 	} else {
@@ -84,7 +84,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 			*kvp."modify_time" = *row.DATA_MODIFY_TIME;
 			*kvp."irods_type" = "DataObject";
 			# Add Dataobject metadata with ilab prefix
-			uuObjectMetadataKvp(*data_id, ORGMETADATAPREFIX, *kvp);
+			uuObjectMetadataKvp(*data_id, UUORGMETADATAPREFIX, *kvp);
 			*kvpList = cons(*kvp, *kvpList);
 		}
 	}
@@ -135,7 +135,7 @@ iiCollectionDetails(*path, *result) {
        *kvp.totalSize = *totalSize;
        *kvp.filecount = *filecount;
        *kvp.content_modify_time = *modified;
-       uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+       uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 
        uuKvp2JSON(*kvp, *result);
  }

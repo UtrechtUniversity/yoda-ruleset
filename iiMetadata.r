@@ -81,3 +81,11 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
 }
+
+iiRemoveMetadata(*path) {
+	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
+	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
+	msiAddKeyValToMspStr("forceFlag", "", *options);
+	*err = errorcode(msiDataObjUnlink(*options, *status));
+	writeLine("stdout", "iiRemoveMetadata: Errorcode - *err");
+}

@@ -52,7 +52,7 @@ uuIiIntakeLevel(*level) {
 	*level = 2;
 }
 
-# \breif uuIiVersionPrefix 		Get the prefix used for versions (on top
+# \brief uuIiVersionPrefix 		Get the prefix used for versions (on top
 # 								of the default metadata prefix)
 # \param[out] versionPrefix 	The prefix used for versions in iRods metadata
 uuIiVersionKey(*versionKey, *dependsKey) {
@@ -66,13 +66,7 @@ uuIiVersionKey(*versionKey, *dependsKey) {
 # \constant IIMETADATAPREFIX	Prefix for metadata in ilab
 IIMETADATAPREFIX = "ilab_"
 # \constants IIGROUPPREFIX	Prefix for groups in ilab
-IIGROUPPREFIX = "grp-"
-
-# \constants ORGMETADATAPREFIX Prefix for organisational metadata
-ORGMETADATAPREFIX = "org_"
-
-# \constant USERMETADATAPREFIX Prefix for user metadata
-USERMETADATAPREFIX = "usr_"
+IIGROUPPREFIX = "research-"
 
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
@@ -88,3 +82,6 @@ IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
 
 # \constant IIXMLCOLLECTION
 IIXMLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xml"
+
+# \constant IIMETADATAXMLNAME
+IIMETADATAXMLNAME = ".yoda-metadata.xml"

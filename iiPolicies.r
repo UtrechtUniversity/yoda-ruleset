@@ -196,7 +196,7 @@ uuIiIsAdminUser(*isAdminUser) {
 #					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
 #		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		uuChopPath($KVPairs.logical_path, *parent, *basename);	
 		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Promoting to Datapackage");
@@ -209,7 +209,7 @@ pep_resource_modified_post(*out) {
 #					in the workspace of a Research team. This should be done asynchronously
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/grp-*") ) {
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") ) {
 		*path = $KVPairs.logical_path;
 		uuChopPath(*path, *parent, *basename);
 		if (*basename like "._*") {
@@ -228,7 +228,7 @@ pep_resource_rename_post(*out) {
 	# When a DPTXTNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post. So we don't need to set the Datapackage flag here.
         # This rule only needs to handle the degradation of the Datapackage to a folder when it's moved or renamed.
 
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
 		# writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		# the logical_path in $KVPairs is that of the destination
 		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);
@@ -268,7 +268,7 @@ pep_resource_rename_post(*out) {
 # \brief pep_resource_unregistered_post		Policy to act upon the removal of a DPTXTNAME file.
 # \param[in,out] out 				This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_unregistered_post(*out) {
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/grp-[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
 		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		if (uuCollectionExists(*parent)) {
@@ -282,12 +282,12 @@ pep_resource_unregistered_post(*out) {
 
 # \brief acPostProcForCollCreate 		Policy to mark Collections as Folder or Research Team when created.
 acPostProcForCollCreate {
-	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]+\$") {
+	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+\$") {
 		writeLine("serverLog", "acPostProcForCollCreate: A Research team is created at $collName");
 		
 		iiSetCollectionType($collName, "Research Team");
 	}
-       	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/grp-[^/]\*/.\*") {
+       	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]\*/.\*") {
 		writeLine("serverLog", "acPostProcForCollCreate: an ordinary folder is created at $collName");
 		iiSetCollectionType($collName, "Folder");
 	}

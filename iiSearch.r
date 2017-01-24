@@ -53,7 +53,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*msize = 0;
 			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix AND META_COLL_ATTR_VALUE like "%*searchstring%") {
 				msiString2KeyValPair("", *match);
-				*name = triml(*row.META_COLL_ATTR_NAME, USERMETADATAPREFIX);
+				*name = triml(*row.META_COLL_ATTR_NAME, UUUSERMETADATAPREFIX);
 				*val = *row.META_COLL_ATTR_VALUE;
 				msiAddKeyVal(*match, *name, *val);
 				*match_json = "";
@@ -76,7 +76,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*msize = 0;
 			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix AND META_DATA_ATTR_VALUE like "%*searchstring%") {
 				msiString2KeyValPair("", *match);
-				*name = triml(*row.META_DATA_ATTR_NAME, USERMETADATAPREFIX);
+				*name = triml(*row.META_DATA_ATTR_NAME, UUUSERMETADATAPREFIX);
 				*val = *row.META_DATA_ATTR_VALUE;
 				msiAddKeyVal(*match, *name, *val);
 				*match_json = "";
@@ -95,7 +95,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 # \brief iiSearchByOrgMetadata	Search for a collection by organisational metadata
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] searchstring	String to search for in the organisational metadata
-# \param[in] attrname		Name of the metadata attribute to query (without ORGMETADATAPREFIX)
+# \param[in] attrname		Name of the metadata attribute to query (without UUORGMETADATAPREFIX)
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
@@ -103,7 +103,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 # \param[out] result		List of results in JSON format
 iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, *limit, *offset, *result) {
 
-	*attr = ORGMETADATAPREFIX ++ "*attrname";
+	*attr = UUORGMETADATAPREFIX ++ "*attrname";
 	*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 	*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring));
 	*conditions = cons(uucondition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
@@ -135,7 +135,7 @@ iiKvpCollectionTemplate(*rowList, *kvpList) {
 		*kvp."create_time" = *row.COLL_CREATE_TIME;
 		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
 		# Add collection metadata with org prefix 	
-		uuCollectionMetadataKvp(*coll_id, ORGMETADATAPREFIX, *kvp);
+		uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 		#! writeLine("stdout", *kvp);
 		*kvpList = cons(*kvp, *kvpList);
 	}
@@ -161,7 +161,7 @@ iiKvpDataObjectsTemplate(*rowList, *kvpList) {
 		*kvp."modify_time" = *row.DATA_MODIFY_TIME;
 		*kvp."irods_type" = "DataObject";
 		# Add Dataobject metadata with org prefix
-		uuObjectMetadataKvp(*data_id, ORGMETADATAPREFIX, *kvp);
+		uuObjectMetadataKvp(*data_id, UUORGMETADATAPREFIX, *kvp);
 		*kvpList = cons(*kvp, *kvpList);
 	}
 	*kvpList = cons(hd(*rowList), *kvpList);
