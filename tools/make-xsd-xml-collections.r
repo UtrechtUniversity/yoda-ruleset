@@ -20,7 +20,7 @@ createXmlXsdCollections {
 	}
 
 	*isfound = false;
-	*xmlcoll = "/" ++ $rodsZoneClient ++ IIXMLCOLLECTION;
+	*xmlcoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
 	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *xmlcoll) {
 		*isfound = true;
 	}

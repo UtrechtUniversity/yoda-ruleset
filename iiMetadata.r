@@ -91,3 +91,85 @@ iiRemoveMetadata(*path) {
 	*err = errorcode(msiDataObjUnlink(*options, *status));
 	writeLine("stdout", "iiRemoveMetadata: Errorcode - *err");
 }
+
+# /brief iiPrepareMetadataForm	return info needed for the metadata form
+# /param[in] path	path of the collection where metadata needs to be viewed or added
+# /param[out] result	json object with the location of the metadata file, formelements.xml, the XSD and the role of the current user in the group
+iiPrepareMetadataForm(*path, *result) {
+	msiString2KeyValPair("", *kvp);
+
+	*isfound = false;
+	*prefix = IIGROUPPREFIX ++ "%";
+	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+		*id = *accessid.COLL_ACCESS_USER_ID;
+		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
+				*isfound = true;
+				*groupName = *group.USER_GROUP_NAME;
+		}
+	}
+
+
+	if (!*isfound) {
+		# No results found. Not a research group
+		failmsg(-808000, "path is not a research group or not available to current user");
+	}
+	
+	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *usertype);
+	*kvp.groupName = *groupName;
+	*kvp.usertype = *usertype;
+
+	*xmlname = IIMETADATAXMLNAME;	
+	*xmlpath = "";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
+	       *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*xmlpath == "") {
+		*kvp.hasmetadataxml = "false";
+		*kvp.metadataxmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
+	} else {
+		*kvp.hasmetadataxml = "true";
+		*kvp.metadataxmlpath = *xmlpath;
+	}	
+
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*kvp.category = *category;
+	*kvp.subcategory = *subcategory;
+	*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
+	*xsdname = "*category.xsd";
+	*xsdpath = "";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
+		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+	
+	if (*xsdpath == "") {
+		*kvp.xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	} else {
+		*kvp.xsdpath = *xsdpath;
+	}
+
+	*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
+	*formelementsname = "*category.xml";
+	*formelementspath = "";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
+		*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*formelementspath == "") {
+		*kvp.formelementspath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
+	} else {
+		*kvp.formelementspath = *formelementspath;
+	}
+
+	uuKvp2JSON(*kvp, *result);
+}
+
+# /brief iiRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
+# /param[in] path		Path of collection to scrub of metadata
+iiRemoveMetadata(*path) {
+	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
+	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
+	msiAddKeyValToMspStr("forceFlag", "", *options);
+	*err = errorcode(msiDataObjUnlink(*options, *status));
+	writeLine("stdout", "iiRemoveMetadata: Errorcode - *err");
+}
