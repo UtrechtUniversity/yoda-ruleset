@@ -35,7 +35,7 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	}
 }
 
-# /brief iiXSDfroMetadataxml	Locate the XSD to use for a metadata path. Assume $rodsZoneClient is available
+# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Assume $rodsZoneClient is available
 # /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
 # /param[out] xsdpath		path of the XSD to use for validation
 iiXSDforMetadataxml(*metadataxmlpath, *xsdpath) {
@@ -82,6 +82,8 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 	}
 }
 
+# /brief iiRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
+# /param[in] path		Path of collection to scrub of metadata
 iiRemoveMetadata(*path) {
 	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
 	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
