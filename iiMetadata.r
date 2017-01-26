@@ -116,7 +116,7 @@ iiPrepareMetadataForm(*path, *result) {
 	
 	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *usertype);
 	*kvp.groupName = *groupName;
-	*kvp.usertype = *usertype;
+	*kvp.userType = *usertype;
 
 	*xmlname = IIMETADATAXMLNAME;	
 	*xmlpath = "";
@@ -125,11 +125,11 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 
 	if (*xmlpath == "") {
-		*kvp.hasmetadataxml = "false";
-		*kvp.metadataxmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
+		*kvp.hasMetadataXml = "false";
+		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
 	} else {
-		*kvp.hasmetadataxml = "true";
-		*kvp.metadataxmlpath = *xmlpath;
+		*kvp.hasMetadataXml = "true";
+		*kvp.metadataXmlPath = *xmlpath;
 	}	
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -143,9 +143,9 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 	
 	if (*xsdpath == "") {
-		*kvp.xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		*kvp.xsdPath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	} else {
-		*kvp.xsdpath = *xsdpath;
+		*kvp.xsdPath = *xsdpath;
 	}
 
 	*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
@@ -156,9 +156,9 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 
 	if (*formelementspath == "") {
-		*kvp.formelementspath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
+		*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
 	} else {
-		*kvp.formelementspath = *formelementspath;
+		*kvp.formelementsPath = *formelementspath;
 	}
 
 	uuKvp2JSON(*kvp, *result);
