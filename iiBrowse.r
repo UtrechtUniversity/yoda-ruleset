@@ -131,6 +131,7 @@ iiCollectionDetails(*path, *result) {
 		       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
        }
 
+       *kvp.user_metadata = "false";
        if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
 	       *kvp.user_metadata = "true";
 	       *pathelems = split(*path, "/");
