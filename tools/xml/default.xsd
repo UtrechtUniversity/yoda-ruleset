@@ -15,6 +15,7 @@
 				<xs:element name="Ethical_Approval" type="optionsYesNo" maxOccurs="1" />
 				<xs:element name="Approval_By" type="stringNormal" maxOccurs="1" />
 				<xs:element name="Approval_added" type="optionsYesNo" maxOccurs="1" />
+				<xs:element name="Approval_Date"  type="xs:date" maxOccurs="1" />
 				<xs:element name="Name_approval_doc" type="stringNormal" maxOccurs="unbounded" />
 				<xs:element name="Funding_Organisation" type="stringNormal" maxOccurs="unbounded" />
 				<xs:element name="Fund_Description" type="stringLong" maxOccurs="unbounded" />

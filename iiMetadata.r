@@ -161,5 +161,5 @@ iiRemoveAllMetadata(*path) {
 	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
 	msiAddKeyValToMspStr("forceFlag", "", *options);
 	*err = errorcode(msiDataObjUnlink(*options, *status));
-	writeLine("stdout", "iiRemoveMetadata: Errorcode - *err");
+	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
 }
