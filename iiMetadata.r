@@ -82,16 +82,6 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 	}
 }
 
-# /brief iiRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
-# /param[in] path		Path of collection to scrub of metadata
-iiRemoveMetadata(*path) {
-	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
-	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
-	msiAddKeyValToMspStr("forceFlag", "", *options);
-	*err = errorcode(msiDataObjUnlink(*options, *status));
-	writeLine("stdout", "iiRemoveMetadata: Errorcode - *err");
-}
-
 # /brief iiPrepareMetadataForm	return info needed for the metadata form
 # /param[in] path	path of the collection where metadata needs to be viewed or added
 # /param[out] result	json object with the location of the metadata file, formelements.xml, the XSD and the role of the current user in the group
@@ -164,9 +154,9 @@ iiPrepareMetadataForm(*path, *result) {
 	uuKvp2JSON(*kvp, *result);
 }
 
-# /brief iiRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
+# /brief iiAllRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
 # /param[in] path		Path of collection to scrub of metadata
-iiRemoveMetadata(*path) {
+iiRemoveAllMetadata(*path) {
 	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
 	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
 	msiAddKeyValToMspStr("forceFlag", "", *options);
