@@ -12,6 +12,22 @@ createXmlXsdCollections {
 		*isfound = true;	
 	}
 	
+	*isfound = false;
+	foreach(*row in SELECT RESC_NAME WHERE RESC_NAME = *resc) {
+		*isfound = true;
+	}
+
+	if (!*isfound) {
+		writeLine("stdout", "Resource *resc is not found. Please provide a valid resource example:");
+		writeLine("stdout", "irule -F ./install-default-xml-for-metadata.r '\*resc=\"demoResc\"'");
+		failmsg(-1, "Aborting. Resource not found");
+	}
+
+	if (*usertype != "rodsadmin") {
+		failmsg(-1, "This script needs to be run by a rodsadmin");
+	}
+
+
 	if (*isfound) {
 		writeLine("stdout", "System Collection found at *systemcoll");
 	} else {

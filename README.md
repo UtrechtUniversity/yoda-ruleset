@@ -50,6 +50,14 @@ $ ln -sv /etc/irods/job_iiCreateSnapshots.r job_iiCopySnapshotToVault.re
 ```
 * * * * * /bin/irule -F /etc/irods/job_iiCreateSnapshots.r >> $HOME/iRODS/server/log/job_iiCreateSnapshot.log 2> /dev/null
 ```
+
+9) Install the default schema and formelements for the metadata form. The user needs to be a rodsadmin. If the default target resource "irodsResc" does not exist, add a *resc parameter.
+```
+$ irule -F ./tools/install-default-xml-for-metadata.r
+# or
+$ irule -F ./tools/install-default-xml-for-metadata.r '*resc="demoResc"'
+```
+
     
 LICENSE
 -------
