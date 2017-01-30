@@ -160,11 +160,13 @@
 		<Language_dataset>
 			<label>Language of data</label>
 			<help>The language the dataset is in</help>
+			<default>Dutch</default>
 		</Language_dataset>
 
 		<Owner>
 			<label>Owner Data</label>
 			<help>The person or organisation owning the data</help>
+			<default>University of Utrecht</default>
 		</Owner>
 
 		<Citation>
@@ -356,11 +358,12 @@
 		<Dataset_Access>
 			<label>Dataset access</label>
 			<help>Once archived, how is your dataset accessible to third parties?</help>
-			<default>Free</default>
+			<default>Open</default>
 		</Dataset_Access>
 		<Dataset_location>
 			<label>Archival Status</label>
 			<help>Where is the datapackage stored?</help>
+			<default>I-lab</default>
 		</Dataset_location>
 	</Group>
 </formelements>
