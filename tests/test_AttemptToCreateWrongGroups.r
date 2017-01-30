@@ -5,7 +5,7 @@ test {
 	*subcategory = *testname;
        	*description = "This Group is created by a test rule at *timestamp";
 
-	*groupnames = list("wrongprefix-*testname", "research-*testname", "intake-*testname", "datamanagers-*testname", "grp-*testname", "research-1234", "research-&#>!", "research-*testname" ++ "2", "research-paté");
+	*groupnames = list("wrongprefix-*testname", "research-*testname", "research-*testname", "intake-i*testname", "datamanagers-d*testname", "grp-d*testname", "research-1234*testname", "research-&#>!*testname", "research-*testname" ++ "2", "research-paté*testname");
 
 	foreach(*groupName in *groupnames) {
 		writeLine("stdout", "Attempt to create *groupName");
