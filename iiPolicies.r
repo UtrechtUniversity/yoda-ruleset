@@ -208,17 +208,17 @@ pep_resource_modified_post(*out) {
 # \description				This policy should trigger whenever a new file is added or modified
 #					in the workspace of a Research team. This should be done asynchronously
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
-pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") ) {
-		*path = $KVPairs.logical_path;
-		uuChopPath(*path, *parent, *basename);
-		if (*basename like "._*") {
-			writeLine("serverLog", "pep_resource_modified_post: Ignore *basename for revision store. This is littering by Mac OS");
-		} else {
-			uuRevisionCreateAsynchronously(*path);
-		}
-	}
-}
+#pep_resource_modified_post(*out) {
+#	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") ) {
+#		*path = $KVPairs.logical_path;
+#		uuChopPath(*path, *parent, *basename);
+#		if (*basename like "._*") {
+#			writeLine("serverLog", "pep_resource_modified_post: Ignore *basename for revision store. This is littering by Mac OS");
+#		} else {
+#			uuRevisionCreateAsynchronously(*path);
+#		}
+#	}
+#}
 
 # \brief pep_resource_rename_post	This policy is created to support the moving, renaming and trashing of the .yoda-datapackage.txt file
 # \param[in,out] out			This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
