@@ -35,19 +35,14 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	}
 }
 
-# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Assume $rodsZoneClient is available
-# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
-# /param[out] xsdpath		path of the XSD to use for validation
-iiXSDforMetadataxml(*metadataxmlpath, *xsdpath) {
-	iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, $rodsZoneClient);
-}
-
-# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
-# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
-# /param[out] xsdpath		path of the XSD to use for validation
-# /param[in] rodsZone		irods zone to use
-iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
+# /brief iiPrepareMetadataImport	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
+# /param[in] metadataxmlpath		path of the metadata XML file that needs to be validated
+# /param[in] rodsZone			irods zone to use
+# /param[out] xsdpath			path of the XSD to use for validation
+# /param[out] xslpath			path of the XSL to use for conversion to an AVU xml
+iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 	*xsdpath = "";
+	*xslpath = "";
 	*isfound = false;
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	foreach(*row in
@@ -76,9 +71,19 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
 		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
-	
+
 	if (*xsdpath == "") {
 		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	}
+	
+	*xslcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xslname = "*category.xsl";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslcoll AND DATA_NAME = *xslname) {
+		*xslpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*xslpath == "") {
+		*xslpath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 }
 
@@ -162,4 +167,28 @@ iiRemoveAllMetadata(*path) {
 	msiAddKeyValToMspStr("forceFlag", "", *options);
 	*err = errorcode(msiDataObjUnlink(*options, *status));
 	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
+}
+
+# /brief iiRemoveUserAVUs   Remove the User AVU's from the irods AVU store
+# /param[in] coll	    Collection to scrub of user metadata
+iiRemoveUserAVUs(*coll) {
+	*prefix = UUUSERMETADATAPREFIX ++ "%";
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
+		*attr = *row.META_COLL_ATTR_NAME;
+		*val = *row.META_COLL_ATTR_VALUE;
+		msiString2KeyValPair(*kvp, "*attr=*val");
+		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
+	}
+}
+
+# /brief iiImportMetadataFromXML Ingest user metadata from XML preprocessed with an XSLT
+# /param[in] metadataxmlpath	path of metadataxml to ingest
+# /param[in] xslpath		path of XSL stylesheet
+iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
+
+	# apply xsl stylesheet to metadataxml
+	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
+
+	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
+	msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);
 }

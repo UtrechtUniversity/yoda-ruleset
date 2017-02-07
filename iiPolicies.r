@@ -204,6 +204,22 @@ pep_resource_modified_post(*out) {
 	}
 }
 
+# \brief pep_resource_modified_post  	Policy to set the datapackage flag in case a IIMETADATAXMLNAME file appears. This
+#					dynamic PEP was chosen because it works the same no matter if the file is
+#					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
+# \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
+pep_resource_modified_post(*out) {
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ IIMETADATAXMLNAME ++ "$")) {
+#		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		uuChopPath($KVPairs.logical_path, *parent, *basename);
+		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Import of metadata started");
+		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
+		msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status)
+		writeBytesBuf("serverLog", *status);
+		iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
+	}
+}
+
 # \brief pep_resource_modified_post 	Create revisions on file modifications
 # \description				This policy should trigger whenever a new file is added or modified
 #					in the workspace of a Research team. This should be done asynchronously
@@ -274,6 +290,21 @@ pep_resource_unregistered_post(*out) {
 		if (uuCollectionExists(*parent)) {
 			writeLine("serverLog", "pep_resource_unregistered_post: Demoting *parent to Folder after removal of *basename");
 			iiSetCollectionType(*parent, "Folder");
+		} else {
+			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
+		}			
+	}
+}
+
+# \brief pep_resource_unregistered_post		Policy to act upon the removal of a METADATAXMLNAME file.
+# \param[in,out] out 				This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
+pep_resource_unregistered_post(*out) {
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ IIMETADATAXMLNAME ++ "$")) {
+		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		uuChopPath($KVPairs.logical_path, *parent, *basename);
+		if (uuCollectionExists(*parent)) {
+			writeLine("serverLog", "pep_resource_unregistered_post: *basename removed. Removing user metadata from *parent");
+			iiRemoveUserAVUs(*parent);
 		} else {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			

@@ -74,6 +74,23 @@ createXmlXsdCollections {
 	msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements.xml++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xmldefault");
 
+        *isfound = false;
+	*xslcoll = "/" ++ $rodsZoneClient ++ IIXSLCOLLECTION;
+	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *xslcoll) {
+		*isfound = true;
+	}
+	if(*isfound) {
+		writeLine("stdout", "System collection already exists at *xslcoll");
+	} else {
+		msiCollCreate(*xslcoll, 1, *status);
+		msiSetACL("default", "read", "public", *xslcoll);
+		msiSetACL("default", "admin:inherit", "public", *xslcoll);
+		writeLine("stdout", "Created: *xslcoll");
+	}
+
+	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
+	msiDataObjPut(*xsldefault, *resc, "localPath=*src/metadata.xsl++++forceFlag=", *status);
+	writeLine("stdout", "Installed: *xsldefault");
 
 }
 
