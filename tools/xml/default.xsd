@@ -4,92 +4,92 @@
 	<xs:element name="metadata">
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="Project_ID" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Project_Title" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Project_Description" type="stringLong" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Primary_Investigator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="PID_Primary_Investigator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Project_URL" type="xs:anyURI" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Discipline" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Research_type" type="KindOfDataTypeType" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Ethical_Approval" type="optionsYesNo" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Approval_By" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Approval_added" type="optionsYesNo" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Name_approval_doc" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Funding_Organisation" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Fund_Description" type="stringLong" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Fund_URL" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Funder_Role" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Study_Title" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Study_Description" type="stringLong" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Study_Purpose" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Related_Studies" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Related_Studies" type="xs:anyURI" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Instrument" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Instrument_Description" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Dataset_Title" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Dataset_Description" type="stringLong" minOccurs="1" maxOccurs="1" />
-				<xs:element name="PID_Datapackage" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Dataset_Type" type="optionsDatasetType" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Anonymized" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Version_dataset" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Version_Rationale" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Version_Responsibility" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Underlying_Dataset" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Language_dataset" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Owner" type="stringNormal" minOccurs="1" maxOccurs="unbounded" />
-				<xs:element name="Citation" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Data_Source" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Start_Collection_Date" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="End_Collection_Date" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Collection_Method" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Collection_Method_Description" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Sample_Size" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Collection_Software" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Creator" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Contributor" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="PID_Contributor" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Unit_Analysis" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Location_Covered" type="stringNormal" minOccurs="1" maxOccurs="unbounded" />
-				<xs:element name="Start_Period_Dataset" type="xs:date" minOccurs="1" maxOccurs="1" />
-				<xs:element name="End_Period_Dataset" type="xs:date" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Name_Contactperson" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="PID_Contactperson" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="URL_Contactperson" type="xs:anyURI" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Contact_Info" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="UU_Dept" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Tag" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Codes_used" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Codes_Acronym" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Code" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator_Acronym" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator_Description" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Indicator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Number_of_files" type="xs:integer" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Retention_period" type="xs:integer" minOccurs="1" maxOccurs="1" />
-				<xs:element name="License" type="stringNormal" minOccurs="1" maxOccurs="1" />
-				<xs:element name="URL_License" type="xs:anyURI" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Publish_Dataset" type="optionsYesNo" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Publish_Metadata" type="optionsYesNo" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Archive" type="optionsYesNo" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Embargo" type="xs:date" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Dataset_Access" type="optionsDatasetAccess" minOccurs="1" maxOccurs="1" />
-				<xs:element name="Dataset_location" type="stringNormal" minOccurs="1" maxOccurs="1" />
+				<xs:element name="Project_ID" type="stringNormal" maxOccurs="1" />
+				<xs:element name="Project_Title" type="stringNormal" maxOccurs="1" />
+				<xs:element name="Project_Description" type="stringLong" maxOccurs="1" />
+				<xs:element name="Primary_Investigator" type="stringNormal" maxOccurs="unbounded" />
+				<xs:element name="PID_Primary_Investigator" type="stringNormal" maxOccurs="unbounded" />
+				<xs:element name="Project_URL" type="xs:anyURI"  maxOccurs="1" />
+				<xs:element name="Discipline" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Research_type" type="KindOfDataTypeType"  maxOccurs="1" />
+				<xs:element name="Ethical_Approval" type="optionsYesNo"  maxOccurs="1" />
+				<xs:element name="Approval_By" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Approval_added" type="optionsYesNo"  maxOccurs="1" />
+				<xs:element name="Name_approval_doc" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Funding_Organisation" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Fund_Description" type="stringLong"  maxOccurs="unbounded" />
+				<xs:element name="Fund_URL" type="xs:anyURI"  maxOccurs="unbounded" />
+				<xs:element name="Funder_Role" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Study_Title" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Study_Description" type="stringLong"  maxOccurs="1" />
+				<xs:element name="Study_Purpose" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Related_Studies" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="URL_Related_Studies" type="xs:anyURI"  maxOccurs="unbounded" />
+				<xs:element name="Instrument" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Instrument_Description" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Dataset_Title" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Dataset_Description" type="stringLong"  maxOccurs="1" />
+				<xs:element name="PID_Datapackage" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Dataset_Type" type="optionsDatasetType"  maxOccurs="1" />
+				<xs:element name="Anonymized" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Version_dataset" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Version_Rationale" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Version_Responsibility" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Underlying_Dataset" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Language_dataset" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Owner" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Citation" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Data_Source" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Start_Collection_Date" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="End_Collection_Date" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Collection_Method" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Collection_Method_Description" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Sample_Size" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Collection_Software" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Creator" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="Contributor" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="PID_Contributor" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Unit_Analysis" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Location_Covered" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Start_Period_Dataset" type="xs:date"  maxOccurs="1" />
+				<xs:element name="End_Period_Dataset" type="xs:date"  maxOccurs="1" />
+				<xs:element name="Name_Contactperson" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="PID_Contactperson" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="URL_Contactperson" type="xs:anyURI"  maxOccurs="1" />
+				<xs:element name="Contact_Info" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="UU_Dept" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Tag" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Codes_used" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Codes_Acronym" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="URL_Code" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Indicator" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Indicator_Acronym" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Indicator_Description" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="URL_Indicator" type="stringNormal"  maxOccurs="unbounded" />
+				<xs:element name="Number_of_files" type="xs:integer"  maxOccurs="1" />
+				<xs:element name="Retention_period" type="xs:integer"  maxOccurs="1" />
+				<xs:element name="License" type="stringNormal"  maxOccurs="1" />
+				<xs:element name="URL_License" type="xs:anyURI"  maxOccurs="1" />
+				<xs:element name="Publish_Dataset" type="optionsYesNo"  maxOccurs="1" />
+				<xs:element name="Publish_Metadata" type="optionsYesNo"  maxOccurs="1" />
+				<xs:element name="Archive" type="optionsYesNo"  maxOccurs="1" />
+				<xs:element name="Embargo" type="xs:date"  maxOccurs="1" />
+				<xs:element name="Dataset_Access" type="optionsDatasetAccess"  maxOccurs="1" />
+				<xs:element name="Dataset_location" type="stringNormal"  maxOccurs="1" />
 			</xs:sequence>
 		</xs:complexType>
-	</xs:element>
+	</xs:element>	
 
 	<xs:simpleType name="stringNormal">
 		<xs:restriction base="xs:string">
 			<xs:maxLength value="255"/>
-		</xs:restriction>
+		</xs:restriction>		
 	</xs:simpleType>
 
 	<xs:simpleType name="stringLong">
 		<xs:restriction base="xs:string">
 			<xs:maxLength value="2700"/>
-		</xs:restriction>
+		</xs:restriction>		
 	</xs:simpleType>
 
 	<xs:simpleType name="optionsYesNo">

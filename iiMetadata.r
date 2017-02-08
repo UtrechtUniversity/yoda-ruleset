@@ -188,6 +188,7 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 
 	# apply xsl stylesheet to metadataxml
 	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
+	writeBytesBuf("serverLog", *buf);
 
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);

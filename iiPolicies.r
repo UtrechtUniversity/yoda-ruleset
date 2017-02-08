@@ -304,7 +304,7 @@ pep_resource_unregistered_post(*out) {
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		if (uuCollectionExists(*parent)) {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename removed. Removing user metadata from *parent");
-			iiRemoveUserAVUs(*parent);
+			#iiRemoveUserAVUs(*parent);
 		} else {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			
