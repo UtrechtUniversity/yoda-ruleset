@@ -216,6 +216,8 @@ pep_resource_modified_post(*out) {
 		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
 		iiRemoveUserAVUs(*parent);
 		msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status)
+		writeLine("serverLog", "Status of Validation");
+		writePosInt("serverLog", *status);
 		writeBytesBuf("serverLog", *status);
 		iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
 	}
