@@ -180,8 +180,9 @@ iiRemoveUserAVUs(*coll) {
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
-		msiString2KeyValPair(*kvp, "*attr=*val");
+		msiString2KeyValPair("*attr=*val", *kvp);
 		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
+		writeLine("serverLog", "iiRemoveUserAVUs: Removed [Attribute: \"*attr\"; Value: \"*val\"] from *coll");
 	}
 }
 
