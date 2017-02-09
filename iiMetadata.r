@@ -116,12 +116,16 @@ iiPrepareMetadataForm(*path, *result) {
 	*xmlname = IIMETADATAXMLNAME;	
 	*xmlpath = "";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
-	       *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
 	if (*xmlpath == "") {
 		*kvp.hasMetadataXml = "false";
 		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
+		uuChopPath(*path, *parent, *child);
+		foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
+			*kvp.parentMetadataXml = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
 	} else {
 		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
@@ -193,3 +197,12 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);
 }
+
+# \brief iiCloneMetadataXml   Clone metadata file from one place to the other
+# \param[in] *src	path of source metadataxml
+# \param[in] *dst	path of destination metadataxml
+iiCloneMetadataXml(*src, *dst) {
+	msiDataObjCopy(*src, *dst, "", *status);
+}
+
+
