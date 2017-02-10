@@ -71,7 +71,7 @@ createXmlXsdCollections {
 	}
 
 	*xmldefault = *xmlcoll ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;	
-	msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements.xml++++forceFlag=", *status);
+	msiDataObjPut(*xmldefault, *resc, "localPath=*src/default.xml++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xmldefault");
 
         *isfound = false;
@@ -89,7 +89,7 @@ createXmlXsdCollections {
 	}
 
 	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
-	msiDataObjPut(*xsldefault, *resc, "localPath=*src/metadata.xsl++++forceFlag=", *status);
+	msiDataObjPut(*xsldefault, *resc, "localPath=*src/default.xsl++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xsldefault");
 
 }

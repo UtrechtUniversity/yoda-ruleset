@@ -38,11 +38,12 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 # \param[in] offset		Offset in result set before returning results
 # \param[out] result		List of results in JSON format
 iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result) {
+	uuStrToLower(*searchstring, *lcsearchstring);
 	*iscollection = iscollection(*collectionOrDataObject);
 	*likeprefix = UUUSERMETADATAPREFIX ++ "%";
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring),
+		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *lcsearchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_PARENT_NAME", *startpath));
 		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
@@ -51,11 +52,20 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*coll_id = *kvp.id;
 			*matches = "[]";
 			*msize = 0;
-			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix AND META_COLL_ATTR_VALUE like "%*searchstring%") {
+			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix AND META_COLL_ATTR_VALUE like "%*lcsearchstring%") {
 				msiString2KeyValPair("", *match);
 				*name = triml(*row.META_COLL_ATTR_NAME, UUUSERMETADATAPREFIX);
-				*val = *row.META_COLL_ATTR_VALUE;
-				msiAddKeyVal(*match, *name, *val);
+				# Remove serialnumber from result
+				uuChop(*name, *serialnumber, *field, "_", true);
+				if (*serialnumber like "lc*") {
+					*mixedcasefield = UUUSERMETADATAPREFIX ++ triml(*serialnumber, "lc") ++ "_" ++ *field;
+					foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME = *mixedcasefield) {
+						*val = *row.META_COLL_ATTR_VALUE;
+					}
+				} else {
+					*val = *row.META_COLL_ATTR_VALUE;
+				}
+				msiAddKeyVal(*match, *field, *val);
 				*match_json = "";
 				msi_json_objops(*match_json, *match, "set");
 				msi_json_arrayops(*matches, *match_json, "add", *msize);
@@ -77,8 +87,10 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix AND META_DATA_ATTR_VALUE like "%*searchstring%") {
 				msiString2KeyValPair("", *match);
 				*name = triml(*row.META_DATA_ATTR_NAME, UUUSERMETADATAPREFIX);
+				# Remove serialnumber from result
+				uuChop(*name, *serialnumber, *field, "_", true);
 				*val = *row.META_DATA_ATTR_VALUE;
-				msiAddKeyVal(*match, *name, *val);
+				msiAddKeyVal(*match, *field, *val);
 				*match_json = "";
 				msi_json_objops(*match_json, *match, "set");
 				msi_json_arrayops(*matches, *match_json, "add", *msize);

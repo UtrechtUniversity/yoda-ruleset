@@ -177,12 +177,33 @@ iiRemoveAllMetadata(*path) {
 # /param[in] coll	    Collection to scrub of user metadata
 iiRemoveUserAVUs(*coll) {
 	*prefix = UUUSERMETADATAPREFIX ++ "%";
+	msiString2KeyValPair("", *kvp);
+
+	*duplicates = list();
+	*attrs = list();
+
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
-		msiString2KeyValPair("*attr=*val", *kvp);
+		uuListContains(*attrs, *attr, *inList);
+		if (*inList) {
+			*duplicates = cons((*attr, *val), *duplicates);
+		} else {
+			*attrs = cons(*attr, *attrs);
+			msiAddKeyVal(*kvp, *attr, *val);
+			writeLine("serverLog", "iiRemoveUserAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		}
+	}
+
+	msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
+	
+	foreach(*pair in *duplicates) {
+
+		(*attr, *val) = *pair;
+		writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		msiString2KeyValPair("", *kvp);
+		msiAddKeyVal(*kvp, *attr, *val);
 		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
-		writeLine("serverLog", "iiRemoveUserAVUs: Removed [Attribute: \"*attr\"; Value: \"*val\"] from *coll");
 	}
 }
 
