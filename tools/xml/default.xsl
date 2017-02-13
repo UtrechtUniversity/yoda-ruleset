@@ -11,7 +11,7 @@
 						<Value><xsl:value-of select="." /></Value>
 					</AVU>
 					<AVU>
-						<Attribute>usr_lc<xsl:number value="$serialnumber" format="1" />_<xsl:value-of select="$attribute" /></Attribute>
+						<Attribute>lc_<xsl:number value="$serialnumber" format="1" />_<xsl:value-of select="$attribute" /></Attribute>
 						<Value><xsl:value-of select="translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')" /></Value>
 					</AVU>
 

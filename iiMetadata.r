@@ -190,11 +190,10 @@ iiRemoveAVUs(*coll, *prefix) {
 			writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
 		       *duplicates = cons((*attr, *val), *duplicates);
 		} else {	
-			*attrs = cons(*attr, *attrs);
 			msiAddKeyVal(*kvp, *attr, *val);
 			writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			*prev = *attr;
 		}
-		*prev = *attr;
 	}
 
 	msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
