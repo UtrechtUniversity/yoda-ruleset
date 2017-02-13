@@ -163,7 +163,7 @@ iiPrepareMetadataForm(*path, *result) {
 	uuKvp2JSON(*kvp, *result);
 }
 
-# /brief iiAllRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
+# /brief iiRemoveAllMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
 # /param[in] path		Path of collection to scrub of metadata
 iiRemoveAllMetadata(*path) {
 	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
@@ -173,26 +173,28 @@ iiRemoveAllMetadata(*path) {
 	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
 }
 
-# /brief iiRemoveUserAVUs   Remove the User AVU's from the irods AVU store
+# /brief iiRemoveAVUs   Remove the User AVU's from the irods AVU store
 # /param[in] coll	    Collection to scrub of user metadata
-iiRemoveUserAVUs(*coll) {
-	*prefix = UUUSERMETADATAPREFIX ++ "%";
+# \param[in] prefix	    prefix of metadata to remov
+iiRemoveAVUs(*coll, *prefix) {
+	writeLine("serverLog", "iIRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
 	msiString2KeyValPair("", *kvp);
+	*prefix = *prefix ++ "%";
 
 	*duplicates = list();
-	*attrs = list();
-
-	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
+	*prev = "";
+	foreach(*row in SELECT order_asc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
-		uuListContains(*attrs, *attr, *inList);
-		if (*inList) {
-			*duplicates = cons((*attr, *val), *duplicates);
-		} else {
+		if (*attr == *prev) {
+			writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
+		       *duplicates = cons((*attr, *val), *duplicates);
+		} else {	
 			*attrs = cons(*attr, *attrs);
 			msiAddKeyVal(*kvp, *attr, *val);
-			writeLine("serverLog", "iiRemoveUserAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 		}
+		*prev = *attr;
 	}
 
 	msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");

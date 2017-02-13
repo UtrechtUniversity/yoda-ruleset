@@ -219,7 +219,7 @@ pep_resource_modified_post(*out) {
 		*len = strlen(*status_str);
 		if (*len == 0) {
 			writeLine("stdout", "XSD validation returned no output. Start indexing");
-			iiRemoveUserAVUs(*parent);
+			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 			iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
 		} else {
 			writeBytesBuf("serverLog", *status_buf);
@@ -321,11 +321,11 @@ pep_resource_rename_post(*out) {
 
 		if (*dest_basename != IIMETADATAXMLNAME && *src_parent == *dest_parent) {
 			writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dest_basename. *src_parent loses user metadata.");
-			iiRemoveUserAVUs(*src_parent);
+			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
 		} else if (*src_parent != *dest_parent) {
 			# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
 			if (uuCollectionExists(*src_parent)) {
-				iiRemoveUserAVUs(*src_parent);
+				iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
 				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent. Remove User Metadata from *src_parent.");
 			} else {
 				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent and *src_parent is gone.");
@@ -357,7 +357,7 @@ pep_resource_unregistered_post(*out) {
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		if (uuCollectionExists(*parent)) {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename removed. Removing user metadata from *parent");
-			iiRemoveUserAVUs(*parent);
+			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 		} else {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			
