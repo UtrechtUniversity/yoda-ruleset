@@ -122,14 +122,17 @@ iiPrepareMetadataForm(*path, *result) {
 	if (*xmlpath == "") {
 		*kvp.hasMetadataXml = "false";
 		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
-		uuChopPath(*path, *parent, *child);
-		foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
-			*kvp.parentMetadataXml = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
 	} else {
 		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
 	}	
+
+	uuChopPath(*path, *parent, *child);
+	*kvp.parentHasMetadataXml = "false";
+	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
+		*kvp.parentHasMetadataXml = "true";
+		*kvp.parentMetadataXmlPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*kvp.category = *category;
