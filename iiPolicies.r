@@ -214,15 +214,19 @@ pep_resource_modified_post(*out) {
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Import of metadata started");
 		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
-		msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf);
-		msiBytesBufToStr(*status_buf, *status_str);
-		*len = strlen(*status_str);
-		if (*len == 0) {
-			writeLine("stdout", "XSD validation returned no output. Start indexing");
-			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-			iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
+		*err = errormsg(msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
 		} else {
-			writeBytesBuf("serverLog", *status_buf);
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation returned no output. This implies successful validation. Start indexing");
+				iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+				iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+			}
 		}
 	}
 }

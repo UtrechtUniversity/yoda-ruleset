@@ -159,12 +159,16 @@ iiPrepareMetadataForm(*path, *result) {
 	*kvp.parentHasMetadataXml = "false";
 	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
 		*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf);
-		msiBytesBufToStr(*status_buf, *status_str);
-		*len = strlen(*status_str);
-		if (*len == 0) {
-			*kvp.parentHasMetadataXml = "true";
-			*kvp.parentMetadataXmlPath = *parentxmlpath;
+		*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				*kvp.parentHasMetadataXml = "true";
+				*kvp.parentMetadataXmlPath = *parentxmlpath;
+			}
 		}
 	}
 
