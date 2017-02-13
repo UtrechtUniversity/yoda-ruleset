@@ -214,7 +214,7 @@ pep_resource_modified_post(*out) {
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Import of metadata started");
 		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
-		msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf)
+		msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf);
 		msiBytesBufToStr(*status_buf, *status_str);
 		*len = strlen(*status_str);
 		if (*len == 0) {
@@ -251,7 +251,7 @@ pep_resource_rename_post(*out) {
 	# When a DPTXTNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post. So we don't need to set the Datapackage flag here.
         # This rule only needs to handle the degradation of the Datapackage to a folder when it's moved or renamed.
 
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ DPTXTNAME ++ "$")) {
 		# writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		# the logical_path in $KVPairs is that of the destination
 		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);

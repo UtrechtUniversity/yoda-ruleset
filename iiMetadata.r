@@ -127,13 +127,6 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.metadataXmlPath = *xmlpath;
 	}	
 
-	uuChopPath(*path, *parent, *child);
-	*kvp.parentHasMetadataXml = "false";
-	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
-		*kvp.parentHasMetadataXml = "true";
-		*kvp.parentMetadataXmlPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*kvp.category = *category;
 	*kvp.subcategory = *subcategory;
@@ -145,10 +138,9 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 	
 	if (*xsdpath == "") {
-		*kvp.xsdPath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
-	} else {
-		*kvp.xsdPath = *xsdpath;
+		*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
+	*kvp.xsdPath = *xsdpath;
 
 	*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
 	*formelementsname = "*category.xml";
@@ -161,6 +153,19 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
 	} else {
 		*kvp.formelementsPath = *formelementspath;
+	}
+
+	uuChopPath(*path, *parent, *child);
+	*kvp.parentHasMetadataXml = "false";
+	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
+		*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf);
+		msiBytesBufToStr(*status_buf, *status_str);
+		*len = strlen(*status_str);
+		if (*len == 0) {
+			*kvp.parentHasMetadataXml = "true";
+			*kvp.parentMetadataXmlPath = *parentxmlpath;
+		}
 	}
 
 	uuKvp2JSON(*kvp, *result);
