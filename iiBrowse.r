@@ -1,4 +1,4 @@
-# \brief Rules to support the ilab datapackage browser
+# \brief Rules to support the ilab browser
 # \author Paul Frederiks
 
 # \brief orderclause	helper functions to determine order clause
@@ -93,19 +93,6 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 
 }
 
-iiSetCollectionType(*path, *orgtype) {
-	msiString2KeyValPair("org_type=*orgtype", *kvp);
-	msiSetKeyValuePairsToObj(*kvp, *path, "-C");
-}
-
-iiGetCollectionType(*path, *orgtype) {
-	*orgtype = "";
-	*attrname = UUORGMETADATAPREFIX ++ "type";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attrname) {
-		*orgtype = *row.META_COLL_ATTR_VALUE;
-	}
-}
-
 # \brief iiCollectionDetails return a json object containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
 # \param[out] result   JSON object containing Details of the Collection
@@ -138,18 +125,6 @@ iiCollectionDetails(*path, *result) {
 
 	       *nelems = size(*pathelems);
 
-	       if (*nelems > 4) {
-		  *ancestor = "/" ++ elem(*pathelems, 0) ++ "/" ++ elem(*pathelems, 1) ++ "/" ++ elem(*pathelems, 2);
-	          *parentelem = *nelems - 1;
-	          for(*i = 3; *i < *parentelem; *i = *i + 1) {
-			  *ancestor = *ancestor ++ "/" ++ elem(*pathelems, *i);
-			  iiGetCollectionType(*ancestor, *colltype)
-			  if (*colltype == "Datapackage") {
-				  *kvp.enclosing_datapackage = *ancestor;
-				  break;
-			  }
-		  }
-	       }
        }
 
        iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
