@@ -71,9 +71,6 @@ IIGROUPPREFIX = "research-"
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
 
-# \constant DPTXTNAME	Name of text file that marks datapackages  
-DPTXTNAME = ".yoda-datapackage.txt"
-
 # \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
 IIXSDDEFAULTNAME = "default.xsd"
 
@@ -83,11 +80,17 @@ IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
 # \constant IIXMLCOLLECTION
 IIXMLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xml"
 
+# \constant IIXSLCOLLECTION
+IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
+
 # \constant IIFORMELEMENTSCOLLECTION
 IIFORMELEMENTSCOLLECTION = UUSYSTEMCOLLECTION ++ "/formelements"
 
 # \constant IIFORMELEMENTSDEFAULTNAME
-IIFORMELEMENTSDEFAULTNAME = "formelements.xml"
+IIFORMELEMENTSDEFAULTNAME = "default.xml"
 
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = ".yoda-metadata.xml"
+
+# \constant IIXSLDEFAULTNAME
+IIXSLDEFAULTNAME = "default.xsl"

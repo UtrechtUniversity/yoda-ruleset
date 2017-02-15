@@ -35,19 +35,14 @@ uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	}
 }
 
-# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Assume $rodsZoneClient is available
-# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
-# /param[out] xsdpath		path of the XSD to use for validation
-iiXSDforMetadataxml(*metadataxmlpath, *xsdpath) {
-	iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, $rodsZoneClient);
-}
-
-# /brief iiXSDforMetadataxml	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
-# /param[in] metadataxmlpath	path of the metadata XML file that needs to be validated
-# /param[out] xsdpath		path of the XSD to use for validation
-# /param[in] rodsZone		irods zone to use
-iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
+# /brief iiPrepareMetadataImport	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
+# /param[in] metadataxmlpath		path of the metadata XML file that needs to be validated
+# /param[in] rodsZone			irods zone to use
+# /param[out] xsdpath			path of the XSD to use for validation
+# /param[out] xslpath			path of the XSL to use for conversion to an AVU xml
+iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 	*xsdpath = "";
+	*xslpath = "";
 	*isfound = false;
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	foreach(*row in
@@ -76,9 +71,19 @@ iiXSDforMetadataxml(*metadataxmlpath, *xsdpath, *rodsZone) {
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
 		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
-	
+
 	if (*xsdpath == "") {
 		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	}
+	
+	*xslcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xslname = "*category.xsl";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslcoll AND DATA_NAME = *xslname) {
+		*xslpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*xslpath == "") {
+		*xslpath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 }
 
@@ -111,7 +116,7 @@ iiPrepareMetadataForm(*path, *result) {
 	*xmlname = IIMETADATAXMLNAME;	
 	*xmlpath = "";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
-	       *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
 	if (*xmlpath == "") {
@@ -133,10 +138,9 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 	
 	if (*xsdpath == "") {
-		*kvp.xsdPath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
-	} else {
-		*kvp.xsdPath = *xsdpath;
+		*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
+	*kvp.xsdPath = *xsdpath;
 
 	*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
 	*formelementsname = "*category.xml";
@@ -151,10 +155,27 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.formelementsPath = *formelementspath;
 	}
 
+	uuChopPath(*path, *parent, *child);
+	*kvp.parentHasMetadataXml = "false";
+	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
+		*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				*kvp.parentHasMetadataXml = "true";
+				*kvp.parentMetadataXmlPath = *parentxmlpath;
+			}
+		}
+	}
+
 	uuKvp2JSON(*kvp, *result);
 }
 
-# /brief iiAllRemoveMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
+# /brief iiRemoveAllMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
 # /param[in] path		Path of collection to scrub of metadata
 iiRemoveAllMetadata(*path) {
 	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
@@ -163,3 +184,60 @@ iiRemoveAllMetadata(*path) {
 	*err = errorcode(msiDataObjUnlink(*options, *status));
 	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
 }
+
+# /brief iiRemoveAVUs   Remove the User AVU's from the irods AVU store
+# /param[in] coll	    Collection to scrub of user metadata
+# \param[in] prefix	    prefix of metadata to remov
+iiRemoveAVUs(*coll, *prefix) {
+	writeLine("serverLog", "iIRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
+	msiString2KeyValPair("", *kvp);
+	*prefix = *prefix ++ "%";
+
+	*duplicates = list();
+	*prev = "";
+	foreach(*row in SELECT order_asc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *coll AND META_COLL_ATTR_NAME like *prefix) {
+		*attr = *row.META_COLL_ATTR_NAME;
+		*val = *row.META_COLL_ATTR_VALUE;
+		if (*attr == *prev) {
+			writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
+		       *duplicates = cons((*attr, *val), *duplicates);
+		} else {	
+			msiAddKeyVal(*kvp, *attr, *val);
+			writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			*prev = *attr;
+		}
+	}
+
+	msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
+	
+	foreach(*pair in *duplicates) {
+
+		(*attr, *val) = *pair;
+		writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		msiString2KeyValPair("", *kvp);
+		msiAddKeyVal(*kvp, *attr, *val);
+		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
+	}
+}
+
+# /brief iiImportMetadataFromXML Ingest user metadata from XML preprocessed with an XSLT
+# /param[in] metadataxmlpath	path of metadataxml to ingest
+# /param[in] xslpath		path of XSL stylesheet
+iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
+
+	# apply xsl stylesheet to metadataxml
+	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
+	writeBytesBuf("serverLog", *buf);
+
+	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
+	msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);
+}
+
+# \brief iiCloneMetadataXml   Clone metadata file from one place to the other
+# \param[in] *src	path of source metadataxml
+# \param[in] *dst	path of destination metadataxml
+iiCloneMetadataXml(*src, *dst) {
+	msiDataObjCopy(*src, *dst, "", *status);
+}
+
+

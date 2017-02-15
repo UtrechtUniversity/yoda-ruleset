@@ -191,16 +191,30 @@ uuIiIsAdminUser(*isAdminUser) {
 	}
 }
 
-# \brief pep_resource_modified_post  	Policy to set the datapackage flag in case a DPTXTNAME file appears. This
+# \brief pep_resource_modified_post  	Policy to set the datapackage flag in case a IIMETADATAXMLNAME file appears. This
 #					dynamic PEP was chosen because it works the same no matter if the file is
 #					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
 pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
-#		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		uuChopPath($KVPairs.logical_path, *parent, *basename);	
-		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Promoting to Datapackage");
-		iiSetCollectionType(*parent, "Datapackage");
+	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
+		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+		uuChopPath($KVPairs.logical_path, *parent, *basename);
+		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Import of metadata started");
+		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
+		*err = errormsg(msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation returned no output. This implies successful validation. Start indexing");
+				iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+				iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+			}
+		}
 	}
 }
 
@@ -220,16 +234,16 @@ pep_resource_modified_post(*out) {
 #	}
 #}
 
-# \brief pep_resource_rename_post	This policy is created to support the moving, renaming and trashing of the .yoda-datapackage.txt file
+# \brief pep_resource_rename_post	This policy is created to support the moving, renaming and trashing of the .yoda-metadata.xml file
 # \param[in,out] out			This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_rename_post(*out) {
-	# run only at the top of the resource hierarchy and when a DPTXTNAME file is found inside a research group.
+	# run only at the top of the resource hierarchy and when a IIMETADATAXMLNAME file is found inside a research group.
 	# Unfortunately the source logical_path is not amongst the available data in $KVPairs. The physical_path does include the old path, but not in a convenient format.
-	# When a DPTXTNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post. So we don't need to set the Datapackage flag here.
-        # This rule only needs to handle the degradation of the Datapackage to a folder when it's moved or renamed.
+	# When a IIMETADATAXMLNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post.
+        # This rule only needs to handle the removal of user metadata when it's moved or renamed.
 
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
-		# writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
+		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		# the logical_path in $KVPairs is that of the destination
 		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);
 		# The physical_path is that of the source, but includes the path of the vault. If the vault path includes a home folder, we are screwed.
@@ -238,7 +252,8 @@ pep_resource_rename_post(*out) {
 		# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
 		uuListIndexOf(*src_parent_lst, "home", *idx);
 		if (*idx < 0) {
-			failmsg(-1,"pep_resource_rename_post: Could not find home in $KVPairs.physical_path. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
+			writeLine("serverLog","pep_resource_rename_post: Could not find home in $KVPairs.physical_path. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
+			succeed;
 		}
 		# skip to the part of the path starting from ../home/..
 		for( *el = 0; *el < *idx; *el = *el + 1){
@@ -250,45 +265,32 @@ pep_resource_rename_post(*out) {
 		*src_parent = "/" ++ *src_parent;
 		writeLine("serverLog", "pep_resource_rename_post: \*src_parent = *src_parent");
 
-		if (*dest_basename != DPTXTNAME && *src_parent == *dest_parent) {
-			writeLine("serverLog", "pep_resource_rename_post: .yoda-datapackage.txt was renamed to *dest_basename. *src_parent loses datapackage flag.");
-			iiSetCollectionType(*parent, "Folder");
+		if (*dest_basename != IIMETADATAXMLNAME && *src_parent == *dest_parent) {
+			writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dest_basename. *src_parent loses user metadata.");
+			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
 		} else if (*src_parent != *dest_parent) {
-			# The DPTXTNAME file was moved to another folder or trashed. Check if src_parent still exists and degrade it.
+			# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
 			if (uuCollectionExists(*src_parent)) {
-				iiSetCollectionType(*src_parent, "Folder");
-				writeLine("serverLog", "pep_resource_rename_post: " ++ DPTXTNAME ++ " was moved to *dest_parent. *src_parent became an ordinary Folder.");
+				iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
+				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent. Remove User Metadata from *src_parent.");
 			} else {
-				writeLine("serverLog", "pep_resource_rename_post: " ++ DPTXTNAME ++ " was moved to *dest_parent and *src_parent is gone.");
+				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent and *src_parent is gone.");
 			}
 		}
 	}
 }
 
-# \brief pep_resource_unregistered_post		Policy to act upon the removal of a DPTXTNAME file.
+# \brief pep_resource_unregistered_post		Policy to act upon the removal of a METADATAXMLNAME file.
 # \param[in,out] out 				This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
 pep_resource_unregistered_post(*out) {
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)+/" ++ DPTXTNAME ++ "$")) {
+	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
 		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 		uuChopPath($KVPairs.logical_path, *parent, *basename);
 		if (uuCollectionExists(*parent)) {
-			writeLine("serverLog", "pep_resource_unregistered_post: Demoting *parent to Folder after removal of *basename");
-			iiSetCollectionType(*parent, "Folder");
+			writeLine("serverLog", "pep_resource_unregistered_post: *basename removed. Removing user metadata from *parent");
+			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 		} else {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			
-	}
-}
-
-# \brief acPostProcForCollCreate 		Policy to mark Collections as Folder or Research Team when created.
-acPostProcForCollCreate {
-	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+\$") {
-		writeLine("serverLog", "acPostProcForCollCreate: A Research team is created at $collName");
-		
-		iiSetCollectionType($collName, "Research Team");
-	}
-       	on ($collName like regex "^/" ++ $rodsZoneClient ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]\*/.\*") {
-		writeLine("serverLog", "acPostProcForCollCreate: an ordinary folder is created at $collName");
-		iiSetCollectionType($collName, "Folder");
 	}
 }
