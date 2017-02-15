@@ -53,7 +53,8 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*msize = 0;
 			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix AND META_COLL_ATTR_VALUE like "%*searchstring%") {
 				msiString2KeyValPair("", *match);
-				*name = triml(*row.META_COLL_ATTR_NAME, UUUSERMETADATAPREFIX);
+				*name_lst = split(*row.META_COLL_ATTR_NAME, "_");
+				uuJoin(" ", tl(tl(*name_lst)), *name);
 				*val = *row.META_COLL_ATTR_VALUE;
 				msiAddKeyVal(*match, *name, *val);
 				*match_json = "";
