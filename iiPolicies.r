@@ -70,28 +70,6 @@ acPreprocForDataObjOpen {
 	   }
 }
 
-# This policy is fired if the AVU meta data (AVU metadata is the non-system metadata)
-# is modified in any way except for copying. The modification of meta data is prohibited
-# if the object the meta data is modified on is locked
-#acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) {
-#	   uuIiObjectActionAllowed(*ItemName, *allowed);
-#	   uuIiGetMetadataPrefix(*prfx);
-#	   *startAllowed = *AName not like "*prfx\*";
-#	   uuIiVersionKey(*versionKey, *dependsKey);
-#	   uuIiIsAdminUser(*isAdminUser);
-#	   if(!(*allowed || *startAllowed) || (
-#			 !*isAdminUser && (
-#				    (*AName == *versionKey && *AValue != "1") || 
-#				    *AName == *dependsKey || 
-#				    *AName == "dataset_snapshot_createdAtBy"
-#			 )
-#	   )) {
-#			 writeLine("serverLog", "Metadata *AName = *AValue cannot be added to *ItemName");
-#			 cut;
-#			 msiOprDisallowed;
-#	   }
-#}
-
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
