@@ -35,39 +35,6 @@ acPreprocForCollCreate {
 	   }
 }
 
-# This policy is fired after a collection is created.
-# The policy checks if the new collection is on the datapackage level, 
-# i.e. if it should be initialized with the version number 0
-#acPostProcForCollCreate {
-#	   writeLine("serverLog", "Jan's policy is getriggerd");
-#	   uuIiGetIntakePrefix(*intakePrefix);
-#	   *pathStart = "/"++$rodsZoneClient++"/home/"++*intakePrefix;
-#	   if($collName like "*pathStart*") {
-#			 uuIiIntakeLevel(*level);
-#			 uuChop($collName, *head, *tail, *pathStart, true);
-#			 *segments = split(*tail, "/");
-#			 if(size(*segments) == *level) {
-#				    uuIiVersionKey(*versionKey, *dependsKey);
-#				    *alreadyHasVersion = false;
-#				    foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE
-#						  COLL_NAME = "$collName" AND 
-#						  META_COLL_ATTR_NAME = *versionKey) {
-#						  *alreadyHasVersion = true;
-#						  break;
-#				    }
-#				    writeLine("serverLog", "Already has version is *alreadyHasVersion");
-#				    if(!*alreadyHasVersion) {
-#						  writeLine("serverLog", "New directory on the versioning level (typically Dataset or Datapackage)");
-#						  msiAddKeyVal(*kv, *versionKey, str(1));
-#						  *err = errorcode(msiSetKeyValuePairsToObj(*kv, $collName, "-C"));
-#						  if(*err != 0) {
-#								writeLine("serverLog", "Could not set initial version for $collName. Error code *err");
-#						  }
-#				    }
-#			 }
-#	   }
-#}
-
 # This policy is fired before a data object is renamed or moved
 # The policy disallows renaming or moving the data object, if the
 # object is locked, or if the collection that will be the new parent
@@ -102,27 +69,6 @@ acPreprocForDataObjOpen {
 			 }
 	   }
 }
-
-# This policy fires when a new data object is created
-# The policy prohibits creating a new data object if the
-# parent collection is locked
-# The policy also sets the default rescource to the resource
-# it would choose either way, because the policy is required
-# to set a resource
-
-#DOES NOT WORK
-#acSetRescSchemeForCreate {
-#        uuChopPath($objPath, *parent, *base);
-#        uuIiObjectActionAllowed(*parent, *allowed);
-#        if(!*allowed) {
-#                writeLine("serverLog", "Creating data object $objPath not allowed");
-#                cut;
-#                msiOprDisallowed;
-#        }
-#        writeLine("serverLog", "Created resource. ObjPath = *objPath");
-#        fail;
-#        #msiSetDefaultResc("$destRescName", "null");
-#}
 
 # This policy is fired if the AVU meta data (AVU metadata is the non-system metadata)
 # is modified in any way except for copying. The modification of meta data is prohibited
@@ -191,7 +137,7 @@ uuIiIsAdminUser(*isAdminUser) {
 	}
 }
 
-# \brief pep_resource_modified_post  	Policy to set the datapackage flag in case a IIMETADATAXMLNAME file appears. This
+# \brief pep_resource_modified_post  	Policy to import metadata when a IIMETADATAXMLNAME file appears. This
 #					dynamic PEP was chosen because it works the same no matter if the file is
 #					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
