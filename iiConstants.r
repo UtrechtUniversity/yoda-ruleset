@@ -39,19 +39,6 @@ uuIiGetMetadataPrefix(*metadataPrefix) {
 	*metadataPrefix = "ilab_";
 }
 
-# \brief uuIiIntakeLevel 		Get the depth at which level the intake
-# 								takes place, i.e. which level is defined
-# 								to be a dataset, which can have versions
-#								and which can be snapshotted or archived
-# 								MAKE SURE TO have this correspond to the
-#								PHP Portal!
-# 
-# \param[out] *level 			The depth of the datapackage counted from
-# 								anything below /<zone>/home/<level1>/<level2>...
-uuIiIntakeLevel(*level) {
-	*level = 2;
-}
-
 # \brief uuIiVersionPrefix 		Get the prefix used for versions (on top
 # 								of the default metadata prefix)
 # \param[out] versionPrefix 	The prefix used for versions in iRods metadata
@@ -61,24 +48,17 @@ uuIiVersionKey(*versionKey, *dependsKey) {
 	*dependsKey = *prfx ++ "depends_on";
 }
 
-# \brief constants		Use constants for constants
-# \author Paul Frederiks
-# \constant IIMETADATAPREFIX	Prefix for metadata in ilab
-IIMETADATAPREFIX = "ilab_"
-# \constants IIGROUPPREFIX	Prefix for groups in ilab
-IIGROUPPREFIX = "research-"
-
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
+
+# \constant IIRESEARCHGROUPPREFIX
+IIGROUPPREFIX = "research-"
 
 # \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
 IIXSDDEFAULTNAME = "default.xsd"
 
 # \constant IIXSDCOLLECTION
 IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
-
-# \constant IIXMLCOLLECTION
-IIXMLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xml"
 
 # \constant IIXSLCOLLECTION
 IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"

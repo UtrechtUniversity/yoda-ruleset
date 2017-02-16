@@ -15,7 +15,7 @@
 # \param[in] *isCollection 				Wether to look in collection or data 
 # \param[out] *values 					List of possible values for the given key
 # 										where the given search string is a substring of
-uuIiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
+iiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
 	*values = list();
 
 	if(*isCollection){
