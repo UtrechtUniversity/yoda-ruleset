@@ -1,56 +1,56 @@
 # This policy is fired before a collection is deleted.
 # The policy prohibits deleting the collection if the collection
 # is locked
-acPreprocForRmColl {
-	   iiObjectActionAllowed($collName, *collAllows);
-	   iiObjectActionAllowed($collParentName, *parentAllows);
-	   if(!(*collAllows && *parentAllows)) {
-			 writeLine("serverLog", "Disallowing deleting $collName");
-			 cut;
-			 msiDeleteDisallowed();
-	   }
-}
+#acPreprocForRmColl {
+#	   iiObjectActionAllowed($collName, *collAllows);
+#	   iiObjectActionAllowed($collParentName, *parentAllows);
+#	   if(!(*collAllows && *parentAllows)) {
+#			 writeLine("serverLog", "Disallowing deleting $collName");
+#			 cut;
+#			 msiDeleteDisallowed();
+#	   }
+#}
 
 # This policy is fired before a data object is deleted
 # The policy prohibits deleting the data object if the data object
 # is locked. The parent collection is not checked
-acDataDeletePolicy {
-	   iiObjectActionAllowed($objPath, *allow);
-	   if(!*allow) {
-			 writeLine("serverLog", "Deleting $objPath not allowed");
-			 cut;
-			 msiDeleteDisallowed();
-	   }
-}
+#acDataDeletePolicy {
+#	   iiObjectActionAllowed($objPath, *allow);
+#	   if(!*allow) {
+#			 writeLine("serverLog", "Deleting $objPath not allowed");
+#			 cut;
+#			 msiDeleteDisallowed();
+#	   }
+#}
 
 # This policy is fired before a collection is created
 # The policy prohibits creating a new collection if the
 # parent collection is locked
-acPreprocForCollCreate {
-	   iiObjectActionAllowed($collParentName, *allowed);
-	   if(!*allowed) {
-			 writeLine("serverLog", "Disallowing creating $collName collection");
-			 cut;
-			 msiOprDisallowed;
-	   }
-}
+#acPreprocForCollCreate {
+#	   iiObjectActionAllowed($collParentName, *allowed);
+#	   if(!*allowed) {
+#			 writeLine("serverLog", "Disallowing creating $collName collection");
+#			 cut;
+#			 msiOprDisallowed;
+#	   }
+#}
 
 # This policy is fired before a data object is renamed or moved
 # The policy disallows renaming or moving the data object, if the
 # object is locked, or if the collection that will be the new parent
 # collection of the data object after the rename is locked
-acPreProcForObjRename(*source, *destination) {
-	   uuChopPath(*source, *sourceParent, *sourceBase);
-	   uuChopPath(*destination, *destParent, *destBase);
-	   iiObjectActionAllowed(*source, *sourceAllows);
-	   iiObjectActionAllowed(*sourceParent, *sourceParentAllows);
-	   iiObjectActionAllowed(*destParent, *destAllows);
-	   if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
-			 writeLine("serverLog", "Disallowing moving *source to *destination");
-			 cut;
-			 msiOprDisallowed;
-	   }
-}
+#acPreProcForObjRename(*source, *destination) {
+#	   uuChopPath(*source, *sourceParent, *sourceBase);
+#	   uuChopPath(*destination, *destParent, *destBase);
+#	   iiObjectActionAllowed(*source, *sourceAllows);
+#	   iiObjectActionAllowed(*sourceParent, *sourceParentAllows);
+#	   iiObjectActionAllowed(*destParent, *destAllows);
+#	   if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
+#			 writeLine("serverLog", "Disallowing moving *source to *destination");
+#			 cut;
+#			 msiOprDisallowed;
+#	   }
+#}
 
 # This policy is fired before a data object is opened.
 # The policy does not prohibit opening data objects for reading,
