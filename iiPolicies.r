@@ -2,8 +2,8 @@
 # The policy prohibits deleting the collection if the collection
 # is locked
 acPreprocForRmColl {
-	   uuIiObjectActionAllowed($collName, *collAllows);
-	   uuIiObjectActionAllowed($collParentName, *parentAllows);
+	   iiObjectActionAllowed($collName, *collAllows);
+	   iiObjectActionAllowed($collParentName, *parentAllows);
 	   if(!(*collAllows && *parentAllows)) {
 			 writeLine("serverLog", "Disallowing deleting $collName");
 			 cut;
@@ -15,7 +15,7 @@ acPreprocForRmColl {
 # The policy prohibits deleting the data object if the data object
 # is locked. The parent collection is not checked
 acDataDeletePolicy {
-	   uuIiObjectActionAllowed($objPath, *allow);
+	   iiObjectActionAllowed($objPath, *allow);
 	   if(!*allow) {
 			 writeLine("serverLog", "Deleting $objPath not allowed");
 			 cut;
@@ -27,7 +27,7 @@ acDataDeletePolicy {
 # The policy prohibits creating a new collection if the
 # parent collection is locked
 acPreprocForCollCreate {
-	   uuIiObjectActionAllowed($collParentName, *allowed);
+	   iiObjectActionAllowed($collParentName, *allowed);
 	   if(!*allowed) {
 			 writeLine("serverLog", "Disallowing creating $collName collection");
 			 cut;
@@ -42,9 +42,9 @@ acPreprocForCollCreate {
 acPreProcForObjRename(*source, *destination) {
 	   uuChopPath(*source, *sourceParent, *sourceBase);
 	   uuChopPath(*destination, *destParent, *destBase);
-	   uuIiObjectActionAllowed(*source, *sourceAllows);
-	   uuIiObjectActionAllowed(*sourceParent, *sourceParentAllows);
-	   uuIiObjectActionAllowed(*destParent, *destAllows);
+	   iiObjectActionAllowed(*source, *sourceAllows);
+	   iiObjectActionAllowed(*sourceParent, *sourceParentAllows);
+	   iiObjectActionAllowed(*destParent, *destAllows);
 	   if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
 			 writeLine("serverLog", "Disallowing moving *source to *destination");
 			 cut;
@@ -61,7 +61,7 @@ acPreProcForObjRename(*source, *destination) {
 # created in the file, but they cannot be saved.
 acPreprocForDataObjOpen {
 	   ON ($writeFlag == "1") {
-			 uuIiObjectActionAllowed($objPath, *objAllows);
+			 iiObjectActionAllowed($objPath, *objAllows);
 			 if(!*objAllows) {
 				    writeLine("serverLog", "Disallowing opening $objPath for writing");
 				    cut;
@@ -73,7 +73,7 @@ acPreprocForDataObjOpen {
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	   uuIiObjectActionAllowed(*TargetItemName, *allowed);
+	   iiObjectActionAllowed(*TargetItemName, *allowed);
 	   if(!*allowed) {
 			 writeLine("serverLog", "Metadata could not be copied from *SourceItemName to *TargetItemName because the latter is locked");
 			 cut;
@@ -81,39 +81,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 	   }
 }
 
-# uuIiObjectActionAllowed 	Checks if any action on the target object is allowed
-# 							i.e. if no lock exist. If the current user is the admin
-# 							user, everything is allowed by default
-# \param[in] objPath 		The full path to the object that is to be checked
-# \param[out] allowed 		Bool indicating wether actions are allowed on this object
-# 							at this time by the current user
-#
-uuIiObjectActionAllowed(*objPath, *allowed) {
-	   *allowed = true;
-	   msiGetObjType(*objPath, *type);
-	   *isCollection = false;
-	   if (*type == "-c") {
-			 *isCollection = true;
-	   }
-	   iiObjectIsSnapshotLocked(*objPath, *isCollection, *snaplocked, *frozen);
-	   if(*snaplocked || *frozen) {
-			 uuIiIsAdminUser(*isAdminUser);
-			 if(!*isAdminUser) {
-				    *allowed = false;
-			 }
-	   }
-}
 
-# \brief uuIiIsAdminUser Check if current user is of type rodsadmin
-# \param[out] isAdminUser	 true if user is rodsadmin else false
-uuIiIsAdminUser(*isAdminUser) {
-	uuGetUserType("$userNameClient#$rodsZoneClient", *userType);
-	if (*userType == "rodsadmin") {
-		*isAdminUser = true;
-	} else {
-		*isAdminUser = false;
-	}
-}
 
 # \brief pep_resource_modified_post  	Policy to import metadata when a IIMETADATAXMLNAME file appears. This
 #					dynamic PEP was chosen because it works the same no matter if the file is

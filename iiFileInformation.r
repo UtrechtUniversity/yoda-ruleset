@@ -52,3 +52,15 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *coll_modified = int(*coll_modified);
     *modified = str(max(*data_modified, *coll_modified));
 }
+
+# Note: Code returns allowed = true as Vault process will be reimplemented
+# iiObjectActionAllowed 	Checks if any action on the target object is allowed
+# 							i.e. if no lock exist. If the current user is the admin
+# 							user, everything is allowed by default
+# \param[in] objPath 		The full path to the object that is to be checked
+# \param[out] allowed 		Bool indicating wether actions are allowed on this object
+# 							at this time by the current user
+#
+iiObjectActionAllowed(*objPath, *allowed) {
+	   *allowed = true;
+}
