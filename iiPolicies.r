@@ -52,35 +52,35 @@
 #	   }
 #}
 
-# This policy is fired before a data object is opened.
-# The policy does not prohibit opening data objects for reading,
-# but if the data object is locked, opening for writing is 
-# disallowed. Many editors open a file for reading while editing and
-# store the file locally. Only when saving the changes, the file is
-# opened for writing. IF the file is locked, this means changes can be
-# created in the file, but they cannot be saved.
-acPreprocForDataObjOpen {
-	   ON ($writeFlag == "1") {
-			 iiObjectActionAllowed($objPath, *objAllows);
-			 if(!*objAllows) {
-				    writeLine("serverLog", "Disallowing opening $objPath for writing");
-				    cut;
-				    msiOprDisallowed;
-			 }
-	   }
-}
-
-# This policy is fired if AVU meta data is copied from one object to another.
-# Copying of metadata is prohibited by this policy if the target object is locked
-acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	   iiObjectActionAllowed(*TargetItemName, *allowed);
-	   if(!*allowed) {
-			 writeLine("serverLog", "Metadata could not be copied from *SourceItemName to *TargetItemName because the latter is locked");
-			 cut;
-			 msiOprDisallowed;
-	   }
-}
-
+## This policy is fired before a data object is opened.
+## The policy does not prohibit opening data objects for reading,
+## but if the data object is locked, opening for writing is 
+## disallowed. Many editors open a file for reading while editing and
+## store the file locally. Only when saving the changes, the file is
+## opened for writing. IF the file is locked, this means changes can be
+## created in the file, but they cannot be saved.
+#acPreprocForDataObjOpen {
+#	   ON ($writeFlag == "1") {
+#			 iiObjectActionAllowed($objPath, *objAllows);
+#			 if(!*objAllows) {
+#				    writeLine("serverLog", "Disallowing opening $objPath for writing");
+#				    cut;
+#				    msiOprDisallowed;
+#			 }
+#	   }
+#}
+#
+## This policy is fired if AVU meta data is copied from one object to another.
+## Copying of metadata is prohibited by this policy if the target object is locked
+#acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
+#	   iiObjectActionAllowed(*TargetItemName, *allowed);
+#	   if(!*allowed) {
+#			 writeLine("serverLog", "Metadata could not be copied from *SourceItemName to *TargetItemName because the latter is locked");
+#			 cut;
+#			 msiOprDisallowed;
+#	   }
+#}
+#
 
 
 # \brief pep_resource_modified_post  	Policy to import metadata when a IIMETADATAXMLNAME file appears. This
@@ -185,4 +185,57 @@ pep_resource_unregistered_post(*out) {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			
 	}
+}
+
+acPostProcForPut {
+	on ($objPath like regex ".*" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
+		*invalid = false;
+		*err = errormsg(msiXmlDocSchemaValidate($objPath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+			*invalid = true;
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation returned no output. This implies successful validation.");
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+				*invalid = true;
+			}
+		}
+		if (*invalid) {
+			writeLine("serverLog", "Renaming corrupt or invalid XSD $objPath");
+			msiGetIcatTime(*timestamp, "unix");
+			*iso8601 = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z");
+			msiDataObjRename($objPath, $objPath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
+		}
+	}
+
+	on ($objPath like regex ".*" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
+		*invalid = false;
+		*err = errormsg(msiXmlDocSchemaValidate($objPath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+			*invalid = true;
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation of $objPath returned no output. This implies successful validation.");
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+				*invalid = true;
+			}
+		}
+		if (*invalid) {
+			writeLine("serverLog", "Renaming corrupt or invalid formelements $objPath");
+			msiGetIcatTime(*timestamp, "unix");
+			*iso8601 = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z");
+			msiDataObjRename($objPath, $objPath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
+		}
+	}
+
 }

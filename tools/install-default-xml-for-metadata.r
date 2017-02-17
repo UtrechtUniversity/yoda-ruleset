@@ -51,6 +51,13 @@ createXmlXsdCollections {
 		writeLine("stdout", "Created: *xsdcoll");
 	}
 
+	*xsdforxsd = *xsdcoll ++ "/" ++ "schema-for-xsd.xsd";
+	msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
+	writeLine("stdout", "Installed: *xsdforxsd");
+
+	*xsdforformelements = *xsdcoll ++ "/" ++ "schema-for-formelements.xsd";
+	msiDataObjPut(*xsdforformelements, *resc, "localPath=*src/schema-for-formelements.xsd++++forceFlag=", *status);
+	writeLine("stdout", "Installed: *xsdforformelements");
 	
 	*xsddefault = *xsdcoll ++ "/" ++ IIXSDDEFAULTNAME;	
 	msiDataObjPut(*xsddefault, *resc, "localPath=*src/default.xsd++++forceFlag=", *status);

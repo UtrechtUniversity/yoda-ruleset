@@ -54,9 +54,6 @@ GENQMAXROWS = 256
 # \constant IIRESEARCHGROUPPREFIX
 IIGROUPPREFIX = "research-"
 
-# \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
-IIXSDDEFAULTNAME = "default.xsd"
-
 # \constant IIXSDCOLLECTION
 IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
 
@@ -65,6 +62,9 @@ IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
 
 # \constant IIFORMELEMENTSCOLLECTION
 IIFORMELEMENTSCOLLECTION = UUSYSTEMCOLLECTION ++ "/formelements"
+
+# \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
+IIXSDDEFAULTNAME = "default.xsd"
 
 # \constant IIFORMELEMENTSDEFAULTNAME
 IIFORMELEMENTSDEFAULTNAME = "default.xml"

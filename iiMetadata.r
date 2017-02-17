@@ -185,8 +185,8 @@ iiRemoveAllMetadata(*path) {
 	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
 }
 
-# /brief iiRemoveAVUs   Remove the User AVU's from the irods AVU store
-# /param[in] coll	    Collection to scrub of user metadata
+# \brief iiRemoveAVUs   Remove the User AVU's from the irods AVU store
+# \param[in] coll	    Collection to scrub of user metadata
 # \param[in] prefix	    prefix of metadata to remov
 iiRemoveAVUs(*coll, *prefix) {
 	writeLine("serverLog", "iIRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
