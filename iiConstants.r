@@ -70,7 +70,7 @@ IIXSDDEFAULTNAME = "default.xsd"
 IIFORMELEMENTSDEFAULTNAME = "default.xml"
 
 # \constant IIMETADATAXMLNAME
-IIMETADATAXMLNAME = ".yoda-metadata.xml"
+IIMETADATAXMLNAME = "yoda-metadata.xml"
 
 # \constant IIXSLDEFAULTNAME
 IIXSLDEFAULTNAME = "default.xsl"
