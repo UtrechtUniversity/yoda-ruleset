@@ -60,7 +60,7 @@ createXmlXsdCollections {
 	writeLine("stdout", "Installed: *xsdforformelements");
 	
 	*xsddefault = *xsdcoll ++ "/" ++ IIXSDDEFAULTNAME;	
-	msiDataObjPut(*xsddefault, *resc, "localPath=*src/default.xsd++++forceFlag=", *status);
+	msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xsddefault");
 
 	*isfound = false;
@@ -78,7 +78,7 @@ createXmlXsdCollections {
 	}
 
 	*xmldefault = *xmlcoll ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;	
-	msiDataObjPut(*xmldefault, *resc, "localPath=*src/default.xml++++forceFlag=", *status);
+	msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xmldefault");
 
         *isfound = false;
@@ -96,10 +96,10 @@ createXmlXsdCollections {
 	}
 
 	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
-	msiDataObjPut(*xsldefault, *resc, "localPath=*src/default.xsl++++forceFlag=", *status);
+	msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xsldefault");
 
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-ilab/tools/xml"
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-ilab/tools/xml", *default="ilab"
 output ruleExecOut

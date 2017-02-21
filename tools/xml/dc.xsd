@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified">
+	<xs:element name="metadata">
+		<xs:complexType>
+			<xs:sequence>
+				  <xs:element name="title" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="creator" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="subject" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="description" type="stringLong" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="publisher" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="contributor" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="date" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="type" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="format" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="source" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="language" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="relation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="coverage" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				  <xs:element name="rights" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+  	<xs:simpleType name="stringNormal">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="255"/>
+		</xs:restriction>		
+	</xs:simpleType>
+
+	<xs:simpleType name="stringLong">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="2700"/>
+		</xs:restriction>		
+	</xs:simpleType>
+
+</xs:schema>
