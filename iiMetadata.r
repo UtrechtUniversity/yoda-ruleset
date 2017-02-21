@@ -162,13 +162,12 @@ iiPrepareMetadataForm(*path, *result) {
 		*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
+		} else if (*err == 0) {
 				*kvp.parentHasMetadataXml = "true";
 				*kvp.parentMetadataXmlPath = *parentxmlpath;
-			}
+		} else {
+			writeLine("serverLog", "iiPrepareMetadataForm: *err");
+			writeBytesBuf("serverLog", *status_buf);
 		}
 	}
 
