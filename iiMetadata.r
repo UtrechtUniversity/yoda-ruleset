@@ -230,7 +230,12 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 	writeBytesBuf("serverLog", *buf);
 
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
-	msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);
+	*err = errormsg(msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
+	} else {
+		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from XML");
+	}
 }
 
 # \brief iiCloneMetadataXml   Clone metadata file from one place to the other
@@ -239,5 +244,3 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 iiCloneMetadataXml(*src, *dst) {
 	msiDataObjCopy(*src, *dst, "", *status);
 }
-
-

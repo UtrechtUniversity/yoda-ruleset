@@ -96,16 +96,12 @@ pep_resource_modified_post(*out) {
 		*err = errormsg(msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
-				writeLine("serverLog", "XSD validation returned no output. This implies successful validation. Start indexing");
+		} else if (*err == 0) {
+				writeLine("serverLog", "XSD validation successful. Start indexing");
 				iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 				iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
-			} else {
+		} else {
 				writeBytesBuf("serverLog", *status_buf);
-			}
 		}
 	}
 }
