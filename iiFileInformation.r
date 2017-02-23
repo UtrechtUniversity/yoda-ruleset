@@ -64,3 +64,22 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
 iiObjectActionAllowed(*objPath, *allowed) {
 	   *allowed = true;
 }
+
+iiCollectionGroupNameAndUserType(*path, *groupName, *userType) {
+	*isfound = false;
+	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+		*id = *accessid.COLL_ACCESS_USER_ID;
+		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
+				*isfound = true;
+				*groupName = *group.USER_GROUP_NAME;
+		}
+	}
+
+
+	if (!*isfound) {
+		# No results found. Not a research group
+		failmsg(-808000, "path does not belong to a group or is not available to current user");
+	}
+	
+	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *userType);
+}

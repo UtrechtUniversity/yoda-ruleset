@@ -188,7 +188,7 @@ iiRemoveAllMetadata(*path) {
 # \param[in] coll	    Collection to scrub of user metadata
 # \param[in] prefix	    prefix of metadata to remov
 iiRemoveAVUs(*coll, *prefix) {
-	writeLine("serverLog", "iIRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
+	writeLine("serverLog", "iiRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
 	msiString2KeyValPair("", *kvp);
 	*prefix = *prefix ++ "%";
 

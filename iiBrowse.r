@@ -104,6 +104,12 @@ iiCollectionDetails(*path, *result) {
        *kvp.filecount = *filecount;
        *kvp.content_modify_time = *modified;
        uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
+       *err = errorcode(*kvp.org_status);
+       # -313000 UNMATCHED_KEY_OR_INDEX
+       if (*err == -313000) {
+	       writeLine("stdout", "iiCollectionDetails: *err");
+	       *kvp.org_status = "UNPROTECTED";
+       }
 
        uuKvp2JSON(*kvp, *result);
  }
