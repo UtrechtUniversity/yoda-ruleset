@@ -109,7 +109,7 @@ iiCollectionDetails(*path, *result) {
        # -313000 UNMATCHED_KEY_OR_INDEX
        if (*err == -313000) {
 	       writeLine("stdout", "iiCollectionDetails: *err");
-	       *kvp.org_status = "UNPROTECTED";
+	       *kvp."*statuskey" = "UNPROTECTED";
        }
 
        uuKvp2JSON(*kvp, *result);
