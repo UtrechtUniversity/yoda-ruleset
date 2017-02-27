@@ -17,7 +17,7 @@
 			<mandatory>true</mandatory>
 		</Project_Description>
 		<Primary_Investigator>
-			<label>(Optional) Name Principal Investigator(s)</label>
+			<label>Name Principal Investigator(s)</label>
 			<help>The title of your Research Project</help>
 			<mandatory>true</mandatory>
 		</Primary_Investigator>
@@ -343,7 +343,7 @@
 		<Dataset_Access>
 			<label>Dataset access</label>
 			<help>Once archived, how is your dataset accessible to third parties?</help>
-			<default>Free</default>
+			<default>Open</default>
 			<mandatory>true</mandatory>
 		</Dataset_Access>
 		<Dataset_location>
