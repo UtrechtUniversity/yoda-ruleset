@@ -113,7 +113,7 @@ iiPrepareMetadataForm(*path, *result) {
 	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
 	*collLocks = list();
 	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
-		*lockName = *row.META_COLL_ATTR_NAME;
+		*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
 		*collLocks = cons(*lockName, *collLocks);
 	}
 
