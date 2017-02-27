@@ -108,8 +108,16 @@ iiPrepareMetadataForm(*path, *result) {
 		# No results found. Not a research group
 		failmsg(-808000, "path is not a research group or not available to current user");
 	}
-	
-	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *usertype);
+
+	# Check for locks on Collection
+	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
+	*collLocks = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
+		*lockName = *row.META_COLL_ATTR_NAME;
+		*collLocks = cons(*lockName, *collLocks);
+	}
+
+	uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
 	*kvp.groupName = *groupName;
 	*kvp.userType = *usertype;
 
@@ -119,12 +127,18 @@ iiPrepareMetadataForm(*path, *result) {
 	        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
+	*metadataxmlLocks = list();
 	if (*xmlpath == "") {
 		*kvp.hasMetadataXml = "false";
 		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
 	} else {
 		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
+		# check for locks on metadataXml
+		foreach(*row in SELECT META_DATA_ATTR_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname AND META_DATA_ATTR_NAME like '*lockprefix%') {
+			*lockName = *row.META_DATA_ATTR_NAME;
+			*metadataxmlLocks = cons(*lockName, *metadataxmlLocks);
+		}
 	}	
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -170,6 +184,12 @@ iiPrepareMetadataForm(*path, *result) {
 			writeBytesBuf("serverLog", *status_buf);
 		}
 	}
+
+	uuList2JSON(*collLocks, *json_str);
+	*kvp.collLocks = *json_str;
+	
+	uuList2JSON(*metadataxmlLocks, *json_str);
+	*kvp.metadataxmlLocks = *json_str;	
 
 	uuKvp2JSON(*kvp, *result);
 }

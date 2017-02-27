@@ -85,6 +85,33 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 	   }
 }
 
+acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *AUnit) {
+	on (*ItemType == "-C") {
+	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
+		iiObjectActionAllowed(*ItemName, *allowed);
+		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
+		if(!*allowed && !*isLock) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
+	on (*ItemType == "-d") {
+	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
+
+		iiObjectActionAllowed(*ItemName, *allowed);
+		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
+		if(!*allowed && !*isLock) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
+}
+
+acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *AUnit,  *NAName, *NAValue, *NAUnit) {
+	writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit, \*NAName=*NAName, \*NAValue=*NAValue, \*NAUnit=*NAUnit");
+}
+
+
 pep_resource_create_pre(*out) {
 	uuChopPath($KVPairs.logical_path, *parent, *basename);
 	*clientFullName = $KVPairs.client_user_name ++ "#" ++ $KVPairs.client_user_zone;
@@ -92,7 +119,7 @@ pep_resource_create_pre(*out) {
 	if(!*allowed) {
 		writeLine("serverLog", "pep_resource_create_pre: Disallowing creating *basename in *parent as the collection is locked");
 		cut;
-		fail;
+		msiOprDisallowed;
 	}
 }
 

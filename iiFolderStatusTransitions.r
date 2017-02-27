@@ -9,8 +9,6 @@ iiFolderStatus(*folder, *folderstatus) {
 	
 }
 
-
-
 # \brief iiFolderProtect
 
 iiFolderProtect(*folder) {
@@ -27,12 +25,14 @@ iiFolderProtect(*folder) {
 		failmsg(-1, "Illegal status change. *folderstatus -> " ++  PROTECTED);
 	}
 }
+
 # \brief iiFolderUnprotect
 iiFolderUnprotect(*folder) {
 	iiFolderStatus(*folder, *folderstatus);
 	if (iiIsStatusTransitionLegal(*folderstatus, UNPROTECTED)) {
 		*lockName = UUORGMETADATAPREFIX ++ "lock_protect";
 		iiFolderLockChange(*folder, *lockName, false, *status);
+		iiFolderLockChange(*folder, UUORGMETADATAPREFIX ++ "root_collection", false, *status);
 		if (*status == 0) {
 			*folderstatuskey = UUORGMETADATAPREFIX ++ "status";
 			msiString2KeyValPair("*folderstatuskey=" ++ PROTECTED, *statuskvp);
@@ -53,15 +53,15 @@ iiFolderUnprotect(*folder) {
 iiFolderLockChange(*rootCollection, *lockName, *lockIt, *status){
 	if (*lockIt) {
 		msiGetIcatTime(*timestamp, "unix");
-		msiString2KeyValPair("*lockName=*timestamp", *kvp)
+		msiString2KeyValPair("*lockName=*timestamp%" ++ UUORGMETADATAPREFIX ++ "root_collection=*rootCollection", *buffer)
 		writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
-		uuTreeWalk(*direction, *rootCollection, "iiSetMetadataOnItem", *kvp, *error);
+		uuTreeWalk(*direction, *rootCollection, "iiSetMetadataOnItem", *buffer, *error);
 		*status = *error;
 	} else {
 		*direction="reverse";
-		*kvp.key = *lockName;
-		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataKeyOnItem", *kvp, *error);	
+		*buffer.key = *lockName;
+		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataKeyFromItem", *buffer, *error);	
 		*status = *error;
 	}
 }
@@ -85,23 +85,33 @@ iiSetMetadataOnItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) 
 	*error = errorcode(msiSetKeyValuePairsToObj(*buffer, *objPath, *objType));
 }
 
-iiRemoveMetadataKeyOnItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
+iiRemoveMetadataKeyFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
-	writeLine("serverLog", "iiRemoveMetadataOnItem: Removing *buffer on *objPath");
 	*key = *buffer.key;
+	writeLine("serverLog", "iiRemoveMetadataKeyFromItem: Removing *key on *objPath");
+
 	if (*itemIsCollection) {
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *key AND COLL_NAME = *objPath) {
-			*val = *row.META_COLL_ATTR_VALUE;
-			*error = errorcode(msiRemoveKeyValuePairsFromObj(*buffer, *objPath, *objType));
-			if (*error == -819000) { *error = 0 }
-		}
+		*Q = SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *key AND COLL_NAME = *objPath;
 	} else {
-		uuChopPath(*objPath, *coll, *basename);
-		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *key AND COLL_NAME = *coll AND DATA_NAME = *basename) {
+		*Q = SELECT META_DATA_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *key AND COLL_NAME = *itemParent AND DATA_NAME = *itemName;
+	}
+
+	foreach(*row in *Q) {
+		if (*itemIsCollection) {
+			*val = *row.META_COLL_ATTR_VALUE;
+		} else {
 			*val = *row.META_DATA_ATTR_VALUE;
-			*error = errorcode(msiRemoveKeyValuePairsFromObj(*buffer, *objPath, *objType));
-			if (*error == -819000) { *error = 0 }
+		}
+		msiString2KeyValPair("*key=*val", *kvp);
+		*error = errormsg(msiRemoveKeyValuePairsFromObj(*kvp, *objPath, *objType), *msg);
+		if (*error < 0) {
+			writeLine("serverLog", "iiRemoveMetadataKeyFromItem: removing *key=*val from *objPath failed with errorcode: *error");
+			writeLine("serverLog", *msg);
+			if (*error == -819000) {
+				writeLine("serverLog", "iiRemoveMetadaKeyFromItem: -819000 detected. Keep on trucking");
+				*error = 0;
+			}
 		}
 	}
 }
