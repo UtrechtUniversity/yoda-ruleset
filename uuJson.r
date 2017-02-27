@@ -22,3 +22,17 @@ uuKvp2JSON(*kvp, *json_str) {
 	*json_str = "";
 	msi_json_objops(*json_str, *kvp, "set");
 }
+
+# \brief uuList2JSON convert a list of strings into a JSON array
+# \param[in] lst  a list of strings
+# \param[out] json_str string containing JSON result
+
+uuList2JSON(*lst, *json_str) {
+	*json_str = "[]";
+	*size = 0;
+	if (size(*lst) > 0) {
+		foreach(*item in *lst) {
+			msi_json_arrayops(*json_str, *item, "add", *size);
+		}
+	}
+}
