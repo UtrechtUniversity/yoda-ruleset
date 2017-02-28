@@ -212,7 +212,7 @@
 			<help>(Optional) Persitent Identifier contribitor (e.g. an ORCID, DAI, of ScopusID)</help>
 		</PID_Contributor>
 		<Unit_Analysis>
-			<label>Unit_of Analysis</label>
+			<label>Unit of Analysis</label>
 			<help>(Optional) Unit of analysis of the dataset</help>
 		</Unit_Analysis>
 		<Location_Covered>
