@@ -113,7 +113,7 @@
 			<mandatory>true</mandatory>
 		</Dataset_Title>
 		<Dataset_Description>
-			<label>Dataset_Description</label>
+			<label>Dataset Description</label>
 			<help>A description of your dataset</help>
 			<mandatory>true</mandatory>
 		</Dataset_Description>
