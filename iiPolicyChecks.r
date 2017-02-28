@@ -11,10 +11,11 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 }
 
 
-iiHasLock(*objPath) {
+iiGetLocks(*objPath, *locks, *locked) {
+	*locked = false;
 	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
 	msiGetObjType(*objPath, *objType);
-	*locked = false;
+	msiString2KeyValPair("", *locks);
 	if (*objType == '-d') {
 		uuChopPath(*objPath, *collection, *dataName);
 		foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE
@@ -22,13 +23,13 @@ iiHasLock(*objPath) {
 					  AND DATA_NAME = '*dataName'
 					  AND META_DATA_ATTR_NAME like '*lockprefix%'
 			) {
-			*lockName = *row.META_DATA_ATTR_NAME;
-			*lockTimestamp = *row.META_DATA_ATTR_VALUE;
-			uuListContains(IIVALIDLOCKS, triml(*lockName, *lockprefix), *valid);
-			writeLine("serverLog", "iiHasLock: *objPath -> *lockName=*lockTimestamp [valid=*valid]");
+			*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+			*rootCollection= *row.META_DATA_ATTR_VALUE;
+			uuListContains(IIVALIDLOCKS, *lockName, *valid);
+			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
 			if (*valid) {
+				*locks."*lockName" = *rootCollection;
 				*locked = true;
-				break;
 			}
 		}
 	} else {
@@ -36,33 +37,77 @@ iiHasLock(*objPath) {
 					WHERE COLL_NAME = '*objPath'
 					  AND META_COLL_ATTR_NAME like '*lockprefix%'
 			) {
-			*lockName = *row.META_COLL_ATTR_NAME;
-			*lockTimestamp = *row.META_COLL_ATTR_VALUE;
-			uuListContains(IIVALIDLOCKS, triml(*lockName, *lockprefix), *valid);
-			writeLine("serverLog", "iiHasLock: *objPath -> *lockName=*lockTimestamp [valid=*valid]");
+			*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+			*rootCollection = *row.META_COLL_ATTR_VALUE;
+			uuListContains(IIVALIDLOCKS, *lockName, *valid);
+			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
 			if (*valid) {
+				*locks."*lockName" = *rootCollection;
 				*locked = true;
-				break;
 			}
 		}
 	}
-	*locked;
 }
 
+iiCollectionModifyAllowed(*path, *allowed) {
+	uuGetUserType(uuClientFullName, *userType);
+	iiCollectionModifyAllowed(*userType, *path, *allowed);
+}
 
-iiObjectActionAllowed(*path, *allowed, *clientFullName) {
+iiCollectionModifyAllowed(*userType, *path, *allowed) {
 	*allowed = false;
-	uuGetUserType(*clientFullName, *userType);
+	*reason = "unknown";
 	if (*userType == "rodsadmin" ) {
+		*reason = "*clientFullName is rodsadmin";
 		*allowed = true;
-	} else if (!iiHasLock(*path)) {
-		*allowed = true;
+	} else {
+		iiGetLocks(*path, *locks, *locked);
+		foreach(*lock in *locks) {
+				*rootCollection = *locks."*lock";
+				if (strlen(*rootCollection) > strlen(*path)) {
+					*reason = "subfolder *rootCollection is *lock locked.";
+						allowed = false;
+						break;
+				} else {
+					*reason = "*rootCollection is *lock locked";
+					*allowed = false;
+					break;
+				}	
+		}
 	}
 		
-	writeLine("serverLog", "iiObjectActionAllowed: *path allowed=*allowed");
+	writeLine("serverLog", "iiObjectActionAllowed: *path allowed=*allowed reason=*reason");
 }
 
 iiObjectActionAllowed(*path, *allowed) {
-	*clientFullName  = uuClientFullName();
-	iiObjectActionAllowed(*path, *allowed, *clientFullName);
+	uuGetUserType(uuClientFullName, *userType);
+	iiObjectActionAllowed(*userType, *path, *allowed);
+}
+
+iiObjectActionAllowed(*userType, *path, *allowed) {
+	*allowed = false;
+	if (*userType == "rodsadmin" ) {
+		*reason = "*clientFullName is rodsadmin";
+		*allowed = true;
+	} else {
+		iiGetLocks(*path, *locks, *locked);
+
+		if (*locked) {
+			foreach(*lock in *locks) {
+				*rootCollection = *locks."*lock";
+				if (strlen(*rootCollection) > strlen(*path)) {
+					*reason = "Child *rootCollection has *lock lock. Does not affect current action.";
+					*allowed = true;
+				} else {
+					*reason = "*lock lock found at *rootCollection";
+					*allowed = false;
+					break;
+				}
+			}
+		} else {
+			*reason = "No locks found on *path";
+			*allowed = true;		
+		}
+	}
+	writeLine("serverLog", "iiObjectActionAllowed: *path allowed=*allowed reason=*reason");
 }

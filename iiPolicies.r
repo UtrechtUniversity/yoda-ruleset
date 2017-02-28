@@ -2,7 +2,7 @@
 # The policy prohibits deleting the collection if the collection
 # is locked
 acPreprocForRmColl {
-	   iiObjectActionAllowed($collName, *collAllows);
+	   iiCollectionModifyAllowed($collName, *collAllows);
 	   iiObjectActionAllowed($collParentName, *parentAllows);
 	   if(!(*collAllows && *parentAllows)) {
 			 writeLine("serverLog", "Disallowing deleting $collName");
@@ -28,6 +28,7 @@ acDataDeletePolicy {
 # parent collection is locked
 acPreprocForCollCreate {
 	   writeLine("serverLog", "acPreprocForCollCreate: $collParentName");
+	   *allowed = true;
 	   iiObjectActionAllowed($collParentName, *allowed);
 	   if(!*allowed) {
 			 writeLine("serverLog", "Disallowing creating $collName collection");
@@ -43,9 +44,14 @@ acPreprocForCollCreate {
 acPreProcForObjRename(*source, *destination) {
 	   uuChopPath(*source, *sourceParent, *sourceBase);
 	   uuChopPath(*destination, *destParent, *destBase);
-	   iiObjectActionAllowed(*source, *sourceAllows);
+	   if (*objType == "-C") {
+		   iiCollectionModifyAllowed(*source, *sourceAllows);
+	   } else {
+	   	   iiObjectActionAllowed(*source, *sourceAllows);
+	   }
 	   iiObjectActionAllowed(*sourceParent, *sourceParentAllows);
 	   iiObjectActionAllowed(*destParent, *destAllows);
+	   msiGetObjType(*source, *objType);
 	   if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
 			 writeLine("serverLog", "Disallowing moving *source to *destination");
 			 cut;
@@ -86,21 +92,18 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 }
 
 acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *AUnit) {
-	on (*ItemType == "-C") {
+	on (*ItemType == "-C" && *AName like UUUSERMETADATAPREFIX ++ "*") {
 	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
 		iiObjectActionAllowed(*ItemName, *allowed);
-		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
-		if(!*allowed && !*isLock) {
+		if(!*allowed) {
 			cut;
 			msiOprDisallowed;
 		}
 	}
-	on (*ItemType == "-d") {
+	on (*ItemType == "-d" && *AName like UUUSERMETADATAPREFIX ++ "*") {
 	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
-
 		iiObjectActionAllowed(*ItemName, *allowed);
-		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
-		if(!*allowed && !*isLock) {
+		if(!*allowed) {
 			cut;
 			msiOprDisallowed;
 		}
@@ -114,8 +117,19 @@ acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *A
 
 pep_resource_create_pre(*out) {
 	uuChopPath($KVPairs.logical_path, *parent, *basename);
-	*clientFullName = $KVPairs.client_user_name ++ "#" ++ $KVPairs.client_user_zone;
-	iiObjectActionAllowed(*parent, *allowed, *clientFullName);
+	*userName = $KVPairs.client_user_name;
+	*userZone = $KVPairs.client_user_zone;
+	foreach (
+		*row in
+		SELECT USER_TYPE
+		WHERE  USER_NAME = '*userName'
+		AND    USER_ZONE = '*userZone'
+	) {
+		*userType = *row."USER_TYPE";
+		break;
+	}
+
+	iiObjectActionAllowed(*userType, *parent, *allowed);
 	if(!*allowed) {
 		writeLine("serverLog", "pep_resource_create_pre: Disallowing creating *basename in *parent as the collection is locked");
 		cut;

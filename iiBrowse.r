@@ -133,16 +133,7 @@ iiCollectionDetails(*path, *result) {
        *err = errorcode(*kvp."*statuskey");
        # -313000 UNMATCHED_KEY_OR_INDEX
        if (*err == -313000) {
-		if (size(*collLocks) > 0) {
-			*rootCollKey = UUORGMETADATAPREFIX ++ "root_collection";
-		    	msiGetValByKey(*kvp, *rootCollKey, *rootCollection);
-			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *statuskey AND COLL_NAME = *rootCollection){
-				*kvp."*statuskey" = *row.META_COLL_ATTR_VALUE;
-			}	
-		} else {
 			*kvp."*statuskey" = UNPROTECTED;
-		}
-
        }
 
        uuList2JSON(*collLocks, *collLocks_json);
