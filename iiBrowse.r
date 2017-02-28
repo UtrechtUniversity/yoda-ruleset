@@ -76,34 +76,62 @@ iiCollectionDetails(*path, *result) {
                fail(-317000);
        }
 
+
+
        msiString2KeyValPair("path=*path", *kvp);
 
        foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
-		       *parent = *row.COLL_PARENT_NAME;
-		       *kvp.parent = *parent;
-		       *kvp.basename = triml(*path, *parent ++ "/");
-		       *coll_id = *row.COLL_ID;
-		       *kvp.id = *coll_id;
-		       *kvp."irods_type" = "Collection";
-		       *kvp."coll_create_time" = *row.COLL_CREATE_TIME;
-		       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
+	       *parent = *row.COLL_PARENT_NAME;
+	       *kvp.parent = *parent;
+	       *kvp.basename = triml(*path, *parent ++ "/");
+	       *coll_id = *row.COLL_ID;
+	       *kvp.id = *coll_id;
+	       *kvp."irods_type" = "Collection";
+	       *kvp."coll_create_time" = *row.COLL_CREATE_TIME;
+	       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
        }
 
        *kvp.user_metadata = "false";
        if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
 	       *kvp.user_metadata = "true";
 	       *pathelems = split(*path, "/");
-
 	       *nelems = size(*pathelems);
-
        }
+
+	# Check for locks on Collection
+	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
+	*collLocks = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
+		*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+		*collLocks = cons(*lockName, *collLocks);
+	}
 
        iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
        *kvp.dircount = *dircount;
        *kvp.totalSize = *totalSize;
        *kvp.filecount = *filecount;
        *kvp.content_modify_time = *modified;
+
        uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
+
+       *statuskey = UUORGMETADATAPREFIX ++ "status";
+       *err = errorcode(*kvp."*statuskey");
+       # -313000 UNMATCHED_KEY_OR_INDEX
+       if (*err == -313000) {
+		if (size(*collLocks) > 0) {
+			*rootCollKey = UUORGMETADATAPREFIX ++ "root_collection";
+		    	msiGetValByKey(*kvp, *rootCollKey, *rootCollection);
+			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *statuskey AND COLL_NAME = *rootCollection){
+				*kvp."*statuskey" = *row.META_COLL_ATTR_VALUE;
+			}	
+		} else {
+			*kvp."*statuskey" = UNPROTECTED;
+		}
+
+       }
+
+       uuList2JSON(*collLocks, *collLocks_json);
+       *kvp.collLocks = *collLocks_json;
 
        uuKvp2JSON(*kvp, *result);
  }

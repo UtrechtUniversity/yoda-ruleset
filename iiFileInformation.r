@@ -53,14 +53,21 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *modified = str(max(*data_modified, *coll_modified));
 }
 
-# Note: Code returns allowed = true as Vault process will be reimplemented
-# iiObjectActionAllowed 	Checks if any action on the target object is allowed
-# 							i.e. if no lock exist. If the current user is the admin
-# 							user, everything is allowed by default
-# \param[in] objPath 		The full path to the object that is to be checked
-# \param[out] allowed 		Bool indicating wether actions are allowed on this object
-# 							at this time by the current user
-#
-iiObjectActionAllowed(*objPath, *allowed) {
-	   *allowed = true;
+iiCollectionGroupNameAndUserType(*path, *groupName, *userType) {
+	*isfound = false;
+	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+		*id = *accessid.COLL_ACCESS_USER_ID;
+		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
+				*isfound = true;
+				*groupName = *group.USER_GROUP_NAME;
+		}
+	}
+
+
+	if (!*isfound) {
+		# No results found. Not a group folder
+		failmsg(-808000, "path does not belong to a group or is not available to current user");
+	}
+	
+	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *userType);
 }

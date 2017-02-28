@@ -13,5 +13,5 @@ test_iiImportMetadataFromXML {
 	#msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf);
 }
 
-input *metadataxmlpath="", *xslpath=""
+input *metadataxmlpath="", *metadataxml_coll="", *xslpath=""
 output ruleExecOut
