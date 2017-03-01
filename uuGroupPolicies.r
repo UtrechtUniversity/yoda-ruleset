@@ -337,16 +337,16 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
 
 		if (*groupName like regex "(intake|research)-.*") {
+
 			# Create a corresponding RO group.
+
 			uuChop(*groupName, *_, *baseName, "-", true);
 			*roGroupName = "read-*baseName";
 			msiSudoGroupAdd(*roGroupName, "", "", "", "");
 
 			# Give the RO group read access.
 			msiSudoObjAclSet(1, "read", *roGroupName, "/$rodsZoneClient/home/*groupName", "");
-		}
 
-		if (*groupName like regex "(intake|research)-.*") {
 			# Create vault group.
 
 			uuChop(*groupName, *_, *baseName, "-", true);
@@ -361,6 +361,34 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			if (*datamanagerGroupExists) {
 				*aclKv."forGroup" = *vaultGroupName;
 				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+			}
+		} else if (*groupName like "datamanager-*") {
+
+			# Give the newly created datamanager group read access to all
+			# existing vaults in its category.
+
+			*category = *policyKv."category";
+
+			foreach (
+				# Iterate over groups within the same category.
+				*row in
+				SELECT USER_GROUP_NAME
+				WHERE  USER_TYPE            = 'rodsgroup'
+				  AND  META_USER_ATTR_NAME  = 'category'
+				  AND  META_USER_ATTR_VALUE = '*category'
+			) {
+				# Filter down to intake/research groups and get their vault groups.
+				*catGroup = *row."USER_GROUP_NAME";
+				if (*catGroup like regex "(intake|research)-.*") {
+					uuChop(*catGroup, *_, *catGroupBase, "-", true);
+					*vaultGroupName = "vault-*catGroupBase";
+
+					uuGroupExists(*vaultGroupName, *vaultExists);
+					if (*vaultExists) {
+						*aclKv."forGroup" = *vaultGroupName;
+						msiSudoObjAclSet(1, "read", *groupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+					}
+				}
 			}
 		}
 	}
