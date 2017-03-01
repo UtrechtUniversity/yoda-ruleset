@@ -252,6 +252,8 @@ uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *kvp);
 	}
 
+	*kvpList = cons(hd(*kvpList), uuListReverse(tl(*kvpList)));
+
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }
@@ -269,6 +271,9 @@ uuRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 		*id = *kvp.DATA_ID;
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *kvp);
 	}
+
+	*kvpList = cons(hd(*kvpList), uuListReverse(tl(*kvpList)));
+	
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }

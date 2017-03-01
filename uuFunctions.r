@@ -28,3 +28,7 @@ uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*s
 # \returnvalue uucondition	A triple of strings of type uucondition
 uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like", "*searchstring%%")
 
+# \function uuiso8601  Return irods style timestamp in iso8601 format
+# \param[in] *timestamp		irods style timestamp (epoch as string) 
+# \returnvalue uuiso8601	string with timestamp in iso8601 format
+uuiso8601(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z")
