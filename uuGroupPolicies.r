@@ -194,13 +194,27 @@ uuGroupPreSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 
 uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 
-	if (*otherName like "read-*") {
+	if (*otherName like "read-*" && *accessLevel == "read") {
 		uuGetBaseGroup(*otherName, *baseGroup);
+		uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
 
-		if (*baseGroup != *otherName) {
-			if (*accessLevel == "read" && *objPath == "/$rodsZoneClient/home/*baseGroup") {
+		if (*isManagerInBaseGroup && *baseGroup != *otherName) {
+			if (*objPath == "/$rodsZoneClient/home/*baseGroup") {
 				# Client wants to give a 'read-' group read access to its base
 				# group.
+				succeed;
+			}
+		}
+	} else if (*otherName like "datamanager-*" && *accessLevel == "read") {
+		*forGroup = *policyKv."forGroup";
+		if (*forGroup like "vault-*" && *objPath == "/$rodsZoneClient/home/*forGroup") {
+			uuGetBaseGroup(*forGroup, *baseGroup);
+			uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+			uuGroupGetCategory(*baseGroup, *category, *_);
+
+			if (*isManagerInBaseGroup && *otherName == "datamanager-*category") {
+				# Client wants to give the datamanager group for *category read
+				# access to a vault directory in *category.
 				succeed;
 			}
 		}
@@ -308,11 +322,11 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 	}
 
 	if (*groupName like "vault-*") {
-		# No postprocessing for vault groups, but see near the end of this
-		# function.
+		# No postprocessing for vault groups here - but see below for actions
+		# taken after automatic creation of vault groups.
 
 	} else {
-		# This is a group manager managed group (i.e. 'research-', 'grp-', 'intake-', 'priv-').
+		# This is a group manager managed group (i.e. 'research-', 'grp-', 'intake-', 'priv-', 'datamanager-').
 		# Add group manager metadata and add the creator as a member.
 
 		errorcode(msiSudoGroupMemberAdd(*groupName, uuClientFullName, ""));
@@ -340,6 +354,14 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			msiSudoGroupAdd(*vaultGroupName, "", "", "", "");
 			# Add rods to the vault group.
 			msiSudoGroupMemberAdd(*vaultGroupName, "rods#$rodsZoneClient", "");
+
+			# Give the datamanager group read access to the vault, if the group exists.
+			*datamanagerGroupName = "datamanager-" ++ *policyKv."category";
+			uuGroupExists(*datamanagerGroupName, *datamanagerGroupExists);
+			if (*datamanagerGroupExists) {
+				*aclKv."forGroup" = *vaultGroupName;
+				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+			}
 		}
 	}
 
