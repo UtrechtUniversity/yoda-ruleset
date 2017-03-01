@@ -193,7 +193,6 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
-
 uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
@@ -204,10 +203,11 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		if (*attribute == "category") {
-			*reason = ""; # The rule engine seems to require us to have our parameters
-			              # initialized before passing them to other functions.
-
-			uuGroupPolicyCanUseCategory(*actor, *value, *allowed, *reason);
+			if (*groupName like "datamanager-*" && *groupName != "datamanager-*value") {
+				*reason = "The category of a datamanager group cannot be changed.";
+			} else {
+				uuGroupPolicyCanUseCategory(*actor, *value, *allowed, *reason);
+			}
 
 		} else if (*attribute == "subcategory") {
 			if (uuGroupCategoryNameIsValid(*value)) {
@@ -241,7 +241,8 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
-		if (*groupName like regex "(grp|intake|research|vault)-.*") {
+		#                           v  These groups are user-removable  v
+		if (*groupName like regex "(grp|intake|research|vault|datamanager)-.*") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -258,7 +259,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
+			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault or datamanager.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
