@@ -32,7 +32,7 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 # this is needed for groupcollections to allow users to share objects 
 acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
-	if (*type != "rodsgroup" || !($otherUserName like "read-*")) {
+	if (*type != "rodsgroup" || !($otherUserName like regex "(read|datamanager)-.*")) {
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);

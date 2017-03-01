@@ -44,7 +44,7 @@ uuUserNameIsValid(*name)
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research|datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a (sub)category name is valid.
 #
@@ -83,17 +83,38 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
 
-				uuChop(*groupName, *_, *base, "-", true);
-				*roName = "read-*base";
-				uuGroupExists(*roName, *roExists);
+				uuChop(*groupName, *prefix, *base, "-", true);
 
-				if (*roExists) {
-					*reason = "This group name is not available.";
+				if (*prefix == "datamanager") {
+					# Datamanager groups may only be created with priv-category-add.
+					uuGroupUserExists("priv-category-add", *actor, *hasCatPriv);
+					if (*hasCatPriv) {
+						if (*groupName == "datamanager-*category") {
+							# Last check.
+							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+						} else {
+							*reason = "Datamanager groups must be named after their category.";
+						}
+					} else {
+						*reason = "You cannot create a datamanager group because you are not a member of the priv-category-add group.";
+					}
 				} else {
-					# Last check.
-					uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-				}
+					# For research and intake groups: Make sure their ro and
+					# vault groups do not exist yet.
 
+					*roName = "read-*base";
+					uuGroupExists(*roName, *roExists);
+
+					*vaultName = "vault-*base";
+					uuGroupExists(*vaultName, *vaultExists);
+
+					if (*roExists || *vaultExists) {
+						*reason = "This group name is not available.";
+					} else {
+						# Last check.
+						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+					}
+				}
 			} else {
 				if (*existingType == "rodsuser") {
 					*existingType = "user";
@@ -103,7 +124,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanagers-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -172,7 +193,6 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
-
 uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
@@ -183,10 +203,11 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		if (*attribute == "category") {
-			*reason = ""; # The rule engine seems to require us to have our parameters
-			              # initialized before passing them to other functions.
-
-			uuGroupPolicyCanUseCategory(*actor, *value, *allowed, *reason);
+			if (*groupName like "datamanager-*" && *groupName != "datamanager-*value") {
+				*reason = "The category of a datamanager group cannot be changed.";
+			} else {
+				uuGroupPolicyCanUseCategory(*actor, *value, *allowed, *reason);
+			}
 
 		} else if (*attribute == "subcategory") {
 			if (uuGroupCategoryNameIsValid(*value)) {
@@ -220,7 +241,8 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
-		if (*groupName like regex "(grp|intake|research|vault)-.*") {
+		#                           v  These groups are user-removable  v
+		if (*groupName like regex "(grp|intake|research|vault|datamanager)-.*") {
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -237,7 +259,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
+			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault or datamanager.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
