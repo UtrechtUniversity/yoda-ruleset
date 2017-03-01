@@ -53,6 +53,8 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 
 	if (*groupName like regex "(read|vault)-.*") {
 
+		# This type of group is automatically created from a postproc policy.
+
 		uuGetBaseGroup(*groupName, *baseName);
 		if (*baseName == *groupName) {
 			# Do not allow creating a standalone "read-" or "vault-" group.
@@ -70,6 +72,9 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 		succeed;
 
 	} else {
+
+		# This type of group is manually created.
+
 		if (*initialAttr == "manager" || *initialValue == uuClientFullName) {
 			# Normal groups must have an initial manager attribute.
 

@@ -44,7 +44,7 @@ uuUserNameIsValid(*name)
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research|datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a (sub)category name is valid.
 #
@@ -83,17 +83,38 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
 
-				uuChop(*groupName, *_, *base, "-", true);
-				*roName = "read-*base";
-				uuGroupExists(*roName, *roExists);
+				uuChop(*groupName, *prefix, *base, "-", true);
 
-				if (*roExists) {
-					*reason = "This group name is not available.";
+				if (*prefix == "datamanager") {
+					# Datamanager groups may only be created with priv-category-add.
+					uuGroupUserExists("priv-category-add", *actor, *hasCatPriv);
+					if (*hasCatPriv) {
+						if (*groupName == "datamanager-*category") {
+							# Last check.
+							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+						} else {
+							*reason = "Datamanager groups must be named after their category.";
+						}
+					} else {
+						*reason = "You cannot create a datamanager group because you are not a member of the priv-category-add group.";
+					}
 				} else {
-					# Last check.
-					uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-				}
+					# For research and intake groups: Make sure their ro and
+					# vault groups do not exist yet.
 
+					*roName = "read-*base";
+					uuGroupExists(*roName, *roExists);
+
+					*vaultName = "vault-*base";
+					uuGroupExists(*vaultName, *vaultExists);
+
+					if (*roExists || *vaultExists) {
+						*reason = "This group name is not available.";
+					} else {
+						# Last check.
+						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+					}
+				}
 			} else {
 				if (*existingType == "rodsuser") {
 					*existingType = "user";
@@ -103,7 +124,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanagers-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
