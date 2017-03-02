@@ -76,8 +76,6 @@ iiCollectionDetails(*path, *result) {
                fail(-317000);
        }
 
-
-
        msiString2KeyValPair("path=*path", *kvp);
 
        foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
@@ -91,27 +89,27 @@ iiCollectionDetails(*path, *result) {
 	       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
        }
 
-	*isfound = false;
-	*prefix = IIGROUPPREFIX ++ "%";
-	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
-		*id = *accessid.COLL_ACCESS_USER_ID;
-		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
-				*isfound = true;
-				*groupName = *group.USER_GROUP_NAME;
-		}
-	}
 
        *kvp.user_metadata = "false";
        if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
 	       *kvp.user_metadata = "true";
 	       *pathelems = split(*path, "/");
 	       *nelems = size(*pathelems);
+
+		*isfound = false;
+		*prefix = IIGROUPPREFIX ++ "%";
+		foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*id = *accessid.COLL_ACCESS_USER_ID;
+			foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
+					*isfound = true;
+					*groupName = *group.USER_GROUP_NAME;
+			}
+		}
+
+		uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
+		*kvp.groupName = *groupName;
+		*kvp.userType = *usertype;
        }
-
-	uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
-	*kvp.groupName = *groupName;
-	*kvp.userType = *usertype;
-
 
 	# Check for locks on Collection
 	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";

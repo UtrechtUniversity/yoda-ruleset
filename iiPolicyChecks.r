@@ -1,3 +1,4 @@
+# \brief iiRenameInvalidXML
 iiRenameInvalidXML(*xmlpath, *xsdpath) {
 		*invalid = false;
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);

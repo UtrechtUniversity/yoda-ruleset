@@ -21,7 +21,7 @@ acPostProcForPut {
 # is locked
 acPreprocForRmColl {
 	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreCollDelete($collName, uuClientFullName);
+		iiPreCollDelete($collName, uuClientFullName) ;
 	}
 }
 
@@ -30,7 +30,7 @@ acPreprocForRmColl {
 # is locked. The parent collection is not checked
 acDataDeletePolicy {
 	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreDataObjDelete(*path, uuClientFullName);
+		iiPreDataObjDelete(*path, uuClientFullName) ;
 	}
 }
 
@@ -39,7 +39,7 @@ acDataDeletePolicy {
 # parent collection is locked
 acPreprocForCollCreate {
 	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreCollCreate($collName, uuClientFullName);
+		iiPreCollCreate($collName, uuClientFullName) ;
 	}
 }
 
@@ -49,7 +49,7 @@ acPreprocForCollCreate {
 # collection of the data object after the rename is locked
 acPreProcForObjRename(*source, *destination) {
 	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreObjRename(*source, *destination, uuClientFullName);
+		iiPreObjRename(*source, *destination, uuClientFullName) ;
 	}
 }
 
@@ -62,9 +62,9 @@ acPreProcForObjRename(*source, *destination) {
 # created in the file, but they cannot be saved.
 acPreprocForDataObjOpen {
 	writeLine("stdout", "$oprType, $writeFlag");
-	#ON ($writeFlag == "1" && $objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-	#	iiPreDataObjWrite($objPath, uuClientFullName);
-	#}
+	ON ($writeFlag == "1" && $objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
+		iiPreDataObjWrite($objPath, uuClientFullName) ;
+	}
 }
 
 
@@ -78,32 +78,34 @@ pep_resource_create_pre(*out) {
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
 	on ((*SourceItemType == "-C" || *SourceItemType == "-d") && (*SourceItemName like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*" || *TargetItemName like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*")) {
-		iiPreCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName);
+		iiPreCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName) ;
 	}
 }
 
 
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-		iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue);
-	}
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName);
+		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName) ;
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
-		iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName);
+		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+			iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue) ;
+		} else {
+			iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName) ;
+		}
 	}
 }
 
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-		iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeValue); 
-	}
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName);
+		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName) ;
 	}
-	on (*attributeName like UUORGMETAPREFIX ++ "*") {
-		iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName);
+	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+			iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue) ; 
+		} else {
+			iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName) ;
+		}
 	}
 }
 
@@ -206,5 +208,3 @@ pep_resource_unregistered_post(*out) {
 		}			
 	}
 }
-
-

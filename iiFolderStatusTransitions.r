@@ -6,7 +6,6 @@ iiFolderStatus(*folder, *folderstatus) {
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderstatuskey) {
 		*folderstatus = *row.META_COLL_ATTR_VALUE;
 	}
-	
 }
 
 # \brief iiFolderProtect
@@ -83,9 +82,6 @@ iiFolderLockChange(*rootCollection, *lockName, *lockIt, *status){
 
 	*status = *error;
 }
-
-
-
 
 iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d"
 
