@@ -1,3 +1,27 @@
+iiRenameInvalidXML(*xmlpath, *xsdpath) {
+		*invalid = false;
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+			*invalid = true;
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation returned no output. This implies successful validation.");
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+				*invalid = true;
+			}
+		}
+		if (*invalid) {
+			writeLine("serverLog", "Renaming corrupt or invalid $objPath");
+			msiGetIcatTime(*timestamp, "unix");
+			*iso8601 = uuiso8601(*timestamp);
+			msiDataObjRename(*xmlpath, *xmlpath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
+		}
+}
+
 # \brief iiIsStatusTransitionLegal
 iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal = false;
@@ -10,7 +34,7 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal;
 }
 
-
+# \brief iiGetLocks
 iiGetLocks(*objPath, *locks, *locked) {
 	*locked = false;
 	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
