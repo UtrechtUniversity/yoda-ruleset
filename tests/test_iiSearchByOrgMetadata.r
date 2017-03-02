@@ -1,6 +1,6 @@
 testSearchByMetadata {
 
-	writeLine("stdout", "Searching for Collections with " ++ ORGMETADATAPREFIX ++ "*attrname = *searchstring");
+	writeLine("stdout", "Searching for Collections with " ++ UUORGMETADATAPREFIX ++ "*attrname = *searchstring");
 
 	iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, *limit, *offset, *result);
 	writeLine("stdout", *result);
