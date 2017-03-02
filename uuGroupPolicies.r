@@ -207,15 +207,26 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 		}
 	} else if (*otherName like "datamanager-*" && *accessLevel == "read") {
 		*forGroup = *policyKv."forGroup";
-		if (*forGroup like "vault-*" && *objPath == "/$rodsZoneClient/home/*forGroup") {
-			uuGetBaseGroup(*forGroup, *baseGroup);
-			uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
-			uuGroupGetCategory(*baseGroup, *category, *_);
+		if (*objPath == "/$rodsZoneClient/home/*forGroup") {
+			if (*forGroup like regex "(intake|research)-.*") {
+				uuGroupUserIsManager(*forGroup, uuClientFullName, *isManagerInGroup);
+				uuGroupGetCategory(*forGroup, *category, *_);
+				if (*isManagerInGroup && *otherName == "datamanager-*category") {
+					# Client wants to give the datamanager group for *category read
+					# access to a research/intake directory in *category.
+					succeed;
+				}
 
-			if (*isManagerInBaseGroup && *otherName == "datamanager-*category") {
-				# Client wants to give the datamanager group for *category read
-				# access to a vault directory in *category.
-				succeed;
+			} else if (*forGroup like "vault-*") {
+				uuGetBaseGroup(*forGroup, *baseGroup);
+				uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+				uuGroupGetCategory(*baseGroup, *category, *_);
+
+				if (*isManagerInBaseGroup && *otherName == "datamanager-*category") {
+					# Client wants to give the datamanager group for *category read
+					# access to a vault directory in *category.
+					succeed;
+				}
 			}
 		}
 	} else if (*accessLevel == "inherit") {
@@ -355,17 +366,21 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			# Add rods to the vault group.
 			msiSudoGroupMemberAdd(*vaultGroupName, "rods#$rodsZoneClient", "");
 
-			# Give the datamanager group read access to the vault, if the group exists.
+			# Give the datamanager group read access to the home dir and the
+			# vault, if the group exists.
 			*datamanagerGroupName = "datamanager-" ++ *policyKv."category";
 			uuGroupExists(*datamanagerGroupName, *datamanagerGroupExists);
 			if (*datamanagerGroupExists) {
+				*aclKv."forGroup" = *groupName;
+				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*groupName", *aclKv);
+
 				*aclKv."forGroup" = *vaultGroupName;
 				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
 			}
 		} else if (*groupName like "datamanager-*") {
 
 			# Give the newly created datamanager group read access to all
-			# existing vaults in its category.
+			# existing intake/research home dirs and vaults in its category.
 
 			*category = *policyKv."category";
 
@@ -380,6 +395,10 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 				# Filter down to intake/research groups and get their vault groups.
 				*catGroup = *row."USER_GROUP_NAME";
 				if (*catGroup like regex "(intake|research)-.*") {
+
+					*aclKv."forGroup" = *catGroup;
+					msiSudoObjAclSet(1, "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
+
 					uuChop(*catGroup, *_, *catGroupBase, "-", true);
 					*vaultGroupName = "vault-*catGroupBase";
 
