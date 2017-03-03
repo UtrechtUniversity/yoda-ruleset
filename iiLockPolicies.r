@@ -1,10 +1,6 @@
-iiPreCollCreate(*path, *user) {
-	writeLine("serverLog", "iiPreCollCreate(*path, *user)");
-
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
+iiCanCollCreate(*path, *allowed, *reason) {
+	*allowed = false;
+	*reason = "iiCanCollCreate: Unknown failure";
 
 	uuChopPath(*path, *parent, *basename);
 	iiGetLocks(*parent, *locks, *locked);
@@ -12,177 +8,269 @@ iiPreCollCreate(*path, *user) {
 		foreach(*lockName in *locks) {
 			*rootCollection = *locks."*lockName";
 			if (strlen(*rootCollection) > strlen(*parent)) {
-				writeLine("serverLog", "iiPreCollCreate: lock *lockName found. But Starting from *rootCollection") ;
+				*reason = "iiCanCollCreate: lock *lockName found on *parent, but Starting from *rootCollection" ;
+				*allowed = true;
 			} else {
-				fail;
+				*reason = "iiCanCollCreate: lock *lockName found on *parent. Disallowing creating subcollection: *basename";
+				*allowed = false;
+				break;
 			}
 		}
+	} else {
+		*reason = "iiCanCollCreate: No locks found on *parent";
+		*allowed = true;
 	}
+
+	writeLine("serverLog", "iiCanCollCreate: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreCollRename(*src, *dst, *user) {
-	writeLine("serverLog", "iiPreCollRename(*src, *dst, *user)");
-	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
-
+iiCanCollRename(*src, *dst, *allowed, *reason) {
+	*allowed = false;
+	*reason = "Unknown error";
 	iiGetLocks(*src, *locks, *locked);
 	if(*locked) {
-		fail;
+		*allowed = false;
+		*reason = "*src is locked with *locks";	
+	} else {
+		uuChopPath(*dst, *dstparent, *dstbasename);
+		iiGetLocks(*dstparent, *locks, *locked);
+		if (*locked) {
+			*allowed = false;
+			*reason = "*dstparent is locked with *locks";
+		} else {
+			*allowed = true;
+			*reason = "No Locks found";
+		}
 	}
 
+	writeLine("serverLog", "iiCanCollRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
-iiPreCollDelete(*path, *user) {
-	writeLine("serverLog", "iiPreCollDelete(*path, *user)");
-	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
+iiCanCollDelete(*path, *allowed, *reason) {
 
+	*allowed = false;
+	*reason = "Unknown error"; 	
 	iiGetLocks(*path, *locks, *locked);
 	if(*locked) {
-		fail;
+		*allowed = false;
+		*reason = "Locked with *locks";
+	} else {
+		*allowed = true;
+		*reason = "No locks found";
 	}
+
+	writeLine("serverLog", "iiCanCollDelete: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreDataObjCreate(*path, *user) {
-	writeLine("serverLog", "iiPreDataObjCreate(*path, *user)");
+iiCanDataObjCreate(*path, *allowed, *reason) {
 	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
+	*allowed = false;
+	*reason = "Unknown error";
 
 	uuChopPath(*path, *parent, *basename);
 	iiGetLocks(*parent, *locks, *locked);
 	if(*locked) {
-		fail;
+		foreach(*lockName in *locks) {
+			*rootCollection = *locks.*lockName;
+			if (strlen(*rootCollection) > strlen(*parent)) {
+				*allowed = true;
+				*reason = "*parent has locked child *rootCollection, but this does not prevent creating new files."
+			} else {
+				*allowed = false;
+				*reason = "*parent has locks: *locks";
+				break;
+			}
+		}
+	} else {
+		*allowed = true;
+		*reason = "No locks found";
 	}
+
+	writeLine("serverLog", "iiCanDataObjCreate: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreDataObjWrite(*path, *user) {
-	writeLine("serverLog", "iiPreDataObjWrite(*path, *user)"); 
-	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
+iiCanDataObjWrite(*path, *allowed, *reason) {
+
+	*allowed = false;
+	*reason = "Unknown error";
 
 	iiGetLocks(*path, *locks, *locked);
 	if(*locked) {
-		fail;
+		*allowed = false;
+		*reason = "Locks found: *locks";
+	} else  {
+		uuChopPath(*path, *parent, *basename);
+		iiGetLocks(*parent, *locks, *locked);
+		if(*locked) {
+			foreach(*lockName in *locks) {
+				*rootCollection = *locks.*lockName;
+				if (strlen(*rootCollection) > strlen(*parent)) {
+					*allowed = true;
+					*reason = "*parent has locked child *rootCollection, but this does not prevent writing to files."
+				} else {
+					*allowed = false;
+					*reason = "*parent has locks: *locks";
+					break;
+				}
+			}
+		} else {
+			*allowed = true;
+			*reason = "No locks found";
+		}
 	}
+	
+	writeLine("serverLog", "iiCanDataObjWrite: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreDataObjRename(*src, *dst, *user) {
-	writeLine("serverLog", "iiPreDataObjRename(*src, *dst, *user)");
-	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
+iiCanDataObjRename(*src, *dst, *reason, *allowed) {
+
+	*allowed = false;
+	*reason = "Unknown error";
+	iiGetLocks(*src, *locks, *locked);
+	if(*locked) {
+		*allowed = false;
+		*reason = "*src is locked with *locks";
+	} else {
+		uuChopPath(*dst, *dstparent, *dstbasename);
+		iiGetLocks(*dstparent, *locks, *locked);
+		if(*locked) {
+			*allowed = false;
+			*reason = "*dstparent is locked with *locks";
+		} else {
+			*allowed = true;
+			*reason = "No locks found";
+		}
 	}
+
+	writeLine("serverLog", "iiCanDataObjRename: *path; allowed=*allowed; reason=*reason");
+}
+
+iiCanDataObjDelete(*path, *allowed, *reason) {
+
+	*allowed = false;
+	*reason = "Unknown Error";
 
 	iiGetLocks(*path, *locks, *locked);
 	if(*locked) {
-		fail;
+		*reason = "Found locks: *locks";
+	} else {
+		*allowed = true;
+		*reason = "No locks found";
 	}
-
+	writeLine("serverLog", "iiCanDataObjDelete: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreDataObjDelete(*path, *user) {
-	writeLine("serverLog", "iiPreDataObjDelete(*path, *user)");
+iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *targetItemName, *allowed, *reason) {	
+	*allowed = false;
+	*reason = "Unknown error";
 	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
+	if (*targetItemType == "-C") {	
+		# Prevent copying metadata to locked folder
+		iiGetLocks(*targetItemName, *locks, *locked);
+		if (*locked) {
+			foreach(*lockName in *locks) {
+				*rootCollection = *locks."*lockName";
+				if (strlen(*rootCollection) > strlen(*targetItemName)) {
+					*allowed = true;
+					*reason = "*rootCollection is locked, but does not affect metadata copy to *targetItemName";
+				} else {
+					*allowed = false;
+				*reason = "*targetItemName is locked";	
+				break;
+				}
+			}
+		} else {
+			*allowed = true;
+			*reason = "No locks found";
+		}
+	} else if (*targetItemType == "-d") {
+		   iiGetLocks(*targetItemName, *locks, *locked);
+		if (*locked) {
+			*reason = "*targetItemName has locks. *locks";
+		} else {
+			*allowed = true;
+			*reason = "No locks found.";
+		}
+	} else {
+		*allowed = true;
+		*reason = "Restrictions only apply on Collections and DataObjects";
 	}
 
-	iiGetLocks(*path, *locks, *locked);
-	if(*locked) {
-		fail;
-	}
-
+	writeLine("serverLog", "iiCanCopyMetadata: *sourceItemName -> *targetItemName; allowed=*allowed; reason=*reason");
 }
 
-iiPreCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *targetItemName) {
-	writeLine("serverLog", "iiPreCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *targetItemName)");
-
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
-	
-	iiGetLocks(*sourceItemName, *locks, *locked);
-	if (*locked) {
-		fail;
-	}
-	
-	iiGetLocks(*targetItemName, *locks, *locked);
-	if (*locked) {
-		fail;
-	}
-
-}
-
-iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	writeLine("serverLog", "iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit)");
-	
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
-
+iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
+	*allowed = false;
+	*reason = "Unknown error";
 	iiGetLocks(*itemName, *locks, *locked);
 	if (*locked) {
 		if (*itemType == "-C") {
 			foreach(*lockName in *locks) {
 				*rootCollection = *locks."*lockName";
 				if (strlen(*rootCollection) > strlen(*parent)) {
-					writeLine("serverLog", "iiPreCollCreate: lock *lockName found, but Starting from *rootCollection") ;
+					*allowed = true;
+					*reason = "Lock *lockName found, but starting from *rootCollection";
 				} else {
-					fail;
+					*allowed = false;
+					*reason = "Lock *LockName found on *rootCollection";
+					break;
 				}
 			}
 		} else {
-			fail;
+			*reason = "Locks found. *locks";	
 		}
 	}
+
+	writeLine("serverLog", "iiCanModifyUserMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
-iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName) {
-	writeLine("serverLog", "iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName)");
-	# Locking org metadata would prevent unlocking.
-	succeed;
-
+iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
+	*allowed = true;
+	*reason = "No reason to lock OrgMetatadata yet";
+	writeLine("serverLog", "iiCanModifyOrgMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
-iiPreModifyFolderStatus(*option, *path, *attributeName, *attributeValue) {
-	writeLine("serverLog", "iiPreModifyFolderStatus(*option, *path, *attributeName, *attributeValue)");
+iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowed, *reason) {
+	*allowed = false;
+	*reason = "Unknown error";
+
+	iiGetLocks(*path, *locks, *locked);
 	if (*option == "rm") {
 		if (!iiIsStatusTransitionLegal(*attributeValue, UNPROTECTED)) {
-			fail;
+			*reason = "Illegal status transition from *attributeValue to UNPROTECTED";
+		} else {
+			*allowed = true;
+			*reason = "Legal status transition";
 		}
 	}
 	if (*option == "add") {
 		
 		if (!iiIsStatusTransitionLegal(UNPROTECTED, *attributeValue)) {
-			fail;
+			*reason = "Illegal status transition from UNPROTECTED to *attributeValue";
+		} else {
+			*allowed = true;
+			*reason = "Legal status transition";
 		}
 	}
 	if (*option == "set") {
+		*currentStatus = UNPROTECTED;
 		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
-			if(!iiIsStatusTransitionLegal(*row.META_COLL_ATTR_VALUE, *attributeValue)) {
-				fail;
-			}
+			*currentStatus = *row.META_COLL_ATTR_VALUE;
+		}
+		if(!iiIsStatusTransitionLegal(*currentStatus, *attributeValue)) {
+			*reason = "Illegal status transition from *currentStatus to *attributeValue";
+		} else {
+			*allowed = true;
+			*reason = "Legal status transition";
 		}
 	}
+
+	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
-iiPreModifyFolderStatus(*option, *path, *attributeName, *newAttributeName, *attributeValue, *newAttributeValue) {
-	writeLine("serverLog", "iiPreModifyFolderStatus(*option, *path, *attributeName, *newAttributeName, *attributeValue, *newAttributeValue)");
+iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason) {
+	writeLine("serverLog", "iiPreModifyFolderStatus:*option, *path, *attributeName, *newAttributeName, *attributeValue, *newAttributeValue");
+	*allowed = true;
+	*reason = "Need to study behaviour";
 
 }

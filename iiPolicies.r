@@ -1,15 +1,24 @@
 acPostProcForPut {
-	on ($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreDataObjWrite($objPath, uuClientFullName);
+	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjCreate($objPath, *allowed, *reason);
+		if (!*allowed) {
+			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);	
+		}
 	}
 
-	on ($objPath like regex ".*" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
 
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
-	on ($objPath like regex ".*" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
@@ -20,8 +29,18 @@ acPostProcForPut {
 # The policy prohibits deleting the collection if the collection
 # is locked
 acPreprocForRmColl {
-	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreCollDelete($collName, uuClientFullName) ;
+	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanCollDelete($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+
 	}
 }
 
@@ -29,8 +48,18 @@ acPreprocForRmColl {
 # The policy prohibits deleting the data object if the data object
 # is locked. The parent collection is not checked
 acDataDeletePolicy {
-	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreDataObjDelete(*path, uuClientFullName) ;
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjDelete(*path, *allowed, *reason);
+		if (!allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 }
 
@@ -38,8 +67,13 @@ acDataDeletePolicy {
 # The policy prohibits creating a new collection if the
 # parent collection is locked
 acPreprocForCollCreate {
-	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreCollCreate($collName, uuClientFullName) ;
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		writeLine("serverLog", "acPreprocForCollCreate: $objPath");
+		iiCanCollCreate($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 }
 
@@ -47,9 +81,27 @@ acPreprocForCollCreate {
 # The policy disallows renaming or moving the data object, if the
 # object is locked, or if the collection that will be the new parent
 # collection of the data object after the rename is locked
-acPreProcForObjRename(*source, *destination) {
-	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreObjRename(*source, *destination, uuClientFullName) ;
+acPreProcForObjRename(*src, *dst) {
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		msiGetObjType($objPath, *objType);
+		if (*objType == "-C") {
+			iiCanCollRename(*src, *dst, *allowed, *reason);
+			if(!*allowed) {
+				cut;
+				failmsg(-1110000, *reason);
+			}	
+		} else {
+			iiCanDataObjRename(*src, *dst, *allowed, *reason);
+			if(!*allowed) {
+				cut;
+				failmsg(-1110000, *reason);
+			}
+		}
 	}
 }
 
@@ -61,50 +113,104 @@ acPreProcForObjRename(*source, *destination) {
 # opened for writing. IF the file is locked, this means changes can be
 # created in the file, but they cannot be saved.
 acPreprocForDataObjOpen {
-	writeLine("stdout", "$oprType, $writeFlag");
-	ON ($writeFlag == "1" && $objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPreDataObjWrite($objPath, uuClientFullName) ;
-	}
-}
+	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
+		writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
 
-pep_resource_create_pre(*out) {
-	on($objPath like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
-		writeLine("serverLog", "pep_resource_create_pre: $KVPairs");
+		iiCanDataObjWrite($objPath, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			msiOprDisallowed;
+		}
 	}
 }
 
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	on ((*SourceItemType == "-C" || *SourceItemType == "-d") && (*SourceItemName like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*" || *TargetItemName like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*")) {
-		iiPreCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName) ;
+	on ((*SourceItemType == "-C" || *SourceItemType == "-d") && (*SourceItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" || *TargetItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*")) {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName, *allowed, *reason);
+		if (!allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 }
 
 
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName) ;
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
-		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue) ;
-		} else {
-			iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName) ;
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
 		}
+
+		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+			
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+		} else {
+			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		}
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+
 	}
 }
 
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-		iiPreModifyUserMetadata(*option, *itemType, *itemName, *attributeName) ;
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+
+		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
 		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			iiPreModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue) ; 
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason) ; 
 		} else {
-			iiPreModifyOrgMetadata(*option, *itemType, *itemName, *attributeName) ;
+			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		}
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
 		}
 	}
 }
