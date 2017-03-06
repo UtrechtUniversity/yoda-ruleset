@@ -49,7 +49,7 @@ iiGetLocks(*objPath, *locks, *locked) {
 					  AND DATA_NAME = '*dataName'
 					  AND META_DATA_ATTR_NAME like '*lockprefix%'
 			) {
-			*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+			*lockName = triml(*row.META_DATA_ATTR_NAME, *lockprefix);
 			*rootCollection= *row.META_DATA_ATTR_VALUE;
 			uuListContains(IIVALIDLOCKS, *lockName, *valid);
 			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
