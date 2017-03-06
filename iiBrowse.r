@@ -76,8 +76,6 @@ iiCollectionDetails(*path, *result) {
                fail(-317000);
        }
 
-
-
        msiString2KeyValPair("path=*path", *kvp);
 
        foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
@@ -91,11 +89,26 @@ iiCollectionDetails(*path, *result) {
 	       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
        }
 
+
        *kvp.user_metadata = "false";
        if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
 	       *kvp.user_metadata = "true";
 	       *pathelems = split(*path, "/");
 	       *nelems = size(*pathelems);
+
+		*isfound = false;
+		*prefix = IIGROUPPREFIX ++ "%";
+		foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*id = *accessid.COLL_ACCESS_USER_ID;
+			foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
+					*isfound = true;
+					*groupName = *group.USER_GROUP_NAME;
+			}
+		}
+
+		uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
+		*kvp.groupName = *groupName;
+		*kvp.userType = *usertype;
        }
 
 	# Check for locks on Collection
@@ -118,16 +131,7 @@ iiCollectionDetails(*path, *result) {
        *err = errorcode(*kvp."*statuskey");
        # -313000 UNMATCHED_KEY_OR_INDEX
        if (*err == -313000) {
-		if (size(*collLocks) > 0) {
-			*rootCollKey = UUORGMETADATAPREFIX ++ "root_collection";
-		    	msiGetValByKey(*kvp, *rootCollKey, *rootCollection);
-			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *statuskey AND COLL_NAME = *rootCollection){
-				*kvp."*statuskey" = *row.META_COLL_ATTR_VALUE;
-			}	
-		} else {
 			*kvp."*statuskey" = UNPROTECTED;
-		}
-
        }
 
        uuList2JSON(*collLocks, *collLocks_json);

@@ -1,56 +1,108 @@
+acPostProcForPut {
+	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjCreate($objPath, *allowed, *reason);
+		if (!*allowed) {
+			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);	
+		}
+	}
+
+	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
+		iiRenameInvalidXML($objPath, *xsdpath);
+	}
+
+	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
+		iiRenameInvalidXML($objPath, *xsdpath);
+	}
+
+}
+
 # This policy is fired before a collection is deleted.
 # The policy prohibits deleting the collection if the collection
 # is locked
 acPreprocForRmColl {
-	   iiObjectActionAllowed($collName, *collAllows);
-	   iiObjectActionAllowed($collParentName, *parentAllows);
-	   if(!(*collAllows && *parentAllows)) {
-			 writeLine("serverLog", "Disallowing deleting $collName");
-			 cut;
-			 msiDeleteDisallowed();
-	   }
+	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanCollDelete($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+
+	}
 }
 
 # This policy is fired before a data object is deleted
 # The policy prohibits deleting the data object if the data object
 # is locked. The parent collection is not checked
 acDataDeletePolicy {
-	   iiObjectActionAllowed($objPath, *allow);
-	   if(!*allow) {
-			 writeLine("serverLog", "Deleting $objPath not allowed");
-			 cut;
-			 msiDeleteDisallowed();
-	   }
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjDelete(*path, *allowed, *reason);
+		if (!allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+	}
 }
 
 # This policy is fired before a collection is created
 # The policy prohibits creating a new collection if the
 # parent collection is locked
 acPreprocForCollCreate {
-	   writeLine("serverLog", "acPreprocForCollCreate: $collParentName");
-	   iiObjectActionAllowed($collParentName, *allowed);
-	   if(!*allowed) {
-			 writeLine("serverLog", "Disallowing creating $collName collection");
-			 cut;
-			 msiOprDisallowed;
-	   }
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		writeLine("serverLog", "acPreprocForCollCreate: $objPath");
+		iiCanCollCreate($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+	}
 }
 
 # This policy is fired before a data object is renamed or moved
 # The policy disallows renaming or moving the data object, if the
 # object is locked, or if the collection that will be the new parent
 # collection of the data object after the rename is locked
-acPreProcForObjRename(*source, *destination) {
-	   uuChopPath(*source, *sourceParent, *sourceBase);
-	   uuChopPath(*destination, *destParent, *destBase);
-	   iiObjectActionAllowed(*source, *sourceAllows);
-	   iiObjectActionAllowed(*sourceParent, *sourceParentAllows);
-	   iiObjectActionAllowed(*destParent, *destAllows);
-	   if(!(*sourceAllows && *sourceParentAllows && *destAllows)) {
-			 writeLine("serverLog", "Disallowing moving *source to *destination");
-			 cut;
-			 msiOprDisallowed;
-	   }
+acPreProcForObjRename(*src, *dst) {
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		msiGetObjType($objPath, *objType);
+		if (*objType == "-C") {
+			iiCanCollRename(*src, *dst, *allowed, *reason);
+			if(!*allowed) {
+				cut;
+				failmsg(-1110000, *reason);
+			}	
+		} else {
+			iiCanDataObjRename(*src, *dst, *allowed, *reason);
+			if(!*allowed) {
+				cut;
+				failmsg(-1110000, *reason);
+			}
+		}
+	}
 }
 
 # This policy is fired before a data object is opened.
@@ -61,65 +113,114 @@ acPreProcForObjRename(*source, *destination) {
 # opened for writing. IF the file is locked, this means changes can be
 # created in the file, but they cannot be saved.
 acPreprocForDataObjOpen {
-	   ON ($writeFlag == "1") {
-		   	 writeLine("serverLog", "acPreprocForDataObjOpen: writeFlag=$writeFlag");
-			 iiObjectActionAllowed($objPath, *objAllowed);
-			 uuChopPath($objPath, *parent, *_);
-			 iiObjectActionAllowed(*parent, *parentAllowed);
-			 if(!*objAllowed || !*parentAllowed) {
-				    writeLine("serverLog", "acPreprocForDataObjOpen: Disallowing opening $objPath for writing");
-				    cut;
-				    msiOprDisallowed;
-			 }
-	   }
+	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjWrite($objPath, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+	}
 }
 
 # This policy is fired if AVU meta data is copied from one object to another.
 # Copying of metadata is prohibited by this policy if the target object is locked
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	   iiObjectActionAllowed(*TargetItemName, *allowed);
-	   if(!*allowed) {
-			 writeLine("serverLog", "Metadata could not be copied from *SourceItemName to *TargetItemName because the latter is locked");
-			 cut;
-			 msiOprDisallowed;
-	   }
-}
+	on ((*SourceItemType == "-C" || *SourceItemType == "-d") && (*SourceItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" || *TargetItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*")) {
 
-acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *AUnit) {
-	on (*ItemType == "-C") {
-	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
-		iiObjectActionAllowed(*ItemName, *allowed);
-		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
-		if(!*allowed && !*isLock) {
-			cut;
-			msiOprDisallowed;
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
 		}
-	}
-	on (*ItemType == "-d") {
-	        writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit");
 
-		iiObjectActionAllowed(*ItemName, *allowed);
-		*islock = *AName like UUORGMETADATAPREFIX ++ "lock*";
-		if(!*allowed && !*isLock) {
+		iiCanCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName, *allowed, *reason);
+		if (!allowed) {
 			cut;
-			msiOprDisallowed;
+			failmsg(-1110000, *reason);
 		}
 	}
 }
 
-acPreProcForModifyAVUMetadata(*Option, *ItemType, *ItemName, *AName, *AValue, *AUnit,  *NAName, *NAValue, *NAUnit) {
-	writeLine("serverLog", "\*Option=*Option, \*ItemType=*ItemType, \*ItemName=*ItemName, \*AName=*AName, \*AValue=*AValue, \*AUnit=*AUnit, \*NAName=*NAName, \*NAValue=*NAValue, \*NAUnit=*NAUnit");
+
+acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+	}
+	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+			
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+			if (*allowed) {
+				iiFolderStatus(*itemName, *currentStatus);
+				iiFolderTransition(*itemName, *currentStatus, *attributeValue);
+			}
+		} else {
+			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		}
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+
+	}
 }
 
+acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
 
-pep_resource_create_pre(*out) {
-	uuChopPath($KVPairs.logical_path, *parent, *basename);
-	*clientFullName = $KVPairs.client_user_name ++ "#" ++ $KVPairs.client_user_zone;
-	iiObjectActionAllowed(*parent, *allowed, *clientFullName);
-	if(!*allowed) {
-		writeLine("serverLog", "pep_resource_create_pre: Disallowing creating *basename in *parent as the collection is locked");
-		cut;
-		msiOprDisallowed;
+
+		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
+	}
+	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
+			if (*allowed) {
+				iiFolderStatus(*itemName, *currentStatus);
+				iiFolderTransition(*itemName, *currentStatus,*attributeValue);
+			}
+
+		} else {
+			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		}
+		if (!*allowed) {
+			cut;
+			failmsg(-1110000, *reason);
+		}
 	}
 }
 
@@ -137,11 +238,11 @@ pep_resource_modified_post(*out) {
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
 		} else if (*err == 0) {
-				writeLine("serverLog", "XSD validation successful. Start indexing");
-				iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-				iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
+			writeLine("serverLog", "XSD validation successful. Start indexing");
+			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+			iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
 		} else {
-				writeBytesBuf("serverLog", *status_buf);
+			writeBytesBuf("serverLog", *status_buf);
 		}
 	}
 }
@@ -168,7 +269,7 @@ pep_resource_rename_post(*out) {
 	# run only at the top of the resource hierarchy and when a IIMETADATAXMLNAME file is found inside a research group.
 	# Unfortunately the source logical_path is not amongst the available data in $KVPairs. The physical_path does include the old path, but not in a convenient format.
 	# When a IIMETADATAXMLNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post.
-        # This rule only needs to handle the removal of user metadata when it's moved or renamed.
+	# This rule only needs to handle the removal of user metadata when it's moved or renamed.
 
 	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
 		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
@@ -221,57 +322,4 @@ pep_resource_unregistered_post(*out) {
 			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
 		}			
 	}
-}
-
-acPostProcForPut {
-	on ($objPath like regex ".*" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
-		*invalid = false;
-		*err = errormsg(msiXmlDocSchemaValidate($objPath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-			*invalid = true;
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
-				writeLine("serverLog", "XSD validation returned no output. This implies successful validation.");
-			} else {
-				writeBytesBuf("serverLog", *status_buf);
-				*invalid = true;
-			}
-		}
-		if (*invalid) {
-			writeLine("serverLog", "Renaming corrupt or invalid XSD $objPath");
-			msiGetIcatTime(*timestamp, "unix");
-			*iso8601 = uuiso8601(*timestamp);
-			msiDataObjRename($objPath, $objPath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
-		}
-	}
-
-	on ($objPath like regex ".*" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
-		*invalid = false;
-		*err = errormsg(msiXmlDocSchemaValidate($objPath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-			*invalid = true;
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
-				writeLine("serverLog", "XSD validation of $objPath returned no output. This implies successful validation.");
-			} else {
-				writeBytesBuf("serverLog", *status_buf);
-				*invalid = true;
-			}
-		}
-		if (*invalid) {
-			writeLine("serverLog", "Renaming corrupt or invalid formelements $objPath");
-			msiGetIcatTime(*timestamp, "unix");
-			*iso8601 = uuiso8601(*timestamp);
-			msiDataObjRename($objPath, $objPath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
-		}
-	}
-
 }

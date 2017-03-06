@@ -1,3 +1,28 @@
+# \brief iiRenameInvalidXML
+iiRenameInvalidXML(*xmlpath, *xsdpath) {
+		*invalid = false;
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+			*invalid = true;
+		} else {
+			msiBytesBufToStr(*status_buf, *status_str);
+			*len = strlen(*status_str);
+			if (*len == 0) {
+				writeLine("serverLog", "XSD validation returned no output. This implies successful validation.");
+			} else {
+				writeBytesBuf("serverLog", *status_buf);
+				*invalid = true;
+			}
+		}
+		if (*invalid) {
+			writeLine("serverLog", "Renaming corrupt or invalid $objPath");
+			msiGetIcatTime(*timestamp, "unix");
+			*iso8601 = uuiso8601(*timestamp);
+			msiDataObjRename(*xmlpath, *xmlpath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
+		}
+}
+
 # \brief iiIsStatusTransitionLegal
 iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal = false;
@@ -5,16 +30,18 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 		(*legalfrom, *legalto) = *legaltransition;
 		if (*legalfrom == *fromstatus && *legalto == *tostatus) {
 			*legal = true;
+			break;
 		}
 	}
 	*legal;
 }
 
-
-iiHasLock(*objPath) {
+# \brief iiGetLocks
+iiGetLocks(*objPath, *locks, *locked) {
+	*locked = false;
 	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
 	msiGetObjType(*objPath, *objType);
-	*locked = false;
+	msiString2KeyValPair("", *locks);
 	if (*objType == '-d') {
 		uuChopPath(*objPath, *collection, *dataName);
 		foreach (*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE
@@ -22,13 +49,13 @@ iiHasLock(*objPath) {
 					  AND DATA_NAME = '*dataName'
 					  AND META_DATA_ATTR_NAME like '*lockprefix%'
 			) {
-			*lockName = *row.META_DATA_ATTR_NAME;
-			*lockTimestamp = *row.META_DATA_ATTR_VALUE;
-			uuListContains(IIVALIDLOCKS, triml(*lockName, *lockprefix), *valid);
-			writeLine("serverLog", "iiHasLock: *objPath -> *lockName=*lockTimestamp [valid=*valid]");
+			*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+			*rootCollection= *row.META_DATA_ATTR_VALUE;
+			uuListContains(IIVALIDLOCKS, *lockName, *valid);
+			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
 			if (*valid) {
+				*locks."*lockName" = *rootCollection;
 				*locked = true;
-				break;
 			}
 		}
 	} else {
@@ -36,33 +63,14 @@ iiHasLock(*objPath) {
 					WHERE COLL_NAME = '*objPath'
 					  AND META_COLL_ATTR_NAME like '*lockprefix%'
 			) {
-			*lockName = *row.META_COLL_ATTR_NAME;
-			*lockTimestamp = *row.META_COLL_ATTR_VALUE;
-			uuListContains(IIVALIDLOCKS, triml(*lockName, *lockprefix), *valid);
-			writeLine("serverLog", "iiHasLock: *objPath -> *lockName=*lockTimestamp [valid=*valid]");
+			*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
+			*rootCollection = *row.META_COLL_ATTR_VALUE;
+			uuListContains(IIVALIDLOCKS, *lockName, *valid);
+			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
 			if (*valid) {
+				*locks."*lockName" = *rootCollection;
 				*locked = true;
-				break;
 			}
 		}
 	}
-	*locked;
-}
-
-
-iiObjectActionAllowed(*path, *allowed, *clientFullName) {
-	*allowed = false;
-	uuGetUserType(*clientFullName, *userType);
-	if (*userType == "rodsadmin" ) {
-		*allowed = true;
-	} else if (!iiHasLock(*path)) {
-		*allowed = true;
-	}
-		
-	writeLine("serverLog", "iiObjectActionAllowed: *path allowed=*allowed");
-}
-
-iiObjectActionAllowed(*path, *allowed) {
-	*clientFullName  = uuClientFullName();
-	iiObjectActionAllowed(*path, *allowed, *clientFullName);
 }
