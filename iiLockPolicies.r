@@ -122,7 +122,7 @@ iiCanDataObjWrite(*path, *allowed, *reason) {
 	writeLine("serverLog", "iiCanDataObjWrite: *path; allowed=*allowed; reason=*reason");
 }
 
-iiCanDataObjRename(*src, *dst, *reason, *allowed) {
+iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 
 	*allowed = false;
 	*reason = "Unknown error";
@@ -142,7 +142,7 @@ iiCanDataObjRename(*src, *dst, *reason, *allowed) {
 		}
 	}
 
-	writeLine("serverLog", "iiCanDataObjRename: *src; allowed=*allowed; reason=*reason");
+	writeLine("serverLog", "iiCanDataObjRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
 iiCanDataObjDelete(*path, *allowed, *reason) {
