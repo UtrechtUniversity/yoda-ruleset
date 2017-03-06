@@ -58,7 +58,7 @@ acDataDeletePolicy {
 		iiCanDataObjDelete($objPath, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			msiOprDisallowed;
+			msiDeleteDisallowed;
 		}
 	}
 }
@@ -89,7 +89,7 @@ acPreProcForObjRename(*src, *dst) {
 		}
 
 		msiGetObjType($objPath, *objType);
-		if (*objType == "-C") {
+		if (*objType == "-c") {
 			iiCanCollRename(*src, *dst, *allowed, *reason);
 			if(!*allowed) {
 				cut;
