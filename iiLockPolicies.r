@@ -1,6 +1,6 @@
 iiCanCollCreate(*path, *allowed, *reason) {
 	*allowed = false;
-	*reason = "iiCanCollCreate: Unknown failure";
+	*reason = "Unknown failure";
 
 	uuChopPath(*path, *parent, *basename);
 	iiGetLocks(*parent, *locks, *locked);
@@ -8,16 +8,16 @@ iiCanCollCreate(*path, *allowed, *reason) {
 		foreach(*lockName in *locks) {
 			*rootCollection = *locks."*lockName";
 			if (strlen(*rootCollection) > strlen(*parent)) {
-				*reason = "iiCanCollCreate: lock *lockName found on *parent, but Starting from *rootCollection" ;
+				*reason = "lock *lockName found on *parent, but Starting from *rootCollection" ;
 				*allowed = true;
 			} else {
-				*reason = "iiCanCollCreate: lock *lockName found on *parent. Disallowing creating subcollection: *basename";
+				*reason = "lock *lockName found on *parent. Disallowing creating subcollection: *basename";
 				*allowed = false;
 				break;
 			}
 		}
 	} else {
-		*reason = "iiCanCollCreate: No locks found on *parent";
+		*reason = "No locks found on *parent";
 		*allowed = true;
 	}
 
@@ -30,13 +30,13 @@ iiCanCollRename(*src, *dst, *allowed, *reason) {
 	iiGetLocks(*src, *locks, *locked);
 	if(*locked) {
 		*allowed = false;
-		*reason = "*src is locked with *locks";	
+		*reason = "*src is has locks *locks";	
 	} else {
 		uuChopPath(*dst, *dstparent, *dstbasename);
 		iiGetLocks(*dstparent, *locks, *locked);
 		if (*locked) {
 			*allowed = false;
-			*reason = "*dstparent is locked with *locks";
+			*reason = "*dstparent has locks *locks";
 		} else {
 			*allowed = true;
 			*reason = "No Locks found";
@@ -77,7 +77,7 @@ iiCanDataObjCreate(*path, *allowed, *reason) {
 				*reason = "*parent has locked child *rootCollection, but this does not prevent creating new files."
 			} else {
 				*allowed = false;
-				*reason = "*parent has locks: *locks";
+				*reason = "*parent has lock(s) *locks";
 				break;
 			}
 		}
@@ -109,7 +109,7 @@ iiCanDataObjWrite(*path, *allowed, *reason) {
 					*reason = "*parent has locked child *rootCollection, but this does not prevent writing to files."
 				} else {
 					*allowed = false;
-					*reason = "*parent has locks: *locks";
+					*reason = "*parent has lock(s) *locks";
 					break;
 				}
 			}
@@ -152,7 +152,7 @@ iiCanDataObjDelete(*path, *allowed, *reason) {
 
 	iiGetLocks(*path, *locks, *locked);
 	if(*locked) {
-		*reason = "Found locks: *locks";
+		*reason = "Found lock(s) *locks";
 	} else {
 		*allowed = true;
 		*reason = "No locks found";
@@ -186,7 +186,7 @@ iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *t
 	} else if (*targetItemType == "-d") {
 		   iiGetLocks(*targetItemName, *locks, *locked);
 		if (*locked) {
-			*reason = "*targetItemName has locks. *locks";
+			*reason = "*targetItemName has lock(s) *locks";
 		} else {
 			*allowed = true;
 			*reason = "No locks found.";
@@ -233,44 +233,80 @@ iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, 
 iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
+	if (*attributeName != UUORGMETADATAPREFIX ++ "status") {
+		failmsg(-1, "iiCanModifyFolderStatus: Called for attribute *attributeName instead of FolderStatus.");
+	}
 
-	iiGetLocks(*path, *locks, *locked);
 	if (*option == "rm") {
-		if (!iiIsStatusTransitionLegal(*attributeValue, UNPROTECTED)) {
-			*reason = "Illegal status transition from *attributeValue to UNPROTECTED";
-		} else {
-			*allowed = true;
-			*reason = "Legal status transition";
-		}
+		*transitionFrom = *attributeValue;
+		*transitionTo =  UNPROTECTED;
 	}
+
 	if (*option == "add") {
-		
-		if (!iiIsStatusTransitionLegal(UNPROTECTED, *attributeValue)) {
-			*reason = "Illegal status transition from UNPROTECTED to *attributeValue";
-		} else {
-			*allowed = true;
-			*reason = "Legal status transition";
+		*transitionFrom = UNPROTECTED;
+		*transitionTo = *attributeValue;	
+	}
+
+	if (*option == "set") {
+		*transitionTo = *attributeValue;
+		# We need to query for current status. Set to UNPROTECTED by default.
+		*transitionFrom = UNPROTECTED;
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
+			*transitionFrom = *row.META_COLL_ATTR_VALUE;
 		}
 	}
-	if (*option == "set") {
-		*currentStatus = UNPROTECTED;
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
-			*currentStatus = *row.META_COLL_ATTR_VALUE;
+
+	if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
+		*reason = "Illegal status transition from *transitionFrom to *transitionTo";
+	} else {
+		*allowed = true;
+		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
+
+		iiGetLocks(*path, *locks, *locked);
+		if (*locked) {
+			foreach(*lockName in *locks) {
+				*rootCollection = *locks."*lockName";
+				if (*rootCollection != *path) {
+					*allowed = false;
+					*reason = "Found lock(s) *lockName starting from *rootCollection";
+					break;
+				}
+			}
 		}
-		if(!iiIsStatusTransitionLegal(*currentStatus, *attributeValue)) {
-			*reason = "Illegal status transition from *currentStatus to *attributeValue";
-		} else {
-			*allowed = true;
-			*reason = "Legal status transition";
-		}
+
 	}
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
 iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason) {
-	writeLine("serverLog", "iiPreModifyFolderStatus:*option, *path, *attributeName, *newAttributeName, *attributeValue, *newAttributeValue");
-	*allowed = true;
-	*reason = "Need to study behaviour";
+	writeLine("serverLog", "iiCanModifyFolderStatus:*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue");
+	*allowed = false;
+	*reason = "Unknown error";
+	if (*newAttributeName == ""  || *newAttributeName == UUORGMETADATAPREFIX ++ "status") {
+		*transitionFrom = *attributeValue;
+		*transitionTo = triml(*newAttributeValue, "v:");
+		if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
+			*reason = "Illegal status transition from *transitionFrom to *transitionTo";
+		} else {
+			*allowed = true;
+			*reason = "Legal status transition. *transitionFrom -> *transitionTo";
 
+			iiGetLocks(*path, *locks, *locked);
+			if (*locked) {
+				foreach(*lockName in *locks) {
+					*rootCollection = *locks."*lockName";
+					if (*rootCollection != *path) {
+						*allowed = false;
+						*reason = "Found lock(s) *lockName starting from *rootCollection";
+						break;
+					}
+				}
+			}
+		}
+	} else {
+		*reason = "*attributeName should not be changed to *newAttributeName";
+	}
+
+	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }

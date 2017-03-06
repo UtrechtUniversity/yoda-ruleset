@@ -30,6 +30,7 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 		(*legalfrom, *legalto) = *legaltransition;
 		if (*legalfrom == *fromstatus && *legalto == *tostatus) {
 			*legal = true;
+			break;
 		}
 	}
 	*legal;

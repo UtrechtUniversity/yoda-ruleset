@@ -8,38 +8,34 @@ iiFolderStatus(*folder, *folderstatus) {
 	}
 }
 
+iiFolderTransition(*path, *currentStatus, *newStatus) {
+	if (*currentStatus == UNPROTECTED && *newStatus == PROTECTED) {
+		iiFolderLockChange(*path, "protect", true, *status);
+		if (*status != 0) {
+			failmsg(-111000, "Rollback needed");
+		}
+	} else if (*currentStatus == PROTECTED && (*newStatus == UNPROTECTED || *newStatus == "")) {
+		iiFolderLockChange(*path, "protect", false, *status);
+		if (*status != 0) {
+			failmsg(-111000, "Rollback needed");
+		}
+	}
+}
+
 # \brief iiFolderProtect
 # \param[in] folder	path of folder to protect
 iiFolderProtect(*folder) {
-	iiFolderStatus(*folder, *folderstatus);
-	if (iiIsStatusTransitionLegal(*folderstatus, PROTECTED)) {
-		*lockName = UUORGMETADATAPREFIX ++ "lock_protect";
-		iiFolderLockChange(*folder, *lockName, true, *status);
-		if (*status == 0) {
-			*folderstatuskey = UUORGMETADATAPREFIX ++ "status";
-			msiString2KeyValPair("*folderstatuskey=" ++ PROTECTED, *statuskvp);
-			msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");			
-		}
-	} else {
-		failmsg(-1, "Illegal status change. *folderstatus -> " ++  PROTECTED);
-	}
+	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ PROTECTED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
 }
 
 # \brief iiFolderUnprotect
 # \param[in] folder	path of folder to protect
 iiFolderUnprotect(*folder) {
-	iiFolderStatus(*folder, *folderstatus);
-	if (iiIsStatusTransitionLegal(*folderstatus, UNPROTECTED)) {
-		*lockName = UUORGMETADATAPREFIX ++ "lock_protect";
-		iiFolderLockChange(*folder, *lockName, false, *status);
-		if (*status == 0) {
-			*folderstatuskey = UUORGMETADATAPREFIX ++ "status";
-			msiString2KeyValPair("*folderstatuskey=" ++ PROTECTED, *statuskvp);
-			msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C");			
-		}
-	} else {
-		failmsg(-1, "Illegal status change. *folderstatus -> " ++ UNPROTECTED);
-	}
+	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ UNPROTECTED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");	
 }
 
 
@@ -50,8 +46,9 @@ iiFolderUnprotect(*folder) {
 # 									if false, the lock is removed (if allowed)
 # \param[out] status 			Zero if no errors, non-zero otherwise
 iiFolderLockChange(*rootCollection, *lockName, *lockIt, *status){
-	msiGetIcatTime(*timestamp, "unix");
-	msiString2KeyValPair("*lockName=*rootCollection", *buffer)
+	*lock_str = UUORGMETADATAPREFIX ++ "lock_" ++ *lockName ++ "=" ++ *rootCollection;
+	writeLine("ServerLog", "iiFolderLockChange: *lock_str");
+	msiString2KeyValPair(*lock_str, *buffer)
 
 	if (*lockIt) {
 		writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");

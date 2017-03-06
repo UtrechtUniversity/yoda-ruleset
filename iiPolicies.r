@@ -124,7 +124,7 @@ acPreprocForDataObjOpen {
 		iiCanDataObjWrite($objPath, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			msiOprDisallowed;
+			failmsg(-1110000, *reason);
 		}
 	}
 }
@@ -172,6 +172,10 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
 			
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+			if (*allowed) {
+				iiFolderStatus(*itemName, *currentStatus);
+				iiFolderTransition(*itemName, *currentStatus, *attributeValue);
+			}
 		} else {
 			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
 		}
@@ -204,7 +208,12 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 
 		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason) ; 
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
+			if (*allowed) {
+				iiFolderStatus(*itemName, *currentStatus);
+				iiFolderTransition(*itemName, *currentStatus,*attributeValue);
+			}
+
 		} else {
 			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
 		}
