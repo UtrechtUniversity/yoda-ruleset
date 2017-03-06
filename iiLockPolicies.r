@@ -71,7 +71,7 @@ iiCanDataObjCreate(*path, *allowed, *reason) {
 	iiGetLocks(*parent, *locks, *locked);
 	if(*locked) {
 		foreach(*lockName in *locks) {
-			*rootCollection = *locks.*lockName;
+			*rootCollection = *locks."*lockName";
 			if (strlen(*rootCollection) > strlen(*parent)) {
 				*allowed = true;
 				*reason = "*parent has locked child *rootCollection, but this does not prevent creating new files."
@@ -103,7 +103,7 @@ iiCanDataObjWrite(*path, *allowed, *reason) {
 		iiGetLocks(*parent, *locks, *locked);
 		if(*locked) {
 			foreach(*lockName in *locks) {
-				*rootCollection = *locks.*lockName;
+				*rootCollection = *locks."*lockName";
 				if (strlen(*rootCollection) > strlen(*parent)) {
 					*allowed = true;
 					*reason = "*parent has locked child *rootCollection, but this does not prevent writing to files."
