@@ -142,7 +142,7 @@ iiCanDataObjRename(*src, *dst, *reason, *allowed) {
 		}
 	}
 
-	writeLine("serverLog", "iiCanDataObjRename: *path; allowed=*allowed; reason=*reason");
+	writeLine("serverLog", "iiCanDataObjRename: *src; allowed=*allowed; reason=*reason");
 }
 
 iiCanDataObjDelete(*path, *allowed, *reason) {
