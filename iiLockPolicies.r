@@ -243,9 +243,18 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowe
 	}
 
 	if (*option == "add") {
-		*transitionFrom = UNPROTECTED;
+		*transitionFrom = "";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
+			*transitionFrom = *row.META_COLL_ATTR_VALUE;
+		}
+
 		*transitionTo = *attributeValue;	
+
+		if (*transitionFrom == "") {
+			*transitionFrom = UNPROTECTED;
+		}
 	}
+
 
 	if (*option == "set") {
 		*transitionTo = *attributeValue;

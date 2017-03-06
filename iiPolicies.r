@@ -38,7 +38,7 @@ acPreprocForRmColl {
 		iiCanCollDelete($collName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 
 	}
@@ -58,7 +58,7 @@ acDataDeletePolicy {
 		iiCanDataObjDelete(*path, *allowed, *reason);
 		if (!allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 }
@@ -72,7 +72,7 @@ acPreprocForCollCreate {
 		iiCanCollCreate($collName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 }
@@ -93,13 +93,13 @@ acPreProcForObjRename(*src, *dst) {
 			iiCanCollRename(*src, *dst, *allowed, *reason);
 			if(!*allowed) {
 				cut;
-				failmsg(-1110000, *reason);
+				msiOprDisallowed;
 			}	
 		} else {
 			iiCanDataObjRename(*src, *dst, *allowed, *reason);
 			if(!*allowed) {
 				cut;
-				failmsg(-1110000, *reason);
+				msiOprDisallowed;
 			}
 		}
 	}
@@ -124,7 +124,7 @@ acPreprocForDataObjOpen {
 		iiCanDataObjWrite($objPath, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 }
@@ -142,7 +142,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 		iiCanCopyMetadata(*Option, *SourceItemType, *TargetItemType, *SourceItemName, *TargetItemName, *allowed, *reason);
 		if (!allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 }
@@ -159,7 +159,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
@@ -181,7 +181,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 
 	}
@@ -198,7 +198,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
@@ -219,7 +219,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 		if (!*allowed) {
 			cut;
-			failmsg(-1110000, *reason);
+			msiOprDisallowed;
 		}
 	}
 }
