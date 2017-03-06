@@ -55,7 +55,7 @@ acDataDeletePolicy {
 			succeed;
 		}
 
-		iiCanDataObjDelete(*path, *allowed, *reason);
+		iiCanDataObjDelete($objPath, *allowed, *reason);
 		if (!allowed) {
 			cut;
 			msiOprDisallowed;
