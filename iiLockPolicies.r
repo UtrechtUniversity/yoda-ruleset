@@ -134,8 +134,17 @@ iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 		uuChopPath(*dst, *dstparent, *dstbasename);
 		iiGetLocks(*dstparent, *locks, *locked);
 		if(*locked) {
-			*allowed = false;
-			*reason = "*dstparent is locked with *locks";
+			foreach(*lockName in *locks) {
+				*rootCollection = *locks."*lockName";
+				if (strlen(*rootCollection) > strlen(*parent)) {
+					*allowed = true;
+					*reason = "*dstparent has locked child *rootCollection, but this does not prevent writing to files."
+				} else {
+					*allowed = false;
+					*reason = "*dstparent has lock(s) *locks";
+					break;
+				}
+			}
 		} else {
 			*allowed = true;
 			*reason = "No locks found";
