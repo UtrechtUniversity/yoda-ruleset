@@ -67,8 +67,12 @@ acDataDeletePolicy {
 # The policy prohibits creating a new collection if the
 # parent collection is locked
 acPreprocForCollCreate {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		writeLine("serverLog", "acPreprocForCollCreate: $objPath");
+	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+		writeLine("serverLog", "acPreprocForCollCreate: $collName");
 		iiCanCollCreate($collName, *allowed, *reason);
 		if (!*allowed) {
 			cut;

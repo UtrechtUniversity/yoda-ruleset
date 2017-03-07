@@ -202,6 +202,7 @@ iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *t
 iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
+
 	iiGetLocks(*itemName, *locks, *locked);
 	if (*locked) {
 		if (*itemType == "-C") {
@@ -219,6 +220,9 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 		} else {
 			*reason = "Locks found. *locks";	
 		}
+	} else {
+		*allowed = true;
+		*reason = "No locks found";
 	}
 
 	writeLine("serverLog", "iiCanModifyUserMetadata: *itemName; allowed=*allowed; reason=*reason");
