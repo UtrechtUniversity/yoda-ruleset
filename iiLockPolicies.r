@@ -136,7 +136,7 @@ iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 		if(*locked) {
 			foreach(*lockName in *locks) {
 				*rootCollection = *locks."*lockName";
-				if (strlen(*rootCollection) > strlen(*parent)) {
+				if (strlen(*rootCollection) > strlen(*dstparent)) {
 					*allowed = true;
 					*reason = "*dstparent has locked child *rootCollection, but this does not prevent writing to files."
 				} else {
