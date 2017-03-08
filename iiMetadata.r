@@ -92,53 +92,70 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 # /param[out] result	json object with the location of the metadata file, formelements.xml, the XSD and the role of the current user in the group
 iiPrepareMetadataForm(*path, *result) {
 	msiString2KeyValPair("", *kvp);
+	
+	
+	iiCollectionGroupNameAndUserType(*path, *groupName, *userType); 
+	*kvp.groupName = *groupName;
+	*kvp.userType = *userType;
+	
+	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
 
-	*isfound = false;
-	*prefix = IIGROUPPREFIX ++ "%";
-	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
-		*id = *accessid.COLL_ACCESS_USER_ID;
-		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
-				*isfound = true;
-				*groupName = *group.USER_GROUP_NAME;
+	foreach(*metadataKvp in *kvpList) {
+		*orgStatus = UNPROTECTED;
+		if (*metadataKvp.attrName == "status") {
+			*orgStatus = *metadataKvp.attrValue;
+			break;
 		}
 	}
+	*kvp.folderStatus = *orgStatus;
 
-
-	if (!*isfound) {
-		# No results found. Not a research group
-		failmsg(-808000, "path is not a research group or not available to current user");
+	*lockFound = "no";
+	foreach(*metadataKvp in *kvpList) {
+		if (*metadataKvp.attrName like "lock_*") {
+			*rootCollection = *metadataKvp.attrValue;
+			if (*rootCollection == *path) {
+				*lockFound = "here";
+				break;
+			} else {
+				*descendants = triml(*rootCollection, *path);
+				if (*descendants == *rootCollection) {
+					*ancestors = triml(*path, *rootCollection);
+					if (*ancestors == *path) {
+						*lockFound = "outoftree";
+					} else {
+						*lockFound = "ancestor";
+						break;
+					}
+				} else {
+					*lockFound = "descendant";
+					break;
+				}
+			}
+		}
+	}
+	*kvp.lockFound = *lockFound;
+	if (*lockFound != "no") {
+		*kvp.lockRootCollection = *rootCollection;
 	}
 
-	# Check for locks on Collection
-	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
-	*collLocks = list();
-	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
-		*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
-		*collLocks = cons(*lockName, *collLocks);
-	}
-
-	uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
-	*kvp.groupName = *groupName;
-	*kvp.userType = *usertype;
-
+		
+	
 	*xmlname = IIMETADATAXMLNAME;	
 	*xmlpath = "";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
 	        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
-	*metadataxmlLocks = list();
 	if (*xmlpath == "") {
-		*kvp.hasMetadataXml = "false";
+		*kvp.hasMetadataXml = "no";
 		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
 	} else {
-		*kvp.hasMetadataXml = "true";
+		*kvp.hasMetadataXml = "yes";
 		*kvp.metadataXmlPath = *xmlpath;
 		# check for locks on metadataXml
-		foreach(*row in SELECT META_DATA_ATTR_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname AND META_DATA_ATTR_NAME like '*lockprefix%') {
-			*lockName = *row.META_DATA_ATTR_NAME;
-			*metadataxmlLocks = cons(*lockName, *metadataxmlLocks);
-		}
+		iiDataObjectMetadataKvpList(*path, UUORGMETADATAPREFIX ++ "lock_", true, *metadataXmlLocks);
+		uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
+		*kvp.metadataXmlLocks = *json_str;	
 	}	
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -184,13 +201,6 @@ iiPrepareMetadataForm(*path, *result) {
 			writeBytesBuf("serverLog", *status_buf);
 		}
 	}
-
-	uuList2JSON(*collLocks, *json_str);
-	*kvp.collLocks = *json_str;
-	
-	uuList2JSON(*metadataxmlLocks, *json_str);
-	*kvp.metadataxmlLocks = *json_str;	
-
 	uuKvp2JSON(*kvp, *result);
 }
 

@@ -108,13 +108,14 @@ iiCollectionDetails(*path, *result) {
 		*kvp.groupName = *groupName;
 		*kvp.userType = *userType;
 
+		*orgStatus = UNPROTECTED;
 		foreach(*metadataKvp in *kvpList) {
-			*orgStatus = UNPROTECTED;
 			if (*metadataKvp.attrName == "status") {
 				*orgStatus = *metadataKvp.attrValue;
 				break;
 			}
 		}
+		*kvp.folderStatus = *orgStatus;
 
 		*lockFound = "no";
 		foreach(*metadataKvp in *kvpList) {
