@@ -90,9 +90,7 @@ iiCollectionDetails(*path, *result) {
        }
 
 
-       *kvp.user_metadata = "false";
        if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
-	       *kvp.user_metadata = "true";
 	       *pathelems = split(*path, "/");
 	       *nelems = size(*pathelems);
 
@@ -106,18 +104,9 @@ iiCollectionDetails(*path, *result) {
 			}
 		}
 
-		uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
 		*kvp.groupName = *groupName;
-		*kvp.userType = *usertype;
        }
-
-	# Check for locks on Collection
-	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
-	*collLocks = list();
-	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
-		*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
-		*collLocks = cons(*lockName, *collLocks);
-	}
+        
 
        iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
        *kvp.dircount = *dircount;
@@ -125,7 +114,7 @@ iiCollectionDetails(*path, *result) {
        *kvp.filecount = *filecount;
        *kvp.content_modify_time = *modified;
 
-       uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
+       iiCollectionMetadataKvpList(*coll_id, UUORGMETADATAPREFIX, *kvp);
 
        *statuskey = UUORGMETADATAPREFIX ++ "status";
        *err = errorcode(*kvp."*statuskey");
@@ -139,3 +128,32 @@ iiCollectionDetails(*path, *result) {
 
        uuKvp2JSON(*kvp, *result);
  }
+
+iiCollectionMetadataKvpList(*path, *prefix,*strip, *lst) {
+	*lst = list();
+	foreach(*row in SELECT order_desc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_COLL_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_COLL_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_COLL_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
+
+iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	uuChopPath(*path, *collName, *dataName);
+	foreach(*row in SELECT order_desc(META_DATA_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *collName AND DATA_NAME = *dataName AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_DATA_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_DATA_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_DATA_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
