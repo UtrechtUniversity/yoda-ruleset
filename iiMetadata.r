@@ -94,14 +94,20 @@ iiPrepareMetadataForm(*path, *result) {
 	msiString2KeyValPair("", *kvp);
 	
 	
-	iiCollectionGroupNameAndUserType(*path, *groupName, *userType); 
+	iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 	*kvp.groupName = *groupName;
 	*kvp.userType = *userType;
+	if (*isDatamanager) {
+		*kvp.isDatamanager = "yes";
+	} else {
+		*kvp.isDatamanager = "no";
+	}
+	
 	
 	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
 
+	*orgStatus = UNPROTECTED;
 	foreach(*metadataKvp in *kvpList) {
-		*orgStatus = UNPROTECTED;
 		if (*metadataKvp.attrName == "status") {
 			*orgStatus = *metadataKvp.attrValue;
 			break;

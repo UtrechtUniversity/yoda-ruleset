@@ -57,7 +57,7 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
 # \param[in] path
 # \param[out] groupName
 # \param[out] userType
-iiCollectionGroupNameAndUserType(*path, *groupName, *userType) {
+iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 	*isfound = false;
 	*groupName = "";
 	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
@@ -79,14 +79,14 @@ iiCollectionGroupNameAndUserType(*path, *groupName, *userType) {
 	
 	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
 
-	writeLine("serverLog", "iiCollectionGroupNameAndUserType: userType = *userType");
 
-	if (*userType == "none") {	
-		uuGroupGetCategory(*groupName, *category, *subcategory);	
-		uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
-		if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-			*userType = "datamanager";
-		}	
-		writeLine("serverLog", "iiCollectionGroupNameAndUserType: userType = *userType");
-	}
+	uuGroupGetCategory(*groupName, *category, *subcategory);	
+	uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
+	if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+		*isDatamanager = true;
+	} else {
+		*isDatamanager = false;
+	}	
+	
+	writeLine("serverLog", "iiCollectionGroupNameAndUserType: userType = *userType, isDatamanager = *isDatamanager");
 }

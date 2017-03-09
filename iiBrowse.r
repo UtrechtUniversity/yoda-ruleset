@@ -104,9 +104,15 @@ iiCollectionDetails(*path, *result) {
 
 	# The following information is only  applicable inside research groups.
 	if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
-		iiCollectionGroupNameAndUserType(*path, *groupName, *userType); 
+		*kvp.userMetadata = "yes";
+		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 		*kvp.groupName = *groupName;
 		*kvp.userType = *userType;
+		if (*isDatamanager) {
+			*kvp.isDatamanager = "yes";
+		} else {
+			*kvp.isDatamanager = "no";
+		}
 
 		*orgStatus = UNPROTECTED;
 		foreach(*metadataKvp in *kvpList) {
@@ -121,6 +127,7 @@ iiCollectionDetails(*path, *result) {
 		foreach(*metadataKvp in *kvpList) {
 			if (*metadataKvp.attrName like "lock_*") {
 				*rootCollection = *metadataKvp.attrValue;
+				*kvp.lockRootCollection = *rootCollection;
 				if (*rootCollection == *path) {
 					*lockFound = "here";
 				} else {
