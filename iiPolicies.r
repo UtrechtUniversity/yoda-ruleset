@@ -178,7 +178,11 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
-				iiFolderTransition(*itemName, *currentStatus, *attributeValue);
+				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *attributeValue));
+				if (*err < 0) {
+					# Rollback
+					*allowed = false;
+				}
 			}
 		} else {
 			*allowed = true;
@@ -216,11 +220,16 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
-				iiFolderTransition(*itemName, *currentStatus,*attributeValue);
+				*err = errorcode(iiFolderTransition(*itemName, *currentStatus,*attributeValue));
+				if (*err < 0) {
+					# Rollback
+					*allowed = false;
+				}
 			}
 
 		} else {
-			iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+			*allowed = true;
+			#iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
 		}
 		if (!*allowed) {
 			cut;

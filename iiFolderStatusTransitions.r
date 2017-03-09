@@ -12,13 +12,22 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 	if (*currentStatus == UNPROTECTED && *newStatus == PROTECTED) {
 		iiFolderLockChange(*path, "protect", true, *status);
 		if (*status != 0) {
-			failmsg(-111000, "Rollback needed");
+			failmsg(-1110000, "Rollback needed");
 		}
 	} else if (*currentStatus == PROTECTED && (*newStatus == UNPROTECTED || *newStatus == "")) {
 		iiFolderLockChange(*path, "protect", false, *status);
 		if (*status != 0) {
-			failmsg(-111000, "Rollback needed");
+			failmsg(-1110000, "Rollback needed");
 		}
+	} else if (*currentStatus == UNPROTECTED && *newStatus == SUBMITTED) {
+		# protect the folder.
+		iiFolderLockChange(*path, "protect", true, *status);
+		if (*status != 0) {
+			failmsg(-1110000, "Rollback needed");
+		}
+	} else if (*currentStatus == PROTECTED && *newStatus == SUBMITTED) {
+		# nothing to do
+		succeed;
 	}
 }
 
@@ -38,6 +47,13 @@ iiFolderUnprotect(*folder) {
 	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");	
 }
 
+# \brief iiFolderSubmit
+# \param[in] folder	path of folder to submit to vault 
+iiFolderSubmit(*folder) {
+	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ SUBMITTED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+}
 
 # \brief iiFolderLockChange
 # \param[in] rootCollection 	The COLL_NAME of the collection the dataset resides in
