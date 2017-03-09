@@ -23,7 +23,7 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 		*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
 	} else {
 		*fields = list("DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
-		*conditions =  list(uucondition("COLL_NAME", "=", *path), uucondition("DATA_NAME", "not like", "\.%"));
+		*conditions =  list(uucondition("COLL_NAME", "=", *path));
 	}
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
