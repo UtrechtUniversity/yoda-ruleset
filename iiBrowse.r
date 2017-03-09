@@ -69,73 +69,120 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 # \param[out] result   JSON object containing Details of the Collection
 iiCollectionDetails(*path, *result) {
 
-       # First check if path exists and fail if not
-       if (!uuCollectionExists(*path)) {
-               # class USER_INPUT_PATH_ERR(UserInputException):
-               # code = -317000
-               fail(-317000);
-       }
-
-       msiString2KeyValPair("path=*path", *kvp);
-
-       foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
-	       *parent = *row.COLL_PARENT_NAME;
-	       *kvp.parent = *parent;
-	       *kvp.basename = triml(*path, *parent ++ "/");
-	       *coll_id = *row.COLL_ID;
-	       *kvp.id = *coll_id;
-	       *kvp."irods_type" = "Collection";
-	       *kvp."coll_create_time" = *row.COLL_CREATE_TIME;
-	       *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
-       }
-
-
-       *kvp.user_metadata = "false";
-       if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
-	       *kvp.user_metadata = "true";
-	       *pathelems = split(*path, "/");
-	       *nelems = size(*pathelems);
-
-		*isfound = false;
-		*prefix = IIGROUPPREFIX ++ "%";
-		foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
-			*id = *accessid.COLL_ACCESS_USER_ID;
-			foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id AND USER_GROUP_NAME like *prefix) {
-					*isfound = true;
-					*groupName = *group.USER_GROUP_NAME;
-			}
-		}
-
-		uuGroupGetMemberType(*groupName, uuClientFullName, *usertype);
-		*kvp.groupName = *groupName;
-		*kvp.userType = *usertype;
-       }
-
-	# Check for locks on Collection
-	*lockprefix = UUORGMETADATAPREFIX ++ "lock_";
-	*collLocks = list();
-	foreach(*row in SELECT META_COLL_ATTR_NAME WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME like '*lockprefix%') {
-		*lockName = triml(*row.META_COLL_ATTR_NAME, *lockprefix);
-		*collLocks = cons(*lockName, *collLocks);
+	# First check if path exists and fail if not
+	if (!uuCollectionExists(*path)) {
+		# class USER_INPUT_PATH_ERR(UserInputException):
+		# code = -317000
+		fail(-317000);
 	}
 
-       iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
-       *kvp.dircount = *dircount;
-       *kvp.totalSize = *totalSize;
-       *kvp.filecount = *filecount;
-       *kvp.content_modify_time = *modified;
+	msiString2KeyValPair("path=*path", *kvp);
 
-       uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
+	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
+		*parent = *row.COLL_PARENT_NAME;
+		*kvp.parent = *parent;
+		*kvp.basename = triml(*path, *parent ++ "/");
+		*coll_id = *row.COLL_ID;
+		*kvp.id = *coll_id;
+		*kvp."irods_type" = "Collection";
+		*kvp."coll_create_time" = *row.COLL_CREATE_TIME;
+		*kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
+	}
 
-       *statuskey = UUORGMETADATAPREFIX ++ "status";
-       *err = errorcode(*kvp."*statuskey");
-       # -313000 UNMATCHED_KEY_OR_INDEX
-       if (*err == -313000) {
-			*kvp."*statuskey" = UNPROTECTED;
-       }
 
-       uuList2JSON(*collLocks, *collLocks_json);
-       *kvp.collLocks = *collLocks_json;
 
-       uuKvp2JSON(*kvp, *result);
- }
+	iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
+	*kvp.dircount = *dircount;
+	*kvp.totalSize = *totalSize;
+	*kvp.filecount = *filecount;
+	*kvp.content_modify_time = *modified;
+
+	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
+	uuKvpList2JSON(*kvpList, *orgMetadata_json, *size);
+
+	*kvp.orgMetadata = *orgMetadata_json;
+
+	# The following information is only  applicable inside research groups.
+	if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
+		*kvp.userMetadata = "true";
+		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
+		*kvp.groupName = *groupName;
+		*kvp.userType = *userType;
+		if (*isDatamanager) {
+			*kvp.isDatamanager = "yes";
+		} else {
+			*kvp.isDatamanager = "no";
+		}
+
+		*orgStatus = UNPROTECTED;
+		foreach(*metadataKvp in *kvpList) {
+			if (*metadataKvp.attrName == "status") {
+				*orgStatus = *metadataKvp.attrValue;
+				break;
+			}
+		}
+		*kvp.folderStatus = *orgStatus;
+
+		*lockFound = "no";
+		foreach(*metadataKvp in *kvpList) {
+			if (*metadataKvp.attrName like "lock_*") {
+				*rootCollection = *metadataKvp.attrValue;
+				*kvp.lockRootCollection = *rootCollection;
+				if (*rootCollection == *path) {
+					*lockFound = "here";
+				} else {
+					*children = triml(*rootCollection, *path);
+					if (*children == *rootCollection) {
+						*ancestors = triml(*path, *rootCollection);
+						if (*ancestors == *path) {
+							*lockFound = "outoftree";
+						} else {
+							*lockFound = "ancestor";
+						}
+					} else {
+						*lockFound = "descendant";
+					}
+				}
+			}
+		}
+		*kvp.lockFound = *lockFound;
+
+	}
+
+	uuKvp2JSON(*kvp, *result);
+}
+
+iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *path
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_COLL_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_COLL_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_COLL_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
+
+iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	uuChopPath(*path, *collName, *dataName);
+	foreach(*row in SELECT META_DATA_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *collName
+		AND DATA_NAME = *dataName
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_DATA_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_DATA_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_DATA_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
+

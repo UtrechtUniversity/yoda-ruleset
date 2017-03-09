@@ -53,21 +53,40 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *modified = str(max(*data_modified, *coll_modified));
 }
 
-iiCollectionGroupNameAndUserType(*path, *groupName, *userType) {
+# \brief iiCollectionGroupNameAndUserType
+# \param[in] path
+# \param[out] groupName
+# \param[out] userType
+iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 	*isfound = false;
+	*groupName = "";
 	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
 		*id = *accessid.COLL_ACCESS_USER_ID;
 		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
-				*isfound = true;
 				*groupName = *group.USER_GROUP_NAME;
+		}
+		if (*groupName like regex "(research|intake)-.*") {
+			*isfound = true;
+			break;
 		}
 	}
 
-
+	writeLine("serverLog", "iiCollectionGroupNameAndUserType: groupName = *groupName");
 	if (!*isfound) {
 		# No results found. Not a group folder
-		failmsg(-808000, "path does not belong to a group or is not available to current user");
+		failmsg(-808000, "path does not belong to a research or intake group or is not available to current user");
 	}
 	
-	uuGroupGetMemberType(*groupName, "$userNameClient#$rodsZoneClient", *userType);
+	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
+
+
+	uuGroupGetCategory(*groupName, *category, *subcategory);	
+	uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
+	if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+		*isDatamanager = true;
+	} else {
+		*isDatamanager = false;
+	}	
+	
+	writeLine("serverLog", "iiCollectionGroupNameAndUserType: userType = *userType, isDatamanager = *isDatamanager");
 }
