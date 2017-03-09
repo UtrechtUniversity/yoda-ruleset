@@ -153,10 +153,10 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 
 	if (*xmlpath == "") {
-		*kvp.hasMetadataXml = "no";
+		*kvp.hasMetadataXml = "false";
 		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
 	} else {
-		*kvp.hasMetadataXml = "yes";
+		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
 		# check for locks on metadataXml
 		iiDataObjectMetadataKvpList(*path, UUORGMETADATAPREFIX ++ "lock_", true, *metadataXmlLocks);

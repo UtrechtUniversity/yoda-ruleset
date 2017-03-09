@@ -104,7 +104,7 @@ iiCollectionDetails(*path, *result) {
 
 	# The following information is only  applicable inside research groups.
 	if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
-		*kvp.userMetadata = "yes";
+		*kvp.userMetadata = "true";
 		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 		*kvp.groupName = *groupName;
 		*kvp.userType = *userType;
