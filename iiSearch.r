@@ -12,7 +12,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-		*conditions = list(uumakelikecondition("COLL_NAME", *searchstring));
+		*conditions = list(uumakelikecollcondition("COLL_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
 		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
 		iiKvpCollectionTemplate(*rowList, *kvpList);
