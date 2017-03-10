@@ -21,6 +21,11 @@ data uucondition =
 # \returnvalue	uucondition	A triple of strings of type uucondition
 uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*searchstring%%")
 
+# \function uumakelikecollcondition Helper function to search within the clientZone
+# \param[in] column		The irods column to search
+# \param[in] searchstring	Part of the string to search on.
+uumakelikecollcondition(*column, *searchstring) = uucondition(*column, "like", "/$rodsZoneClient/home/%%*searchstring%%")
+
 # \function uumakestartswithcondition	Helper function to create a condition for strings starting
 #					with the searchstring
 # \param[in] column		The irods column to search
