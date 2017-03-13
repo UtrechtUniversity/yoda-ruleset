@@ -35,8 +35,17 @@ iiCanCollRename(*src, *dst, *allowed, *reason) {
 		uuChopPath(*dst, *dstparent, *dstbasename);
 		iiGetLocks(*dstparent, *locks, *locked);
 		if (*locked) {
-			*allowed = false;
-			*reason = "*dstparent has locks *locks";
+			foreach(*lockName in *locks) {
+				*rootCollection = *locks."*lockName";
+				if (strlen(*rootCollection) > strlen(*dstparent)) {
+					*allowed = true;
+					*reason = "*dstparent has locked child *rootCollection, but this does not prevent renaming subcollections."
+				} else {
+					*allowed = false;
+					*reason = "*dstparent has lock(s) *locks";
+					break;
+				}
+			}
 		} else {
 			*allowed = true;
 			*reason = "No Locks found";
