@@ -293,7 +293,7 @@
 		</URL_Indicator>
 		<Number_of_files>
 			<label>No. Of Files</label>
-			<help>The number of files of the datapackage. The field will be automatically set.</help>
+			<help>The number of files of the datapackage.</help>
 			<mandatory>true</mandatory>
 		</Number_of_files>
 
