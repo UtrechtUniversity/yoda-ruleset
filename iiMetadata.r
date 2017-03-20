@@ -279,3 +279,71 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 iiCloneMetadataXml(*src, *dst) {
 	msiDataObjCopy(*src, *dst, "", *status);
 }
+
+# \brief iiMetadataXmlModifiedPost
+iiMetadataXmlModifiedPost(*xmlpath, *zone) {
+	uuChopPath(*xmlpath, *parent, *basename);
+	writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
+	iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+	*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", *msg);
+	} else if (*err == 0) {
+		writeLine("serverLog", "XSD validation successful. Start indexing");
+		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+		iiImportMetadataFromXML(*xmlpath, *xslpath);
+	} else {
+		writeBytesBuf("serverLog", *status_buf);
+	}
+}
+
+iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
+	*lst = split(*physicalPath, "/");
+	# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
+	uuListIndexOf(*lst, "home", *idx);
+	if (*idx < 0) {
+		writeLine("serverLog","iiLogicalPathFromPhysicalPath: Could not find home in *physicalPath. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
+		fail;
+	}
+	# skip to the part of the path starting from ../home/..
+	for( *el = 0; *el < *idx; *el = *el + 1) {
+		*lst = tl(*lst);
+	}
+	# Prepend with the zone and rejoin to a logical path
+	*lst	= cons(*zone, *lst);
+	uuJoin("/", *lst, *logicalPath);
+	*logicalPath = "/" ++ *logicalPath;
+	writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
+}
+
+
+# \brief iiMetadataXmlRenamedPost
+iiMetadataXmlRenamedPost(*src, *dst, *zone) {
+	uuChopPath(*src, *src_parent, *src_basename);
+	# the logical_path in $KVPairs is that of the destination
+	uuChopPath(*dst, *dst_parent, *dst_basename);
+	if (*dst_basename != IIMETADATAXMLNAME && *src_parent == *dst_parent) {
+		writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
+		iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
+	} else if (*src_parent != *dst_parent) {
+		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
+		if (uuCollectionExists(*src_parent)) {
+			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
+			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
+		} else {
+			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
+		}
+	}
+}
+
+# \brief iiMetadataXmlUnregisteredPost
+iiMetadataXmlUnregisteredPost(*logicalPath) {
+	# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+	uuChopPath(*logicalPath, *parent, *basename);
+	if (uuCollectionExists(*parent)) {
+		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename removed. Removing user metadata from *parent");
+		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+	} else {
+		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
+	}			
+}
