@@ -6,6 +6,25 @@
 #
 #####################################################
 #
+
+# \brief pep_resource_modified_post 	Create revisions on file modifications
+# \description				This policy should trigger whenever a new file is added or modified
+#					in the workspace of a Research team. This should be done asynchronously
+# \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
+uuResourceModifiedPostRevision(*pluginInstanceName, *KVPairs) {
+	if (*KVPairs.logical_path like "/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
+		writeLine("serverLog", "uuResourceModifiedPostRevision:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
+		*path = *KVPairs.logical_path;
+		uuChopPath(*path, *parent, *basename);
+		if (*basename like "._*") {
+			# MacOS writes to ._ multiple times per put
+			writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. This is littering by Mac OS");
+		} else {
+			uuRevisionCreateAsynchronously(*path);
+		}
+	}
+}
+
 # \brief uuRevisionCreateAsynchronously  Asynchronous call to uuRevisionCreate
 # \param[in] path	The path of the added or modified file.
 uuRevisionCreateAsynchronously(*path) {
