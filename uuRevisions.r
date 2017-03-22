@@ -49,7 +49,7 @@ uuRevisionCreate(*path, *id) {
        #| writeLine("stdout", *timestamp);
 	*objectId = 0;
 	*found = false;
-	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID WHERE DATA_NAME = *basename AND COLL_NAME = *parent) {
+	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_REPL_NUM = "0") {
 		if (!*found) {
        #| 		writeLine("stdout", *row);
 			*found = true;
@@ -58,18 +58,18 @@ uuRevisionCreate(*path, *id) {
 			*dataSize = *row.DATA_SIZE;
 			*collId = *row.COLL_ID;
 			*dataOwner = *row.DATA_OWNER_NAME;
-		} else {
-			failmsg(-1, "Multiple results for path found");
 		}
 	}
 
 	if (!*found) {
-		failmsg(-317000, "DataObject was not found or path was collection");
+		writeLine("serverLog", "uuRevisionCreate: DataObject was not found or path was collection");
+		succeed;
 	}
 
 
 	if (int(*dataSize)>500048576) {
-		failmsg(-311000, "Files larger than 500MiB cannot store revisions");
+		writeLine("serverLog", "uuRevisionCreate: Files larger than 500MiB cannot store revisions");
+		succeed;
 	}	
 
 
@@ -78,12 +78,7 @@ uuRevisionCreate(*path, *id) {
 		*userZone = *row.USER_ZONE;
 	}
 
-	uuLockExists(*parent, *isLocked);
-	if (*isLocked) {
-		failmsg(-818000, "Collection *parent is Locked");
-	}
-
-	*revisionStore = "/*userZone/revisions/*groupName";
+	*revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
 	foreach(*row in SELECT COUNT(COLL_ID) WHERE COLL_NAME = *revisionStore) {
 	       	*revisionStoreExists = bool(int(*row.COLL_ID));
@@ -126,7 +121,7 @@ uuRevisionCreate(*path, *id) {
 		}
 
 	} else {
-		failmsg(-814000, "*revisionStore does not exists or is inaccessible for current client.");
+		writeLine("serverLog", "uuRevisionCreate: *revisionStore does not exists or is inaccessible for current client.");
 	}
 }
 
@@ -135,22 +130,23 @@ uuRevisionCreate(*path, *id) {
 # \param[in] revision_id
 uuRevisionRemove(*revision_id) {
 	*isfound = false;
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = "*revision_id" AND COLL_NAME like "/$rodsZoneClient/revisions/%") {
+	*revisionStore =  "/$rodsZoneClient" ++ UUREVISIONCOLLECTION;
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = "*revision_id" AND COLL_NAME like "*revisionStore/%") {
 		if (!*isfound) {
 			*isfound = true;
 			*objPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-			*args = "";
-			msiAddKeyValToMspStr("objPath", *objPath, *args);
-			msiAddKeyValToMspStr("forceFlag", "", *args);
-			msiDataObjUnlink(*args, *status);
 		} else {
-			failmsg(-54000, "revision_id returned multiple results");
+			writeLine("serverLog", "uuRevisionRemove: *revision_id returned multiple results");
 		}
 	}
 	if (*isfound) {
+		*args = "";
+		msiAddKeyValToMspStr("objPath", *objPath, *args);
+		msiAddKeyValToMspStr("forceFlag", "", *args);
+		msiDataObjUnlink(*args, *status);
 		writeLine("serverLog", "uuRevisionRemove('*revision_id'): Removed *objPath from revision store");
 	} else {
-		failmsg(-808000, "uuRevisionRemove: Revision_id not found or permission denied.");
+		writeLine("serverLog", "uuRevisionRemove: Revision_id not found or permission denied.");
 	}
 }
 
