@@ -101,5 +101,5 @@ createXmlXsdCollections {
 
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-ilab/tools/xml", *default="ilab"
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="ilab"
 output ruleExecOut
