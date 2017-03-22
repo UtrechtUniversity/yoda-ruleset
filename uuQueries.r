@@ -92,8 +92,14 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	*kvpList = list();
 
 	foreach(*field in *fields) {
-		*orderclause =	orderclause(*field, *orderby, *ascdesc);
-		msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
+		if (*field like regex "(MIN|MAX|SUM|AVG|COUNT)\(.*") {
+			*action = trimr(*field, "(");
+			*field = trimr(triml(*field, "("), ")");
+			msiAddSelectFieldToGenQuery(*field, *action, *GenQInp);
+		} else {
+			*orderclause =	orderclause(*field, *orderby, *ascdesc);
+			msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
+		}
 	}
 
 	foreach(*condition in *conditions) {

@@ -258,21 +258,13 @@ uuRevisionList(*path, *revisions) {
 }
 
 uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("COLL_NAME","DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
+	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchstring), *conditions);	
-	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
+	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
-
-	foreach(*kvp in tl(*kvpList)) {
-		*id = *kvp.DATA_ID;
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *kvp);
-	}
-
-	*kvpList = cons(hd(*kvpList), uuListReverse(tl(*kvpList)));
-
 	uuKvpList2JSON(*kvpList, *json_str, *size);
 	*result = *json_str;
 }
