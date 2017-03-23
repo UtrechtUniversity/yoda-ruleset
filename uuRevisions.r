@@ -221,7 +221,7 @@ uuRevisionLast(*originalPath, *isfound, *revision) {
 
 
 # \brief uuRevisionList list revisions of path
-uuRevisionList(*path, *revisions) {
+uuRevisionList(*path, *result) {
 	#| writeLine("stdout", "List revisions of path");
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
@@ -242,6 +242,9 @@ uuRevisionList(*path, *revisions) {
 
 		*revisions = cons(*kvp, *revisions);
 	}
+	
+	uuKvpList2JSON(*revisions, *result, *size);	
+	
 	# Step 1: Identify revisions
        	# - Query iRODS for data object in /zone/revisions/grp-of-*owner with ori- metadata set to COLL_NAME and DATA_NAME of the dataobject
 	# Step 2: Create return list *revisions
@@ -255,13 +258,24 @@ uuRevisionList(*path, *revisions) {
 
 uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
-	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"));
-        *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchstring), *conditions);	
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
+			   uucondition("DATA_REPL_NUM", "=", "0"));
+        *conditions = cons(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
-	uuKvpList2JSON(*kvpList, *json_str, *size);
+	
+	*result_lst = list();
+	foreach(*kvp in tl(*kvpList)) {
+		msiString2KeyValPair("", *res);
+		*res.originalPath = *kvp.META_DATA_ATTR_VALUE;
+		*res.numberOfRevisions = *kvp.DATA_ID;
+		*result_lst = cons(*res, *result_lst);
+	}
+	
+	*result_lst = cons(hd(*kvpList), uuListReverse(*result_lst));
+	uuKvpList2JSON(*result_lst, *json_str, *size);
 	*result = *json_str;
 }
 
