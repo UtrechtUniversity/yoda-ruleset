@@ -152,46 +152,53 @@ uuRevisionRemove(*revision_id) {
 
 # \brief uuRevisionRestore
 # \param[in] revision_id	id of revision data object
+# \param[in] target		target collection to write in
 # \param[in] overwrite		1 = overwrite old path with revision, 0 = put file next to original file.
-uuRevisionRestore(*revision_id, *overwrite) {
+# \param[out] status		status of restore process
+uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
       #| writeLine("stdout", "Restore a revision");
+	*status = 1;
 	*isfound = false;
-	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = "*revision_id") {
+	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
 		if (!*isfound) {
 			*isfound = true;
 			*revName = *rev.DATA_NAME;
 			*revCollName = *rev.COLL_NAME;
-			*src =  *revCollName ++ "/" ++ *revName;
-			} else {
-	#| 			writeLine("stdout", "original_path is set more than once");
-				fail;
+			*src = *revCollName ++ "/" ++ *revName;
 		}
 	}
 
 	if (!*isfound) {
-		failmsg(-1, "Could not find revision");
+		writeLine("serverLog", "uuRevisionRestore: Could not find revision *revisionId");
+		*status = 2;
+		succeed;
 	}
 
        # Get MetaData
 	msiString2KeyValPair("", *kvp);
-	uuObjectMetadataKvp(*revision_id, UUORGMETADATAPREFIX, *kvp);
-       # Check if original_coll_name exists
-	msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_coll_name", *collName);
+	uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
 
-	if (!uuCollectionExists(*collName)) {
-	 	#writeLine("serverLog", "uuRevisionRestore: (re)creating *collName");
-		msiCollCreate(*collName, 1, *status);
-     #| 	writeLine("stdout", "Status of msiCollCreate is *status");	
+	if (!uuCollectionExists(*target)) {
+		writeLine("serverLog", "uuRevisionRestore: Cannot find *target");
+		*status = 3;
+		succeed;
 	}
+
 	*options = "";
 	if (*overwrite == 1) {
-		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_path", *dst);
+		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
 		msiAddKeyValToMspStr("forceFlag", "", *options);
+		*dst = *target ++ "/" ++ *oriDataName;
 	} else {
-		*dst = *coll_name ++ "/" ++ *revName;
+		*dst = *target ++ "/" ++ *revName;
 	}
 	msiAddKeyValToMspStr("verifyChksum", "", *options);
-	*err = errorcode(msiDataObjCopy(*src, *dst, *options, *status));
+	writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
+	*err = errorcode(msiDataObjCopy("*src", "*dst", *options, *msistatus));
+	if (*err < 0) {
+		writeLine("serverLog", "uuRevisionRestore: Restoration failed with errorcode: *err");
+	}
+	*status = *err;
 }
 
 # \brief uuRevisionLast return last revision
@@ -226,7 +233,7 @@ uuRevisionList(*path, *result) {
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_asc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
+	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_desc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
