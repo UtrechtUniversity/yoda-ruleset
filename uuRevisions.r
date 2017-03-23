@@ -184,7 +184,6 @@ uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
 		succeed;
 	}
 
-	*options = "";
 	if (*overwrite == 1) {
 		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
 		msiAddKeyValToMspStr("forceFlag", "", *options);
