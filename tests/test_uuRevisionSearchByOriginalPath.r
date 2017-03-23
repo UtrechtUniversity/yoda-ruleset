@@ -1,10 +1,10 @@
 test_RevisionSearchByOriginalPath {
-	if (*testPath == "") {
-		*testPath = "/" ++ $rodsZoneClient ++ "/home/grp-test/revisioncreate/revisiontest.txt";
+	if (*searchstring == "") {
+		*searchstring = "/" ++ $rodsZoneClient ++ "/home/grp-test/revisioncreate/revisiontest.txt";
 	}
-	uuRevisionSearchByOriginalPath(*testPath, "", "", 10, 0, *result);
+	uuRevisionSearchByOriginalPath(*searchstring, "", "", 10, 0, *result);
 	writeLine("stdout", *result);
 }
 
-INPUT *testPath = ""
+INPUT *searchstring = ""
 OUTPUT ruleExecOut

@@ -153,11 +153,11 @@ uuRevisionRemove(*revision_id) {
 # \brief uuRevisionRestore
 # \param[in] revision_id	id of revision data object
 # \param[in] target		target collection to write in
-# \param[in] overwrite		1 = overwrite old path with revision, 0 = put file next to original file.
+# \param[in] overwrite		yes = overwrite old path with revision, no = put file next to original file.
 # \param[out] status		status of restore process
 uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
       #| writeLine("stdout", "Restore a revision");
-	*status = 1;
+	*status = "Unknown error";
 	*isfound = false;
 	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
 		if (!*isfound) {
@@ -169,8 +169,8 @@ uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
 	}
 
 	if (!*isfound) {
-		writeLine("serverLog", "uuRevisionRestore: Could not find revision *revisionId");
-		*status = 2;
+		*status = "Could not find revision *revisionId"
+		writeLine("serverLog", "uuRevisionRestore: *status");
 		succeed;
 	}
 
@@ -179,12 +179,12 @@ uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
 	uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
 
 	if (!uuCollectionExists(*target)) {
-		writeLine("serverLog", "uuRevisionRestore: Cannot find *target");
-		*status = 3;
+		*status = "Cannot find *target";
+		writeLine("serverLog", "uuRevisionRestore: *status");
 		succeed;
 	}
 
-	if (*overwrite == 1) {
+	if (*overwrite == "yes") {
 		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
 		msiAddKeyValToMspStr("forceFlag", "", *options);
 		*dst = *target ++ "/" ++ *oriDataName;
@@ -193,11 +193,13 @@ uuRevisionRestore(*revisionId, *target, *overwrite, *status) {
 	}
 	msiAddKeyValToMspStr("verifyChksum", "", *options);
 	writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
-	*err = errorcode(msiDataObjCopy("*src", "*dst", *options, *msistatus));
+	*err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
 	if (*err < 0) {
-		writeLine("serverLog", "uuRevisionRestore: Restoration failed with errorcode: *err");
+		*status = "Restoration failed with error *err: *errmsg"
+		writeLine("serverLog", "uuRevisionRestore: *status");
+	} else {
+		*status = "Success";
 	}
-	*status = *err;
 }
 
 # \brief uuRevisionLast return last revision
@@ -265,6 +267,29 @@ uuRevisionList(*path, *result) {
 uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
+			   uucondition("DATA_REPL_NUM", "=", "0"));
+        *conditions = cons(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
+	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
+
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	
+	*result_lst = list();
+	foreach(*kvp in tl(*kvpList)) {
+		msiString2KeyValPair("", *res);
+		*res.originalPath = *kvp.META_DATA_ATTR_VALUE;
+		*res.numberOfRevisions = *kvp.DATA_ID;
+		*result_lst = cons(*res, *result_lst);
+	}
+	
+	*result_lst = cons(hd(*kvpList), uuListReverse(*result_lst));
+	uuKvpList2JSON(*result_lst, *json_str, *size);
+	*result = *json_str;
+}
+
+uuRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
+	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_data_name"),
 			   uucondition("DATA_REPL_NUM", "=", "0"));
         *conditions = cons(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
