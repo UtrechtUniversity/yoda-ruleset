@@ -315,4 +315,3 @@ uuRevisionVacuum(*status) {
 	# Step 5: Check if storage is below 50%
 	# Step 6: If not, repeat process with 90 days treshold (and 60, then 30)
 }
-
