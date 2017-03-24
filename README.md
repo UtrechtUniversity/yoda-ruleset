@@ -13,10 +13,12 @@ These rules are required on top of the rules-uu rules to use the YoDa Portal I-L
 It consists of:
 - Institutions I-lab specific rules and policies
 
-Prerequisite: 
+DEPENDENCIES
+------------
+- A ruleset with implementation specific configuration. For example: [irods-ruleset-i-lab](https://github.com/UtrechtUniversity/irods-ruleset-i-lab)
 - [irods-ruleset-uu](https://github.com/UtrechtUniversity/irods-ruleset-uu)
-- [MaastrichtUniversity/irods-microservices](https://github.com/MaastrichtUniversity/irods-microservices)
-- Yoda rules require an iRODS 3.3.1+ server release.
+- [irods-xml-microservices](https://github.com/UtrechtUniversity/irods-xml-microservices)
+- All dependencies of the above
 
 INSTALLATION
 -----------
@@ -28,30 +30,19 @@ INSTALLATION
 
 4) Checkout the target branch.
 
-5) Use the make file to compile and install the rules: ``Make install``
+5) Use the make file to compile and install the rules: ``make install``
 
-6) Add the generated `rules-ii.re` (as well as the requisite `rules-uu.re`) to the `server_config.json` the _re_rulebase_set_, above `core` in `/etc/irods/server_config.json`:
+6) Add the generated `rules-research.re` (as well as the requisite `rules-uu.re`) to the `server_config.json` the _re_rulebase_set_, above `core` in `/etc/irods/server_config.json`:
 
 ```javascript
 "re_rulebase_set": [
-    {  "filename":  "rules-ii" },
+    {  "filename":  "rules-research" },
     {  "filename":  "rules-uu" },
     { "filename": "core"}
 ]
 ```
-    
-7) Create a symlink from `job_iiCopySnapshotToVault.re` in the repository to `/etc/irods/job_iiCreateSnapshots.r`
-    From the directory you cloned this repository to:
-``````sh
-$ ln -sv /etc/irods/job_iiCreateSnapshots.r job_iiCopySnapshotToVault.re
-```
-    
-8) Using crontab -e, add the following cron job to a user with rodsadmin rights (this cronjob assumes the user has admin rights within iRODS and ``iinit`` has been executed after login):
-```
-* * * * * /bin/irule -F /etc/irods/job_iiCreateSnapshots.r >> $HOME/iRODS/server/log/job_iiCreateSnapshot.log 2> /dev/null
-```
 
-9) Install the default schema and formelements for the metadata form. The user needs to be a rodsadmin. If the default target resource "irodsResc" does not exist, add a *resc parameter.
+7) Install the default schema and formelements for the metadata form. The user needs to be a rodsadmin. If the default target resource "irodsResc" does not exist, add a *resc parameter.
 ```
 $ irule -F ./tools/install-default-xml-for-metadata.r
 # or
@@ -67,4 +58,6 @@ The full license can be found in [LICENSE](LICENSE).
 
 AUTHORS
 -------
+- [Paul Frederiks](https://github.com/pfrederiks)
 - [Jan de Mooij](https://github.com/ajdemooij)
+
