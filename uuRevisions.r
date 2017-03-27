@@ -1,8 +1,8 @@
 # \file
-# \brief Revision management
-# \author Paul Frederiks
+# \brief     Revision management
+# \author    Paul Frederiks
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \license   GPLv3, see LICENSE
 #
 #####################################################
 #
@@ -49,7 +49,8 @@ uuRevisionCreate(*path, *id) {
        #| writeLine("stdout", *timestamp);
 	*objectId = 0;
 	*found = false;
-	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_REPL_NUM = "0") {
+	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID
+	       		WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_REPL_NUM = "0") {
 		if (!*found) {
        #| 		writeLine("stdout", *row);
 			*found = true;
@@ -229,12 +230,15 @@ uuRevisionLast(*originalPath, *isfound, *revision) {
 
 
 # \brief uuRevisionList list revisions of path
+# \param[in]  path     Path of original file
+# \param[out] result   List in JSON format with all revisions of the original path
 uuRevisionList(*path, *result) {
 	#| writeLine("stdout", "List revisions of path");
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_desc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
+	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_desc(DATA_CREATE_TIME) 
+		        WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
@@ -252,20 +256,12 @@ uuRevisionList(*path, *result) {
 	}
 	
 	uuKvpList2JSON(*revisions, *result, *size);	
-	
-	# Step 1: Identify revisions
-       	# - Query iRODS for data object in /zone/revisions/grp-of-*owner with ori- metadata set to COLL_NAME and DATA_NAME of the dataobject
-	# Step 2: Create return list *revisions
-	# - For each object found create a tuple with:
-	#	- object id of revision
-	#	- Timestamp of revision
-	#	- User who added revision
-	#	- file size
-	#	- checksum
 }
 
+# \brief uuRevisionSearchByOriginalPath 
+# TODO: Refactor to support sorting and searching on filename instead of complete path
 uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
+	*fields = list("META_DATA_ATTR_VALUE", "DATA_ID");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
 			   uucondition("DATA_REPL_NUM", "=", "0"));
         *conditions = cons(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring), *conditions);	
@@ -287,6 +283,8 @@ uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 	*result = *json_str;
 }
 
+# \brief uuRevisionSearchByOriginalFilename
+# TODO: See uuRevisionSearchByOriginalPath
 uuRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_data_name"),
@@ -310,6 +308,8 @@ uuRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*result = *json_str;
 }
 
+# \brief uuRevisionSearchByOriginalId
+# Id stays the same after file renames.
 uuRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("COLL_NAME", "DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
@@ -330,13 +330,3 @@ uuRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 	*result = *json_str;
 }
 
-uuRevisionVacuum(*status) {
-	writeLine("stdout", "Vacuuming revisions store");
-	# Step 1: Check if store exceeds 50% of total storage available
-	#  - If not, return status success
-	# Step 2: Identify revisions older than 180 days in /zone/revisions
-	# Step 3: For each old revision, check if newer revision is stored to ensure researcher the option to revert to the last revision
-	# Step 4: If newer revisions are available remove the old revision
-	# Step 5: Check if storage is below 50%
-	# Step 6: If not, repeat process with 90 days treshold (and 60, then 30)
-}

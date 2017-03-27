@@ -1,17 +1,8 @@
-#| myTestRule {
-#|	if (uuCollectionExists(*coll_name)) {
-#|		writeLine("stdout", "Collection Exists");	
-#|	} else {
-#|		writeLine("stdout", "Collection Does not exist");
-#|	}
-#|
-#|	#msiString2KeyValPair("test=testmij",*kvp);	
-#|	uuObjectMetadataKvp(*data_id,"", *kvp);
-#|      	writeLine("stdout", *kvp);
-#|
-#|	uuObjectMetadataKvp(*data_id,"original", *kvp);
-#|	
-#|}
+# \file
+# \brief      Helper rules for common queries
+# \author     Paul Frederiks
+# \copyright  Copyright (c) 2015, Utrecht university. All rights reserved
+# \license    GPLv3, see LICENSE
 
 # \brief uuCollectionExists checks if a collection exists
 # \description Used to be iicollectionexists from Jan de Mooij
@@ -105,6 +96,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	foreach(*condition in *conditions) {
 		# deconstruct condition into its parts
 		uucondition(*column, *comparison, *expression) =  *condition;
+		writeLine("stdout", "*column, *comparison, *expression");
 		msiAddConditionToGenQuery(*column, *comparison, *expression, *GenQInp);
 	}
 
@@ -150,6 +142,9 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 			# Query for total number of rows to include in summary
 			# Add count to every field. Should yield the same number, but hopefully assures we get the same implicit joins
 			foreach(*field in *fields) {
+				if (*field like regex "(MIN|MAX|SUM|AVG|COUNT)\(.*") {
+					*field = trimr(triml(*field, "("), ")");
+				} 
 				msiAddSelectFieldToGenQuery(*field, "COUNT", *TotalQInp);
 			}
 

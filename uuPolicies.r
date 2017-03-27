@@ -42,7 +42,7 @@ acCreateUserZoneCollections {
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
-		if ($otherUserName like regex "research-.*") {
+		if ($otherUserName like regex "research-.*" && uuCollectionExists(UUREVISIONCOLLECTION)) {
 			*revisionColl = "/"++$rodsZoneProxy++UUREVISIONCOLLECTION;
 			acCreateCollByAdmin(*revisionColl, $otherUserName);
 			msiSetACL("default", "admin:inherit", $otherUserName, "*revisionColl/$otherUserName");

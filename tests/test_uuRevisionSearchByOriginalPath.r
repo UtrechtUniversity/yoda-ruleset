@@ -1,10 +1,7 @@
 test_RevisionSearchByOriginalPath {
-	if (*searchstring == "") {
-		*searchstring = "/" ++ $rodsZoneClient ++ "/home/grp-test/revisioncreate/revisiontest.txt";
-	}
-	uuRevisionSearchByOriginalPath(*searchstring, "", "", 10, 0, *result);
+	uuRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result);
 	writeLine("stdout", *result);
 }
 
-INPUT *searchstring = ""
+INPUT *searchstring="", *orderby="META_DATA_ATTR_VALUE", *ascdesc="asc", *limit=10, *offset=0
 OUTPUT ruleExecOut

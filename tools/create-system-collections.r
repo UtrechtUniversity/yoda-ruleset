@@ -6,7 +6,12 @@ createSystemCollection {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
 	}
 	
-	*systemcolls = list("/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION, "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION);
+	*systemcolls = list("/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION)
+
+	if (*enableRevisions == 1) {
+		*systemcolls = uuListReverse(cons("/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION, *systemcolls));
+	}
+
 	foreach(*systemcoll in *systemcolls) {
 		*exists = false;
 		foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *systemcoll) {
@@ -22,5 +27,5 @@ createSystemCollection {
 	}
 }
 
-input null
+input *enableRevisions=0
 output ruleExecOut

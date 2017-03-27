@@ -1,3 +1,10 @@
+
+# \file
+# \brief       JSON rules depending on the irods-json-microservices
+# \author      Paul Frederiks
+# \copyright   Copyright (c) 2016-2017 Utrecht University. All rights reserved
+# \license     GPLv3, see LICENSE
+
 # \brief uuKvList2JSON convert a list of key-value-pair objects into a JSON string
 # \param[in] kvpList	list of key-value-pairs to convert to JSON
 # \param[out] json_str	String containing JSON
