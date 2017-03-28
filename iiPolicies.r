@@ -1,6 +1,7 @@
+# This policy is fired when a file is put onto iRODS. 
 acPostProcForPut {
 	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
+		# Check for locks in the research area
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -8,17 +9,20 @@ acPostProcForPut {
 
 		iiCanDataObjCreate($objPath, *allowed, *reason);
 		if (!*allowed) {
+			# There is no acPreProcForPut, so we can only remove the object after the fact.
 			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);	
 		}
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+		# Check new XSD against a schema for xsd validity. Rename the file when invalid
 
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+		# Check  for invalid formelements XML files and rename them.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
@@ -30,6 +34,7 @@ acPostProcForPut {
 # is locked
 acPreprocForRmColl {
 	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -151,15 +156,15 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 	}
 }
 
-
+# This policy is fired when AVU metadata is added or set.
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
 		}
 
+		# Only allow manipulation of user metadata when the target is not locked
 		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
@@ -174,18 +179,20 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 
 		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			
+			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
 			if (*allowed) {
+				# This prevents illegal status transitions.	
 				iiFolderStatus(*itemName, *currentStatus);
 				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *attributeValue));
 				if (*err < 0) {
-					# Rollback
+					# Perhaps a rollback is needed
 					*allowed = false;
 				}
 			}
 		} else {
 			*allowed = true;
+			# We cannot distinguish organisational metadata changes between the portal and imeta
 			# iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
 		}
 		if (!*allowed) {
@@ -196,6 +203,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 }
 
+# This policy gets triggered when metadata is modified
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
 		uuGetUserType(uuClientFullName, *userType);
@@ -239,6 +247,8 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 }
 
 # \brief uuResourceModifiedPostResearch   	Policy to import metadata when a IIMETADATAXMLNAME file appears
+# \param[in] *pluginInstanceName		A copy of $pluginInstanceName
+# \param[in] KVPairs  a copy of $KVPairs
 uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	if (*KVPairs.logical_path like regex "^/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
 		writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");

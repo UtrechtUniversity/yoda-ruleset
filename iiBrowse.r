@@ -1,5 +1,8 @@
-# \brief Rules to support the ilab browser
-# \author Paul Frederiks
+# \file
+# \brief Rules to support the research area browser
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
+# \license   GPLv3, see LICENSE
 
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			
@@ -8,9 +11,10 @@ orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER_A
 
 iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
-# \brief iiBrowse	return list of subcollections or dataobjects with ilab specific information attached
+# \brief iiBrowse	        return list of subcollections or dataobjects with ilab specific information attached
 # \param[in] path		requested path of parent collection
-# \param[in] collectionOrDataObject	Set to "Collection" if you want collections or "DataObject" (Or anything else) if you want dataobjects
+# \param[in] collectionOrDataObject	Set to "Collection" if you want collections or "DataObject" (Or anything
+#				        else) if you want dataobjects
 # \param[in] orderby		which column to sort on 
 # \param[in] ascdesc		Order Ascending or Descending: "asc" or "desc"
 # \param[in] limit		limit the list of results. Cast to int
@@ -151,6 +155,9 @@ iiCollectionDetails(*path, *result) {
 
 	uuKvp2JSON(*kvp, *result);
 }
+
+# \brief iiCollectionMetadataKvpList
+# \param[in] path
 
 iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
 	*lst = list();

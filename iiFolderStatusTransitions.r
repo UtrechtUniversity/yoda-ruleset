@@ -1,4 +1,12 @@
+# \file
+# \brief     Status transitions for Folders in the Research area.
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
+# \license   GPLv3, see LICENSE
+
 # \brief iiFolderStatus
+# \param[in]  folder	    Path of folder
+# \param[out] folderstatus  Current status of folder
 iiFolderStatus(*folder, *folderstatus) {
 	
 	*folderstatuskey = UUORGMETADATAPREFIX ++ "status";
@@ -8,6 +16,10 @@ iiFolderStatus(*folder, *folderstatus) {
 	}
 }
 
+# \brief iiFolderTransition    Dispatch rules based on status transition
+# \param[in] path              Path of folder
+# \param[in] currentStatus     Current status of folder
+# \param[in] newStatus         New status of folder
 iiFolderTransition(*path, *currentStatus, *newStatus) {
 	if (*currentStatus == UNPROTECTED && *newStatus == PROTECTED) {
 		iiFolderLockChange(*path, "protect", true, *status);
@@ -108,6 +120,12 @@ iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d
 #                                       buffer."error" can be updated by the rule to indicate
 #                                       an error, the treewalk will stop
 
+# \brief iiAddMetadataToItem        For use by uuTreewalk to add metadata
+# \param[in] itemParent            full iRODS path to the parent of this object
+# \param[in] itemName              basename of collection or dataobject
+# \param[in] itemIsCollection      true if the item is a collection
+# \param[in,out] buffer            in/out Key-Value variable
+# \param[out] error                errorcode in case of failure
 iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
@@ -115,6 +133,12 @@ iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) 
 	*error = errorcode(msiAssociateKeyValuePairsToObj(*buffer, *objPath, *objType));
 }
 
+# \brief iiRemoveMetadataFromItem  For use by uuTreeWalk to remove metadata
+# \param[in] itemParent            full iRODS path to the parent of this object
+# \param[in] itemName              basename of collection or dataobject
+# \param[in] itemIsCollection      true if the item is a collection
+# \param[in,out] buffer            in/out Key-Value variable
+# \param[out] error                errorcode in case of failure
 iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
@@ -124,8 +148,10 @@ iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *er
 		writeLine("serverLog", "iiRemoveMetadataFromItem: removing *buffer from *objPath failed with errorcode: *error");
 		writeLine("serverLog", *msg);
 		if (*error == -819000) {
+			# This happens when metadata was already removed or never there.
 			writeLine("serverLog", "iiRemoveMetadaFromItem: -819000 detected. Keep on trucking");
 			*error = 0;
 		}
 	}
 }
+
