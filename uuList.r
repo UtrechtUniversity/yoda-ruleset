@@ -1,6 +1,7 @@
 # \file
 # \brief     UU - List functions.
 # \author    Chris Smeele
+# \author    Paul Frederiks
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
@@ -114,3 +115,16 @@ uuListReverse(*lst) {
 	}
 	*newlst;
 }
+
+
+# \brief inlist         Returns true if a value is found in a list. Useful for inside expressions. Only works when the
+#                       list elements and the value have the same type
+# \param[in] val	A value
+# \param[in] lst	A list of values
+# \returnvalue	true when value in list, false otherwise
+uuinlist(*val, *lst) = if size(*lst) == 0  then false else uuheadinlist(*val, *lst)
+
+#\brief headinlist	Helper function for in list. Checks the head of the list for value. The list is iterated using
+#                       mutual recursion.
+uuheadinlist(*val, *lst) = if hd(*lst) == *val then true else uuinlist(*val, tl(*lst))
+

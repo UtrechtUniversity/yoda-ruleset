@@ -1,0 +1,6 @@
+check process irodsReServer
+	matching "irodsReServer"
+	every 5 cycles # "0 3 * * *"
+	if memory > 20% then
+		exec "/usr/local/bin/restartifirodsisidle.sh"
+		as uid irods and gid irods

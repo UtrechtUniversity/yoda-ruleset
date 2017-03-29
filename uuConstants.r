@@ -1,3 +1,9 @@
+# \file
+# \brief       Constants that apply to all yoda implementations
+# \author      Paul Frederiks
+# \copyright   Copyright (c) 2016-2017 Utrecht University. All rights reserved
+# \license     GPLv3, see LICENSE
+
 # \constants uuORGMETADATAPREFIX Prefix for organisational metadata
 UUORGMETADATAPREFIX = "org_"
 
@@ -6,4 +12,7 @@ UUUSERMETADATAPREFIX = "usr_"
 
 # \constant UUSYSTEMCOLLECTION   irods path of a system collection to store system support files in
 # Needs to be prepended with irods zone.
-UUSYSTEMCOLLECTION = "/system"
+UUSYSTEMCOLLECTION = "/yoda"
+
+# \constant  UUREVISIONCOLLECTION   irods path where all revisions will be stored
+UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/revisions"

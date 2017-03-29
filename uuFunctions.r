@@ -21,6 +21,11 @@ data uucondition =
 # \returnvalue	uucondition	A triple of strings of type uucondition
 uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*searchstring%%")
 
+# \function uumakelikecollcondition Helper function to search within the clientZone
+# \param[in] column		The irods column to search
+# \param[in] searchstring	Part of the string to search on.
+uumakelikecollcondition(*column, *searchstring) = uucondition(*column, "like", "/$rodsZoneClient/home/%%*searchstring%%")
+
 # \function uumakestartswithcondition	Helper function to create a condition for strings starting
 #					with the searchstring
 # \param[in] column		The irods column to search
@@ -28,3 +33,7 @@ uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*s
 # \returnvalue uucondition	A triple of strings of type uucondition
 uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like", "*searchstring%%")
 
+# \function uuiso8601  Return irods style timestamp in iso8601 format
+# \param[in] *timestamp		irods style timestamp (epoch as string) 
+# \returnvalue uuiso8601	string with timestamp in iso8601 format
+uuiso8601(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z")
