@@ -17,7 +17,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
 		iiKvpCollectionTemplate(*rowList, *kvpList);
 	} else {
-		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("DATA_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
@@ -64,7 +64,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*kvp.matches = *matches;
 		}	
 	} else {
-		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_NAME", *startpath));
