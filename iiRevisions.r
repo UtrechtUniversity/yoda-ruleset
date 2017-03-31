@@ -25,13 +25,13 @@ uuResourceModifiedPostRevision(*pluginInstanceName, *KVPairs) {
 	}
 }
 
-# \brief uuRevisionCreateAsynchronously  Asynchronous call to uuRevisionCreate
+# \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
 # \param[in] path	The path of the added or modified file.
 iiRevisionCreateAsynchronously(*path) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
 			iiRevisionCreate(*path, *id);
-			writeLine("serverLog", "uuRevisionCreate: Revision created for *path ID=*id");
+			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
 		}
 	}
 }
