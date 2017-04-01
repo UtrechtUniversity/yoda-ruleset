@@ -237,14 +237,15 @@ iiRevisionList(*path, *result) {
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_desc(DATA_CREATE_TIME) 
+	foreach(*row in SELECT DATA_RESC_NAME, DATA_ID, DATA_CHECKSUM, DATA_SIZE, COLL_NAME, order_desc(DATA_NAME) 
 		        WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
+		*kvp.resourceName = *row.DATA_RESC_NAME;
 		*kvp.id = *id;
 		*kvp.checksum = *row.DATA_CHECKSUM;
-		*kvp.timestamp = *row.DATA_CREATE_TIME;
+		*kvp.revisionPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		*kvp.filesize = *row.DATA_SIZE;
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
@@ -261,7 +262,7 @@ iiRevisionList(*path, *result) {
 # \brief iiRevisionSearchByOriginalPath 
 # TODO: Refactor to support sorting and searching on filename instead of complete path
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
+	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)", "DATA_NAME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
 			   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
@@ -285,7 +286,7 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 # \brief iiRevisionSearchByOriginalFilename
 # TODO: See iiRevisionSearchByOriginalPath
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
+	*fields = list("COLL_NAME", "DATA_RESC_NAME", "META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_data_name"),
         		   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));	
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
@@ -295,9 +296,21 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	
 	*result_lst = list();
 	foreach(*kvp in tl(*kvpList)) {
-		msiString2KeyValPair("", *res);
-		*res.originalPath = *kvp.META_DATA_ATTR_VALUE;
 		*res.numberOfRevisions = *kvp.DATA_ID;
+		*res.resourceName = *kvp.DATA_RESC_NAME;
+		*originalFilename = *kvp.META_DATA_ATTR_VALUE;
+		*res.originalFileName = *originalFilename;
+		*revisionColl = *kvp.COLL_NAME;
+		*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
+		foreach(*row in SELECT order_desc(DATA_MODIFY_TIME), META_DATA_ATTR_VALUE
+		          	WHERE COLL_NAME = *revisionColl
+				AND DATA_NAME like "*originalFilename%"
+				AND META_DATA_ATTR_NAME = *originalPathKey) {
+
+				*res.originalPath = *row.META_DATA_ATTR_VALUE;
+				break;
+		}
+		msiString2KeyValPair("", *res);
 		*result_lst = cons(*res, *result_lst);
 	}
 	
