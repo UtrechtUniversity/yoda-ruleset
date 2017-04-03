@@ -237,15 +237,13 @@ iiRevisionList(*path, *result) {
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, DATA_SIZE, order_desc(DATA_CREATE_TIME) 
+	foreach(*row in SELECT DATA_ID, COLL_NAME, order_desc(DATA_NAME) 
 		        WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
 		*kvp.id = *id;
-		*kvp.checksum = *row.DATA_CHECKSUM;
-		*kvp.timestamp = *row.DATA_CREATE_TIME;
-		*kvp.filesize = *row.DATA_SIZE;
+		*kvp.revisionPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
 			*val = *meta.META_DATA_ATTR_VALUE;
@@ -261,7 +259,7 @@ iiRevisionList(*path, *result) {
 # \brief iiRevisionSearchByOriginalPath 
 # TODO: Refactor to support sorting and searching on filename instead of complete path
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
+	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)", "DATA_NAME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
 			   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
@@ -285,8 +283,9 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 # \brief iiRevisionSearchByOriginalFilename
 # TODO: See iiRevisionSearchByOriginalPath
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
-	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_data_name"),
+	*originalDataNameKey = UUORGMETADATAPREFIX ++ "original_data_name";
+	*fields = list("COLL_NAME", "META_DATA_ATTR_VALUE");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", *originalDataNameKey),
         		   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));	
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
@@ -296,8 +295,34 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*result_lst = list();
 	foreach(*kvp in tl(*kvpList)) {
 		msiString2KeyValPair("", *res);
-		*res.originalPath = *kvp.META_DATA_ATTR_VALUE;
-		*res.numberOfRevisions = *kvp.DATA_ID;
+		*originalDataName = *kvp.META_DATA_ATTR_VALUE;
+		*res.originalDataName = *originalDataName;
+		*revisionColl = *kvp.COLL_NAME;
+		*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
+		*revCount = 0;
+		*isFound = false;
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl AND META_DATA_ATTR_NAME = *originalDataNameKey AND META_DATA_ATTR_VALUE = *originalDataName) {
+			*revId = *row.DATA_ID;
+			*revCount = *revCount + 1;
+			uuObjectMetadataKvp(*revId, UUORGMETADATAPREFIX ++ "original", *mdkvp);
+			msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *revModifyTime);
+			if (!*isFound) {
+				*isFound = true;
+				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_path", *originalPath);
+				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_coll_name", *originalCollName);
+				*latestRevModifiedTime = int(*revModifyTime);
+				*oldestRevModifiedTime = int(*revModifyTime);
+			} else {
+				*latestRevModifiedTime = max(*latestRevModifiedTime, int(*revModifyTime));
+				*oldestRevModifiedTime = min(*oldestRevModifiedTime, int(*revModifyTime));
+			}
+		}
+		*res.numberOfRevisions = str(*revCount);
+		*res.originalPath = *originalPath;
+		*res.originalCollName = *originalCollName;
+		*res.latestRevisionModifiedTime = str(*latestRevModifiedTime);
+		*res.oldestRevisionModifiedTime = str(*oldestRevModifiedTime);
+								
 		*result_lst = cons(*res, *result_lst);
 	}
 	
