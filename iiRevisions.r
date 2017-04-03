@@ -237,16 +237,13 @@ iiRevisionList(*path, *result) {
 	*revisions = list();
 	uuChopPath(*path, *coll_name, *data_name);
 	*isFound = false;
-	foreach(*row in SELECT DATA_RESC_NAME, DATA_ID, DATA_CHECKSUM, DATA_SIZE, COLL_NAME, order_desc(DATA_NAME) 
+	foreach(*row in SELECT DATA_ID, COLL_NAME, order_desc(DATA_NAME) 
 		        WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
 		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
 		*isFound = true;
 		*id = *row.DATA_ID;
-		*kvp.resourceName = *row.DATA_RESC_NAME;
 		*kvp.id = *id;
-		*kvp.checksum = *row.DATA_CHECKSUM;
 		*kvp.revisionPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		*kvp.filesize = *row.DATA_SIZE;
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
 			*val = *meta.META_DATA_ATTR_VALUE;
