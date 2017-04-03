@@ -156,7 +156,7 @@ iiRevisionRemove(*revision_id) {
 # \param[in] target		target collection to write in
 # \param[in] overwrite		yes = overwrite old path with revision, no = put file next to original file.
 # \param[out] status		status of restore process
-iiRevisionRestore(*revisionId, *target, *overwrite, *status) {
+oldRevisionRestore(*revisionId, *target, *overwrite, *status) {
       #| writeLine("stdout", "Restore a revision");
 	*status = "Unknown error";
 	*isfound = false;
@@ -202,6 +202,111 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status) {
 		*status = "Success";
 	}
 }
+
+# \brief iiRevisionRestore
+# \param[in] revision_id        id of revision data object
+# \param[in] target             target collection to write in
+# \param[in] overwrite          {restore_no_overwrite, restore_overwrite, restore_next_to} 
+#				With "restore_no_overwrite" the front end tries to copy the selected revision in *target 
+#				If the file already exist the user needs to decide what to do. 
+#				Function exits with corresponding status so front end can take action
+#				Options for user are:
+#				- "restore_overwrite" -> overwrite the file 
+#				- "restore_next_to" -> revision is places next to the file it conficted with by adding 
+# \param[out] status            status of the process
+# \param[out] statusInfo	Contextual info regarding status        
+iiRevisionRestore(*revisionId, *target, *overwrite, *status) {
+      #| writeLine("stdout", "Restore a revision");
+        *status = "Unknown error";
+        *isfound = false;
+        *executeRestoration = false;
+	*statusInfo = '';
+
+        foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
+                if (!*isfound) {
+                        *isfound = true;
+                        *revName = *rev.DATA_NAME; # revision name is suffixed with a timestamp for uniqueness
+                        *revCollName = *rev.COLL_NAME;
+                        *src = *revCollName ++ "/" ++ *revName;
+                        writeLine("serverLog", "Source is: *src");
+                }
+        }
+
+        if (!*isfound) {
+                writeLine("serverLog", "uuRevisionRestore: Could not find revision *revisionId");
+                *status = "RevisionNotFound";
+                succeed;
+        }
+
+       # Get MetaData
+        msiString2KeyValPair("", *kvp);
+        uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
+
+        if (!uuCollectionExists(*target)) {
+                writeLine("serverLog", "uuRevisionRestore: Cannot find target collection *target");
+                *status = "TargetPathDoesNotExist";
+                succeed;
+        }
+
+        if (*overwrite == "restore_no_overwrite") {
+                ## Check for presence of file in target directory
+                ## If not present, it can be restored. Otherwise user must decide
+                *existsTargetFile = false;
+
+                # Get original name for check whether file exists
+                msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
+
+                foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = *target AND DATA_NAME = *oriDataName ) {
+                        *existsTargetFile = true;
+                        break;
+                }
+                if(*existsTargetFile) {
+                        # User decision required
+                        writeLine("serverLog", "File exists already");
+                        *status = "FileExists";
+                        succeed;
+                }
+                else { ## Revision can be restored directly - no user interference required
+                        msiAddKeyValToMspStr("forceFlag", "", *options);
+                        *dst = *target ++ "/" ++ *oriDataName;
+
+                        *executeRestoration = true;
+                }
+        }
+        else {
+                if (*overwrite == "restore_overwrite") {
+                        msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
+                        msiAddKeyValToMspStr("forceFlag", "", *options);
+                        *dst = *target ++ "/" ++ *oriDataName;
+                        *executeRestoration = true;
+
+                } else if (*overwrite == "restore_next_to") {
+                        *dst = *target ++ "/" ++ *revName;
+                        *executeRestoration = true;
+                }
+                else {
+                        *statusInfo = "Illegal overwrite flag *overwrite";
+			writeLine("serverLog", "uuRevisionRestore: *statusInfo");
+                        *status = "Unrecoverable";
+			succeed;
+                }
+        }
+
+        # Actual restoration
+        if (*executeRestoration) {
+                msiAddKeyValToMspStr("verifyChksum", "", *options);
+                writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
+                *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
+                if (*err < 0) {
+                        *statusInfo = "Restoration failed with error *err: *errmsg";
+                        writeLine("serverLog", "uuRevisionRestore: *statusInfo");
+                        *status = "Unrecoverable";
+                } else {
+                        *status = "Success";
+                }
+        }
+}
+
 
 # \brief iiRevisionLast return last revision
 # \param[in] oricollid Original Collection id
