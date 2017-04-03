@@ -286,8 +286,9 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 # \brief iiRevisionSearchByOriginalFilename
 # TODO: See iiRevisionSearchByOriginalPath
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
-	*fields = list("COLL_NAME", "DATA_RESC_NAME", "META_DATA_ATTR_VALUE", "COUNT(DATA_ID)");
-	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_data_name"),
+	*originalDataNameKey = UUORGMETADATAPREFIX ++ "original_data_name";
+	*fields = list("COLL_NAME", "META_DATA_ATTR_VALUE");
+	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", *originalDataNameKey),
         		   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));	
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
@@ -296,21 +297,35 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	
 	*result_lst = list();
 	foreach(*kvp in tl(*kvpList)) {
-		*res.numberOfRevisions = *kvp.DATA_ID;
-		*res.resourceName = *kvp.DATA_RESC_NAME;
-		*originalFilename = *kvp.META_DATA_ATTR_VALUE;
-		*res.originalFileName = *originalFilename;
+		msiString2KeyValPair("", *res);
+		*originalDataName = *kvp.META_DATA_ATTR_VALUE;
+		*res.originalDataName = *originalDataName;
 		*revisionColl = *kvp.COLL_NAME;
 		*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
-		foreach(*row in SELECT order_desc(DATA_MODIFY_TIME), META_DATA_ATTR_VALUE
-		          	WHERE COLL_NAME = *revisionColl
-				AND DATA_NAME like "*originalFilename%"
-				AND META_DATA_ATTR_NAME = *originalPathKey) {
-
-				*res.originalPath = *row.META_DATA_ATTR_VALUE;
-				break;
+		*revCount = 0;
+		*isFound = false;
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl AND META_DATA_ATTR_NAME = *originalDataNameKey AND META_DATA_ATTR_VALUE = *originalDataName) {
+			*revId = *row.DATA_ID;
+			*revCount = *revCount + 1;
+			uuObjectMetadataKvp(*revId, UUORGMETADATAPREFIX ++ "original", *mdkvp);
+			msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *revModifyTime);
+			if (!*isFound) {
+				*isFound = true;
+				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_path", *originalPath);
+				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_coll_name", *originalCollName);
+				*latestRevModifiedTime = int(*revModifyTime);
+				*oldestRevModifiedTime = int(*revModifyTime);
+			} else {
+				*latestRevModifiedTime = max(*latestRevModifiedTime, int(*revModifyTime));
+				*oldestRevModifiedTime = min(*oldestRevModifiedTime, int(*revModifyTime));
+			}
 		}
-		msiString2KeyValPair("", *res);
+		*res.numberOfRevisions = str(*revCount);
+		*res.originalPath = *originalPath;
+		*res.originalCollName = *originalCollName;
+		*res.latestRevisionModifiedTime = str(*latestRevModifiedTime);
+		*res.oldestRevisionModifiedTime = str(*oldestRevModifiedTime);
+								
 		*result_lst = cons(*res, *result_lst);
 	}
 	
