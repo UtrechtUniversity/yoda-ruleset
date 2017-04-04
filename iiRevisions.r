@@ -151,57 +151,6 @@ iiRevisionRemove(*revision_id) {
 	}
 }
 
-# \brief iiRevisionRestore
-# \param[in] revision_id	id of revision data object
-# \param[in] target		target collection to write in
-# \param[in] overwrite		yes = overwrite old path with revision, no = put file next to original file.
-# \param[out] status		status of restore process
-oldRevisionRestore(*revisionId, *target, *overwrite, *status) {
-      #| writeLine("stdout", "Restore a revision");
-	*status = "Unknown error";
-	*isfound = false;
-	foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
-		if (!*isfound) {
-			*isfound = true;
-			*revName = *rev.DATA_NAME;
-			*revCollName = *rev.COLL_NAME;
-			*src = *revCollName ++ "/" ++ *revName;
-		}
-	}
-
-	if (!*isfound) {
-		*status = "Could not find revision *revisionId"
-		writeLine("serverLog", "iiRevisionRestore: *status");
-		succeed;
-	}
-
-       # Get MetaData
-	msiString2KeyValPair("", *kvp);
-	uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
-
-	if (!uuCollectionExists(*target)) {
-		*status = "Cannot find *target";
-		writeLine("serverLog", "iiRevisionRestore: *status");
-		succeed;
-	}
-
-	if (*overwrite == "yes") {
-		msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
-		msiAddKeyValToMspStr("forceFlag", "", *options);
-		*dst = *target ++ "/" ++ *oriDataName;
-	} else {
-		*dst = *target ++ "/" ++ *revName;
-	}
-	msiAddKeyValToMspStr("verifyChksum", "", *options);
-	writeLine("serverLog", "iiRevisionRestore: *src => *dst [*options]");
-	*err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
-	if (*err < 0) {
-		*status = "Restoration failed with error *err: *errmsg"
-		writeLine("serverLog", "iiRevisionRestore: *status");
-	} else {
-		*status = "Success";
-	}
-}
 
 # \brief iiRevisionRestore
 # \param[in] revision_id        id of revision data object
@@ -298,7 +247,11 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                 writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
                 *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
                 if (*err < 0) {
-                        *statusInfo = "Restoration failed with error *err: *errmsg";
+			if (*err==-818000) {
+				*status = "PermissionDenied";
+				succeed;
+			}                        
+			*statusInfo = "Restoration failed with error *err: *errmsg";
                         writeLine("serverLog", "uuRevisionRestore: *statusInfo");
                         *status = "Unrecoverable";
                 } else {
