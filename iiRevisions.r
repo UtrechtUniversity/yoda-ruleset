@@ -215,7 +215,7 @@ oldRevisionRestore(*revisionId, *target, *overwrite, *status) {
 #				- "restore_next_to" -> revision is places next to the file it conficted with by adding 
 # \param[out] status            status of the process
 # \param[out] statusInfo	Contextual info regarding status        
-iiRevisionRestore(*revisionId, *target, *overwrite, *status) {
+iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
       #| writeLine("stdout", "Restore a revision");
         *status = "Unknown error";
         *isfound = false;
