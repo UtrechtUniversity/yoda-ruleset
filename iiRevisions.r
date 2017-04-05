@@ -293,7 +293,6 @@ iiRevisionLast(*originalPath, *isfound, *revision) {
 iiRevisionList(*path, *result) {
 	#| writeLine("stdout", "List revisions of path");
 	*revisions = list();
-	uuChopPath(*path, *coll_name, *data_name);
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*originalPathKey =  UUORGMETADATAPREFIX ++ 'original_path';
 	*isFound = false;
@@ -423,7 +422,10 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 		*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
 		*revCount = 0;
 		*isFound = false;
-		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl AND META_DATA_ATTR_NAME = *originalDataNameKey AND META_DATA_ATTR_VALUE = *originalDataName) {
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl
+					       AND META_DATA_ATTR_NAME = *originalDataNameKey
+					       AND META_DATA_ATTR_VALUE = *originalDataName
+		       ) {
 			*revId = *row.DATA_ID;
 			*revCount = *revCount + 1;
 			uuObjectMetadataKvp(*revId, UUORGMETADATAPREFIX ++ "original", *mdkvp);
