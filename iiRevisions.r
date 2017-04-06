@@ -380,7 +380,11 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 		*res.originalCollName = *originalCollName;
 		*res.latestRevisionModifiedTime = str(*latestRevModifiedTime);
 		*res.oldestRevisionModifiedTime = str(*oldestRevModifiedTime);
-								
+		*res.collectionExists = 'false';  
+		if ( uuCollectionExists(*originalCollName)) {
+			*res.collectionExists = 'true'
+		}					
+				
 		*result_lst = cons(*res, *result_lst);
 	}
 	
