@@ -333,7 +333,12 @@ IIREVISIONBUCKETS = list(6*60*60,
 			 5*24*60*60,
 			 6*24*60*60,
 			 7*24*60*60,
-			 14*24*60*60);
+			 14*24*60*60,
+                         28*24*60*60,
+                         56*24*60*60,
+                         84*24*60*60,
+                         112*24*60*60
+                         );
 
 iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 	*keep = list();
@@ -350,25 +355,32 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 
 	foreach(*bucket in IIREVISIONBUCKETS) {
 		*offset = *endofcalendarday - *bucket; 
+		writeLine("stdout", "offset: *offset");
 		*candidates = list();
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
 			uurevisioncandidate(*timeInt, *id) = *revision;
+			writeLine("stdout", "*timeInt: *id");
 			if (*timeInt > *offset) {
+				writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
 			} else {
+				writeLine("stdout", "break;");
 				break;	
 			}	
 		}
 		if (size(*candidates) > 1) {
-			*keep = cons(hd(*candidates), *keep);
+			*candidate = hd(*candidates);
+			*keep = cons(*candidate, *keep);
+			writeLine("stdout", "Keep: *canditate")
 			foreach(*revision in tl(*candidates)) {
 				*remove = cons(*revision, *remove); 
 			}	
 		} else {
 			foreach(*revision in *candidates) {
+				writeLine("stdout", "Remove: *revision");
 				*keep = cons(*revision, *keep);
 			}
 		}
