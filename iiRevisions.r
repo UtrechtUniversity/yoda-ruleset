@@ -293,11 +293,14 @@ iiRevisionLast(*originalPath, *isfound, *revision) {
 iiRevisionList(*path, *result) {
 	#| writeLine("stdout", "List revisions of path");
 	*revisions = list();
-	uuChopPath(*path, *coll_name, *data_name);
+	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
+	*originalPathKey =  UUORGMETADATAPREFIX ++ 'original_path';
 	*isFound = false;
 	foreach(*row in SELECT DATA_ID, COLL_NAME, order_desc(DATA_NAME) 
-		        WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *path) {
-		msiString2KeyValPair("", *kvp); # only way as far as I know to initialize a new key-value-pair object each iteration.
+		        WHERE META_DATA_ATTR_NAME = *originalPathKey
+		   	AND META_DATA_ATTR_VALUE = *path
+			AND COLL_NAME like *startpath) {
+		msiString2KeyValPair("", *kvp);
 		*isFound = true;
 		*id = *row.DATA_ID;
 		*kvp.id = *id;
@@ -312,6 +315,66 @@ iiRevisionList(*path, *result) {
 	}
 	
 	uuKvpList2JSON(*revisions, *result, *size);	
+}
+
+
+data uurevisioncandidate = 
+	| uurevisioncandidate : integer * string -> uurevisioncandidate
+
+
+
+IIREVISIONBUCKETS = list(6*60*60,
+			 12*60*60,
+			 18*60*60,
+			 24*60*60,
+			 2*24*60*60,
+			 3*24*60*60,
+			 4*24*60*60,
+			 5*24*60*60,
+			 6*24*60*60,
+			 7*24*60*60,
+			 14*24*60*60);
+
+iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
+	*keep = list();
+	*remove = list();
+	*revisions = list();
+	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
+	foreach(*row in SELECT DATA_ID, order_desc(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
+		        AND META_DATA_ATTR_VALUE = *path) {
+		*id = *row.DATA_ID;
+		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
+		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
+		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
+	}
+
+	foreach(*bucket in IIREVISIONBUCKETS) {
+		*offset = *endofcalendarday - *bucket; 
+		*candidates = list();
+		*n = size(*revisions);
+		for(*i = 0;*i < *n; *i = *i + 1) {
+			*revision = hd(*revisions);
+			uurevisioncandidate(*timeInt, *id) = *revision;
+			if (*timeInt > *offset) {
+				*candidates = cons(*revision, *candidates);
+				*revisions = tl(*revisions);
+			} else {
+				break;	
+			}	
+		}
+		if (size(*candidates) > 1) {
+			*keep = cons(hd(*candidates), *keep);
+			foreach(*revision in tl(*candidates)) {
+				*remove = cons(*revision, *remove); 
+			}	
+		} else {
+			foreach(*revision in *candidates) {
+				*keep = cons(*revision, *keep);
+			}
+		}
+		
+	}	
+
 }
 
 # \brief iiRevisionSearchByOriginalPath 
@@ -359,7 +422,10 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 		*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
 		*revCount = 0;
 		*isFound = false;
-		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl AND META_DATA_ATTR_NAME = *originalDataNameKey AND META_DATA_ATTR_VALUE = *originalDataName) {
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *revisionColl
+					       AND META_DATA_ATTR_NAME = *originalDataNameKey
+					       AND META_DATA_ATTR_VALUE = *originalDataName
+		       ) {
 			*revId = *row.DATA_ID;
 			*revCount = *revCount + 1;
 			uuObjectMetadataKvp(*revId, UUORGMETADATAPREFIX ++ "original", *mdkvp);
