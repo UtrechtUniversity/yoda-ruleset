@@ -296,10 +296,10 @@ iiRevisionList(*path, *result) {
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*originalPathKey =  UUORGMETADATAPREFIX ++ 'original_path';
 	*isFound = false;
-	foreach(*row in SELECT DATA_ID, COLL_NAME, order_desc(DATA_NAME) 
+	foreach(*row in SELECT DATA_ID, COLL_NAME, order(DATA_NAME) 
 		        WHERE META_DATA_ATTR_NAME = *originalPathKey
 		   	AND META_DATA_ATTR_VALUE = *path
-			AND COLL_NAME like *startpath) {
+			AND COLL_NAME like '*startpath/%%') {
 		msiString2KeyValPair("", *kvp);
 		*isFound = true;
 		*id = *row.DATA_ID;
@@ -448,7 +448,7 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 		*res.oldestRevisionModifiedTime = str(*oldestRevModifiedTime);
 		*res.collectionExists = 'false';  
 		if ( uuCollectionExists(*originalCollName)) {
-			*res.collectionExists = 'true'
+			*res.collectionExists = 'true';
 		}					
 				
 		*result_lst = cons(*res, *result_lst);
