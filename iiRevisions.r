@@ -162,6 +162,7 @@ iiRevisionRemove(*revision_id) {
 #				Options for user are:
 #				- "restore_overwrite" -> overwrite the file 
 #				- "restore_next_to" -> revision is places next to the file it conficted with by adding 
+# \param[in] newFileName	Name as entered by user when chosing option 'restore_next_to'
 # \param[out] status            status of the process
 # \param[out] statusInfo	Contextual info regarding status        
 iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
@@ -230,8 +231,21 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                         *executeRestoration = true;
 
                 } else if (*overwrite == "restore_next_to") {
-                        *dst = *target ++ "/" ++ *revName;
-                        *executeRestoration = true;
+                        #new file name is entered by user and can be a duplicate again. So check first.
+			*newFileNameExists = false;
+			foreach (*row in  SELECT DATA_NAME WHERE COLL_NAME = *target AND DATA_NAME = *newFileName ){
+				*newFileNameExists = true;
+				break;	
+			}	
+			
+			if (!*newFileNameExists) {
+				*dst = *target ++ "/" ++ *newFileName;
+                        	*executeRestoration = true;
+			}
+			else {
+				*status = "FileExistsEnteredByUser";
+				succeed;
+			}	
                 }
                 else {
                         *statusInfo = "Illegal overwrite flag *overwrite";
