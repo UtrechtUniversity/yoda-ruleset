@@ -347,7 +347,7 @@ IIREVISIONBUCKETLIST = list(
 			 uubucket(uuhours(6),  1),
 			 uubucket(uuhours(12), 1),
 			 uubucket(uuhours(18), 1),
-			 uubucket(uudays(1),     1),
+			 uubucket(uudays(1),   1),
 			 uubucket(uudays(2),   1),
 			 uubucket(uudays(3),   1),
 			 uubucket(uudays(4),   1),
@@ -367,7 +367,7 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 	*remove = list();
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
-	foreach(*row in SELECT DATA_ID, order_desc(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
+	foreach(*row in SELECT DATA_ID, order(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
 		        AND META_DATA_ATTR_VALUE = *path) {
 		*id = *row.DATA_ID;
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);

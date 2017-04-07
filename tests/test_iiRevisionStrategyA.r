@@ -15,7 +15,7 @@ testRule {
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = *id) {
 			*revPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		}
-		writeLine("stdout", "Remove *revPath with datetime *dt");
+		writeLine("stdout", "Remove *revPath with id *id");
 	}
 }
 
