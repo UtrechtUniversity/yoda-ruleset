@@ -16,9 +16,9 @@ uuResourceModifiedPostRevision(*rodsZone, *logicalPath, *maxSize, *filterlist) {
 		uuChopPath(*logicalPath, *parent, *basename);
 		
 		foreach(*filter in *filterlist) {
-		if (*basename like *filter) {
-			# MacOS writes to ._ multiple times per put
-			writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
+			if (*basename like *filter) {
+				writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
+				succeed;
 			}
 		}
 
