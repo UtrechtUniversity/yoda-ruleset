@@ -106,7 +106,6 @@ iiRevisionCreate(*path, *id) {
 			foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
 				*id = *row.DATA_ID;
 			}
-
 			msiString2KeyValPair("", *revkv);
 			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
 			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
@@ -116,7 +115,7 @@ iiRevisionCreate(*path, *id) {
 			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
 			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
 			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
-
+			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_filesize", *dataSize);		
 
 			msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
 		}
@@ -317,11 +316,13 @@ iiRevisionList(*path, *result) {
 		msiString2KeyValPair("", *kvp);
 		*isFound = true;
 		*id = *row.DATA_ID;
+		# writeLine("serverLog", "DataID: *id");
 		*kvp.id = *id;
 		*kvp.revisionPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
 			*val = *meta.META_DATA_ATTR_VALUE;
+			# writeLine("serverLog","metada: *name - *val");
 			msiAddKeyVal(*kvp, *name, *val);	
 		}
 
