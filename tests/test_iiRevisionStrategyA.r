@@ -7,9 +7,7 @@ testRule {
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = *id) {
 			*revPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		}
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
-		*dt = uuiso8601(*timeInt);
-		writeLine("stdout", "Keep *revPath with datetime *dt");
+		writeLine("stdout", "Keep *revPath with id *id");
 	}
 
 	foreach(*revision in *remove) {
@@ -17,8 +15,6 @@ testRule {
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = *id) {
 			*revPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		}
-		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
-		*dt = uuiso8601(*timeInt);
 		writeLine("stdout", "Remove *revPath with datetime *dt");
 	}
 }
