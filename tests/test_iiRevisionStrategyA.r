@@ -1,5 +1,5 @@
 testRule {
-	writeLine("stdout", IIREVISIONBUCKETS);
+	writeLine("stdout", IIREVISIONBUCKETLIST);
 	iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove);
 	writeLine("stdout", "*keep, *remove");
 	foreach(*revision in *keep) {
