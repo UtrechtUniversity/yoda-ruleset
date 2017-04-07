@@ -88,7 +88,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 			*field = trimr(triml(*field, "("), ")");
 			msiAddSelectFieldToGenQuery(*field, *action, *GenQInp);
 		} else {
-			*orderclause =	orderclause(*field, *orderby, *ascdesc);
+			*orderclause =	uuorderclause(*field, *orderby, *ascdesc);
 			msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
 		}
 	}
