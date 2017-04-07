@@ -11,26 +11,27 @@
 # \description				This policy should trigger whenever a new file is added or modified
 #					in the workspace of a Research team. This should be done asynchronously
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
-uuResourceModifiedPostRevision(*pluginInstanceName, *KVPairs) {
-	if (*KVPairs.logical_path like "/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
-		writeLine("serverLog", "uuResourceModifiedPostRevision:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
-		*path = *KVPairs.logical_path;
-		uuChopPath(*path, *parent, *basename);
-		if (*basename like "._*") {
+uuResourceModifiedPostRevision(*rodsZone, *logicalPath, *maxSize, *filterlist) {
+	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
+		uuChopPath(*logicalPath, *parent, *basename);
+		
+		foreach(*filter in *filterlist) {
+		if (*basename like *filter) {
 			# MacOS writes to ._ multiple times per put
-			writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. This is littering by Mac OS");
-		} else {
-			iiRevisionCreateAsynchronously(*path);
+			writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
+			}
 		}
+
+		iiRevisionCreateAsynchronously(*logicalPath, *maxSize);
 	}
 }
 
 # \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
 # \param[in] path	The path of the added or modified file.
-iiRevisionCreateAsynchronously(*path) {
+iiRevisionCreateAsynchronously(*path, *maxSize) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
-			iiRevisionCreate(*path, *id);
+			iiRevisionCreate(*path, *maxSize, *id);
 			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
 		}
 	}
@@ -38,8 +39,9 @@ iiRevisionCreateAsynchronously(*path) {
 
 # \brief iiRevisionCreate create a revision of a dataobject in a revision folder
 # \param[in] path		path of data object to create a revision for
+# \param[in] maxSize		max size of files in bytes
 # \param[out] id		object id of revision
-iiRevisionCreate(*path, *id) {
+iiRevisionCreate(*path, *maxSize, *id) {
 	#| writeLine("stdout", "Create a revision of a file");
 	#| writeLine("stdout", "Current User: $userNameClient");
 	# Step 1: Check requisites:
@@ -68,8 +70,8 @@ iiRevisionCreate(*path, *id) {
 	}
 
 
-	if (int(*dataSize)>500048576) {
-		writeLine("serverLog", "iiRevisionCreate: Files larger than 500MiB cannot store revisions");
+	if (int(*dataSize)>*maxSize) {
+		writeLine("serverLog", "iiRevisionCreate: Files larger than *maxSize bytes cannot store revisions");
 		succeed;
 	}	
 
@@ -377,20 +379,20 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 
 	foreach(*bucket in IIREVISIONBUCKETLIST) {
 		uubucket(*offset, *sizeOfBucket) = *bucket;
-		writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket]");
+	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket]");
 		*startTime = *endofcalendarday - *offset; 
 		*candidates = list();
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
 			uurevisioncandidate(*timeInt, *id) = *revision;
-			writeLine("stdout", "*timeInt: *id");
+	#		writeLine("stdout", "*timeInt: *id");
 			if (*timeInt > *startTime) {
 				writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
 			} else {
-				writeLine("stdout", "break;");
+	#			writeLine("stdout", "break;");
 				break;	
 			}	
 		}
@@ -400,12 +402,12 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 		for(*i = 0; *i < *nToRemove;*i = *i + 1) {
 			*toRemove = hd(*candidates);
 			*remove = cons(*toRemove, *remove);
-			writeLine("serverLog", "Remove: *toRemove");
+	#		writeLine("serverLog", "Remove: *toRemove");
 			*candidates = tl(*candidates);
 		}
 
 		foreach(*toKeep in *candidates) {	
-			writeLine("serverLog", "Keep: *toKeep in bucket");
+	#		writeLine("serverLog", "Keep: *toKeep in bucket");
 			*keep = cons(*toKeep, *keep);
 		}
 	}	
