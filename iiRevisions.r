@@ -335,24 +335,30 @@ iiRevisionList(*path, *result) {
 data uurevisioncandidate = 
 	| uurevisioncandidate : integer * string -> uurevisioncandidate
 
+data uubucket =
+	| uubucket : integer * integer -> uubucket
 
+uuhours(*h) = *h * 60 * 60
+uudays(*d) = *d * uuhours(24)
+uuweeks(*w) = *w * uudays(7) 
 
-IIREVISIONBUCKETS = list(6*60*60,
-			 12*60*60,
-			 18*60*60,
-			 24*60*60,
-			 2*24*60*60,
-			 3*24*60*60,
-			 4*24*60*60,
-			 5*24*60*60,
-			 6*24*60*60,
-			 7*24*60*60,
-			 14*24*60*60,
-			 21*24*60*60,
-                         28*24*60*60,
-                         56*24*60*60,
-                         84*24*60*60,
-                         112*24*60*60
+IIREVISIONBUCKETLIST = list(
+			 uubucket(uuhours(6),  1),
+			 uubucket(uuhours(12), 1),
+			 uubucket(uuhours(18), 1),
+			 uubucket(uudays(1),     1),
+			 uubucket(uudays(2),   1),
+			 uubucket(uudays(3),   1),
+			 uubucket(uudays(4),   1),
+			 uubucket(uudays(5),   1),
+			 uubucket(uudays(6),   1),
+			 uubucket(uuweeks(1),  1),
+			 uubucket(uuweeks(2),  1),
+			 uubucket(uuweeks(3),  1),
+                         uubucket(uuweeks(4),  1),
+                         uubucket(uuweeks(8),  1),
+                         uubucket(uuweeks(12), 1),
+                         uubucket(uuweeks(16), 1)
                          );
 
 iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
@@ -368,16 +374,17 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
 	}
 
-	foreach(*bucket in IIREVISIONBUCKETS) {
-		*offset = *endofcalendarday - *bucket; 
-		writeLine("stdout", "offset: *offset");
+	foreach(*bucket in IIREVISIONBUCKETLIST) {
+		uubucket(*offset, *sizeOfBucket) = *bucket;
+		writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket]");
+		*startTime = *endofcalendarday - *offset; 
 		*candidates = list();
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
 			uurevisioncandidate(*timeInt, *id) = *revision;
 			writeLine("stdout", "*timeInt: *id");
-			if (*timeInt > *offset) {
+			if (*timeInt > *startTime) {
 				writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
@@ -386,22 +393,21 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 				break;	
 			}	
 		}
-		if (size(*candidates) > 1) {
-			*candidate = hd(*candidates);
-			*keep = cons(*candidate, *keep);
-			writeLine("stdout", "Keep: *canditate")
-			foreach(*revision in tl(*candidates)) {
-				*remove = cons(*revision, *remove); 
-			}	
-		} else {
-			foreach(*revision in *candidates) {
-				writeLine("stdout", "Remove: *revision");
-				*keep = cons(*revision, *keep);
-			}
-		}
 		
-	}	
+		*nToRemove = size(*candidates) - *sizeOfBucket;
+		
+		for(*i = 0; *i < *nToRemove;*i = *i + 1) {
+			*toRemove = hd(*candidates);
+			*remove = cons(*toRemove, *remove);
+			writeLine("serverLog", "Remove: *toRemove");
+			*candidates = tl(*candidates);
+		}
 
+		foreach(*toKeep in *candidates) {	
+			writeLine("serverLog", "Keep: *toKeep in bucket");
+			*keep = cons(*toKeep, *keep);
+		}
+	}	
 }
 
 # \brief iiRevisionSearchByOriginalPath 
