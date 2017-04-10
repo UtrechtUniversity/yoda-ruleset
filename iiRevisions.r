@@ -11,7 +11,7 @@
 # \description				This policy should trigger whenever a new file is added or modified
 #					in the workspace of a Research team. This should be done asynchronously
 # \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
-uuResourceModifiedPostRevision(*rodsZone, *logicalPath, *maxSize, *filterlist) {
+uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *filterlist) {
 	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
 		uuChopPath(*logicalPath, *parent, *basename);
 		
@@ -22,39 +22,34 @@ uuResourceModifiedPostRevision(*rodsZone, *logicalPath, *maxSize, *filterlist) {
 			}
 		}
 
-		iiRevisionCreateAsynchronously(*logicalPath, *maxSize);
+		iiRevisionCreateAsynchronously(*resource, *logicalPath, *maxSize);
 	}
 }
 
 # \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
 # \param[in] path	The path of the added or modified file.
-iiRevisionCreateAsynchronously(*path, *maxSize) {
+iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
-			iiRevisionCreate(*path, *maxSize, *id);
+			iiRevisionCreate(*resource, *path, *maxSize, *id);
 			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
 		}
 	}
 }
 
 # \brief iiRevisionCreate create a revision of a dataobject in a revision folder
+# \param[in] resource		resource to retreive original from
 # \param[in] path		path of data object to create a revision for
 # \param[in] maxSize		max size of files in bytes
 # \param[out] id		object id of revision
-iiRevisionCreate(*path, *maxSize, *id) {
-	#| writeLine("stdout", "Create a revision of a file");
-	#| writeLine("stdout", "Current User: $userNameClient");
-	# Step 1: Check requisites:
-	# - path should return a dataObject
+iiRevisionCreate(*resource, *path, *maxSize, *id) {
 	*id = "";
 	uuChopPath(*path, *parent, *basename);
-       #| writeLine("stdout", *timestamp);
 	*objectId = 0;
 	*found = false;
 	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID
-	       		WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_REPL_NUM = "0") {
+	       		WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_RESC_NAME = *resource) {
 		if (!*found) {
-       #| 		writeLine("stdout", *row);
 			*found = true;
 			*dataId = *row.DATA_ID;
 			*modifyTime = *row.DATA_MODIFY_TIME;
@@ -98,11 +93,14 @@ iiRevisionCreate(*path, *maxSize, *id) {
 			if (*err == -312000) {
 			# -312000 OVERWRITE_WITHOUT_FORCE_FLAG
 				writeLine("serverLog", "iiRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
+				succceed;
 			} else if (*err == -814000) {
 			# -814000 CAT_UNKNOWN_COLLECTION
 				writeLine("serverLog", "iiRevisionCreate: Could not access or create *revColl. Please check permissions");
+				succeed;
 			} else {
-				failmsg(*err, "iiRevisionCreate failed");
+				writeLine("serverLog", "iiRevisionCreate: failed for *path with errorCode *err");
+				succeed;
 			}
 		} else {
 			foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
@@ -124,6 +122,7 @@ iiRevisionCreate(*path, *maxSize, *id) {
 
 	} else {
 		writeLine("serverLog", "iiRevisionCreate: *revisionStore does not exists or is inaccessible for current client.");
+		succeed;
 	}
 }
 
