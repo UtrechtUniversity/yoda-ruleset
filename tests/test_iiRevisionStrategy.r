@@ -1,6 +1,9 @@
 testRule {
-	writeLine("stdout", IIREVISIONBUCKETLIST);
-	iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove);
+	if (*endOfCalendarDay == 0) {
+		iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay);
+	}
+	*bucketlist = iiRevisionBucketList(*bucketcase);
+	iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove);
 	writeLine("stdout", "*keep, *remove");
 	foreach(*revision in *keep) {
 		uurevisioncandidate(*timeInt, *id) = *revision;
@@ -19,5 +22,5 @@ testRule {
 	}
 }
 
-input *path="", *endofcalendarday=1
+input *path="", *endOfCalendarDay=0, *bucketcase="B"
 output ruleExecOut

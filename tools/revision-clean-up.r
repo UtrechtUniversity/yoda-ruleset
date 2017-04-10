@@ -1,11 +1,12 @@
 cleanup {
 
-	if (*endofcalendarday == 0) {
-		writeLine("stdout", "Required parameter missing : \*endofcalendarday");
-		succeed;
+	if (*endOfCalendarDay == 0) {
+		iiRevisionCalculateEndofCalendarDay(*endOfCalendarDay);
 	}
+	
+	*bucketlist = iiRevisionBucketList(*bucketcase);
 
-	*ContInxOld = 1;
+	 *ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("META_DATA_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path", *GenQInp);
 	msiAddConditionToGenQuery("COLL_NAME", "like", "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION ++ "%", *GenQInp);
@@ -17,14 +18,14 @@ cleanup {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*originalPath = *row.META_DATA_ATTR_VALUE;
-			iiRevisionStrategyA(*originalPath, *endofcalendarday, *keep, *remove);
+			iiRevisionStrategy(*originalPath, *endOfCalendarDay, *bucketlist, *keep, *remove);
 			foreach(*toRemove in *remove) {
 				uurevisioncandidate(*timeInt, *id) = *toRemove;
 				*ts = uuiso8601(*timeInt);
-				writeLine("stdout", "*originalPath - Removing Revision *id with timestamp *ts;"); 
+				writeLine("serverLog", "*originalPath - Removing Revision *id with timestamp *ts;"); 
 				*err = errorcode(iiRevisionRemove(*id));
 				if (*err < 0) {
-					writeLine("stdout", "Removal failed with error: *err");
+					writeLine("serverLog", "Removal failed with error: *err");
 				}
 			}
 				
@@ -37,5 +38,5 @@ cleanup {
 	}
 }	
 
-input *endofcalendarday=0
+input *endOfCalendarDay=0, *bucketcase="B"
 output ruleExecOut

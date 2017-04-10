@@ -129,25 +129,29 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 
 # \brief iiRevisionRemove
 # \param[in] revision_id
-iiRevisionRemove(*revision_id) {
+iiRevisionRemove(*revisionId) {
 	*isfound = false;
 	*revisionStore =  "/$rodsZoneClient" ++ UUREVISIONCOLLECTION;
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = "*revision_id" AND COLL_NAME like "*revisionStore/%") {
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = "*revisionId" AND COLL_NAME like "*revisionStore/%") {
 		if (!*isfound) {
 			*isfound = true;
 			*objPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		} else {
-			writeLine("serverLog", "iiRevisionRemove: *revision_id returned multiple results");
+			writeLine("serverLog", "iiRevisionRemove: *revisionId returned multiple results");
 		}
 	}
 	if (*isfound) {
 		*args = "";
 		msiAddKeyValToMspStr("objPath", *objPath, *args);
 		msiAddKeyValToMspStr("forceFlag", "", *args);
-		msiDataObjUnlink(*args, *status);
-		writeLine("serverLog", "iiRevisionRemove('*revision_id'): Removed *objPath from revision store");
+		*err = errorcode(msiDataObjUnlink(*args, *status));
+		if (*err < 0) {
+			writeLine("serverLog", "iiRevisionRemove: Failed with errorcode: *err");
+		} else {
+			writeLine("serverLog", "iiRevisionRemove('*revisionId'): Removed *objPath from revision store");
+		}
 	} else {
-		writeLine("serverLog", "iiRevisionRemove: Revision_id not found or permission denied.");
+		writeLine("serverLog", "iiRevisionRemove('*revisionId'): Revision ID not found or permission denied.");
 	}
 }
 
@@ -275,32 +279,6 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
 }
 
 
-# \brief iiRevisionLast return last revision
-# \param[in] oricollid Original Collection id
-# \param[in] oriobjid Original Object id
-# \param[out] isfound Flag set when the last revision was found
-# \param[out] revision 	dataObject of revision
-iiRevisionLast(*originalPath, *isfound, *revision) {
-	#| writeLine("stdout", "Return last revision of dataobject");
-	msiString2KeyValPair("", *revision);
-	*isfound = false;
-	foreach(*row in SELECT DATA_ID, DATA_CHECKSUM, order_desc(DATA_CREATE_TIME) WHERE META_DATA_ATTR_NAME = 'org_original_path' AND META_DATA_ATTR_VALUE = *originalPath) {
-		if (!*isfound) {
-			*isfound = true;
-			*id = *row.DATA_ID;
-			*revision.id = *id;
-			*revision.checksum = *row.DATA_CHECKSUM;
-			*revision.timestamp = *row.DATA_CREATE_TIME;
-			foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
-				*name = *meta.META_DATA_ATTR_NAME;
-				*val = *meta.META_DATA_ATTR_VALUE;
-				msiAddKeyVal(*revision, *name, *val);
-			}
-		}
-	}
-}
-
-
 # \brief iiRevisionList list revisions of path
 # \param[in]  path     Path of original file
 # \param[out] result   List in JSON format with all revisions of the original path
@@ -334,17 +312,35 @@ iiRevisionList(*path, *result) {
 }
 
 
+iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
+		msiGetIcatTime(*timestamp, "unix");
+		*bdY = timestrf(datetime(int(*timestamp)), "%b %d %Y");	
+		
+		*endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); 
+		*endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s");
+		*endOfCalendarDay =  int(*endofcalendarday_str) + 1;
+}
+
 data uurevisioncandidate = 
 	| uurevisioncandidate : integer * string -> uurevisioncandidate
+	| uurevisionremoved : uurevisioncandidate
 
 data uubucket =
 	| uubucket : integer * integer -> uubucket
 
-uuhours(*h) = *h * 60 * 60
+uurevisionisremoved(*r) =
+	match *r with
+		| uurevisionremoved => true
+		| uurevisioncandidate(*i, *s) => false
+
+uuminutes(*m) = *m * 60
+uuhours(*h) = *h * uuminutes(60)
 uudays(*d) = *d * uuhours(24)
 uuweeks(*w) = *w * uudays(7) 
 
-IIREVISIONBUCKETLIST = list(
+iiRevisionBucketList(*case) {
+	if (*case == "A") {
+		*lst = list(
 			 uubucket(uuhours(6),  1),
 			 uubucket(uuhours(12), 1),
 			 uubucket(uuhours(18), 1),
@@ -357,13 +353,30 @@ IIREVISIONBUCKETLIST = list(
 			 uubucket(uuweeks(1),  1),
 			 uubucket(uuweeks(2),  1),
 			 uubucket(uuweeks(3),  1),
-                         uubucket(uuweeks(4),  1),
-                         uubucket(uuweeks(8),  1),
-                         uubucket(uuweeks(12), 1),
-                         uubucket(uuweeks(16), 1)
-                         );
+			 uubucket(uuweeks(4),  1),
+			 uubucket(uuweeks(8),  1),
+			 uubucket(uuweeks(12), 1),
+			 uubucket(uuweeks(16), 1)
+		);
 
-iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
+	} else {
+		# Case B and default
+		*lst = list(
+			 uubucket(uuhours(12), 2),
+			 uubucket(uudays(1),   2),
+			 uubucket(uudays(3),   2),
+			 uubucket(uudays(5),   2),
+			 uubucket(uuweeks(1),  2),
+			 uubucket(uuweeks(3),  2),
+			 uubucket(uuweeks(8),  2),
+			 uubucket(uuweeks(16), 2)
+		);
+	}
+	*lst;
+}
+
+
+iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	*keep = list();
 	*remove = list();
 	*revisions = list();
@@ -376,10 +389,10 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
 	}
 
-	foreach(*bucket in IIREVISIONBUCKETLIST) {
+	foreach(*bucket in *bucketlist) {
 		uubucket(*offset, *sizeOfBucket) = *bucket;
 	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket]");
-		*startTime = *endofcalendarday - *offset; 
+		*startTime = *endOfCalendarDay - *offset; 
 		*candidates = list();
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
@@ -387,7 +400,7 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 			uurevisioncandidate(*timeInt, *id) = *revision;
 	#		writeLine("stdout", "*timeInt: *id");
 			if (*timeInt > *startTime) {
-				writeLine("stdout", "*timeInt > *offset");
+	#			writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
 			} else {
@@ -397,17 +410,22 @@ iiRevisionStrategyA(*path, *endofcalendarday, *keep, *remove) {
 		}
 		
 		*nToRemove = size(*candidates) - *sizeOfBucket;
-		
-		for(*i = 0; *i < *nToRemove;*i = *i + 1) {
-			*toRemove = hd(*candidates);
-			*remove = cons(*toRemove, *remove);
+		if (*nToRemove < 1) {
+			nop;
+		} else { 	
+			for(*idx = 1;*idx < (*nToRemove + 1); *idx = *idx + 1) {
+				*toRemove = elem(*candidates, *idx);
+				*remove = cons(*toRemove, *remove);
+				*candidates = setelem(*candidates, *idx, uurevisionremoved);
 	#		writeLine("serverLog", "Remove: *toRemove");
-			*candidates = tl(*candidates);
+			}
 		}
 
 		foreach(*toKeep in *candidates) {	
 	#		writeLine("serverLog", "Keep: *toKeep in bucket");
-			*keep = cons(*toKeep, *keep);
+			if(!uurevisionisremoved(*toKeep)) {	
+				*keep = cons(*toKeep, *keep);
+			}
 		}
 	}	
 }
