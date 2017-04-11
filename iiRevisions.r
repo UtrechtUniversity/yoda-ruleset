@@ -357,7 +357,25 @@ iiRevisionBucketList(*case) {
 			 uubucket(uuweeks(8),  1),
 			 uubucket(uuweeks(12), 1),
 			 uubucket(uuweeks(16), 1)
-		);
+		); 
+	} else if (*case == "J")  {
+                         uubucket(uuminutes(5),    1),
+                         uubucket(uuminutes(10),   1),
+                         uubucket(uuminutes(15),   1),
+                         uubucket(uuminutes(20),   1),
+                         uubucket(uuminutes(40),   1),
+                         uubucket(uuminutes(60),   1),
+                         uubucket(uuminutes(80),   1),
+                         uubucket(uuminutes(100),  1),
+                         uubucket(uuminutes(120),  1),
+                         uubucket(uuminutes(140),  1),
+                         uubucket(uuminutes(280),  1),
+                         uubucket(uuminutes(320),  1),
+                         uubucket(uuminutes(460),  1),
+                         uubucket(uuminutes(920),  1),
+                         uubucket(uuminutes(1380), 1),
+                         uubucket(uuminutes(1820), 1)
+                         );
 
 	} else {
 		# Case B and default
