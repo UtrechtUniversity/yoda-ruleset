@@ -359,6 +359,7 @@ iiRevisionBucketList(*case) {
 			 uubucket(uuweeks(16), 1)
 		); 
 	} else if (*case == "J")  {
+		*lst = list(
                          uubucket(uuminutes(5),    1),
                          uubucket(uuminutes(10),   1),
                          uubucket(uuminutes(15),   1),
