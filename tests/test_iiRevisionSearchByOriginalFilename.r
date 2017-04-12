@@ -1,5 +1,5 @@
 test_iiRevisionSearchByOriginalPath {
-	iiRevisionSearchByOriginalFilename(*searchstring, "", "", 10, 0, *result);
+	iiRevisionSearchByOriginalFilename(*searchstring, "", "", 100, 0, *result);
 	writeLine("stdout", *result);
 }
 

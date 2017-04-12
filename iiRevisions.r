@@ -311,90 +311,110 @@ iiRevisionList(*path, *result) {
 	uuKvpList2JSON(*revisions, *result, *size);	
 }
 
-
+# \brief iiRevisionCalculateEndOfCalendarDay    Calculate the unix timestamp for the end of the current day (Same as start of next day)
+# param[out] endOfCalendarDay		Timestamp of the end of the current day
 iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
-		msiGetIcatTime(*timestamp, "unix");
-		*bdY = timestrf(datetime(int(*timestamp)), "%b %d %Y");	
+		msiGetIcatTime(*timestamp, "unix"); # Get current Timestamp
+		*bdY = timestrf(datetime(int(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).	
 		
-		*endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); 
-		*endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s");
-		*endOfCalendarDay =  int(*endofcalendarday_str) + 1;
+		*endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); # Append the last second of the day and convert to datetime
+		*endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s"); # Generate string of unix timestamp of the last second of the day
+		*endOfCalendarDay =  int(*endofcalendarday_str) + 1; # Convert to integer and add 1 second to get 00:00 of the next day
 }
 
+# \datatype uurevisioncandidate    Represents a revision with a timestamp with an integer for the timestamp and a string for the DATA_ID.
+#                                  A removed candidate is represented with an empty dataconstructor
 data uurevisioncandidate = 
 	| uurevisioncandidate : integer * string -> uurevisioncandidate
 	| uurevisionremoved : uurevisioncandidate
 
-data uubucket =
-	| uubucket : integer * integer -> uubucket
-
+# \function uurevisionisremoved   Check if a revisioncandidate is removed by matching it with its constructor
 uurevisionisremoved(*r) =
 	match *r with
 		| uurevisionremoved => true
 		| uurevisioncandidate(*i, *s) => false
 
+# \datatype uubucket   Represents a time bucket where a number of revisions should be kept with three integers
+#                      The first integer represents a time offset
+#                      The second integer represents the number of revisions that can stay in the bucket
+#                      The third integer represents the starting index when revisions need to remove. 0 is the latest
+#                      revision after the current original (which should always be kept) , 1 the revision after that, etc.
+data uubucket =
+	| uubucket : integer * integer * integer -> uubucket
+
+
+# iRODS timestamps are in seconds since epoch (1970-01-01 00:00 UTC). Express minutes, hours, days and weeks in seconds
 uuminutes(*m) = *m * 60
 uuhours(*h) = *h * uuminutes(60)
 uudays(*d) = *d * uuhours(24)
 uuweeks(*w) = *w * uudays(7) 
 
+# \brief iiRevisionBucketList   Return a list of time buckets to determine revisions to keep
+# \param[in] case    Select a bucketlist based on a string
+# \returnvalue lst   A bucket list
 iiRevisionBucketList(*case) {
 	if (*case == "A") {
 		*lst = list(
-			 uubucket(uuhours(6),  1),
-			 uubucket(uuhours(12), 1),
-			 uubucket(uuhours(18), 1),
-			 uubucket(uudays(1),   1),
-			 uubucket(uudays(2),   1),
-			 uubucket(uudays(3),   1),
-			 uubucket(uudays(4),   1),
-			 uubucket(uudays(5),   1),
-			 uubucket(uudays(6),   1),
-			 uubucket(uuweeks(1),  1),
-			 uubucket(uuweeks(2),  1),
-			 uubucket(uuweeks(3),  1),
-			 uubucket(uuweeks(4),  1),
-			 uubucket(uuweeks(8),  1),
-			 uubucket(uuweeks(12), 1),
-			 uubucket(uuweeks(16), 1)
+			 uubucket(uuhours(6),  1, 1),
+			 uubucket(uuhours(12), 1, 0),
+			 uubucket(uuhours(18), 1, 0),
+			 uubucket(uudays(1),   1, 0),
+			 uubucket(uudays(2),   1, 0),
+			 uubucket(uudays(3),   1, 0),
+			 uubucket(uudays(4),   1, 0),
+			 uubucket(uudays(5),   1, 0),
+			 uubucket(uudays(6),   1, 0),
+			 uubucket(uuweeks(1),  1, 0),
+			 uubucket(uuweeks(2),  1, 0),
+			 uubucket(uuweeks(3),  1, 0),
+			 uubucket(uuweeks(4),  1, 0),
+			 uubucket(uuweeks(8),  1, 0),
+			 uubucket(uuweeks(12), 1, 0),
+			 uubucket(uuweeks(16), 1, 0)
 		); 
 	} else if (*case == "J")  {
 		*lst = list(
-                         uubucket(uuminutes(5),    1),
-                         uubucket(uuminutes(10),   1),
-                         uubucket(uuminutes(15),   1),
-                         uubucket(uuminutes(20),   1),
-                         uubucket(uuminutes(40),   1),
-                         uubucket(uuminutes(60),   1),
-                         uubucket(uuminutes(80),   1),
-                         uubucket(uuminutes(100),  1),
-                         uubucket(uuminutes(120),  1),
-                         uubucket(uuminutes(140),  1),
-                         uubucket(uuminutes(280),  1),
-                         uubucket(uuminutes(320),  1),
-                         uubucket(uuminutes(460),  1),
-                         uubucket(uuminutes(920),  1),
-                         uubucket(uuminutes(1380), 1),
-                         uubucket(uuminutes(1820), 1)
+                         uubucket(uuminutes(5),    1, 1),
+                         uubucket(uuminutes(10),   1, 0),
+                         uubucket(uuminutes(15),   1, 0),
+                         uubucket(uuminutes(20),   1, 0),
+                         uubucket(uuminutes(40),   1, 0),
+                         uubucket(uuminutes(60),   1, 0),
+                         uubucket(uuminutes(80),   1, 0),
+                         uubucket(uuminutes(100),  1, 0),
+                         uubucket(uuminutes(120),  1, 0),
+                         uubucket(uuminutes(140),  1, 0),
+                         uubucket(uuminutes(280),  1, 0),
+                         uubucket(uuminutes(320),  1, 0),
+                         uubucket(uuminutes(460),  1, 0),
+                         uubucket(uuminutes(920),  1, 0),
+                         uubucket(uuminutes(1380), 1, 0),
+                         uubucket(uuminutes(1820), 1, 0)
                          );
-
+	} else if (*case == "Simple") {
+		*lst = list(uubucket(uuweeks(16), 16, 4));
 	} else {
 		# Case B and default
 		*lst = list(
-			 uubucket(uuhours(12), 2),
-			 uubucket(uudays(1),   2),
-			 uubucket(uudays(3),   2),
-			 uubucket(uudays(5),   2),
-			 uubucket(uuweeks(1),  2),
-			 uubucket(uuweeks(3),  2),
-			 uubucket(uuweeks(8),  2),
-			 uubucket(uuweeks(16), 2)
+			 uubucket(uuhours(12), 2, 0),
+			 uubucket(uudays(1),   2, 1),
+			 uubucket(uudays(3),   2, 1),
+			 uubucket(uudays(5),   2, 1),
+			 uubucket(uuweeks(1),  2, 1),
+			 uubucket(uuweeks(3),  2, 1),
+			 uubucket(uuweeks(8),  2, 1),
+			 uubucket(uuweeks(16), 2, 1)
 		);
 	}
 	*lst;
 }
 
-
+# \brief iiRevisionStrategy    Determine which revisions should be removed and which to remove based on a bucketlist
+# \param[in]  path              full path of original
+# \param[in]  endOfCalendarDay  Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
+# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
+# \param[out] keep             list of revisions to keep
+# \param[out] remove           list of revisions to remove
 iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	*keep = list();
 	*remove = list();
@@ -407,15 +427,32 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
 		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
 	}
+	
+	# If no revisions are found, no revisions need to be removed
+	if (size(*revisions) < 1) {
+		writeLine("serverLog", "iiRevisionStrategy: Nothing to do, no revisions found for *path");
+		succeed;
+	}
 
+	# Always keep the newest revision as it is the same as the original and becomes the "undo" after a change is made
+	*keep = cons(hd(*revisions), *keep);
+	*revisions = tl(*revisions);
+	
+	# Put the remaining revisions in buckets
 	foreach(*bucket in *bucketlist) {
-		uubucket(*offset, *sizeOfBucket) = *bucket;
-	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket]");
+		if (size(*revisions) < 0) {
+			break;
+		}
+		# Use a pseudo constructor on the bucket to put each integer in the proper variable
+		uubucket(*offset, *sizeOfBucket, *startIdx) = *bucket;
+	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket] startIdx[*startIdx]");
 		*startTime = *endOfCalendarDay - *offset; 
+		# each revision newer than the startTime of the bucket is a candidate to keep or remove in that bucket
 		*candidates = list();
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
+			# use pseudo data constructor uurevisioncandidate to initialize timeInt and id.
 			uurevisioncandidate(*timeInt, *id) = *revision;
 	#		writeLine("stdout", "*timeInt: *id");
 			if (*timeInt > *startTime) {
@@ -428,29 +465,42 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 			}	
 		}
 		
+		# Determine if the size of the bucket is exceeded.  
 		*nToRemove = size(*candidates) - *sizeOfBucket;
-		if (*nToRemove < 1) {
-			nop;
-		} else { 	
-			for(*idx = 1;*idx < (*nToRemove + 1); *idx = *idx + 1) {
-				*toRemove = elem(*candidates, *idx);
-				*remove = cons(*toRemove, *remove);
-				*candidates = setelem(*candidates, *idx, uurevisionremoved);
-	#		writeLine("serverLog", "Remove: *toRemove");
+		if (*nToRemove > 0) {
+			# Start marking revisions for removal from the startIdx until the max size of the bucket is reached.
+			if (*startIdx < 0) {
+				# If startIdx is negative go oldest to newest.
+				for(*idx = size(*candidates) + *startidx; *idx > (size(*candidates) + *startIdx - *nToRemove); *idx = *idx - 1) {
+					*toRemove = elem(*candidates, *idx);
+					*remove = cons(*toRemove, *remove);
+					*candidates = setelem(*candidates, *idx, uurevisionremoved);
+				}
+			} else {
+				# If startIdx is zero or higher go newest to oldest.
+				for(*idx = *startIdx;*idx < (*nToRemove + *startIdx); *idx = *idx + 1) {
+					*toRemove = elem(*candidates, *idx);
+					*remove = cons(*toRemove, *remove);
+					*candidates = setelem(*candidates, *idx, uurevisionremoved);
+				}
 			}
 		}
 
 		foreach(*toKeep in *candidates) {	
-	#		writeLine("serverLog", "Keep: *toKeep in bucket");
+			# Every candidate not marked for removal is added to the keep list
 			if(!uurevisionisremoved(*toKeep)) {	
 				*keep = cons(*toKeep, *keep);
 			}
 		}
 	}	
+
+	# All remaining revisions are older than the oldest bucket.
+	foreach(*revision in *revisions) {
+		*remove = cons(*revision, *remove);
+	}
 }
 
 # \brief iiRevisionSearchByOriginalPath 
-# TODO: Refactor to support sorting and searching on filename instead of complete path
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)", "DATA_NAME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
@@ -474,7 +524,6 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 }
 
 # \brief iiRevisionSearchByOriginalFilename
-# TODO: See iiRevisionSearchByOriginalPath
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	*originalDataNameKey = UUORGMETADATAPREFIX ++ "original_data_name";
 	*fields = list("COLL_NAME", "META_DATA_ATTR_VALUE");

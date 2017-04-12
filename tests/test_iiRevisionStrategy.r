@@ -1,4 +1,5 @@
 testRule {
+
 	if (*endOfCalendarDay == 0) {
 		iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay);
 	}
