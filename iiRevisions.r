@@ -337,7 +337,7 @@ uurevisionisremoved(*r) =
 # \datatype uubucket   Represents a time bucket where a number of revisions should be kept with three integers
 #                      The first integer represents a time offset
 #                      The second integer represents the number of revisions that can stay in the bucket
-#                      The third integer represents the starting index when revisions need to remove. 0 is the latest
+#                      The third integer represents the starting index when revisions need to remove. 0 is the newest, -1 the oldest
 #                      revision after the current original (which should always be kept) , 1 the revision after that, etc.
 data uubucket =
 	| uubucket : integer * integer * integer -> uubucket
@@ -466,12 +466,13 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 		}
 		
 		# Determine if the size of the bucket is exceeded.  
-		*nToRemove = size(*candidates) - *sizeOfBucket;
+		*sizeOfCandidates = size(*candidates);
+		*nToRemove = *sizeOfCandidates - *sizeOfBucket;
 		if (*nToRemove > 0) {
 			# Start marking revisions for removal from the startIdx until the max size of the bucket is reached.
 			if (*startIdx < 0) {
 				# If startIdx is negative go oldest to newest.
-				for(*idx = size(*candidates) + *startidx; *idx > (size(*candidates) + *startIdx - *nToRemove); *idx = *idx - 1) {
+				for(*idx = *sizeOfCandidates + *startidx; *idx > (*sizeOfCandidates + *startIdx - *nToRemove); *idx = *idx - 1) {
 					*toRemove = elem(*candidates, *idx);
 					*remove = cons(*toRemove, *remove);
 					*candidates = setelem(*candidates, *idx, uurevisionremoved);
