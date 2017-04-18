@@ -42,6 +42,7 @@ acCreateUserZoneCollections {
 		# *Do* create home directories for all other user types and groups (e.g.
 		# rodsadmin, research- and intake groups).
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
+		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
 		# Disable the creation of revision stores. 2017-03-29
 		# if ($otherUserName like regex "research-.*" && uuCollectionExists("/" ++ $rodsZoneProxy ++ UUREVISIONCOLLECTION)) {
