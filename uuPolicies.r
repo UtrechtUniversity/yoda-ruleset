@@ -33,14 +33,15 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
 	if (*type == "rodsuser") {
-		# Do not create home directories for regular users.
+		# Do not create home directories for regular users,
+		# but do create a trash directory as it is hardcoded in iRODS to be /{rodsZone}/trash/home/{userName}
+		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 	} else if (*type == "rodsgroup" && ($otherUserName like regex "(read|datamanager)-.*")) {
 		# Do not create home directories for read- and datamanager groups.
 	} else {
 		# *Do* create home directories for all other user types and groups (e.g.
 		# rodsadmin, research- and intake groups).
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
-		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
 		if ($otherUserName like regex "research-.*" && uuCollectionExists("/" ++ $rodsZoneProxy ++ UUREVISIONCOLLECTION)) {
 			*revisionColl = "/"++$rodsZoneProxy++UUREVISIONCOLLECTION;
