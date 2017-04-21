@@ -10,7 +10,7 @@
 
 
 #
-UUDEFAULTTIER = 'Standard';
+UUDEFAULTRESOURCETIER = 'Standard';
 FRONTEND_SUCCESS = 'SUCCESS';
 FRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 
@@ -197,7 +197,7 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
         *kvp.resourceName = *resourceName;
 
         # Initialize the actual metadata related to storage TODO: get rid of the org_storage part
-        *kvp.org_storageTierName = UUDEFAULTTIER;
+        *kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
 
         *kvp.org_storageMonth01 = '0'; # storage used in TB
         *kvp.org_storageMonth02 = '0';
@@ -356,7 +356,7 @@ uuListResourcesAndStatisticData(*result, *errorInfo)
                 *kvp.resourceName = *resource.resourceName;
                 
 		# Initialize the actual metadata related to storage TODO: get rid of the org_storage part
-		*kvp.org_storageTierName = UUDEFAULTTIER;
+		*kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
                 
                 *kvp.org_storageMonth01 = '0'; # storage used in TB
                 *kvp.org_storageMonth02 = '0';
