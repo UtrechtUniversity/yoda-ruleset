@@ -19,6 +19,10 @@ FRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 #  FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
 
 # /brief uuFrontEndGetResourceStatisticData
+# /param[out] *data		-return actual requested data if applicable
+# /param[out] *status		-return status to frontend 
+# /param[out] *statusInfo	-return specific information regarding *status
+# /param[in]  *resourceName
 uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
 {
 	AmIAdministrator(*isAdministrator);
@@ -29,7 +33,7 @@ uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
 	}
 
         *resourceData = uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo);
-	writeLine('stdout', *resourceData);
+	# writeLine('stdout', *resourceData);
 	
 	if (*result < 0){
 		if (*result == -1) {
@@ -52,6 +56,9 @@ uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
 
 
 # /brief uuFrontEndListResourceAndStatisticData - List available resources and their tier & storage data
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend 
+# /param[out] *statusInfo       -return specific information regarding *status
 uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 {
 	AmIAdministrator(*isAdministrator);
@@ -75,6 +82,11 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 }
 
 # /brief uuFrontEndSetResourceTier - sets (creates/updates) tier as metadata for given resource
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend 
+# /param[out] *statusInfo       -return specific information regarding *status
+# /param[in]  *resourceName
+# /param[in]  *tierName
 uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
 {
         AmIAdministrator(*isAdministrator);
@@ -104,6 +116,12 @@ uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
 }
 
 # /brief uuFrontEndSetResourceTier - sets (creates/updates) monthly storage as metadata for given resource 
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend 
+# /param[out] *statusInfo       -return specific information regarding *status
+# /param[in]  *resourceName
+# /param[in]  *month		{'01',...,'12'}	
+# /param[in]  *usedStorage
 uuFrontEndSetResourceMonthlyStorage(*data, *status, *statusInfo, *resourceName, *month, *usedStorage)
 {
         AmIAdministrator(*isAdministrator);
@@ -207,6 +225,7 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
 # /param[in]    *resourceName
 # /param[in]    *month {'01'...'12'}
 # /param[out]   *usedStorage
+# /param[out]	*result
 # /param[out]   *errorInfo
 uuSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *result, *errorInfo)
 {
