@@ -420,8 +420,10 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	*remove = list();
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
+	*revisionStore = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	foreach(*row in SELECT DATA_ID, order(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
-		        AND META_DATA_ATTR_VALUE = *path) {
+		                                         AND META_DATA_ATTR_VALUE = *path
+							 AND COLL_NAME like "*revisionStore%") {
 		*id = *row.DATA_ID;
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
 		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
