@@ -1,7 +1,13 @@
 cleanup {
+	
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType == 'rodsadmin') {
+		msiSetACL("recursive", "admin:own", uuClientFullName, "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION);
+		msiSetACL("recursive", "inherit", uuClientFullName, "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION);
+	}
 
 	if (*endOfCalendarDay == 0) {
-		iiRevisionCalculateEndofCalendarDay(*endOfCalendarDay);
+		iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay);
 	}
 	
 	*bucketlist = iiRevisionBucketList(*bucketcase);
