@@ -174,10 +174,18 @@ uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, 
 
 #------------------------------------------ end of front end functions
 #------------------------------------------ Start of supporting functions that probably exist already somewhere 
-# / Permission functionality  to be addressed later
 AmIAdministrator(*isAdministrator)
-{
-	*isAdministrator = true; # TODO: to be replaced by actual 'intelligence'
+{	
+	writeLine('stdout', $userNameClient);
+
+	uuGetUserType($userNameClient, *userType);
+
+	writeLine('stdout', *userType);
+	
+	*isAdministrator = false;
+	if (*userType == 'rodsadmin') {
+		*isAdministrator  = true;
+	}
 }
 
 # /brief uuResourceExistst - check whether given resource actually exists
@@ -364,8 +372,10 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
         }
 }
 
-# -----------------------------------------------------------------------------------
 # /brief uuResourcesAndStatisticData  - List of  all resources and their tier/storage data (if present)
+
+# Tiers are only assigned to the resources that are allowed. 
+# Therefore, no further restriction has to be added for the type of resource (which should be storage)
 uuListResourceTiers(*result, *errorInfo)
 {
         *result = 0;
