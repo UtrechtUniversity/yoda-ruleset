@@ -11,8 +11,8 @@
 
 #
 UUDEFAULTRESOURCETIER = 'Standard';
-FRONTEND_SUCCESS = 'SUCCESS';
-FRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
+UUFRONTEND_SUCCESS = 'SUCCESS';
+UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 
 
 
@@ -23,7 +23,7 @@ FRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 # /param[out] *status		-return status to frontend 
 # /param[out] *statusInfo	-return specific information regarding *status
 # /param[in]  *resourceName
-uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
+uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
 	AmIAdministrator(*isAdministrator);
 	if (!*isAdministrator){
@@ -41,7 +41,7 @@ uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
                         *statusInfo = 'Resource does not exist';
                 }
                 else {
-                        *status = FRONTEND_UNRECOVERABLE;
+                        *status = UUFRONTEND_UNRECOVERABLE;
                         *statusInfo = *errorInfo; # use the info from within the function
                 }
 		succeed;
@@ -49,7 +49,7 @@ uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
 
 	uuKvp2JSON(*resourceData, *data);
 
-        *status = FRONTEND_SUCCESS;
+        *status = UUFRONTEND_SUCCESS;
         *statusInfo = 'All went well!!';
 }
 
@@ -72,11 +72,11 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 
         uuKvpList2JSON(*allResourceData, *data, *size);
 
-        *status = FRONTEND_SUCCESS;
+        *status = UUFRONTEND_SUCCESS;
         *statusInfo = 'All went well!!';
 
         if (*size == 0 ) {  #TODO:  Mogelijkk nog verder differentieren 
-                *status = FRONTEND_UNRECOVERABLE;
+                *status = UUFRONTEND_UNRECOVERABLE;
                 *statusInfo = 'Impossible to convert data to JSON';
         }
 }
@@ -87,7 +87,7 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 # /param[out] *statusInfo       -return specific information regarding *status
 # /param[in]  *resourceName
 # /param[in]  *tierName
-uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
+uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
         AmIAdministrator(*isAdministrator);
         if (!*isAdministrator) {
@@ -100,7 +100,7 @@ uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
 
         *data = ''; # N/A for this situation
 
-        *status = FRONTEND_SUCCESS;
+        *status = UUFRONTEND_SUCCESS;
         *statusInfo = '';
 	
         if (*result < 0) {
@@ -109,7 +109,7 @@ uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
                		*statusInfo = 'Resource does not exist'; 
         	}
         	else {
-               		*status = FRONTEND_UNRECOVERABLE;
+               		*status = UUFRONTEND_UNRECOVERABLE;
                		*statusInfo = *errorInfo; # use the info from within the function
         	}
 	}
@@ -122,7 +122,7 @@ uuFrontEndSetResourceTier(*data, *status, *statusInfo, *resourceName, *tierName)
 # /param[in]  *resourceName
 # /param[in]  *month		{'01',...,'12'}	
 # /param[in]  *usedStorage
-uuFrontEndSetResourceMonthlyStorage(*data, *status, *statusInfo, *resourceName, *month, *usedStorage)
+uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, *status, *statusInfo)
 {
         AmIAdministrator(*isAdministrator);
         if (!*isAdministrator){
@@ -133,7 +133,7 @@ uuFrontEndSetResourceMonthlyStorage(*data, *status, *statusInfo, *resourceName, 
 
         uuSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *result, *errorInfo);
 
-        *status = FRONTEND_SUCCESS;
+        *status = UUFRONTEND_SUCCESS;
         *statusInfo = '';
 
         if (*result < 0) {
@@ -142,7 +142,7 @@ uuFrontEndSetResourceMonthlyStorage(*data, *status, *statusInfo, *resourceName, 
                         *statusInfo = 'Resource does not exist';
                 }
                 else {
-                        *status = FRONTEND_UNRECOVERABLE;
+                        *status = UUFRONTEND_UNRECOVERABLE;
                         *statusInfo = *errorInfo; # use the info from within the function
                 }
         }
@@ -157,10 +157,10 @@ AmIAdministrator(*isAdministrator)
 	*isAdministrator = true; # TODO: to be replaced by actual 'intelligence'
 }
 
-# /brief resourceExistst - check whether given resource actually exists
+# /brief uuResourceExistst - check whether given resource actually exists
 # /param[in] *resourceName
 # /param[out] *exists
-resourceExists(*resourceName, *exists)
+uuResourceExists(*resourceName, *exists)
 {
         *exists = false;
 
@@ -181,7 +181,7 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
 	*result = 0;
 	
         # 1)First check whether resource actually exists
-        resourceExists(*resourceName, *rescExists)
+        uuResourceExists(*resourceName, *rescExists)
 	
         if (!*rescExists) {
                 *result = -1; # Resource does not exist.
@@ -232,7 +232,7 @@ uuSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *result, *error
         *result = 0;
 
         # 1)First check whether resource actually exists
-	resourceExists(*resourceName, *rescExists)
+	uuResourceExists(*resourceName, *rescExists)
 	
         if (!*rescExists) {
                 *result = -1; # Resource does not exist
@@ -288,7 +288,7 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 	*result = 0;
         
 	# 1)First check whether resource actually exists
-        resourceExists(*resourceName, *rescExists)
+        uuResourceExists(*resourceName, *rescExists)
 
         if (!*rescExists) {
                 *result = -1; # Resource does not exist.
