@@ -158,7 +158,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 
 # This policy is fired when AVU metadata is added or set.
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -171,7 +171,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
@@ -205,7 +205,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 
 # This policy gets triggered when metadata is modified
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -218,7 +218,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
+	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
