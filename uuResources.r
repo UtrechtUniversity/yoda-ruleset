@@ -81,6 +81,29 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
         }
 }
 
+
+# /brief uuFrontEndListResourceTiers - List available resources and their tier & storage data
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend 
+# /param[out] *statusInfo       -return specific information regarding *status
+uuFrontEndListResourceTiers(*data, *status, *statusInfo)
+{
+        AmIAdministrator(*isAdministrator);
+        if (!*isAdministrator){
+                *status = 'NoPermissions';
+                *statusInfo = 'Insufficient permissions';
+                succeed;
+        }
+
+        *allResourceTiers = uuListResourceTiers(*result, *errorInfo);
+
+	uuList2JSON(*allResourceTiers, *data);
+
+        *status = UUFRONTEND_SUCCESS;
+        *statusInfo = 'All went well!!';
+}
+
+
 # /brief uuFrontEndSetResourceTier - sets (creates/updates) tier as metadata for given resource
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
@@ -115,7 +138,7 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 	}
 }
 
-# /brief uuFrontEndSetResourceTier - sets (creates/updates) monthly storage as metadata for given resource 
+# /brief uuFrontEndSetResourceMonthlyStorage - sets (creates/updates) monthly storage as metadata for given resource 
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
 # /param[out] *statusInfo       -return specific information regarding *status
@@ -340,6 +363,29 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
                 }
         }
 }
+
+# -----------------------------------------------------------------------------------
+# /brief uuResourcesAndStatisticData  - List of  all resources and their tier/storage data (if present)
+uuListResourceTiers(*result, *errorInfo)
+{
+        *result = 0;
+
+	*foundStandardTier = false;
+        *allRescTiers = list();
+	
+        # fetch tier information for all resources and filter duplicates
+        foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+        	# writeLine('stdout', *row.META_RESC_ATTR_VALUE);
+                *allRescTiers = cons(*row.META_RESC_ATTR_VALUE, *allRescTiers);
+        }
+
+	if (!*foundStandardTier) { # Add standard tier if not found in database
+		*allRescTiers = cons('Standard', *allRescTiers);
+	}
+
+        *allRescTiers;
+}
+
 
 # -----------------------------------------------------------------------------------
 # /brief uuResourcesAndStatisticData  - List of  all resources and their tier/storage data (if present)
