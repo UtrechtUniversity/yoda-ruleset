@@ -409,18 +409,15 @@ iiRevisionBucketList(*case) {
 	*lst;
 }
 
-# \brief iiRevisionStrategy    Determine which revisions should be removed and which to remove based on a bucketlist
-# \param[in]  path              full path of original
-# \param[in]  endOfCalendarDay  Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
-# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
-# \param[out] keep             list of revisions to keep
-# \param[out] remove           list of revisions to remove
-iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
-	*keep = list();
-	*remove = list();
+# iiRevisionCandidates   Return list of revisioncandidates of a path
+# \param[in]  path       path of original
+# \param[out] revisions  list of revisioncandidates
+iiRevisionCandidates(*path, *revisions) {
+		
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
 	*revisionStore = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
+	     
 	foreach(*row in SELECT DATA_ID, order(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
 		                                         AND META_DATA_ATTR_VALUE = *path
 							 AND COLL_NAME like "*revisionStore%") {
@@ -429,10 +426,35 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
 		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
 	}
-	
+}
+
+# \brief iiRevisionStrategy    Determine which revisions should be removed and which to remove based on a bucketlist
+# \param[in]  path              full path of original
+# \param[in]  endOfCalendarDay  Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
+# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
+# \param[out] keep             list of revisions to keep
+# \param[out] remove           list of revisions to remove
+iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
+	if (*endOfCalendarDay == 0) {	
+		iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay);	
+	}
+	iiRevisionCandidates(*path, *revisions);
+	iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove);
+}
+
+# \brief iiRevisionStrategyImplementation  
+# \param[in] revisions     	list of uurevisioncandidates
+# \param[in] endOfCalendarDay   Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
+# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
+# \param[out] keep             list of revisions to keep
+# \param[out] remove           list of revisions to remove
+iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove) {	
+	*keep = list();
+	*remove = list();
+
 	# If no revisions are found, no revisions need to be removed
 	if (size(*revisions) < 1) {
-		writeLine("serverLog", "iiRevisionStrategy: Nothing to do, no revisions found for *path");
+		writeLine("serverLog", "iiRevisionStrategyImplementation: Nothing to do, no revisions found for *path");
 		succeed;
 	}
 
@@ -474,7 +496,7 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 			# Start marking revisions for removal from the startIdx until the max size of the bucket is reached.
 			if (*startIdx < 0) {
 				# If startIdx is negative go oldest to newest.
-				for(*idx = *sizeOfCandidates + *startidx; *idx > (*sizeOfCandidates + *startIdx - *nToRemove); *idx = *idx - 1) {
+				for(*idx = *sizeOfCandidates + *startIdx; *idx > (*sizeOfCandidates + *startIdx - *nToRemove); *idx = *idx - 1) {
 					*toRemove = elem(*candidates, *idx);
 					*remove = cons(*toRemove, *remove);
 					*candidates = setelem(*candidates, *idx, uurevisionremoved);
