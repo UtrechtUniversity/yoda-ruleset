@@ -9,8 +9,8 @@
 # \param[out] folderstatus  Current status of folder
 iiFolderStatus(*folder, *folderstatus) {
 	
-	*folderstatuskey = UUORGMETADATAPREFIX ++ "status";
-	*folderstatus = UNPROTECTED;
+	*folderstatuskey = IISTATUSATTRNAME;
+	*folderstatus = FOLDER;
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderstatuskey) {
 		*folderstatus = *row.META_COLL_ATTR_VALUE;
 	}
@@ -21,63 +21,102 @@ iiFolderStatus(*folder, *folderstatus) {
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
 iiFolderTransition(*path, *currentStatus, *newStatus) {
-	if (*currentStatus == UNPROTECTED && *newStatus == PROTECTED) {
-		iiFolderLockChange(*path, "protect", true, *status);
+	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
+		iiFolderLockChange(*path, true, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
+		} else {
+			iiAddActionLogRecord(*path, "lock");
 		}
-	} else if (*currentStatus == PROTECTED && (*newStatus == UNPROTECTED || *newStatus == "")) {
-		iiFolderLockChange(*path, "protect", false, *status);
+	} else if (*currentStatus == LOCKED && (*newStatus == FOLDER || *newStatus == "")) {
+		iiFolderLockChange(*path, false, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
+		} else {
+			*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+			uuRemoveAVUs(*path, *actionLog);
 		}
-	} else if (*currentStatus == UNPROTECTED && *newStatus == SUBMITTED) {
+	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
 		# protect the folder.
-		iiFolderLockChange(*path, "protect", true, *status);
+		iiFolderLockChange(*path, true, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
+		} else {
+			iiAddActionLogRecord(*path, "submit");
 		}
-	} else if (*currentStatus == PROTECTED && *newStatus == SUBMITTED) {
+	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
 		# nothing to do
+		iiAddActionLogRecord(*path, "submit");
+		succeed;
+	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
+		iiAddActionLogRecord(*path, "submit");
 		succeed;
 	}
 }
 
-# \brief iiFolderProtect
-# \param[in] folder	path of folder to protect
-iiFolderProtect(*folder) {
-	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ PROTECTED;
+# \brief iiFolderLock
+# \param[in] path of folder to lock
+iiFolderLock(*folder) {
+	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
 }
 
-# \brief iiFolderUnprotect
-# \param[in] folder	path of folder to protect
-iiFolderUnprotect(*folder) {
-	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ UNPROTECTED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");	
+# \brief iiFolderUnlock
+# \param[in] folder	path of folder to unlock
+iiFolderUnlock(*folder) {
+	*attrName = IISTATUSATTRNAME;
+	*currentStatus = FOLDER;
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *attrName) {
+		*currentStatus = *row.META_COLL_ATTR_VALUE;
+	}
+	if (*currentStatus != FOLDER) {
+		*status_str = *attrName ++ "=" ++ *currentStatus;
+		msiString2KeyValPair(*status_str, *statuskvp);
+		msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C");	
+	}
 }
 
 # \brief iiFolderSubmit
 # \param[in] folder	path of folder to submit to vault 
 iiFolderSubmit(*folder) {
-	*status_str = UUORGMETADATAPREFIX ++ "status=" ++ SUBMITTED;
+	*status_str = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
 }
 
+
+# \brief iiFolderUnsubmit
+# \param[in] folder	path of folder to submit to vault 
+iiFolderUnsubmit(*folder) {
+	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+}
+
+# \brief iiAddActionLogRecord
+iiAddActionLogRecord(*path, *action) {
+	msiGetIcatTime(*timestamp, "icat");
+	*date = timestrf(datetime(int(*timestamp)), "%F");
+	*actor = uuClientFullName;
+	*json_str = "[]";
+	msi_json_arrayops(*json_str, *date, "add", *size);
+	msi_json_arrayops(*json_str, *action, "add", *size);
+	msi_json_arrayops(*json_str, *actor, "add", *size);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
+	msiAssociateKeyValuePairsToObj(*kvp, *path, "-C", *status);
+}
+
+
 # \brief iiFolderLockChange
 # \param[in] rootCollection 	The COLL_NAME of the collection the dataset resides in
-# \param[in] lockName			Key name of the meta data object that is added
 # \param[in] lockIt 			Boolean, true if the object should be locked.
 # 									if false, the lock is removed (if allowed)
 # \param[out] status 			Zero if no errors, non-zero otherwise
-iiFolderLockChange(*rootCollection, *lockName, *lockIt, *status){
-	*lock_str = UUORGMETADATAPREFIX ++ "lock_" ++ *lockName ++ "=" ++ *rootCollection;
+iiFolderLockChange(*rootCollection, *lockIt, *status){
+	*lock_str = IILOCKATTRNAME ++ "=" ++ *rootCollection;
+	msiString2KeyValPair(*lock_str, *buffer);
 	writeLine("ServerLog", "iiFolderLockChange: *lock_str");
-	msiString2KeyValPair(*lock_str, *buffer)
-
 	if (*lockIt) {
 		writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";

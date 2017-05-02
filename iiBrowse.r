@@ -101,7 +101,7 @@ iiCollectionDetails(*path, *result) {
 	*kvp.filecount = *filecount;
 	*kvp.content_modify_time = *modified;
 
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
+	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
 	uuKvpList2JSON(*kvpList, *orgMetadata_json, *size);
 
 	*kvp.orgMetadata = *orgMetadata_json;
@@ -118,9 +118,9 @@ iiCollectionDetails(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-		*orgStatus = UNPROTECTED;
+		*orgStatus = FOLDER;
 		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName == "status") {
+			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
 				*orgStatus = *metadataKvp.attrValue;
 				break;
 			}
@@ -129,7 +129,7 @@ iiCollectionDetails(*path, *result) {
 
 		*lockFound = "no";
 		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName like "lock_*") {
+			if (*metadataKvp.attrName == IILOCKATTRNAME) {
 				*rootCollection = *metadataKvp.attrValue;
 				*kvp.lockRootCollection = *rootCollection;
 				if (*rootCollection == *path) {
