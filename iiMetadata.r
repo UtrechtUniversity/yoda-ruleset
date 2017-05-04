@@ -106,7 +106,7 @@ iiPrepareMetadataForm(*path, *result) {
 	
 	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
 
-	*orgStatus = UNPROTECTED;
+	*orgStatus = FOLDER;
 	foreach(*metadataKvp in *kvpList) {
 		if (*metadataKvp.attrName == "status") {
 			*orgStatus = *metadataKvp.attrValue;
