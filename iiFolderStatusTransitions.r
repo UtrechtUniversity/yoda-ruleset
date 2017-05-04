@@ -97,9 +97,8 @@ iiFolderUnsubmit(*folder) {
 # \brief iiAddActionLogRecord
 iiAddActionLogRecord(*folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
-	*date = timestrf(datetime(int(*timestamp)), "%F %H:%M");
 	*actor = uuClientFullName;
-	*json_str = "[\"*date\", \"*action\", \"*actor\"]";
+	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
 	msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 }
