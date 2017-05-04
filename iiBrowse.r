@@ -119,7 +119,7 @@ iiCollectionDetails(*path, *result) {
 
 		*lockFound = "no";
 		*lockCount = 0;
-		foreach(*metadataKvp in *kvpList) {
+		foreach(*metadataKvp in *metadataKvpList) {
 			if (*metadataKvp.attrName == IILOCKATTRNAME) {
 				*lockCount = *lockCount + 1;
 				*rootCollection = *metadataKvp.attrValue;
