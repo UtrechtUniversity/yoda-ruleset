@@ -46,21 +46,20 @@ iiGetLocks(*objPath, *locks) {
 		foreach (*row in SELECT META_DATA_ATTR_VALUE
 					WHERE COLL_NAME = *collection
 					  AND DATA_NAME = *dataName
-					  AND META_DATA_ATTR_NAME = *lockattrname;
+					  AND META_DATA_ATTR_NAME = *lockattrname
 			) {
-			*rootCollection= *row.META_DATA_ATTR_VALUE;
-			writeLine("serverLog", "iiGetLocks: *objPath -> *rootCollection");
-			*locks = cons(*rootCollection, *locks);
+				*rootCollection= *row.META_DATA_ATTR_VALUE;
+				writeLine("serverLog", "iiGetLocks: *objPath -> *rootCollection");
+				*locks = cons(*rootCollection, *locks);
 			}
-		}
 	} else {
 		foreach (*row in SELECT META_COLL_ATTR_VALUE
 					WHERE COLL_NAME = *objPath
 					  AND META_COLL_ATTR_NAME = *lockattrname
 			) {
-			*rootCollection = *row.META_COLL_ATTR_VALUE;
-			writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
-			*locks = cons(*rootCollection, *locks);
+				*rootCollection = *row.META_COLL_ATTR_VALUE;
+				writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
+				*locks = cons(*rootCollection, *locks);
 		}
 	}
 }

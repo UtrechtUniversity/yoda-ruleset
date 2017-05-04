@@ -49,7 +49,7 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		iiAddActionLogRecord(*path, "submit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
-		iiAddActionLogRecord(*path, "submit");
+		iiAddActionLogRecord(*path, "unsubmit");
 		succeed;
 	}
 }
@@ -95,18 +95,25 @@ iiFolderUnsubmit(*folder) {
 }
 
 # \brief iiAddActionLogRecord
-iiAddActionLogRecord(*path, *action) {
+iiAddActionLogRecord(*folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
-	*date = timestrf(datetime(int(*timestamp)), "%F");
+	*date = timestrf(datetime(int(*timestamp)), "%F %H:%M");
 	*actor = uuClientFullName;
-	*json_str = "[]";
-	msi_json_arrayops(*json_str, *date, "add", *size);
-	msi_json_arrayops(*json_str, *action, "add", *size);
-	msi_json_arrayops(*json_str, *actor, "add", *size);
+	*json_str = "[\"*date\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
-	msiAssociateKeyValuePairsToObj(*kvp, *path, "-C", *status);
+	msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 }
 
+# \brief iiActionLog
+iiActionLog(*folder, *result) {
+	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+	*result = "[]";
+	*size = 0;
+	foreach(*row in SELECT order(META_COLL_ATTR_VALUE) WHERE META_COLL_ATTR_NAME = *actionLog AND COLL_NAME = *folder) {
+		*logRecord = *row.META_COLL_ATTR_VALUE;
+		msi_json_arrayops(*result, *logRecord, "add", *size);
+	}
+}
 
 # \brief iiFolderLockChange
 # \param[in] rootCollection 	The COLL_NAME of the collection the dataset resides in
