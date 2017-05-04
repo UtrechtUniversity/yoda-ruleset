@@ -4,6 +4,32 @@
 # \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
+
+#  FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
+
+# /brief iiFrontEndUnsubmitFolder
+# /param[in]  *folder           -folder to be 'unsubmitted'
+# /param[out] *data             -return actuual requested data if applicable
+# /param[out] *status           -return status to frontend
+# /param[out] *statusInfo       -return specific information regarding *status
+
+iiFrontEndFolderUnsubmit(*path, *data, *status, *statusInfo)
+{
+        *status = UUFRONTEND_SUCCESS;
+        *statusInfo = 'All went well!';
+
+        iiFolderUnsubmit(*path, *error, *statusInfo);
+
+        if (*error!=0) { # to be differentiated
+                *status = UUFRONTEND_UNRECOVERABLE;
+        }
+        writeLine('serverLog', *status);
+        writeLine('serverLog', *statusInfo);
+}
+
+
+#----------------------------------------------- END OF FRONTEND FUNCTIONS-----------------
+
 # \brief iiFolderStatus
 # \param[in]  folder	    Path of folder
 # \param[out] folderstatus  Current status of folder
@@ -114,13 +140,28 @@ iiFolderSubmit(*folder) {
 
 # \brief iiFolderUnsubmit
 # \param[in] folder	path of folder to submit to vault 
-iiFolderUnsubmit(*folder) {
+
+
+# \brief iiFolderUnsubmit
+# \param[in] *folder            - path of folder to unsubmit when set saving to vault
+# \param[out] *status           - Internal status code
+# \param[out] *statusInfo       - Explanatory info when something is wrong for frontend
+iiFolderUnsubmit(*folder, *status, *statusInfo) {
+
+	# iiFolderUnsubmit(*folder) {
+
+	*status = 0;
+	*statusInfo = '';
+
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
+
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		writeLine("stdout", "iiFolderLock: Failed");
-	}
+                *status = -1;
+                *statusInfo = 'Something went wrong while removing submitted status. (*err)';
+        }
 }
 
 # \brief iiAddActionLogRecord
