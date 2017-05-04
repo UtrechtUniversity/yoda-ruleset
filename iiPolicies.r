@@ -178,7 +178,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			succeed;
 		}
 
-		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
+		if (*attributeName == IISTATUSATTRNAME) {
 			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
 			if (*allowed) {
