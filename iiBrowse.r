@@ -95,17 +95,6 @@ iiCollectionDetails(*path, *result) {
 
 
 
-	iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
-	*kvp.dircount = *dircount;
-	*kvp.totalSize = *totalSize;
-	*kvp.filecount = *filecount;
-	*kvp.content_modify_time = *modified;
-
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
-	uuKvpList2JSON(*kvpList, *orgMetadata_json, *size);
-
-	*kvp.orgMetadata = *orgMetadata_json;
-
 	# The following information is only  applicable inside research groups.
 	if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
 		*kvp.userMetadata = "true";
@@ -118,18 +107,21 @@ iiCollectionDetails(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-		*orgStatus = FOLDER;
-		foreach(*metadataKvp in *kvpList) {
+		iiColle(*path, UUORGMETADATAPREFIX, false, *metadataKvpList);
+		*folderStatus = FOLDER;
+		foreach(*metadataKvp in *metadataKvpList) {
 			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
-				*orgStatus = *metadataKvp.attrValue;
+				*folderStatus = *metadataKvp.attrValue;
 				break;
 			}
 		}
-		*kvp.folderStatus = *orgStatus;
+		*kvp.folderStatus = *folderStatus;
 
 		*lockFound = "no";
+		*lockCount = 0;
 		foreach(*metadataKvp in *kvpList) {
 			if (*metadataKvp.attrName == IILOCKATTRNAME) {
+				*lockCount = *lockCount + 1;
 				*rootCollection = *metadataKvp.attrValue;
 				*kvp.lockRootCollection = *rootCollection;
 				if (*rootCollection == *path) {
@@ -150,6 +142,7 @@ iiCollectionDetails(*path, *result) {
 			}
 		}
 		*kvp.lockFound = *lockFound;
+		*kvp.lockCount = str(*lockCount);
 
 	}
 
