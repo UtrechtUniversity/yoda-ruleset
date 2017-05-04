@@ -21,7 +21,7 @@ IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
 # \constant IIFORMELEMENTSCOLLECTION
 IIFORMELEMENTSCOLLECTION = UUSYSTEMCOLLECTION ++ "/formelements"
 
-# \constant IIXSDDEFAULTNAME	Name of the fallback default xsd for ilab
+# \constant IIXSDDEFAULTNAME Name of the fallback default xsd for ilab
 IIXSDDEFAULTNAME = "default.xsd"
 
 # \constant IIFORMELEMENTSDEFAULTNAME

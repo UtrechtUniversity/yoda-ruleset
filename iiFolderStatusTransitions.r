@@ -28,7 +28,7 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		} else {
 			iiAddActionLogRecord(*path, "lock");
 		}
-	} else if (*currentStatus == LOCKED && (*newStatus == FOLDER || *newStatus == "")) {
+	} else if (*currentStatus == LOCKED && (*newStatus == FOLDER)) {
 		iiFolderLockChange(*path, false, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
@@ -37,15 +37,32 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 			uuRemoveAVUs(*path, *actionLog);
 		}
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
-		# protect the folder.
+		*xmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
+		*zone = hd(split(triml(*path, "/"), "/"));
+		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
+			failmsg(-11110000, "Rollback needed");
+		}
+
+		# lock the folder.
 		iiFolderLockChange(*path, true, *status);
+
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
 		} else {
 			iiAddActionLogRecord(*path, "submit");
 		}
 	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
-		# nothing to do
+		*xmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
+		*zone = hd(split(triml(*path, "/"), "/"));
+		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
+			failmsg(-11110000, "Rollback needed");
+		}
 		iiAddActionLogRecord(*path, "submit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
@@ -59,7 +76,10 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 iiFolderLock(*folder) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+	}
 }
 
 # \brief iiFolderUnlock
@@ -73,7 +93,10 @@ iiFolderUnlock(*folder) {
 	if (*currentStatus != FOLDER) {
 		*status_str = *attrName ++ "=" ++ *currentStatus;
 		msiString2KeyValPair(*status_str, *statuskvp);
-		msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C");	
+		*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
+		if (*err < 0) {
+			writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+		}
 	}
 }
 
@@ -82,7 +105,10 @@ iiFolderUnlock(*folder) {
 iiFolderSubmit(*folder) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+	}
 }
 
 
@@ -91,7 +117,10 @@ iiFolderSubmit(*folder) {
 iiFolderUnsubmit(*folder) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		writeLine("stdout", "iiFolderLock: Failed");
+	}
 }
 
 # \brief iiAddActionLogRecord

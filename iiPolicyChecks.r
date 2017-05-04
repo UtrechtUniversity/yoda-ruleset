@@ -49,7 +49,6 @@ iiGetLocks(*objPath, *locks) {
 					  AND META_DATA_ATTR_NAME = *lockattrname
 			) {
 				*rootCollection= *row.META_DATA_ATTR_VALUE;
-				writeLine("serverLog", "iiGetLocks: *objPath -> *rootCollection");
 				*locks = cons(*rootCollection, *locks);
 			}
 	} else {
@@ -58,7 +57,6 @@ iiGetLocks(*objPath, *locks) {
 					  AND META_COLL_ATTR_NAME = *lockattrname
 			) {
 				*rootCollection = *row.META_COLL_ATTR_VALUE;
-				writeLine("serverLog", "iiGetLocks: *objPath -> *lockName=*rootCollection [valid=*valid]");
 				*locks = cons(*rootCollection, *locks);
 		}
 	}
