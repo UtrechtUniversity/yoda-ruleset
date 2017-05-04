@@ -107,7 +107,7 @@ iiCollectionDetails(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-		iiColle(*path, UUORGMETADATAPREFIX, false, *metadataKvpList);
+		iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *metadataKvpList);
 		*folderStatus = FOLDER;
 		foreach(*metadataKvp in *metadataKvpList) {
 			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
