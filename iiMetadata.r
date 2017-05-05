@@ -104,11 +104,11 @@ iiPrepareMetadataForm(*path, *result) {
 	}
 	
 	
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
+	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
 
 	*orgStatus = FOLDER;
 	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName == "status") {
+		if (*metadataKvp.attrName == IISTATUSATTRNAME) {
 			*orgStatus = *metadataKvp.attrValue;
 			break;
 		}
@@ -117,7 +117,7 @@ iiPrepareMetadataForm(*path, *result) {
 
 	*lockFound = "no";
 	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName like "lock_*") {
+		if (*metadataKvp.attrName == IILOCKATTRNAME) {
 			*rootCollection = *metadataKvp.attrValue;
 			if (*rootCollection == *path) {
 				*lockFound = "here";
@@ -159,7 +159,7 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
 		# check for locks on metadataXml
-		iiDataObjectMetadataKvpList(*path, UUORGMETADATAPREFIX ++ "lock_", true, *metadataXmlLocks);
+		iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
 		uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
 		*kvp.metadataXmlLocks = *json_str;	
 	}	
