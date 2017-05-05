@@ -173,11 +173,6 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
-		}
-
 		if (*attributeName == IISTATUSATTRNAME) {
 			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
