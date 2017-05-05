@@ -28,13 +28,13 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		} else {
 			iiAddActionLogRecord(*path, "lock");
 		}
-	} else if (*currentStatus == LOCKED && (*newStatus == FOLDER)) {
+	} else if (*currentStatus == LOCKED && *newStatus == FOLDER) {
 		iiFolderLockChange(*path, false, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
 		} else {
 			*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
-			uuRemoveAVUs(*path, *actionLog);
+			iiRemoveAVUs(*path, *actionLog);
 		}
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
 		*xmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;

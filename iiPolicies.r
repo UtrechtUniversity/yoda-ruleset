@@ -184,7 +184,12 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			if (*allowed) {
 				# This prevents illegal status transitions.	
 				iiFolderStatus(*itemName, *currentStatus);
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *attributeValue));
+				if (*option == "rm") {
+					*newStatus = FOLDER;
+				} else {
+					*newStatus = *attributeValue;
+				}
+				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Perhaps a rollback is needed
 					*allowed = false;
@@ -228,7 +233,8 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus,*attributeValue));
+				*newStatus = triml(*newAttributeValue, "v:");
+				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Rollback
 					*allowed = false;
