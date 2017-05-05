@@ -168,6 +168,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 iiAddActionLogRecord(*folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
 	*actor = uuClientFullName;
+	writeLine("serverLog", "iiAddActionLogRecord: *actor has peformed *action action on *folder");
 	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
 	msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
