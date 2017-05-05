@@ -175,7 +175,12 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 
 		if (*attributeName == IISTATUSATTRNAME) {
 			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+			uuGetUserType(uuClientFullName, *userType);
+			if (*userType == "rodsadmin") {
+				*allowed = true;
+			} else {	
+				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+			}
 			if (*allowed) {
 				# This prevents illegal status transitions.	
 				iiFolderStatus(*itemName, *currentStatus);
@@ -219,13 +224,15 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
-		}
+	
 
 		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
+			uuGetUserType(uuClientFullName, *userType);
+			if (*userType == "rodsadmin") {
+				*allowed = true;
+			} else {
+				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
+			}
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
 				*newStatus = triml(*newAttributeValue, "v:");
