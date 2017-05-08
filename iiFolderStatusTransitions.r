@@ -45,7 +45,7 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-11110000, "Rollback needed");
+			failmsg(-1110000, "Rollback needed");
 		}
 
 		# lock the folder.
@@ -63,7 +63,7 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-11110000, "Rollback needed");
+			failmsg(-1110000, "Rollback needed");
 		}
 		iiAddActionLogRecord(*path, "submit");
 		succeed;

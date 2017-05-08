@@ -33,9 +33,6 @@ IIMETADATAXMLNAME = "yoda-metadata.xml"
 # \constant IIXSLDEFAULTNAME
 IIXSLDEFAULTNAME = "default.xsl"
 
-# \constant IIVALIDLOCKS
-IIVALIDLOCKS = list("protect", "submit", "tovault");
-
 # \constant IILOCKATTRNAME
 IILOCKATTRNAME = UUORGMETADATAPREFIX ++ "lock"
 

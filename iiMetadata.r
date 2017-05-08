@@ -46,13 +46,13 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 	*isfound = false;
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	foreach(*row in
-	       	SELECT USER_GROUP_NAME
+	       	SELECT USER_NAME
 	       	WHERE COLL_NAME = *metadataxml_coll
 	          AND DATA_NAME = *metadataxml_basename
-	          AND USER_GROUP_NAME like "research-%"
+	          AND USER_NAME like "research-%"
 		  ) {
 		if(!*isfound) {
-			*groupName = *row.USER_GROUP_NAME;
+			*groupName = *row.USER_NAME;
 			*isfound = true;
 	 	} else {
 			# Too many query results. More than one group associated with file.
