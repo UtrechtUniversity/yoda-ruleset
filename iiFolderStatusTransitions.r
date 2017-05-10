@@ -79,7 +79,7 @@ iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);
 			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
 				iiAddActionLogRecord(*actor, *folder, "accept");
-				succceed;
+				succeed;
 			} else {
 				writeLine("serverLog", "iiFolderTransition: *folder has a datamanager, but *actor is not one");
 				failmsg(-1110001, "Only a datamanager is allowed to accept a datapackage for the vault");
