@@ -96,7 +96,7 @@ iiCollectionDetails(*path, *result) {
 
 
 	# The following information is only  applicable inside research groups.
-	if (*path like regex "/[^/]/home/" ++ IIGROUPPREFIX ++ ".*") {
+	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*kvp.userMetadata = "true";
 		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 		*kvp.groupName = *groupName;
