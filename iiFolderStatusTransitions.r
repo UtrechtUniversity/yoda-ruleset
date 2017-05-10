@@ -19,28 +19,29 @@ iiFolderStatus(*folder, *folderstatus) {
 }
 
 # \brief iiFolderTransition    Dispatch rules based on status transition
-# \param[in] path              Path of folder
+# \param[in] actor		user name of actor
+# \param[in] folder              Path of folder
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
-iiFolderTransition(*path, *currentStatus, *newStatus) {
+iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
-		iiFolderLockChange(*path, true, *status);
+		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
 		} else {
-			iiAddActionLogRecord(*path, "lock");
+			iiAddActionLogRecord(*actor, *folder, "lock");
 		}
 	} else if (*currentStatus == LOCKED && *newStatus == FOLDER) {
-		iiFolderLockChange(*path, false, *status);
+		iiFolderLockChange(*folder, false, *status);
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
 		} else {
 			*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
-			iiRemoveAVUs(*path, *actionLog);
+			iiRemoveAVUs(*folder, *actionLog);
 		}
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
-		*xmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*path, "/"), "/"));
+		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
+		*zone = hd(split(triml(*folder, "/"), "/"));
 		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
@@ -49,27 +50,45 @@ iiFolderTransition(*path, *currentStatus, *newStatus) {
 		}
 
 		# lock the folder.
-		iiFolderLockChange(*path, true, *status);
+		iiFolderLockChange(*folder, true, *status);
 
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
 		} else {
-			iiAddActionLogRecord(*path, "submit");
+			iiAddActionLogRecord(*actor, *folder, "submit");
 		}
 	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
-		*xmlpath = *path ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*path, "/"), "/"));
+		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
+		*zone = hd(split(triml(*folder, "/"), "/"));
 		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
 			failmsg(-1110000, "Rollback needed");
 		}
-		iiAddActionLogRecord(*path, "submit");
+		iiAddActionLogRecord(*actor, *folder, "submit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
-		iiAddActionLogRecord(*path, "unsubmit");
+		iiAddActionLogRecord(*actor, *folder, "unsubmit");
 		succeed;
+	} else if (*currentStatus == SUBMITTED && *newStatus == ACCEPTED) {
+		iiCollectionGroupName(*folder, *groupName);
+		uuGroupGetCategory(*groupName, *category, *subcategory);
+		uuGroupExists("datamanager-*category", *datamanagerExists);
+		if(*datamanagerExists) {
+			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+				iiAddActionLogRecord(*actor, *folder, "accept");
+				succceed;
+			} else {
+				writeLine("serverLog", "iiFolderTransition: *folder has a datamanager, but *actor is not one");
+				failmsg(-1110001, "Only a datamanager is allowed to accept a datapackage for the vault");
+			}
+		} else {
+			iiAddActionLogRecord(*actor, *folder, "accept");
+			succeed;
+		}
+		
 	}
 }
 
@@ -113,11 +132,6 @@ iiFolderSubmit(*folder) {
 	}
 }
 
-
-# \brief iiFolderUnsubmit
-# \param[in] folder	path of folder to submit to vault 
-
-
 # \brief iiFolderUnsubmit
 # \param[in] *folder            - path of folder to unsubmit when set saving to vault
 iiFolderUnsubmit(*folder) {
@@ -130,10 +144,21 @@ iiFolderUnsubmit(*folder) {
         }
 }
 
+# \brief iiFolderAccept    accept a folder for the vault
+# \param[in] folder
+iiFolderAccept(*folder) {
+	*status_str = IISTATUSATTRNAME ++ "=" ++ ACCEPTED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", "iiFolderAccept: Failed - (*err, *msg)");
+	}
+}
+
+
 # \brief iiAddActionLogRecord
-iiAddActionLogRecord(*folder, *action) {
+iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
-	*actor = uuClientFullName;
 	writeLine("serverLog", "iiAddActionLogRecord: *actor has peformed *action action on *folder");
 	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);

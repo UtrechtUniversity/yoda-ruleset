@@ -189,7 +189,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 				} else {
 					*newStatus = *attributeValue;
 				}
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *newStatus));
+				*err = errorcode(iiFolderTransition(uuClientFullName, *itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Perhaps a rollback is needed
 					*allowed = false;
