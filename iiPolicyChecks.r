@@ -354,7 +354,7 @@ iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, 
 # \param[in] path
 # \param[out] allowed
 # \param[out] reason
-iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowed, *reason) {
+iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
 	if (*attributeName != IISTATUSATTRNAME) {
@@ -389,8 +389,22 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowe
 	if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
 		*reason = "Illegal status transition. *transitionFrom -> *transitionTo";
 	} else {
+
 		*allowed = true;
 		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
+
+		if (*transitionTo == ACCEPTED) {
+			iiCollectionGroupName(*path, *groupName);	
+			uuGroupGetCategory(*groupName, *category, *subcategory);
+			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+				allowed = true;
+				*reason = "Folder is accepted by *actor from datamanager-*category";
+			} else {
+				*allowed = false;
+				*reason = "Only a datamanager is allowed to accept a folder to the vault";
+			}
+		}
 
 		iiGetLocks(*path, *locks);
 		if (size(*locks) > 0) {
@@ -412,7 +426,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *allowe
 # \param[in] path
 # \param[out] allowed
 # \param[out] reason
-iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason) {
+iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason) {
 	writeLine("serverLog", "iiCanModifyFolderStatus:*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue");
 	*allowed = false;
 	*reason = "Unknown error";
@@ -424,6 +438,19 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 		} else {
 			*allowed = true;
 			*reason = "Legal status transition. *transitionFrom -> *transitionTo";
+
+			if (*transitionTo == ACCEPTED) {
+				iiCollectionGroupName(*path, *groupName);	
+				uuGroupGetCategory(*groupName, *category, *subcategory);
+				uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
+				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+					allowed = true;
+					*reason = "Folder is accepted by *actor from datamanager-*category";
+				} else {
+					*allowed = false;
+					*reason = "Only a datamanager is allowed to accept a folder to the vault";
+				}
+			}
 
 			iiGetLocks(*path, *locks);
 			if (size(*locks) > 0) {

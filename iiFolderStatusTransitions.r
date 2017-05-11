@@ -42,7 +42,13 @@ iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
 		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
 		*zone = hd(split(triml(*folder, "/"), "/"));
-		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
+		if (*err < 0) { 
+			if (*err == -808000) {
+				failmsg(-808000, "Folder submitted without metadata");
+			}
+			fail(*err);
+		}
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
@@ -72,23 +78,8 @@ iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 		iiAddActionLogRecord(*actor, *folder, "unsubmit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == ACCEPTED) {
-		iiCollectionGroupName(*folder, *groupName);
-		uuGroupGetCategory(*groupName, *category, *subcategory);
-		uuGroupExists("datamanager-*category", *datamanagerExists);
-		if(*datamanagerExists) {
-			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);
-			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-				iiAddActionLogRecord(*actor, *folder, "accept");
-				succeed;
-			} else {
-				writeLine("serverLog", "iiFolderTransition: *folder has a datamanager, but *actor is not one");
-				failmsg(-1110001, "Only a datamanager is allowed to accept a datapackage for the vault");
-			}
-		} else {
-			iiAddActionLogRecord(*actor, *folder, "accept");
-			succeed;
-		}
-		
+		iiAddActionLogRecord(*actor, *folder, "accept");
+		succeed;
 	}
 }
 
@@ -147,22 +138,32 @@ iiFolderUnsubmit(*folder) {
 # \brief iiFolderAccept    accept a folder for the vault
 # \param[in] folder
 iiFolderAccept(*folder) {
+	iiCollectionGroupName(*folder, *groupName);
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*aclKv.actor = uuClientFullName;
+	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
 	*status_str = IISTATUSATTRNAME ++ "=" ++ ACCEPTED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	if (*err < 0) {
-		writeLine("serverLog", "iiFolderAccept: Failed - (*err, *msg)");
-	}
+	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
 }
 
 
 # \brief iiAddActionLogRecord
 iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
-	writeLine("serverLog", "iiAddActionLogRecord: *actor has peformed *action action on *folder");
+	writeLine("serverLog", "iiAddActionLogRecord: *actor has performed *action action on *folder");
 	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
-	msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
+	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
+}
+
+# \brief iiAddActionLogRecord
+iiSudoAddActionLogRecord(*actor, *folder, *action) {
+	msiGetIcatTime(*timestamp, "icat");
+	writeLine("serverLog", "iiSudoAddActionLogRecord: *actor has performed *action action on *folder");
+	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
+        *status = errorcode(msiSudoObjMetaAdd(*folder, "-c", UUORGMETADATAPREFIX ++ "action_log" , *json_str, "", ""));
 }
 
 # \brief iiActionLog
