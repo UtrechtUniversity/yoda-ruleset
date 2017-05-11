@@ -256,6 +256,37 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 }
 
+
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		if (*attributeValue == SUBMITTED) {
+			iiCollectionGroupName(*itemName, *groupName);
+			uuGroupGetCategory(*groupName, *category, *subcategory);
+			uuGroupExists("datamanager-*category", *datamanagerExists);
+			if (!*datamanagerExists) {
+				msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
+				msiAssociateKeyValuePairsToObj(*kvp, *itemName, "-C");
+			}
+		}
+	}
+}
+
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		if (*newAttributeValue == SUBMITTED) {
+			iiCollectionGroupName(*itemName, *groupName);
+			uuGroupGetCategory(*groupName, *category, *subcategory);
+			uuGroupExists("datamanager-*category", *datamanagerExists);
+			if (!*datamanagerExists) {
+				msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
+				msiAssociateKeyValuePairToObj(*kvp, *itemName, "-C");
+			}
+		}
+
+	}
+}
+
+
 # \brief uuResourceModifiedPostResearch   	Policy to import metadata when a IIMETADATAXMLNAME file appears
 # \param[in] *pluginInstanceName		A copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
