@@ -53,11 +53,10 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *modified = str(max(*data_modified, *coll_modified));
 }
 
-# \brief iiCollectionGroupNameAndUserType
+# \brief iiCollectionGroupName    return the name of the group a collection belongs to
 # \param[in] path
 # \param[out] groupName
-# \param[out] userType
-iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
+iiCollectionGroupName(*path, *groupName) {
 	*isfound = false;
 	*groupName = "";
 	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
@@ -76,7 +75,16 @@ iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 		# No results found. Not a group folder
 		failmsg(-808000, "*path does not belong to a research or intake group or is not available to current user");
 	}
+}
+
+# \brief iiCollectionGroupNameAndUserType
+# \param[in] path
+# \param[out] groupName
+# \param[out] userType
+# \param[out] isDatamanager
+iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 	
+	iiCollectionGroupName(*path, *groupName); 
 	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
 
 

@@ -175,11 +175,12 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 
 		if (*attributeName == IISTATUSATTRNAME) {
 			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
-			uuGetUserType(uuClientFullName, *userType);
+			*actor = uuClientFullName;
+			uuGetUserType(*actor, *userType);
 			if (*userType == "rodsadmin") {
 				*allowed = true;
 			} else {	
-				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
+				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
 			}
 			if (*allowed) {
 				# This prevents illegal status transitions.	
@@ -189,7 +190,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 				} else {
 					*newStatus = *attributeValue;
 				}
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *newStatus));
+				*err = errorcode(iiFolderTransition(uuClientFullName, *itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Perhaps a rollback is needed
 					*allowed = false;
@@ -226,12 +227,13 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 	
 
-		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			uuGetUserType(uuClientFullName, *userType);
+		if (*attributeName == IISTATUSATTRNAME) {
+			*actor = uuClientFullName;
+			uuGetUserType(*actor, *userType);
 			if (*userType == "rodsadmin") {
 				*allowed = true;
 			} else {
-				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
+				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason); 
 			}
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
