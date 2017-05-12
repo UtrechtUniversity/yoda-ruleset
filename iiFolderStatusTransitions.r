@@ -83,7 +83,7 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 # \param[in] newStatus
 iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
 	if (*newStatus == SUBMITTED) {
-		iiAddActionLogRecord(*actor, *folder, *newStatus);
+		iiAddActionLogRecord(*actor, *folder, "submitted");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
@@ -92,16 +92,25 @@ iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
 	} else if (*newStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
-			iiAddActionLogRecord(*actor, *folder, *newStatus);
+			iiAddActionLogRecord(*actor, *folder, "accept");
 		} else {
-			iiAddActionLogRecord("system", *folder, *newStatus);
+			iiAddActionLogRecord("system", *folder, "accept");
 		}
 	} else if (*newStatus == FOLDER) {
 		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 		iiRemoveAVUs(*folder, *actionLog);
+	} else if (*newStatus == LOCKED) {
+		iiActionLog(*folder, *size, *actionLog);
+		if (*size > 0) {
+			iiAddActionLogRecord(*actor, *folder, "unsubmit");
+		} else {
+			iiAddActionLogRecord(*actor, *folder, "lock");
+		}
+	} else if (*newStatus == REJECTED) {
+		iiAddActionLogRecord(*actor, *folder, "reject");
 	} else {
-		iiAddActionLogRecord(*actor, *folder, *newStatus);
-	}	
+		writeLine("serverLog", "iiPostFolderStatusTransition: No Action log yet for *newStatus");
+	}
 }
 
 # \brief iiFolderLock
@@ -192,7 +201,7 @@ iiAddActionLogRecord(*actor, *folder, *action) {
 }
 
 # \brief iiActionLog
-iiActionLog(*folder, *result) {
+iiActionLog(*folder, *size, *result) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 	*result = "[]";
 	*size = 0;
