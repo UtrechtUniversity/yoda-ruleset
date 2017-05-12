@@ -4,8 +4,6 @@
 # \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
-
-
 # \brief iiFolderStatus
 # \param[in]  folder	    Path of folder
 # \param[out] folderstatus  Current status of folder
@@ -18,28 +16,28 @@ iiFolderStatus(*folder, *folderstatus) {
 	}
 }
 
-# \brief iiFolderTransition    Dispatch rules based on status transition
-# \param[in] actor		user name of actor
+# \brief iiFolderDatamanagerExists    Check if a datamanager group exists for the category that the group of a folder belongs to
+# \param[in] folder
+# \param[out] datamananagerExists
+iiFolderDatamanagerExists(*folder, *datamanagerExists) {
+	iiCollectionGroupName(*folder, *groupName);
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	uuGroupExists("datamanager-*category", *datamanagerExists);
+}
+
+# \brief iiPreFolderStatusTransition  Actions taken before status transition    
 # \param[in] folder              Path of folder
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
-iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
+iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
+		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
-		if (*status != 0) {
-			failmsg(-1110000, "Rollback needed");
-		} else {
-			iiAddActionLogRecord(*actor, *folder, "lock");
-		}
 	} else if (*currentStatus == LOCKED && *newStatus == FOLDER) {
+		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
-		if (*status != 0) {
-			failmsg(-1110000, "Rollback needed");
-		} else {
-			*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
-			iiRemoveAVUs(*folder, *actionLog);
-		}
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
+		# Check if the yoda-metadata.xml conforms to the XSD
 		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
 		*zone = hd(split(triml(*folder, "/"), "/"));
 		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
@@ -60,8 +58,6 @@ iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 
 		if (*status != 0) {
 			failmsg(-1110000, "Rollback needed");
-		} else {
-			iiAddActionLogRecord(*actor, *folder, "submit");
 		}
 	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
 		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
@@ -72,15 +68,40 @@ iiFolderTransition(*actor, *folder, *currentStatus, *newStatus) {
 			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
 			failmsg(-1110000, "Rollback needed");
 		}
-		iiAddActionLogRecord(*actor, *folder, "submit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
-		iiAddActionLogRecord(*actor, *folder, "unsubmit");
 		succeed;
 	} else if (*currentStatus == SUBMITTED && *newStatus == ACCEPTED) {
-		iiAddActionLogRecord(*actor, *folder, "accept");
 		succeed;
 	}
+}
+
+
+# \brief iiPostFolderStatusTransition   Processing after Status had changed
+# \param[in] folder
+# \param[in] actor
+# \param[in] newStatus
+iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
+	if (*newStatus == SUBMITTED) {
+		iiAddActionLogRecord(*actor, *folder, *newStatus);
+		iiFolderDatamanagerExists(*folder, *datamanagerExists);
+		if (!*datamanagerExists) {
+			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
+			msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
+		}
+	} else if (*newStatus == ACCEPTED) {
+		iiFolderDatamanagerExists(*folder, *datamanagerExists);
+		if (*datamanagerExists) {
+			iiAddActionLogRecord(*actor, *folder, *newStatus);
+		} else {
+			iiAddActionLogRecord("system", *folder, *newStatus);
+		}
+	} else if (*newStatus == FOLDER) {
+		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+		iiRemoveAVUs(*folder, *actionLog);
+	} else {
+		iiAddActionLogRecord(*actor, *folder, *newStatus);
+	}	
 }
 
 # \brief iiFolderLock
@@ -152,18 +173,10 @@ iiFolderAccept(*folder) {
 # \brief iiAddActionLogRecord
 iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
-	writeLine("serverLog", "iiAddActionLogRecord: *actor has performed *action action on *folder");
+	writeLine("serverLog", "iiAddActionLogRecord: *actor has *action *folder");
 	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
-}
-
-# \brief iiAddActionLogRecord
-iiSudoAddActionLogRecord(*actor, *folder, *action) {
-	msiGetIcatTime(*timestamp, "icat");
-	writeLine("serverLog", "iiSudoAddActionLogRecord: *actor has performed *action action on *folder");
-	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
-        *status = errorcode(msiSudoObjMetaAdd(*folder, "-c", UUORGMETADATAPREFIX ++ "action_log" , *json_str, "", ""));
 }
 
 # \brief iiActionLog
