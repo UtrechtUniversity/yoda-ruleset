@@ -445,7 +445,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 			*allowed = true;
 			*reason = "Legal status transition. *transitionFrom -> *transitionTo";
 
-			if (*transitionTo == ACCEPTED) {
+			if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
 				iiCollectionGroupName(*path, *groupName);	
 				uuGroupGetCategory(*groupName, *category, *subcategory);
 				uuGroupExists("datamanager-*category", *datamanagerExists);
@@ -453,10 +453,10 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 					uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
 					if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
 						allowed = true;
-						*reason = "Folder is accepted by *actor from datamanager-*category";
+						*reason = "Folder is *transitionTo by *actor from datamanager-*category";
 					} else {
 						*allowed = false;
-						*reason = "Only a datamanager is allowed to accept a folder to the vault";
+						*reason = "Only a member of datamanager-*category is allowed to accept or reject a submitted folder";
 					}
 				} else {
 					*allowed = true;
