@@ -259,7 +259,12 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
 	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		iiPostFolderStatusTransition(*itemName, uuClientFullName, *attributeValue);
+		if (*option == "rm") {
+		       	*newStatus = FOLDER;
+	       	} else {
+		       	*newStatus =  *attributeValue;
+	       	};
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 }
 
