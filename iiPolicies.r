@@ -190,7 +190,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 				} else {
 					*newStatus = *attributeValue;
 				}
-				*err = errorcode(iiFolderTransition(uuClientFullName, *itemName, *currentStatus, *newStatus));
+				*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Perhaps a rollback is needed
 					*allowed = false;
@@ -238,7 +238,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			if (*allowed) {
 				iiFolderStatus(*itemName, *currentStatus);
 				*newStatus = triml(*newAttributeValue, "v:");
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *newStatus));
+				*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
 				if (*err < 0) {
 					# Rollback
 					*allowed = false;
@@ -255,6 +255,21 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 }
+
+
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *attributeValue);
+	}
+}
+
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		*newStatus = triml(*newAttributeValue, "v:");
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
+	}
+}
+
 
 # \brief uuResourceModifiedPostResearch   	Policy to import metadata when a IIMETADATAXMLNAME file appears
 # \param[in] *pluginInstanceName		A copy of $pluginInstanceName

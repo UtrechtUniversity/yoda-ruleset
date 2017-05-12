@@ -396,13 +396,19 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 		if (*transitionTo == ACCEPTED) {
 			iiCollectionGroupName(*path, *groupName);	
 			uuGroupGetCategory(*groupName, *category, *subcategory);
-			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
-			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-				allowed = true;
-				*reason = "Folder is accepted by *actor from datamanager-*category";
+			uuGroupExists("datamanager-*category", *datamanagerExists);
+			if (*datamanagerExists) {
+				uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
+				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+					allowed = true;
+					*reason = "Folder is accepted by *actor from datamanager-*category";
+				} else {
+					*allowed = false;
+					*reason = "Only a datamanager is allowed to accept a folder to the vault";
+				}
 			} else {
-				*allowed = false;
-				*reason = "Only a datamanager is allowed to accept a folder to the vault";
+				*allowed = true;
+				*reason = "When no datamanager group exists, submitted folders are automatically accepted";
 			}
 		}
 
@@ -442,13 +448,19 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 			if (*transitionTo == ACCEPTED) {
 				iiCollectionGroupName(*path, *groupName);	
 				uuGroupGetCategory(*groupName, *category, *subcategory);
-				uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
-				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-					allowed = true;
-					*reason = "Folder is accepted by *actor from datamanager-*category";
+				uuGroupExists("datamanager-*category", *datamanagerExists);
+				if (*datamanagerExists) {
+					uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
+					if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+						allowed = true;
+						*reason = "Folder is accepted by *actor from datamanager-*category";
+					} else {
+						*allowed = false;
+						*reason = "Only a datamanager is allowed to accept a folder to the vault";
+					}
 				} else {
-					*allowed = false;
-					*reason = "Only a datamanager is allowed to accept a folder to the vault";
+					*allowed = true;
+					*reason = "When no datamanager group exists, submitted folders are automatically accepted";
 				}
 			}
 
