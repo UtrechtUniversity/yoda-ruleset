@@ -33,7 +33,7 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
-	} else if (*currentStatus == LOCKED && *newStatus == FOLDER) {
+	} else if ((*currentStatus == LOCKED || *currentStatus == REJECTED) && *newStatus == FOLDER) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
