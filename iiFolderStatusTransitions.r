@@ -169,6 +169,18 @@ iiFolderAccept(*folder) {
 	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
 }
 
+# \brief iiFolderReject    reject a folder for the vault
+# \param[in] folder
+iiFolderReject(*folder) {
+	iiCollectionGroupName(*folder, *groupName);
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*aclKv.actor = uuClientFullName;
+	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
+	*status_str = IISTATUSATTRNAME ++ "=" ++ REJECTED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
+}
 
 # \brief iiAddActionLogRecord
 iiAddActionLogRecord(*actor, *folder, *action) {
