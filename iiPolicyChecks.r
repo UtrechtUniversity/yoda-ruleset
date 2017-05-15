@@ -320,7 +320,7 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 	if (size(*locks) > 0) {
 		if (*itemType == "-C") {
 			foreach(*rootCollection in *locks) {
-				if (strlen(*rootCollection) > strlen(*parent)) {
+				if (strlen(*rootCollection) > strlen(*itemName)) {
 					*allowed = true;
 					*reason = "Lock *lockName found, but starting from *rootCollection";
 				} else {
@@ -463,7 +463,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 					*reason = "When no datamanager group exists, submitted folders are automatically accepted";
 				}
 			}
-
+			
 			iiGetLocks(*path, *locks);
 			if (size(*locks) > 0) {
 				foreach(*rootCollection in *locks) {
@@ -474,6 +474,13 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 					}
 				}
 			}
+			
+			if (*transitionTo == SECURED) {
+				*allowed = false;
+				*reason = "Only a rodsadmin is allowed to secure a folder to the vault";
+			}
+
+
 		}
 	} else {
 		*reason = "*attributeName should not be changed to *newAttributeName";
