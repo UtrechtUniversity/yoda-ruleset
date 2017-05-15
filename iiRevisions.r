@@ -176,6 +176,19 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
         *executeRestoration = false;
 	*statusInfo = '';
 
+ 	*lockFound = false;
+        *attrName = UUORGMETADATAPREFIX ++ 'lock';
+        foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
+               *lockFound = true; # no need to inquire the content of attr_value
+               break;
+        }
+
+        if (*lockFound) {
+ 	       *status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
+               # writeLine('serverLog', '*target is LOCKED');
+               succeed;
+        }
+
         foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
                 if (!*isfound) {
                         *isfound = true;
@@ -260,21 +273,8 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                 }
         }
 
-        # Actual restoration
+        # Actual restoration - perhaps check for locking one more time here? just before the actual copy action?
         if (*executeRestoration) {
-		*lockFound = false;
-		*attrName = UUORGMETADATAPREFIX ++ 'lock';
-		foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
-                        *lockFound = true; # no need to inquire the content of attr_value
-                        break;
-                }
-
-		if (*lockFound) {
-			*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
-			# writeLine('serverLog', '*target is LOCKED');
-			succeed;
-		}
-
                 msiAddKeyValToMspStr("verifyChksum", "", *options);
                 writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
                 *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
