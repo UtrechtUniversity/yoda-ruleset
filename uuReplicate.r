@@ -28,7 +28,7 @@
 uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
    remote("localhost","") {
       delay("<PLUSET>1s</PLUSET><EF>1m DOUBLE UNTIL SUCCESS OR 10 TIMES</EF>") {
-         *options = "rescName=*sourceResource++++destRescName=*targetResource++++verifyChksum=";
+         *options = "rescName=*sourceResource++++destRescName=*targetResource";
          msiDataObjRepl(*object, *options, *status);
       }
    }

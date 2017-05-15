@@ -96,7 +96,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	foreach(*condition in *conditions) {
 		# deconstruct condition into its parts
 		uucondition(*column, *comparison, *expression) =  *condition;
-		writeLine("stdout", "*column, *comparison, *expression");
+		# writeLine("stdout", "*column, *comparison, *expression");
 		msiAddConditionToGenQuery(*column, *comparison, *expression, *GenQInp);
 	}
 
