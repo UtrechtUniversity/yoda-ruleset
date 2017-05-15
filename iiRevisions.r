@@ -202,6 +202,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                 succeed;
         }
 
+
         if (*overwrite == "restore_no_overwrite") {
                 ## Check for presence of file in target directory
                 ## If not present, it can be restored. Otherwise user must decide
@@ -261,6 +262,19 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
 
         # Actual restoration
         if (*executeRestoration) {
+		*lockFound = false;
+		*attrName = UUORGMETADATAPREFIX ++ 'lock';
+		foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
+                        *lockFound = true; # no need to inquire the content of attr_value
+                        break;
+                }
+
+		if (*lockFound) {
+			*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
+			# writeLine('serverLog', '*target is LOCKED');
+			succeed;
+		}
+
                 msiAddKeyValToMspStr("verifyChksum", "", *options);
                 writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
                 *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
