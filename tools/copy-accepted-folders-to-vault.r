@@ -11,8 +11,8 @@ copyToVault {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*folder = *row.COLL_NAME;
-			msiCheckAccess(*folder, "modify object", *hasAccess);
-			if (bool(*hasAccess)) {
+			msiCheckAccess(*folder, "modify object", *result);
+			if (*result == 1) {
 				iiCopyFolderToVault(*folder) ::: nop;
 			} else {
 				msiSetACL("recursive", "admin:write", uuClientFullName, *folder);
