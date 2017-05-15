@@ -33,7 +33,7 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
-	} else if ((*currentStatus == LOCKED || *currentStatus == REJECTED) && *newStatus == FOLDER) {
+	} else if ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
 	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
@@ -190,6 +190,13 @@ iiFolderReject(*folder) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
 }
+
+iiFolderSecure(*folder) {
+	*status_str = IISTATUSATTRNAME ++ "=" ++ SECURED;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+}
+
 
 # \brief iiAddActionLogRecord
 iiAddActionLogRecord(*actor, *folder, *action) {
