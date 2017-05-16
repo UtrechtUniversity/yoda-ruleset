@@ -33,13 +33,16 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 	on (*currentStatus == FOLDER && *newStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
+		if (*status != 0) { fail; }
 	}
 	on ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
+		if (*status != 0) { fail; }
 	}
 	on (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
 		iiFolderLockChange(*folder, true, *status);
+		if (*status != 0) { fail; }
 	}
 	on (true) { 
 		nop;
@@ -95,6 +98,8 @@ iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
 # \brief iiFolderLock
 # \param[in] path of folder to lock
 iiFolderLock(*folder,*status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
@@ -104,7 +109,6 @@ iiFolderLock(*folder,*status, *statusInfo) {
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
-			succeed;
 		} else {
 			*status = "Unrecoverable";
 			*statusInfo = "*err - *msg";
@@ -112,12 +116,13 @@ iiFolderLock(*folder,*status, *statusInfo) {
 	} else {
 		*status = "Success";
 	}
-
 }
 
 # \brief iiFolderUnlock
 # \param[in] folder	path of folder to unlock
 iiFolderUnlock(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
 	iiFolderStatus(*folder, *currentStatus);
 	*status_str = IISTATUSATTRNAME ++ "=" ++ *currentStatus;
 	msiString2KeyValPair(*status_str, *statuskvp);
@@ -139,6 +144,8 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 # \brief iiFolderSubmit
 # \param[in] folder	path of folder to submit to vault 
 iiFolderSubmit(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
 	*status_str = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
@@ -160,6 +167,8 @@ iiFolderSubmit(*folder, *status, *statusInfo) {
 # \brief iiFolderUnsubmit
 # \param[in] *folder            - path of folder to unsubmit when set saving to vault
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
@@ -181,7 +190,8 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 # \brief iiFolderDatamanagerAction    
 # \param[in] folder
 iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
-	*status = "Success";
+	*status = "Unknown";
+	*statusInfo = "";
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";
@@ -215,6 +225,8 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
 		*statusInfo = "*err - *msg"
+	} else if (*status == "Unknown") {
+		*status = "Success";
 	}
 }
 
@@ -229,9 +241,11 @@ iiFolderReject(*folder, *status, *statusInfo) {
 }
 
 iiFolderSecure(*folder) {
-	*status_str = IISTATUSATTRNAME ++ "=" ++ SECURED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+	*status = "Unknown";
+	*statusInfo = "";
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
 }
 
 

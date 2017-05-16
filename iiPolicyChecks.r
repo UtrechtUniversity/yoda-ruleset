@@ -380,7 +380,6 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 
 	iiCanModifyFolderStatus(*path, *transitionFrom, *transitionFrom, *actor, *allowed, *reason); 
 
-	}
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
@@ -411,22 +410,23 @@ iiCanModifyFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *allowe
 	*allowed = false;
 	*reason = "Unknown error";
 	if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
-			*reason = "Illegal status transition from *transitionFrom to *transitionTo";
+			*reason = "Illegal status transition. Current status: *transitionFrom,  new status: *transitionTo";
 	} else {
 		*allowed = true;
 		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
-		if (*transisionTo == SUBMITTED) {
+		if (*transitionTo == SUBMITTED) {
 			*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
 			*zone = hd(split(triml(*folder, "/"), "/"));
 			*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
 			if (*err < 0) { 
 				*allowed = false;
 				*reason = "Folder submitted without metadata.";
-			}
-			*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-			if (*err < 0) {
-				*allowed = false;
-				*reason = "Metadata does not conform to schema.";
+			} else {
+				*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+				if (*err < 0) {
+					*allowed = false;
+					*reason = "Metadata does not conform to schema.";
+				}
 			}
 
 		} else if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
