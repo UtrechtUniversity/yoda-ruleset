@@ -7,12 +7,12 @@
 # \brief iiFolderStatus
 # \param[in]  folder	    Path of folder
 # \param[out] folderstatus  Current status of folder
-iiFolderStatus(*folder, *folderstatus) {
+iiFolderStatus(*folder, *folderStatus) {
 	
-	*folderstatuskey = IISTATUSATTRNAME;
-	*folderstatus = FOLDER;
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderstatuskey) {
-		*folderstatus = *row.META_COLL_ATTR_VALUE;
+	*folderStatusKey = IISTATUSATTRNAME;
+	*folderStatus = FOLDER;
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderStatusKey) {
+		*folderStatus = *row.META_COLL_ATTR_VALUE;
 	}
 }
 
@@ -30,50 +30,21 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
 iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
-	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
+	on (*currentStatus == FOLDER && *newStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
-	} else if ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
+	}
+	on ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
-	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
-		# Check if the yoda-metadata.xml conforms to the XSD
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
-		if (*err < 0) { 
-			if (*err == -808000) {
-				failmsg(-808000, "Folder submitted without metadata");
-			}
-			fail(*err);
-		}
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-1110000, "Rollback needed");
-		}
-
-		# lock the folder.
-		iiFolderLockChange(*folder, true, *status);
-
-		if (*status != 0) {
-			failmsg(-1110000, "Rollback needed");
-		}
-	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-1110000, "Rollback needed");
-		}
-		succeed;
-	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
-		succeed;
-	} else if (*currentStatus == SUBMITTED && *newStatus == ACCEPTED) {
-		succeed;
 	}
+	on (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
+		iiFolderLockChange(*folder, true, *status);
+	}
+	on (true) { 
+		nop;
+	}
+
 }
 
 
@@ -82,34 +53,42 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 # \param[in] actor
 # \param[in] newStatus
 iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
-	if (*newStatus == SUBMITTED) {
-		iiAddActionLogRecord(*actor, *folder, "submitted");
+	on (*newStatus == SUBMITTED) {
+		iiAddActionLogRecord(*actor, *folder, "submit");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
 			msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 		}
-	} else if (*newStatus == ACCEPTED) {
+	}
+	on (*newStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
 			iiAddActionLogRecord(*actor, *folder, "accept");
 		} else {
 			iiAddActionLogRecord("system", *folder, "accept");
 		}
-	} else if (*newStatus == FOLDER) {
+	}
+	on (*newStatus == FOLDER) {
 		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 		iiRemoveAVUs(*folder, *actionLog);
-	} else if (*newStatus == LOCKED) {
+	}
+	on (*newStatus == LOCKED) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
 			iiAddActionLogRecord(*actor, *folder, "unsubmit");
 		} else {
 			iiAddActionLogRecord(*actor, *folder, "lock");
 		}
-	} else if (*newStatus == REJECTED) {
+	}
+	on (*newStatus == REJECTED) {
 		iiAddActionLogRecord(*actor, *folder, "reject");
-	} else {
-		writeLine("serverLog", "iiPostFolderStatusTransition: No Action log yet for *newStatus");
+	}
+	on (*newStatus == SECURED) {
+		iiAddActionLogRecord(*actor, *folder, "secured");
+	}
+	on (true) {
+		nop;
 	}
 }
 
@@ -128,10 +107,7 @@ iiFolderLock(*folder) {
 # \param[in] folder	path of folder to unlock
 iiFolderUnlock(*folder) {
 	*attrName = IISTATUSATTRNAME;
-	*currentStatus = FOLDER;
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *attrName) {
-		*currentStatus = *row.META_COLL_ATTR_VALUE;
-	}
+	iiFolderStatus(*folder, *currentStatus);
 	if (*currentStatus != FOLDER) {
 		*status_str = *attrName ++ "=" ++ *currentStatus;
 		msiString2KeyValPair(*status_str, *statuskvp);
