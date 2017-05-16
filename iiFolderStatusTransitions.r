@@ -94,77 +94,138 @@ iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
 
 # \brief iiFolderLock
 # \param[in] path of folder to lock
-iiFolderLock(*folder) {
+iiFolderLock(*folder,*status, *statusInfo) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
-		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+		iiFolderStatus(*folder, *currentStatus);
+                iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, uuClientFullName, *allowed, *reason); 
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+			succeed;
+		} else {
+			*status = "Unrecoverable";
+			*statusInfo = "*err - *msg";
+		}
+	} else {
+		*status = "Success";
 	}
+
 }
 
 # \brief iiFolderUnlock
 # \param[in] folder	path of folder to unlock
-iiFolderUnlock(*folder) {
-	*attrName = IISTATUSATTRNAME;
+iiFolderUnlock(*folder, *status, *statusInfo) {
 	iiFolderStatus(*folder, *currentStatus);
-	if (*currentStatus != FOLDER) {
-		*status_str = *attrName ++ "=" ++ *currentStatus;
-		msiString2KeyValPair(*status_str, *statuskvp);
-		*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
-		if (*err < 0) {
-			writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+	*status_str = IISTATUSATTRNAME ++ "=" ++ *currentStatus;
+	msiString2KeyValPair(*status_str, *statuskvp);
+	*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
+	if (*err < 0) {
+		iiCanModifyFolderStatus(*folder, *currentStatus, FOLDER, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			*status = "Unrecoverable";
+			*statusInfo = "*err - *msg";
 		}
-	}
+	} else {
+		*status = "Success";
+		}
 }
 
 # \brief iiFolderSubmit
 # \param[in] folder	path of folder to submit to vault 
-iiFolderSubmit(*folder) {
+iiFolderSubmit(*folder, *status, *statusInfo) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
-		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
-	}
+		iiFolderStatus(*folder, *currentStatus);
+		iiCanModifyFolderStatus(*folder, *currentStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+		      *status = "PermissionDenied";
+		      *statusInfo = *reason; 
+		} else {
+			*status = "Unrecoverable";
+			*statusInfo = "*err - *msg";
+	 	}		
+	} else {
+		*status = "Success";
+	}		
 }
 
 # \brief iiFolderUnsubmit
 # \param[in] *folder            - path of folder to unsubmit when set saving to vault
-iiFolderUnsubmit(*folder) {
+iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	
 	if (*err < 0) {
-		writeLine("serverLog", "iiFolderUnsubmit: Failed - (*err, *msg)");
-        }
+		iiFolderStatus(*folder, *currentStatus);
+		iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			*status = "Unrecoverable";
+			*statusInfo = "*err - *msg";
+		}
+        } else {
+		*status = "Success";
+	}
 }
 
-# \brief iiFolderAccept    accept a folder for the vault
+# \brief iiFolderDatamanagerAction    
 # \param[in] folder
-iiFolderAccept(*folder) {
-	iiCollectionGroupName(*folder, *groupName);
+iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
+	*status = "Success";
+	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	if (*err < 0) {
+		*status = "NoResearchGroup";
+		*statusInfo = "Failed to determine research group name of *folder";
+		succeed;
+	}
+	*actor = uuClientFullName;
 	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*aclKv.actor = uuClientFullName;
-	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
-	*status_str = IISTATUSATTRNAME ++ "=" ++ ACCEPTED;
+	*aclKv.actor = *actor;
+	*err = errorcode(msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv));
+	if (*err < 0) {
+		*status = "PermissionDenied";
+		*statusInfo = "Could not acquire write access to *folder.";
+		succeed;
+	}
+	*status_str = IISTATUSATTRNAME ++ "=" ++ *newStatus;
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
+	if (*err < 0) {
+		iiFolderStatus(*folder, *currentStatus);
+		iiCanModifyFolderStatus(*folder, *currentStatus, *newStatus, *actor, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = "Reason";
+		} else {
+			*status = "Unrecoverable";
+			*statusInfo = "*err - *msg";
+		}
+	}
+	*err = errormsg(msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv), *msg);
+	if (*err < 0) {
+		*status = "FailedToRemoveTemporaryAccess";
+		*statusInfo = "*err - *msg"
+	}
 }
 
-# \brief iiFolderReject    reject a folder for the vault
+iiFolderAccept(*folder, *status, *statusInfo) {
+	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
+}
+
+# \brief iiFolderReject    accept a folder for the vault
 # \param[in] folder
-iiFolderReject(*folder) {
-	iiCollectionGroupName(*folder, *groupName);
-	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*aclKv.actor = uuClientFullName;
-	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
-	*status_str = IISTATUSATTRNAME ++ "=" ++ REJECTED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
+iiFolderReject(*folder, *status, *statusInfo) {
+	iiFolderDatamanagerAction(*folder, REJECT, *status, *statusInfo);
 }
 
 iiFolderSecure(*folder) {
