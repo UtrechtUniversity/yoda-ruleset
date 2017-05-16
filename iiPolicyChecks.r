@@ -374,11 +374,11 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 	}
 
 	if (*option == "set") {
-		*transitionTo = *attributeValue;
 		iiFolderStatus(*path, *transitionFrom);
+		*transitionTo = *attributeValue;
 	}
 
-	iiCanModifyFolderStatus(*path, *transitionFrom, *transitionFrom, *actor, *allowed, *reason); 
+	iiCanModifyFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
 
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");

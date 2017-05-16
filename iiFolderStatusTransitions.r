@@ -97,7 +97,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
 
 # \brief iiFolderLock
 # \param[in] path of folder to lock
-iiFolderLock(*folder,*status, *statusInfo) {
+iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "";
 	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
@@ -105,7 +105,8 @@ iiFolderLock(*folder,*status, *statusInfo) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentStatus);
-                iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, uuClientFullName, *allowed, *reason); 
+		*actor = uuClientFullName;
+                iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, *actor, *allowed, *reason); 
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -128,7 +129,8 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 	msiString2KeyValPair(*status_str, *statuskvp);
 	*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
 	if (*err < 0) {
-		iiCanModifyFolderStatus(*folder, *currentStatus, FOLDER, uuClientFullName, *allowed, *reason);
+		*actor = uuClientFullName;
+		iiCanModifyFolderStatus(*folder, *currentStatus, FOLDER, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
