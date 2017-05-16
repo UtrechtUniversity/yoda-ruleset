@@ -378,10 +378,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 		*transitionTo = *attributeValue;
 	}
 
-	#iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
-	*allowed = true;
-	*reason = "Avoid segfault";
-
+	iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }

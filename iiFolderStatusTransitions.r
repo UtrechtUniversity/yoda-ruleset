@@ -206,7 +206,7 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 	*err = errorcode(msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv));
 	if (*err < 0) {
 		*status = "PermissionDenied";
-		*statusInfo = "Could not acquire write access to *folder.";
+		*statusInfo = "Could not acquire datamanager access to *folder.";
 		succeed;
 	}
 	*status_str = IISTATUSATTRNAME ++ "=" ++ *newStatus;
@@ -216,8 +216,8 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 		iiFolderStatus(*folder, *currentStatus);
 		iiCanTransitionFolderStatus(*folder, *currentStatus, *newStatus, *actor, *allowed, *reason);
 		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = "Reason";
+			*status = "TransitionDisallowed";
+			*statusInfo = *reason;
 		} else {
 			*status = "Unrecoverable";
 			*statusInfo = "*err - *msg";
@@ -239,7 +239,7 @@ iiFolderAccept(*folder, *status, *statusInfo) {
 # \brief iiFolderReject    accept a folder for the vault
 # \param[in] folder
 iiFolderReject(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, REJECT, *status, *statusInfo);
+	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
 iiFolderSecure(*folder) {
