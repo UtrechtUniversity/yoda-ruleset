@@ -178,6 +178,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		if (*userType == "rodsadmin") {
 			*allowed = true;
 		} else {	
+			writeLine("serverLog", "Calling iiCanModifyFolderStatus");
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
 		}
 		if (*allowed) {

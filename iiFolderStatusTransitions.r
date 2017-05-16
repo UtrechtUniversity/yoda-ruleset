@@ -106,7 +106,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentStatus);
 		*actor = uuClientFullName;
-                iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, *actor, *allowed, *reason); 
+                iiCanTransitionFolderStatus(*folder, *currentStatus, LOCKED, *actor, *allowed, *reason); 
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -130,7 +130,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 	*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
 	if (*err < 0) {
 		*actor = uuClientFullName;
-		iiCanModifyFolderStatus(*folder, *currentStatus, FOLDER, *actor, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentStatus, FOLDER, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -153,7 +153,7 @@ iiFolderSubmit(*folder, *status, *statusInfo) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentStatus);
-		iiCanModifyFolderStatus(*folder, *currentStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 		      *status = "PermissionDenied";
 		      *statusInfo = *reason; 
@@ -176,7 +176,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentStatus);
-		iiCanModifyFolderStatus(*folder, *currentStatus, LOCKED, uuClientFullName, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentStatus, LOCKED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -214,7 +214,7 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentStatus);
-		iiCanModifyFolderStatus(*folder, *currentStatus, *newStatus, *actor, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentStatus, *newStatus, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = "Reason";
