@@ -167,7 +167,7 @@ iiListLocks(*path, *offset, *limit, *result, *status, *statusInfo) {
 		*statusInfo = "No Locks Found";
 		*more = 0;
 		*returned = 0;
-		*result = "[]";
+		*json_arr = "[]";
 	} else if (*nLocks > *limit) {
 		*status = "MoreLocksFound";
 		*more = *nLocks - *limit;
@@ -175,7 +175,7 @@ iiListLocks(*path, *offset, *limit, *result, *status, *statusInfo) {
 		*returnedLocks = list();
 		for(*i = 0; *i < *limit; *i = *i + 1) {
 			*lock = elem(*locks, *i);	
-			*returnedLocks = cons(*lock, *tenLocks);
+			*returnedLocks = cons(*lock, *returnedLocks);
 		}
 		*returned = *limit;
 		uuList2JSON(*returnedLocks, *json_arr);
