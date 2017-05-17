@@ -6,7 +6,7 @@
 
 # \brief iiFolderStatus
 # \param[in]  folder	    Path of folder
-# \param[out] folderstatus  Current status of folder
+# \param[out] folderStatus  Current status of folder
 iiFolderStatus(*folder, *folderStatus) {
 	
 	*folderStatusKey = IISTATUSATTRNAME;
@@ -35,7 +35,7 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
-	on ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
+	on (*newStatus == FOLDER && (*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED)) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
 		if (*status != 0) { fail; }
@@ -140,7 +140,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 		}
 	} else {
 		*status = "Success";
-		}
+	}
 }
 
 # \brief iiFolderSubmit
@@ -167,7 +167,7 @@ iiFolderSubmit(*folder, *status, *statusInfo) {
 }
 
 # \brief iiFolderUnsubmit
-# \param[in] *folder            - path of folder to unsubmit when set saving to vault
+# \param[in] folder            path of folder to unsubmit when set saving to vault
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "";
@@ -231,17 +231,19 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 		*status = "Success";
 	}
 }
-
+# \brief iiFolderAccept    Accept a folder for the vault
 iiFolderAccept(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
 }
 
-# \brief iiFolderReject    accept a folder for the vault
+# \brief iiFolderReject   Reject a folder for the vault
 # \param[in] folder
 iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
+# \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
+# \param[in] folder
 iiFolderSecure(*folder) {
 	*status = "Unknown";
 	*statusInfo = "";
@@ -310,17 +312,10 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 	*status = *error;
 }
 
+# \brief iitypeabbreviation    return objectType string based on boolean itemIsCollection
+# \param[in] itemIsCollection	boolean usually returned by treewalk when item is a Collection
+# \returnvalue		        iRODS objectType string. "-C" for Collection, "-d" for DataObject
 iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d"
-
-#                                itemParent  = full iRODS path to the parent of this object
-#                                  itemName  = basename of collection or dataobject
-#                                  itemIsCollection = true if the item is a collection
-#                                  buffer = in/out Key-Value variable
-#                                       the buffer is maintained by treewalk and passed
-#                                       on to the processing rule. can be used by the rule
-#                                       to communicate data to subsequent rule invocations
-#                                       buffer."error" can be updated by the rule to indicate
-#                                       an error, the treewalk will stop
 
 # \brief iiAddMetadataToItem        For use by uuTreewalk to add metadata
 # \param[in] itemParent            full iRODS path to the parent of this object
