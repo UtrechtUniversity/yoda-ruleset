@@ -216,7 +216,7 @@ iiFolderDatamanagerAction(*folder, *newStatus, *status, *statusInfo) {
 		iiFolderStatus(*folder, *currentStatus);
 		iiCanTransitionFolderStatus(*folder, *currentStatus, *newStatus, *actor, *allowed, *reason);
 		if (!*allowed) {
-			*status = "TransitionDisallowed";
+			*status = "PermissionDenied";
 			*statusInfo = *reason;
 		} else {
 			*status = "Unrecoverable";
