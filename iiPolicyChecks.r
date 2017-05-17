@@ -358,7 +358,8 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 	*allowed = false;
 	*reason = "Unknown error";
 	if (*attributeName != IISTATUSATTRNAME) {
-		failmsg(-1, "iiCanModifyFolderStatus: Called for attribute *attributeName instead of FolderStatus.");
+		*reason = "Called for attribute *attributeName instead of FolderStatus.";
+		succeed;
 	}
 
 	if (*option == "rm") {
@@ -367,63 +368,17 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 	}
 
 	if (*option == "add") {
-		*transitionFrom = FOLDER;
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
-			*transitionFrom = *row.META_COLL_ATTR_VALUE;
-		}
-
+		iiFolderStatus(*path, *transitionFrom);
 		*transitionTo = *attributeValue;	
 
 	}
 
-
 	if (*option == "set") {
+		iiFolderStatus(*path, *transitionFrom);
 		*transitionTo = *attributeValue;
-		# We need to query for current status. Set to FOLDER by default.
-		*transitionFrom = FOLDER;
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *attributeName) {
-			*transitionFrom = *row.META_COLL_ATTR_VALUE;
-		}
 	}
 
-	if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
-		*reason = "Illegal status transition. *transitionFrom -> *transitionTo";
-	} else {
-
-		*allowed = true;
-		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
-
-		if (*transitionTo == ACCEPTED) {
-			iiCollectionGroupName(*path, *groupName);	
-			uuGroupGetCategory(*groupName, *category, *subcategory);
-			uuGroupExists("datamanager-*category", *datamanagerExists);
-			if (*datamanagerExists) {
-				uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
-				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-					allowed = true;
-					*reason = "Folder is accepted by *actor from datamanager-*category";
-				} else {
-					*allowed = false;
-					*reason = "Only a datamanager is allowed to accept a folder to the vault";
-				}
-			} else {
-				*allowed = true;
-				*reason = "When no datamanager group exists, submitted folders are automatically accepted";
-			}
-		}
-
-		iiGetLocks(*path, *locks);
-		if (size(*locks) > 0) {
-			foreach(*rootCollection in *locks) {
-				if (*rootCollection != *path) {
-					*allowed = false;
-					*reason = "Found lock starting from *rootCollection";
-					break;
-				}
-			}
-		}
-
-	}
+	iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
@@ -433,58 +388,89 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 # \param[out] allowed
 # \param[out] reason
 iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason) {
-	writeLine("serverLog", "iiCanModifyFolderStatus:*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue");
 	*allowed = false;
 	*reason = "Unknown error";
 	if (*newAttributeName == "" || *newAttributeName == IISTATUSATTRNAME ) {
 		*transitionFrom = *attributeValue;
 		*transitionTo = triml(*newAttributeValue, "v:");
-		if (!iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
-			*reason = "Illegal status transition from *transitionFrom to *transitionTo";
-		} else {
-			*allowed = true;
-			*reason = "Legal status transition. *transitionFrom -> *transitionTo";
-
-			if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
-				iiCollectionGroupName(*path, *groupName);	
-				uuGroupGetCategory(*groupName, *category, *subcategory);
-				uuGroupExists("datamanager-*category", *datamanagerExists);
-				if (*datamanagerExists) {
-					uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
-					if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-						allowed = true;
-						*reason = "Folder is *transitionTo by *actor from datamanager-*category";
-					} else {
-						*allowed = false;
-						*reason = "Only a member of datamanager-*category is allowed to accept or reject a submitted folder";
-					}
-				} else {
-					*allowed = true;
-					*reason = "When no datamanager group exists, submitted folders are automatically accepted";
-				}
-			}
-			
-			iiGetLocks(*path, *locks);
-			if (size(*locks) > 0) {
-				foreach(*rootCollection in *locks) {
-					if (*rootCollection != *path) {
-						*allowed = false;
-						*reason = "Found lock(s) starting from *rootCollection";
-						break;
-					}
-				}
-			}
-			
-			if (*transitionTo == SECURED) {
-				*allowed = false;
-				*reason = "Only a rodsadmin is allowed to secure a folder to the vault";
-			}
-
-
-		}
+		iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason);
 	} else {
 		*reason = "*attributeName should not be changed to *newAttributeName";
 	}
 
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
+}
+
+# \brief iiCanModifyFolderStatus 
+# \param[in] path
+# \param[out] allowed
+# \param[out] reason
+iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *allowed, *reason) {
+	*allowed = false;
+	*reason = "Unknown error";
+	if (iiIsStatusTransitionLegal(*transitionFrom, *transitionTo)) {
+		*allowed = true;
+		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
+	} else {
+		*reason = "Illegal status transition. Current status: *transitionFrom, new status: *transitionTo";
+		succeed;
+	}
+
+	if (*transitionTo == SUBMITTED) {
+		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
+		*zone = hd(split(triml(*folder, "/"), "/"));
+		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
+		if (*err < 0) { 
+			*allowed = false;
+			*reason = "Folder submitted without metadata.";
+			succeed;
+		} else {
+			*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+			if (*err < 0) {
+				*allowed = false;
+				*reason = "Metadata does not conform to schema.";
+				succeed;
+			}
+		}
+
+	}
+
+	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
+		iiCollectionGroupName(*path, *groupName);	
+		uuGroupGetCategory(*groupName, *category, *subcategory);
+		uuGroupExists("datamanager-*category", *datamanagerExists);
+		if (*datamanagerExists) {
+			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+				allowed = true;
+				*reason = "Folder is *transitionTo by *actor from datamanager-*category";
+			} else {
+				*allowed = false;
+				*reason = "Only a member of datamanager-*category is allowed to accept or reject a submitted folder";
+				succeed;
+			}
+		} else {
+			*allowed = true;
+			*reason = "When no datamanager group exists, submitted folders are automatically accepted";
+		}
+	}
+
+	if (*transitionTo == SECURED) {
+		*allowed = false;
+		*reason = "Only a rodsadmin is allowed to secure a folder to the vault";
+		succeed;
+	}
+
+	if (*allowed) {	
+		iiGetLocks(*folder, *locks);
+		if (size(*locks) > 0) {
+			foreach(*rootCollection in *locks) {
+				if (*rootCollection != *folder) {
+					*allowed = false;
+					*reason = "Found lock(s) starting from *rootCollection";
+					break;
+				}
+			}
+		}
+	}
 }

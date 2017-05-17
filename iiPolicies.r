@@ -171,42 +171,35 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
-		if (*attributeName == IISTATUSATTRNAME) {
-			# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
-			*actor = uuClientFullName;
-			uuGetUserType(*actor, *userType);
-			if (*userType == "rodsadmin") {
-				*allowed = true;
-			} else {	
-				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
-			}
-			if (*allowed) {
-				# This prevents illegal status transitions.	
-				iiFolderStatus(*itemName, *currentStatus);
-				if (*option == "rm") {
-					*newStatus = FOLDER;
-				} else {
-					*newStatus = *attributeValue;
-				}
-				*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
-				if (*err < 0) {
-					# Perhaps a rollback is needed
-					*allowed = false;
-				}
-			}
-		} else {
+	on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
+		if (*userType == "rodsadmin") {
 			*allowed = true;
-			# We cannot distinguish organisational metadata changes between the portal and imeta
-			# iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		} else {	
+			writeLine("serverLog", "Calling iiCanModifyFolderStatus");
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
+		}
+		if (*allowed) {
+			iiFolderStatus(*itemName, *currentStatus);
+			if (*option == "rm") {
+				*newStatus = FOLDER;
+			} else {
+				*newStatus = *attributeValue;
+			}
+			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Perhaps a rollback is needed
+				*allowed = false;
+			}
 		}
 		if (!*allowed) {
 			cut;
 			msiOprDisallowed;
 		}
-
 	}
+
 }
 
 # This policy gets triggered when metadata is modified
@@ -224,31 +217,26 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+
+	on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 	
-
-		if (*attributeName == IISTATUSATTRNAME) {
-			*actor = uuClientFullName;
-			uuGetUserType(*actor, *userType);
-			if (*userType == "rodsadmin") {
-				*allowed = true;
-			} else {
-				iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason); 
-			}
-			if (*allowed) {
-				iiFolderStatus(*itemName, *currentStatus);
-				*newStatus = triml(*newAttributeValue, "v:");
-				*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
-				if (*err < 0) {
-					# Rollback
-					*allowed = false;
-				}
-			}
-
-		} else {
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
+		if (*userType == "rodsadmin") {
 			*allowed = true;
-			#iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		} else {
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason); 
 		}
+		if (*allowed) {
+			iiFolderStatus(*itemName, *currentStatus);
+			*newStatus = triml(*newAttributeValue, "v:");
+			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Rollback
+				*allowed = false;
+			}
+		}
+
 		if (!*allowed) {
 			cut;
 			msiOprDisallowed;

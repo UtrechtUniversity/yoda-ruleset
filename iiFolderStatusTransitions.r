@@ -6,13 +6,12 @@
 
 # \brief iiFolderStatus
 # \param[in]  folder	    Path of folder
-# \param[out] folderstatus  Current status of folder
-iiFolderStatus(*folder, *folderstatus) {
-	
-	*folderstatuskey = IISTATUSATTRNAME;
-	*folderstatus = FOLDER;
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderstatuskey) {
-		*folderstatus = *row.META_COLL_ATTR_VALUE;
+# \param[out] folderStatus  Current status of folder
+iiFolderStatus(*folder, *folderStatus) {
+	*folderStatusKey = IISTATUSATTRNAME;
+	*folderStatus = FOLDER;
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *folderStatusKey) {
+		*folderStatus = *row.META_COLL_ATTR_VALUE;
 	}
 }
 
@@ -29,51 +28,25 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 # \param[in] folder              Path of folder
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
-iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
-	if (*currentStatus == FOLDER && *newStatus == LOCKED) {
+iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
+	on (*currentFolderStatus == FOLDER && *newFolderStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
-	} else if ((*currentStatus == LOCKED || *currentStatus == REJECTED || *currentStatus == SECURED) && *newStatus == FOLDER) {
+		if (*status != 0) { fail; }
+	}
+	on (*newFolderStatus == FOLDER && (*currentFolderStatus == LOCKED || *currentFolderStatus == REJECTED || *currentFolderStatus == SECURED)) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
-	} else if (*currentStatus == FOLDER && *newStatus == SUBMITTED) {
-		# Check if the yoda-metadata.xml conforms to the XSD
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
-		if (*err < 0) { 
-			if (*err == -808000) {
-				failmsg(-808000, "Folder submitted without metadata");
-			}
-			fail(*err);
-		}
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-1110000, "Rollback needed");
-		}
-
-		# lock the folder.
-		iiFolderLockChange(*folder, true, *status);
-
-		if (*status != 0) {
-			failmsg(-1110000, "Rollback needed");
-		}
-	} else if (*currentStatus == LOCKED && *newStatus == SUBMITTED) {
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", "iiFolderTransition: *err - *msg");	
-			failmsg(-1110000, "Rollback needed");
-		}
-		succeed;
-	} else if (*currentStatus == SUBMITTED && *newStatus == LOCKED) {
-		succeed;
-	} else if (*currentStatus == SUBMITTED && *newStatus == ACCEPTED) {
-		succeed;
+		if (*status != 0) { fail; }
 	}
+	on (*currentFolderStatus == FOLDER && *newFolderStatus == SUBMITTED) {
+		iiFolderLockChange(*folder, true, *status);
+		if (*status != 0) { fail; }
+	}
+	on (true) { 
+		nop;
+	}
+
 }
 
 
@@ -81,120 +54,227 @@ iiPreFolderStatusTransition(*folder, *currentStatus, *newStatus) {
 # \param[in] folder
 # \param[in] actor
 # \param[in] newStatus
-iiPostFolderStatusTransition(*folder, *actor, *newStatus) {
-	if (*newStatus == SUBMITTED) {
-		iiAddActionLogRecord(*actor, *folder, "submitted");
+iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
+	on (*newFolderStatus == SUBMITTED) {
+		iiAddActionLogRecord(*actor, *folder, "submit");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
 			msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 		}
-	} else if (*newStatus == ACCEPTED) {
+	}
+	on (*newFolderStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
 			iiAddActionLogRecord(*actor, *folder, "accept");
 		} else {
 			iiAddActionLogRecord("system", *folder, "accept");
 		}
-	} else if (*newStatus == FOLDER) {
+	}
+	on (*newFolderStatus == FOLDER) {
 		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 		iiRemoveAVUs(*folder, *actionLog);
-	} else if (*newStatus == LOCKED) {
+	}
+	on (*newFolderStatus == LOCKED) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
 			iiAddActionLogRecord(*actor, *folder, "unsubmit");
 		} else {
 			iiAddActionLogRecord(*actor, *folder, "lock");
 		}
-	} else if (*newStatus == REJECTED) {
+	}
+	on (*newFolderStatus == REJECTED) {
 		iiAddActionLogRecord(*actor, *folder, "reject");
-	} else {
-		writeLine("serverLog", "iiPostFolderStatusTransition: No Action log yet for *newStatus");
+	}
+	on (*newFolderStatus == SECURED) {
+		iiAddActionLogRecord(*actor, *folder, "secured");
+	}
+	on (true) {
+		nop;
 	}
 }
 
 # \brief iiFolderLock
 # \param[in] path of folder to lock
-iiFolderLock(*folder) {
-	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+iiFolderLock(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	if (*err < 0) {
-		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+		iiFolderStatus(*folder, *currentFolderStatus);
+		*actor = uuClientFullName;
+                iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, *actor, *allowed, *reason); 
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+	} else {
+		*status = "Success";
 	}
 }
 
 # \brief iiFolderUnlock
 # \param[in] folder	path of folder to unlock
-iiFolderUnlock(*folder) {
-	*attrName = IISTATUSATTRNAME;
-	*currentStatus = FOLDER;
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *attrName) {
-		*currentStatus = *row.META_COLL_ATTR_VALUE;
-	}
-	if (*currentStatus != FOLDER) {
-		*status_str = *attrName ++ "=" ++ *currentStatus;
-		msiString2KeyValPair(*status_str, *statuskvp);
-		*err = errormsg(msiRemoveKeyValuePairsFromObj(*statuskvp, *folder, "-C"), *msg);	
-		if (*err < 0) {
-			writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
+iiFolderUnlock(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	iiFolderStatus(*folder, *currentFolderStatus);
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);	
+	if (*err < 0) {
+		*actor = uuClientFullName;
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, FOLDER, *actor, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
 		}
+	} else {
+		*status = "Success";
 	}
 }
 
 # \brief iiFolderSubmit
 # \param[in] folder	path of folder to submit to vault 
-iiFolderSubmit(*folder) {
-	*status_str = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
+iiFolderSubmit(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	if (*err < 0) {
-		writeLine("stdout", "iiFolderLock: Failed - *err, *msg");
-	}
+		iiFolderStatus(*folder, *currentFolderStatus);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+		      *status = "PermissionDenied";
+		      *statusInfo = *reason; 
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+	 	}		
+	} else {
+		*status = "Success";
+	}		
 }
 
 # \brief iiFolderUnsubmit
-# \param[in] *folder            - path of folder to unsubmit when set saving to vault
-iiFolderUnsubmit(*folder) {
-	*status_str = IISTATUSATTRNAME ++ "=" ++ LOCKED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	
+# \param[in] folder            path of folder to unsubmit when set saving to vault
+iiFolderUnsubmit(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	if (*err < 0) {
-		writeLine("serverLog", "iiFolderUnsubmit: Failed - (*err, *msg)");
-        }
+		iiFolderStatus(*folder, *currentFolderStatus);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+        } else {
+		*status = "Success";
+	}
 }
 
-# \brief iiFolderAccept    accept a folder for the vault
+# \brief iiFolderDatamanagerAction    
 # \param[in] folder
-iiFolderAccept(*folder) {
-	iiCollectionGroupName(*folder, *groupName);
+iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	if (*err < 0) {
+		*status = "NoResearchGroup";
+		*statusInfo = "Failed to determine research group name of *folder";
+		succeed;
+	}
+	*actor = uuClientFullName;
 	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*aclKv.actor = uuClientFullName;
-	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
-	*status_str = IISTATUSATTRNAME ++ "=" ++ ACCEPTED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
+	*aclKv.actor = *actor;
+	*err = errorcode(msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv));
+	if (*err < 0) {
+		*status = "PermissionDenied";
+		*statusInfo = "Could not acquire datamanager access to *folder.";
+		succeed;
+	}
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *newFolderStatus;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		iiFolderStatus(*folder, *currentFolderStatus);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, *newStatus, *actor, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+	}
+	*err = errormsg(msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv), *msg);
+	if (*err < 0) {
+		*status = "FailedToRemoveTemporaryAccess";
+		*statusInfo = "*err - *msg"
+	} else if (*status == "Unknown") {
+		*status = "Success";
+	}
 }
 
-# \brief iiFolderReject    reject a folder for the vault
+# \brief iiFolderAccept    Accept a folder for the vault
+iiFolderAccept(*folder, *status, *statusInfo) {
+	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
+}
+
+# \brief iiFolderReject   Reject a folder for the vault
 # \param[in] folder
-iiFolderReject(*folder) {
-	iiCollectionGroupName(*folder, *groupName);
-	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*aclKv.actor = uuClientFullName;
-	msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv);
-	*status_str = IISTATUSATTRNAME ++ "=" ++ REJECTED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C"), *msg);
-	msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv);
+iiFolderReject(*folder, *status, *statusInfo) {
+	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
+# \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
+# \param[in] folder
 iiFolderSecure(*folder) {
-	*status_str = IISTATUSATTRNAME ++ "=" ++ SECURED;
-	msiString2KeyValPair(*status_str, *statuskvp);
-	msiSetKeyValuePairsToObj(*statuskvp, *folder, "-C");
+	*status = "Unknown";
+	*statusInfo = "";
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
 }
 
 
@@ -257,17 +337,10 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 	*status = *error;
 }
 
+# \brief iitypeabbreviation    return objectType string based on boolean itemIsCollection
+# \param[in] itemIsCollection	boolean usually returned by treewalk when item is a Collection
+# \returnvalue		        iRODS objectType string. "-C" for Collection, "-d" for DataObject
 iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d"
-
-#                                itemParent  = full iRODS path to the parent of this object
-#                                  itemName  = basename of collection or dataobject
-#                                  itemIsCollection = true if the item is a collection
-#                                  buffer = in/out Key-Value variable
-#                                       the buffer is maintained by treewalk and passed
-#                                       on to the processing rule. can be used by the rule
-#                                       to communicate data to subsequent rule invocations
-#                                       buffer."error" can be updated by the rule to indicate
-#                                       an error, the treewalk will stop
 
 # \brief iiAddMetadataToItem        For use by uuTreewalk to add metadata
 # \param[in] itemParent            full iRODS path to the parent of this object
