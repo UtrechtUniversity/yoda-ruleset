@@ -412,7 +412,11 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 		*allowed = true;
 		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
 	} else {
-		*reason = "Illegal status transition. Current status: *transitionFrom, new status: *transitionTo";
+		if (*transitionFrom == FOLDER) {
+			*reason = "Illegal status transition. Current folder has no status.";
+		} else {
+			*reason = "Illegal status transition. Current status is *transitionFrom.";
+		}
 		succeed;
 	}
 
