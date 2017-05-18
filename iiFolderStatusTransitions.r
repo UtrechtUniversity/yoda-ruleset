@@ -217,9 +217,17 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	iiFolderStatus(*folder, *currentFolderStatus);
+	if (*currentFolderStatus == SUBMITTED) {
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
+		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	} else {
+		*status = "WrongStatus";
+		*statusInfo = "Cannot unsubmit folder as it is currently in *currentFolderStatus state";
+		*folderStatus = *currentFolderStatus;
+		succeed;
+	}
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentFolderStatus);
 		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, uuClientFullName, *allowed, *reason);
