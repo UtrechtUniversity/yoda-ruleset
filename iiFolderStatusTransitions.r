@@ -87,7 +87,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		iiAddActionLogRecord(*actor, *folder, "reject");
 	}
 	on (*newFolderStatus == SECURED) {
-		iiAddActionLogRecord(*actor, *folder, "secured");
+		iiAddActionLogRecord(*actor, *folder, "secure");
 	}
 	on (true) {
 		nop;
@@ -96,9 +96,17 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 
 # \brief iiFolderLock
 # \param[in] path of folder to lock
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+	iiFolderStatus(*folder, *currentFolderStatus);
+	if (*currentFolderStatus != FOLDER) {
+		*status = "WrongStatus";
+		*statusInfo = "Cannot lock folder as it is currently in *currentFolderStatus state"; 
+		succeed;
+	}
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -120,18 +128,27 @@ iiFolderLock(*folder, *status, *statusInfo) {
 		}
 	} else {
 		*status = "Success";
+		*statusInfo = "";
 	}
 }
 
 # \brief iiFolderUnlock
 # \param[in] folder	path of folder to unlock
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderUnlock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 	iiFolderStatus(*folder, *currentFolderStatus);
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);	
+	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SECURED || *currentFolderStatus == REJECTED) {
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
+		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);	
+	} else {
+		*status = "WrongStatus";
+		*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state";
+		succeed;
+	}
 	if (*err < 0) {
 		*actor = uuClientFullName;
 		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, FOLDER, *actor, *allowed, *reason);
@@ -149,20 +166,24 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 		}
 	} else {
 		*status = "Success";
+		*statusInfo = "";
 	}
 }
 
 # \brief iiFolderSubmit
-# \param[in] folder	path of folder to submit to vault 
-iiFolderSubmit(*folder, *status, *statusInfo) {
+# \param[in] folder	    path of folder to submit to vault 
+# \param[out] folderStatus  status of the folder after submission 
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
+iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	iiFolderStatus(*folder, *folderStatus);
 	if (*err < 0) {
-		iiFolderStatus(*folder, *currentFolderStatus);
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *folderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 		      *status = "PermissionDenied";
 		      *statusInfo = *reason; 
@@ -177,11 +198,14 @@ iiFolderSubmit(*folder, *status, *statusInfo) {
 	 	}		
 	} else {
 		*status = "Success";
+		*statusInfo = "";
 	}		
 }
 
 # \brief iiFolderUnsubmit
 # \param[in] folder            path of folder to unsubmit when set saving to vault
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -205,11 +229,15 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		}
         } else {
 		*status = "Success";
+		*statusInfo = "";
 	}
 }
 
 # \brief iiFolderDatamanagerAction    
 # \param[in] folder
+# \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
+# \param[out] status          status of the action
+# \param[out] statusInfo      Informative message when action was not successfull
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -253,22 +281,29 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		*statusInfo = "*err - *msg"
 	} else if (*status == "Unknown") {
 		*status = "Success";
+		*statusInfo = "";
 	}
 }
 
 # \brief iiFolderAccept    Accept a folder for the vault
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderAccept(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
 }
 
 # \brief iiFolderReject   Reject a folder for the vault
 # \param[in] folder
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
 # \param[in] folder
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderSecure(*folder) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -279,6 +314,9 @@ iiFolderSecure(*folder) {
 
 
 # \brief iiAddActionLogRecord
+# \param[in] actor
+# \param[in] folder
+# \param[in] action
 iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
 	writeLine("serverLog", "iiAddActionLogRecord: *actor has *action *folder");
@@ -288,6 +326,9 @@ iiAddActionLogRecord(*actor, *folder, *action) {
 }
 
 # \brief iiActionLog
+# \param[in] folder
+# \param[out] size
+# \param[out] result
 iiActionLog(*folder, *size, *result) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 	*result = "[]";
