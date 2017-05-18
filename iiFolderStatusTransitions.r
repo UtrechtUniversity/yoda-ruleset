@@ -178,10 +178,17 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
-	iiFolderStatus(*folder, *folderStatus);
+	iiFolderStatus(*folder, *currentFolderStatus);
+	if (*currentFolderStatus == FOLDER || *currentFolderStatus == LOCKED) {
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
+		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	} else {
+		*status = "WrongStatus";
+		*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state";
+		*folderStatus = *currentFolderStatus;
+		succeed;
+	}
 	if (*err < 0) {
 		iiCanTransitionFolderStatus(*folder, *folderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
@@ -199,6 +206,7 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	} else {
 		*status = "Success";
 		*statusInfo = "";
+		iiFolderStatus(*folder, *folderStatus);
 	}		
 }
 
@@ -302,11 +310,7 @@ iiFolderReject(*folder, *status, *statusInfo) {
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
 # \param[in] folder
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
 iiFolderSecure(*folder) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
