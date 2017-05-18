@@ -440,13 +440,18 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 	}
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
-		iiCollectionGroupName(*path, *groupName);	
-		uuGroupGetCategory(*groupName, *category, *subcategory);
-		uuGroupExists("datamanager-*category", *datamanagerExists);
+		*err1 = errorcode(iiCollectionGroupName(*folder, *groupName));	
+		*err2 = errorcode(uuGroupGetCategory(*groupName, *category, *subcategory));
+		*err3 = errorcode(uuGroupExists("datamanager-*category", *datamanagerExists));
+		if (*err1 < 0 || *err2 <0 || *err3 < 0) {
+			*allowed = false;
+			*reason = "Could not determine if datamanager-*category exists";
+			succeed;
+		}	
 		if (*datamanagerExists) {
 			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);	
 			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-				allowed = true;
+				*allowed = true;
 				*reason = "Folder is *transitionTo by *actor from datamanager-*category";
 			} else {
 				*allowed = false;

@@ -98,7 +98,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 # \param[in] path of folder to lock
 iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -127,7 +127,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 # \param[in] folder	path of folder to unlock
 iiFolderUnlock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	iiFolderStatus(*folder, *currentFolderStatus);
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
@@ -156,7 +156,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 # \param[in] folder	path of folder to submit to vault 
 iiFolderSubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -184,7 +184,7 @@ iiFolderSubmit(*folder, *status, *statusInfo) {
 # \param[in] folder            path of folder to unsubmit when set saving to vault
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -212,7 +212,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 # \param[in] folder
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";
@@ -271,7 +271,7 @@ iiFolderReject(*folder, *status, *statusInfo) {
 # \param[in] folder
 iiFolderSecure(*folder) {
 	*status = "Unknown";
-	*statusInfo = "";
+	*statusInfo = "An internal error has occurred";
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
