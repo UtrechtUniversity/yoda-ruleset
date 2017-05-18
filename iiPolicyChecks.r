@@ -443,7 +443,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 		*err1 = errorcode(iiCollectionGroupName(*folder, *groupName));	
 		*err2 = errorcode(uuGroupGetCategory(*groupName, *category, *subcategory));
 		*err3 = errorcode(uuGroupExists("datamanager-*category", *datamanagerExists));
-		if (*err1 < 0 || *err2 <0 || *err3 < 0) {
+		if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 			*allowed = false;
 			*reason = "Could not determine if datamanager-*category exists";
 			succeed;
