@@ -179,8 +179,13 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
  	*lockFound = false;
         *attrName = UUORGMETADATAPREFIX ++ 'lock';
         foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
-               *lockFound = true; # no need to inquire the content of attr_value
-               break;
+		*originatingLockColl =  *row.META_COLL_ATTR_VALUE;
+		# writeLine("serverLog","target: *target" );	
+		# writeLine("serverLog", "lock originating from coll: " ++ *originatingLockColl);
+		if ( *target >= *row.META_COLL_ATTR_VALUE ) { 
+			*lockFound = true; 
+		}
+               	break;
         }
 
         if (*lockFound) {
