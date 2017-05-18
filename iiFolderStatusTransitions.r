@@ -60,7 +60,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
-			msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
+			msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 		}
 	}
 	on (*newFolderStatus == ACCEPTED) {
