@@ -294,7 +294,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*err = errormsg(msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
-		*statusInfo = "*err - *msg"
+		*statusInfo = "*err - *msg";
 	} else if (*status == "Unknown") {
 		*status = "Success";
 		*statusInfo = "";
