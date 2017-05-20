@@ -5,7 +5,6 @@ testRule {
 	   writeLine("stdout", "statusInfo: *statusInfo");
 	}
 	writeLine("stdout", "folderStatus: *folderStatus");
-
 }
 input *folder=""
 output ruleExecOut
