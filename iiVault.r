@@ -1,5 +1,6 @@
 iiCopyFolderToVault(*folder) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	writeLine("stdout", "*folder - *groupName");
 	if (*err < 0) {
 		failmsg(-1, "NoResearchGroup");
 	}
@@ -11,11 +12,12 @@ iiCopyFolderToVault(*folder) {
 	*buffer.source = *folder;
 	*buffer.destination = *target;
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	iiCopyRelevantMetadata(*folder, *target);
+	iiCopyUserMetadata(*folder, *target);
 	iiFolderSecure(*folder);
+	iiCopyActionLog(*folder, *target);
 }
 
-iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer) {
+iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
 	*destPath = *buffer.destination;
 	if (*sourcePath != *buffer."source") {
@@ -25,15 +27,15 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer) {
 		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
 	}
 	if (*itemIsCollection) {
-		msiCollCreate(*destPath, "1", *status);
+		*error = errorcode(msiCollCreate(*destPath, 1, *status));
 	} else {
-		msiDataObjChksum(*sourcePath, "forceChksum=", *checksum);
-		msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status);
+	#	*error = errorcode(msiDataObjChksum(*sourcePath, "forceChksum=", *checksum));
+	 	*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
 	}
 
 }
 
-iiCopyRelevantMetadata(*source, *destination) {
+iiCopyUserMetadata(*source, *destination) {
 	*userMetadataPrefix = UUUSERMETADATAPREFIX ++ "%";
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
 			WHERE COLL_NAME = *source
@@ -42,7 +44,9 @@ iiCopyRelevantMetadata(*source, *destination) {
 		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
 		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
 	}
+}
 
+iiCopyActionLog(*source, *destination) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
 	       		WHERE META_COLL_ATTR_NAME = *actionLog
