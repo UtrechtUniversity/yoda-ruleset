@@ -269,7 +269,12 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*err = errorcode(msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv));
 	if (*err < 0) {
 		*status = "PermissionDenied";
-		*statusInfo = "Could not acquire datamanager access to *folder.";
+		iiCanDatamanagerAclSet(*folder, *actor, *allowed, *reason);
+		if (*allowed) {
+			*statusInfo = "Could not acquire datamanager access to *folder.";
+		} else {
+			*statusInfo = *reason;		
+		}
 		succeed;
 	}
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *newFolderStatus;
@@ -294,7 +299,12 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*err = errormsg(msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
-		*statusInfo = "*err - *msg";
+		iiCanDatamanagerAclSet(*folder, *actor, *allowed, *reason);
+		if (*allowed) {
+			*statusInfo = "*err - *msg";
+		} else {
+			*statusInfo = *reason;		
+		}
 	} else if (*status == "Unknown") {
 		*status = "Success";
 		*statusInfo = "";
