@@ -265,11 +265,12 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	}
 	*actor = uuClientFullName;
 	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*datamanagerGroup = "datamanager-*category";
 	*aclKv.actor = *actor;
-	*err = errorcode(msiSudoObjAclSet(0, "write", "datamanager-*category", *folder, *aclKv));
+	*err = errorcode(msiSudoObjAclSet(0, "write", *datamanagerGroup, *folder, *aclKv));
 	if (*err < 0) {
 		*status = "PermissionDenied";
-		iiCanDatamanagerAclSet(*folder, *actor, *allowed, *reason);
+		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, *allowed, *reason);
 		if (*allowed) {
 			*statusInfo = "Could not acquire datamanager access to *folder.";
 		} else {
@@ -296,10 +297,10 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 			}
 		}
 	}
-	*err = errormsg(msiSudoObjAclSet(0, "read", "datamanager-*category", *folder, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet(0, "read", *datamanagerGroup, *folder, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
-		iiCanDatamanagerAclSet(*folder, *actor, *allowed, *reason);
+		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, *allowed, *reason);
 		if (*allowed) {
 			*statusInfo = "*err - *msg";
 		} else {

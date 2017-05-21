@@ -6,9 +6,9 @@
 
 # \brief iiDatamanagerPreSudoObjAclSet
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	if (*recursive == 0 && (*accesslevel == "write" || *accessLevel == "read")) {
+	if (*recursive == 0 && (*accessLevel == "write" || *accessLevel == "read")) {
 		*actor = uuClientFullName;
-		iiCanDatamanagerAclSet(*objPath, uuClientFullName, *allowed, *reason);
+		iiCanDatamanagerAclSet(*objPath, uuClientFullName, *otherName, *allowed, *reason);
 		if (*allowed) {
 			succeed;
 		}
@@ -18,7 +18,7 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 
 
 # \brief iiCanDatamanagerAclSet
-iiCanDatamanagerAclSet(*objPath, *actor, *allowed, *reason) {
+iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *allowed, *reason) {
 	iiFolderStatus(*objPath, *folderStatus);
 	if (*folderStatus == SUBMITTED || *folderStatus == ACCEPTED || *folderStatus == REJECTED) {
 		iiCollectionGroupName(*objPath, *groupName);
