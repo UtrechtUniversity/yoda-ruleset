@@ -146,7 +146,11 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);	
 	} else {
 		*status = "WrongStatus";
-		*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state";
+		if (*currentFolderStatus == FOLDER) {
+			*statusInfo = "Cannot unlock folder as it currently  is not in a locked state.";
+		} else {
+			*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state.";
+		}
 		succeed;
 	}
 	if (*err < 0) {
