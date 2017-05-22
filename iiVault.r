@@ -17,8 +17,16 @@ iiCopyFolderToVault(*folder) {
 	uuChop(*groupName, *_, *baseName, "-", true);
 	uuChopPath(*folder, *parent, *datapackageName);
 	msiGetIcatTime(*timestamp, "unix");
+	*timestamp = triml(*timestamp, "0");
         *vaultGroupName = "vault-*baseName";
-	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName" ++ "_*timestamp";
+	*i = 0;
+	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
+		
+	while (uuCollectionExists(*target)) {
+		*i = *i + 1;
+		*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
+	}
+
 	*buffer.source = *folder;
 	*buffer.destination = *target;
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
