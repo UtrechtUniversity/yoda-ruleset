@@ -1,17 +1,17 @@
-Institutions I-lab Rules and Policies for YoDa/iRODS
+Research module Rules and Policies for YoDa/iRODS
 ==========
 
 NAME
 ----
-irods-ruleset-ilab - Subset of rules and policies for iRODS based YoDa required for the yoda-portal-ilab-intake module 
+irods-ruleset-research - Subset of rules and policies for iRODS based YoDa required for the yoda-portal-research module 
 
 DESCRIPTION
 -----------
 Yoda is configuration of an iRODS server for dataset management.
-These rules are required on top of the rules-uu rules to use the YoDa Portal I-Lab Intake module
+These rules are required on top of the rules-uu rules to use the YoDa Portal research module designed.
 
 It consists of:
-- Institutions I-lab specific rules and policies
+- Research module specific rules and policies
 
 DEPENDENCIES
 ------------
@@ -49,6 +49,11 @@ $ irule -F ./tools/install-default-xml-for-metadata.r
 $ irule -F ./tools/install-default-xml-for-metadata.r '*resc="demoResc"'
 ```
 
+8) Configure a cronjob under a rodsadmin account to copy datapackages to the vault. Example line for crontab -e:
+
+```
+*/2 * * * * /bin/irule -F /etc/irods/irods-ruleset-research/tools/copy-accepted-folders-to-vault.r >>$HOME/iRODS/server/log/job_copy-accepted-folder-to-vault.r 2>&1
+```
     
 LICENSE
 -------
