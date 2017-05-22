@@ -1,3 +1,13 @@
+# \file iiVault.r
+# \brief Copy folders to the vault
+#
+# \author Paul Frederiks
+# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
+# \license GPLv3, see LICENSE
+
+
+# \brief iiCopyFolderToVault
+# \param[in] folder  The folder to copy to the vault
 iiCopyFolderToVault(*folder) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	writeLine("stdout", "*folder - *groupName");
@@ -17,6 +27,12 @@ iiCopyFolderToVault(*folder) {
 	iiCopyActionLog(*folder, *target);
 }
 
+# \brief iiIngestObject
+# \param[in] itemParent
+# \param[in] itemName
+# \param[in] itemIsCollection
+# \param[in/out] buffer
+# \param[in/out] error
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
 	*destPath = *buffer.destination;
@@ -29,12 +45,15 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	if (*itemIsCollection) {
 		*error = errorcode(msiCollCreate(*destPath, 1, *status));
 	} else {
-	#	*error = errorcode(msiDataObjChksum(*sourcePath, "forceChksum=", *checksum));
 	 	*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
 	}
 
 }
 
+
+# \brief iiCopyUserMetadata    Copy user metadata from sourde to destination
+# \param[in] source
+# \param[in] destination
 iiCopyUserMetadata(*source, *destination) {
 	*userMetadataPrefix = UUUSERMETADATAPREFIX ++ "%";
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
@@ -46,6 +65,10 @@ iiCopyUserMetadata(*source, *destination) {
 	}
 }
 
+
+# \brief iiCopyActionLog   Copy the action log from the source to destination
+# \param[in] source
+# \param[in] destination
 iiCopyActionLog(*source, *destination) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
