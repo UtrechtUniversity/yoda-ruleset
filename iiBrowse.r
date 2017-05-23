@@ -169,9 +169,8 @@ iiListLocks(*path, *offset, *limit, *result, *status, *statusInfo) {
 		*returned = 0;
 		*json_arr = "[]";
 	} else if (*nLocks > *limit) {
-		*status = "MoreLocksFound";
+		*status = "Success";
 		*more = *nLocks - *limit;
-		*statusInfo = "*more more locks found.";
 		*returnedLocks = list();
 		for(*i = 0; *i < *limit; *i = *i + 1) {
 			*lock = elem(*locks, *i);	
