@@ -646,3 +646,19 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 	*result = *json_str;
 }
 
+iiRevisionListRevisionsOfCollectionBeforeDate(*collName, *date, *revisions) {
+    
+}
+
+iiRevisionLastBefore(*path, *timestamp, *revisionId) {
+	*revisionId = "";
+	iiRevisionCandidates(*path, *candidates);
+	foreach(*candidate in *candidates) {
+		uurevisioncandidate(*timeInt, *candidateId) = *candidate;
+		if (*timeInt < *timestamp) {
+			break;
+		}
+		*revisionId = *candidateId;
+	}
+
+}
