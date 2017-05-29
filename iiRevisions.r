@@ -678,9 +678,16 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 	*result = *json_str;
 }
 
-iiRevisionListRevisionsOfCollectionBeforeDate(*collName, *date, *revisions) {
-    
+iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
+	*revisions = list();
+	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";	
+	foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = *originalPathKey AND META_DATA_ATTR_VALUE LIKE '*collName/%') {
+		*originalPath = *row.META_DATA_ATTR_VALUE;
+		iiRevisionLastBefore(*originalPath, *timestamp, *revisionId);
+		*revisions = cons(*revisionId, *revisions);
+	}
 }
+
 
 iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
