@@ -2,7 +2,9 @@ testRule {
 
 	iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions); 
 	foreach(*revision in *revisions) {
-		writeLine("stdout", "*revision");	
+		uurevisionwithpath(*revisionId, *path) = *revision;
+		writeLine("stdout", "revisionId: *revisionId");	
+		writeLine("stdout", "path: *path");	
 	}
 
 }

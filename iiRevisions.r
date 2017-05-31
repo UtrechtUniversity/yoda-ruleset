@@ -281,7 +281,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
         # Actual restoration - perhaps check for locking one more time here? just before the actual copy action?
         if (*executeRestoration) {
                 msiAddKeyValToMspStr("verifyChksum", "", *options);
-                writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
+                writeLine("serverLog", "iiRevisionRestore: *src => *dst [*options]");
                 *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
                 if (*err < 0) {
 			if (*err==-818000) {
@@ -646,26 +646,34 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 	*result = *json_str;
 }
 
+
+data uurevisionwithpath =
+	| uurevisionwithpath : string * string -> uurevisionwithpath
+
+# \brief iiRevisionListOfCollectionBeforeTimestamp
 iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";	
 	foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = *originalPathKey AND META_DATA_ATTR_VALUE LIKE '*collName/%') {
 		*originalPath = *row.META_DATA_ATTR_VALUE;
 		iiRevisionLastBefore(*originalPath, *timestamp, *revisionId);
-		*revisions = cons(*revisionId, *revisions);
+		if (*revisionId != "") {
+			*revisions = cons(uurevisionwithpath(*revisionId, *originalPath), *revisions);
+		}
 	}
 }
 
-
+# \brief iiRevisionLastBefore
 iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
+	*candidates = uuListReverse(*candidates);
 	foreach(*candidate in *candidates) {
 		uurevisioncandidate(*timeInt, *candidateId) = *candidate;
 		if (*timeInt < *timestamp) {
+			*revisionId = *candidateId;
 			break;
 		}
-		*revisionId = *candidateId;
 	}
 
 }
