@@ -6,38 +6,93 @@
 
 # \brief iiDatamanagerPreSudoObjAclSet
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	if (*recursive == 0 && (*accessLevel == "write" || *accessLevel == "read")) {
-		*actor = uuClientFullName;
-		iiCanDatamanagerAclSet(*objPath, uuClientFullName, *otherName, *allowed, *reason);
-		if (*allowed) {
-			succeed;
-		}
+	*actor = *policyKv.actor;
+	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
+	writeLine("serverLog", "iiDatamanagerPreSudoObjAclSet: *reason");
+	if (*allowed) {
+		succeed;
 	}
 	fail;
 }
 
 
 # \brief iiCanDatamanagerAclSet
-iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *allowed, *reason) {
-	iiFolderStatus(*objPath, *folderStatus);
-	if (*folderStatus == SUBMITTED || *folderStatus == ACCEPTED || *folderStatus == REJECTED) {
-		iiCollectionGroupName(*objPath, *groupName);
-		uuGroupGetCategory(*groupName, *category, *subcategory);
-		if (*otherName == "datamanager-*category") {
-			uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
+iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
+	
+	on (*objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
+		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
+		if (*accessLevel != "read" && *accessLevel != "null") {
+			*allowed = false;
+			*reason = "Only read access can be granted or revoked in vault";
+			succeed;
+		}
+
+		*baseGroupName = triml(*otherName, IIGROUPPREFIX);	
+		if (*otherName == IIGROUPPREFIX ++ *baseGroupName) {
+			uuGroupGetCategory(*otherName, *category, *subcategory);
+			uuGroupExists("datamanager-*category", *datamanagerExists);
+			if (!*datamanagerExists) {
+				*allowed = false;
+				*reason = "User is not a datamanager or no datamanager exists";
+				succeed;
+			}
+			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);
 			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
 				*allowed = true;
 				*reason = "User is a datamanager of category *category.";
 			} else {
 				*allowed = false;
 				*reason = "User is not a datamanager.";
+				succeed;
 			}
 		} else {
 			*allowed = false;
-			*reason = "Permission can only be granted to the datamanager-*category group, not *otherName.";
+			*reason = "Only research groups can be granted read access to the vault";
+			succeed;
 		}
-	} else {
+
+		*vaultGroupName = IIVAULTPREFIX ++ *baseGroupName;
+		*pathElems = split(*objPath, "/");
+		if (size(*pathElems) < 4) {
+		    *allowed = false;
+		    *reason = "*objPath is not a datapackage in the vault";
+		} else if (elem(*pathElems, 2) != *vaultGroupName) {
+			*allowed = false;
+			*reason = "*objPath is not part of *vaultGroupName";
+		}
+	}
+       
+	on (*objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+
+		if (*recursive == 1 || *accessLevel == "own") {
+			*allowed = false;
+			*reason = "Cannot grant own or inherit to *objPath";
+			succeed;
+		}
+		iiFolderStatus(*objPath, *folderStatus);
+		if (*folderStatus == SUBMITTED || *folderStatus == ACCEPTED || *folderStatus == REJECTED) {
+			iiCollectionGroupName(*objPath, *groupName);
+			uuGroupGetCategory(*groupName, *category, *subcategory);
+			if (*otherName == "datamanager-*category") {
+				uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
+				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+					*allowed = true;
+					*reason = "User is a datamanager of category *category.";
+				} else {
+					*allowed = false;
+					*reason = "User is not a datamanager.";
+				}
+			} else {
+				*allowed = false;
+				*reason = "Permission can only be granted to the datamanager-*category group, not *otherName.";
+			}
+		} else {
+			*allowed = false;
+			*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+		}
+	} 
+	on (true) {
 		*allowed = false;
-		*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+		*reason = "Datamanager can only manage research groups or the vault";
 	}
 }
