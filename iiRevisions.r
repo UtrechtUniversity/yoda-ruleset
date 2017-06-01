@@ -546,13 +546,17 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 
 # \brief iiRevisionSearchByOriginalPath 
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
+	# Generic exception handling intialisation for possible later purposes
+        *status = 'Success';
+        *statusInfo = '';
+
 	*fields = list("META_DATA_ATTR_VALUE", "COUNT(DATA_ID)", "DATA_NAME");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path"),
 			   uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring));
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
 	
 	*result_lst = list();
 	foreach(*kvp in tl(*kvpList)) {
@@ -568,7 +572,13 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 }
 
 # \brief iiRevisionSearchByOriginalFilename
-iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
+# \ Used by frontend to search for revisions. Hence presence of *status and *statusInfo
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = '';
+
 	*originalDataNameKey = UUORGMETADATAPREFIX ++ "original_data_name";
 	*fields = list("COLL_NAME", "META_DATA_ATTR_VALUE");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", *originalDataNameKey),
@@ -576,7 +586,10 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
+ 	if (*status!='Success') {
+        	succeed;
+        }
 	
 	*result_lst = list();
 	foreach(*kvp in tl(*kvpList)) {
@@ -627,13 +640,17 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 # \brief iiRevisionSearchByOriginalId
 # Id stays the same after file renames.
 iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
+        # Generic exception handling intialisation for possible later purposes
+        *status = 'Success';
+        *statusInfo = '';
+
 	*fields = list("COLL_NAME", "DATA_NAME", "DATA_ID", "DATA_CREATE_TIME", "DATA_MODIFY_TIME", "DATA_CHECKSUM", "DATA_SIZE");
 	*conditions = list(uucondition("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_id"));
         *conditions = cons(uucondition("META_DATA_ATTR_VALUE", "=", *searchid), *conditions);	
 	*startpath = "/" ++ $rodsZoneClient ++ "/revisions";
 	*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
 
 	foreach(*kvp in tl(*kvpList)) {
 		*id = *kvp.DATA_ID;

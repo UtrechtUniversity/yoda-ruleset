@@ -20,7 +20,12 @@ iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collectio
 # \param[in] limit		limit the list of results. Cast to int
 #\ param[in] offset		Start returning results from offset. Cast to int
 # \param[out] result 		JSON output of subcollections and their flags
-iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result) {
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = ''; 
+	
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection){
 		*fields = list("COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
@@ -30,7 +35,12 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 		*conditions =  list(uucondition("COLL_NAME", "=", *path));
 	}
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+ 
+	if (*status != 'Success') {
+		succeed;
+	}
+
 	*kvpList = list()
 	if (*iscollection) {
 		foreach(*row in tl(*rowList)) {
@@ -71,13 +81,18 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 # \brief iiCollectionDetails return a json object containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
 # \param[out] result   JSON object containing Details of the Collection
-iiCollectionDetails(*path, *result) {
+iiCollectionDetails(*path, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = '';
 
 	# First check if path exists and fail if not
-	if (!uuCollectionExists(*path)) {
+	if (1==1) { #!uuCollectionExists(*path)) {
 		# class USER_INPUT_PATH_ERR(UserInputException):
 		# code = -317000
-		fail(-317000);
+		# fail(-317000);
+		*status = 'ErrorPathNotExists';
+		*statusInfo = 'The indicated path does not exists';
+		succeed;
 	}
 
 	msiString2KeyValPair("path=*path", *kvp);
