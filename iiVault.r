@@ -18,7 +18,7 @@ iiCopyFolderToVault(*folder) {
 	uuChopPath(*folder, *parent, *datapackageName);
 	msiGetIcatTime(*timestamp, "unix");
 	*timestamp = triml(*timestamp, "0");
-        *vaultGroupName = "vault-*baseName";
+        *vaultGroupName = IIVAULTPREFIX ++ *baseName;
 	*i = 0;
 	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
 		
@@ -87,3 +87,33 @@ iiCopyActionLog(*source, *destination) {
 		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
 	}
 }
+
+# \brief iiGrantReadAccessToResearchGroup
+iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "An internal error occured";
+	
+	*pathElems = split(*path, "/");
+	*vaultGroupName = elem(*pathElems, 2);
+	*baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
+	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
+	*actor = uuClientFullName;
+	*aclKv.actor = *actor;
+	*err = errormsg(msiSudoObjAclSet(1, "read", *researchGroup, *path, *aclKv), *msg);
+	if (*err < 0) {
+		*status = "PermissionDenied";
+		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
+		if (*allowed) {
+			*statusInfo = "Could not acquire datamanager access to *path.";
+			writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
+		} else {
+			*statusInfo = *reason;		
+		}
+		succeed;
+	} else {
+		*status = "Success";
+		*statusInfo = "";
+	}
+
+}
+
