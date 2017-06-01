@@ -86,12 +86,12 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 	*statusInfo = '';
 
 	# First check if path exists and fail if not
-	if (1==1) { #!uuCollectionExists(*path)) {
+	if (!uuCollectionExists(*path)) {
 		# class USER_INPUT_PATH_ERR(UserInputException):
 		# code = -317000
 		# fail(-317000);
 		*status = 'ErrorPathNotExists';
-		*statusInfo = 'The indicated path does not exists';
+		*statusInfo = 'The indicated path does not exist';
 		succeed;
 	}
 
