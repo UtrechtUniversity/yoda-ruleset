@@ -1,5 +1,5 @@
 testIiBrowse {
-	iiBrowse(*testPath, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result);
+	iiBrowse(*testPath, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo);
 	writeLine("stdout", *result);
 }
 

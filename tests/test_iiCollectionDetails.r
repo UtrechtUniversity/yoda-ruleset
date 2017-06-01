@@ -2,7 +2,7 @@ testiiCollectionDetails {
 	if (*testPath == "") {
 		*testPath = "/" ++ $rodsZoneClient ++ "/home";
 	}
-	iiCollectionDetails(*testPath, *result);
+	iiCollectionDetails(*testPath, *result, *status, *statusInfo);
 	writeLine("stdout", *result);
 }
 

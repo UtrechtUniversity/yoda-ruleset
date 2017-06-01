@@ -159,7 +159,47 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockFound = *lockFound;
 		*kvp.lockCount = str(*lockCount);
 
+	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		*metadataXmlName = IIMETADATAXMLNAME;
+		*kvp.isVaultPackage = "no";
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *path AND DATA_NAME = *metadataXmlName) {
+			*kvp.userMetadata = "true";
+			*kvp.isVaultPackage = "yes";
+		}
+		
+		*isFound = false;
+		# Check Access
+		*kvp.researchGroupAccess = "no";
+		foreach(*row in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*userId = *row.COLL_ACCESS_USER_ID;
+			foreach(*row in SELECT USER_NAME WHERE USER_ID = *userId) {
+				*userName = *row.USER_NAME;
+				if (*userName like "datamanager-*") {
+					*isFound = true;
+					*datamanagerGroup = *userName;
+					uuGroupGetMemberType(*datamanagerGroup, uuClientFullName, *userTypeIfDatamanager);
+					if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+						*kvp.isDatamanager = "yes";
+					} else {
+						*kvp.isDatamanager = "no";
+					}
+				}
+				if (*userName like "research-*") {
+					*kvp.researchGroupAccess = "yes";
+				}
+			}
+		}
+		if (*isFound) {
+		       *kvp.hasDatamanager = "yes";
+		} else {
+			*kvp.hasDatamanager = "no";
+		        *kvp.isDatamanager = "no";	
+		}
+		
+		
+		
 	}
+
 
 	uuKvp2JSON(*kvp, *result);
 }
