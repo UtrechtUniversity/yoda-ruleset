@@ -78,9 +78,18 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] kvpList		List of results in the form of a key-value-pair. first entry is a summary
-uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList) {
-	
+# \param[out] status		Status code: 'Success' of all ok
+# \param[out] statusInfo	Extra information if something went wrong
+uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = '';
+
 	*kvpList = list();
+        
+	# Testing purposes
+	#*status = 'ErrorExecutingQuery';
+        #*statusInfo = 'An error occured while retrieving data - testing purposes';
+	#succeed;
 
 	foreach(*field in *fields) {
 		if (*field like regex "(MIN|MAX|SUM|AVG|COUNT)\(.*") {
@@ -100,9 +109,24 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 		msiAddConditionToGenQuery(*column, *comparison, *expression, *GenQInp);
 	}
 
-	msiExecGenQuery(*GenQInp, *GenQOut);
+	*err = errormsg(msiExecGenQuery(*GenQInp, *GenQOut), *errmsg);
+        if (*err < 0) {
+		*status = 'ErrorExecutingQuery';		
+		*statusInfo = 'An error occured while retrieving data - *errmsg';
+		succeed;
+	}
 
-	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
+	#msiExecGenQuery(*GenQInp, *GenQOut);
+
+	# msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
+        
+	*err = errormsg(msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew), *errmsg);
+        if (*err < 0) {
+                *status = 'ErrorGetContFromQuery';
+                *statusInfo = 'An error occured while retrieving data - *errmsg';
+                succeed;
+        }
+
 	
 	# FastForward to Rowset of GENQMAXROWS based on offset
 	*offsetInGenQ = *offset;
@@ -155,6 +179,13 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 			}
 
 			msiExecGenQuery(*TotalQInp, *TotalQOut);
+		        *err = errormsg(msiExecGenQuery(*TotalQInp, *TotalQOut), *errmsg);
+		        if (*err < 0) {
+                		*status = 'ErrorExecutingQuery';
+                		*statusInfo = 'An error occured while retrieving data - *errmsg';
+                		succeed;
+        		}
+
 			foreach(*row in *TotalQOut) {
 			       msiGetValByKey(*row, hd(*fields), *total);
 		       	}
