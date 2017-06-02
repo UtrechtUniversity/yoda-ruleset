@@ -88,12 +88,21 @@ iiCopyActionLog(*source, *destination) {
 	}
 }
 
-# \brief iiGrantReadAccessToResearchGroup
+# \brief iiGrantReadAccessToResearchGroup Rule to grant read access to the vault package managed by a datamanger
+# \param[in] path
+# \param[out] status
+# \param[out] statusInfo
 iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
-	
+
+	# The vault starts at least three directories deep	
 	*pathElems = split(*path, "/");
+	if (size(*pathElems) < 3) {
+		*status = "PermissionDenied";
+		*statusInfo = "The datamanager can only grant permissions in in the vault";
+		succeed;
+	}
 	*vaultGroupName = elem(*pathElems, 2);
 	*baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
 	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
@@ -117,3 +126,39 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 }
 
+# \brief iiRevokeReadAccessToResearchGroup  Rule to revoke read access to the vault package managed by a datamanger
+# \param[in] path 
+# \param[out] status
+# \param[out] statusInfo
+iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "An internal error occured";
+	
+	*pathElems = split(*path, "/");
+	if (size(*pathElems) < 3) {
+		*status = "PermissionDenied";
+		*statusInfo = "The datamanager can only grant permissions in in the vault";
+		succeed;
+	}
+	*vaultGroupName = elem(*pathElems, 2);
+	*baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
+	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
+	*actor = uuClientFullName;
+	*aclKv.actor = *actor;
+	*err = errormsg(msiSudoObjAclSet(1, "null", *researchGroup, *path, *aclKv), *msg);
+	if (*err < 0) {
+		*status = "PermissionDenied";
+		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "null", *allowed, *reason);
+		if (*allowed) {
+			*statusInfo = "Could not acquire datamanager access to *path.";
+			writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
+		} else {
+			*statusInfo = *reason;		
+		}
+		succeed;
+	} else {
+		*status = "Success";
+		*statusInfo = "";
+	}
+
+}
