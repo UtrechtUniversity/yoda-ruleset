@@ -88,11 +88,15 @@ iiCopyActionLog(*source, *destination) {
 	}
 }
 
-# \brief iiGrantReadAccessToResearchGroup
+# \brief iiGrantReadAccessToResearchGroup Rule to grant read access to the vault package managed by a datamanger
+# \param[in] path
+# \param[out] status
+# \param[out] statusInfo
 iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
-	
+
+	# The vault starts at least three directories deep	
 	*pathElems = split(*path, "/");
 	if (size(*pathElems) < 3) {
 		*status = "PermissionDenied";
@@ -122,6 +126,10 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 }
 
+# \brief iiRevokeReadAccessToResearchGroup  Rule to revoke read access to the vault package managed by a datamanger
+# \param[in] path 
+# \param[out] status
+# \param[out] statusInfo
 iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
@@ -137,7 +145,7 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
-	*err = errormsg(msiSudoObjAclSet(0, "null", *researchGroup, *path, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet(1, "null", *researchGroup, *path, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "PermissionDenied";
 		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "null", *allowed, *reason);
