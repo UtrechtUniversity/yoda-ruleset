@@ -23,7 +23,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
 		if (*accessLevel != "read" && *accessLevel != "null") {
 			*allowed = false;
-			*reason = "Only read access can be granted or revoked in vault";
+			*reason = "A datamanager can only grant read access or revoke access in the vault.";
 			succeed;
 		}
 
@@ -33,7 +33,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			uuGroupExists("datamanager-*category", *datamanagerExists);
 			if (!*datamanagerExists) {
 				*allowed = false;
-				*reason = "User is not a datamanager or no datamanager exists";
+				*reason = "User is not a datamanager or no datamanager exists.";
 				succeed;
 			}
 			uuGroupGetMemberType("datamanager-*category", *actor, *userTypeIfDatamanager);
@@ -55,7 +55,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		*pathElems = split(*objPath, "/");
 		if (size(*pathElems) < 4) {
 		    *allowed = false;
-		    *reason = "*objPath is not a datapackage in the vault";
+		    *reason = "*objPath is not a datapackage in the vault.";
 		} else if (elem(*pathElems, 2) != *vaultGroupName) {
 			*allowed = false;
 			*reason = "*objPath is not part of *vaultGroupName";
@@ -88,7 +88,11 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			}
 		} else {
 			*allowed = false;
-			*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+			if (*folderStatus == FOLDER) {
+				*reason = "A datamanager has no permission to alter *objPath.";
+			} else {
+				*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'.";
+			}
 		}
 	} 
 	on (true) {
