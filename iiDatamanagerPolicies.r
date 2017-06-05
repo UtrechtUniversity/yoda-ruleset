@@ -97,6 +97,10 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 	} 
 	on (true) {
 		*allowed = false;
-		*reason = "Datamanager can only manage research groups or the vault";
+
+		#*reason = "Datamanager can only manage research groups or the vault";
+
+		#*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+		*reason = "Current status of folder *objPath is not 'submitted', 'accepted' or 'rejected'. Therefore the requested action can not be completed as a datamanager.";
 	}
 }

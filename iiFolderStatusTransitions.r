@@ -101,6 +101,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+	
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus != FOLDER) {
 		*status = "WrongStatus";
@@ -139,6 +140,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 iiFolderUnlock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+	
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SECURED || *currentFolderStatus == REJECTED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
@@ -182,6 +184,11 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+
+	#*status = "WrongStatus";
+        #*statusInfo = "Cannot unlock folder as it is currently in blablas state";
+	#succeed;
+
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == FOLDER || *currentFolderStatus == LOCKED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
@@ -221,6 +228,11 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+
+	#*status = "PermissionDenied";
+        #*statusInfo = 'Geen permissies om dit te doen';
+	#succeed;
+
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == SUBMITTED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
@@ -264,7 +276,8 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";
-		*statusInfo = "Failed to determine research group name of *folder";
+		#*statusInfo = "Failed to determine research group name of *folder";
+		*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
 		succeed;
 	}
 	*actor = uuClientFullName;
