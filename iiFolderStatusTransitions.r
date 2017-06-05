@@ -149,7 +149,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 	} else {
 		*status = "WrongStatus";
 		if (*currentFolderStatus == FOLDER) {
-			*statusInfo = "Cannot unlock folder as it currently  is not in a locked state.";
+			*statusInfo = "Insufficient permissions or the folder is  currently not in a locked state.";
 		} else {
 			*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state.";
 		}
