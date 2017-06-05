@@ -38,6 +38,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *allowed, *reason) {
 		}
 	} else {
 		*allowed = false;
-		*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+		#*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'";
+		*reason = "Current status of folder *objPath is not 'submitted', 'accepted' or 'rejected'. Therefore the requested action can not be completed as a datamanager.";
 	}
 }
