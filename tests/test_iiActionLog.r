@@ -1,5 +1,5 @@
 testRule {
-	iiActionLog(*folder, *result);
+	iiActionLog(*folder, *size, *result);
 	writeLine("stdout", *result);
 
 }

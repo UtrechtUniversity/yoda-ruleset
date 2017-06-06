@@ -19,7 +19,6 @@ iiCopyFolderToVault(*folder) {
 	msiGetIcatTime(*timestamp, "unix");
 	*timestamp = triml(*timestamp, "0");
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
-	*datamanagerGroupName = "datamanager-" ++  *baseName;
 	*i = 0;
 	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
 		
@@ -31,7 +30,8 @@ iiCopyFolderToVault(*folder) {
 	*buffer.source = *folder;
 	*buffer.destination = *target;
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	*datamanagerGroupName = "datamanager-" ++ *baseName;
+	uuGroupGetCategory(*groupName, *category, *subcategory);
+	*datamanagerGroupName = "datamanager-" ++ *category;
 	uuGroupExists(*datamanagerGroupName, *datamanagerExists);
 	if (*datamanagerExists) {
         	*err = errorcode(msiSetACL("recursive", "admin:read", *datamanagerGroupName, *target));
