@@ -28,7 +28,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		}
 
 		*baseGroupName = triml(*otherName, IIGROUPPREFIX);	
-		if (*otherName == IIGROUPPREFIX ++ *baseGroupName) {
+		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
 			uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
 			uuGroupExists("datamanager-*category", *datamanagerExists);
 			if (!*datamanagerExists) {
