@@ -124,29 +124,15 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
 		if (*allowed) {
 			*statusInfo = "Could not acquire datamanager access to *path.";
-			writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
+			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
 		} else {
 			*statusInfo = *reason;		
 		}
 		succeed;
 	} else {
-		*readGroup = "read-" ++  *baseGroupName;
-		*err = errormsg(msiSudoObjAclSet(1, "read", *readGroup, *path, *aclKv), *msg);
-		if (*err < 0) {
-			*status = "PermissionDenied";
-			iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
-			if (*allowed) {
-				*statusInfo = "Could not acquire datamanager access to *path.";
-				writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
-			} else {
-				*statusInfo = *reason;		
-			}
-		} else {
-			*status = "Success";
-			*statusInfo = "";
-			succeed;
-		}
-
+		*status = "Success";
+		*statusInfo = "";
+		succeed;
 	}
 
 }
@@ -182,21 +168,8 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 		}
 		succeed;
 	} else {
-		*readGroup = "read-" ++  *baseGroupName;
-		*err = errormsg(msiSudoObjAclSet(1, "null", *readGroup, *path, *aclKv), *msg);
-		if (*err < 0) {
-			*status = "PermissionDenied";
-			iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
-			if (*allowed) {
-				*statusInfo = "Could not acquire datamanager access to *path.";
-				writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
-			} else {
-				*statusInfo = *reason;		
-			}
-		} else {
-				*status = "Success";
-				*statusInfo = "";
-				succeed;
-		}
+			*status = "Success";
+			*statusInfo = "";
+			succeed;
 	}
 }
