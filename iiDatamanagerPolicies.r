@@ -89,9 +89,9 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		} else {
 			*allowed = false;
 			if (*folderStatus == FOLDER) {
-				*reason = "A datamanager has no permission to alter *objPath.";
+				*reason = "Currently a datamanager has no permission to alter the state of *objPath.";
 			} else {
-				*reason = "A datamanager has no permission to alter *objPath with status '*folderStatus'.";
+				*reason = "Currently a datamanager has no permission to alter the state of  *objPath with status '*folderStatus'.";
 			}
 		}
 	} 
