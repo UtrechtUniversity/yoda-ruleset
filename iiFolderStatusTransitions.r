@@ -240,7 +240,14 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
-		*statusInfo = "Cannot unsubmit folder due to insufficient permissions or folder is currently in *currentFolderStatus state";
+		
+		*extraReason = '';
+		if (*currentFolderStatus != '') {
+			*extraReason = " or folder is currently in *currentFolderStatus state";
+		}		
+
+		*statusInfo = "Cannot unsubmit folder due to insufficient permissions"; # *extraReason";
+
 		*folderStatus = *currentFolderStatus;
 		succeed;
 	}
