@@ -226,6 +226,19 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 					# Client wants to give the datamanager group for *category read
 					# access to a vault directory in *category.
 					succeed;
+				} else if (*isManagerInBaseGroup && *otherName == *baseGroup) {
+					# When a datamanager is present the research group needs read access.
+					succeed;
+				}
+			}
+		}
+	} else if (*otherName like "research-*" && *accessLevel == "read") {
+		*forGroup = *policyKv."forGroup";
+		if (*objPath == "/$rodsZoneClient/home/*forGroup") {
+			if (*forGroup like "vault-*") {
+				uuGetBaseGroup(*forGroup, *baseGroup);
+				if (*otherName == *baseGroup) {
+					succeed;				
 				}
 			}
 		}
@@ -336,6 +349,12 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		# No postprocessing for vault groups here - but see below for actions
 		# taken after automatic creation of vault groups.
 
+		# Grant the research group read-only access to the home dir
+		uuChop(*groupName, *_, *baseName, "-", true);
+		*researchGroupName = "research-*baseName";
+		*aclKv."forGroup" = *groupName;
+		msiSudoObjAclSet(0, "read", *researchGroupName, "/$rodsZoneClient/home/*groupName", *aclKv);
+
 	} else {
 		# This is a group manager managed group (i.e. 'research-', 'grp-', 'intake-', 'priv-', 'datamanager-').
 		# Add group manager metadata and add the creator as a member.
@@ -376,7 +395,15 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 
 				*aclKv."forGroup" = *vaultGroupName;
 				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+				
 			}
+
+			# Put the group name in the policyKv to assist the acl policy.
+			*aclKv."forGroup" = *groupName;
+
+			# Enable inheritance for the new group.
+			msiSudoObjAclSet(1, "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+
 		} else if (*groupName like "datamanager-*") {
 
 			# Give the newly created datamanager group read access to all
@@ -409,14 +436,15 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 					}
 				}
 			}
+			# Put the group name in the policyKv to assist the acl policy.
+			*aclKv."forGroup" = *groupName;
+
+			# Enable inheritance for the new group.
+			msiSudoObjAclSet(1, "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+
 		}
 	}
 
-	# Put the group name in the policyKv to assist the acl policy.
-	*aclKv."forGroup" = *groupName;
-
-	# Enable inheritance for the new group.
-	msiSudoObjAclSet(1, "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
