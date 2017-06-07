@@ -108,9 +108,9 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 	# The vault starts at least three directories deep	
 	*pathElems = split(*path, "/");
-	if (size(*pathElems) < 3) {
+	if (size(*pathElems) != 3) {
 		*status = "PermissionDenied";
-		*statusInfo = "The datamanager can only grant permissions in in the vault";
+		*statusInfo = "The datamanager can only grant permissions to vault packages";
 		succeed;
 	}
 	*vaultGroupName = elem(*pathElems, 2);
@@ -146,9 +146,9 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*statusInfo = "An internal error occured";
 	
 	*pathElems = split(*path, "/");
-	if (size(*pathElems) < 3) {
+	if (size(*pathElems) != 3) {
 		*status = "PermissionDenied";
-		*statusInfo = "The datamanager can only grant permissions in in the vault";
+		*statusInfo = "The datamanager can only revoke permissions to vault packages";
 		succeed;
 	}
 	*vaultGroupName = elem(*pathElems, 2);
@@ -162,7 +162,7 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "null", *allowed, *reason);
 		if (*allowed) {
 			*statusInfo = "Could not acquire datamanager access to *path.";
-			writeLine("stdout", "iiGrantReadAccessToResearchGroup: *err - *msg");
+			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
 		} else {
 			*statusInfo = *reason;		
 		}

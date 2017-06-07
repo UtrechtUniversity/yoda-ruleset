@@ -164,6 +164,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.isVaultPackage = "no";
 		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *path AND DATA_NAME = *metadataXmlName) {
 			*kvp.userMetadata = "true";
+		}
+
+		*pathElems = split(*path, "/");
+		if (size(*pathElems) == 3) {
 			*kvp.isVaultPackage = "yes";
 		}
 		
