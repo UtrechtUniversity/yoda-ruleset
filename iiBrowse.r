@@ -167,7 +167,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		}
 
 		*pathElems = split(*path, "/");
-		if (size(*pathElems) == 3) {
+		if (size(*pathElems) == 4) {
 			*kvp.isVaultPackage = "yes";
 		}
 		

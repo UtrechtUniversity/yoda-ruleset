@@ -108,7 +108,7 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 	# The vault starts at least three directories deep	
 	*pathElems = split(*path, "/");
-	if (size(*pathElems) != 3) {
+	if (size(*pathElems) != 4) {
 		*status = "PermissionDenied";
 		*statusInfo = "The datamanager can only grant permissions to vault packages";
 		succeed;
@@ -146,7 +146,7 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*statusInfo = "An internal error occured";
 	
 	*pathElems = split(*path, "/");
-	if (size(*pathElems) != 3) {
+	if (size(*pathElems) != 4) {
 		*status = "PermissionDenied";
 		*statusInfo = "The datamanager can only revoke permissions to vault packages";
 		succeed;
