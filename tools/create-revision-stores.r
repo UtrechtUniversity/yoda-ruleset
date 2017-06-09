@@ -119,13 +119,14 @@ createRevisionStores {
 				}
 			}
 			
+			writeLine("stdout", "*count revisions created");
+
 			# Remove the temporary read ACL
 			if (*readPermission == 0) {
 				writeLine("stdout", "Revoking read access to *groupColl");
 				msiSetACL("recursive", "admin:null", uuClientFullName, *groupColl);
 			}
 			
-			writeLine("stdout", "*count revisions created");
 
 					
 
