@@ -81,6 +81,8 @@ createRevisionStores {
 				*resource = *row.DATA_RESC_NAME;
 				*path = "*collName/*dataName";
 
+				*skip = false;
+
 				foreach(*filter in UUBLACKLIST) {
 					if (*dataName like *filter) {
 						writeLine("stdout", "Ignore *path for revision store. Filter *filter matches");
