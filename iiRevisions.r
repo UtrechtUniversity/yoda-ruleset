@@ -32,7 +32,10 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
 			iiRevisionCreate(*resource, *path, *maxSize, *id);
-			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
+			if (*id != "") {
+				writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
+			}
+			
 		}
 	}
 }
@@ -87,6 +90,9 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 		*iso8601 = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z");
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
+		if (!uuCollectionExists(*revColl)) {
+		    msiCollCreate(*revColl, 1, *msistatus);
+		}
 		*revPath = *revColl ++ "/" ++ *revFileName;
 		*err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
 		if (*err < 0) {
