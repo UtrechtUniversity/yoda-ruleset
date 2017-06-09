@@ -29,6 +29,7 @@ createRevisionStores {
 				msiSetACL("recursive", "admin:read", uuClientFullName, *groupColl);
 			}
 
+			*count = 0;
 			# First process the main collection	
 			foreach(*row in SELECT COLL_NAME, DATA_NAME, DATA_RESC_NAME where COLL_NAME = *groupColl) {
 				*collName = *row.COLL_NAME;
@@ -72,6 +73,7 @@ createRevisionStores {
 					}
 
 					*previousPath = *path;
+					*count = *count + 1;
 				}
 			}
 			# Then process the rest of the tree	
@@ -113,6 +115,7 @@ createRevisionStores {
 					}
 
 					*previousPath = *path;
+					*count = *count + 1;
 				}
 			}
 			
@@ -121,6 +124,8 @@ createRevisionStores {
 				writeLine("stdout", "Revoking read access to *groupColl");
 				msiSetACL("recursive", "admin:null", uuClientFullName, *groupColl);
 			}
+			
+			writeLine("stdout", "*count revisions created");
 
 					
 

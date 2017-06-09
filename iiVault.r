@@ -43,9 +43,10 @@ iiCopyFolderToVault(*folder) {
 	iiCopyUserMetadata(*folder, *target);
 	iiFolderSecure(*folder);
 	iiCopyActionLog(*folder, *target);
+	writeLine("serverLog", "Successfully copied *folder to *target");
 }
 
-# \brief iiIngestObject
+# \brief iiIngestObject       called by uuTreeWalk for each collection and dataobject to copy to the vault.
 # \param[in] itemParent
 # \param[in] itemName
 # \param[in] itemIsCollection
@@ -106,7 +107,7 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
 
-	# The vault starts at least three directories deep	
+	# Vault packages start four directories deep	
 	*pathElems = split(*path, "/");
 	if (size(*pathElems) != 4) {
 		*status = "PermissionDenied";
