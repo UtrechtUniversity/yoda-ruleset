@@ -508,8 +508,8 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
         # Get all existing tiers for initialisation purposes per category
         *allTiers = uuListResourceTiers(*result, *errorInfo);
 
-       *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
-
+        *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+	
 	# Aggregate (SUM) 'manually' to category/tier as all information is stored on grouplevel
         foreach (*categoryName in *listCategories) {
 		msiString2KeyValPair("", *categoryTierStorage);
@@ -519,12 +519,13 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
                         *categoryTierStorage."*tier" = '0';
                 }
 
-		foreach (*row in SELECT META_USER_ATTR_VALUE 
+		foreach (*row in SELECT META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME 
 				WHERE META_USER_ATTR_NAME = '*metadataName' 
 				AND META_USER_ATTR_VALUE like '{\"*categoryName\",%%'  ) {
                 	
 			# decipher return value {"category","tier","storage"}
 			# tier & storage are required.
+
 			*parts = split(*row.META_USER_ATTR_VALUE,',');
 			*tierName =  elem(*parts,1); # e.g. "tape"
 			*storage =  elem(*parts,2); # e.g. "12345"}
@@ -546,6 +547,21 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
 	}
 
         uuKvpList2JSON(*listCatTierStorage, *result, *size);
+}
+
+# /param[in] *kvpList - list with all key-value pairs to be deleted
+# /param[in] *objectName - description as known in dbs
+# /param[in] *objectType - description as known within iRODS {-u, -C, etc}
+uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInformation)
+{
+	foreach (*kvp in *kvpList) {
+                 *err = errormsg( msiRemoveKeyValuePairsFromObj(*kvp, *objectName, *objecType), *errmsg);
+                 if (*err < 0) {
+                         *status = 'ErrorDeletingMonthlyStorage';
+                         *statusInformation = 'Error deleting metadata: *err - *errmsg';
+                         succeed;
+                 }
+	}
 }
 
 
@@ -572,6 +588,27 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
 	*month = uuGetCurrentStatisticsMonth();
         writeLine('serverLog', 'Month: *month ');
 
+	*metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+	
+	# First delete all previous data for this month-number
+	*kvpList = list();
+	foreach (*row in SELECT META_USER_ATTR_VALUE, USER_GROUP_NAME WHERE META_USER_ATTR_NAME = '*metadataName' ) {
+	
+                msiString2KeyValPair("", *kvp);
+                msiAddKeyVal(*kvp, *metadataName, *row.META_USER_ATTR_VALUE);
+		*kvpList = cons(*kvp, *kvpList);	
+                 *err = errormsg( msiRemoveKeyValuePairsFromObj(*kvp, *row.USER_GROUP_NAME, "-u"), *errmsg);
+                 if (*err < 0) {
+	                 *status = 'ErrorDeletingMonthlyStorage';
+        	         *statusInformation = 'Error deleting metadata: *err - *errmsg';
+                         succeed;
+                 }
+	}
+	# Problem here is that *objectName differs for vkp's. 
+	# So it should be taken along in building the kvp list
+	#uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInformation);
+
+
         # zone is used to search in proper paths for storage
         *zone =  $rodsZoneClient;
 
@@ -591,7 +628,6 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
 
 	# Step through all categories
         foreach (*categoryName in *listCategories) {
-		writeLine('stdout', *categoryName);
                 *listGroups = list();
                 uuListGroupsOnCategory(*categoryName, *listGroups);
 
@@ -626,27 +662,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
 				}
 			}
                         # Group information complete.
-                        # Add it to the group as metadata for month
-                        *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
-
-                        foreach (*row in SELECT META_USER_ATTR_VALUE WHERE META_USER_ATTR_NAME = '*metadataName'
-AND USER_GROUP_NAME='*groupName' ) {
-                                #writeLine('stdout', 'Group META FROM  DBS: ' ++ *groupName);
-                                #writeLine('stdout', *row.META_USER_ATTR_VALUE );
-
-                        }
-                        
-			#errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, *metadataName, "", "", ""));
-			#writeLine('stdout', 'Delete from *groupName');
-			# First remove old metadata for this group
-                        #*err = errormsg( msiRemoveKeyValuePairsFromObj(*metadataName, *groupName, "-u"), *errmsg);       
-
-			#if (*err < 0) {
-                        #                *status = 'ErrorDeletingMonthlyStorage';
-                        #                *statusInformation = 'Error deleting metadata: *err - *errmsg';
-                        #                succeed;
-                        #}
-
+			# Add it to dbs
                         foreach (*tier in *allTiers) {
                                 msiString2KeyValPair("", *kvpGroupStorage);
                                 *storage = *groupTierStorage."*tier";
