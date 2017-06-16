@@ -11,7 +11,7 @@
 
 #
 UUDEFAULTRESOURCETIER = 'Standard';
-UUFRONTEND_SUCCESS = 'SUCCESS';
+UUFRONTEND_SUCCESS = 'Success';
 UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 
 
@@ -171,6 +171,26 @@ uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, 
         }
 }
 
+# /brief uuGetMonthlyCategoryStorageOverview() 
+# FrontEnd function for retrieving storage overview for all
+# /param[out] *result - JSON data with category overview
+# /param[out] *status - 
+# /param[out] *statusInfo
+uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
+{
+        *status = UUFRONTEND_SUCCESS;
+        *statusInfo = '';
+
+        AmIAdministrator(*isAdministrator);
+        if (!*isAdministrator){
+                *status = 'NoPermissions';
+                *statusInfo = 'Insufficient permissions';
+                succeed;
+        }
+
+	uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
+}
+
 
 #------------------------------------------ end of front end functions
 #------------------------------------------ Start of supporting functions that probably exist already somewhere 
@@ -187,6 +207,7 @@ AmIAdministrator(*isAdministrator)
 		*isAdministrator  = true;
 	}
 }
+
 
 # /brief uuResourceExistst - check whether given resource actually exists
 # /param[in] *resourceName
@@ -387,6 +408,9 @@ uuListResourceTiers(*result, *errorInfo)
         foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = 'org_storageTierName' ) {
         	# writeLine('stdout', *row.META_RESC_ATTR_VALUE);
                 *allRescTiers = cons(*row.META_RESC_ATTR_VALUE, *allRescTiers);
+		if (*row.META_RESC_ATTR_VALUE == 'Standard') {
+			*foundStandardTier = true;
+		}
         }
 
 	if (!*foundStandardTier) { # Add standard tier if not found in database
@@ -452,9 +476,289 @@ uuListResources()
 		# writeLine('stdout', 'name: ' ++ *kvp.resourceName);
                 *allResources = cons(*kvp, *allResources);
         }
-        #writeLine('stdout', *allResources);
 
         *allResources;
 }
 
+
+
+# /brief uuGetMonthlyStorageStatistics()
+# /param[out] *result - JSON representation of all found storage information on all categories 
+# /param[out] *status
+# /param[out] *statusInfo
+
+# This function is directly dependant on the output of uuStoreMonthlyStorageStatistics.
+# Current month is used to retrieve data.
+# So this must be kept in line with the moment when new data is collected and stored!
+uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
+{
+        # Really for the frontend but can be of use for this as well
+        *status = 'Success';
+        *statusInformation = '';
+
+        *month = uuGetCurrentStatisticsMonth();
+	
+	  # Collection of all category, tier and storage values
+        *listCatTierStorage = list();
+
+        # All categories present        
+        *listCategories = list();
+        uuListCategories(*listCategories)
+
+        # Get all existing tiers for initialisation purposes per category
+        *allTiers = uuListResourceTiers(*result, *errorInfo);
+
+       *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+
+	# Aggregate (SUM) 'manually' to category/tier as all information is stored on grouplevel
+        foreach (*categoryName in *listCategories) {
+		msiString2KeyValPair("", *categoryTierStorage);
+
+                # Set all tiers storage values to 0 for this category
+                foreach (*tier in *allTiers) {
+                        *categoryTierStorage."*tier" = '0';
+                }
+
+		foreach (*row in SELECT META_USER_ATTR_VALUE 
+				WHERE META_USER_ATTR_NAME = '*metadataName' 
+				AND META_USER_ATTR_VALUE like '{\"*categoryName\",%%'  ) {
+                	
+			# decipher return value {"category","tier","storage"}
+			# tier & storage are required.
+			*parts = split(*row.META_USER_ATTR_VALUE,',');
+			*tierName =  elem(*parts,1); # e.g. "tape"
+			*storage =  elem(*parts,2); # e.g. "12345"}
+			
+			*tierName = substr(*tierName, 1, strlen(*tierName)-1);
+			*storage = substr(*storage,1, strlen(*storage)-2);
+        		
+			*categoryTierStorage."*tierName" = str(int(*categoryTierStorage."*tierName") + int(*storage));
+		}
+		# Finished handling this category.
+		# Add to kvp list
+                foreach (*tier in *allTiers) {
+                        msiString2KeyValPair("", *kvp);
+                        *kvp.category = *categoryName;
+                        *kvp.tier = *tier;
+                        *kvp.storage = *categoryTierStorage."*tier";
+                        *listCatTierStorage = cons(*kvp, *listCatTierStorage);
+                }
+	}
+
+        uuKvpList2JSON(*listCatTierStorage, *result, *size);
+}
+
+
+# /brief uuStoreMonthlyStorageStatistics()
+# For all categories known store all found storage data for each group belonging to those category
+# Store as metadata on group level holding
+# 1) category of group on probe date - this can change
+# 2) tier
+# 3) actual calculated storage for the group
+# 
+# The information is bound to the current month the 'probe' is done. 
+# When retrieving the information again the current month is used.
+#
+# A simple alternative for this is to use an offset.
+# Say probes done on the 27th or later of a month will always be connected to the month after or something
+uuStoreMonthlyStorageStatistics(*status, *statusInformation) 
+{
+	writeLine('serverLog', 'Start uuStoreMonthlyStorageStatistics');
+	
+	# Really for the frontend but can be of use for this as well
+	*status = 'Success';
+	*statusInformation = '';
+
+	*month = uuGetCurrentStatisticsMonth();
+        writeLine('serverLog', 'Month: *month ');
+
+        # zone is used to search in proper paths for storage
+        *zone =  $rodsZoneClient;
+
+        # All categories present        
+        *listCategories = list();
+        uuListCategories(*listCategories)
+
+        # Get all existing tiers for initialisation purposes per category
+        *allTiers = uuListResourceTiers(*result, *errorInfo);
+
+        *kvpResourceTier = uuKvpResourceAndTiers();
+
+         #per group find the storage amount for 
+         # 1) dynamic storage and 
+         # 2) vault
+         *storageCalculationSteps = list("dynamic", "vault");
+
+	# Step through all categories
+        foreach (*categoryName in *listCategories) {
+		writeLine('stdout', *categoryName);
+                *listGroups = list();
+                uuListGroupsOnCategory(*categoryName, *listGroups);
+
+                #per group find the storage amount for 
+                # 1) dynamic storage and 
+                # 2) vault
+                foreach(*groupName in *listGroups ) {
+                        msiString2KeyValPair("", *groupTierStorage);
+                        foreach (*tier in *allTiers){ # initialize group tier storage
+                                *groupTierStorage."*tier" = '0';
+                        }
+
+                        foreach (*step in *storageCalculationSteps) {
+                                if (*step == 'dynamic') {
+                                        *collName = '/*zone/home/'++ *groupName ++ '%%';
+                                }
+                                else { # vault sitation - strip groupname down to its basic name (research-)
+                                        uuGetGroupNameForVault(*groupName, *groupNameVault);
+                                        *collName = '/*zone/home/vault'++ *groupNameVault ++ '%%';
+                                }
+				#writeLine('stdout', *collName);
+                                foreach(*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*collName') {
+                                        # This brings the total for dynamic storage of a group per RESOURCE
+                                        # Has to be converted to TIER and added to tier total
+
+                                        *thisResc = *row.RESC_NAME;
+                                        *thisTier = *kvpResourceTier."*thisResc";
+
+                                        # Totals on group level
+                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                        *groupTierStorage."*thisTier" = str(*newGroupSize);
+				}
+			}
+                        # Group information complete.
+                        # Add it to the group as metadata for month
+                        *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+
+                        foreach (*row in SELECT META_USER_ATTR_VALUE WHERE META_USER_ATTR_NAME = '*metadataName'
+AND USER_GROUP_NAME='*groupName' ) {
+                                #writeLine('stdout', 'Group META FROM  DBS: ' ++ *groupName);
+                                #writeLine('stdout', *row.META_USER_ATTR_VALUE );
+
+                        }
+                        
+			#errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, *metadataName, "", "", ""));
+			#writeLine('stdout', 'Delete from *groupName');
+			# First remove old metadata for this group
+                        #*err = errormsg( msiRemoveKeyValuePairsFromObj(*metadataName, *groupName, "-u"), *errmsg);       
+
+			#if (*err < 0) {
+                        #                *status = 'ErrorDeletingMonthlyStorage';
+                        #                *statusInformation = 'Error deleting metadata: *err - *errmsg';
+                        #                succeed;
+                        #}
+
+                        foreach (*tier in *allTiers) {
+                                msiString2KeyValPair("", *kvpGroupStorage);
+                                *storage = *groupTierStorage."*tier";
+                                *json_str = '{"*categoryName","*tier","*storage"}';
+                                *kvpGroupStorage."*metadataName" = *json_str;
+                                *err = errormsg(msiAssociateKeyValuePairsToObj( *kvpGroupStorage, *groupName, "-u"), *errmsg);
+				if (*err < 0) {
+					*status = 'ErrorWritingMonthlyStorage';
+					*statusInformation = 'Error adding metadata: *err - *errmsg';
+					succeed;
+				}
+                        }
+		}
+	}
+}
+
+# /brief uuGetCurrentStatisticsMonth()
+# returns the number of the month {'01',...'12'} that currently is the month reporting is about.
+# In this case the breakpoint is set to halfway through a month.
+# I.e. each statistics probe that is stored after the 15th, is related to the month after.
+uuGetCurrentStatisticsMonth() 
+{
+        msiGetIcatTime(*timestamp, "icat");
+        *month = int(timestrf(datetime(int(*timestamp)), "%m"));
+	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
+	
+	if (*day > 15) {
+		*month = *month + 1;
+		if (*month > 12) {
+			*month = 1;
+		}
+	}
+	# Format month as '01'-'12'
+	*strMonth = str(*month);
+	if (strlen(*strMonth)==1) {
+		*strMonth = '0' ++ *strMonth;
+	}
+	*strMonth;
+}
+
+# /brief uuKvpResourceAndTiers()
+# returns *kvp with resourceName as key and tierName as value 
+# This way it is easy to use the name of a resource as an index and retrieve the corresponding tierName.
+uuKvpResourceAndTiers() 
+{
+	*listResources = uuListResources();
+
+	msiString2KeyValPair("", *kvp);
+
+	foreach (*resource in *listResources) {
+	
+	# Because outerjoins are impossible in iRods and there is nog guarantee that all resources have org_m
+
+		*resourceName = *resource.resourceName;
+		*kvp."*resourceName" = 'Standard';	
+
+		*sqlResource = *resource.resourceName;
+                foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+                        *kvp."*resourceName" = *row.META_RESC_ATTR_VALUE;
+                }
+	}
+
+	*kvp;
+}
+
+
+# /brief Get a list of all known categories 
+uuListCategories(*listCategories) 
+{
+
+        *listCategories = list();
+        foreach (*row in SELECT META_USER_ATTR_VALUE
+                WHERE  USER_TYPE            = 'rodsgroup'
+                  AND  META_USER_ATTR_NAME  = 'category') {
+
+                #writeLine('stdout', *row.META_USER_ATTR_VALUE);
+		*listCategories = cons(*row.META_USER_ATTR_VALUE, *listCategories);
+        }
+}
+
+# /brief List of groups 
+# /param[in] *categoryName
+# /param[out] *listGroups
+uuListGroupsOnCategory(*categoryName, *listGroups) 
+{
+	*listGroups = list();
+       foreach (
+                *row in
+                SELECT USER_NAME
+                WHERE  USER_TYPE            = 'rodsgroup'
+                  AND  META_USER_ATTR_NAME  = 'category'
+                  AND  META_USER_ATTR_VALUE = '*categoryName'
+        ) {
+
+		*listGroups = cons(*row.USER_NAME, *listGroups);
+        }
+}
+
+# /brief uuGetGroupNameForVault()  Get the base group name, stripped off of 'research-' etc
+# /param[in] *groupName - full name of a group including 'research-' etc 
+# /param[out] *groupBase
+uuGetGroupNameForVault(*groupName, *groupBase) 
+{
+	*partsList = split(*groupName,'-');
+
+         *count = 0;
+         *groupBase = '';
+         foreach (*part in *partsList) {
+         	if (*count>0) {
+                        *groupBase = *groupBase ++ '-' ++ *part;
+                }
+                *count = *count + 1;
+         }
+}
 
