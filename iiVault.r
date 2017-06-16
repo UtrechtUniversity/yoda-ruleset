@@ -10,15 +10,22 @@
 # \param[in] folder  The folder to copy to the vault
 iiCopyFolderToVault(*folder) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
-	writeLine("stdout", "*folder - *groupName");
+	writeLine("stdout", "iiCopyFolderToVault: *folder belongs to *groupName");
 	if (*err < 0) {
 		failmsg(-1, "NoResearchGroup");
 	}
 	uuChop(*groupName, *_, *baseName, "-", true);
 	uuChopPath(*folder, *parent, *datapackageName);
+
+	# Make room for the timestamp and sequence number
+	if (strlen(*datapackageName) > 235) {
+		*datapackageName = substr(*datapackageName, 0, 235);
+	}
+
 	msiGetIcatTime(*timestamp, "unix");
 	*timestamp = triml(*timestamp, "0");
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
+
 	*i = 0;
 	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
 		
@@ -26,24 +33,37 @@ iiCopyFolderToVault(*folder) {
 		*i = *i + 1;
 		*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
 	}
+	
+	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target");
 
 	*buffer.source = *folder;
-	*buffer.destination = *target;
+	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
+
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*datamanagerGroupName = "datamanager-" ++ *category;
 	uuGroupExists(*datamanagerGroupName, *datamanagerExists);
 	if (*datamanagerExists) {
         	*err = errorcode(msiSetACL("recursive", "admin:read", *datamanagerGroupName, *target));
 		if (*err < 0) {
-			writeLine("serverLog", "iiCopyFolderToVault: Failed to give *datamanagerGroupName access. errorcode: *err");
+			writeLine("stdout", "iiCopyFolderToVault: Failed to give *datamanagerGroupName access. errorcode: *err");
+		} else {
+			writeLine("stdout", "iiCopyFolderToVault: Granted *datamanagerGroupName read access to *target");
 		}
 	
+	} else {
+		*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
+		if (*err < 0) {
+			writeLine("stdout", "iiCopyFolderToVault: Failed to give *groupName access. errorcode: *err");
+		} else {
+			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to *target");
+		}
 	}
+
 	iiCopyUserMetadata(*folder, *target);
 	iiFolderSecure(*folder);
 	iiCopyActionLog(*folder, *target);
-	writeLine("serverLog", "Successfully copied *folder to *target");
+	writeLine("stdout", "Successfully copied *folder to *target");
 }
 
 # \brief iiIngestObject       called by uuTreeWalk for each collection and dataobject to copy to the vault.
@@ -70,7 +90,7 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 }
 
 
-# \brief iiCopyUserMetadata    Copy user metadata from sourde to destination
+# \brief iiCopyUserMetadata    Copy user metadata from source to destination
 # \param[in] source
 # \param[in] destination
 iiCopyUserMetadata(*source, *destination) {
