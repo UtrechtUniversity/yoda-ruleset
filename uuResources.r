@@ -25,8 +25,9 @@ UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 # /param[in]  *resourceName
 uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
-	AmIAdministrator(*isAdministrator);
-	if (!*isAdministrator){
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin"){
 		*status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
 		succeed;
@@ -61,8 +62,8 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 # /param[out] *statusInfo       -return specific information regarding *status
 uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 {
-	AmIAdministrator(*isAdministrator);
-        if (!*isAdministrator){
+        uuGetUserType(uuClientFullName, *userType);
+        if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
                 succeed;
@@ -88,8 +89,8 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 # /param[out] *statusInfo       -return specific information regarding *status
 uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 {
-        AmIAdministrator(*isAdministrator);
-        if (!*isAdministrator){
+        uuGetUserType(uuClientFullName, *userType);
+        if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
                 succeed;
@@ -112,8 +113,8 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 # /param[in]  *tierName
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
-        AmIAdministrator(*isAdministrator);
-        if (!*isAdministrator) {
+        uuGetUserType(uuClientFullName, *userType);
+        if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
                 succeed;
@@ -147,8 +148,8 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 # /param[in]  *usedStorage
 uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, *status, *statusInfo)
 {
-        AmIAdministrator(*isAdministrator);
-        if (!*isAdministrator){
+        uuGetUserType(uuClientFullName, *userType);
+        if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
                 succeed;
@@ -181,8 +182,8 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
         *status = UUFRONTEND_SUCCESS;
         *statusInfo = '';
 
-        AmIAdministrator(*isAdministrator);
-        if (!*isAdministrator){
+        uuGetUserType(uuClientFullName, *userType);
+        if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
                 *statusInfo = 'Insufficient permissions';
                 succeed;
@@ -194,19 +195,6 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 
 #------------------------------------------ end of front end functions
 #------------------------------------------ Start of supporting functions that probably exist already somewhere 
-AmIAdministrator(*isAdministrator)
-{	
-	writeLine('stdout', $userNameClient);
-
-	uuGetUserType($userNameClient, *userType);
-
-	writeLine('stdout', *userType);
-	
-	*isAdministrator = false;
-	if (*userType == 'rodsadmin') {
-		*isAdministrator  = true;
-	}
-}
 
 
 # /brief uuResourceExistst - check whether given resource actually exists
@@ -490,11 +478,11 @@ uuListResources()
 # This function is directly dependant on the output of uuStoreMonthlyStorageStatistics.
 # Current month is used to retrieve data.
 # So this must be kept in line with the moment when new data is collected and stored!
-uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
+uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 {
         # Really for the frontend but can be of use for this as well
         *status = 'Success';
-        *statusInformation = '';
+        *statusInfo = '';
 
         *month = uuGetCurrentStatisticsMonth();
 	
@@ -550,13 +538,13 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
 # /param[in] *kvpList - list with all key-value pairs to be deleted
 # /param[in] *objectName - description as known in dbs
 # /param[in] *objectType - description as known within iRODS {-u, -C, etc}
-uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInformation)
+uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInfo)
 {
 	foreach (*kvp in *kvpList) {
                  *err = errormsg( msiRemoveKeyValuePairsFromObj(*kvp, *objectName, *objecType), *errmsg);
                  if (*err < 0) {
                          *status = 'ErrorDeletingMonthlyStorage';
-                         *statusInformation = 'Error deleting metadata: *err - *errmsg';
+                         *statusInfo = 'Error deleting metadata: *err - *errmsg';
                          succeed;
                  }
 	}
@@ -569,13 +557,13 @@ uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInf
 # 1) category of group on probe date - this can change
 # 2) tier
 # 3) actual calculated storage for the group
-uuStoreMonthlyStorageStatistics(*status, *statusInformation) 
+uuStoreMonthlyStorageStatistics(*status, *statusInfo) 
 {
 	writeLine('serverLog', 'Start uuStoreMonthlyStorageStatistics');
 	
 	# Really for the frontend but can be of use for this as well
 	*status = 'Success';
-	*statusInformation = '';
+	*statusInfo = '';
 
 	*month = uuGetCurrentStatisticsMonth();
         writeLine('serverLog', 'Month: *month ');
@@ -592,13 +580,13 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
                  *err = errormsg( msiRemoveKeyValuePairsFromObj(*kvp, *row.USER_GROUP_NAME, "-u"), *errmsg);
                  if (*err < 0) {
 	                 *status = 'ErrorDeletingMonthlyStorage';
-        	         *statusInformation = 'Error deleting metadata: *err - *errmsg';
+        	         *statusInfo = 'Error deleting metadata: *err - *errmsg';
                          succeed;
                  }
 	}
 	# Problem here is that *objectName differs for vkp's. 
 	# So it should be taken along in building the kvp list
-	#uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInformation);
+	#uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInfo);
 
 
         # zone is used to search in proper paths for storage
@@ -618,6 +606,10 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
          # 2) vault
          *storageCalculationSteps = list("dynamic", "vault");
 
+         # Per group two statements are required to gather all data 
+         # 1) folder itself
+         # 2) all subfolders of the folder
+
 	# Step through all categories
         foreach (*categoryName in *listCategories) {
                 *listGroups = list();
@@ -634,16 +626,32 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
 
                         foreach (*step in *storageCalculationSteps) {
                                 if (*step == 'dynamic') {
-                                        *collName = '/*zone/home/'++ *groupName ++ '%%';
+                                        *collName = '/*zone/home/'++ *groupName;
                                 }
                                 else { # vault sitation - strip groupname down to its basic name (research-)
                                         uuGetGroupNameForVault(*groupName, *groupNameVault);
-                                        *collName = '/*zone/home/vault'++ *groupNameVault ++ '%%';
+                                        *collName = '/*zone/home/vault'++ *groupNameVault;
                                 }
-				#writeLine('stdout', *collName);
-                                foreach(*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*collName') {
+				
+			        # Per group two statements are required to gather all data 
+         			# 1) data in folder itself
+         			# 2) data in all subfolders of the folder
+
+				# 1) Collect all data in folder itself
+                               	foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*collName') {
+                                       	# This brings the total for dynamic storage of a group per RESOURCE
+
+                                    	*thisResc = *row.RESC_NAME;
+                                        *thisTier = *kvpResourceTier."*thisResc";
+
+                                        # Totals on group level
+                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                        *groupTierStorage."*thisTier" = str(*newGroupSize);					
+				}
+
+				# 2) Collect all data in all subfolders of the folder
+                                foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*collName/%%') {
                                         # This brings the total for dynamic storage of a group per RESOURCE
-                                        # Has to be converted to TIER and added to tier total
 
                                         *thisResc = *row.RESC_NAME;
                                         *thisTier = *kvpResourceTier."*thisResc";
@@ -651,7 +659,10 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
                                         # Totals on group level
                                         *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
                                         *groupTierStorage."*thisTier" = str(*newGroupSize);
-				}
+                                }
+
+
+
 			}
                         # Group information complete.
 			# Add it to dbs
@@ -663,7 +674,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
                                 *err = errormsg(msiAssociateKeyValuePairsToObj( *kvpGroupStorage, *groupName, "-u"), *errmsg);
 				if (*err < 0) {
 					*status = 'ErrorWritingMonthlyStorage';
-					*statusInformation = 'Error adding metadata: *err - *errmsg';
+					*statusInfo = 'Error adding metadata: *err - *errmsg';
 					succeed;
 				}
                         }
