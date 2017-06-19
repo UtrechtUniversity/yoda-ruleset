@@ -188,7 +188,7 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
                 succeed;
         }
 
-	uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
+	uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 }
 
 
@@ -248,7 +248,7 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
         # *kvp.resourceId = *resource.resourceId - not known within this situation here.
         *kvp.resourceName = *resourceName;
 
-        # Initialize the actual metadata related to storage TODO: get rid of the org_storage part
+        # Initialize the actual metadata related to storage TODO: eet rid of the org_storage part
         *kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
 
         *kvp.org_storageMonth01 = '0'; # storage used in TB
@@ -521,17 +521,15 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInformation)
 
 		foreach (*row in SELECT META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME 
 				WHERE META_USER_ATTR_NAME = '*metadataName' 
-				AND META_USER_ATTR_VALUE like '{\"*categoryName\",%%'  ) {
+				AND META_USER_ATTR_VALUE like '[\"*categoryName\",%%'  ) {
                 	
-			# decipher return value {"category","tier","storage"}
-			# tier & storage are required.
+			# resolve as JSON string holding an array ["category","tier","storage"]
+			# Split on ',' where it is sure that a tier as well as a 
+			*tierName = "";
+			msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1); #first position
 
-			*parts = split(*row.META_USER_ATTR_VALUE,',');
-			*tierName =  elem(*parts,1); # e.g. "tape"
-			*storage =  elem(*parts,2); # e.g. "12345"}
-			
-			*tierName = substr(*tierName, 1, strlen(*tierName)-1);
-			*storage = substr(*storage,1, strlen(*storage)-2);
+                        *storage = "";
+                        msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
         		
 			*categoryTierStorage."*tierName" = str(int(*categoryTierStorage."*tierName") + int(*storage));
 		}
@@ -571,12 +569,6 @@ uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInf
 # 1) category of group on probe date - this can change
 # 2) tier
 # 3) actual calculated storage for the group
-# 
-# The information is bound to the current month the 'probe' is done. 
-# When retrieving the information again the current month is used.
-#
-# A simple alternative for this is to use an offset.
-# Say probes done on the 27th or later of a month will always be connected to the month after or something
 uuStoreMonthlyStorageStatistics(*status, *statusInformation) 
 {
 	writeLine('serverLog', 'Start uuStoreMonthlyStorageStatistics');
@@ -666,7 +658,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInformation)
                         foreach (*tier in *allTiers) {
                                 msiString2KeyValPair("", *kvpGroupStorage);
                                 *storage = *groupTierStorage."*tier";
-                                *json_str = '{"*categoryName","*tier","*storage"}';
+                                *json_str = '["*categoryName","*tier","*storage"]';
                                 *kvpGroupStorage."*metadataName" = *json_str;
                                 *err = errormsg(msiAssociateKeyValuePairsToObj( *kvpGroupStorage, *groupName, "-u"), *errmsg);
 				if (*err < 0) {
