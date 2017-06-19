@@ -518,7 +518,7 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
                         *storage = "";
                         msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
         		
-			*categoryTierStorage."*tierName" = str(int(*categoryTierStorage."*tierName") + int(*storage));
+			*categoryTierStorage."*tierName" = str(double(*categoryTierStorage."*tierName") + double(*storage));
 		}
 		# Finished handling this category.
 		# Add to kvp list
@@ -561,7 +561,7 @@ uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInf
 uuStoreMonthlyStorageStatistics(*status, *statusInfo) 
 {
 	writeLine('serverLog', 'Start uuStoreMonthlyStorageStatistics');
-	
+
 	# Really for the frontend but can be of use for this as well
 	*status = 'Success';
 	*statusInfo = '';
@@ -645,7 +645,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                         *thisTier = *kvpResourceTier."*thisResc";
 
                                         # Totals on group level
-                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                        *newGroupSize = double(*groupTierStorage."*thisTier") + double(*row.DATA_SIZE);
                                         *groupTierStorage."*thisTier" = str(*newGroupSize);					
 				}
 
@@ -657,7 +657,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                         *thisTier = *kvpResourceTier."*thisResc";
 
                                         # Totals on group level
-                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                        *newGroupSize = double(*groupTierStorage."*thisTier") + double(*row.DATA_SIZE);
                                         *groupTierStorage."*thisTier" = str(*newGroupSize);
                                 }
 			}
@@ -671,7 +671,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                 *thisTier = *kvpResourceTier."*thisResc";
 
                                  # Totals on group level
-                                 *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                 *newGroupSize = double(*groupTierStorage."*thisTier") + double(*row.DATA_SIZE);
                                  *groupTierStorage."*thisTier" = str(*newGroupSize);
                         }
 
