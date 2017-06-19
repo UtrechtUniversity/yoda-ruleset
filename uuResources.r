@@ -636,6 +636,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 			        # Per group two statements are required to gather all data 
          			# 1) data in folder itself
          			# 2) data in all subfolders of the folder
+				# 3) data from revisions of that group
 
 				# 1) Collect all data in folder itself
                                	foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*collName') {
@@ -661,8 +662,18 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                         *groupTierStorage."*thisTier" = str(*newGroupSize);
                                 }
 
+				*revisionCollName = UUREVISIONCOLLECTION ++ '/' ++ *groupName; 
+                                # 3) Collect all data in revision folder of this group
+                                foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*revisionCollName') {
+                                        # This brings the total for dynamic storage of a group per RESOURCE
 
+                                        *thisResc = *row.RESC_NAME;
+                                        *thisTier = *kvpResourceTier."*thisResc";
 
+                                        # Totals on group level
+                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                        *groupTierStorage."*thisTier" = str(*newGroupSize);
+                                }
 			}
                         # Group information complete.
 			# Add it to dbs
