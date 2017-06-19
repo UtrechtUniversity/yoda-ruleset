@@ -512,9 +512,8 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 				AND META_USER_ATTR_VALUE like '[\"*categoryName\",%%'  ) {
                 	
 			# resolve as JSON string holding an array ["category","tier","storage"]
-			# Split on ',' where it is sure that a tier as well as a 
 			*tierName = "";
-			msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1); #first position
+			msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1);
 
                         *storage = "";
                         msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
@@ -606,9 +605,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
          # 2) vault
          *storageCalculationSteps = list("dynamic", "vault");
 
-         # Per group two statements are required to gather all data 
-         # 1) folder itself
-         # 2) all subfolders of the folder
+	# 3) Furthermore each group's revision store has to be taken into account
 
 	# Step through all categories
         foreach (*categoryName in *listCategories) {
@@ -663,13 +660,11 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                 }
 			}
 
+			# 3) Collect all data in revision folder of this group
+			# This can be caught in a sinlge statement as the group folder itself does not hold data	
                         *revisionCollName = '/*zone' ++ UUREVISIONCOLLECTION ++ '/' ++ *groupName ++ '/%%';
-			#writeLine('stdout', 'RevColl: *revisionCollName');
-                        # 3) Collect all data in revision folder of this group
                         foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*revisionCollName') {
                                 # This brings the total for dynamic storage of a group per RESOURCE
-				#writeLine('stdout', *row.DATA_SIZE);
-				#writeLine('stdout', *row.RESC_NAME);	
                                 *thisResc = *row.RESC_NAME;
                                 *thisTier = *kvpResourceTier."*thisResc";
 
@@ -677,7 +672,6 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                  *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
                                  *groupTierStorage."*thisTier" = str(*newGroupSize);
                         }
-
 
                         # Group information complete.
 			# Add it to dbs
