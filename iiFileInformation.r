@@ -70,7 +70,7 @@ iiCollectionGroupName(*path, *groupName) {
 		}
 	}
 
-	writeLine("serverLog", "iiCollectionGroupNameAndUserType: groupName = *groupName");
+	writeLine("serverLog", "iiCollectionGroupNameAndUserType: path = *path, groupName = *groupName");
 	if (!*isfound) {
 		# No results found. Not a group folder
 		failmsg(-808000, "*path does not belong to a research or intake group or is not available to current user");

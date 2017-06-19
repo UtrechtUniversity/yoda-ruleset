@@ -93,17 +93,22 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 iiPrepareMetadataForm(*path, *result) {
 	msiString2KeyValPair("", *kvp);
 	
-	
-	iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
-	*kvp.groupName = *groupName;
-	*kvp.userType = *userType;
-	if (*isDatamanager) {
-		*kvp.isDatamanager = "yes";
+
+	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
+		*kvp.groupName = *groupName;
+		*kvp.userType = *userType;
+		if (*isDatamanager) {
+			*kvp.isDatamanager = "yes";
+		} else {
+			*kvp.isDatamanager = "no";
+		}
+
 	} else {
-		*kvp.isDatamanager = "no";
+		*result = "";
+		succeed;	
 	}
-	
-	
+
 	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
 
 	*orgStatus = FOLDER;
