@@ -663,10 +663,10 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                 }
 			}
 
-                        *revisionCollName = UUREVISIONCOLLECTION ++ '/' ++ *groupName;
+                        *revisionCollName = '/*zone' ++ UUREVISIONCOLLECTION ++ '/' ++ *groupName ++ '/%%';
 			#writeLine('stdout', 'RevColl: *revisionCollName');
                         # 3) Collect all data in revision folder of this group
-                        foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*revisionCollName') {
+                        foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*revisionCollName') {
                                 # This brings the total for dynamic storage of a group per RESOURCE
 				#writeLine('stdout', *row.DATA_SIZE);
 				#writeLine('stdout', *row.RESC_NAME);	
