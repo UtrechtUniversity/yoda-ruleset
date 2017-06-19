@@ -661,20 +661,24 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
                                         *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
                                         *groupTierStorage."*thisTier" = str(*newGroupSize);
                                 }
-
-				*revisionCollName = UUREVISIONCOLLECTION ++ '/' ++ *groupName; 
-                                # 3) Collect all data in revision folder of this group
-                                foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*revisionCollName') {
-                                        # This brings the total for dynamic storage of a group per RESOURCE
-
-                                        *thisResc = *row.RESC_NAME;
-                                        *thisTier = *kvpResourceTier."*thisResc";
-
-                                        # Totals on group level
-                                        *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
-                                        *groupTierStorage."*thisTier" = str(*newGroupSize);
-                                }
 			}
+
+                        *revisionCollName = UUREVISIONCOLLECTION ++ '/' ++ *groupName;
+			#writeLine('stdout', 'RevColl: *revisionCollName');
+                        # 3) Collect all data in revision folder of this group
+                        foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME = '*revisionCollName') {
+                                # This brings the total for dynamic storage of a group per RESOURCE
+				#writeLine('stdout', *row.DATA_SIZE);
+				#writeLine('stdout', *row.RESC_NAME);	
+                                *thisResc = *row.RESC_NAME;
+                                *thisTier = *kvpResourceTier."*thisResc";
+
+                                 # Totals on group level
+                                 *newGroupSize = int(*groupTierStorage."*thisTier") + int(*row.DATA_SIZE);
+                                 *groupTierStorage."*thisTier" = str(*newGroupSize);
+                        }
+
+
                         # Group information complete.
 			# Add it to dbs
                         foreach (*tier in *allTiers) {
