@@ -523,11 +523,13 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 		# Finished handling this category.
 		# Add to kvp list
                 foreach (*tier in *allTiers) {
-                        msiString2KeyValPair("", *kvp);
-                        *kvp.category = *categoryName;
-                        *kvp.tier = *tier;
-                        *kvp.storage = *categoryTierStorage."*tier";
-                        *listCatTierStorage = cons(*kvp, *listCatTierStorage);
+			if (*categoryTierStorage."*tier"!='0') { #present only tears with actual data 
+                        	msiString2KeyValPair("", *kvp);
+                        	*kvp.category = *categoryName;
+                        	*kvp.tier = *tier;
+                        	*kvp.storage = *categoryTierStorage."*tier";
+                        	*listCatTierStorage = cons(*kvp, *listCatTierStorage);
+			}
                 }
 	}
 
