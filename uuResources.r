@@ -663,7 +663,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 			}
 
 			# 3) Collect all data in revision folder of this group
-			# This can be caught in a sinlge statement as the group folder itself does not hold data	
+			# This can be caught in a single statement as the group folder itself does not hold data	
                         *revisionCollName = '/*zone' ++ UUREVISIONCOLLECTION ++ '/' ++ *groupName ++ '/%%';
                         foreach (*row in SELECT SUM(DATA_SIZE), RESC_NAME WHERE COLL_NAME like '*revisionCollName') {
                                 # This brings the total for dynamic storage of a group per RESOURCE
@@ -695,20 +695,22 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 
 # /brief uuGetCurrentStatisticsMonth()
 # returns the number of the month {'01',...'12'} that currently is the month reporting is about.
-# In this case the breakpoint is set to halfway through a month.
-# I.e. each statistics probe that is stored after the 15th, is related to the month after.
 uuGetCurrentStatisticsMonth() 
 {
         msiGetIcatTime(*timestamp, "icat");
         *month = int(timestrf(datetime(int(*timestamp)), "%m"));
-	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
+
+# When you want to prevent changes to the statistics after a probe date use the code below
+# I.e. each statistics probe that is stored after the 15th, is related to the month after.
+#	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
 	
-	if (*day > 15) {
-		*month = *month + 1;
-		if (*month > 12) {
-			*month = 1;
-		}
-	}
+#	if (*day > 15) {
+#		*month = *month + 1;
+#		if (*month > 12) {
+#			*month = 1;
+#		}
+#	}
+
 	# Format month as '01'-'12'
 	*strMonth = str(*month);
 	if (strlen(*strMonth)==1) {
