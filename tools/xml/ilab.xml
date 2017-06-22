@@ -326,7 +326,6 @@
 		<Publish_Metadata>
 			<label>Publish Metadata?</label>
 			<help>Do you want to make the metadata available in the Data Catalogue?</help>
-			<default>Yes</default>
 			<mandatory>true</mandatory>
 		</Publish_Metadata>
 		<Archive>
