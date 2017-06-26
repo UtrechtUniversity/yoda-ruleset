@@ -14,11 +14,12 @@ UUDEFAULTRESOURCETIER = 'Standard';
 UUFRONTEND_SUCCESS = 'Success';
 UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 
-
+# Metadata attribute
+UURESOURCETIERATTRNAME = 'storageTierName';
 
 #  FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
 
-# /brief uuFrontEndGetResourceStatisticData [OK]
+# /brief uuFrontEndGetResourceStatisticData
 # /param[out] *data		-return actual requested data if applicable
 # /param[out] *status		-return status to frontend 
 # /param[out] *statusInfo	-return specific information regarding *status
@@ -55,7 +56,6 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 }
 
 
-# [OK]
 # /brief uuFrontEndListResourceAndStatisticData - List available resources and their tier & storage data
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
@@ -82,7 +82,6 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
         }
 }
 
-# [OK]
 # /brief uuFrontEndListResourceTiers - List available resources and their tier & storage data
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
@@ -104,7 +103,6 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
         *statusInfo = 'All went well!!';
 }
 
-# [OK]
 # /brief uuFrontEndSetResourceTier - sets (creates/updates) tier as metadata for given resource
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
@@ -140,7 +138,6 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 }
 
 
-# [OK]
 # /brief uuGetMonthlyCategoryStorageOverview() 
 # FrontEnd function for retrieving storage overview for all
 # /param[out] *result - JSON data with category overview
@@ -162,28 +159,22 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 }
 
 
-# [NEW]
 #/ brief uuGetMonthlyCategoryStorageOverviewDatamanager()
 # Front end function for retrieving storage overview for a datamanager and its 
 # /param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
 # /param[out] *status
 # /param[out] *statusInfo
+
+# Anyone can use this function - it will not yield anything if not a datamanager.
+# So no check for permissions is required.
+
 uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 {
         *status = UUFRONTEND_SUCCESS;
         *statusInfo = '';
 
-	# Nog verder uitwerken 
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-
-        uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
+	uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo);
 }
-
 
 
 #------------------------------------------ end of front end functions
@@ -232,20 +223,9 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
         # Initialize the actual metadata related to storage TODO: eet rid of the org_storage part
         *kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
 
-#        *kvp.org_storageMonth01 = '0'; # storage used in TB
-#        *kvp.org_storageMonth02 = '0';
-#        *kvp.org_storageMonth03 = '0';
-#        *kvp.org_storageMonth04 = '0';
-#        *kvp.org_storageMonth05 = '0';
-#        *kvp.org_storageMonth06 = '0';
-#        *kvp.org_storageMonth07 = '0';
-#        *kvp.org_storageMonth08 = '0';
-#        *kvp.org_storageMonth09 = '0';
-#        *kvp.org_storageMonth10 = '0';
-#        *kvp.org_storageMonth11 = '0';
-#        *kvp.org_storageMonth12 = '0';
+	*metaName = UUORGMETADATAPREFIX ++ UURESOURCETIERATTRNAME;
 
-        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME = = 'org_storageTierName' ) {
+        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME = '*metaName' ) {
         	*key = *row.META_RESC_ATTR_NAME;
                 *kvp."*key" = *row.META_RESC_ATTR_VALUE;
         }
@@ -275,7 +255,7 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 
         # 2)Check whether tier- metadata exists for given resource based upon 'org_storageTierName' as meta attribute
         *metaFound = false;
-	*metaName = UUORGMETADATAPREFIX ++ 'storageTierName';
+	*metaName = UUORGMETADATAPREFIX ++ UURESOURCETIERATTRNAME;
         foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME='*metaName' ) {
                 *metaFound = true;
                 writeLine("stdout",  *row.RESC_ID );
@@ -329,7 +309,8 @@ uuListResourceTiers(*result, *errorInfo)
         *allRescTiers = list();
 	
         # fetch tier information for all resources and filter duplicates
-        foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+	*metaName = UUORGMETADATAPREFIX ++ UURESOURCETIERATTRNAME;
+        foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = '*metaName' ) {
         	# writeLine('stdout', *row.META_RESC_ATTR_VALUE);
                 *allRescTiers = cons(*row.META_RESC_ATTR_VALUE, *allRescTiers);
 		if (*row.META_RESC_ATTR_VALUE == 'Standard') {
@@ -354,6 +335,7 @@ uuListResourcesAndStatisticData(*result, *errorInfo)
         *allResources = uuListResources();
         *allRescStats = list();
 
+	*metaName = UUORGMETADATAPREFIX ++ UURESOURCETIERATTRNAME;
         foreach (*resource in *allResources) {
                 msiString2KeyValPair("", *kvp);
                 *kvp.resourceId = *resource.resourceId
@@ -362,22 +344,9 @@ uuListResourcesAndStatisticData(*result, *errorInfo)
 		# Initialize the actual metadata related to storage TODO: get rid of the org_storage part
 		*kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
                 
-#                *kvp.org_storageMonth01 = '0'; # storage used in TB
-#                *kvp.org_storageMonth02 = '0';
-#                *kvp.org_storageMonth03 = '0';
-#                *kvp.org_storageMonth04 = '0';
-#                *kvp.org_storageMonth05 = '0';
-#                *kvp.org_storageMonth06 = '0';
-#                *kvp.org_storageMonth07 = '0';
-#                *kvp.org_storageMonth08 = '0';
-#                *kvp.org_storageMonth09 = '0';
-#                *kvp.org_storageMonth10 = '0';
-#                *kvp.org_storageMonth11 = '0';
-#                *kvp.org_storageMonth12 = '0';
-
                 # fetch tier information in a seperate sql call as outerjoins are not possible
                 *sqlResource = *resource.resourceName;
-		foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = 'org_storageTierName'  ) {
+		foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = '*metaName'  ) {
                        	*key = *row.META_RESC_ATTR_NAME;
 			#writeLine('stdout', *key);
                        	*kvp."*key" = *row.META_RESC_ATTR_VALUE;
@@ -441,9 +410,6 @@ uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo)
 
 	*listDMCategories = uuListCategoriesDatamanager();
 	
-	#writeLine('stdout', *listDMCategories);
-	#succeed;
-
 	uuGetMonthlyCategoryStorageStatistics(*listDMCategories, *result, *status, *statusInfo);
 }
 
@@ -701,6 +667,7 @@ uuKvpResourceAndTiers()
 
 	msiString2KeyValPair("", *kvp);
 
+	*metaName = UUORGMETADATAPREFIX ++ UURESOURCETIERATTRNAME;
 	foreach (*resource in *listResources) {
 	
 	# Because outerjoins are impossible in iRods and there is nog guarantee that all resources have org_m
@@ -709,7 +676,7 @@ uuKvpResourceAndTiers()
 		*kvp."*resourceName" = 'Standard';	
 
 		*sqlResource = *resource.resourceName;
-                foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+                foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = '*metaName' ) {
                         *kvp."*resourceName" = *row.META_RESC_ATTR_VALUE;
                 }
 	}
