@@ -1,6 +1,5 @@
 setVaultPermissions {
 	uuGetUserType("$userNameClient#$rodsZoneClient", *usertype);
-	writeLine("stdout", "Usertype: *usertype");
 
 	if (*usertype != "rodsadmin") {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
