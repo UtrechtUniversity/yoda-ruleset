@@ -36,11 +36,6 @@ acCreateUserZoneCollections {
 		# Do not create home directories for regular users.
 	} else if (*type == "rodsgroup" && ($otherUserName like regex "(read|datamanager)-.*")) {
 		# Do not create home directories for read- and datamanager groups.
-	} else if (*type == "rodsgroup" && ($otherUserName like regex "vault-.*")) {
-	
-		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
-		*researchGroupName = "research-" ++ triml($otherUserName, "vault-");
-		msiSetACL("default", "admin:read", *researchGroupName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
 	} else {
 		# *Do* create home directories for all other user types and groups (e.g.
 		# rodsadmin, research- and intake groups).
