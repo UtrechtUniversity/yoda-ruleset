@@ -282,7 +282,11 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 # \param[in] *src	path of source metadataxml
 # \param[in] *dst	path of destination metadataxml
 iiCloneMetadataXml(*src, *dst) {
-	msiDataObjCopy(*src, *dst, "", *status);
+	writeLine("serverLog", "iiCloneMetadataXml:*src -> *dst");
+	*err = errormsg(msiDataObjCopy(*src, *dst, "", *status), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", "iiCloneMetadataXml: *err - *msg)");
+	}
 }
 
 # \brief iiMetadataXmlModifiedPost
