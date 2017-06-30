@@ -179,7 +179,7 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 
 #/ brief uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 # Front end function for retrieving storage overview for a datamanager and its 
-# /param[in] *isDatamanager {'yes', 'no'}
+# /param[out] *isDatamanager {'yes', 'no'}
 # /param[out] *status
 # /param[out] *statusInfo
 uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
@@ -187,8 +187,9 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 	*status = UUFRONTEND_SUCCESS;
         *statusInfo = '';
 
-        *user = uuClientFullName;
+	*isDatamanager = 'no';
 
+        *user = uuClientFullName;
         # Get categories with datamanager groups
         foreach (
                 *row in
@@ -198,12 +199,11 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
         ) {
                 *datamanagerGroupName = *row.USER_NAME;
                 uuGroupUserExists(*datamanagerGroupName, *user, true, *membership)
-                if (*membership) {
+		if (*membership) {
 			*isDatamanager = 'yes';
 			succeed;
                 }
         }
-	*isDatamanager = 'no';
 }
 
 
