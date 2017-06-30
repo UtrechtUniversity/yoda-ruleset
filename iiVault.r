@@ -39,6 +39,21 @@ iiCopyFolderToVault(*folder) {
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
+	
+	# Setting main collection of vault group to noinherit for finegrained access control
+	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
+	if (*err < 0) {
+		writeLine("stdout", "iiCopyFolderToVault: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
+	} else {
+		writeLine("stdout", "iiCopyFolderToVault: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
+		# Grant the research group read-only acccess to the collection to enable browsing through the vault.
+		*err = errorcode(msiSetACL("default", "admin:read", *groupName, "/$rodsZoneClient/home/*vaultGroupName"));
+		if (*err < 0) {
+			writeLine("stdout", "iiCopyFolderToVault: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+		} else {
+			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
+		}
+	}
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*datamanagerGroupName = "datamanager-" ++ *category;
@@ -46,7 +61,7 @@ iiCopyFolderToVault(*folder) {
 	if (*datamanagerExists) {
         	*err = errorcode(msiSetACL("recursive", "admin:read", *datamanagerGroupName, *target));
 		if (*err < 0) {
-			writeLine("stdout", "iiCopyFolderToVault: Failed to give *datamanagerGroupName access. errorcode: *err");
+			writeLine("stdout", "iiCopyFolderToVault: Failed to give *datamanagerGroupName read access. errorcode: *err");
 		} else {
 			writeLine("stdout", "iiCopyFolderToVault: Granted *datamanagerGroupName read access to *target");
 		}
@@ -54,7 +69,7 @@ iiCopyFolderToVault(*folder) {
 	} else {
 		*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
 		if (*err < 0) {
-			writeLine("stdout", "iiCopyFolderToVault: Failed to give *groupName access. errorcode: *err");
+			writeLine("stdout", "iiCopyFolderToVault: Failed to give *groupName read access. errorcode: *err");
 		} else {
 			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to *target");
 		}
