@@ -182,6 +182,15 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
         *executeRestoration = false;
 	*statusInfo = '';
 
+	*vaultArea = "/" ++ $rodsZoneClient ++ "/home/" ++ IIVAULTPREFIX;
+	*length = strlen(*vaultArea);
+	
+	if (substr(*target,0,*length) == *vaultArea) {
+		#writeLine('serverLog', 'IS VAULT');
+		*status = "VaultNotAllowed";
+	        succeed;
+	}
+
  	*lockFound = false;
         *attrName = UUORGMETADATAPREFIX ++ 'lock';
         foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
