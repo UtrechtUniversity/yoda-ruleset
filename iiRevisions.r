@@ -68,7 +68,7 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 	}
 
 
-	if (int(*dataSize)>*maxSize) {
+	if (double(*dataSize)>*maxSize) {
 		writeLine("serverLog", "iiRevisionCreate: Files larger than *maxSize bytes cannot store revisions");
 		succeed;
 	}	
