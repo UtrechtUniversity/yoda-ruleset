@@ -39,17 +39,24 @@ iiCopyFolderToVault(*folder) {
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
+	if (*error != 0) {
+		msiGetValByKey(*buffer, "msg", *msg);
+		writeLine("stdout", "iiCopyFolderToVault: *error: *msg");
+		succeed;
+	}
 	
 	# Setting main collection of vault group to noinherit for finegrained access control
 	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
 	if (*err < 0) {
 		writeLine("stdout", "iiCopyFolderToVault: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
+		succeed;
 	} else {
 		writeLine("stdout", "iiCopyFolderToVault: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
 		# Grant the research group read-only acccess to the collection to enable browsing through the vault.
 		*err = errorcode(msiSetACL("default", "admin:read", *groupName, "/$rodsZoneClient/home/*vaultGroupName"));
 		if (*err < 0) {
 			writeLine("stdout", "iiCopyFolderToVault: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+			succeed;
 		} else {
 			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
 		}
@@ -62,6 +69,7 @@ iiCopyFolderToVault(*folder) {
         	*err = errorcode(msiSetACL("recursive", "admin:read", *datamanagerGroupName, *target));
 		if (*err < 0) {
 			writeLine("stdout", "iiCopyFolderToVault: Failed to give *datamanagerGroupName read access. errorcode: *err");
+			succeed;
 		} else {
 			writeLine("stdout", "iiCopyFolderToVault: Granted *datamanagerGroupName read access to *target");
 		}
@@ -70,6 +78,7 @@ iiCopyFolderToVault(*folder) {
 		*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
 		if (*err < 0) {
 			writeLine("stdout", "iiCopyFolderToVault: Failed to give *groupName read access. errorcode: *err");
+			succeed;
 		} else {
 			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to *target");
 		}
@@ -89,6 +98,13 @@ iiCopyFolderToVault(*folder) {
 # \param[in/out] error
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
+	msiCheckAccess(*sourcePath, "read object", *readAccess);
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
+		if (*error < 0) { 
+			*buffer.msg = "Failed to acquire read access to *sourcePath";
+			succeed;};
+	}
 	*destPath = *buffer.destination;
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
@@ -98,8 +114,20 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	}
 	if (*itemIsCollection) {
 		*error = errorcode(msiCollCreate(*destPath, 1, *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to create collection *destPath";
+		}
 	} else {
 	 	*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to copy *sourcePath to *destPath";
+		}
+	}
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to revoke read access to *sourcePath";
+		}
 	}
 
 }

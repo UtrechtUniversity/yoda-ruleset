@@ -356,6 +356,10 @@ iiFolderReject(*folder, *status, *statusInfo) {
 iiFolderSecure(*folder) {
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	msiCheckAccess(*folder, "modify object", *modifyAccess);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
 }
 
