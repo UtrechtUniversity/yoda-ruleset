@@ -46,8 +46,7 @@ iiDetermineVaultTarget(*folder) {
 # \param[in] target            path of the vault package
 iiCopyFolderToVault(*folder, *target) {
 	
-	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target");
-
+	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target")
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
@@ -139,11 +138,19 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 		*sourceLength = strlen(*sourcePath);
 		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
 		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
+		*markIncomplete = false;
+	} else {
+		*markIncomplete = true;
 	}
+
 	if (*itemIsCollection) {
 		*error = errorcode(msiCollCreate(*destPath, 1, *status));
 		if (*error < 0) {
 			*buffer.msg = "Failed to create collection *destPath";
+		} else if (*markIncomplete) {
+			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
+			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ INCOMPLETE, *kvp);
+			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
 		}
 	} else {
 #		*error = errorcode(msiDataObjChksum(*sourcePath, "ChksumAll=++++forceChksum=", *chksum));
