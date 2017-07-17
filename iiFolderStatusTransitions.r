@@ -380,7 +380,7 @@ iiFolderSecure(*folder) {
 	}
 
 	iiCopyActionLog(*folder, *target);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETED, *vaultStatusKvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 
 }
