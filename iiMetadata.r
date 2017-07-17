@@ -306,6 +306,10 @@ iiMetadataXmlModifiedPost(*xmlpath, *zone) {
 	}
 }
 
+# \brief iiLogicalPathFromPhysicalPath
+# \param[in] physicalPath
+# \param[out] logicalPath
+# \param[in] zone
 iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
 	*lst = split(*physicalPath, "/");
 	# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/

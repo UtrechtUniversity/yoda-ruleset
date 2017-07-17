@@ -352,11 +352,37 @@ iiFolderReject(*folder, *status, *statusInfo) {
 }
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
+#			  and should not be called from the portal. Thus no statusInfo is returned, but 
+#			  log messages are sent to stdout instead 
 # \param[in] folder
 iiFolderSecure(*folder) {
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		writeLine("stdout", "iiFolderSecure: Should only be called by a rodsadmin");
+		fail;
+	}
+
+	*target = iiDetermineVaultTarget(*folder);
+	iiCopyFolderToVault(*folder, *target);
+	iiCopyUserMetadata(*folder, *target);
+	iiSetVaultPermissions(*folder, *target);
+
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	msiCheckAccess(*folder, "modify object", *modifyAccess);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
+
+	iiCopyActionLog(*folder, *target);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
+	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
+
 }
 
 

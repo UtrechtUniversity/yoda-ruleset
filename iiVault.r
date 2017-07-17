@@ -5,14 +5,16 @@
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
 
-
-# \brief iiCopyFolderToVault
-# \param[in] folder  The folder to copy to the vault
-iiCopyFolderToVault(*folder) {
+# \brief iiDetermineVaultTarget
+# \param[in] folder
+# \returnvalue target path
+iiDetermineVaultTarget(*folder) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
-	writeLine("stdout", "iiCopyFolderToVault: *folder belongs to *groupName");
 	if (*err < 0) {
-		failmsg(-1, "NoResearchGroup");
+		writeLine("stdout", "iiDetermineVaultTarget: Cannot determine which research group *folder belongs to");
+		fail;
+	} else {
+		writeLine("stdout", "iiDetermineVaultTarget: *folder belongs to *groupName");
 	}
 	uuChop(*groupName, *_, *baseName, "-", true);
 	uuChopPath(*folder, *parent, *datapackageName);
@@ -26,32 +28,65 @@ iiCopyFolderToVault(*folder) {
 	*timestamp = triml(*timestamp, "0");
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
 
-	*i = 0;
-	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
+	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp]";
 		
+	*i = 0;
 	while (uuCollectionExists(*target)) {
+		writeLine("stdout", "iiDetermineVaultTarget: *target already exists");
 		*i = *i + 1;
 		*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
 	}
-	
-	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target");
+	writeLine("stdout", "iiDetermineVaultTarget: Target is *target");
+	*target;
+}
 
+
+# \brief iiCopyFolderToVault
+# \param[in] folder  		folder to copy to the vault
+# \param[in] target            path of the vault package
+iiCopyFolderToVault(*folder, *target) {
+	
+	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target")
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	
+	if (*error != 0) {
+		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
+		writeLine("stdout", "iiIngestObject: *error: *msg");
+		fail;
+	}
+}
+
+# \brief iiSetVaultPermissions
+# \param[in] folder
+# \param[in] target
+iiSetVaultPermissions(*folder, *target) {
+
+	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	if (*err < 0) {
+		writeLine("stdout", "iiSetVaultPermissions: Cannot determine which research group *folder belongs to");
+		fail;
+	} else {
+		writeLine("stdout", "iiSetVaultPermissions: *folder belongs to *groupName");
+	}
+
+	uuChop(*groupName, *_, *baseName, "-", true);
+        *vaultGroupName = IIVAULTPREFIX ++ *baseName;
+
 	# Setting main collection of vault group to noinherit for finegrained access control
 	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
 	if (*err < 0) {
-		writeLine("stdout", "iiCopyFolderToVault: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
+		writeLine("stdout", "iiSetVaultPermissions: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
+		fail;
 	} else {
-		writeLine("stdout", "iiCopyFolderToVault: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
+		writeLine("stdout", "iiSetVaultPermissions: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
 		# Grant the research group read-only acccess to the collection to enable browsing through the vault.
 		*err = errorcode(msiSetACL("default", "admin:read", *groupName, "/$rodsZoneClient/home/*vaultGroupName"));
 		if (*err < 0) {
-			writeLine("stdout", "iiCopyFolderToVault: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+			writeLine("stdout", "iiSetVaultPermissions: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+			fail;
 		} else {
-			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
+			writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
 		}
 	}
 
@@ -61,24 +96,21 @@ iiCopyFolderToVault(*folder) {
 	if (*datamanagerExists) {
         	*err = errorcode(msiSetACL("recursive", "admin:read", *datamanagerGroupName, *target));
 		if (*err < 0) {
-			writeLine("stdout", "iiCopyFolderToVault: Failed to give *datamanagerGroupName read access. errorcode: *err");
+			writeLine("stdout", "iiSetVaultPermissions: Failed to give *datamanagerGroupName read access. errorcode: *err");
+			fail;
 		} else {
-			writeLine("stdout", "iiCopyFolderToVault: Granted *datamanagerGroupName read access to *target");
+			writeLine("stdout", "iiSetVaultPermissions: Granted *datamanagerGroupName read access to *target");
 		}
 	
 	} else {
 		*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
 		if (*err < 0) {
-			writeLine("stdout", "iiCopyFolderToVault: Failed to give *groupName read access. errorcode: *err");
+			writeLine("stdout", "iiSetVaultPermissions: Failed to give *groupName read access. errorcode: *err");
+			fail;
 		} else {
-			writeLine("stdout", "iiCopyFolderToVault: Granted *groupName read access to *target");
+			writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to *target");
 		}
 	}
-
-	iiCopyUserMetadata(*folder, *target);
-	iiFolderSecure(*folder);
-	iiCopyActionLog(*folder, *target);
-	writeLine("stdout", "Successfully copied *folder to *target");
 }
 
 # \brief iiIngestObject       called by uuTreeWalk for each collection and dataobject to copy to the vault.
@@ -89,17 +121,56 @@ iiCopyFolderToVault(*folder) {
 # \param[in/out] error
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
+	msiCheckAccess(*sourcePath, "read object", *readAccess);
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
+		if (*error < 0) { 
+			*buffer.msg = "Failed to acquire read access to *sourcePath";
+			succeed;
+		} else {
+			writeLine("stdout", "iiIngestObject: Read access to *sourcePath acquired");
+		}
+	}
+
 	*destPath = *buffer.destination;
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
 		*sourceLength = strlen(*sourcePath);
 		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
 		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
+		*markIncomplete = false;
+	} else {
+		*markIncomplete = true;
 	}
+
 	if (*itemIsCollection) {
 		*error = errorcode(msiCollCreate(*destPath, 1, *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to create collection *destPath";
+		} else if (*markIncomplete) {
+			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
+			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ INCOMPLETE, *kvp);
+			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
+		}
 	} else {
-	 	*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+#		*error = errorcode(msiDataObjChksum(*sourcePath, "ChksumAll=++++forceChksum=", *chksum));
+#		if (*error < 0) {
+#			*buffer.msg = "Failed to Checksum *sourcePath";
+#		} else {
+#			writeLine("stdout", "iiIngestObject: *sourcePath has checksum *chksum");
+			*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+			if (*error < 0) {
+				*buffer.msg = "Failed to copy *sourcePath to *destPath";
+			}
+#		}
+	}
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to revoke read access to *sourcePath";
+		} else {
+			writeLine("stdout", "iiIngestObject: Read access to *sourcePath revoked");
+		}
 	}
 
 }
@@ -209,3 +280,4 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 			succeed;
 	}
 }
+

@@ -1,4 +1,5 @@
 copyToVault {
+	# This script is kept as dumb as possible. All processing and error handling is done by iiFolderSecure
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", IISTATUSATTRNAME, *GenQInp);
@@ -11,14 +12,8 @@ copyToVault {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*folder = *row.COLL_NAME;
-			msiCheckAccess(*folder, "modify object", *result);
-			if (*result == 1) {
-				iiCopyFolderToVault(*folder) ::: nop;
-			} else {
-				msiSetACL("recursive", "admin:write", uuClientFullName, *folder);
-				iiCopyFolderToVault(*folder) ::: nop;
-				msiSetACL("recursive", "admin:null", uuClientFullName, *folder);
-			}
+			# When iiFolderSecure fails continue with the other folders.
+			iiFolderSecure(*folder) ::: nop;
 		}
 
 		*ContInxOld = *ContInxNew;
