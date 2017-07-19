@@ -688,10 +688,7 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";	
 	foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = *originalPathKey AND META_DATA_ATTR_VALUE LIKE '*collName/%') {
 		*originalPath = *row.META_DATA_ATTR_VALUE;
-		writeLine("stdout", *originalPath);
-		writeLine("stdout", *timestamp);
 		iiRevisionLastBefore(*originalPath, *timestamp, *revisionId);
-		writeLine("stdout", *revisionId);
 		if (*revisionId != "") {
 			*revisions = cons(uurevisionwithpath(*revisionId, *originalPath), *revisions);
 		}
