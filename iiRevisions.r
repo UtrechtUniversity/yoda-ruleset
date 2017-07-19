@@ -99,7 +99,7 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 			if (*err == -312000) {
 			# -312000 OVERWRITE_WITHOUT_FORCE_FLAG
 				writeLine("serverLog", "iiRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
-				succceed;
+				succeed;
 			} else if (*err == -814000) {
 			# -814000 CAT_UNKNOWN_COLLECTION
 				writeLine("serverLog", "iiRevisionCreate: Could not access or create *revColl. Please check permissions");
