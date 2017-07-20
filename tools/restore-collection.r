@@ -20,7 +20,7 @@ restoreCollection {
 			msiSetACL("recursive", "admin:write", uuClientFullName, *path);
 		} else {
 			uuChopPath(*path, *parent, *_);
-			while(*parent like regex "/[^/]/home/research-") {
+			while(*parent like regex "/[^/]/home/research-.*") {
 				if (uuCollectionExists(*parent)) {
 					msiSetACL("recursive", "admin:write", *parent);
 					break;
