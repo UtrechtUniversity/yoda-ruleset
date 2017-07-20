@@ -87,7 +87,7 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
-		*iso8601 = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z");
+		*iso8601 = timestrf(datetime(double(*timestamp)), "%Y%m%dT%H%M%S%z");
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		if (!uuCollectionExists(*revColl)) {
@@ -296,7 +296,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
         # Actual restoration - perhaps check for locking one more time here? just before the actual copy action?
         if (*executeRestoration) {
                 msiAddKeyValToMspStr("verifyChksum", "", *options);
-                writeLine("serverLog", "uuRevisionRestore: *src => *dst [*options]");
+                writeLine("serverLog", "iiRevisionRestore: *src => *dst [*options]");
                 *err = errormsg(msiDataObjCopy("*src", "*dst", *options, *msistatus), *errmsg);
                 if (*err < 0) {
 			if (*err==-818000) {
@@ -349,17 +349,17 @@ iiRevisionList(*path, *result) {
 # param[out] endOfCalendarDay		Timestamp of the end of the current day
 iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
 		msiGetIcatTime(*timestamp, "unix"); # Get current Timestamp
-		*bdY = timestrf(datetime(int(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).	
+		*bdY = timestrf(datetime(double(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).	
 		
 		*endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); # Append the last second of the day and convert to datetime
 		*endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s"); # Generate string of unix timestamp of the last second of the day
-		*endOfCalendarDay =  int(*endofcalendarday_str) + 1; # Convert to integer and add 1 second to get 00:00 of the next day
+		*endOfCalendarDay =  double(*endofcalendarday_str) + 1.0; # Convert to double and add 1 second to get 00:00 of the next day
 }
 
-# \datatype uurevisioncandidate    Represents a revision with a timestamp with an integer for the timestamp and a string for the DATA_ID.
+# \datatype uurevisioncandidate    Represents a revision with a timestamp with an double for the timestamp and a string for the DATA_ID.
 #                                  A removed candidate is represented with an empty dataconstructor
 data uurevisioncandidate = 
-	| uurevisioncandidate : integer * string -> uurevisioncandidate
+	| uurevisioncandidate : double * string -> uurevisioncandidate
 	| uurevisionremoved : uurevisioncandidate
 
 # \function uurevisionisremoved   Check if a revisioncandidate is removed by matching it with its constructor
@@ -458,7 +458,7 @@ iiRevisionCandidates(*path, *revisions) {
 		*id = *row.DATA_ID;
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
 		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
-		*revisions = cons(uurevisioncandidate(int(*modifyTime), *id), *revisions);
+		*revisions = cons(uurevisioncandidate(double(*modifyTime), *id), *revisions);
 	}
 }
 
@@ -511,9 +511,9 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
 			# use pseudo data constructor uurevisioncandidate to initialize timeInt and id.
-			uurevisioncandidate(*timeInt, *id) = *revision;
+			uurevisioncandidate(*timeDouble, *id) = *revision;
 	#		writeLine("stdout", "*timeInt: *id");
-			if (*timeInt > *startTime) {
+			if (*timeDouble > *startTime) {
 	#			writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
@@ -627,11 +627,11 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 				*isFound = true;
 				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_path", *originalPath);
 				msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_coll_name", *originalCollName);
-				*latestRevModifiedTime = int(*revModifyTime);
-				*oldestRevModifiedTime = int(*revModifyTime);
+				*latestRevModifiedTime = double(*revModifyTime);
+				*oldestRevModifiedTime = double(*revModifyTime);
 			} else {
-				*latestRevModifiedTime = max(*latestRevModifiedTime, int(*revModifyTime));
-				*oldestRevModifiedTime = min(*oldestRevModifiedTime, int(*revModifyTime));
+				*latestRevModifiedTime = max(*latestRevModifiedTime, double(*revModifyTime));
+				*oldestRevModifiedTime = min(*oldestRevModifiedTime, double(*revModifyTime));
 			}
 		}
 		*res.numberOfRevisions = str(*revCount);
@@ -678,3 +678,36 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 	*result = *json_str;
 }
 
+
+data uurevisionwithpath =
+	| uurevisionwithpath : string * string -> uurevisionwithpath
+
+# \brief iiRevisionListOfCollectionBeforeTimestamp
+iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
+	*revisions = list();
+	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";	
+	foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE META_DATA_ATTR_NAME = *originalPathKey AND META_DATA_ATTR_VALUE LIKE '*collName/%') {
+		*originalPath = *row.META_DATA_ATTR_VALUE;
+		iiRevisionLastBefore(*originalPath, *timestamp, *revisionId);
+		if (*revisionId != "") {
+			*revisions = cons(uurevisionwithpath(*revisionId, *originalPath), *revisions);
+		}
+	}
+}
+
+# \brief iiRevisionLastBefore
+iiRevisionLastBefore(*path, *timestamp, *revisionId) {
+	*revisionId = "";
+	iiRevisionCandidates(*path, *candidates);
+	writeLine("stdout", *candidates);
+	foreach(*candidate in *candidates) {
+		writeLine("stdout", *candidate);
+		uurevisioncandidate(*timeDouble, *candidateId) = *candidate;
+		if (*timeDouble < *timestamp) {
+			*revisionId = *candidateId;
+			break;
+		}
+	}
+	writeLine("stdout", *revisionId);
+
+}
