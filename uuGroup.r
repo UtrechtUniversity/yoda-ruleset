@@ -715,7 +715,18 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	*status = errorcode(msiSudoObjMetaSet(*groupName, "-u", *property, *value, "", ""));
+	*kv.'.' = ".";
+
+	if (*property == "category") {
+		# We must pass the current category name such that the postproc rule
+		# for metaset can revoke read access from the current datamanager group
+		# in our category if it exists.
+
+		uuGroupGetCategory(*groupName, *category, *_);
+		*kv.'oldCategory' = *category;
+	}
+
+	*status = errorcode(msiSudoObjMetaSet(*groupName, "-u", *property, *value, "", *kv));
 	if (*status == 0) {
 		*message = "";
 	} else {
