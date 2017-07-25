@@ -296,8 +296,10 @@ uuGroupPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyK
 					# datamanager-*oldCategory read access can be revoked in
 					# the postproc action of metaset.
 					uuGroupGetCategory(*objName, *category, *_);
+					# (*category will be empty ("") if the group isn't currently in a category)
 					if (*category != *policyKv."oldCategory") {
-						# (*category will be empty if the group isn't currently in a category)
+						# This will fail if 'oldCategory' is not given in
+						# *policyKv or if it doesn't match the current category.
 						fail;
 					}
 				}
