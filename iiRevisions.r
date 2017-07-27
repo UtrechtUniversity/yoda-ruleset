@@ -1,7 +1,7 @@
 # \file
 # \brief     Revision management
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
+# \copyright Copyright (c) 2017, Utrecht university. All rights reserved
 # \license   GPLv3, see LICENSE
 #
 #####################################################
@@ -10,7 +10,11 @@
 # \brief uuResourceModifiedPostRevision 	Create revisions on file modifications
 # \description				This policy should trigger whenever a new file is added or modified
 #					in the workspace of a Research team. This should be done asynchronously
-# \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
+# \param[in] resource			The resource where the original is written to
+# \param[in] rodsZone			Zone where the original can be found
+# \param[in] logicalPath		path of the original
+# \param[in] maxsize			Maximum file size of original
+# \param[in] filterlist			A list with like expressions to blacklist
 uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *filterlist) {
 	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
 		uuChopPath(*logicalPath, *parent, *basename);
@@ -27,7 +31,9 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *fi
 }
 
 # \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
+# \param[in] resource   The resource where the original is written to
 # \param[in] path	The path of the added or modified file.
+# \param[in] maxSize    The maximum file size of original
 iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
@@ -81,13 +87,14 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 
 	*revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
-	foreach(*row in SELECT COUNT(COLL_ID) WHERE COLL_NAME = *revisionStore) {
-	       	*revisionStoreExists = bool(int(*row.COLL_ID));
+	*revisionStoreExists = False;	
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *revisionStore) {
+	       	*revisionStoreExists = True;
        	}
 
 	if (*revisionStoreExists) {
 		msiGetIcatTime(*timestamp, "icat");
-		*iso8601 = timestrf(datetime(double(*timestamp)), "%Y%m%dT%H%M%S%z");
+		*iso8601 = uuiso8601(*timestamp);
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
 		*revColl = *revisionStore ++ "/" ++ *collId;
 		if (!uuCollectionExists(*revColl)) {
@@ -144,6 +151,7 @@ iiRevisionRemove(*revisionId) {
 			*objPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		} else {
 			writeLine("serverLog", "iiRevisionRemove: *revisionId returned multiple results");
+			break;
 		}
 	}
 	if (*isfound) {
@@ -191,23 +199,16 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
 	        succeed;
 	}
 
- 	*lockFound = false;
-        *attrName = UUORGMETADATAPREFIX ++ 'lock';
-        foreach (*row in SELECT META_COLL_ATTR_VALUE, COLL_NAME WHERE COLL_NAME = *target AND META_COLL_ATTR_NAME = *attrName ) {
-		*originatingLockColl =  *row.META_COLL_ATTR_VALUE;
-		# writeLine("serverLog","target: *target" );	
-		# writeLine("serverLog", "lock originating from coll: " ++ *originatingLockColl);
-		if ( *target >= *row.META_COLL_ATTR_VALUE ) { 
-			*lockFound = true; 
-		}
-               	break;
-        }
+	iiGetLocks(*target, *locks);
 
-        if (*lockFound) {
- 	       *status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
-               # writeLine('serverLog', '*target is LOCKED');
-               succeed;
-        }
+	if(size(*locks) > 0) {
+		foreach(*rootCollection in *locks) {
+			if (strlen(*rootCollection) <= strlen(*target)) {
+ 	       			*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
+               			succeed;
+			}
+		}
+	}
 
         foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
                 if (!*isfound) {
