@@ -699,15 +699,12 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
-	writeLine("stdout", *candidates);
 	foreach(*candidate in *candidates) {
-		writeLine("stdout", *candidate);
 		uurevisioncandidate(*timeDouble, *candidateId) = *candidate;
 		if (*timeDouble < *timestamp) {
 			*revisionId = *candidateId;
 			break;
 		}
 	}
-	writeLine("stdout", *revisionId);
 
 }
