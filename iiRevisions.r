@@ -700,7 +700,6 @@ iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
 	foreach(*candidate in *candidates) {
-		writeLine("stdout", *candidate);
 		uurevisioncandidate(*timeDouble, *candidateId) = *candidate;
 		if (*timeDouble < *timestamp) {
 			*revisionId = *candidateId;
