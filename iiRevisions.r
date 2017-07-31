@@ -141,7 +141,7 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 
 
 # \brief iiRevisionRemove
-# \param[in] revision_id
+# \param[in] revisionId
 iiRevisionRemove(*revisionId) {
 	*isfound = false;
 	*revisionStore =  "/$rodsZoneClient" ++ UUREVISIONCOLLECTION;
@@ -171,7 +171,7 @@ iiRevisionRemove(*revisionId) {
 
 
 # \brief iiRevisionRestore
-# \param[in] revision_id        id of revision data object
+# \param[in] revisionId        id of revision data object
 # \param[in] target             target collection to write in
 # \param[in] overwrite          {restore_no_overwrite, restore_overwrite, restore_next_to} 
 #				With "restore_no_overwrite" the front end tries to copy the selected revision in *target 
@@ -183,7 +183,7 @@ iiRevisionRemove(*revisionId) {
 # \param[in] newFileName	Name as entered by user when chosing option 'restore_next_to'
 # \param[out] status            status of the process
 # \param[out] statusInfo	Contextual info regarding status        
-iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
+iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *statusInfo) {
       #| writeLine("stdout", "Restore a revision");
         *status = "Unknown error";
         *isfound = false;
@@ -201,7 +201,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
 
 	iiGetLocks(*target, *locks);
 
-	if(size(*locks) > 0) {
+	if (size(*locks) > 0) {
 		foreach(*rootCollection in *locks) {
 			if (strlen(*rootCollection) <= strlen(*target)) {
  	       			*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
@@ -216,12 +216,13 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                         *revName = *rev.DATA_NAME; # revision name is suffixed with a timestamp for uniqueness
                         *revCollName = *rev.COLL_NAME;
                         *src = *revCollName ++ "/" ++ *revName;
-                        writeLine("serverLog", "Source is: *src");
+                        writeLine("serverLog", "iiRevisionRestore: Source is *src");
+			break;
                 }
         }
 
         if (!*isfound) {
-                writeLine("serverLog", "uuRevisionRestore: Could not find revision *revisionId");
+                writeLine("serverLog", "iiRevisionRestore: Could not find revision *revisionId");
                 *status = "RevisionNotFound";
                 succeed;
         }
@@ -231,7 +232,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
         uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
 
         if (!uuCollectionExists(*target)) {
-                writeLine("serverLog", "uuRevisionRestore: Cannot find target collection *target");
+                writeLine("serverLog", "iiRevisionRestore: Cannot find target collection *target");
                 *status = "TargetPathDoesNotExist";
                 succeed;
         }
@@ -288,7 +289,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
                 }
                 else {
                         *statusInfo = "Illegal overwrite flag *overwrite";
-			writeLine("serverLog", "uuRevisionRestore: *statusInfo");
+			writeLine("serverLog", "iiRevisionRestore: *statusInfo");
                         *status = "Unrecoverable";
 			succeed;
                 }
@@ -305,7 +306,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *status, *statusInfo) {
 				succeed;
 			}                        
 			*statusInfo = "Restoration failed with error *err: *errmsg";
-                        writeLine("serverLog", "uuRevisionRestore: *statusInfo");
+                        writeLine("serverLog", "iiRevisionRestore: *statusInfo");
                         *status = "Unrecoverable";
                 } else {
                         *status = "Success";
@@ -326,7 +327,7 @@ iiRevisionList(*path, *result) {
 	foreach(*row in SELECT DATA_ID, COLL_NAME, order(DATA_NAME) 
 		        WHERE META_DATA_ATTR_NAME = *originalPathKey
 		   	AND META_DATA_ATTR_VALUE = *path
-			AND COLL_NAME like '*startpath/%%') {
+			AND COLL_NAME like '*startpath/%') {
 		msiString2KeyValPair("", *kvp);
 		*isFound = true;
 		*id = *row.DATA_ID;
@@ -357,32 +358,32 @@ iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
 		*endOfCalendarDay =  double(*endofcalendarday_str) + 1.0; # Convert to double and add 1 second to get 00:00 of the next day
 }
 
-# \datatype uurevisioncandidate    Represents a revision with a timestamp with an double for the timestamp and a string for the DATA_ID.
+# \datatype iirevisioncandidate    Represents a revision with a timestamp with an double for the timestamp and a string for the DATA_ID.
 #                                  A removed candidate is represented with an empty dataconstructor
-data uurevisioncandidate = 
-	| uurevisioncandidate : double * string -> uurevisioncandidate
-	| uurevisionremoved : uurevisioncandidate
+data iirevisioncandidate = 
+	| iirevisioncandidate : double * string -> iirevisioncandidate
+	| iirevisionremoved : iirevisioncandidate
 
-# \function uurevisionisremoved   Check if a revisioncandidate is removed by matching it with its constructor
-uurevisionisremoved(*r) =
+# \function iirevisionisremoved   Check if a revisioncandidate is removed by matching it with its constructor
+iirevisionisremoved(*r) =
 	match *r with
-		| uurevisionremoved => true
-		| uurevisioncandidate(*i, *s) => false
+		| iirevisionremoved => true
+		| iirevisioncandidate(*i, *s) => false
 
-# \datatype uubucket   Represents a time bucket where a number of revisions should be kept with three integers
+# \datatype iibucket   Represents a time bucket where a number of revisions should be kept with three integers
 #                      The first integer represents a time offset
 #                      The second integer represents the number of revisions that can stay in the bucket
 #                      The third integer represents the starting index when revisions need to remove. 0 is the newest, -1 the oldest
 #                      revision after the current original (which should always be kept) , 1 the revision after that, etc.
-data uubucket =
-	| uubucket : integer * integer * integer -> uubucket
+data iibucket =
+	| iibucket : integer * integer * integer -> iibucket
 
 
 # iRODS timestamps are in seconds since epoch (1970-01-01 00:00 UTC). Express minutes, hours, days and weeks in seconds
-uuminutes(*m) = *m * 60
-uuhours(*h) = *h * uuminutes(60)
-uudays(*d) = *d * uuhours(24)
-uuweeks(*w) = *w * uudays(7) 
+iiminutes(*m) = *m * 60
+iihours(*h) = *h * iiminutes(60)
+iidays(*d) = *d * iihours(24)
+iiweeks(*w) = *w * iidays(7) 
 
 # \brief iiRevisionBucketList   Return a list of time buckets to determine revisions to keep
 # \param[in] case    Select a bucketlist based on a string
@@ -390,55 +391,55 @@ uuweeks(*w) = *w * uudays(7)
 iiRevisionBucketList(*case) {
 	if (*case == "A") {
 		*lst = list(
-			 uubucket(uuhours(6),  1, 1),
-			 uubucket(uuhours(12), 1, 0),
-			 uubucket(uuhours(18), 1, 0),
-			 uubucket(uudays(1),   1, 0),
-			 uubucket(uudays(2),   1, 0),
-			 uubucket(uudays(3),   1, 0),
-			 uubucket(uudays(4),   1, 0),
-			 uubucket(uudays(5),   1, 0),
-			 uubucket(uudays(6),   1, 0),
-			 uubucket(uuweeks(1),  1, 0),
-			 uubucket(uuweeks(2),  1, 0),
-			 uubucket(uuweeks(3),  1, 0),
-			 uubucket(uuweeks(4),  1, 0),
-			 uubucket(uuweeks(8),  1, 0),
-			 uubucket(uuweeks(12), 1, 0),
-			 uubucket(uuweeks(16), 1, 0)
+			 iibucket(iihours(6),  1, 1),
+			 iibucket(iihours(12), 1, 0),
+			 iibucket(iihours(18), 1, 0),
+			 iibucket(iidays(1),   1, 0),
+			 iibucket(iidays(2),   1, 0),
+			 iibucket(iidays(3),   1, 0),
+			 iibucket(iidays(4),   1, 0),
+			 iibucket(iidays(5),   1, 0),
+			 iibucket(iidays(6),   1, 0),
+			 iibucket(iiweeks(1),  1, 0),
+			 iibucket(iiweeks(2),  1, 0),
+			 iibucket(iiweeks(3),  1, 0),
+			 iibucket(iiweeks(4),  1, 0),
+			 iibucket(iiweeks(8),  1, 0),
+			 iibucket(iiweeks(12), 1, 0),
+			 iibucket(iiweeks(16), 1, 0)
 		); 
 	} else if (*case == "J")  {
 		*lst = list(
-                         uubucket(uuminutes(5),    1, 1),
-                         uubucket(uuminutes(10),   1, 0),
-                         uubucket(uuminutes(15),   1, 0),
-                         uubucket(uuminutes(20),   1, 0),
-                         uubucket(uuminutes(40),   1, 0),
-                         uubucket(uuminutes(60),   1, 0),
-                         uubucket(uuminutes(80),   1, 0),
-                         uubucket(uuminutes(100),  1, 0),
-                         uubucket(uuminutes(120),  1, 0),
-                         uubucket(uuminutes(140),  1, 0),
-                         uubucket(uuminutes(280),  1, 0),
-                         uubucket(uuminutes(320),  1, 0),
-                         uubucket(uuminutes(460),  1, 0),
-                         uubucket(uuminutes(920),  1, 0),
-                         uubucket(uuminutes(1380), 1, 0),
-                         uubucket(uuminutes(1820), 1, 0)
+                         iibucket(iiminutes(5),    1, 1),
+                         iibucket(iiminutes(10),   1, 0),
+                         iibucket(iiminutes(15),   1, 0),
+                         iibucket(iiminutes(20),   1, 0),
+                         iibucket(iiminutes(40),   1, 0),
+                         iibucket(iiminutes(60),   1, 0),
+                         iibucket(iiminutes(80),   1, 0),
+                         iibucket(iiminutes(100),  1, 0),
+                         iibucket(iiminutes(120),  1, 0),
+                         iibucket(iiminutes(140),  1, 0),
+                         iibucket(iiminutes(280),  1, 0),
+                         iibucket(iiminutes(320),  1, 0),
+                         iibucket(iiminutes(460),  1, 0),
+                         iibucket(iiminutes(920),  1, 0),
+                         iibucket(iiminutes(1380), 1, 0),
+                         iibucket(iiminutes(1820), 1, 0)
                          );
 	} else if (*case == "Simple") {
-		*lst = list(uubucket(uuweeks(16), 16, 4));
+		*lst = list(iibucket(iiweeks(16), 16, 4));
 	} else {
 		# Case B and default
 		*lst = list(
-			 uubucket(uuhours(12), 2, 0),
-			 uubucket(uudays(1),   2, 1),
-			 uubucket(uudays(3),   2, 1),
-			 uubucket(uudays(5),   2, 1),
-			 uubucket(uuweeks(1),  2, 1),
-			 uubucket(uuweeks(3),  2, 1),
-			 uubucket(uuweeks(8),  2, 1),
-			 uubucket(uuweeks(16), 2, 1)
+			 iibucket(iihours(12), 2, 0),
+			 iibucket(iidays(1),   2, 1),
+			 iibucket(iidays(3),   2, 1),
+			 iibucket(iidays(5),   2, 1),
+			 iibucket(iiweeks(1),  2, 1),
+			 iibucket(iiweeks(3),  2, 1),
+			 iibucket(iiweeks(8),  2, 1),
+			 iibucket(iiweeks(16), 2, 1)
 		);
 	}
 	*lst;
@@ -459,14 +460,14 @@ iiRevisionCandidates(*path, *revisions) {
 		*id = *row.DATA_ID;
 		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
 		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
-		*revisions = cons(uurevisioncandidate(double(*modifyTime), *id), *revisions);
+		*revisions = cons(iirevisioncandidate(double(*modifyTime), *id), *revisions);
 	}
 }
 
 # \brief iiRevisionStrategy    Determine which revisions should be removed and which to remove based on a bucketlist
 # \param[in]  path              full path of original
 # \param[in]  endOfCalendarDay  Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
-# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
+# \param[in]  bucketlist        list of iibuckets consisting of an offset, size and start index
 # \param[out] keep             list of revisions to keep
 # \param[out] remove           list of revisions to remove
 iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
@@ -478,9 +479,9 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 }
 
 # \brief iiRevisionStrategyImplementation  
-# \param[in] revisions     	list of uurevisioncandidates
+# \param[in] revisions     	list of iirevisioncandidates
 # \param[in] endOfCalendarDay   Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
-# \param[in]  bucketlist        list of uubuckets consisting of an offset, size and start index
+# \param[in]  bucketlist        list of iibuckets consisting of an offset, size and start index
 # \param[out] keep             list of revisions to keep
 # \param[out] remove           list of revisions to remove
 iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove) {	
@@ -503,7 +504,7 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 			break;
 		}
 		# Use a pseudo constructor on the bucket to put each integer in the proper variable
-		uubucket(*offset, *sizeOfBucket, *startIdx) = *bucket;
+		iibucket(*offset, *sizeOfBucket, *startIdx) = *bucket;
 	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket] startIdx[*startIdx]");
 		*startTime = *endOfCalendarDay - *offset; 
 		# each revision newer than the startTime of the bucket is a candidate to keep or remove in that bucket
@@ -511,8 +512,8 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
-			# use pseudo data constructor uurevisioncandidate to initialize timeInt and id.
-			uurevisioncandidate(*timeDouble, *id) = *revision;
+			# use pseudo data constructor iirevisioncandidate to initialize timeInt and id.
+			iirevisioncandidate(*timeDouble, *id) = *revision;
 	#		writeLine("stdout", "*timeInt: *id");
 			if (*timeDouble > *startTime) {
 	#			writeLine("stdout", "*timeInt > *offset");
@@ -534,21 +535,21 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 				for(*idx = *sizeOfCandidates + *startIdx; *idx > (*sizeOfCandidates + *startIdx - *nToRemove); *idx = *idx - 1) {
 					*toRemove = elem(*candidates, *idx);
 					*remove = cons(*toRemove, *remove);
-					*candidates = setelem(*candidates, *idx, uurevisionremoved);
+					*candidates = setelem(*candidates, *idx, iirevisionremoved);
 				}
 			} else {
 				# If startIdx is zero or higher go newest to oldest.
 				for(*idx = *startIdx;*idx < (*nToRemove + *startIdx); *idx = *idx + 1) {
 					*toRemove = elem(*candidates, *idx);
 					*remove = cons(*toRemove, *remove);
-					*candidates = setelem(*candidates, *idx, uurevisionremoved);
+					*candidates = setelem(*candidates, *idx, iirevisionremoved);
 				}
 			}
 		}
 
 		foreach(*toKeep in *candidates) {	
 			# Every candidate not marked for removal is added to the keep list
-			if(!uurevisionisremoved(*toKeep)) {	
+			if(!iirevisionisremoved(*toKeep)) {	
 				*keep = cons(*toKeep, *keep);
 			}
 		}
@@ -680,8 +681,8 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 }
 
 
-data uurevisionwithpath =
-	| uurevisionwithpath : string * string -> uurevisionwithpath
+data iirevisionwithpath =
+	| iirevisionwithpath : string * string -> iirevisionwithpath
 
 # \brief iiRevisionListOfCollectionBeforeTimestamp
 iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
@@ -691,7 +692,7 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 		*originalPath = *row.META_DATA_ATTR_VALUE;
 		iiRevisionLastBefore(*originalPath, *timestamp, *revisionId);
 		if (*revisionId != "") {
-			*revisions = cons(uurevisionwithpath(*revisionId, *originalPath), *revisions);
+			*revisions = cons(iirevisionwithpath(*revisionId, *originalPath), *revisions);
 		}
 	}
 }
@@ -701,7 +702,7 @@ iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
 	foreach(*candidate in *candidates) {
-		uurevisioncandidate(*timeDouble, *candidateId) = *candidate;
+		iirevisioncandidate(*timeDouble, *candidateId) = *candidate;
 		if (*timeDouble < *timestamp) {
 			*revisionId = *candidateId;
 			break;
