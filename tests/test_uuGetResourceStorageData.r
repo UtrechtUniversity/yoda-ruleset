@@ -3,6 +3,9 @@ test_iiTiers {
         
 	#*resourceName = 'Blabla';
 
+	uuUserIsDatamanager(*isDatamanager, *status, *statusInfo);
+	writeLine('stdout', 'is datamanager: ' ++ *isDatamanager);
+
 	uuFrontEndGetResourceStatisticData(*data, *status, *statusInfo, *resourceName)
 	
 	writeLine('stdout','-------------------------');

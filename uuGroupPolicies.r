@@ -211,6 +211,7 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 			if (*forGroup like regex "(intake|research)-.*") {
 				uuGroupUserIsManager(*forGroup, uuClientFullName, *isManagerInGroup);
 				uuGroupGetCategory(*forGroup, *category, *_);
+
 				if (*isManagerInGroup && *otherName == "datamanager-*category") {
 					# Client wants to give the datamanager group for *category read
 					# access to a research/intake directory in *category.
@@ -225,6 +226,34 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 				if (*isManagerInBaseGroup && *otherName == "datamanager-*category") {
 					# Client wants to give the datamanager group for *category read
 					# access to a vault directory in *category.
+					succeed;
+				}
+			}
+		}
+	} else if (*otherName like "datamanager-*" && *accessLevel == "null") {
+		*forGroup = *policyKv."forGroup";
+		if (*objPath == "/$rodsZoneClient/home/*forGroup") {
+			if (*forGroup like regex "(intake|research)-.*") {
+				uuGroupUserIsManager(*forGroup, uuClientFullName, *isManagerInGroup);
+				uuGroupGetCategory(*forGroup, *category, *_);
+
+				if (*isManagerInGroup && *otherName != "datamanager-*category") {
+					# Client wants to take away read access to a
+					# research/intake group from a datamanager group in a
+					# different category.
+					# Likely because the group has changed categories.
+					succeed;
+				}
+
+			} else if (*forGroup like "vault-*") {
+				uuGetBaseGroup(*forGroup, *baseGroup);
+				uuGroupUserIsManager(*baseGroup, uuClientFullName, *isManagerInBaseGroup);
+				uuGroupGetCategory(*baseGroup, *category, *_);
+
+				if (*isManagerInBaseGroup && *otherName != "datamanager-*category") {
+					# Client wants to take away read access to a vault group
+					# from a datamanager group in a different category.
+					# Likely because the group has changed categories.
 					succeed;
 				}
 			}
@@ -261,6 +290,19 @@ uuGroupPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyK
 			if (# We do not use / allow the unit field here.
 				*unit == ""
 			) {
+				if (*attribute == "category") {
+					# When setting a group's category, require that the old
+					# category name (if any) be passed in *policyKv, so that
+					# datamanager-*oldCategory read access can be revoked in
+					# the postproc action of metaset.
+					uuGroupGetCategory(*objName, *category, *_);
+					# (*category will be empty ("") if the group isn't currently in a category)
+					if (*category != *policyKv."oldCategory") {
+						# This will fail if 'oldCategory' is not given in
+						# *policyKv or if it doesn't match the current category.
+						fail;
+					}
+				}
 				uuGroupPolicyCanGroupModify(uuClientFullName, *objName, *attribute, *value, *allowed, *reason);
 				if (*allowed == 1) {
 					succeed;
@@ -338,14 +380,11 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 
 	} else {
 		# This is a group manager managed group (i.e. 'research-', 'grp-', 'intake-', 'priv-', 'datamanager-').
-		# Add group manager metadata and add the creator as a member.
+		# Add the creator as a member.
 
 		errorcode(msiSudoGroupMemberAdd(*groupName, uuClientFullName, ""));
-		errorcode(msiSudoObjMetaSet(*groupName, "-u", "category",      *policyKv."category",    "", ""));
-		errorcode(msiSudoObjMetaSet(*groupName, "-u", "subcategory",   *policyKv."subcategory", "", ""));
 
-		*description = if *policyKv."description" != "" then *policyKv."description" else ".";
-		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
+		# Perform group prefix-dependent actions (e.g. create vaults for intake/research groups).
 
 		if (*groupName like regex "(intake|research)-.*") {
 
@@ -366,17 +405,6 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			# Add rods to the vault group.
 			msiSudoGroupMemberAdd(*vaultGroupName, "rods#$rodsZoneClient", "");
 
-			# Give the datamanager group read access to the home dir and the
-			# vault, if the group exists.
-			*datamanagerGroupName = "datamanager-" ++ *policyKv."category";
-			uuGroupExists(*datamanagerGroupName, *datamanagerGroupExists);
-			if (*datamanagerGroupExists) {
-				*aclKv."forGroup" = *groupName;
-				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*groupName", *aclKv);
-
-				*aclKv."forGroup" = *vaultGroupName;
-				msiSudoObjAclSet(1, "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
-			}
 		} else if (*groupName like "datamanager-*") {
 
 			# Give the newly created datamanager group read access to all
@@ -410,6 +438,20 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 				}
 			}
 		}
+
+		# Set group manager-managed group metadata.
+		#
+		# Note: Setting the category of an intake/research group will trigger
+		# an ACL change: The datamanager group in the category, if it exists
+		# will get read access to this group an its accompanying vault.
+		# See uuPostSudoObjMetaSet.
+
+		*categoryKv.'oldCategory' = "";
+		errorcode(msiSudoObjMetaSet(*groupName, "-u", "category",      *policyKv."category",    "", *categoryKv));
+		errorcode(msiSudoObjMetaSet(*groupName, "-u", "subcategory",   *policyKv."subcategory", "", ""));
+
+		*description = if *policyKv."description" != "" then *policyKv."description" else ".";
+		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
 	}
 
 	# Put the group name in the policyKv to assist the acl policy.
@@ -443,7 +485,60 @@ uuPostSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 }
 
 #uuPostSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) { }
-#uuPostSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) { }
+
+uuPostSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
+	# Update datamanager ACLs on a group directory that changes categories.
+	ON (
+		*objType == "-u"
+		# vault- and read- groups don't define their own category attribute.
+		&& *objName like regex "(intake|research)-.*"
+		&& *attribute == "category"
+	) {
+		# Make sure it's actually a group.
+		uuGroupExists(*objName, *isGroup);
+		if (!*isGroup) { succeed; }
+
+		# As enforced by the preproc rule for metaset, an oldCategory value
+		# must be defined in the policyKv that matches the original category
+		# before this operation. We use this to determine the datamanager group
+		# whose read access must be revoked.
+		*oldCategory = *policyKv.'oldCategory';
+		*newCategory = *value;
+
+		# Nothing to do.
+		if (*oldCategory == *newCategory) { succeed; }
+
+		# Take read access away from the datamanager group of the old category, if it exists.
+		if (*oldCategory != "") {
+			*oldDatamanagerGroupName = "datamanager-*oldCategory";
+			uuGroupExists(*oldDatamanagerGroupName, *oldCategoryHasDatamanagerGroup);
+			if (*oldCategoryHasDatamanagerGroup) {
+				*kv.'forGroup' = *objName;
+				msiSudoObjAclSet("recursive", "null", *oldDatamanagerGroupName, "/$rodsZoneClient/home/*objName", *kv);
+
+				uuChop(*objName, *_, *baseName, "-", true);
+				*vaultGroupName = "vault-*baseName";
+				*kv.'forGroup' = *vaultGroupName;
+				msiSudoObjAclSet("recursive", "null", *oldDatamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *kv);
+			}
+		} # else, it's a new group that didn't yet have an assigned category.
+
+		*datamanagerGroupName = "datamanager-*newCategory";
+		uuGroupExists(*datamanagerGroupName, *datamanagerGroupExists);
+		if (*datamanagerGroupExists) {
+			# The destination category has a datamanager group, give our new
+			# datamanager overlords read access to our home directory and the accompanying vault.
+			*kv.'forGroup' = *objName;
+			msiSudoObjAclSet("recursive", "read", *datamanagerGroupName, "/$rodsZoneClient/home/*objName", *kv);
+
+			uuChop(*objName, *_, *baseName, "-", true);
+			*vaultGroupName = "vault-*baseName";
+			*kv.'forGroup' = *vaultGroupName;
+			msiSudoObjAclSet("recursive", "read", *datamanagerGroupName, "/$rodsZoneClient/home/*vaultGroupName", *kv);
+		}
+	}
+}
+
 #uuPostSudoObjMetaAdd(*objName, *objType, *attribute, *value, *unit, *policyKv) { }
 #uuPostSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) { }
 

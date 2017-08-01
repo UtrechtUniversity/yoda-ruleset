@@ -6,15 +6,6 @@
 # A tier is added as metadata to a resources
 # A resources can only have 1 tier.
 
-# How does category link into all of this???
-
-
-#
-UUDEFAULTRESOURCETIER = 'Standard';
-UUFRONTEND_SUCCESS = 'Success';
-UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
-
-
 
 #  FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
 
@@ -25,6 +16,8 @@ UUFRONTEND_UNRECOVERABLE = 'UNRECOVERABLE';
 # /param[in]  *resourceName
 uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
+        *status = 'Success';
+        *statusInfo = '';
 
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin"){
@@ -42,18 +35,14 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
                         *statusInfo = 'Resource does not exist';
                 }
                 else {
-                        *status = UUFRONTEND_UNRECOVERABLE;
+                        *status = 'UNRECOVERABLE';
                         *statusInfo = *errorInfo; # use the info from within the function
                 }
 		succeed;
 	}
 
 	uuKvp2JSON(*resourceData, *data);
-
-        *status = UUFRONTEND_SUCCESS;
-        *statusInfo = 'All went well!!';
 }
-
 
 
 # /brief uuFrontEndListResourceAndStatisticData - List available resources and their tier & storage data
@@ -62,6 +51,9 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 # /param[out] *statusInfo       -return specific information regarding *status
 uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 {
+        *status = 'Success';
+        *statusInfo = '';
+
         uuGetUserType(uuClientFullName, *userType);
         if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
@@ -73,15 +65,11 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 
         uuKvpList2JSON(*allResourceData, *data, *size);
 
-        *status = UUFRONTEND_SUCCESS;
-        *statusInfo = 'All went well!!';
-
         if (*size == 0 ) {  #TODO:  Mogelijkk nog verder differentieren 
-                *status = UUFRONTEND_UNRECOVERABLE;
+                *status = 'UNRECOVERABLE';
                 *statusInfo = 'Impossible to convert data to JSON';
         }
 }
-
 
 # /brief uuFrontEndListResourceTiers - List available resources and their tier & storage data
 # /param[out] *data             -return actual requested data if applicable
@@ -89,6 +77,9 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 # /param[out] *statusInfo       -return specific information regarding *status
 uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 {
+        *status = 'Success';
+        *statusInfo = '';
+
         uuGetUserType(uuClientFullName, *userType);
         if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
@@ -99,11 +90,7 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
         *allResourceTiers = uuListResourceTiers(*result, *errorInfo);
 
 	uuList2JSON(*allResourceTiers, *data);
-
-        *status = UUFRONTEND_SUCCESS;
-        *statusInfo = 'All went well!!';
 }
-
 
 # /brief uuFrontEndSetResourceTier - sets (creates/updates) tier as metadata for given resource
 # /param[out] *data             -return actual requested data if applicable
@@ -113,6 +100,9 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 # /param[in]  *tierName
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
+        *status = 'Success';
+        *statusInfo = '';
+
         uuGetUserType(uuClientFullName, *userType);
         if (*userType != "rodsadmin"){
                 *status = 'NoPermissions';
@@ -124,53 +114,18 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 
         *data = ''; # N/A for this situation
 
-        *status = UUFRONTEND_SUCCESS;
-        *statusInfo = '';
-	
         if (*result < 0) {
 		if (*result == -1) {
         	        *status = 'NotExists';
                		*statusInfo = 'Resource does not exist'; 
         	}
         	else {
-               		*status = UUFRONTEND_UNRECOVERABLE;
+               		*status = 'UNRECOVERABLE';
                		*statusInfo = *errorInfo; # use the info from within the function
         	}
 	}
 }
 
-# /brief uuFrontEndSetResourceMonthlyStorage - sets (creates/updates) monthly storage as metadata for given resource 
-# /param[out] *data             -return actual requested data if applicable
-# /param[out] *status           -return status to frontend 
-# /param[out] *statusInfo       -return specific information regarding *status
-# /param[in]  *resourceName
-# /param[in]  *month		{'01',...,'12'}	
-# /param[in]  *usedStorage
-uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, *status, *statusInfo)
-{
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-
-        uuSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *result, *errorInfo);
-
-        *status = UUFRONTEND_SUCCESS;
-        *statusInfo = '';
-
-        if (*result < 0) {
-                if (*result == -1) {
-                        *status = 'NotExists';
-                        *statusInfo = 'Resource does not exist';
-                }
-                else {
-                        *status = UUFRONTEND_UNRECOVERABLE;
-                        *statusInfo = *errorInfo; # use the info from within the function
-                }
-        }
-}
 
 # /brief uuGetMonthlyCategoryStorageOverview() 
 # FrontEnd function for retrieving storage overview for all
@@ -179,7 +134,7 @@ uuFrontEndSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *data, 
 # /param[out] *statusInfo
 uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 {
-        *status = UUFRONTEND_SUCCESS;
+        *status = 'Success';
         *statusInfo = '';
 
         uuGetUserType(uuClientFullName, *userType);
@@ -190,6 +145,54 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
         }
 
 	uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
+}
+
+
+#/ brief uuGetMonthlyCategoryStorageOverviewDatamanager()
+# Front end function for retrieving storage overview for a datamanager and its 
+# /param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
+# /param[out] *status
+# /param[out] *statusInfo
+
+# Anyone can use this function - it will not yield anything if not a datamanager.
+# So no check for permissions is required.
+
+uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
+{
+        *status = 'Success';
+        *statusInfo = '';
+
+	uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo);
+}
+
+
+#/ brief uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
+# Front end function for retrieving storage overview for a datamanager and its 
+# /param[out] *isDatamanager {'yes', 'no'}
+# /param[out] *status
+# /param[out] *statusInfo
+uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
+{
+        *status = 'Success';
+        *statusInfo = '';
+
+	*isDatamanager = 'no';
+
+        *user = uuClientFullName;
+        # Get categories with datamanager groups
+        foreach (
+                *row in
+                SELECT USER_NAME
+                WHERE  USER_TYPE            = 'rodsgroup'
+                        AND USER_NAME like 'datamanager-%%'
+        ) {
+                *datamanagerGroupName = *row.USER_NAME;
+                uuGroupUserExists(*datamanagerGroupName, *user, true, *membership)
+		if (*membership) {
+			*isDatamanager = 'yes';
+			succeed;
+                }
+        }
 }
 
 
@@ -237,22 +240,11 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
         *kvp.resourceName = *resourceName;
 
         # Initialize the actual metadata related to storage TODO: eet rid of the org_storage part
-        *kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
+        *kvp.org_storage_tier = UUDEFAULTRESOURCETIER;
 
-        *kvp.org_storageMonth01 = '0'; # storage used in TB
-        *kvp.org_storageMonth02 = '0';
-        *kvp.org_storageMonth03 = '0';
-        *kvp.org_storageMonth04 = '0';
-        *kvp.org_storageMonth05 = '0';
-        *kvp.org_storageMonth06 = '0';
-        *kvp.org_storageMonth07 = '0';
-        *kvp.org_storageMonth08 = '0';
-        *kvp.org_storageMonth09 = '0';
-        *kvp.org_storageMonth10 = '0';
-        *kvp.org_storageMonth11 = '0';
-        *kvp.org_storageMonth12 = '0';
+	*metaName = UURESOURCETIERATTRNAME;
 
-        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME like 'org_storage%%' ) {
+        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME = '*metaName' ) {
         	*key = *row.META_RESC_ATTR_NAME;
                 *kvp."*key" = *row.META_RESC_ATTR_VALUE;
         }
@@ -260,63 +252,6 @@ uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
 	*kvp;
 }
 
-
-# /brief uuSetResourceMonthlyStorage
-# /param[in]    *resourceName
-# /param[in]    *month {'01'...'12'}
-# /param[out]   *usedStorage
-# /param[out]	*result
-# /param[out]   *errorInfo
-uuSetResourceMonthlyStorage(*resourceName, *month, *usedStorage, *result, *errorInfo)
-{
-        *result = 0;
-
-        # 1)First check whether resource actually exists
-	uuResourceExists(*resourceName, *rescExists)
-	
-        if (!*rescExists) {
-                *result = -1; # Resource does not exist
-		*errorInfo = 'Resource *resourceName does not exist';
-                succeed;
-        }
-
-
-        # 2)Check whether storage metadata exists for given resource for this month 
-
-        *metaFound = false;
-        *metaName = UUORGMETADATAPREFIX ++ 'storageMonth' ++ *month ;
-        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME='*metaName' ) {
-                *metaFound = true;
-        }
-
-        msiString2KeyValPair("", *kvpResc);
-        msiAddKeyVal(*kvpResc, *metaName, *usedStorage);
-
-        if (!*metaFound ) {
-                #writeLine("stdout", "META NOT FOUND - INSERT");
-
-                *err = msiAssociateKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
-
-                #writeLine("stdout", "Add KVP of RESC: *err ");
-                if (*err!=0 ) {
-                        *result=-999;
-                        *errorInfo = 'Something went wrong adding tier metadata';
-                        succeed;
-                }
-        }
-        else {
-                #writeLine("stdout", "META FOUND - UPDATE" );
-
-                *err = msiSetKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
-
-                #writeLine("stdout", "UPDATE KVP of RESC: *err");
-                if (*err!=0 ) {
-                        *result=-999;
-                        *errorInfo = 'Something went wrong updating tier metadata';
-                        succeed;
-                }
-        }
-}
 
 # /brief uuSetResourceTier
 # /param[in] 	*resourceName
@@ -337,26 +272,26 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
         }
 
 
-        # 2)Check whether tier- metadata exists for given resource based upon 'org_storageTierName' as meta attribute
+        # 2)Check whether tier- metadata exists for given resource based upon 'org_storage_tier' as meta attribute
         *metaFound = false;
-	*metaName = UUORGMETADATAPREFIX ++ 'storageTierName';
+	*metaName = UURESOURCETIERATTRNAME;
         foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME='*metaName' ) {
                 *metaFound = true;
-                writeLine("stdout",  *row.RESC_ID );
-                writeLine("stdout",  *row.RESC_NAME);
-                writeLine("stdout", *row.META_RESC_ATTR_NAME );
-                writeLine("stdout", *row.META_RESC_ATTR_VALUE);
-                writeLine("stdout", "------------------------------");
+                #writeLine("stdout",  *row.RESC_ID );
+                #writeLine("stdout",  *row.RESC_NAME);
+                #writeLine("stdout", *row.META_RESC_ATTR_NAME );
+                #writeLine("stdout", *row.META_RESC_ATTR_VALUE);
+                #writeLine("stdout", "------------------------------");
                 #writeLine("stdout", *row.RESC_NAME);
         }
 	
-	# writeLine('stdout', *tierName);
+	writeLine('serverLog', 'Tier: ' ++  *tierName);
 
 	msiString2KeyValPair("", *kvpResc);
         msiAddKeyVal(*kvpResc, *metaName, *tierName);
 
         if (!*metaFound ) {
-                #writeLine("stdout", "META NOT FOUND - INSERT");
+                #writeLine("serverLog", "META NOT FOUND - INSERT");
 
                 *err = msiAssociateKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
                 
@@ -368,7 +303,7 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 		}
         }
         else {
-                #writeLine("stdout", "META FOUND - UPDATE" );
+                #writeLine("serverLog", "META FOUND - UPDATE" );
                 
 		*err = msiSetKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
                 
@@ -393,7 +328,8 @@ uuListResourceTiers(*result, *errorInfo)
         *allRescTiers = list();
 	
         # fetch tier information for all resources and filter duplicates
-        foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+	*metaName = UURESOURCETIERATTRNAME;
+        foreach(*row in SELECT META_RESC_ATTR_VALUE WHERE  META_RESC_ATTR_NAME = '*metaName' ) {
         	# writeLine('stdout', *row.META_RESC_ATTR_VALUE);
                 *allRescTiers = cons(*row.META_RESC_ATTR_VALUE, *allRescTiers);
 		if (*row.META_RESC_ATTR_VALUE == 'Standard') {
@@ -418,32 +354,18 @@ uuListResourcesAndStatisticData(*result, *errorInfo)
         *allResources = uuListResources();
         *allRescStats = list();
 
+	*metaName = UURESOURCETIERATTRNAME;
         foreach (*resource in *allResources) {
                 msiString2KeyValPair("", *kvp);
                 *kvp.resourceId = *resource.resourceId
                 *kvp.resourceName = *resource.resourceName;
                 
 		# Initialize the actual metadata related to storage TODO: get rid of the org_storage part
-		*kvp.org_storageTierName = UUDEFAULTRESOURCETIER;
-                
-                *kvp.org_storageMonth01 = '0'; # storage used in TB
-                *kvp.org_storageMonth02 = '0';
-                *kvp.org_storageMonth03 = '0';
-                *kvp.org_storageMonth04 = '0';
-                *kvp.org_storageMonth05 = '0';
-                *kvp.org_storageMonth06 = '0';
-                *kvp.org_storageMonth07 = '0';
-                *kvp.org_storageMonth08 = '0';
-                *kvp.org_storageMonth09 = '0';
-                *kvp.org_storageMonth10 = '0';
-                *kvp.org_storageMonth11 = '0';
-                *kvp.org_storageMonth12 = '0';
-
+		*kvp.org_storage_tier = UUDEFAULTRESOURCETIER;
                 # fetch tier information in a seperate sql call as outerjoins are not possible
                 *sqlResource = *resource.resourceName;
-		foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME like 'org_storage%%' ) {
+		foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = '*metaName'  ) {
                        	*key = *row.META_RESC_ATTR_NAME;
-			#writeLine('stdout', *key);
                        	*kvp."*key" = *row.META_RESC_ATTR_VALUE;
 		}
                 *allRescStats = cons(*kvp, *allRescStats);
@@ -468,9 +390,49 @@ uuListResources()
         *allResources;
 }
 
-
-
+# TODO: deze twee functies kunnen eigenlijk naar niveau dat wordt aangeroepen vanuit frontend
 # /brief uuGetMonthlyStorageStatistics()
+# /param[out] *result - JSON representation of all found storage information on all categories 
+# /param[out] *status
+# /param[out] *statusInfo
+
+uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
+{
+        *result = '[]';
+
+        *status = 'Success';
+        *statusInfo = '';
+
+        # All categories present        
+        *listCategories = uuListCategories();
+
+        #writeLine('stdout', *listCategories);
+	#succeed;
+
+	uuGetMonthlyCategoryStorageStatistics(*listCategories, *result, *status, *statusInfo);
+}
+
+
+# /brief uuGetMonthlyStorageStatisticsDatamanager()
+# /param[out] *result - JSON representation of all found storage information on all categories 
+# /param[out] *status
+# /param[out] *statusInfo
+
+uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo)
+{
+	*result = '[]';
+	
+        *status = 'Success';
+        *statusInfo = '';
+
+	*listDMCategories = uuListCategoriesDatamanager();
+	
+	uuGetMonthlyCategoryStorageStatistics(*listDMCategories, *result, *status, *statusInfo);
+}
+
+# /brief uuGetMonthlyCategoryStorageStatistics()
+# /param[in] *listCategories - list of all categories that statistics need to be collected for
+
 # /param[out] *result - JSON representation of all found storage information on all categories 
 # /param[out] *status
 # /param[out] *statusInfo
@@ -478,7 +440,7 @@ uuListResources()
 # This function is directly dependant on the output of uuStoreMonthlyStorageStatistics.
 # Current month is used to retrieve data.
 # So this must be kept in line with the moment when new data is collected and stored!
-uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
+uuGetMonthlyCategoryStorageStatistics(*listCategories, *result, *status, *statusInfo)
 {
         # Really for the frontend but can be of use for this as well
         *status = 'Success';
@@ -489,14 +451,10 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 	  # Collection of all category, tier and storage values
         *listCatTierStorage = list();
 
-        # All categories present        
-        *listCategories = list();
-        uuListCategories(*listCategories)
-
         # Get all existing tiers for initialisation purposes per category
         *allTiers = uuListResourceTiers(*result, *errorInfo);
 
-        *metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+        *metadataName = UUMETADATASTORAGEMONTH ++ *month; #UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
 	
 	# Aggregate (SUM) 'manually' to category/tier as all information is stored on grouplevel
         foreach (*categoryName in *listCategories) {
@@ -541,6 +499,9 @@ uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
 # /param[in] *objectType - description as known within iRODS {-u, -C, etc}
 uuRemoveKeyValuePairList(*kvpList, *objectName, *objectType, *status, *statusInfo)
 {
+        *status = 'Success';
+        *statusInfo = '';
+
 	foreach (*kvp in *kvpList) {
                  *err = errormsg( msiRemoveKeyValuePairsFromObj(*kvp, *objectName, *objecType), *errmsg);
                  if (*err < 0) {
@@ -569,7 +530,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 	*month = uuGetCurrentStatisticsMonth();
         writeLine('serverLog', 'Month: *month ');
 
-	*metadataName = UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
+	*metadataName = UUMETADATASTORAGEMONTH ++ *month;  #UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
 	
 	# First delete all previous data for this month-number
 	*kvpList = list();
@@ -593,9 +554,9 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
         # zone is used to search in proper paths for storage
         *zone =  $rodsZoneClient;
 
-        # All categories present        
-        *listCategories = list();
-        uuListCategories(*listCategories)
+        #uuListCategories(*listCategories)
+
+	*listCategories = uuListCategories();
 
         # Get all existing tiers for initialisation purposes per category
         *allTiers = uuListResourceTiers(*result, *errorInfo);
@@ -702,14 +663,14 @@ uuGetCurrentStatisticsMonth()
 
 # When you want to prevent changes to the statistics after a probe date use the code below
 # I.e. each statistics probe that is stored after the 15th, is related to the month after.
-#	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
+	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
 	
-#	if (*day > 15) {
-#		*month = *month + 1;
-#		if (*month > 12) {
-#			*month = 1;
-#		}
-#	}
+	if (*day > 15) {
+		*month = *month + 1;
+		if (*month > 12) {
+			*month = 1;
+		}
+	}
 
 	# Format month as '01'-'12'
 	*strMonth = str(*month);
@@ -728,6 +689,7 @@ uuKvpResourceAndTiers()
 
 	msiString2KeyValPair("", *kvp);
 
+	*metaName = UURESOURCETIERATTRNAME;
 	foreach (*resource in *listResources) {
 	
 	# Because outerjoins are impossible in iRods and there is nog guarantee that all resources have org_m
@@ -736,7 +698,7 @@ uuKvpResourceAndTiers()
 		*kvp."*resourceName" = 'Standard';	
 
 		*sqlResource = *resource.resourceName;
-                foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = 'org_storageTierName' ) {
+                foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = '*metaName' ) {
                         *kvp."*resourceName" = *row.META_RESC_ATTR_VALUE;
                 }
 	}
@@ -744,11 +706,50 @@ uuKvpResourceAndTiers()
 	*kvp;
 }
 
+# /brief Get a list of all known categories where current user is datamanager of 
+
+# Returns list of categories for this user as a datamanager
+uuListCategoriesDatamanager()
+{
+        *listCategories = list();
+        *user = uuClientFullName;
+
+        # Get categories current user is a datamanager of
+        foreach (
+                *row in
+                SELECT USER_NAME
+                WHERE  USER_TYPE            = 'rodsgroup'
+                        AND USER_NAME like 'datamanager-%%'
+        ) {
+                *datamanagerGroupName = *row.USER_NAME;
+                uuGroupUserExists(*datamanagerGroupName, *user, true, *membership)
+		if (*membership) {
+			# datamanagerGroupName must be deciphered to get actual category (its prefixed with 'datamanager-'
+			*partsCategories = split(*datamanagerGroupName,'-');
+			*category = '';
+			*counter = 0;
+			foreach (*cat in *partsCategories) {
+				if (*counter > 0) {
+					if (*counter==1) {
+						*category = *cat;
+					}
+					else {
+						*category = *category ++ '-' ++ *cat;
+					}
+				}
+				*counter = *counter + 1;
+			}
+			*listCategories = cons(*category, *listCategories);
+		}	
+        }
+
+	*listCategories;
+}
+
 
 # /brief Get a list of all known categories 
-uuListCategories(*listCategories) 
+uuListCategories() 
 {
-
         *listCategories = list();
         foreach (*row in SELECT META_USER_ATTR_VALUE
                 WHERE  USER_TYPE            = 'rodsgroup'
@@ -757,6 +758,7 @@ uuListCategories(*listCategories)
                 #writeLine('stdout', *row.META_USER_ATTR_VALUE);
 		*listCategories = cons(*row.META_USER_ATTR_VALUE, *listCategories);
         }
+	*listCategories;
 }
 
 # /brief List of groups 
