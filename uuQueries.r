@@ -106,8 +106,14 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 		# deconstruct condition into its parts
 		uucondition(*column, *comparison, *expression) =  *condition;
 		# writeLine("stdout", "*column, *comparison, *expression");
-		msiAddConditionToGenQuery(*column, *comparison, *expression, *GenQInp);
+
+		# Convert expression to uppercase to prepare for case insensitve search.
+		uuStrToUpper(*expression, *expressionOut);
+		msiAddConditionToGenQuery(*column, *comparison, *expressionOut, *GenQInp);
 	}
+
+	# Enable case insensitive query.
+	msiSetUpperCaseWhereQuery(*GenQInp);
 
 	*err = errormsg(msiExecGenQuery(*GenQInp, *GenQOut), *errmsg);
         if (*err < 0) {
