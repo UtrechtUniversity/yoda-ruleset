@@ -91,9 +91,6 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
         #*statusInfo = 'An error occured while retrieving data - testing purposes';
 	#succeed;
 
-	msiMakeGenQuery("META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_ID = '*data_id'", *GenQInp);
-
-
 	foreach(*field in *fields) {
 		if (*field like regex "(MIN|MAX|SUM|AVG|COUNT)\(.*") {
 			*action = trimr(*field, "(");
@@ -178,14 +175,8 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 			foreach(*condition in *conditions) {
 				# deconstruct condition into its parts
 				uucondition(*column, *comparison, *expression) = *condition;
-
-                                # Convert expression to uppercase to prepare for case insensitve search.
-				uuStrToUpper(*expression, *expressionOut);
-				msiAddConditionToGenQuery(*column, *comparison, *expressionOut, *GenQInp);
+				msiAddConditionToGenQuery(*column, *comparison, *expression, *TotalQInp);
 			}
-
-			# Enable case insensitive query.
-			msiSetUpperCaseWhereQuery(*GenQInp);
 
 			msiExecGenQuery(*TotalQInp, *TotalQOut);
 		        *err = errormsg(msiExecGenQuery(*TotalQInp, *TotalQOut), *errmsg);
