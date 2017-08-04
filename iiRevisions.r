@@ -478,7 +478,7 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove);
 }
 
-# \brief iiRevisionStrategyImplementation  
+# \brief iiRevisionStrategyImplementation Algorithm to find all removal candidates 
 # \param[in] revisions     	list of iirevisioncandidates
 # \param[in] endOfCalendarDay   Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
 # \param[in]  bucketlist        list of iibuckets consisting of an offset, size and start index
@@ -685,6 +685,9 @@ data iirevisionwithpath =
 	| iirevisionwithpath : string * string -> iirevisionwithpath
 
 # \brief iiRevisionListOfCollectionBeforeTimestamp
+# \param[in] collName	   name of collection
+# \param[in] timestamp     only revisions created before this timestamp will be returned
+# \param[out] revisions    list of revisions
 iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";	
@@ -698,6 +701,9 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 }
 
 # \brief iiRevisionLastBefore
+# \param[in] path        original path
+# \param[in] timestamp   the first revision before this timestamp will be returned
+# \param[out] revisionId  ID of revision
 iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
