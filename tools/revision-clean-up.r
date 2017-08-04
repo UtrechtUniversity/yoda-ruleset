@@ -26,7 +26,7 @@ cleanup {
 			*originalPath = *row.META_DATA_ATTR_VALUE;
 			iiRevisionStrategy(*originalPath, *endOfCalendarDay, *bucketlist, *keep, *remove);
 			foreach(*toRemove in *remove) {
-				uurevisioncandidate(*timeInt, *id) = *toRemove;
+				iirevisioncandidate(*timeInt, *id) = *toRemove;
 				*ts = uuiso8601(*timeInt);
 				writeLine("serverLog", "*originalPath - Removing Revision *id with timestamp *ts;"); 
 				*err = errorcode(iiRevisionRemove(*id));
