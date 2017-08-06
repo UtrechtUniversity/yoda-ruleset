@@ -18,12 +18,66 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 
 # \brief iiCanDatamanagerAclSet
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
+
+	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
+		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
+		if (*accessLevel != "write" && *accessLevel != "read") {
+			*allowed = false;
+			*reason = "A datamanager can only obtain or revoke write access for the dataanager group to a vault package";
+			succeed;
+		}
+		
+		msiGetObjType(*objPath, *objType);
+		if (*objType != "-c") {
+			*allowed = false;
+			*reason = "A datamanager can only change permissions on collections in the vault";
+			succeed;
+		}
+		
+		foreach(*row in SELECT USER_ID WHERE USER_NAME = *otherName) {
+			*userId = *row.USER_ID;
+		}
 	
+		*accessName = "null";	
+		foreach(*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *userId AND COLL_NAME = *objPath) {
+			*accessName = *row.COLL_ACCESS_NAME;	
+		}
+		
+		if (*accessLevel == "write" && *accessName != "read object") {
+			*allowed = false:
+			*reason = "*otherName has no read access to *objPath";
+			succeed;
+		}
+		
+		if (*accessLevel == "read" && *accessName != "modify object") {
+			*allowed = false;
+			*reason = "*otherName has no write access to *objPath";
+			succeed;
+		}
+
+		uuGroupExists(*otherName, *datamanagerExists);
+		if (!*datamanagerExists) {
+			*allowed = false;
+			*reason = "User is not a datamanager or *otherName does not exists.";
+			succeed;
+		}
+		uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
+		if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+			*allowed = true;
+			*reason = "User is a datamanager.";
+		} else {
+			*allowed = false;
+			*reason = "User is not a datamanager.";
+			succeed;
+		}
+
+	}
+
 	on (*objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
 		if (*accessLevel != "read" && *accessLevel != "null") {
 			*allowed = false;
-			*reason = "A datamanager can only grant read access or revoke access in the vault.";
+			*reason = "A datamanager can only grant write or read access or revoke access in the vault.";
 			succeed;
 		}
 

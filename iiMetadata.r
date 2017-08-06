@@ -267,7 +267,7 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 
 	# apply xsl stylesheet to metadataxml
 	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
-	writeBytesBuf("serverLog", *buf);
+	#writeBytesBuf("serverLog", *buf);
 
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	*err = errormsg(msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf), *msg);
@@ -359,4 +359,69 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 	} else {
 		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
 	}			
+}
+
+# \brief iiIngestDatamanagerMetadataIntoVault
+iiIngestDatamanagerMetadataIntoVault(*objPath) {
+	# Changes to metadata should be written to the datamanagers area first
+	# Example path: /nluu1dev/yoda/datamanagers/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
+	# index:        /0       /1   /2           /3                   /4          /(5)/(6)/(7)        /(8)
+	*pathElems = split(*objPath, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*datamanagerGroup = elem(*pathElems, 3);
+	uuChop(*datamanagerGroup, *_, *category, "-", true);
+	*vaultGroup = elems(*pathElems, 4);
+	uuJoin("/", tl(tl(tl(tl(*pathElems)))), *metadataXmlSubPath);
+	
+	*vaultPackageSubPath = trimr(*metadataXmlSubPath, "/");
+	
+	*vaultPackagePath = "/*rodsZone/home/*vaultGroup/" ++ *vaultPackageSubPath;
+
+	msiGetIcatTime(*timestamp, "unix");
+	*date = uuiso8601date(*timestamp);
+	*vaultMetadataTarget = *vaultPackagePath ++ "/" ++ *date ++"_" ++ UUMETADAXMLNAME;  
+	*i = 0;
+	while (uuFileExists(*vaultMetadataTarget)) {
+		*i = *i + 1;
+		*vaultMetadataTarget = *vaultPackagePath ++ "/" ++ *date ++"_[*i]_" ++ UUMETADATAXMLNAME; 
+
+	}
+
+	*xsdcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xsdname = "*category.xsd";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
+		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*xsdpath == "") {
+		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	}
+
+	*err = errormsg(msiXmlDocSchemaValidate(*objPath, *xsdpath, *status_buf), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", *msg);
+		fail;
+	} else if (*err > 0) {
+		writeBytesBuf("serverLog", *status_buf);
+		fail;
+	}
+
+	*xslcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xslname = "*category.xsl";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslcoll AND DATA_NAME = *xslname) {
+		*xslpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*xslpath == "") {
+		*xslpath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
+	}
+
+	*actor = uuClientFullName;
+	*aclKv.actor = *actor;
+	msiSudoObjAclSet(0, "write", *datamanagerGroup, *vaultPackagePath, *aclKv);
+	msiDataObjCopy(*objPath, *vaultMetadataTarget, "verifyChksum=");
+
+	iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
+	iiImportMetadataFromXML(*vaultMetadataTarget, *xslpath);
+	msiSudoObjAclSet(0, "read", *datamanagerGroup, *vaultPackagePath, *aclKv);
 }
