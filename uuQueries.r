@@ -108,7 +108,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 		# writeLine("stdout", "*column, *comparison, *expression");
 
 		# Convert expression to uppercase to prepare for case insensitve search.
-		uuStrToUpper(*expression, *expressionOut);
+		msiStrToUpper(*expression, *expressionOut);
 		msiAddConditionToGenQuery(*column, *comparison, *expressionOut, *GenQInp);
 	}
 
