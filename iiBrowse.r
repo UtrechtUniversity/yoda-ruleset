@@ -162,7 +162,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 
 		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
-		if (*metadataXmlPath = "") {
+		if (*metadataXmlPath == "") {
 			*kvp.vaultPackage = "no";
 			*kvp.hasMetadataXml = "no";
 		} else {
