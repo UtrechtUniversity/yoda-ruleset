@@ -160,16 +160,16 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockCount = str(*lockCount);
 
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-		*metadataXmlName = IIMETADATAXMLNAME;
-		*kvp.isVaultPackage = "no";
-		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *path AND DATA_NAME = *metadataXmlName) {
-			*kvp.userMetadata = "true";
+
+		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+		if (*metadataXmlPath = "") {
+			*kvp.vaultPackage = "no";
+			*kvp.hasMetadataXml = "no";
+		} else {
+			*kvp.vaultPackage = "yes";
+			*kvp.hasMetadataXml = "yes";
 		}
 
-		*pathElems = split(*path, "/");
-		if (size(*pathElems) == 4) {
-			*kvp.isVaultPackage = "yes";
-		}
 		
 		*isFound = false;
 		# Check Access
