@@ -1,39 +1,10 @@
 # \file
 # \brief This file contains rules related to metadata
 #                       to a dataset
-# \author Jan de Mooij
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
+# \author Paul Frederiks
+
+# \copyright Copyright (c) 2017, Utrecht university. All rights reserved
 # \license GPLv3, see LICENSE
-
-# \brief GetAvailableValuesForKeyLike Returns list of values that exist in the
-# 										icat database for a certain key, which
-# 										are like a certain value
-#
-# \param[in] *key 						Key to look for
-# \param[in] *searchString 				String that should be a substring of the
-# 										returned values
-# \param[in] *isCollection 				Wether to look in collection or data 
-# \param[out] *values 					List of possible values for the given key
-# 										where the given search string is a substring of
-iiGetAvailableValuesForKeyLike(*key, *searchString, *isCollection, *values){
-	*values = list();
-
-	if(*isCollection){
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE 
-			META_COLL_ATTR_NAME like '*key' AND
-			META_COLL_ATTR_VALUE like '%*searchString%') {
-			writeLine("stdout", *row.META_COLL_ATTR_VALUE);
-			*values = cons(*row.META_COLL_ATTR_VALUE,*values);
-			writeLine("serverLog", *row.META_COLL_ATTR_VALUE);
-		}
-	} else {
-		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE 
-			META_DATA_ATTR_NAME like '*key' AND
-			META_DATA_ATTR_VALUE like '%*searchString%') {
-			*values = cons(*row.META_DATA_ATTR_VALUE,*values);
-		}
-	}
-}
 
 # /brief iiPrepareMetadataImport	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
 # /param[in] metadataxmlpath		path of the metadata XML file that needs to be validated
@@ -91,10 +62,11 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 # /param[in] path	path of the collection where metadata needs to be viewed or added
 # /param[out] result	json object with the location of the metadata file, formelements.xml, the XSD and the role of the current user in the group
 iiPrepareMetadataForm(*path, *result) {
-	msiString2KeyValPair("", *kvp);
-	
 
-	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+	on (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		msiString2KeyValPair("", *kvp);
+		
+
 		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 		*kvp.groupName = *groupName;
 		*kvp.userType = *userType;
@@ -104,115 +76,184 @@ iiPrepareMetadataForm(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-	} else {
-		*result = "";
-		succeed;	
-	}
+		iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
 
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
-
-	*orgStatus = FOLDER;
-	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName == IISTATUSATTRNAME) {
-			*orgStatus = *metadataKvp.attrValue;
-			break;
-		}
-	}
-	*kvp.folderStatus = *orgStatus;
-
-	*lockFound = "no";
-	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName == IILOCKATTRNAME) {
-			*rootCollection = *metadataKvp.attrValue;
-			if (*rootCollection == *path) {
-				*lockFound = "here";
+		*orgStatus = FOLDER;
+		foreach(*metadataKvp in *kvpList) {
+			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
+				*orgStatus = *metadataKvp.attrValue;
 				break;
-			} else {
-				*descendants = triml(*rootCollection, *path);
-				if (*descendants == *rootCollection) {
-					*ancestors = triml(*path, *rootCollection);
-					if (*ancestors == *path) {
-						*lockFound = "outoftree";
+			}
+		}
+		*kvp.folderStatus = *orgStatus;
+
+		*lockFound = "no";
+		foreach(*metadataKvp in *kvpList) {
+			if (*metadataKvp.attrName == IILOCKATTRNAME) {
+				*rootCollection = *metadataKvp.attrValue;
+				if (*rootCollection == *path) {
+					*lockFound = "here";
+					break;
+				} else {
+					*descendants = triml(*rootCollection, *path);
+					if (*descendants == *rootCollection) {
+						*ancestors = triml(*path, *rootCollection);
+						if (*ancestors == *path) {
+							*lockFound = "outoftree";
+						} else {
+							*lockFound = "ancestor";
+							break;
+						}
 					} else {
-						*lockFound = "ancestor";
+						*lockFound = "descendant";
 						break;
 					}
-				} else {
-					*lockFound = "descendant";
-					break;
 				}
 			}
 		}
-	}
-	*kvp.lockFound = *lockFound;
-	if (*lockFound != "no") {
-		*kvp.lockRootCollection = *rootCollection;
-	}
-
-		
-	
-	*xmlname = IIMETADATAXMLNAME;	
-	*xmlpath = "";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
-	        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*xmlpath == "") {
-		*kvp.hasMetadataXml = "false";
-		*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
-	} else {
-		*kvp.hasMetadataXml = "true";
-		*kvp.metadataXmlPath = *xmlpath;
-		# check for locks on metadataXml
-		iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
-		uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
-		*kvp.metadataXmlLocks = *json_str;	
-	}	
-
-	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*kvp.category = *category;
-	*kvp.subcategory = *subcategory;
-	*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
-	*xsdname = "*category.xsd";
-	*xsdpath = "";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
-		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-	
-	if (*xsdpath == "") {
-		*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
-	}
-	*kvp.xsdPath = *xsdpath;
-
-	*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
-	*formelementsname = "*category.xml";
-	*formelementspath = "";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
-		*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*formelementspath == "") {
-		*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
-	} else {
-		*kvp.formelementsPath = *formelementspath;
-	}
-
-	uuChopPath(*path, *parent, *child);
-	*kvp.parentHasMetadataXml = "false";
-	foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
-		*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-		} else if (*err == 0) {
-				*kvp.parentHasMetadataXml = "true";
-				*kvp.parentMetadataXmlPath = *parentxmlpath;
-		} else {
-			writeLine("serverLog", "iiPrepareMetadataForm: *err");
-			writeBytesBuf("serverLog", *status_buf);
+		*kvp.lockFound = *lockFound;
+		if (*lockFound != "no") {
+			*kvp.lockRootCollection = *rootCollection;
 		}
+		
+		*xmlname = IIMETADATAXMLNAME;	
+		*xmlpath = "";
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
+			*xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
+
+		if (*xmlpath == "") {
+			*kvp.hasMetadataXml = "false";
+			*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
+		} else {
+			*kvp.hasMetadataXml = "true";
+			*kvp.metadataXmlPath = *xmlpath;
+			# check for locks on metadataXml
+			iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
+			uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
+			*kvp.metadataXmlLocks = *json_str;	
+		}	
+
+		uuGroupGetCategory(*groupName, *category, *subcategory);
+		*kvp.category = *category;
+		*kvp.subcategory = *subcategory;
+		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
+		*xsdname = "*category.xsd";
+		*xsdpath = "";
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
+			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
+		
+		if (*xsdpath == "") {
+			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		}
+		*kvp.xsdPath = *xsdpath;
+
+		*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
+		*formelementsname = "*category.xml";
+		*formelementspath = "";
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
+			*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
+
+		if (*formelementspath == "") {
+			*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
+		} else {
+			*kvp.formelementsPath = *formelementspath;
+		}
+
+		uuChopPath(*path, *parent, *child);
+		*kvp.parentHasMetadataXml = "false";
+		foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
+			*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+			*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
+			if (*err < 0) {
+				writeLine("serverLog", *msg);
+			} else if (*err == 0) {
+					*kvp.parentHasMetadataXml = "true";
+					*kvp.parentMetadataXmlPath = *parentxmlpath;
+			} else {
+				writeLine("serverLog", "iiPrepareMetadataForm: *err");
+				writeBytesBuf("serverLog", *status_buf);
+			}
+		}
+		uuKvp2JSON(*kvp, *result);
 	}
-	uuKvp2JSON(*kvp, *result);
+
+	on (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		*pathElems = split(*path, "/");
+		*rodsZone = elem(*pathElems, 0);
+		*vaultGroup = elem(*pathElems, 2);
+		uuJoin("/", tl(tl(tl(*pathElems))), *vaultPackageSubPath)		
+			
+		msiString2KeyValPair("", *kvp);
+		*kvp.groupName = *vaultGroup;
+		uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
+		*kvp.userType = *memberType;
+		
+		uuGetBaseGroup(*vaultGroup, *baseGroup);
+		uuGroupGetCategory(*baseGroup, *category, *subcategory);
+		*kvp.category = *category;
+		*kvp.subcategory = *subcategory;
+		uuGroupExists("datamanager-*category", *datamananagerExists);
+		if (!*datamanagerExists) {
+			*isDatamanager = false;
+		} else {
+			uuGroupGetMemberType("datamanager-*category", uuClientFullName, *userTypeIfDatamanager);
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "managaer") {
+				*isDatamanager = true;
+			} else {
+				*isDatamanager = false;
+			}
+		}
+		
+		if (*isDatamanager) {
+			*kvp.isDatamanager = "yes";
+		} else {
+			*kvp.isDatamanager = "no";
+		}
+
+		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+		if (*metadataXmlPath == "") {
+			*kvp.hasMetadataXml = "no";
+		} else {
+			*kvp.hasMetadataXml = "yes";
+			*kvp.metadataXmlPath = *metadataXmlPath;
+		}
+
+		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
+		*xsdname = "*category.xsd";
+		*xsdpath = "";
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
+			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
+		
+		if (*xsdpath == "") {
+			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		}
+		*kvp.xsdPath = *xsdpath;
+
+		*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
+		*formelementsname = "*category.xml";
+		*formelementspath = "";
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
+			*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
+
+		if (*formelementspath == "") {
+			*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
+		} else {
+			*kvp.formelementsPath = *formelementspath;
+		}
+
+		uuKvp2JSON(*kvp, *result);	
+			     
+	}
+
+	on (true) {
+		*result = "";
+		succeed;
+	}
 }
 
 # /brief iiRemoveAllMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
@@ -361,7 +402,8 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 	}			
 }
 
-# \brief iiIngestDatamanagerMetadataIntoVault
+# \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
+# \param[in] objPath path of metadata xml to ingest
 iiIngestDatamanagerMetadataIntoVault(*objPath) {
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/yoda/datamanagers/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
@@ -424,4 +466,17 @@ iiIngestDatamanagerMetadataIntoVault(*objPath) {
 	iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
 	iiImportMetadataFromXML(*vaultMetadataTarget, *xslpath);
 	msiSudoObjAclSet(0, "read", *datamanagerGroup, *vaultPackagePath, *aclKv);
+}
+
+# \brief iiGetLatestVaultMetadataXml
+# \param[in] vaultPackage
+# \param[out] metadataXmlPath
+iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath) {
+	*dataNameQuery = "%" ++ IIMETADATAXMLNAME;
+	*metadataXmlPath = "";
+	foreach (*row in SELECT DATA_NAME, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
+		*metadataXmlPath = *vaultPackage ++ "/" ++ *row.DATA_NAME;
+		break;
+	}
+
 }

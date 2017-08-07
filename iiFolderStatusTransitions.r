@@ -366,6 +366,7 @@ iiFolderSecure(*folder) {
 	*target = iiDetermineVaultTarget(*folder);
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
+	iiCopyOriginalMetadataToVault(*folder, *target); 
 	iiSetVaultPermissions(*folder, *target);
 
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;

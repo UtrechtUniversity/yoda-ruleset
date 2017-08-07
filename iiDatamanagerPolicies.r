@@ -5,6 +5,11 @@
 # \licens GPLv3 LICENSE
 
 # \brief iiDatamanagerPreSudoObjAclSet
+# \param[in] recursive
+# \param[in] accessLevel
+# \param[in] otherName
+# \param[in] objPath
+# \param[in] policyKv
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 	*actor = *policyKv.actor;
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
@@ -17,6 +22,13 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 
 
 # \brief iiCanDatamanagerAclSet
+# \param[in] objPath
+# \param[in] actor
+# \param[in] otherName
+# \param[in] recursive
+# \param[in] accessLevel
+# \param[out] allowed
+# \param[out] reason
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
 
 	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
@@ -44,7 +56,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		}
 		
 		if (*accessLevel == "write" && *accessName != "read object") {
-			*allowed = false:
+			*allowed = false;
 			*reason = "*otherName has no read access to *objPath";
 			succeed;
 		}

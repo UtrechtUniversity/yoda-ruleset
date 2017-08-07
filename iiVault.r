@@ -188,6 +188,7 @@ iiCopyUserMetadata(*source, *destination) {
 		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
 		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
 	}
+	
 }
 
 
@@ -203,6 +204,15 @@ iiCopyActionLog(*source, *destination) {
 		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
 		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
 	}
+}
+
+# \brief iiCopyOriginalMetadataToVault    Copy the original metadata xml into the root of the package
+iiCopyOriginalMetadataToVault(*folder, *vaultPackage) {
+	*originalMetadataXml = "*folder/" ++ IIMETADATAXMLNAME;
+	msiGetIcatTime(*timestamp, "unix");
+	*date = uuiso8601date(*timestamp);
+	*vaultMetadataTarget = *vaultPackage ++ "/" ++ *date ++"_" ++ IIMETADATAXMLNAME;
+	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget,"verifyChksum=", *status);
 }
 
 # \brief iiGrantReadAccessToResearchGroup Rule to grant read access to the vault package managed by a datamanger
