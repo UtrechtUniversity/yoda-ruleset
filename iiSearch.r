@@ -17,7 +17,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(uumakelikecollcondition("COLL_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
 		if (*status!='Success') {
 			succeed;
 		}
@@ -27,7 +27,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("DATA_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
                         succeed;
                 }
@@ -61,7 +61,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_PARENT_NAME", *startpath));
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
                         succeed;
                 }
@@ -94,7 +94,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_NAME", *startpath));
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
                         succeed;
                 }
@@ -149,7 +149,7 @@ iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, 
 	*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring));
 	*conditions = cons(uucondition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+	uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
         if (*status!='Success') {
                 succeed;
         }
