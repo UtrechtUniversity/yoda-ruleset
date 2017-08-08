@@ -184,13 +184,13 @@ iiPrepareMetadataForm(*path, *result) {
 		*pathElems = split(*path, "/");
 		*rodsZone = elem(*pathElems, 0);
 		*vaultGroup = elem(*pathElems, 2);
-		uuJoin("/", tl(tl(tl(*pathElems))), *vaultPackageSubPath)		
+		uuJoin("/", tl(tl(tl(*pathElems))), *vaultPackageSubPath);		
 			
 		msiString2KeyValPair("", *kvp);
 		*kvp.groupName = *vaultGroup;
 		uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
 		*kvp.userType = *memberType;
-		
+
 		uuGetBaseGroup(*vaultGroup, *baseGroup);
 		uuGroupGetCategory(*baseGroup, *category, *subcategory);
 		*kvp.category = *category;
@@ -401,6 +401,32 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
 	}			
 }
+
+# \brief iiPrepareVaultMetadataForEditing
+# \param[in] metadataXmlPath
+# \param[out] result
+iiPrepareVaultMetadataForEditing(*metadataXmlPath, *result) {
+	# path of metadataxml in vault:
+	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/1999-12-31_yoda-metadata.xml	
+	# /0       /1   /2              /(3)/(4)/(5)         /(6)
+	*pathElems = split(*metadataXmlPath, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*vaultGroup = elem(*pathElems, 2);
+	uuJoin("/", tl(tl(tl(*pathElems))), *metadataXmlSubPath);
+	
+	*vaultPackageSubPath = trimr(*metadataXmlSubPath, "/");
+	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
+	if (*datamanagerGroup == "") {
+		fail;
+	}	
+	*metadataXmlName = IIMETADATAXMLNAME;	
+	*tempPath = "/*rodsZone/home/*datamanagerGroup/*vaultGroup/*vaultPackageSubPath";
+	msiCollCreate(*tempPath, 1, *status);
+	*tempMetadataXmlPath = *tempPath ++ "/" ++ IIMETADATAXMLNAME;
+	msiDataObjCopy(*metadataXmlPath, *tempMetadataXmlPath, "verifyChksum=", *status);
+	
+}
+
 
 # \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
 # \param[in] objPath path of metadata xml to ingest
