@@ -160,16 +160,30 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockCount = str(*lockCount);
 
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		
+		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
+		*vaultStatus = "";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+			*vaultStatus = *row.META_COLL_ATTR_VALUE;
+		}
 
-		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
-		if (*metadataXmlPath == "") {
+		if (*vaultStatus == COMPLETE) {
+			*kvp.vaultPackage = "yes";
+			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+			if (*metadataXmlPath == "") {
+				*kvp.hasMetadataXml = "no";
+			} else {
+				*kvp.userMetadata = "true";
+				*kvp.hasMetadataXml = "yes";
+				*kvp.metadataXmlPath = *metadataXmlPath;
+			}
+		} else {
 			*kvp.vaultPackage = "no";
 			*kvp.hasMetadataXml = "no";
-		} else {
-			*kvp.userMetadata = "true";
-			*kvp.vaultPackage = "yes";
-			*kvp.hasMetadataXml = "yes";
+			*kvp.userMetadata = "false";
 		}
+
+		*kvp.vaultStatus = *vaultStatus;
 
 		
 		*isFound = false;
