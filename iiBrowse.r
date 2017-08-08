@@ -166,6 +166,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*kvp.vaultPackage = "no";
 			*kvp.hasMetadataXml = "no";
 		} else {
+			*kvp.userMetadata = "true";
 			*kvp.vaultPackage = "yes";
 			*kvp.hasMetadataXml = "yes";
 		}

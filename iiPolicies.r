@@ -27,10 +27,6 @@ acPostProcForPut {
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
-	on ($objPath like regex "/[^/]+/" ++ UUDATAMANAGERSCOLLECTION ++ "/.*/" ++ IIMETADATAXMLNAME) {
-		iiIngestDatamanagerMetadataInToVault($objPath);	
-	}
-
 }
 
 # This policy is fired before a collection is deleted.
