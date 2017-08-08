@@ -1,6 +1,7 @@
+# This policy is fired when a file is put onto iRODS. 
 acPostProcForPut {
 	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
+		# Check for locks in the research area
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -8,17 +9,20 @@ acPostProcForPut {
 
 		iiCanDataObjCreate($objPath, *allowed, *reason);
 		if (!*allowed) {
+			# There is no acPreProcForPut, so we can only remove the object after the fact.
 			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);	
 		}
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+		# Check new XSD against a schema for xsd validity. Rename the file when invalid
 
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+		# Check  for invalid formelements XML files and rename them.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
@@ -30,6 +34,7 @@ acPostProcForPut {
 # is locked
 acPreprocForRmColl {
 	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -151,53 +156,55 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 	}
 }
 
-
+# This policy is fired when AVU metadata is added or set.
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
-
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
 		}
 
+		# Only allow manipulation of user metadata when the target is not locked
 		iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
-
-		uuGetUserType(uuClientFullName, *userType);
+	on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
-			succeed;
-		}
-
-		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *allowed, *reason);
-			if (*allowed) {
-				iiFolderStatus(*itemName, *currentStatus);
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus, *attributeValue));
-				if (*err < 0) {
-					# Rollback
-					*allowed = false;
-				}
-			}
-		} else {
 			*allowed = true;
-			# iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason);
+		} else {	
+			writeLine("serverLog", "Calling iiCanModifyFolderStatus");
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
+		}
+		if (*allowed) {
+			iiFolderStatus(*itemName, *currentStatus);
+			if (*option == "rm") {
+				*newStatus = FOLDER;
+			} else {
+				*newStatus = *attributeValue;
+			}
+			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Perhaps a rollback is needed
+				*allowed = false;
+			}
 		}
 		if (!*allowed) {
 			cut;
 			msiOprDisallowed;
 		}
-
 	}
+
 }
 
+# This policy gets triggered when metadata is modified
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*") {
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -210,27 +217,26 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName like UUORGMETADATAPREFIX ++ "*") {
-		uuGetUserType(uuClientFullName, *userType);
+
+	on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+	
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
-			succeed;
-		}
-
-		if (*attributeName == UUORGMETADATAPREFIX ++ "status") {
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *allowed, *reason); 
-			if (*allowed) {
-				iiFolderStatus(*itemName, *currentStatus);
-				*err = errorcode(iiFolderTransition(*itemName, *currentStatus,*attributeValue));
-				if (*err < 0) {
-					# Rollback
-					*allowed = false;
-				}
-			}
-
-		} else {
 			*allowed = true;
-			#iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) ;
+		} else {
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason); 
 		}
+		if (*allowed) {
+			iiFolderStatus(*itemName, *currentStatus);
+			*newStatus = triml(*newAttributeValue, "v:");
+			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Rollback
+				*allowed = false;
+			}
+		}
+
 		if (!*allowed) {
 			cut;
 			msiOprDisallowed;
@@ -238,102 +244,59 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 }
 
-# \brief pep_resource_modified_post  	Policy to import metadata when a IIMETADATAXMLNAME file appears. This
-#					dynamic PEP was chosen because it works the same no matter if the file is
-#					created on the web disk or by a rule invoked in the portal. Also works in case the file is moved.
-# \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
-pep_resource_modified_post(*out) {
-	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
-		writeLine("serverLog", "pep_resource_modified_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		uuChopPath($KVPairs.logical_path, *parent, *basename);
-		writeLine("serverLog", "pep_resource_modified_post: *basename added to *parent. Import of metadata started");
-		iiPrepareMetadataImport($KVPairs.logical_path, $KVPairs.client_user_zone, *xsdpath, *xslpath);
-		*err = errormsg(msiXmlDocSchemaValidate($KVPairs.logical_path, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-		} else if (*err == 0) {
-			writeLine("serverLog", "XSD validation successful. Start indexing");
-			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-			iiImportMetadataFromXML($KVPairs.logical_path, *xslpath);
-		} else {
-			writeBytesBuf("serverLog", *status_buf);
-		}
+
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		if (*option == "rm") {
+		       	*newStatus = FOLDER;
+	       	} else {
+		       	*newStatus =  *attributeValue;
+	       	};
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 }
 
-# \brief pep_resource_modified_post 	Create revisions on file modifications
-# \description				This policy should trigger whenever a new file is added or modified
-#					in the workspace of a Research team. This should be done asynchronously
-# \param[in,out] out	This is a required argument for Dynamic PEP's in the 4.1.x releases. It is unused.
-#pep_resource_modified_post(*out) {
-#	on ($pluginInstanceName == hd(split($KVPairs.resc_hier, ";")) && ($KVPairs.logical_path like "/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "*") ) {
-#		*path = $KVPairs.logical_path;
-#		uuChopPath(*path, *parent, *basename);
-#		if (*basename like "._*") {
-#			writeLine("serverLog", "pep_resource_modified_post: Ignore *basename for revision store. This is littering by Mac OS");
-#		} else {
-#			uuRevisionCreateAsynchronously(*path);
-#		}
-#	}
-#}
-
-# \brief pep_resource_rename_post	This policy is created to support the moving, renaming and trashing of the .yoda-metadata.xml file
-# \param[in,out] out			This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
-pep_resource_rename_post(*out) {
-	# run only at the top of the resource hierarchy and when a IIMETADATAXMLNAME file is found inside a research group.
-	# Unfortunately the source logical_path is not amongst the available data in $KVPairs. The physical_path does include the old path, but not in a convenient format.
-	# When a IIMETADATAXMLNAME file gets moved into a new directory it will be picked up by pep_resource_modified_post.
-	# This rule only needs to handle the removal of user metadata when it's moved or renamed.
-
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
-		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		# the logical_path in $KVPairs is that of the destination
-		uuChopPath($KVPairs.logical_path, *dest_parent, *dest_basename);
-		# The physical_path is that of the source, but includes the path of the vault. If the vault path includes a home folder, we are screwed.
-		*src_parent = trimr($KVPairs.physical_path, "/");
-		*src_parent_lst = split(*src_parent, "/");
-		# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
-		uuListIndexOf(*src_parent_lst, "home", *idx);
-		if (*idx < 0) {
-			writeLine("serverLog","pep_resource_rename_post: Could not find home in $KVPairs.physical_path. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
-			succeed;
-		}
-		# skip to the part of the path starting from ../home/..
-		for( *el = 0; *el < *idx; *el = *el + 1){
-			*src_parent_lst = tl(*src_parent_lst);
-		}
-		# Prepend with the zone and rejoin to a src_path
-		*src_parent_lst	= cons($KVPairs.client_user_zone, *src_parent_lst);
-		uuJoin("/", *src_parent_lst, *src_parent);
-		*src_parent = "/" ++ *src_parent;
-		writeLine("serverLog", "pep_resource_rename_post: \*src_parent = *src_parent");
-
-		if (*dest_basename != IIMETADATAXMLNAME && *src_parent == *dest_parent) {
-			writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dest_basename. *src_parent loses user metadata.");
-			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-		} else if (*src_parent != *dest_parent) {
-			# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
-			if (uuCollectionExists(*src_parent)) {
-				iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent. Remove User Metadata from *src_parent.");
-			} else {
-				writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was moved to *dest_parent and *src_parent is gone.");
-			}
-		}
+acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
+	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		*newStatus = triml(*newAttributeValue, "v:");
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
 	}
 }
 
-# \brief pep_resource_unregistered_post		Policy to act upon the removal of a METADATAXMLNAME file.
-# \param[in,out] out 				This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
-pep_resource_unregistered_post(*out) {
-	on (($pluginInstanceName == hd(split($KVPairs.resc_hier, ";"))) && ($KVPairs.logical_path like regex "^/" ++ $KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$")) {
-		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-		uuChopPath($KVPairs.logical_path, *parent, *basename);
-		if (uuCollectionExists(*parent)) {
-			writeLine("serverLog", "pep_resource_unregistered_post: *basename removed. Removing user metadata from *parent");
-			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-		} else {
-			writeLine("serverLog", "pep_resource_unregistered_post: *basename was removed, but *parent is also gone.");
-		}			
+
+# \brief uuResourceModifiedPostResearch   	Policy to import metadata when a IIMETADATAXMLNAME file appears
+# \param[in] *pluginInstanceName		A copy of $pluginInstanceName
+# \param[in] KVPairs  a copy of $KVPairs
+uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
+	if (*KVPairs.logical_path like regex "^/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+		writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
+		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.client_user_zone);
 	}
 }
+
+# This policy is created to support the moving, renaming and trashing of the .yoda-metadata.xml file
+# \param[in] pluginInstanceName   a copy of $pluginInstanceName
+# \param[in] KVPairs  a copy of $KVPairs
+uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
+	if (*KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
+		*zone =  *KVPairs.client_user_zone;
+		*dst = *KVPairs.logical_path;
+		iiLogicalPathFromPhysicalPath(*KVPairs.physical_path, *src, *zone);
+		iiMetadataXmlRenamedPost(*src, *dst, *zone);
+
+	}
+}
+
+# \brief uuResourceUnregisteredPostResearch	Policy to act upon the removal of a METADATAXMLNAME file.
+# \param[in] pluginInstanceName   a copy of $pluginInstanceName
+# \param[in] KVPairs  a copy of $KVPairs
+uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
+	if (*KVPairs.logical_path like regex "^/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+
+		writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
+		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
+		}
+}
+
+

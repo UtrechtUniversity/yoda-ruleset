@@ -7,20 +7,31 @@
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] result		List of results in JSON format
-iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result) {
-
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status='Success';
+	*statusInfo = '';
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(uumakelikecollcondition("COLL_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+		if (*status!='Success') {
+			succeed;
+		}
+
 		iiKvpCollectionTemplate(*rowList, *kvpList);
 	} else {
-		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("DATA_NAME", *searchstring));
 		*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+                if (*status!='Success') {
+                        succeed;
+                }
+
 		iiKvpDataObjectsTemplate(*rowList, *kvpList);
 	}
 
@@ -37,7 +48,12 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] result		List of results in JSON format
-iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result) {
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status='Success';
+        *statusInfo = '';
+
 	*iscollection = iscollection(*collectionOrDataObject);
 	*likeprefix = UUUSERMETADATAPREFIX ++ "%";
 	if (*iscollection) {
@@ -45,7 +61,11 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_PARENT_NAME", *startpath));
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+                if (*status!='Success') {
+                        succeed;
+                }
+
 		iiKvpCollectionTemplate(*rowList, *kvpList);	
 		foreach(*kvp in tl(*kvpList)) {
 			*coll_id = *kvp.id;
@@ -70,11 +90,15 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			*kvp.matches = *matches;
 		}	
 	} else {
-		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_NAME", *startpath));
-		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+		uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+                if (*status!='Success') {
+                        succeed;
+                }
+
 		iiKvpDataObjectsTemplate(*rowList, *kvpList);
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
 		foreach(*kvp in tl(*kvpList)) {
@@ -113,14 +137,23 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] result		List of results in JSON format
-iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, *limit, *offset, *result) {
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+
+iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = '';
 
 	*attr = UUORGMETADATAPREFIX ++ *attrname;
 	*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 	*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring));
 	*conditions = cons(uucondition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+        if (*status!='Success') {
+                succeed;
+        }
+
 	iiKvpCollectionTemplate(*rowList, *kvpList);
 	uuKvpList2JSON(*kvpList, *result, *size);
 }

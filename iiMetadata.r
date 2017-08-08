@@ -46,13 +46,13 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 	*isfound = false;
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
 	foreach(*row in
-	       	SELECT USER_GROUP_NAME
+	       	SELECT USER_NAME
 	       	WHERE COLL_NAME = *metadataxml_coll
 	          AND DATA_NAME = *metadataxml_basename
-	          AND USER_GROUP_NAME like "research-%"
+	          AND USER_NAME like "research-%"
 		  ) {
 		if(!*isfound) {
-			*groupName = *row.USER_GROUP_NAME;
+			*groupName = *row.USER_NAME;
 			*isfound = true;
 	 	} else {
 			# Too many query results. More than one group associated with file.
@@ -93,22 +93,27 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 iiPrepareMetadataForm(*path, *result) {
 	msiString2KeyValPair("", *kvp);
 	
-	
-	iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
-	*kvp.groupName = *groupName;
-	*kvp.userType = *userType;
-	if (*isDatamanager) {
-		*kvp.isDatamanager = "yes";
-	} else {
-		*kvp.isDatamanager = "no";
-	}
-	
-	
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
 
-	*orgStatus = UNPROTECTED;
+	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
+		*kvp.groupName = *groupName;
+		*kvp.userType = *userType;
+		if (*isDatamanager) {
+			*kvp.isDatamanager = "yes";
+		} else {
+			*kvp.isDatamanager = "no";
+		}
+
+	} else {
+		*result = "";
+		succeed;	
+	}
+
+	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
+
+	*orgStatus = FOLDER;
 	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName == "status") {
+		if (*metadataKvp.attrName == IISTATUSATTRNAME) {
 			*orgStatus = *metadataKvp.attrValue;
 			break;
 		}
@@ -117,7 +122,7 @@ iiPrepareMetadataForm(*path, *result) {
 
 	*lockFound = "no";
 	foreach(*metadataKvp in *kvpList) {
-		if (*metadataKvp.attrName like "lock_*") {
+		if (*metadataKvp.attrName == IILOCKATTRNAME) {
 			*rootCollection = *metadataKvp.attrValue;
 			if (*rootCollection == *path) {
 				*lockFound = "here";
@@ -159,7 +164,7 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.hasMetadataXml = "true";
 		*kvp.metadataXmlPath = *xmlpath;
 		# check for locks on metadataXml
-		iiDataObjectMetadataKvpList(*path, UUORGMETADATAPREFIX ++ "lock_", true, *metadataXmlLocks);
+		iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
 		uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
 		*kvp.metadataXmlLocks = *json_str;	
 	}	
@@ -277,5 +282,81 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 # \param[in] *src	path of source metadataxml
 # \param[in] *dst	path of destination metadataxml
 iiCloneMetadataXml(*src, *dst) {
-	msiDataObjCopy(*src, *dst, "", *status);
+	writeLine("serverLog", "iiCloneMetadataXml:*src -> *dst");
+	*err = errormsg(msiDataObjCopy(*src, *dst, "", *status), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", "iiCloneMetadataXml: *err - *msg)");
+	}
+}
+
+# \brief iiMetadataXmlModifiedPost
+iiMetadataXmlModifiedPost(*xmlpath, *zone) {
+	uuChopPath(*xmlpath, *parent, *basename);
+	writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
+	iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+	*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+	if (*err < 0) {
+		writeLine("serverLog", *msg);
+	} else if (*err == 0) {
+		writeLine("serverLog", "XSD validation successful. Start indexing");
+		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+		iiImportMetadataFromXML(*xmlpath, *xslpath);
+	} else {
+		writeBytesBuf("serverLog", *status_buf);
+	}
+}
+
+# \brief iiLogicalPathFromPhysicalPath
+# \param[in] physicalPath
+# \param[out] logicalPath
+# \param[in] zone
+iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
+	*lst = split(*physicalPath, "/");
+	# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
+	uuListIndexOf(*lst, "home", *idx);
+	if (*idx < 0) {
+		writeLine("serverLog","iiLogicalPathFromPhysicalPath: Could not find home in *physicalPath. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
+		fail;
+	}
+	# skip to the part of the path starting from ../home/..
+	for( *el = 0; *el < *idx; *el = *el + 1) {
+		*lst = tl(*lst);
+	}
+	# Prepend with the zone and rejoin to a logical path
+	*lst	= cons(*zone, *lst);
+	uuJoin("/", *lst, *logicalPath);
+	*logicalPath = "/" ++ *logicalPath;
+	writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
+}
+
+
+# \brief iiMetadataXmlRenamedPost
+iiMetadataXmlRenamedPost(*src, *dst, *zone) {
+	uuChopPath(*src, *src_parent, *src_basename);
+	# the logical_path in $KVPairs is that of the destination
+	uuChopPath(*dst, *dst_parent, *dst_basename);
+	if (*dst_basename != IIMETADATAXMLNAME && *src_parent == *dst_parent) {
+		writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
+		iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
+	} else if (*src_parent != *dst_parent) {
+		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
+		if (uuCollectionExists(*src_parent)) {
+			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
+			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
+		} else {
+			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
+		}
+	}
+}
+
+# \brief iiMetadataXmlUnregisteredPost
+iiMetadataXmlUnregisteredPost(*logicalPath) {
+	# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
+	uuChopPath(*logicalPath, *parent, *basename);
+	if (uuCollectionExists(*parent)) {
+		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename removed. Removing user metadata from *parent");
+		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+	} else {
+		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
+	}			
 }

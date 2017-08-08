@@ -1,5 +1,8 @@
-# \brief Rules to support the ilab browser
-# \author Paul Frederiks
+# \file
+# \brief Rules to support the research area browser
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
+# \license   GPLv3, see LICENSE
 
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			
@@ -8,25 +11,36 @@ orderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER_A
 
 iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
-# \brief iiBrowse	return list of subcollections or dataobjects with ilab specific information attached
+# \brief iiBrowse	        return list of subcollections or dataobjects with ilab specific information attached
 # \param[in] path		requested path of parent collection
-# \param[in] collectionOrDataObject	Set to "Collection" if you want collections or "DataObject" (Or anything else) if you want dataobjects
+# \param[in] collectionOrDataObject	Set to "Collection" if you want collections or "DataObject" (Or anything
+#				        else) if you want dataobjects
 # \param[in] orderby		which column to sort on 
 # \param[in] ascdesc		Order Ascending or Descending: "asc" or "desc"
 # \param[in] limit		limit the list of results. Cast to int
 #\ param[in] offset		Start returning results from offset. Cast to int
 # \param[out] result 		JSON output of subcollections and their flags
-iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result) {
+# \param[out] status            Status code: 'Success' of all ok
+# \param[out] statusInfo        Extra information if something went wrong
+iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = ''; 
+	
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection){
 		*fields = list("COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
 	} else {
-		*fields = list("DATA_ID", "DATA_NAME", "DATA_CREATE_TIME", "DATA_MODIFY_TIME");
+		*fields = list("DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions =  list(uucondition("COLL_NAME", "=", *path));
 	}
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
+ 
+	if (*status != 'Success') {
+		succeed;
+	}
+
 	*kvpList = list()
 	if (*iscollection) {
 		foreach(*row in tl(*rowList)) {
@@ -67,13 +81,18 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 # \brief iiCollectionDetails return a json object containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
 # \param[out] result   JSON object containing Details of the Collection
-iiCollectionDetails(*path, *result) {
+iiCollectionDetails(*path, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = '';
 
 	# First check if path exists and fail if not
 	if (!uuCollectionExists(*path)) {
 		# class USER_INPUT_PATH_ERR(UserInputException):
 		# code = -317000
-		fail(-317000);
+		# fail(-317000);
+		*status = 'ErrorPathNotExists';
+		*statusInfo = 'The indicated path does not exist';
+		succeed;
 	}
 
 	msiString2KeyValPair("path=*path", *kvp);
@@ -91,19 +110,8 @@ iiCollectionDetails(*path, *result) {
 
 
 
-	iiFileCount(*path, *totalSize, *dircount, *filecount, *modified);
-	*kvp.dircount = *dircount;
-	*kvp.totalSize = *totalSize;
-	*kvp.filecount = *filecount;
-	*kvp.content_modify_time = *modified;
-
-	iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, true, *kvpList);
-	uuKvpList2JSON(*kvpList, *orgMetadata_json, *size);
-
-	*kvp.orgMetadata = *orgMetadata_json;
-
 	# The following information is only  applicable inside research groups.
-	if (*path like "/$rodsZoneClient/home/" ++ IIGROUPPREFIX ++ "*") {
+	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*kvp.userMetadata = "true";
 		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager); 
 		*kvp.groupName = *groupName;
@@ -114,18 +122,21 @@ iiCollectionDetails(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-		*orgStatus = UNPROTECTED;
-		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName == "status") {
-				*orgStatus = *metadataKvp.attrValue;
+		iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *metadataKvpList);
+		*folderStatus = FOLDER;
+		foreach(*metadataKvp in *metadataKvpList) {
+			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
+				*folderStatus = *metadataKvp.attrValue;
 				break;
 			}
 		}
-		*kvp.folderStatus = *orgStatus;
+		*kvp.folderStatus = *folderStatus;
 
 		*lockFound = "no";
-		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName like "lock_*") {
+		*lockCount = 0;
+		foreach(*metadataKvp in *metadataKvpList) {
+			if (*metadataKvp.attrName == IILOCKATTRNAME) {
+				*lockCount = *lockCount + 1;
 				*rootCollection = *metadataKvp.attrValue;
 				*kvp.lockRootCollection = *rootCollection;
 				if (*rootCollection == *path) {
@@ -146,11 +157,102 @@ iiCollectionDetails(*path, *result) {
 			}
 		}
 		*kvp.lockFound = *lockFound;
+		*kvp.lockCount = str(*lockCount);
 
+	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		*metadataXmlName = IIMETADATAXMLNAME;
+		*kvp.isVaultPackage = "no";
+		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *path AND DATA_NAME = *metadataXmlName) {
+			*kvp.userMetadata = "true";
+		}
+
+		*pathElems = split(*path, "/");
+		if (size(*pathElems) == 4) {
+			*kvp.isVaultPackage = "yes";
+		}
+		
+		*isFound = false;
+		# Check Access
+		*kvp.researchGroupAccess = "no";
+		foreach(*row in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*userId = *row.COLL_ACCESS_USER_ID;
+			foreach(*row in SELECT USER_NAME WHERE USER_ID = *userId) {
+				*userName = *row.USER_NAME;
+				if (*userName like "datamanager-*") {
+					*isFound = true;
+					*datamanagerGroup = *userName;
+					uuGroupGetMemberType(*datamanagerGroup, uuClientFullName, *userTypeIfDatamanager);
+					if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+						*kvp.isDatamanager = "yes";
+					} else {
+						*kvp.isDatamanager = "no";
+					}
+				}
+				if (*userName like "research-*") {
+					*kvp.researchGroupAccess = "yes";
+				}
+			}
+		}
+		if (*isFound) {
+		       *kvp.hasDatamanager = "yes";
+		} else {
+			*kvp.hasDatamanager = "no";
+		        *kvp.isDatamanager = "no";	
+		}
+		
+		
+		
 	}
+
 
 	uuKvp2JSON(*kvp, *result);
 }
+
+# \brief iiListLocks
+iiListLocks(*path, *offset, *limit, *result, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
+	iiGetLocks(*path, *locks);
+	*total = size(*locks);
+	for(*i = 0; *i < *offset;*i = *i + 1) {
+		if (size(*locks) == 0) {
+			break;
+		}
+		*locks = tl(*locks);
+	}
+	*nLocks = size(*locks);
+	if (*nLocks == 0) {
+		*status = "NoLocksFound";
+		*statusInfo = "No Locks Found";
+		*more = 0;
+		*returned = 0;
+		*json_arr = "[]";
+	} else if (*nLocks > *limit) {
+		*status = "Success";
+		*more = *nLocks - *limit;
+		*returnedLocks = list();
+		for(*i = 0; *i < *limit; *i = *i + 1) {
+			*lock = elem(*locks, *i);	
+			*returnedLocks = cons(*lock, *returnedLocks);
+		}
+		*returned = *limit;
+		uuList2JSON(*returnedLocks, *json_arr);
+	} else {
+		*status = "Success";
+		*returned = size(*locks);
+		*more = 0;
+		uuList2JSON(*locks, *json_arr);
+	}
+	*kvp.locks = *json_arr;
+	*kvp.total = str(*total);
+	*kvp.more = str(*more);
+	*kvp.returned = str(*returned);
+	uuKvp2JSON(*kvp, *result);
+}
+
+
+# \brief iiCollectionMetadataKvpList
+# \param[in] path
 
 iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
 	*lst = list();
