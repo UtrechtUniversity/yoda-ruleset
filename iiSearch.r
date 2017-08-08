@@ -76,7 +76,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_COLL_ATTR_VALUE, *upperValue);
 				msiStrToUpper(*searchstring, *upperSearchstring);
-				if (*upperValue like regex ".**upperSearchstring.*") {
+				if (*upperValue like "**upperSearchstring*") {
 					msiString2KeyValPair("", *match);
 					*name_lst = split(*row.META_COLL_ATTR_NAME, "_");
 					uuJoin(" ", tl(tl(*name_lst)), *name);
@@ -109,7 +109,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_DATA_ATTR_VALUE, *upperValue);
 				msiStrToUpper(*searchstring, *upperSearchstring);
-				if (*upperValue like regex ".**upperSearchstring.*") {
+				if (*upperValue like "**upperSearchstring*") {
 					msiString2KeyValPair("", *match);
 					*name = triml(*row.META_DATA_ATTR_NAME, UUUSERMETADATAPREFIX);
 					*val = *row.META_DATA_ATTR_VALUE;
