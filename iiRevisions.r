@@ -603,7 +603,7 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
+	uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
  	if (*status!='Success') {
         	succeed;
         }
