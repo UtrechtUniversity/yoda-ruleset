@@ -87,9 +87,9 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 
 	*revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
-	*revisionStoreExists = False;	
+	*revisionStoreExists = false;	
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *revisionStore) {
-	       	*revisionStoreExists = True;
+	       	*revisionStoreExists = true;
        	}
 
 	if (*revisionStoreExists) {
