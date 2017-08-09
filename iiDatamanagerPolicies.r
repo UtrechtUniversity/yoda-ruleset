@@ -20,6 +20,16 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 	fail;
 }
 
+# \brief iiDatamanagerGroupFromVaultGroup
+iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {	
+	uuGetBaseGroup(*vaultGroup, *baseGroup);
+	uuGroupGetCategory(*baseGroup, *category, *subcategory);
+	*datamanagerGroup = "datamanager-*category";
+	uuGroupExists(*datamanagerGroup, *datamananagerExists);
+	if (!*datamanagerExists) {
+		*datamanagerGroup = "";
+	}
+}
 
 # \brief iiCanDatamanagerAclSet
 # \param[in] objPath
