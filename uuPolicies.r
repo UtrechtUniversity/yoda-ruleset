@@ -34,11 +34,11 @@ acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
 	if (*type == "rodsuser") {
 		# Do not create home directories for regular users.
-	} else if (*type == "rodsgroup" && ($otherUserName like regex "(read|datamanager)-.*")) {
-		# Do not create home directories for read- and datamanager groups.
+	} else if (*type == "rodsgroup" && ($otherUserName like "read-*")) {
+		# Do not create home directories for read- groups.
 	} else {
 		# *Do* create home directories for all other user types and groups (e.g.
-		# rodsadmin, research- and intake groups).
+		# rodsadmin, research-, datamanager- and intake groups).
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/home", $otherUserName);
 		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 		msiSetACL("default", "admin:inherit", $otherUserName, "/"++$rodsZoneProxy++"/home/"++$otherUserName);
