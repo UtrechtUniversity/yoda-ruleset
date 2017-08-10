@@ -404,11 +404,16 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 
 # \brief iiPrepareVaultMetadataForEditing
 # \param[in] metadataXmlPath
-# \param[out] result
-iiPrepareVaultMetadataForEditing(*metadataXmlPath, *result) {
+# \param[out] tempMetadataXmlPath
+# \param[out] status
+# \param[out] statusInfo
+iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status, *statusInfo) {
 	# path of metadataxml in vault:
 	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/1999-12-31_yoda-metadata.xml	
 	# /0       /1   /2              /(3)/(4)/(5)         /(6)
+	*status =  "Unknown";
+	*statusInfo = "An internal error has occurred";
+	*tempMetadataXmlPath = "";
 	*pathElems = split(*metadataXmlPath, "/");
 	*rodsZone = elem(*pathElems, 0);
 	*vaultGroup = elem(*pathElems, 2);
@@ -421,24 +426,39 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *result) {
 	}	
 	*metadataXmlName = IIMETADATAXMLNAME;	
 	*tempPath = "/*rodsZone/home/*datamanagerGroup/*vaultGroup/*vaultPackageSubPath";
-	msiCollCreate(*tempPath, 1, *status);
+	*err = errorcode(msiCollCreate(*tempPath, 1, *status));
+	if (*err < 0) {
+		*status = "FailedToCreateCollection";
+		*statusInfo = "Failed to create a staging area at *tempPath";
+		succeed;
+	}
+
 	*tempMetadataXmlPath = *tempPath ++ "/" ++ IIMETADATAXMLNAME;
-	msiDataObjCopy(*metadataXmlPath, *tempMetadataXmlPath, "verifyChksum=", *status);
+
+	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *tempMetadataXmlPath, "verifyChksum=", *status));
+	if (*err < 0) {
+		*status = "FailedToCopyMetadata";
+		*statusInfo = "Failed to copy metadata to datamanager staging area";
+		succeed;
+	}
+
+	*status = "Success";
+	*statusInfo = "";
 	
 }
 
 
 # \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
-# \param[in] objPath path of metadata xml to ingest
-iiIngestDatamanagerMetadataIntoVault(*objPath) {
+# \param[in] metadataXmlPath path of metadata xml to ingest
+iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	# Changes to metadata should be written to the datamanagers area first
-	# Example path: /nluu1dev/yoda/datamanagers/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
-	# index:        /0       /1   /2           /3                   /4          /(5)/(6)/(7)        /(8)
-	*pathElems = split(*objPath, "/");
+	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
+	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
+	*pathElems = split(*metadataXmlPath, "/");
 	*rodsZone = elem(*pathElems, 0);
-	*datamanagerGroup = elem(*pathElems, 3);
+	*datamanagerGroup = elem(*pathElems, 2);
 	uuChop(*datamanagerGroup, *_, *category, "-", true);
-	*vaultGroup = elems(*pathElems, 4);
+	*vaultGroup = elems(*pathElems, 3);
 	uuJoin("/", tl(tl(tl(tl(*pathElems)))), *metadataXmlSubPath);
 	
 	*vaultPackageSubPath = trimr(*metadataXmlSubPath, "/");
@@ -487,7 +507,7 @@ iiIngestDatamanagerMetadataIntoVault(*objPath) {
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
 	msiSudoObjAclSet(0, "write", *datamanagerGroup, *vaultPackagePath, *aclKv);
-	msiDataObjCopy(*objPath, *vaultMetadataTarget, "verifyChksum=");
+	msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "verifyChksum=");
 
 	iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
 	iiImportMetadataFromXML(*vaultMetadataTarget, *xslpath);

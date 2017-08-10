@@ -25,7 +25,7 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 	*datamanagerGroup = "datamanager-*category";
-	uuGroupExists(*datamanagerGroup, *datamananagerExists);
+	uuGroupExists(*datamanagerGroup, *datamanagerExists);
 	if (!*datamanagerExists) {
 		*datamanagerGroup = "";
 	}

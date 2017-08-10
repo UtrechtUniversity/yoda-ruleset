@@ -168,7 +168,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		}
 
 		if (*vaultStatus == COMPLETE) {
-			*kvp.vaultPackage = "yes";
+			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
 				*kvp.hasMetadataXml = "no";
@@ -178,7 +178,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 				*kvp.metadataXmlPath = *metadataXmlPath;
 			}
 		} else {
-			*kvp.vaultPackage = "no";
+			*kvp.isVaultPackage = "no";
 			*kvp.hasMetadataXml = "no";
 			*kvp.userMetadata = "false";
 		}
