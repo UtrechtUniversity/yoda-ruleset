@@ -193,7 +193,7 @@ iiPrepareMetadataForm(*path, *result) {
 		uuGroupGetCategory(*baseGroup, *category, *subcategory);
 		*kvp.category = *category;
 		*kvp.subcategory = *subcategory;
-		uuGroupExists("datamanager-*category", *datamananagerExists);
+		uuGroupExists("datamanager-*category", *datamanagerExists);
 		if (!*datamanagerExists) {
 			*isDatamanager = false;
 		} else {
