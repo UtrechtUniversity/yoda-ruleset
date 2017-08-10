@@ -189,6 +189,18 @@ iiPrepareMetadataForm(*path, *result) {
 		uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
 		*kvp.userType = *memberType;
 
+		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
+		*vaultStatus = "";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+			*vaultStatus = *row.META_COLL_ATTR_VALUE;
+		}
+
+		if (*vaultStatus == COMPLETE) {
+			*kvp.isVaultPackage = "yes";
+		} else {
+			*kvp.isVaultPackage = "no";
+		}
+
 		uuGetBaseGroup(*vaultGroup, *baseGroup);
 		uuGroupGetCategory(*baseGroup, *category, *subcategory);
 		*kvp.category = *category;
@@ -198,7 +210,7 @@ iiPrepareMetadataForm(*path, *result) {
 			*isDatamanager = false;
 		} else {
 			uuGroupGetMemberType("datamanager-*category", uuClientFullName, *userTypeIfDatamanager);
-			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "managaer") {
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
 				*isDatamanager = true;
 			} else {
 				*isDatamanager = false;
