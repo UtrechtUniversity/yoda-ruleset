@@ -434,20 +434,26 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 	}	
 	*metadataXmlName = IIMETADATAXMLNAME;	
 	*tempPath = "/*rodsZone/home/*datamanagerGroup/*vaultGroup/*vaultPackageSubPath";
-	*err = errorcode(msiCollCreate(*tempPath, 1, *status));
-	if (*err < 0) {
-		*status = "FailedToCreateCollection";
-		*statusInfo = "Failed to create a staging area at *tempPath";
-		succeed;
+	
+	
+	if (!uuCollectionExists(*tempPath) {
+		*err = errorcode(msiCollCreate(*tempPath, 1, *status));
+		if (*err < 0) {
+			*status = "FailedToCreateCollection";
+			*statusInfo = "Failed to create a staging area at *tempPath";
+			succeed;
+		}
 	}
 
 	*tempMetadataXmlPath = *tempPath ++ "/" ++ IIMETADATAXMLNAME;
-
-	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *tempMetadataXmlPath, "verifyChksum=", *status));
-	if (*err < 0) {
-		*status = "FailedToCopyMetadata";
-		*statusInfo = "Failed to copy metadata to datamanager staging area";
-		succeed;
+	
+	if (!uuFileExists(*tempMetadataXmlPath)) {
+		*err = errorcode(msiDataObjCopy(*metadataXmlPath, *tempMetadataXmlPath, "verifyChksum=", *status));
+		if (*err < 0) {
+			*status = "FailedToCopyMetadata";
+			*statusInfo = "Failed to copy metadata to datamanager staging area";
+			succeed;
+		}
 	}
 
 	*status = "Success";
