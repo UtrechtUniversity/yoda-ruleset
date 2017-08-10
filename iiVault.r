@@ -72,7 +72,7 @@ iiSetVaultPermissions(*folder, *target) {
 
 	uuChop(*groupName, *_, *baseName, "-", true);
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
-
+	
 	# Setting main collection of vault group to noinherit for finegrained access control
 	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
 	if (*err < 0) {
@@ -207,11 +207,12 @@ iiCopyActionLog(*source, *destination) {
 }
 
 # \brief iiCopyOriginalMetadataToVault    Copy the original metadata xml into the root of the package
+# \param[in] vaultPackage  path of a new package in the vault
 iiCopyOriginalMetadataToVault(*vaultPackage) {
 	*originalMetadataXml = "*vaultPackage/original/" ++ IIMETADATAXMLNAME;
+	uuChopFileExtension(UUMETADATAXMLNAME, *baseName, *extension);
 	msiGetIcatTime(*timestamp, "unix");
-	*date = uuiso8601date(*timestamp);
-	*vaultMetadataTarget = *vaultPackage ++ "/" ++ *date ++"_" ++ IIMETADATAXMLNAME;
+	*vaultMetadataTarget = "*vaultPackage/*baseName[*timestamp].*extension";
 	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget, "verifyChksum=", *status);
 }
 

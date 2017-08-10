@@ -462,12 +462,12 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	*vaultPackagePath = "/*rodsZone/home/*vaultGroup/" ++ *vaultPackageSubPath;
 
 	msiGetIcatTime(*timestamp, "unix");
-	*date = uuiso8601date(*timestamp);
-	*vaultMetadataTarget = *vaultPackagePath ++ "/" ++ *date ++"_" ++ UUMETADAXMLNAME;  
+	uuChopFileExtension(UUMETADATAXMLNAME, *baseName, *extension);
+	*vaultMetadataTarget = "*vaultPackagePath/*baseName[*timestamp].*extension";  
 	*i = 0;
 	while (uuFileExists(*vaultMetadataTarget)) {
 		*i = *i + 1;
-		*vaultMetadataTarget = *vaultPackagePath ++ "/" ++ *date ++"_[*i]_" ++ UUMETADATAXMLNAME; 
+		*vaultMetadataTarget = "*vaultPackagePath/*baseName[*timestamp][*i].*extension"; 
 
 	}
 
