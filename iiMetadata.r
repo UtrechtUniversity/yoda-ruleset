@@ -63,7 +63,7 @@ iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
 # /param[out] result	json object with the location of the metadata file, formelements.xml, the XSD and the role of the current user in the group
 iiPrepareMetadataForm(*path, *result) {
 
-	on (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		msiString2KeyValPair("", *kvp);
 		
 
@@ -178,9 +178,7 @@ iiPrepareMetadataForm(*path, *result) {
 			}
 		}
 		uuKvp2JSON(*kvp, *result);
-	}
-
-	on (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+	} else if  (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*pathElems = split(*path, "/");
 		*rodsZone = elem(*pathElems, 0);
 		*vaultGroup = elem(*pathElems, 2);
@@ -248,6 +246,8 @@ iiPrepareMetadataForm(*path, *result) {
 
 		uuKvp2JSON(*kvp, *result);	
 			     
+	} else {
+		*result = "";	
 	}
 
 }
