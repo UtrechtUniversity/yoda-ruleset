@@ -250,10 +250,6 @@ iiPrepareMetadataForm(*path, *result) {
 			     
 	}
 
-	on (true) {
-		*result = "";
-		succeed;
-	}
 }
 
 # /brief iiRemoveAllMetadata	Remove the yoda-metadata.xml file and remove all user metadata from irods	
