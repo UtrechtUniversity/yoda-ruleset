@@ -212,6 +212,7 @@ iiCopyOriginalMetadataToVault(*vaultPackage) {
 	*originalMetadataXml = "*vaultPackage/original/" ++ IIMETADATAXMLNAME;
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
 	msiGetIcatTime(*timestamp, "unix");
+	*timestamp = triml(*timestamp, "0");
 	*vaultMetadataTarget = "*vaultPackage/*baseName[*timestamp].*extension";
 	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget, "verifyChksum=", *status);
 }

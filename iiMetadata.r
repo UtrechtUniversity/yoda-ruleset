@@ -474,6 +474,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	*vaultPackagePath = "/*rodsZone/home/*vaultGroup/" ++ *vaultPackageSubPath;
 
 	msiGetIcatTime(*timestamp, "unix");
+	*timestamp = triml(*timestamp, "0");
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
 	*vaultMetadataTarget = "*vaultPackagePath/*baseName[*timestamp].*extension";  
 	*i = 0;
