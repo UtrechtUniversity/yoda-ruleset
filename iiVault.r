@@ -210,7 +210,7 @@ iiCopyActionLog(*source, *destination) {
 # \param[in] vaultPackage  path of a new package in the vault
 iiCopyOriginalMetadataToVault(*vaultPackage) {
 	*originalMetadataXml = "*vaultPackage/original/" ++ IIMETADATAXMLNAME;
-	uuChopFileExtension(UUMETADATAXMLNAME, *baseName, *extension);
+	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
 	msiGetIcatTime(*timestamp, "unix");
 	*vaultMetadataTarget = "*vaultPackage/*baseName[*timestamp].*extension";
 	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget, "verifyChksum=", *status);
