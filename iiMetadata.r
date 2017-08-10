@@ -417,7 +417,7 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 # \param[out] statusInfo
 iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status, *statusInfo) {
 	# path of metadataxml in vault:
-	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/1999-12-31_yoda-metadata.xml	
+	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/yoda-metadata[123456789].xml	
 	# /0       /1   /2              /(3)/(4)/(5)         /(6)
 	*status =  "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -527,7 +527,8 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 # \param[in] vaultPackage
 # \param[out] metadataXmlPath
 iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath) {
-	*dataNameQuery = "%" ++ IIMETADATAXMLNAME;
+	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
+	*dataNameQuery = "%*baseName%*extension";
 	*metadataXmlPath = "";
 	foreach (*row in SELECT DATA_NAME, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
 		*metadataXmlPath = *vaultPackage ++ "/" ++ *row.DATA_NAME;
