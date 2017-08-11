@@ -34,6 +34,8 @@ acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
 	if (*type == "rodsuser") {
 		# Do not create home directories for regular users.
+		# but do create trash directories as iRODS always uses the personal trash folder evan when in a group directory
+		acCreateCollByAdmin("/"++$rodsZoneProxy++"/trash/home", $otherUserName);
 	} else if (*type == "rodsgroup" && ($otherUserName like regex "(read|datamanager)-.*")) {
 		# Do not create home directories for read- and datamanager groups.
 	} else {
