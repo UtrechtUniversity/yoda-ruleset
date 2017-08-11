@@ -340,18 +340,22 @@ iiCloneMetadataXml(*src, *dst) {
 
 # \brief iiMetadataXmlModifiedPost
 iiMetadataXmlModifiedPost(*xmlpath, *zone) {
-	uuChopPath(*xmlpath, *parent, *basename);
-	writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
-	iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
-	*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-	if (*err < 0) {
-		writeLine("serverLog", *msg);
-	} else if (*err == 0) {
-		writeLine("serverLog", "XSD validation successful. Start indexing");
-		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-		iiImportMetadataFromXML(*xmlpath, *xslpath);
+	if (*xmlpath like regex "/*zone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
+		iiIngestDatamanagerMetadataIntoVault(*xmlpath); 
 	} else {
-		writeBytesBuf("serverLog", *status_buf);
+		uuChopPath(*xmlpath, *parent, *basename);
+		writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
+		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		if (*err < 0) {
+			writeLine("serverLog", *msg);
+		} else if (*err == 0) {
+			writeLine("serverLog", "XSD validation successful. Start indexing");
+			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+			iiImportMetadataFromXML(*xmlpath, *xslpath);
+		} else {
+			writeBytesBuf("serverLog", *status_buf);
+		}
 	}
 }
 
@@ -462,7 +466,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	*rodsZone = elem(*pathElems, 0);
 	*datamanagerGroup = elem(*pathElems, 2);
 	uuChop(*datamanagerGroup, *_, *category, "-", true);
-	*vaultGroup = elems(*pathElems, 3);
+	*vaultGroup = elem(*pathElems, 3);
 	uuJoin("/", tl(tl(tl(tl(*pathElems)))), *metadataXmlSubPath);
 	
 	*vaultPackageSubPath = trimr(*metadataXmlSubPath, "/");

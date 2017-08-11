@@ -272,7 +272,14 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 # \param[in] *pluginInstanceName		A copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
 uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
-	if (*KVPairs.logical_path like regex "^/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+	# possible match
+	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
+	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.xml"
+	if (*KVPairs.logical_path like regex "^/"
+	    ++ *KVPairs.client_user_zone
+	    ++ "/home/"
+	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
+	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
 		writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.client_user_zone);
 	}
@@ -282,7 +289,11 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 # \param[in] pluginInstanceName   a copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
-	if (*KVPairs.physical_path like regex ".\*/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
+	if (*KVPairs.physical_path like regex ".\*/home/"
+	    ++ IIGROUPPREFIX
+	    ++ "[^/]+(/.\*)\*/"
+	    ++ IIMETADATAXMLNAME ++ "$") {
 		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		*zone =  *KVPairs.client_user_zone;
 		*dst = *KVPairs.logical_path;
@@ -296,7 +307,12 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 # \param[in] pluginInstanceName   a copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
 uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
-	if (*KVPairs.logical_path like regex "^/" ++ *KVPairs.client_user_zone ++ "/home/" ++ IIGROUPPREFIX ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+	# Example match: "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
+	if (*KVPairs.logical_path like regex "^/"
+	    ++ *KVPairs.client_user_zone
+	    ++ "/home/" ++ IIGROUPPREFIX 
+	    ++ "[^/]+(/.\*)\*/"
+	    ++ IIMETADATAXMLNAME ++ "$") {
 
 		writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
