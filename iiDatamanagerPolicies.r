@@ -45,7 +45,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
 		if (*accessLevel != "write" && *accessLevel != "read") {
 			*allowed = false;
-			*reason = "A datamanager can only obtain or revoke write access for the dataanager group to a vault package";
+			*reason = "A datamanager can only obtain or revoke write access for the datamanager group to a vault package";
 			succeed;
 		}
 		
@@ -56,26 +56,26 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			succeed;
 		}
 		
-		foreach(*row in SELECT USER_ID WHERE USER_NAME = *otherName) {
-			*userId = *row.USER_ID;
-		}
-	
-		*accessName = "null";	
-		foreach(*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *userId AND COLL_NAME = *objPath) {
-			*accessName = *row.COLL_ACCESS_NAME;	
-		}
-		
-		if (*accessLevel == "write" && *accessName != "read object") {
-			*allowed = false;
-			*reason = "*otherName has no read access to *objPath";
-			succeed;
-		}
-		
-		if (*accessLevel == "read" && *accessName != "modify object") {
-			*allowed = false;
-			*reason = "*otherName has no write access to *objPath";
-			succeed;
-		}
+#		foreach(*row in SELECT USER_ID WHERE USER_NAME = *otherName) {
+#			*userId = *row.USER_ID;
+#		}
+
+		# *accessName = "null";	
+		# foreach(*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *userId AND COLL_NAME = *objPath) {
+	# 		*accessName = *row.COLL_ACCESS_NAME;	
+	# 	}
+	# 	
+	# 	if (*accessLevel == "write" && *accessName != "read object") {
+	# 		*allowed = false;
+	# 		*reason = "*otherName has no read access to *objPath";
+	# 		succeed;
+	# 	}
+	# 	
+	# 	if (*accessLevel == "read" && *accessName != "modify object") {
+	# 		*allowed = false;
+	# 		*reason = "*otherName has no write access to *objPath";
+	# 		succeed;
+	# 	}
 
 		uuGroupExists(*otherName, *datamanagerExists);
 		if (!*datamanagerExists) {

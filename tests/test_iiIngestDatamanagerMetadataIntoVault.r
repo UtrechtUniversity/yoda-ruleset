@@ -1,5 +1,5 @@
 testRule {
-	iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath); 
+	iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *userName, *userZone); 
 }
-input metadataXmlPath=""
+input *metadataXmlPath="", *userName="", *userZone=""
 output ruleExecOut

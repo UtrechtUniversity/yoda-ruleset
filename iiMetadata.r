@@ -339,22 +339,22 @@ iiCloneMetadataXml(*src, *dst) {
 }
 
 # \brief iiMetadataXmlModifiedPost
-iiMetadataXmlModifiedPost(*xmlpath, *zone) {
-	if (*xmlpath like regex "/*zone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
-		iiIngestDatamanagerMetadataIntoVault(*xmlpath); 
+iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
+	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
+		iiIngestDatamanagerMetadataIntoVault(*xmlPath, *userName, *userZone); 
 	} else {
-		uuChopPath(*xmlpath, *parent, *basename);
+		uuChopPath(*xmlPath, *parent, *basename);
 		writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
-		iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath);
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+		iiPrepareMetadataImport(*xmlPath, *userZone, *xsdPath, *xslPath);
+		*err = errormsg(msiXmlDocSchemaValidate(*xmlPath, *xsdPath, *statusBuf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
 		} else if (*err == 0) {
 			writeLine("serverLog", "XSD validation successful. Start indexing");
 			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-			iiImportMetadataFromXML(*xmlpath, *xslpath);
+			iiImportMetadataFromXML(*xmlPath, *xslPath);
 		} else {
-			writeBytesBuf("serverLog", *status_buf);
+			writeBytesBuf("serverLog", *statusBuf);
 		}
 	}
 }
@@ -458,7 +458,9 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 
 # \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
 # \param[in] metadataXmlPath path of metadata xml to ingest
-iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
+# \param[in] userName name of user
+# \param[in] userZone zone of user
+iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *userName, *userZone) {
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
@@ -484,42 +486,46 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 
 	}
 
-	*xsdcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdname = "*category.xsd";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
-		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xsdName = "*category.xsd";
+	*xsdPath = "";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+	
+	if (*xsdPath == "") {
+		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
 
-	if (*xsdpath == "") {
-		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
-	}
-
-	*err = errormsg(msiXmlDocSchemaValidate(*objPath, *xsdpath, *status_buf), *msg);
+	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 	if (*err < 0) {
 		writeLine("serverLog", *msg);
 		fail;
 	} else if (*err > 0) {
-		writeBytesBuf("serverLog", *status_buf);
+		writeBytesBuf("serverLog", *statusBuf);
 		fail;
 	}
 
-	*xslcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xslname = "*category.xsl";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslcoll AND DATA_NAME = *xslname) {
-		*xslpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xslName = "*category.xsl";
+	*xslPath = "";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
+		*xslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
-	if (*xslpath == "") {
-		*xslpath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
+	if (*xslPath == "") {
+		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 
-	*actor = uuClientFullName;
-	*aclKv.actor = *actor;
+	*aclKv.actor = "*userName#*userZone";
 	msiSudoObjAclSet(0, "write", *datamanagerGroup, *vaultPackagePath, *aclKv);
-	msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "verifyChksum=");
+	*err = errorcode(msiDataObjRename(*metadataXmlPath, *vaultMetadataTarget, "-d", *status));
+	if (*err < 0) {
+		writeLine("serverLog","iiIngestDatamanagerMetadataIntoVault: Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err");
+	}
 
 	iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
-	iiImportMetadataFromXML(*vaultMetadataTarget, *xslpath);
+	iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath);
 	msiSudoObjAclSet(0, "read", *datamanagerGroup, *vaultPackagePath, *aclKv);
 }
 
