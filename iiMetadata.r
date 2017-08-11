@@ -341,7 +341,8 @@ iiCloneMetadataXml(*src, *dst) {
 # \brief iiMetadataXmlModifiedPost
 iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
-		iiIngestDatamanagerMetadataIntoVault(*xmlPath, *userName, *userZone); 
+		 msiString2KeyValPair( UUORGMETADATAPREFIX ++ "move_to_vault=True", *kvp);		
+		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d"); 
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
 		writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
@@ -458,9 +459,7 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 
 # \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
 # \param[in] metadataXmlPath path of metadata xml to ingest
-# \param[in] userName name of user
-# \param[in] userZone zone of user
-iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *userName, *userZone) {
+iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
@@ -517,16 +516,14 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *userName, *userZone) {
 		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 
-	*aclKv.actor = "*userName#*userZone";
-	msiSudoObjAclSet(0, "write", *datamanagerGroup, *vaultPackagePath, *aclKv);
 	*err = errorcode(msiDataObjRename(*metadataXmlPath, *vaultMetadataTarget, "-d", *status));
 	if (*err < 0) {
 		writeLine("serverLog","iiIngestDatamanagerMetadataIntoVault: Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err");
+	} else {
+		writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Moved *metadataXmlPath to *vaultMetadataTarget");
+		iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
+		iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath);
 	}
-
-	iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
-	iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath);
-	msiSudoObjAclSet(0, "read", *datamanagerGroup, *vaultPackagePath, *aclKv);
 }
 
 # \brief iiGetLatestVaultMetadataXml
