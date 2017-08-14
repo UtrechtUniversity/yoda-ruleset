@@ -398,6 +398,22 @@ iiAddActionLogRecord(*actor, *folder, *action) {
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
 }
 
+
+# \brief iiFrontActionLog
+# 
+
+# Wrapper for iiActionLog to make it accessible conform standard to the front end
+# \param[in] folder - folder name to be extended with required full qualification name
+# \param[out] result
+# \param[out] status
+# \param[out] statusInfo
+iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = *folder;
+
+	 iiActionLog(*folder, *size, *result);	
+}
+
 # \brief iiActionLog
 # \param[in] folder
 # \param[out] size
