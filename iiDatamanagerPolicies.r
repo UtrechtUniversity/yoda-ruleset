@@ -5,6 +5,11 @@
 # \licens GPLv3 LICENSE
 
 # \brief iiDatamanagerPreSudoObjAclSet
+# \param[in] recursive
+# \param[in] accessLevel
+# \param[in] otherName
+# \param[in] objPath
+# \param[in] policyKv
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 	*actor = *policyKv.actor;
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
@@ -15,15 +20,86 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 	fail;
 }
 
+# \brief iiDatamanagerGroupFromVaultGroup
+iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {	
+	uuGetBaseGroup(*vaultGroup, *baseGroup);
+	uuGroupGetCategory(*baseGroup, *category, *subcategory);
+	*datamanagerGroup = "datamanager-*category";
+	uuGroupExists(*datamanagerGroup, *datamanagerExists);
+	if (!*datamanagerExists) {
+		*datamanagerGroup = "";
+	}
+}
 
 # \brief iiCanDatamanagerAclSet
+# \param[in] objPath
+# \param[in] actor
+# \param[in] otherName
+# \param[in] recursive
+# \param[in] accessLevel
+# \param[out] allowed
+# \param[out] reason
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
-	
+
+	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
+		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
+		if (*accessLevel != "write" && *accessLevel != "read") {
+			*allowed = false;
+			*reason = "A datamanager can only obtain or revoke write access for the datamanager group to a vault package";
+			succeed;
+		}
+		
+		msiGetObjType(*objPath, *objType);
+		if (*objType != "-c") {
+			*allowed = false;
+			*reason = "A datamanager can only change permissions on collections in the vault";
+			succeed;
+		}
+		
+#		foreach(*row in SELECT USER_ID WHERE USER_NAME = *otherName) {
+#			*userId = *row.USER_ID;
+#		}
+
+		# *accessName = "null";	
+		# foreach(*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *userId AND COLL_NAME = *objPath) {
+	# 		*accessName = *row.COLL_ACCESS_NAME;	
+	# 	}
+	# 	
+	# 	if (*accessLevel == "write" && *accessName != "read object") {
+	# 		*allowed = false;
+	# 		*reason = "*otherName has no read access to *objPath";
+	# 		succeed;
+	# 	}
+	# 	
+	# 	if (*accessLevel == "read" && *accessName != "modify object") {
+	# 		*allowed = false;
+	# 		*reason = "*otherName has no write access to *objPath";
+	# 		succeed;
+	# 	}
+
+		uuGroupExists(*otherName, *datamanagerExists);
+		if (!*datamanagerExists) {
+			*allowed = false;
+			*reason = "User is not a datamanager or *otherName does not exists.";
+			succeed;
+		}
+		uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
+		if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+			*allowed = true;
+			*reason = "User is a datamanager.";
+		} else {
+			*allowed = false;
+			*reason = "User is not a datamanager.";
+			succeed;
+		}
+
+	}
+
 	on (*objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
 		if (*accessLevel != "read" && *accessLevel != "null") {
 			*allowed = false;
-			*reason = "A datamanager can only grant read access or revoke access in the vault.";
+			*reason = "A datamanager can only grant write or read access or revoke access in the vault.";
 			succeed;
 		}
 

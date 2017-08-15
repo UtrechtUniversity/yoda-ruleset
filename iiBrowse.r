@@ -160,16 +160,31 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockCount = str(*lockCount);
 
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-		*metadataXmlName = IIMETADATAXMLNAME;
-		*kvp.isVaultPackage = "no";
-		foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *path AND DATA_NAME = *metadataXmlName) {
-			*kvp.userMetadata = "true";
+		
+		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
+		*vaultStatus = "";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		*pathElems = split(*path, "/");
-		if (size(*pathElems) == 4) {
+		if (*vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
+			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+			if (*metadataXmlPath == "") {
+				*kvp.hasMetadataXml = "no";
+			} else {
+				*kvp.userMetadata = "true";
+				*kvp.hasMetadataXml = "yes";
+				*kvp.metadataXmlPath = *metadataXmlPath;
+			}
+		} else {
+			*kvp.isVaultPackage = "no";
+			*kvp.hasMetadataXml = "no";
+			*kvp.userMetadata = "false";
 		}
+
+		*kvp.vaultStatus = *vaultStatus;
+
 		
 		*isFound = false;
 		# Check Access
