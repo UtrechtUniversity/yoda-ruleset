@@ -1,5 +1,5 @@
 # \file
-# \brief     Status transitions for Folders in the Research area.
+# \brief     Status transitions for Folders in the Research & Vault area.
 # \author    Paul Frederiks
 # \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
@@ -384,6 +384,13 @@ iiFolderSecure(*folder) {
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 
+}
+
+# \brief iiFolderApprove    Approve a folder in the vault for publication
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
+iiFolderApprove(*folder, *status, *statusInfo) {
+	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
 }
 
 
