@@ -281,7 +281,7 @@ iiFolderApprove(*folder, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == SUBMITTED) {
+	if (*currentFolderStatus == LOCK) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ APPROVED;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
