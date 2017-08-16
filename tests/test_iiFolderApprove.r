@@ -1,5 +1,5 @@
 testRule {
-   iiFolderApprove(*folder, *folderStatus, *status, *statusInfo);
+	iiFolderApprove(*folder, *status, *statusInfo);
 	writeLine("stdout", *status);
 	if (*status != "Success") {
 	   writeLine("stdout", "statusInfo: *statusInfo");
