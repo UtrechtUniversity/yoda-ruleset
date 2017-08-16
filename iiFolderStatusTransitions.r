@@ -287,14 +287,7 @@ iiFolderApprove(*folder, *status, *statusInfo) {
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
-
-		*extraReason = '';
-		if (*currentFolderStatus != '') {
-			*extraReason = " or folder is currently in *currentFolderStatus state";
-		}
-
-		*statusInfo = "Cannot unsubmit folder due to insufficient permissions"; # *extraReason";
-
+		*statusInfo = "Cannot approve folder due to insufficient permissions";
 		*folderStatus = *currentFolderStatus;
 		succeed;
 	}
