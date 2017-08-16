@@ -272,6 +272,54 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	}
 }
 
+# \brief iiFolderApprove    Approve a folder in the vault for publication
+# \param[in]  folder        path of folder to approve
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
+iiFolderApprove(*folder, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "An internal error has occurred";
+
+	iiFolderStatus(*folder, *currentFolderStatus);
+	if (*currentFolderStatus == SUBMITTED) {
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ APPROVED;
+		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	} else {
+		*status = "WrongStatus";
+
+		*extraReason = '';
+		if (*currentFolderStatus != '') {
+			*extraReason = " or folder is currently in *currentFolderStatus state";
+		}
+
+		*statusInfo = "Cannot unsubmit folder due to insufficient permissions"; # *extraReason";
+
+		*folderStatus = *currentFolderStatus;
+		succeed;
+	}
+	if (*err < 0) {
+		iiFolderStatus(*folder, *currentFolderStatus);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, APPROVED, uuClientFullName, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+        } else {
+		*status = "Success";
+		*statusInfo = "";
+	}
+}
+
+
 # \brief iiFolderDatamanagerAction    
 # \param[in] folder
 # \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
@@ -349,14 +397,6 @@ iiFolderAccept(*folder, *status, *statusInfo) {
 # \param[out] statusInfo    Informative message when action was not successfull
 iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
-}
-
-# \brief iiFolderApprove    Approve a folder in the vault for publication
-# \param[in]  folder        path of folder to approve
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-iiFolderApprove(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
 }
 
 
