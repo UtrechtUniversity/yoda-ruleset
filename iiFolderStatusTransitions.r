@@ -387,10 +387,42 @@ iiFolderSecure(*folder) {
 }
 
 # \brief iiFolderApprove    Approve a folder in the vault for publication
+# \param[in]  folder        path of folder to approve
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiFolderApprove(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
+	*status = "Unknown";
+	*statusInfo = "An internal error has occurred";
+
+	iiFolderStatus(*folder, *currentFolderStatus);
+	if (*currentFolderStatus != FOLDER) {
+		*status = "WrongStatus";
+		*statusInfo = "Cannot approve folder as it is currently in *currentFolderStatus state";
+		succeed;
+	}
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ APPROVED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
+	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		iiFolderStatus(*folder, *currentFolderStatus);
+		*actor = uuClientFullName;
+                iiCanTransitionFolderStatus(*folder, *currentFolderStatus, APPROVED, *actor, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+	} else {
+		*status = "Success";
+		*statusInfo = "";
+	}
 }
 
 
