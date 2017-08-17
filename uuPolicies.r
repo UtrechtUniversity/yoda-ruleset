@@ -29,7 +29,7 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 }
 
 # acCreateUserZoneCollections extended to also set inherit on the home coll
-# this is needed for groupcollections to allow users to share objects 
+# this is needed for groupcollections to allow users to share objects
 acCreateUserZoneCollections {
 	uuGetUserType($otherUserName, *type);
 	if (*type == "rodsuser") {
@@ -48,6 +48,19 @@ acCreateUserZoneCollections {
 			msiSetACL("default", "admin:inherit", $otherUserName, "*revisionColl/$otherUserName");
 		}
 	}
+}
+
+
+# acPreProcForObjRename is fired before a data object is renamed or moved.
+# Disallows renaming or moving the data object if it is directly under home.
+acPreProcForObjRename(*src, *dst) {
+        ON($objPath like regex "/[^/]+/home/" ++ ".[^/]*") {
+                uuGetUserType(uuClientFullName, *userType);
+                if (*userType != "rodsadmin") {
+                        cut;
+                        msiOprDisallowed;
+                }
+        }
 }
 
 #input null
