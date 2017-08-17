@@ -41,20 +41,31 @@ uuUserNameIsValid(*name)
 # - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
+# NB: Update the category name check below if you change the second half of this pattern.
+#
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
 	= *name like regex ``(intake|research|datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
-# \brief Check if a (sub)category name is valid.
+# \brief Check if a category name is valid.
 #
-# Category names must:
+# This must be exactly the same as the part of the group name check after the group prefix.
+#
+# \param[in] name
+#
+uuGroupCategoryNameIsValid(*name)
+	= *name like regex ``([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+
+# \brief Check if a subcategory name is valid.
+#
+# Subcategory names must:
 #
 # - contain only letters, numbers, spaces, commas, periods, underscores and hyphens
 #
 # \param[in] name
 #
-uuGroupCategoryNameIsValid(*name)
+uuGroupSubcategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
 # }}}
@@ -174,7 +185,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 			if (uuGroupCategoryNameIsValid(*categoryName)) {
 				*allowed = 1;
 			} else {
-				*reason = "(Sub)category names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";
+				*reason = "Category names may only contain lowercase letters (a-z), numbers, and hyphens (-), and may not start or end with a hyphen.";
 			}
 		} else {
 			*reason = "You cannot use this group category because you are not a member of the priv-category-add group.";
@@ -210,7 +221,7 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			}
 
 		} else if (*attribute == "subcategory") {
-			if (uuGroupCategoryNameIsValid(*value)) {
+			if (uuGroupSubcategoryNameIsValid(*value)) {
 				*allowed = 1;
 			} else {
 				*reason = "Subcategory names may only contain letters (a-z), numbers, spaces, commas, periods, parentheses, hyphens (-) and underscores (_).";

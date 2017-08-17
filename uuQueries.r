@@ -17,6 +17,18 @@ uuCollectionExists(*collectionname) {
 	*exists;
 }
 
+# \brief uuFileExists Check if a file exists in the catalog
+# \param[in] *path
+uuFileExists(*path) {
+	*exists = false;
+	uuChopPath(*path, *collName, *dataName);
+	foreach (*row in SELECT DATA_ID WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
+		*exists = true;
+		break;
+	}
+	*exists;
+}
+
 # \brief uuObjectMetadataKvp return a key-value-pair of metadata associated with a dataobject
 #				If a key is defined multiple times, the last found will be returned
 # \param[in]  data_id	Unique DataObject ID. Used because it is Unique
