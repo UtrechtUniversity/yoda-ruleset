@@ -91,7 +91,7 @@ acPreprocForCollCreate {
 # object is locked, or if the collection that will be the new parent
 # collection of the data object after the rename is locked
 acPreProcForObjRename(*src, *dst) {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;

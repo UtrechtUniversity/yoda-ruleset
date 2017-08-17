@@ -9,7 +9,7 @@
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
 
-# \constant IIRESEARCHGROUPPREFIX
+# \constant IIGROUPPREFIX
 IIGROUPPREFIX = "research-"
  
 # \constant IIVAULTPREFIX
