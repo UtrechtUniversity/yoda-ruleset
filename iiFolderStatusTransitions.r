@@ -425,7 +425,7 @@ iiFolderSecure(*folder) {
 	iiCopyActionLog(*folder, *target);
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
-
+        msiSetKeyValuePairsToObj(*folderStatusKvp, *target, "-C");
 }
 
 
