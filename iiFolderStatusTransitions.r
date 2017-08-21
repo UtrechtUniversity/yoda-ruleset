@@ -298,7 +298,7 @@ iiFolderApprove(*folder, *status, *statusInfo) {
 
         if (*publish_meta != "Yes" || *publish_data != "Yes") {
                *status = "WrongStatus";
-               *statusInfo = "Cannot approve folder, publication is prohibited in the metadat
+               *statusInfo = "Cannot approve folder, publication is prohibited in the metadata";
                succeed;
         }
 
