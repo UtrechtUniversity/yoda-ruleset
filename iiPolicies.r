@@ -171,7 +171,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-	on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -217,9 +217,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-
-	on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
-	
+        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -246,7 +244,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 
 
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
 		if (*option == "rm") {
 		       	*newStatus = FOLDER;
 	       	} else {
@@ -257,7 +255,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 }
 
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
 	}
