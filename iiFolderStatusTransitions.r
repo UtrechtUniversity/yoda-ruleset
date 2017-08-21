@@ -89,6 +89,9 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == SECURED) {
 		iiAddActionLogRecord(*actor, *folder, "secure");
 	}
+	on (*newFolderStatus == APPROVED) {
+		iiAddActionLogRecord(*actor, *folder, "secure");
+	}
 	on (true) {
 		nop;
 	}
@@ -252,7 +255,6 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		succeed;
 	}
 	if (*err < 0) {
-		iiFolderStatus(*folder, *currentFolderStatus);
 		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
@@ -292,7 +294,6 @@ iiFolderApprove(*folder, *status, *statusInfo) {
 		succeed;
 	}
 	if (*err < 0) {
-		iiFolderStatus(*folder, *currentFolderStatus);
 		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, APPROVED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
