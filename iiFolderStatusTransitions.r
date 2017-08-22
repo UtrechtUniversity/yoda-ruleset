@@ -372,29 +372,6 @@ iiFolderReject(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiFolderApprove(*folder, *status, *statusInfo) {
-        *status = "Unknown";
-        *statusInfo = "An internal error has occurred";
-
-        # Check if a folder may be published.
-        *prefix = UUUSERMETADATAPREFIX;
-        *prefix = *prefix ++ "%";
-        *publish_meta = "No";
-        *publish_data = "No";
-        foreach(*row in SELECT order_asc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME like *prefix) {
-               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Dataset") {
-                       *publish_data = *row.META_COLL_ATTR_VALUE;
-               }
-               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Metadata") {
-                       *publish_meta = *row.META_COLL_ATTR_VALUE;
-               }
-        }
-
-        if (*publish_meta != "Yes" || *publish_data != "Yes") {
-               *status = "WrongStatus";
-               *statusInfo = "Cannot approve folder, publication is prohibited in the metadata";
-               succeed;
-        }
-
 	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
 }
 
