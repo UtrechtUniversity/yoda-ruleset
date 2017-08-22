@@ -420,25 +420,6 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 		succeed;
 	}
 
-	if (*transitionTo == APPROVED) {
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
-		if (*err < 0) {
-			*allowed = false;
-			*reason = "Folder submitted without metadata.";
-			succeed;
-		} else {
-			*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-			if (*err < 0) {
-				*allowed = false;
-				*reason = "Metadata does not conform to schema.";
-				succeed;
-			}
-		}
-
-	}
-
 	if (*transitionTo == SUBMITTED) {
 		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
 		*zone = hd(split(triml(*folder, "/"), "/"));

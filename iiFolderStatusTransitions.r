@@ -274,83 +274,37 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	}
 }
 
-# \brief iiFolderApprove    Approve a folder in the vault for publication
-# \param[in]  folder        path of folder to approve
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-iiFolderApprove(*folder, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
-
-        # Check if a folder may be published.
-        *prefix = UUUSERMETADATAPREFIX;
-        *prefix = *prefix ++ "%";
-        *publish_meta = "No";
-        *publish_data = "No";
-        foreach(*row in SELECT order_asc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME like *prefix) {
-               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Dataset") {
-                       *publish_data = *row.META_COLL_ATTR_VALUE;
-               }
-               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Metadata") {
-                       *publish_meta = *row.META_COLL_ATTR_VALUE;
-               }
-        }
-
-        if (*publish_meta != "Yes" || *publish_data != "Yes") {
-               *status = "WrongStatus";
-               *statusInfo = "Cannot approve folder, publication is prohibited in the metadata";
-               succeed;
-        }
-
-	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus != APPROVED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ APPROVED;
-		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
-	} else {
-		*status = "WrongStatus";
-		*statusInfo = "Cannot approve folder due to insufficient permissions";
-		*folderStatus = *currentFolderStatus;
-		succeed;
-	}
-	if (*err < 0) {
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, APPROVED, uuClientFullName, *allowed, *reason);
-		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-		}
-        } else {
-		*status = "Success";
-		*statusInfo = "";
-	}
-}
-
 
 # \brief iiFolderDatamanagerAction    
 # \param[in] folder
-# \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
+# \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED, REJECTED or APPROVED
 # \param[out] status          status of the action
 # \param[out] statusInfo      Informative message when action was not successfull
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
+
+	# Check if folder is a research group.
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
-		*status = "NoResearchGroup";
-		#*statusInfo = "Failed to determine research group name of *folder";
-		*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
-		succeed;
+		 # Check if folder is a vault package.
+		 # (vault packages start four directories deep)
+		 *pathElems = split(*folder, "/");
+		 if (size(*pathElems) != 4) {
+			*status = "NoResearchGroup";
+			*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
+			succeed;
+		} else {
+		        # Vault package, determine category.
+			*vaultGroupName = elem(*pathElems, 2);
+			*category = triml(*vaultGroupName, IIVAULTPREFIX);
+		}
+	} else {
+		# Research group, determine category.
+		uuGroupGetCategory(*groupName, *category, *subcategory);
 	}
+
 	*actor = uuClientFullName;
-	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*datamanagerGroup = "datamanager-*category";
 	*aclKv.actor = *actor;
 	*err = errorcode(msiSudoObjAclSet(0, "write", *datamanagerGroup, *folder, *aclKv));
@@ -411,6 +365,37 @@ iiFolderAccept(*folder, *status, *statusInfo) {
 # \param[out] statusInfo    Informative message when action was not successfull
 iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
+}
+
+# \brief iiFolderApprove    Approve a folder in the vault for publication
+# \param[in]  folder        path of folder to approve
+# \param[out] status        status of the action
+# \param[out] statusInfo    Informative message when action was not successfull
+iiFolderApprove(*folder, *status, *statusInfo) {
+        *status = "Unknown";
+        *statusInfo = "An internal error has occurred";
+
+        # Check if a folder may be published.
+        *prefix = UUUSERMETADATAPREFIX;
+        *prefix = *prefix ++ "%";
+        *publish_meta = "No";
+        *publish_data = "No";
+        foreach(*row in SELECT order_asc(META_COLL_ATTR_NAME), META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME like *prefix) {
+               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Dataset") {
+                       *publish_data = *row.META_COLL_ATTR_VALUE;
+               }
+               if (*row.META_COLL_ATTR_NAME == "usr_0_Publish_Metadata") {
+                       *publish_meta = *row.META_COLL_ATTR_VALUE;
+               }
+        }
+
+        if (*publish_meta != "Yes" || *publish_data != "Yes") {
+               *status = "WrongStatus";
+               *statusInfo = "Cannot approve folder, publication is prohibited in the metadata";
+               succeed;
+        }
+
+	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
 }
 
 
