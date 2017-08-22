@@ -431,6 +431,10 @@ iiFolderSecure(*folder) {
 	iiCopyActionLog(*folder, *target);
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
+
+	# Set status of vault package to Stored in vault (STORED).
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ STORED;
+	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
         msiSetKeyValuePairsToObj(*folderStatusKvp, *target, "-C");
 }
 
