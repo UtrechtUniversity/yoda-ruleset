@@ -295,17 +295,17 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 			*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
 			succeed;
 		} else {
-		        # Vault package, determine category.
-			*vaultGroupName = elem(*pathElems, 2);
-			*category = triml(*vaultGroupName, IIVAULTPREFIX);
+			# Vault package, determine datamanager group.
+			*vaultGroup = elem(*pathElems, 2);
+			iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
 		}
 	} else {
-		# Research group, determine category.
+		# Research group, determine datamanager group.
 		uuGroupGetCategory(*groupName, *category, *subcategory);
+               *datamanagerGroup = "datamanager-*category";
 	}
 
 	*actor = uuClientFullName;
-	*datamanagerGroup = "datamanager-*category";
 	*aclKv.actor = *actor;
 	*err = errorcode(msiSudoObjAclSet(0, "write", *datamanagerGroup, *folder, *aclKv));
 	if (*err < 0) {
