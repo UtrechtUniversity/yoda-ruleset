@@ -409,8 +409,8 @@ iiFolderSecure(*folder) {
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 
-	# Set status of vault package to Stored in vault (STORED).
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ STORED;
+	# Set status of vault package to unpublished.
+	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ UNPUBLISHED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
         msiSetKeyValuePairsToObj(*folderStatusKvp, *target, "-C");
 }
