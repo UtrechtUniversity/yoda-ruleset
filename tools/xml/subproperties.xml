@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<formelements>
+    <Group name="Project information">
+        <Project_ID>
+            <label>Project ID</label>
+            <help>The ID of the project as provided by the SAP system, i.e. the WSB-element of the financial system (SAP)</help>
+            <mandatory>true</mandatory>
+        </Project_ID>
+        <Author>
+            <Name>
+                <label>Author</label>
+                <help>Name of the author</help>
+                <mandatory>true</mandatory>
+            </Name>
+            <Properties>
+                <Orcid>
+                    <label>ORC ID</label>
+                    <help>ORC ID of corresponding author</help>
+                </Orcid>
+                <Country>
+                    <label>Country</label>
+                    <help>Name of country of author</help>
+                </Country>
+            </Properties>
+        </Author>
+        <Project_Name>
+            <label>Project name</label>
+            <help>Name of the project</help>
+            <mandatory>true</mandatory>
+        </Project_Name>
+    </Group>
+    <Group name="Project funding">
+        <Funder>
+            <Name>
+                <label>Funder name</label>
+                <help>blabla?</help>
+                <mandatory>true</mandatory>
+            </Name>
+            <Properties>
+                <Important>
+                    <label>Funder importance</label>
+                    <help>blabla?</help>
+                </Important>
+                <Department>
+                    <label>Funder department</label>
+                    <help>blabla?</help>
+                </Department>
+                <Role>
+                    <label>Funder role</label>
+                    <help>blabla?</help>
+                </Role>
+            </Properties>
+        </Funder>
+        <Project_URL>
+            <label>URL of project</label>
+            <help>Url of project description</help>
+        </Project_URL>
+        <Project_Type>
+            <label>Type of project</label>
+            <help>Description of type of project</help>
+        </Project_Type>
+    </Group>
+</formelements> 

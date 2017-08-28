@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+    <xs:element name="metadata">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Project_ID" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Author" minOccurs="0" maxOccurs="2">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="Properties"  minOccurs="0" maxOccurs="1">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Orcid" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                        <xs:element name="Country" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Project_Name" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Funder"  minOccurs="0" maxOccurs="1">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                            <xs:element name="Properties"  minOccurs="0" maxOccurs="2">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Important" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                        <xs:element name="Department" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                                        <xs:element name="Role" type="stringNormal" minOccurs="0" maxOccurs="2"/>
+                                    </xs:sequence>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Project_URL" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                <xs:element name="Project_Type" type="stringNormal" minOccurs="0" maxOccurs="5" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="stringNormal">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="255"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="optionsRoles">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="President"/>
+            <xs:enumeration value="Vice president"/>
+            <xs:enumeration value="Soccer sucker"/>
+            <xs:enumeration value="N.A."/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="optionsYesNo">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Yes"/>
+            <xs:enumeration value="No"/>
+            <xs:enumeration value="N.A."/>
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>
