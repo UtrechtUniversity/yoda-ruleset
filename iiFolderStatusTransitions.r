@@ -372,7 +372,7 @@ iiFolderReject(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiFolderApprove(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
+	iiFolderDatamanagerAction(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
 
@@ -406,13 +406,8 @@ iiFolderSecure(*folder) {
 	}
 
 	iiCopyActionLog(*folder, *target);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
-
-	# Set status of vault package to unpublished.
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ UNPUBLISHED;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-        msiSetKeyValuePairsToObj(*folderStatusKvp, *target, "-C");
 }
 
 

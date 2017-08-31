@@ -160,20 +160,13 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockCount = str(*lockCount);
 
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-		*folderStatusAttrName = UUORGMETADATAPREFIX ++ "status";
-		*folderStatus = "";
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *folderStatusAttrName) {
-			     *folderStatus = *row.META_COLL_ATTR_VALUE;
-                }
-               *kvp.folderStatus = *folderStatus;
-
 		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
 		*vaultStatus = "";
 		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		if (*vaultStatus == COMPLETE) {
+		if (*vaultStatus == COMPLETE || *vaultStatus == UNPUBLISHED) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
