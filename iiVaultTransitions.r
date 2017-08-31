@@ -59,6 +59,9 @@ iiVaultStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo)
 				*statusInfo = "*err - *msg";
 			}
 		}
+        } else {
+		*status = "Success";
+		*statusInfo = "";
 	}
 }
 
