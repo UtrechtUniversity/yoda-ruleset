@@ -314,7 +314,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentFolderStatus);
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, *newStatus, *actor, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, *newFolderStatus, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
