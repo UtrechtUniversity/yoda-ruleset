@@ -171,7 +171,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
+        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -199,7 +199,32 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
+		if (*userType == "rodsadmin") {
+			*allowed = true;
+		}
 
+		if (*allowed) {
+			iiFolderStatus(*itemName, *currentStatus);
+			if (*option == "rm") {
+				*newStatus = FOLDER;
+			} else {
+				*newStatus = *attributeValue;
+			}
+			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Perhaps a rollback is needed
+				*allowed = false;
+			}
+		}
+		if (!*allowed) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
 }
 
 # This policy gets triggered when metadata is modified
@@ -217,7 +242,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*" ) {
+        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -240,11 +265,33 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
+		*actor = uuClientFullName;
+		uuGetUserType(*actor, *userType);
+		if (*userType == "rodsadmin") {
+			*allowed = true;
+		}
+
+		if (*allowed) {
+			iiVaultStatus(*itemName, *currentStatus);
+			*newStatus = triml(*newAttributeValue, "v:");
+			*err = errorcode(iiPreVaultStatusTransition(*itemName, *currentStatus, *newStatus));
+			if (*err < 0) {
+				# Rollback
+				*allowed = false;
+			}
+		}
+
+		if (!*allowed) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
 }
 
 
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		if (*option == "rm") {
 		       	*newStatus = FOLDER;
 	       	} else {
@@ -252,12 +299,19 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 	       	};
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		iiPostVaultStatusTransition(*itemName, uuClientFullName, *attributeValue);
+	}
 }
 
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/[" ++ IIGROUPPREFIX ++ "|" ++ IIVAULTPREFIX ++ "].*") {
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
+	}
+        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+		*newStatus = triml(*newAttributeValue, "v:");
+		iiPostVaultStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 }
 
