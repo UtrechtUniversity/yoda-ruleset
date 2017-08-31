@@ -284,6 +284,7 @@ iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
 	}
 }
 
+# \brief iiDataObjectKvpList
 iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
 	*lst = list();
 	uuChopPath(*path, *collName, *dataName);
