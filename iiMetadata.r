@@ -225,10 +225,31 @@ iiPrepareMetadataForm(*path, *result) {
 
 		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 		if (*metadataXmlPath == "") {
+			*hasMetadataXml = false;
 			*kvp.hasMetadataXml = "no";
 		} else {
+			*hasMetadataXml = true;
 			*kvp.hasMetadataXml = "yes";
 			*kvp.metadataXmlPath = *metadataXmlPath;
+		}
+		
+		# Check if a shadow metadata XML exists	
+		if (*isDatamanager && *hasMetadataXml) {
+			*shadowMetadataXml = "/*rodsZone/home/datamanager-*category/*vaultGroup/*vaultPackageSubPath/" ++ IIMETADATAXMLNAME;
+			*kvp.hasShadowMetadataXml = "no";
+			if (uuFileExists(*shadowMetadataXml)) {
+				*kvp.hasShadowMetadataXml = "yes";
+				iiDataObjectMetadataKvpList(*shadowMetadataXml, UUORGMETADATAPREFIX, true, *kvpList);
+				foreach(*item in *kvpList) {
+					if (*item.attrName == "vault_ingest") {
+						*kvp.vaultIngestStatus = *item.attrValue;
+					}
+					if (*item.attrName == "vault_ingest_info") {
+						*kvp.vaultIngestStatusInfo = *item.attrValue;
+					}
+				}
+			
+			}
 		}
 
 		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
@@ -341,7 +362,7 @@ iiCloneMetadataXml(*src, *dst) {
 # \brief iiMetadataXmlModifiedPost
 iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
-		 msiString2KeyValPair( UUORGMETADATAPREFIX ++ "move_to_vault=True", *kvp);		
+		 msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_ingest=Pending", *kvp);		
 		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d"); 
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
@@ -458,8 +479,12 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 
 
 # \brief iiIngestDatamanagerMetadataIntoVault    Ingest changes to metadata in to the vault
-# \param[in] metadataXmlPath path of metadata xml to ingest
-iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
+# \param[in] metadataXmlPath    path of metadata xml to ingest
+# \param[out] status
+# \param[out] statusInfo
+iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "";
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
@@ -474,6 +499,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 	
 	*vaultPackagePath = "/*rodsZone/home/*vaultGroup/" ++ *vaultPackageSubPath;
 
+	if (!uuCollectionExists(*vaultPackagePath)) {
+		*status = "VaultPackageMissing";
+		*statusInfo = "*vaultPackagePath does not exist";
+		succeed;
+	}
+	
+	# Generate a new metadata xml filename with a timestamp, to prevent overwriting the old version
 	msiGetIcatTime(*timestamp, "unix");
 	*timestamp = triml(*timestamp, "0");
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
@@ -498,11 +530,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 
 	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 	if (*err < 0) {
-		writeLine("serverLog", *msg);
-		fail;
+		*status = "FailedToValidateXML";
+		*statusInfo = "*err - *msg";
+		succeed;
 	} else if (*err > 0) {
-		writeBytesBuf("serverLog", *statusBuf);
-		fail;
+		*status = "InvalidXML";
+		*statusInfo = "*statusBuf";
+		succeed;
 	}
 
 	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
@@ -518,12 +552,27 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath) {
 
 	*err = errorcode(msiDataObjRename(*metadataXmlPath, *vaultMetadataTarget, "-d", *status));
 	if (*err < 0) {
-		writeLine("serverLog","iiIngestDatamanagerMetadataIntoVault: Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err");
-	} else {
-		writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Moved *metadataXmlPath to *vaultMetadataTarget");
-		iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX);
-		iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath);
+		*status = "FailedToMoveXML";
+		*statusInfo = "Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
+		succeed;
 	}
+
+	*err = errorcode(iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX));
+	if (*err < 0) {
+		*status = "FailedToRemoveMetadata";
+		*statusInfo = "Failed to remove old metadata from *vaultPackagePath";
+		succeed;
+	} 
+
+	*err = errorcode(iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath));
+	if (*err < 0) {
+		*status = "FailedToImportMetadata";
+		*statusInfo = "Failed to ingest new metadata for *vaultPackagePath into index";
+		succeed;
+	}
+
+	*status = "Success";
+	*statusInfo = "";
 }
 
 # \brief iiGetLatestVaultMetadataXml
