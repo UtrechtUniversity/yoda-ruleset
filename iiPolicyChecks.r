@@ -36,6 +36,19 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal;
 }
 
+# \brief iiIsVaultStatusTransitionLegal
+iiIsVaultStatusTransitionLegal(*fromstatus, *tostatus) {
+	*legal = false;
+	foreach(*legaltransition in IIVAULTTRANSITIONS) {
+		(*legalfrom, *legalto) = *legaltransition;
+		if (*legalfrom == *fromstatus && *legalto == *tostatus) {
+			*legal = true;
+			break;
+		}
+	}
+	*legal;
+}
+
 # \brief iiGetLocks
 iiGetLocks(*objPath, *locks) {
 	*locks = list();
@@ -401,7 +414,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanModifyFolderStatus 
+# \brief iiCanTransitionFolderStatus 
 # \param[in] path
 # \param[out] allowed
 # \param[out] reason
@@ -481,5 +494,22 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 				}
 			}
 		}
+	}
+}
+
+
+# \brief iiCanTransitionVaultStatus 
+# \param[in] path
+# \param[out] allowed
+# \param[out] reason
+iiCanTransitionVaultStatus(*folder, *transitionFrom, *transitionTo, *actor, *allowed, *reason) {
+	*allowed = false;
+	*reason = "Unknown error";
+	if (iiIsVaultStatusTransitionLegal(*transitionFrom, *transitionTo)) {
+		*allowed = true;
+		*reason = "Legal status transition. *transitionFrom -> *transitionTo";
+	} else {
+		*reason = "Illegal status transition. Current status is *transitionFrom.";
+		succeed;
 	}
 }

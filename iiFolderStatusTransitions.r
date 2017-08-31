@@ -277,7 +277,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 
 # \brief iiFolderDatamanagerAction    
 # \param[in] folder
-# \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED, REJECTED or APPROVED
+# \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
 # \param[out] status          status of the action
 # \param[out] statusInfo      Informative message when action was not successfull
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
@@ -287,18 +287,9 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	# Check if folder is a research group.
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
-		 # Check if folder is a vault package.
-		 # (vault packages start four directories deep)
-		 *pathElems = split(*folder, "/");
-		 if (size(*pathElems) != 4) {
-			*status = "NoResearchGroup";
-			*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
-			succeed;
-		} else {
-			# Vault package, determine datamanager group.
-			*vaultGroup = elem(*pathElems, 2);
-			iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
-		}
+		*status = "NoResearchGroup";
+		*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
+		succeed;
 	} else {
 		# Research group, determine datamanager group.
 		uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -367,14 +358,6 @@ iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
-# \brief iiFolderApprove    Approve a folder in the vault for publication
-# \param[in]  folder        path of folder to approve
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-iiFolderApprove(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, APPROVED, *status, *statusInfo);
-}
-
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
 #			  and should not be called from the portal. Thus no statusInfo is returned, but 
@@ -406,13 +389,8 @@ iiFolderSecure(*folder) {
 	}
 
 	iiCopyActionLog(*folder, *target);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ COMPLETE, *vaultStatusKvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
-
-	# Set status of vault package to unpublished.
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ UNPUBLISHED;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-        msiSetKeyValuePairsToObj(*folderStatusKvp, *target, "-C");
 }
 
 
