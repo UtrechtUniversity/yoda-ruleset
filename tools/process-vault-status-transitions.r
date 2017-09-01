@@ -26,13 +26,17 @@ processVaultActions {
 					*status = "InternalError";
 					*statusInfo = "";
 				}
+
+				foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
+			                *collId = *row.COLL_ID;
+				}
 				if (*status != "Success") {
-					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_status" ++ "=FAIL", *kvp);
+					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=FAIL", *kvp);
 					msiSetKeyValuePairsToObj(*kvp, *collName, "-C");
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
 					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
-					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_status" ++ "=WAITING";
+					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=WAITING";
 					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
 					msiString2KeyValPair(*vaultActionStatus, *vaultActionStatusKvp);
 					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);

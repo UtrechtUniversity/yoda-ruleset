@@ -55,14 +55,20 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
         }
 
 	# Add vault action status to datamanager group.
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_status=WAITING", *kvp);
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
+		*collId = *row.COLL_ID;
+	}
+	*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId=WAITING";
+	msiString2KeyValPair(*vaultActionStatus, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
 		*statusInfo = "*err - *msg";
-        } else {
+		succeed;
+	} else {
 		*status = "Success";
 		*statusInfo = "";
+		succeed;
 	}
 }
 
