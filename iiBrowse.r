@@ -166,7 +166,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		if (*vaultStatus == UNPUBLISHED || *vaultStatus == APPROVED_FOR_PUBLICATION) {
+		if (*vaultStatus == UNPUBLISHED ||
+		    *vaultStatus == SUBMITTED_FOR_PUBLICATION ||
+		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
+		    *vaultStatus == REJECTED_FOR_PUBLICATION) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
