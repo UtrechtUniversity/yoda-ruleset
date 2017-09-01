@@ -166,9 +166,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
+		# Check if vault package is currently in state transition, if so set status to "WAITING".
 		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'WAITING') {
-			*vaultStatus = *row.META_COLL_ATTR_VALUE;
+			*vaultStatus = "WAITING";
 		}
 
 		if (*vaultStatus == UNPUBLISHED ||

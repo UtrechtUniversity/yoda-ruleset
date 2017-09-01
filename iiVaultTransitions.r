@@ -55,6 +55,7 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
         }
 
 	# Add vault action status to datamanager group.
+	# Used in frontend to check if vault package is in state transition..
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
 		*collId = *row.COLL_ID;
 	}
@@ -86,6 +87,7 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 		fail;
 	}
 
+	# Set new vault status.
 	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
 	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
