@@ -199,7 +199,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        on (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -265,7 +265,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
-        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
+        on (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -299,7 +299,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 	       	};
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *attributeValue);
 	}
 }
@@ -309,7 +309,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
 	}
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
