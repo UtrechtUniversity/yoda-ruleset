@@ -27,10 +27,41 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 
 }
 
-# \brief iiVaultStatusTransition   Processing after Status had changed
+# \brief iiVaultRequestStatusTransition   Request vault status transition action
 # \param[in] folder
+# \param[in] newFolderStatus
 # \param[in] actor
-# \param[in] newStatus
+iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "An internal error has occurred";
+	*actor = uuClientFullName;
+
+	# Determine datamanager group path.
+	*pathElems = split(*folder, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*vaultGroup = elem(*pathElems, 2);
+	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
+	*datamanagerGroupPath = "/*rodsZone/home/*datamanagerGroup";
+
+	# Add vault action request to datamanager group.
+	writeLine("serverLog", "iiVaultRequestStatusTransition: *folder APPROVED_FOR_PUBLICATION *actor");
+	*json_str = "[\"*folder\", \"APPROVED_FOR_PUBLICATION\", \"*actor\"]";
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
+	msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C");
+	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		*status = "Unrecoverable";
+		*statusInfo = "*err - *msg";
+        } else {
+		*status = "Success";
+		*statusInfo = "";
+	}
+}
+
+# \brief iiVaultProcessStatusTransition   Processing vault status transition request
+# \param[in] folder
+# \param[in] newFolderStatus
+# \param[in] actor
 iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -70,23 +101,32 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] actor
 # \param[in] newStatus
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
+	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
+		iiAddActionLogRecord(*actor, *folder, "submit");
+	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "approve");
+	}
+	on (*newVaultStatus == REJECTED_FOR_PUBLICATION) {
+		iiAddActionLogRecord(*actor, *folder, "reject");
+	}
+	on (*newVaultStatus == PUBLISHED) {
+		iiAddActionLogRecord(*actor, *folder, "published");
+	}
+	on (*newVaultStatus == DEPUBLISHED) {
+		iiAddActionLogRecord(*actor, *folder, "depublished");
 	}
 	on (true) {
 		nop;
 	}
 }
 
-
-
 # \brief iiVaultSubmit    Submit a folder in the vault for publication
 # \param[in]  folder      path of folder to submit
 # \param[out] status      status of the action
 # \param[out] statusInfo  Informative message when action was not successfull
 iiVaultSubmit(*folder, *status, *statusInfo) {
-	*actor = uuClientFullName;
-	iiVaultStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *actor, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
 # \brief iiVaultApprove     Approve a folder in the vault for publication
@@ -94,20 +134,7 @@ iiVaultSubmit(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiVaultApprove(*folder, *status, *statusInfo) {
-	*actor = uuClientFullName;
-
-	# Determine datamanager group path.
-	*pathElems = split(*folder, "/");
-	*rodsZone = elem(*pathElems, 0);
-	*vaultGroup = elem(*pathElems, 2);
-	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
-	*datamanagerGroupPath = "/*rodsZone/home/*datamanagerGroup";
-
-	# Add vault action request to datamanager group.
-	writeLine("serverLog", "iiVaultRequestStatusTransition: *folder APPROVED_FOR_PUBLICATION *actor");
-	*json_str = "[\"*folder\", \"APPROVED_FOR_PUBLICATION\", \"*actor\"]";
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
-	msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C");
+	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
 # \brief iiVaultReject      Reject a folder in the vault for publication
@@ -115,8 +142,7 @@ iiVaultApprove(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiVaultReject(*folder, *status, *statusInfo) {
-	*actor = uuClientFullName;
-	iiVaultStatusTransition(*folder, REJECTED_FOR_PUBLICATION, *actor, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, REJECTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
 # \brief iiVaultPublish     Publish a folder in the vault
@@ -124,8 +150,7 @@ iiVaultReject(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiVaultPublish(*folder, *status, *statusInfo) {
-	*actor = uuClientFullName;
-	iiVaultStatusTransition(*folder, PUBLISHED, *actor, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
 }
 
 # \brief iiVaultDepublish   Depublish a folder in the vault
@@ -133,6 +158,5 @@ iiVaultPublish(*folder, *status, *statusInfo) {
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 iiVaultDepublish(*folder, *status, *statusInfo) {
-	*actor = uuClientFullName;
-	iiVaultStatusTransition(*folder, DEPUBLISHED, *actor, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
