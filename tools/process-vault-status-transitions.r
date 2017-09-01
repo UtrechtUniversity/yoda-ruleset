@@ -1,7 +1,8 @@
 processVaultActions {
-	# Scan for any pending vault actions in the datamanager area
+	# Scan for any pending vault actions.
 	*ContInxOld = 1;
-	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
+	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
@@ -12,10 +13,14 @@ processVaultActions {
 			*collName = *row.COLL_NAME;
 			
 			if (*collName like regex "/[^/]+/home/datamanager-.*") {
-				writeLine("stdout", "processVaultActions: *collName - *row");
+                               *folder = "";
+                               *action = "";
+                               *actor = "";
+                               msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0);
+                               msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 1);
+                               msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2);
 
-			   	
-				*err = errorcode(iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo));
+                               *err = errorcode(iiVaultProcessStatusTransition(*folder, *action, *actor, *status, *statusInfo));
 				if (*err < 0) {
 					writeLine("stdout", "iiVaultProcessStatusTransition: *err");
 					*status = "InternalError";
@@ -24,7 +29,7 @@ processVaultActions {
 				if (*status != "Success") {
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
-					writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *metadataXmlPath");
+                                       writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 				}
 			}
 		}
