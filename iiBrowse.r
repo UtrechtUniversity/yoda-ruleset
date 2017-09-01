@@ -162,14 +162,21 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
 		*vaultStatus = "";
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+		foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+		        *collId = *row.COLL_ID;
+			*vaultStatus = *row.META_COLL_ATTR_VALUE;
+		}
+
+		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_action_*collId";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultStatusAttrName) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
 		if (*vaultStatus == UNPUBLISHED ||
 		    *vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
-		    *vaultStatus == REJECTED_FOR_PUBLICATION) {
+		    *vaultStatus == REJECTED_FOR_PUBLICATION ||
+		    *vaultStatus == WAITING) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
