@@ -2,11 +2,9 @@ processVaultActions {
 	# Scan for any pending vault actions in the datamanager area
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
-	msiAddConditionToGenQuery("DATA_NAME", "=", IIMETADATAXMLNAME, *GenQInp);
-	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
-
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
 
 	while(*ContInxOld > 0) {
