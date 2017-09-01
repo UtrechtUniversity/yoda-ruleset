@@ -47,8 +47,7 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newFolderStatus on *folder by *actor");
 	*json_str = "[\"*folder\", \"*newFolderStatus\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
-	msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C");
-	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
 		*statusInfo = "*err - *msg";

@@ -29,6 +29,9 @@ processVaultActions {
 				if (*status != "Success") {
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
+					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
+					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
                                        writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 				}
 			}
