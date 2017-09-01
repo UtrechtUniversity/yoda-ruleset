@@ -4,7 +4,6 @@ processVaultActions {
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action_status", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
