@@ -166,7 +166,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*collId";
+		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'WAITING') {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
