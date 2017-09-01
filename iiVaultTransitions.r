@@ -1,4 +1,4 @@
-# \file iiVault.r
+# \file iiVaultTransitions.r
 # \brief Copy folders to the vault
 #
 # \copyright Copyright (c) 2017, Utrecht university. All rights reserved
@@ -27,11 +27,11 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 
 }
 
-# \brief iiPostVaultStatusTransition   Processing after Status had changed
+# \brief iiVaultStatusTransition   Processing after Status had changed
 # \param[in] folder
 # \param[in] actor
 # \param[in] newStatus
-iiVaultStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
+iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 
@@ -46,7 +46,7 @@ iiVaultStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo)
 	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
 	if (*err < 0) {
 		iiVaultStatus(*folder, *currentFolderStatus);
-		iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, uuClientFullName, *allowed, *reason);
+		iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -78,6 +78,8 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 }
 
+
+
 # \brief iiVaultSubmit    Submit a folder in the vault for publication
 # \param[in]  folder      path of folder to submit
 # \param[out] status      status of the action
@@ -93,7 +95,19 @@ iiVaultSubmit(*folder, *status, *statusInfo) {
 # \param[out] statusInfo    Informative message when action was not successfull
 iiVaultApprove(*folder, *status, *statusInfo) {
 	*actor = uuClientFullName;
-	iiVaultStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *actor, *status, *statusInfo);
+
+	# Determine datamanager group path.
+	*pathElems = split(*folder, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*vaultGroup = elem(*pathElems, 2);
+	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
+	*datamanagerGroupPath = "/*rodsZone/home/*datamanagerGroup";
+
+	# Add vault action request to datamanager group.
+	writeLine("serverLog", "iiVaultRequestStatusTransition: *folder APPROVED_FOR_PUBLICATION *actor");
+	*json_str = "[\"*folder\", \"APPROVED_FOR_PUBLICATION\", \"*actor\"]";
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
+	msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C");
 }
 
 # \brief iiVaultReject      Reject a folder in the vault for publication
