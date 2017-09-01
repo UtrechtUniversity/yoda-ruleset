@@ -5,8 +5,8 @@
 # \license GPLv3, see LICENSE
 
 
-# \brief iiVaultStatus
-# \param[in]  folder	    Path of folder
+# \brief iiVaultStatus Retrieve current vault folder status
+# \param[in]  folder	    Path of vault folder
 # \param[out] folderStatus  Current status of vault folder
 iiVaultStatus(*folder, *vaultStatus) {
 	*vaultStatusKey = IIVAULTSTATUSATTRNAME;
@@ -16,7 +16,7 @@ iiVaultStatus(*folder, *vaultStatus) {
 	}
 }
 
-# \brief iiPreVaultStatusTransition  Actions taken before status transition
+# \brief iiPreVaultStatusTransition  Actions taken before vault status transition
 # \param[in] folder            Path of vault folder
 # \param[in] currentStatus     Current status of vault folder
 # \param[in] newStatus         New status of vault folder
@@ -112,19 +112,19 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 	}
 }
 
-# \brief iiPostVaultStatusTransition   Processing after Status had changed
-# \param[in] folder
-# \param[in] actor
-# \param[in] newStatus
+# \brief iiPostVaultStatusTransition   Processing after vault status is changed
+# \param[in] folder         Folder in vault for state transition
+# \param[in] actor          Actor of the status transition
+# \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "submit");
 	}
-	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "approve");
-	}
 	on (*newVaultStatus == REJECTED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "reject");
+	}
+	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
+		iiAddActionLogRecord(*actor, *folder, "approve");
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord(*actor, *folder, "published");
@@ -138,41 +138,25 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 }
 
 # \brief iiVaultSubmit    Submit a folder in the vault for publication
-# \param[in]  folder      path of folder to submit
-# \param[out] status      status of the action
+# \param[in]  folder      Path of folder in vault to submit for publication
+# \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successfull
 iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
-# \brief iiVaultApprove     Approve a folder in the vault for publication
-# \param[in]  folder        path of folder to approve
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
+# \brief iiVaultApprove   Approve a folder in the vault for publication
+# \param[in]  folder      Path of folder in vault to approve for publication
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Informative message when action was not successfull
 iiVaultApprove(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
-# \brief iiVaultReject      Reject a folder in the vault for publication
-# \param[in]  folder        path of folder to reject
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
+# \brief iiVaultReject    Reject a folder in the vault for publication
+# \param[in]  folder      Path of folder in vault to reject for publication
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Informative message when action was not successfull
 iiVaultReject(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, REJECTED_FOR_PUBLICATION, *status, *statusInfo);
-}
-
-# \brief iiVaultPublish     Publish a folder in the vault
-# \param[in]  folder        path of folder to publish
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-iiVaultPublish(*folder, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
-}
-
-# \brief iiVaultDepublish   Depublish a folder in the vault
-# \param[in]  folder        path of folder to publish
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-iiVaultDepublish(*folder, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
