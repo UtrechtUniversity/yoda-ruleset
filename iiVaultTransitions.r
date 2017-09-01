@@ -51,6 +51,15 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
 	if (*err < 0) {
 		*status = "Unrecoverable";
 		*statusInfo = "*err - *msg";
+		succeed;
+        }
+
+	# Add vault action status to datamanager group.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_status=WAITING", *kvp);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
+	if (*err < 0) {
+		*status = "Unrecoverable";
+		*statusInfo = "*err - *msg";
         } else {
 		*status = "Success";
 		*statusInfo = "";

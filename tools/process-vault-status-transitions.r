@@ -4,6 +4,7 @@ processVaultActions {
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action_status", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
@@ -11,7 +12,7 @@ processVaultActions {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
-			
+
 			if (*collName like regex "/[^/]+/home/datamanager-.*") {
                                *folder = "";
                                *action = "";
@@ -30,9 +31,14 @@ processVaultActions {
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
 					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_status" ++ "=WAITING";
+
 					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
+					msiString2KeyValPair(*vaultActionStatus, *vaultActionStatusKvp);
 					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
-                                       writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
+					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionStatusKvp, *collName, "-C"), *msg);
+
+                                        writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 				}
 			}
 		}
