@@ -21,6 +21,9 @@ iiVaultStatus(*folder, *vaultStatus) {
 # \param[in] currentStatus     Current status of vault folder
 # \param[in] newStatus         New status of vault folder
 iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
+	on (*newVaultStatus == PUBLISHED) {
+		# TODO prepare for publication
+	}
 	on (true) {
 		nop;
 	}
@@ -125,6 +128,9 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "approve");
+
+		# Package is approved and can be published now.
+		iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord(*actor, *folder, "published");
