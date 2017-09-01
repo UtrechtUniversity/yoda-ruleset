@@ -162,13 +162,12 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
 		*vaultStatus = "";
-		foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
-		        *collId = *row.COLL_ID;
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_action_*collId";
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*collId";
+		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'WAITING') {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
