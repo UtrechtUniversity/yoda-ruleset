@@ -34,23 +34,30 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 # \param[in] folder
 # \param[in] newFolderStatus
 # \param[in] actor
-iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) {
+iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 	*actor = uuClientFullName;
 
-	# Determine datamanager group path.
+	# Determine vault group and actor group path.
 	*pathElems = split(*folder, "/");
 	*rodsZone = elem(*pathElems, 0);
-	*vaultGroup = elem(*pathElems, 2);
-	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
-	*datamanagerGroupPath = "/*rodsZone/home/*datamanagerGroup";
+        *vaultGroup = elem(*pathElems, 2);
+
+	# Only SUBMITTED_FOR_PUBLICATION is called by researcher.
+	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
+	        *baseGroupName = triml(*vaultGroup, IIVAULTPREFIX);
+	        *actorGroup = IIGROUPPREFIX ++ *baseGroupName;
+	} else {
+		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+	}
+	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
 	# Add vault action request to datamanager group.
-	writeLine("serverLog", "iiVaultRequestStatusTransition: *newFolderStatus on *folder by *actor");
-	*json_str = "[\"*folder\", \"*newFolderStatus\", \"*actor\"]";
+	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
+	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
 		*statusInfo = "*err - *msg";
@@ -64,7 +71,7 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
 	}
 	*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=PENDING";
 	msiString2KeyValPair(*vaultActionStatus, *kvp);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
 		*statusInfo = "*err - *msg";
