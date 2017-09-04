@@ -12,7 +12,8 @@ processVaultActions {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
 
-			if (*collName like regex "/[^/]+/home/datamanager-.*") {
+			if (*collName like regex "/[^/]+/home/research-.*" ||
+			    *collName like regex "/[^/]+/home/datamanager-.*") {
                                *folder = "";
                                *action = "";
                                *actor = "";
