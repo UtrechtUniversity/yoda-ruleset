@@ -99,6 +99,10 @@ createXmlXsdCollections {
 	msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xsldefault");
 
+        *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEDEFAULTNAME;
+	msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl++++forceFlag=", *status);
+	writeLine("stdout", "Installed: *xsldatacite");
+
 }
 
 input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="ilab"
