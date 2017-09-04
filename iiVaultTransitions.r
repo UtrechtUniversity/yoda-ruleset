@@ -128,13 +128,13 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "submit");
+		iiAddActionLogRecord(*actor, *folder, "submitted for publication");
 	}
 	on (*newVaultStatus == REJECTED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "reject");
+		iiAddActionLogRecord(*actor, *folder, "rejected for publication");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "approve");
+		iiAddActionLogRecord(*actor, *folder, "approved for publication");
 
 		# Package is approved and can be published now.
 		iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
