@@ -62,7 +62,7 @@ iiVaultRequestStatusTransition(*folder, *newFolderStatus, *status, *statusInfo) 
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
 		*collId = *row.COLL_ID;
 	}
-	*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=WAITING";
+	*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=PENDING";
 	msiString2KeyValPair(*vaultActionStatus, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *datamanagerGroupPath, "-C"), *msg);
 	if (*err < 0) {

@@ -36,7 +36,7 @@ processVaultActions {
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
 					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
-					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=WAITING";
+					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=PENDING";
 					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
 					msiString2KeyValPair(*vaultActionStatus, *vaultActionStatusKvp);
 					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);

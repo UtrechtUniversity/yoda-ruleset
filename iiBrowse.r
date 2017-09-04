@@ -166,17 +166,17 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		# Check if vault package is currently in state transition, if so set status to "WAITING".
+		# Check if vault package is currently in state transition, if so set status to "PENDING".
 		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
-		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'WAITING') {
-			*vaultStatus = "WAITING";
+		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
+			*vaultStatus = "PENDING";
 		}
 
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == REJECTED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == DEPUBLISHED || *vaultStatus == "WAITING") {
+		    *vaultStatus == DEPUBLISHED || *vaultStatus == "PENDING") {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
