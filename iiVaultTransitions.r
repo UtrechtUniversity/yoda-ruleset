@@ -21,6 +21,9 @@ iiVaultStatus(*folder, *vaultStatus) {
 # \param[in] currentStatus     Current status of vault folder
 # \param[in] newStatus         New status of vault folder
 iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
+	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
+		iiAddActionLogRecord(*actor, *folder, "canceled publication");
+	}
 	on (*newVaultStatus == PUBLISHED) {
 		# TODO prepare for publication
 	}
@@ -127,9 +130,6 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] actor          Actor of the status transition
 # \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
-  on (*newVaultStatus == UNPUBLISHED) {
-	  iiAddActionLogRecord(*actor, *folder, "canceled publication");
-  }
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "submitted for publication");
 	}
@@ -154,7 +154,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 # \param[in]  folder      Path of folder in vault to submit for publication
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
-iiVaultSubmit(*folder, *status, *statusInfo) {
+iiVaultSubmit(*folder, *confirmationVersion, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
