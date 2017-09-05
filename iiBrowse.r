@@ -160,9 +160,8 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*kvp.lockCount = str(*lockCount);
 
 	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
 		*vaultStatus = "";
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
