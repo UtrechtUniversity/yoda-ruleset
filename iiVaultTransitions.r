@@ -127,11 +127,11 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] actor          Actor of the status transition
 # \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
+  on (*newVaultStatus == UNPUBLISHED) {
+	  iiAddActionLogRecord(*actor, *folder, "canceled publication");
+  }
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "submitted for publication");
-	}
-	on (*newVaultStatus == REJECTED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "rejected for publication");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 		iiAddActionLogRecord(*actor, *folder, "approved for publication");
@@ -153,7 +153,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 # \brief iiVaultSubmit    Submit a folder in the vault for publication
 # \param[in]  folder      Path of folder in vault to submit for publication
 # \param[out] status      Status of the action
-# \param[out] statusInfo  Informative message when action was not successfull
+# \param[out] statusInfo  Informative message when action was not successful
 iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
@@ -161,15 +161,15 @@ iiVaultSubmit(*folder, *status, *statusInfo) {
 # \brief iiVaultApprove   Approve a folder in the vault for publication
 # \param[in]  folder      Path of folder in vault to approve for publication
 # \param[out] status      Status of the action
-# \param[out] statusInfo  Informative message when action was not successfull
+# \param[out] statusInfo  Informative message when action was not successful
 iiVaultApprove(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
-# \brief iiVaultReject    Reject a folder in the vault for publication
-# \param[in]  folder      Path of folder in vault to reject for publication
+# \brief iiVaultCancel    Cancel a submission in the vault for publication
+# \param[in]  folder      Path of folder in vault to cancel publication
 # \param[out] status      Status of the action
-# \param[out] statusInfo  Informative message when action was not successfull
-iiVaultReject(*folder, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, REJECTED_FOR_PUBLICATION, *status, *statusInfo);
+# \param[out] statusInfo  Informative message when action was not successful
+iiVaultCancel(*folder, *status, *statusInfo) {
+	iiVaultRequestStatusTransition(*folder, UNPUBLISHED, *status, *statusInfo);
 }

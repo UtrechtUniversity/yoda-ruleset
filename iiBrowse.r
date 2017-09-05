@@ -174,7 +174,6 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
-		    *vaultStatus == REJECTED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
 		    *vaultStatus == DEPUBLISHED || *vaultStatus == "PENDING") {
 			*kvp.isVaultPackage = "yes";
