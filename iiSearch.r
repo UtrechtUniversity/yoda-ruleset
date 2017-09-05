@@ -146,7 +146,7 @@ iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, 
 
 	*attr = UUORGMETADATAPREFIX ++ *attrname;
 	*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-	*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring));
+	*conditions = list(uumakestartswithcondition("META_COLL_ATTR_VALUE", *searchstring));
 	*conditions = cons(uucondition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
 	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 	uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
