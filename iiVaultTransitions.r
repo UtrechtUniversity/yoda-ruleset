@@ -52,8 +52,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*actor = uuClientFullName;
 
 	# Check if user is manager of research group.
-	iiCollectionGroupNameAndUserType(*folder, *groupName, *userType, *isDatamanager);
-	*actorGroup = IIGROUPPREFIX ++ *groupName;
+	iiCollectionGroupNameAndUserType(*folder, *actorGroup, *userType, *isDatamanager);
 
 	# Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
 	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
