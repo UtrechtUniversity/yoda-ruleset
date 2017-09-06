@@ -51,22 +51,19 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         *vaultGroup = elem(*pathElems, 2);
 	*actor = uuClientFullName;
 
-	# Determine research group.
-	*baseGroupName = triml(*vaultGroup, IIVAULTPREFIX);
-	*actorGroup = IIGROUPPREFIX ++ *baseGroupName;
-
 	# Check if user is manager of research group.
-	uuGroupUserIsManager(*actorGroup, *actor, *isManager);
+	iiCollectionGroupNameAndUserType(*folder, *groupName, *userType, *isDatamanager);
+	*actorGroup = IIGROUPPREFIX ++ *groupName;
 
 	# Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
-	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isManager) {
+	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
 		*actorGroupPath = "/*rodsZone/home/*actorGroup";
 	# Status UNPUBLISHED can be called by researcher and datamanager.
-	} else 	if (*newVaultStatus == UNPUBLISHED && !*isManager) {
+	} else 	if (*newVaultStatus == UNPUBLISHED && !*isDatamanager) {
 		*actorGroupPath = "/*rodsZone/home/*actorGroup";
-	} else 	if (*isManager) {
+	} else 	if (*isDatamanager) {
 		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-		*actorGroupPath = "/*rodsZone/home/*actorGroup";
+		*actorGroupPath = "/*rodsZone/home/*vaultGroup";
 	}
 
 	# Add vault action request to datamanager group.
