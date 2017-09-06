@@ -1,103 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-	elementFormDefault="qualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 	<xs:element name="metadata">
 		<xs:complexType>
 			<xs:sequence>
-				<xs:element name="Project_ID" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Project_Title" type="stringNormal" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Project_Description" type="stringLong" minOccurs="0" maxOccurs="1" />
-				<xs:element name="Primary_Investigator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="PID_Primary_Investigator" type="stringNormal" minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Project_URL" type="stringURI"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Discipline" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Research_type" type="KindOfDataTypeType"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Ethical_Approval" type="optionsYesNo"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Approval_By" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Approval_added" type="optionsYesNo"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Name_approval_doc" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Funding_Organisation" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Fund_Description" type="stringLong"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Fund_URL" type="stringURI"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Funder_Role" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Study_Title" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Study_Description" type="stringLong"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Study_Purpose" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Related_Studies" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Related_Studies" type="stringURI"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Instrument" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Instrument_Description" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Dataset_Title" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Dataset_Description" type="stringLong"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="PID_Datapackage" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Dataset_Type" type="optionsDatasetType"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Anonymized" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Version_dataset" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Version_Rationale" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Version_Responsibility" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Underlying_Dataset" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Language_dataset" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Owner" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Citation" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Data_Source" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Start_Collection_Date" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="End_Collection_Date" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Collection_Method" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Collection_Method_Description" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Sample_Size" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Collection_Software" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Creator" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Contributor" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="PID_Contributor" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Unit_Analysis" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Location_Covered" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Start_Period_Dataset" type="xs:date"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="End_Period_Dataset" type="xs:date"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Name_Contactperson" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="PID_Contactperson" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="URL_Contactperson" type="stringURI"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Contact_Info" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="UU_Dept" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Tag" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Codes_used" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Codes_Acronym" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Code" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator_Acronym" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Indicator_Description" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="URL_Indicator" type="stringNormal"  minOccurs="0" maxOccurs="unbounded" />
-				<xs:element name="Number_of_files" type="xs:integer"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Retention_period" type="xs:integer"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="License" type="stringNormal"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="URL_License" type="stringURI"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Publish_Dataset" type="optionsYesNo"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Publish_Metadata" type="optionsYesNo"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Archive" type="optionsYesNo"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Embargo" type="xs:date"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Dataset_Access" type="optionsDatasetAccess"  minOccurs="0" maxOccurs="1" />
-				<xs:element name="Dataset_location" type="stringNormal"  minOccurs="0" maxOccurs="1" />
+				<xs:element name="Title" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Description" type="stringLong" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Discipline" type="optionsDiscipline" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="Research_Type" type="optionsResearchType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Version" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Related_Datapackage" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Title" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="Properties">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsDatasetPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Language" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Start_Collection_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="End_Collection_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Location_Covered" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="Start_Period" type="xs:date" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="End_Period" type="xs:date" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Tag" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="Retention_Period" type="xs:integer" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Retention_Justification" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Embargo_End_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Publish" type="optionsYesNo" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Sensitive" type="optionsYesNo" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Owner" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="Creator" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>	
+							<xs:element name="Name"	type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="Properties">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Affiliation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Contributor" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="Properties">
+								<xs:complexType>
+									<xs:sequence>
+
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+                                <xs:element name="Funder" minOccurs="0" maxOccurs="unbounded">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                      <xs:element name="Properties">
+                                            <xs:complexType>
+                                              <xs:sequence>
+                                                <xs:element name="Grant_Number" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                              </xs:sequence>
+                                            </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType> 
+                                </xs:element>
+				<xs:element name="License" minOccurs="0" maxOccurs="1">
+                                  <xs:complexType>
+                                     <xs:sequence>
+                                     <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                                     <xs:element name="Properties">
+                                        <xs:complexType>
+					  <xs:sequence>
+					    <xs:element name="URL" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
+					  </xs:sequence>
+                                        </xs:complexType>
+                                     </xs:element>
+                                     </xs:sequence>
+                                 </xs:complexType>
+                                </xs:element>
+				<xs:element name="Access_Restriction" type="optionsDatasetAccess" minOccurs="0" maxOccurs="1"/>
 			</xs:sequence>
 		</xs:complexType>
-	</xs:element>	
+	</xs:element>
 
-        <xs:simpleType name="stringURI">
-                <xs:restriction base="xs:anyURI">
-                        <xs:maxLength value="1024"/>
-                </xs:restriction>
-        </xs:simpleType>
+	<xs:element name="system">
+		<xs:complexType>
+	          <xs:sequence>
+			<xs:element name="Last_Modified_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Project_ID_Pure" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:element name="Persistent_Identifier_Datapackage" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+		   </xs:sequence>
+		</xs:complexType>
+	</xs:element>
 
 	<xs:simpleType name="stringNormal">
 		<xs:restriction base="xs:string">
 			<xs:maxLength value="255"/>
-		</xs:restriction>		
+		</xs:restriction>
 	</xs:simpleType>
-
 	<xs:simpleType name="stringLong">
 		<xs:restriction base="xs:string">
 			<xs:maxLength value="2700"/>
-		</xs:restriction>		
+		</xs:restriction>
 	</xs:simpleType>
-
 	<xs:simpleType name="optionsYesNo">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="Yes"/>
@@ -105,34 +129,98 @@
 			<xs:enumeration value="N.A."/>
 		</xs:restriction>
 	</xs:simpleType>
-
-	<xs:simpleType name="optionsDatasetType">
-		<xs:restriction base="xs:string">
-			<xs:enumeration value="Observational Data" />
-			<xs:enumeration value="Experimental Data" />
-			<xs:enumeration value="Simulation Data" />
-			<xs:enumeration value="Derived Data" />
-			<xs:enumeration value="Reference Data" />
-		</xs:restriction>
-	</xs:simpleType>
-
 	<xs:simpleType name="optionsDatasetAccess">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="Open" />
-			<xs:enumeration value="Restricted to UU" />
-			<xs:enumeration value="Restricted to UU dpt" />
-			<xs:enumeration value="Restricted - contact I-lab" />
-			<xs:enumeration value="Closed" />
+			<xs:enumeration value="Open"/>
+			<xs:enumeration value="Restricted to UU"/>
+			<xs:enumeration value="Restricted to UU dpt"/>
+			<xs:enumeration value="Restricted - contact I-lab"/>
+			<xs:enumeration value="Closed"/>
 		</xs:restriction>
 	</xs:simpleType>
-
-	<!-- Taken from http://www.ddialliance.org/Specification/DDI-Lifecycle/3.2/XMLSchema/FieldLevelDocumentation/schemas/reusable_xsd/simpleTypes/KindOfDataTypeType.html -->
-	<xs:simpleType name="KindOfDataTypeType">
+	<xs:simpleType name="optionsResearchType">
 		<xs:restriction base="xs:string">
-			<xs:enumeration value="Qualitative"/>
-			<xs:enumeration value="Quantitative"/>
-			<xs:enumeration value="Mixed"/>
+			<xs:enumeration value="Survey"/>
+			<xs:enumeration value="Longitudinal Panel"/>
+			<xs:enumeration value="Archival"/>
 		</xs:restriction>
 	</xs:simpleType>
-
+	<xs:simpleType name="optionsPersonalPersistentIdentifierType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ORCID"/>
+			<xs:enumeration value="DAI"/>
+			<xs:enumeration value="Author identifier  (Scopus)"/>
+			<xs:enumeration value="ResearcherID (Web of Science)"/>
+			<xs:enumeration value="ISNI"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- Source: https://schema.datacite.org/meta/kernel-3.1/doc/DataCite-MetadataKernel_v3.1.pdf -->
+	<xs:simpleType name="optionsDatasetPersistentIdentifierType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ARK"/>
+			<xs:enumeration value="arXiv"/>
+			<xs:enumeration value="bibcode"/>
+			<xs:enumeration value="DOI"/>
+			<xs:enumeration value="EAN13"/>
+			<xs:enumeration value="EISSN"/>
+			<xs:enumeration value="Handle"/>
+			<xs:enumeration value="ISBN"/>
+			<xs:enumeration value="ISSN"/>
+			<xs:enumeration value="ISTC"/>
+			<xs:enumeration value="LISSN"/>
+			<xs:enumeration value="LSID"/>
+			<xs:enumeration value="PMID"/>
+			<xs:enumeration value="PURL"/>
+			<xs:enumeration value="UPC"/>
+			<xs:enumeration value="URL"/>
+			<xs:enumeration value="URN"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<!-- Source: https://www.oecd.org/science/inno/38235147.pdf -->
+	<xs:simpleType name="optionsDiscipline">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Natural Sciences - Mathematics (1.1)"/>
+			<xs:enumeration value="Natural Sciences - Computer and information sciences (1.2)"/>
+			<xs:enumeration value="Natural Sciences - Physical sciences (1.3)"/>
+			<xs:enumeration value="Natural Sciences - Chemical sciences (1.4)"/>
+			<xs:enumeration value="Natural Sciences - Earth and related environmental sciences (1.5)"/>
+			<xs:enumeration value="Natural Sciences - Biological sciences (1.6)"/>
+			<xs:enumeration value="Natural Sciences - Other natural sciences (1.7)"/>
+			<xs:enumeration value="Engineering and Technology - Civil engineering (2.1)"/>
+			<xs:enumeration value="Engineering and Technology - Electrical engineering, electronic engineering, information engineering (2.2)"/>
+			<xs:enumeration value="Engineering and Technology - Mechanical engineering (2.3)"/>
+			<xs:enumeration value="Engineering and Technology - Chemical engineering (2.4)"/>
+			<xs:enumeration value="Engineering and Technology - Materials engineering (2.5)"/>
+			<xs:enumeration value="Engineering and Technology - Medical engineering (2.6)"/>
+			<xs:enumeration value="Engineering and Technology - Environmental engineering (2.7)"/>
+			<xs:enumeration value="Engineering and Technology - Environmental biotechnology (2.8)"/>
+			<xs:enumeration value="Engineering and Technology - Industrial Biotechnology (2.9)"/>
+			<xs:enumeration value="Engineering and Technology - Nano-technology (2.10)"/>
+			<xs:enumeration value="Engineering and Technology - Other engineering and technologies (2.11)"/>
+			<xs:enumeration value="Medical and Health Sciences - Basic medicine (3.1)"/>
+			<xs:enumeration value="Medical and Health Sciences - Clinical medicine (3.2)"/>
+			<xs:enumeration value="Medical and Health Sciences - Health sciences (3.3)"/>
+			<xs:enumeration value="Medical and Health Sciences - Health biotechnology (3.4)"/>
+			<xs:enumeration value="Medical and Health Sciences - Other medical sciences (3.5)"/>
+			<xs:enumeration value="Agricultural Sciences - Agriculture, forestry, and fisheries (4.1)"/>
+			<xs:enumeration value="Agricultural Sciences - Animal and dairy science (4.2)"/>
+			<xs:enumeration value="Agricultural Sciences - Veterinary science (4.3)"/>
+			<xs:enumeration value="Agricultural Sciences - Agricultural biotechnology (4.4)"/>
+			<xs:enumeration value="Agricultural Sciences - Other agricultural sciences (4.5)"/>
+			<xs:enumeration value="Social Sciences - Psychology (5.1)"/>
+			<xs:enumeration value="Social Sciences - Economics and business (5.2)"/>
+			<xs:enumeration value="Social Sciences - Educational sciences (5.3)"/>
+			<xs:enumeration value="Social Sciences - Sociology (5.4)"/>
+			<xs:enumeration value="Social Sciences - Law (5.5)"/>
+			<xs:enumeration value="Social Sciences - Political Science (5.6)"/>
+			<xs:enumeration value="Social Sciences - Social and economic geography (5.7)"/>
+			<xs:enumeration value="Social Sciences - Media and communications (5.8)"/>
+			<xs:enumeration value="Social Sciences - Other social sciences (5.9)"/>
+			<xs:enumeration value="Humanities - History and archaeology (6.1)"/>
+			<xs:enumeration value="Humanities - Languages and literature (6.2)"/>
+			<xs:enumeration value="Humanities - Philosophy, ethics and religion (6.3)"/>
+			<xs:enumeration value="Humanities - Art (arts, history of arts, performing arts, music) (6.4)"/>
+			<xs:enumeration value="Humanities - Other humanities (6.5)"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>
