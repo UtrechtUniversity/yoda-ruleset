@@ -40,21 +40,30 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
-	*actor = uuClientFullName;
 
-	# Determine vault group and actor group path.
+	# Determine vault group and actor.
 	*pathElems = split(*folder, "/");
 	*rodsZone = elem(*pathElems, 0);
         *vaultGroup = elem(*pathElems, 2);
+	*actor = uuClientFullName;
 
-	# Only SUBMITTED_FOR_PUBLICATION is called by researcher.
-	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
-	        *baseGroupName = triml(*vaultGroup, IIVAULTPREFIX);
-	        *actorGroup = IIGROUPPREFIX ++ *baseGroupName;
-	} else {
+	# Determine research group.
+	*baseGroupName = triml(*vaultGroup, IIVAULTPREFIX);
+	*actorGroup = IIGROUPPREFIX ++ *baseGroupName;
+
+	# Check if user is manager of research group.
+	uuGroupUserIsManager(*actorGroup, *actor, *isManager);
+
+	# Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
+	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isManager) {
+		*actorGroupPath = "/*rodsZone/home/*actorGroup";
+	# Status UNPUBLISHED can be called by researcher and datamanager.
+	} else 	if (*newVaultStatus == UNPUBLISHED && !*isManager) {
+		*actorGroupPath = "/*rodsZone/home/*actorGroup";
+	} else 	if (*isManager) {
 		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+		*actorGroupPath = "/*rodsZone/home/*actorGroup";
 	}
-	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
 	# Add vault action request to datamanager group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
