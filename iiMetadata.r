@@ -195,7 +195,10 @@ iiPrepareMetadataForm(*path, *result) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;
 		}
 
-		if (*vaultStatus == COMPLETE) {
+		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
+		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
+		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
+		    *vaultStatus == DEPUBLISHED || *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 		} else {
 			*kvp.isVaultPackage = "no";

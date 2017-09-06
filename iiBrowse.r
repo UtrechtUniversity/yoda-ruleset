@@ -174,7 +174,8 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == DEPUBLISHED || *vaultStatus == "PENDING") {
+		    *vaultStatus == DEPUBLISHED || *vaultStatus == "PENDING" ||
+		    *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
