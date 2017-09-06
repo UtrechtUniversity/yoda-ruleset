@@ -28,6 +28,9 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (*newVaultStatus == PUBLISHED) {
 		# TODO prepare for publication
 	}
+	on (*newVaultStatus == DEPUBLISHED) {
+		# TODO prepare for depublication
+	}
 	on (true) {
 		nop;
 	}
@@ -182,4 +185,12 @@ iiVaultApprove(*folder, *status, *statusInfo) {
 # \param[out] statusInfo  Informative message when action was not successful
 iiVaultCancel(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, UNPUBLISHED, *status, *statusInfo);
+}
+
+# \brief iiVaultDepublish Depublish a folder in the vault
+# \param[in]  folder      Path of folder in vault to depublish
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Informative message when action was not successful
+iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
+	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
