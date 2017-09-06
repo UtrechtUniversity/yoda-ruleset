@@ -22,6 +22,7 @@ iiVaultStatus(*folder, *vaultStatus) {
 # \param[in] newStatus         New status of vault folder
 iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
+		*actor = uuClientFullName;
 		iiAddActionLogRecord(*actor, *folder, "canceled publication");
 	}
 	on (*newVaultStatus == PUBLISHED) {
