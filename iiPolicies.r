@@ -208,13 +208,9 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 
 		if (*allowed) {
-			iiFolderStatus(*itemName, *currentStatus);
-			if (*option == "rm") {
-				*newStatus = FOLDER;
-			} else {
-				*newStatus = *attributeValue;
-			}
-			*err = errorcode(iiPreFolderStatusTransition(*itemName, *currentStatus, *newStatus));
+			iiVaultStatus(*itemName, *currentStatus);
+			*newStatus = *attributeValue;
+			*err = errorcode(iiPreVaultStatusTransition(*itemName, *currentStatus, *newStatus));
 			if (*err < 0) {
 				# Perhaps a rollback is needed
 				*allowed = false;
