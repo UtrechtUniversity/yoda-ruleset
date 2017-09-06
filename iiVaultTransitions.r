@@ -63,7 +63,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		*actorGroupPath = "/*rodsZone/home/*actorGroup";
 	} else 	if (*isDatamanager) {
 		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-		*actorGroupPath = "/*rodsZone/home/*vaultGroup";
+		*actorGroupPath = "/*rodsZone/home/*actorGroup";
 	}
 
 	# Add vault action request to datamanager group.
