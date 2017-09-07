@@ -166,7 +166,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		}
 
 		# Check if vault package is currently in state transition, if so set status to "PENDING".
-		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
+		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_status_*coll_id";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
 			*vaultStatus = "PENDING";
 		}
