@@ -29,8 +29,8 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 	}
 
 	# Retrieve vault folder action actor.
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId") {
-		 msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
+	         msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
 		 succeed;
 	}
 }
