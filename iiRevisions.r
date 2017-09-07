@@ -199,15 +199,19 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
 	        succeed;
 	}
 
+        *lockFound = false;
 	iiGetLocks(*target, *locks);
-
 	if (size(*locks) > 0) {
 		foreach(*rootCollection in *locks) {
 			if (strlen(*rootCollection) <= strlen(*target)) {
- 	       			*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
-               			succeed;
+				*lockFound = true;
 			}
 		}
+	}
+
+        if (*lockFound) {
+ 	  	*status = 'TargetPathLocked'; # Path to be used is locked. Therefore, placement of revision is not allowed.
+ 		succeed;
 	}
 
         foreach(*rev in SELECT DATA_NAME, COLL_NAME WHERE DATA_ID = *revisionId) {
