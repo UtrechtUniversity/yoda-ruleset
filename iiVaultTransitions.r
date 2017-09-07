@@ -27,13 +27,15 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 
 	# Retrieve vault folder action actor.
 	*actionActor = "";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
+ +       foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
 	         msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
 		 succeed;
 	}
 
 	# Fallback actor (rodsadmin).
-	*actionActor = *actor;
+        if (*actionActor == "") {
+                *actionActor = *actor;
+        }
 }
 
 # \brief iiPreVaultStatusTransition  Actions taken before vault status transition
@@ -161,22 +163,21 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
-	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "submitted for publication");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
-	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
 
 		# Package is approved and can be published now.
 		iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
 	}
 	on (*newVaultStatus == PUBLISHED) {
-	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
-		iiAddActionLogRecord(*actionActor, *folder, "published");
+		iiAddActionLogRecord("system", *folder, "published");
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
-	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "depublished");
 	}
 	on (true) {
