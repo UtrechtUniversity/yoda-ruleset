@@ -189,7 +189,7 @@ iiPrepareMetadataForm(*path, *result) {
 		uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
 		*kvp.userType = *memberType;
 
-		*vaultStatusAttrName = UUORGMETADATAPREFIX ++ "vault_status";
+		*vaultStatusAttrName = IIVAULTSTATUSATTRNAME;
 		*vaultStatus = "";
 		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
 			*vaultStatus = *row.META_COLL_ATTR_VALUE;

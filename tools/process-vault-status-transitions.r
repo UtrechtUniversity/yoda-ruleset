@@ -3,7 +3,7 @@ processVaultActions {
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_action", *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "vault_action_", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
@@ -32,16 +32,16 @@ processVaultActions {
 			                *collId = *row.COLL_ID;
 				}
 				if (*status != "Success") {
-					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=FAIL", *kvp);
+					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId" ++ "=FAIL", *kvp);
 					msiSetKeyValuePairsToObj(*kvp, *collName, "-C");
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
-					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
-					*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=PENDING";
+					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+					*vaultStatus = UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId" ++ "=PENDING";
 					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
-					msiString2KeyValPair(*vaultActionStatus, *vaultActionStatusKvp);
+					msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
 					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
-					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionStatusKvp, *collName, "-C"), *msg);
+					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
                                         writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 				}
 			}

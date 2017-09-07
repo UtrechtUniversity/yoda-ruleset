@@ -149,7 +149,8 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			*buffer.msg = "Failed to create collection *destPath";
 		} else if (*markIncomplete) {
 			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
-			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ INCOMPLETE, *kvp);
+			*vaultStatus = IIVAULTSTATUSATTRNAME;
+			msiString2KeyValPair("*vaultStatus=" ++ INCOMPLETE, *kvp);
 			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
 		}
 	} else {

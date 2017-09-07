@@ -65,10 +65,15 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		*actorGroupPath = "/*rodsZone/home/*actorGroup";
 	}
 
+	# Retrieve collection id.
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
+		*collId = *row.COLL_ID;
+	}
+
 	# Add vault action request to datamanager group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
 	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action=" ++ *json_str, *kvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
@@ -77,12 +82,9 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         }
 
 	# Add vault action status to datamanager group.
-	# Used in frontend to check if vault package is in state transition..
-	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
-		*collId = *row.COLL_ID;
-	}
-	*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=PENDING";
-	msiString2KeyValPair(*vaultActionStatus, *kvp);
+	# Used in frontend to check if vault package is in state transition.
+	*vaultStatus = UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId=PENDING";
+	msiString2KeyValPair(*vaultStatus, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";

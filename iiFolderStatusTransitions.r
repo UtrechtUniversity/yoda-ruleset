@@ -389,7 +389,8 @@ iiFolderSecure(*folder) {
 	}
 
 	iiCopyActionLog(*folder, *target);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ UNPUBLISHED, *vaultStatusKvp);
+	*vaultStatus = IIVAULTSTATUSATTRNAME;
+	msiString2KeyValPair("*vaultStatus=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 }
 
