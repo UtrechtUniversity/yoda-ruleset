@@ -86,11 +86,11 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == REJECTED) {
 		iiAddActionLogRecord(*actor, *folder, "reject");
 	}
-	on (*newFolderStatus == SECURED) {
-		iiAddActionLogRecord(*actor, *folder, "secure");
-	}
 	on (*newFolderStatus == APPROVED) {
 		iiAddActionLogRecord(*actor, *folder, "approve");
+	}
+	on (*newFolderStatus == SECURED) {
+		iiAddActionLogRecord("system", *folder, "secure");
 	}
 	on (true) {
 		nop;
