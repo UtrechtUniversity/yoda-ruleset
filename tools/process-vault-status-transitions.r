@@ -3,7 +3,7 @@ processVaultActions {
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "vault_action_", *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "vault_action_%", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
@@ -29,7 +29,7 @@ processVaultActions {
 
 			       # Check if vault package is currently pending for status transition.
 			       *pending = false;
-			       *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*coll_id";
+			       *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
 			       foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
 			               *pending = true;
 			       }
