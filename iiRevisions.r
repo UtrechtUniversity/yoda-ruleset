@@ -18,12 +18,18 @@
 uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *filterlist) {
 	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
 		uuChopPath(*logicalPath, *parent, *basename);
-		
+	
+		*ignore = false;	
 		foreach(*filter in *filterlist) {
 			if (*basename like *filter) {
 				writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
-				succeed;
+				*ignore = true;
+				break;
 			}
+		}
+
+		if (*ignore) {
+			succeed;
 		}
 
 		iiRevisionCreateAsynchronously(*resource, *logicalPath, *maxSize);
