@@ -16,6 +16,25 @@ iiVaultStatus(*folder, *vaultStatus) {
 	}
 }
 
+# \brief iiVaultGetActionActor Retrieve actor of action on vault folder
+# \param[in]  folder      Path of action vault folder
+# \param[out] actionActor Actor of action on vault folder
+iiVaultGetActionActor(*folder, *actor, *actionActor) {
+	# Fallback actor (rodsadmin).
+	*actionActor = *actor;
+
+	# Retrieve vault folder collection id.
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
+	        *collId = *row.COLL_ID;
+	}
+
+	# Retrieve vault folder action actor.
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId") {
+		 msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
+		 succeed;
+	}
+}
+
 # \brief iiPreVaultStatusTransition  Actions taken before vault status transition
 # \param[in] folder            Path of vault folder
 # \param[in] currentStatus     Current status of vault folder
@@ -34,7 +53,6 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (true) {
 		nop;
 	}
-
 }
 
 # \brief iiVaultRequestStatusTransition   Request vault status transition action
@@ -142,19 +160,23 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 # \param[in] newVaultStatus New vault status
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "submitted for publication");
+	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "submitted for publication");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
-		iiAddActionLogRecord(*actor, *folder, "approved for publication");
+	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
 
 		# Package is approved and can be published now.
 		iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
 	}
 	on (*newVaultStatus == PUBLISHED) {
-		iiAddActionLogRecord(*actor, *folder, "published");
+	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "published");
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
-		iiAddActionLogRecord(*actor, *folder, "depublished");
+	        #iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "depublished");
 	}
 	on (true) {
 		nop;
