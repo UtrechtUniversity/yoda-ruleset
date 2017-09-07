@@ -35,6 +35,20 @@
 				<xs:element name="Embargo_End_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="Publish" type="optionsYesNo" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="Sensitive" type="optionsYesNo" minOccurs="0" maxOccurs="1"/>
+                                <xs:element name="Funder" minOccurs="0" maxOccurs="unbounded">
+                                  <xs:complexType>
+                                    <xs:sequence>
+                                      <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                      <xs:element name="Properties">
+                                            <xs:complexType>
+                                              <xs:sequence>
+                                                <xs:element name="Grant_Number" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+                                              </xs:sequence>
+                                            </xs:complexType>
+                                      </xs:element>
+                                    </xs:sequence>
+                                  </xs:complexType> 
+                                </xs:element>
 				<xs:element name="Owner" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
 				<xs:element name="Creator" minOccurs="0" maxOccurs="unbounded">
 					<xs:complexType>
@@ -68,20 +82,6 @@
 						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
-                                <xs:element name="Funder" minOccurs="0" maxOccurs="unbounded">
-                                  <xs:complexType>
-                                    <xs:sequence>
-                                      <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                      <xs:element name="Properties">
-                                            <xs:complexType>
-                                              <xs:sequence>
-                                                <xs:element name="Grant_Number" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                              </xs:sequence>
-                                            </xs:complexType>
-                                      </xs:element>
-                                    </xs:sequence>
-                                  </xs:complexType> 
-                                </xs:element>
 				<xs:element name="License" minOccurs="0" maxOccurs="1">
                                   <xs:complexType>
                                      <xs:sequence>

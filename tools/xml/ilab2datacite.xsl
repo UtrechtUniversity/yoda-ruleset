@@ -10,7 +10,10 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"
        >
-       <identifier identifierType="DOI"><xsl:value-of select="system/Persistent_Identifier_Datapackage" /></identifier>
+       <identifier identifierType="DOI">
+          <xsl:value-of select="system/Persistent_Identifier_Datapackage" />
+       </identifier>
+
         <titles>
           <xsl:apply-templates select="metadata/Title" />
         </titles>
@@ -37,7 +40,6 @@
           <xsl:apply-templates select="metadata/Contributor" />
         </contributors>
 
-        <xsl:apply-templates select="metadata/Version" />
 
         <dates>
           <xsl:if test="system/Last_Modified_Date">
@@ -50,7 +52,7 @@
             <date dateType="Collected"><xsl:value-of select="metadata/Start_Collection_Date" />/<xsl:value-of select="metadata/End_Collection_Date" /></date>
           </xsl:if>
         </dates>
-          
+        <xsl:apply-templates select="metadata/Version" />
  	<rightsList>
           <xsl:apply-templates select="metadata/License" />
         </rightsList>
@@ -58,11 +60,23 @@
         <resourceType resourceTypeGeneral="Dataset">
             <xsl:text>Dataset</xsl:text>
         </resourceType>
+
+        <xsl:if test="metadata/Related_Datapackage">
+          <relatedIdentifiers>
+            <xsl:apply-templates select="metadata/Related_Datapackage" />
+          </relatedIdentifiers>
+        </xsl:if>
+	
+	<xsl:if test="metadata/Location_Covered">
+          <geoLocations>
+            <xsl:apply-templates select="metadata/Location_Covered" />
+          </geoLocations>
+        </xsl:if>
       </resource>
   </xsl:template>
 
   <xsl:template match="metadata/Version">
-    <xsl:copy />
+    <version><xsl:value-of select="." /></version>
   </xsl:template>
 
   <xsl:template match="metadata/Creator">
@@ -100,12 +114,16 @@
   </xsl:template>
 
   <xsl:template match="Properties/Persistent_Identifier">
-        <xsl:variable name="identifierScheme"><xsl:value-of select="../Persistent_Identifier_Type" /></xsl:variable>
-        <nameIdentifier nameIdentifierScheme="{$identifierScheme}"><xsl:value-of select="." /></nameIdentifier>
+        <nameIdentifier>
+           <xsl:attribute name="nameIdentifierScheme">
+              <xsl:value-of select="../Persistent_Identifier_Type" />
+           </xsl:attribute>
+           <xsl:value-of select="." />
+        </nameIdentifier>
   </xsl:template>
   
   <xsl:template match="Properties/Affiliation">
-	<Affiliation><xsl:value-of select="." /></Affiliation>
+	<affiliation><xsl:value-of select="." /></affiliation>
   </xsl:template>
  
 <xsl:template match="metadata/License">
@@ -115,6 +133,22 @@
        </xsl:attribute>
        <xsl:value-of select="./Name" />
     </rights>
+</xsl:template>
+
+<xsl:template match="metadata/Related_Datapackage">
+  <relatedIdentifier>
+     <xsl:attribute name="relatedIdentifierType">
+       <xsl:value-of select="Properties/Persistent_Identifier_Type" />
+     </xsl:attribute>
+     <xsl:attribute name="relationType">IsPreviousVersionOf</xsl:attribute>
+     <xsl:value-of select="Properties/Persistent_Identifier" />
+  </relatedIdentifier>
+</xsl:template>
+
+<xsl:template match="metadata/Location_Covered">
+  <geoLocation>
+    <geoLocationPlace><xsl:value-of select="." /></geoLocationPlace>
+  </geoLocation>
 </xsl:template>
 
 </xsl:stylesheet>
