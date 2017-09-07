@@ -45,7 +45,8 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
 		*actor = uuClientFullName;
-		iiAddActionLogRecord(*actor, *folder, "canceled publication");
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "canceled publication");
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		# TODO prepare for publication
