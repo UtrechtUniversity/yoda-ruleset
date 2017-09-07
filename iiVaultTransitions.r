@@ -83,7 +83,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 
 	# Add vault action status to datamanager group.
 	# Used in frontend to check if vault package is in state transition.
-	*vaultStatus = UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId=PENDING";
+	*vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId=PENDING";
 	msiString2KeyValPair(*vaultStatus, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {

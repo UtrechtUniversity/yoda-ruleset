@@ -32,12 +32,12 @@ processVaultActions {
 			                *collId = *row.COLL_ID;
 				}
 				if (*status != "Success") {
-					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId" ++ "=FAIL", *kvp);
+					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=FAIL", *kvp);
 					msiSetKeyValuePairsToObj(*kvp, *collName, "-C");
 					writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 				} else {
 					*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
-					*vaultStatus = UUORGMETADATAPREFIX ++ "vault_action_status_" ++ "*collId" ++ "=PENDING";
+					*vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=PENDING";
 					msiString2KeyValPair(*vaultAction, *vaultActionKvp);
 					msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
 					*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
