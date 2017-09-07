@@ -20,19 +20,20 @@ iiVaultStatus(*folder, *vaultStatus) {
 # \param[in]  folder      Path of action vault folder
 # \param[out] actionActor Actor of action on vault folder
 iiVaultGetActionActor(*folder, *actor, *actionActor) {
-	# Fallback actor (rodsadmin).
-	*actionActor = *actor;
-
 	# Retrieve vault folder collection id.
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
 	        *collId = *row.COLL_ID;
 	}
 
 	# Retrieve vault folder action actor.
+	*actionActor = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
 	         msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
 		 succeed;
 	}
+
+	# Fallback actor (rodsadmin).
+	*actionActor = *actor;
 }
 
 # \brief iiPreVaultStatusTransition  Actions taken before vault status transition
