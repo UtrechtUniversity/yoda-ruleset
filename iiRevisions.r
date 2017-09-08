@@ -281,21 +281,35 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
                         *executeRestoration = true;
 
                 } else if (*overwrite == "restore_next_to") {
-                        #new file name is entered by user and can be a duplicate again. So check first.
-			*newFileNameExists = false;
-			foreach (*row in  SELECT DATA_NAME WHERE COLL_NAME = *target AND DATA_NAME = *newFileName ){
-				*newFileNameExists = true;
-				break;	
-			}	
-			
-			if (!*newFileNameExists) {
-				*dst = *target ++ "/" ++ *newFileName;
-                        	*executeRestoration = true;
-			}
-			else {
-				*status = "FileExistsEnteredByUser";
-				succeed;
-			}	
+                        # New file name is entered by user and can be a duplicate again. So check first.
+                        *newFileNameExists = false;
+                        foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = *target AND DATA_NAME = *newFileName ){
+                                *newFileNameExists = true;
+                                break;
+                        }
+
+                        if (!*newFileNameExists) {
+                                *dst = *target ++ "/" ++ *newFileName;
+                        }
+                        else {
+                                *status = "FileExistsEnteredByUser";
+                                succeed;
+                        }
+
+                        # Check if new destination is an existing folder.
+                        *newFileNameExistsAsCollection = false;
+                        foreach (*row in SELECT COLL_NAME WHERE COLL_NAME = *dst){
+                                *newFileNameExistsAsCollection = true;
+                                break;
+                        }
+
+                        if (!*newFileNameExistsAsCollection) {
+                                *executeRestoration = true;
+                        }
+                        else {
+                                *status = "FileExistsEnteredByUser";
+                                succeed;
+                        }
                 }
                 else {
                         *statusInfo = "Illegal overwrite flag *overwrite";
