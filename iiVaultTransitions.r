@@ -102,18 +102,22 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	}
 
 	# Check if vault package is currently pending for status transition.
-	*pending = false;
-        *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
-        foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
-		*pending = true;
-        }
+	# Except for status transition to PUBLISHED, becuase it is requested
+	# by the system before previous pending transition is removed.
+	if (*newVaultStatus != PUBLISHED) {
+		*pending = false;
+		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
+		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
+			*pending = true;
+		}
 
-	# Don't accept request if a status transition is already pending.
-	if (*pending && *newVaultStatus != PUBLISHED ) {
-		*status = "PermissionDenied";
-		*statusInfo = "Vault package is being processed, please wait until finished.";
-		succeed;
-        }
+		# Don't accept request if a status transition is already pending.
+		if (*pending) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault package is being processed, please wait until finished.";
+			succeed;
+		}
+	}
 
 	# Check if status transition is allowed.
 	iiVaultStatus(*folder, *currentVaultStatus);
