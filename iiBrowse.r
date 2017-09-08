@@ -218,7 +218,9 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 					# Determine if user is member of research group.
 					*researchGroup = *userName;
 					uuGroupUserExists(*researchGroup, uuClientFullName, false, *membership)
-					*kvp.inResearchGroup = *membership;
+					if (*membership) {
+					        *kvp.inResearchGroup = "yes";
+					}
 				}
 			}
 		}
