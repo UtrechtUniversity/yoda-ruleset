@@ -197,6 +197,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*isFound = false;
 		# Check Access
 		*kvp.researchGroupAccess = "no";
+		*kvp.inResearchGroup = "no";
 		foreach(*row in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
 			*userId = *row.COLL_ACCESS_USER_ID;
 			foreach(*row in SELECT USER_NAME WHERE USER_ID = *userId) {
@@ -214,10 +215,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 				if (*userName like "research-*") {
 					*kvp.researchGroupAccess = "yes";
 
-					# Determine user type.
+					# Determine if user is member of research group.
 					*researchGroup = *userName;
-					uuGroupGetMemberType(*researchGroup, uuClientFullName, *userType);
-					*kvp.userType = *userType;
+					uuGroupUserExists(*researchGroup, uuClientFullName, false, *membership)
+					*kvp.inResearchGroup = *membership;
 				}
 			}
 		}
@@ -226,7 +227,6 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		} else {
 			*kvp.hasDatamanager = "no";
 		        *kvp.isDatamanager = "no";
-			*kvp.userType = "none";
 		}
 	}
 
