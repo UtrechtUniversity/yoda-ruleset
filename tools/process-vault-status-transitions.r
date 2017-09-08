@@ -57,7 +57,12 @@ processVaultActions {
 						msiString2KeyValPair(*vaultAction, *vaultActionKvp);
 						msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
 						*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
-						*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
+
+                                                # Check if vault package is again pending for status transition to published.
+                                                if (*action != APPROVED_FOR_PUBLICATION) {
+                                                        *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
+                                                }
+
 						writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 					}
 				}
