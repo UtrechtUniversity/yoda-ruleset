@@ -50,9 +50,11 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		# TODO prepare for publication
+		nop;
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 		# TODO prepare for depublication
+		nop;
 	}
 	on (true) {
 		nop;
