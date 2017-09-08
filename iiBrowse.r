@@ -213,6 +213,11 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 				}
 				if (*userName like "research-*") {
 					*kvp.researchGroupAccess = "yes";
+
+					# Determine user type.
+					*researchGroup = *userName;
+					uuGroupGetMemberType(*researchGroup, uuClientFullName, *userType);
+					*kvp.userType = *userType;
 				}
 			}
 		}
@@ -220,14 +225,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		       *kvp.hasDatamanager = "yes";
 		} else {
 			*kvp.hasDatamanager = "no";
-		        *kvp.isDatamanager = "no";	
+		        *kvp.isDatamanager = "no";
+			*kvp.userType = "none";
 		}
-
-		# Determine user type.
-		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager
-		*kvp.userType = *userType;
 	}
-
 
 	uuKvp2JSON(*kvp, *result);
 }
