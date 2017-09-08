@@ -94,6 +94,20 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		*collId = *row.COLL_ID;
 	}
 
+	# Check if vault package is currently pending for status transition.
+	*pending = false;
+        *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
+        foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
+		*pending = true;
+        }
+
+	# Don't accept request if a status transition is already pending.
+	if (*pending) {
+		*status = "PermissionDenied";
+		*statusInfo = "Vault package is being processed, please wait until finished.";
+		succeed;
+        }
+
 	# Add vault action request to datamanager group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
 	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
