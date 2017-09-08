@@ -108,6 +108,15 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		succeed;
         }
 
+	# Check if status transition is allowed.
+	iiVaultStatus(*folder, *currentFolderStatus);
+	iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, *actor, *allowed, *reason);
+	if (!*allowed) {
+		*status = "PermissionDenied";
+		*statusInfo = *reason;
+		succeed;
+	}
+
 	# Add vault action request to datamanager group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
 	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
