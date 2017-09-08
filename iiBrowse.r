@@ -222,9 +222,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*kvp.hasDatamanager = "no";
 		        *kvp.isDatamanager = "no";	
 		}
-		
-		
-		
+
+		# Determine user type.
+		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager
+		*kvp.userType = *userType;
 	}
 
 
