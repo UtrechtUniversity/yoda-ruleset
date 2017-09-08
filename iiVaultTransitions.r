@@ -109,8 +109,8 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         }
 
 	# Check if status transition is allowed.
-	iiVaultStatus(*folder, *currentFolderStatus);
-	iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, *actor, *allowed, *reason);
+	iiVaultStatus(*folder, *currentVaultStatus);
+	iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newVaultStatus, *actor, *allowed, *reason);
 	if (!*allowed) {
 		*status = "PermissionDenied";
 		*statusInfo = *reason;
