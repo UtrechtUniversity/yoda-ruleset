@@ -69,6 +69,13 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 
+	uuGetUserType(uuClientFullName, *userType);
+	if ((*newVaultStatus == PUBLISHED && *userType != "rodsadmin") {
+		*status = "PermissionDenied";
+		*statusInfo = "Vault status request for published can only be requested by a rodsadmin.";
+		succeed;
+        }
+
 	# Determine vault group and actor.
 	*pathElems = split(*folder, "/");
 	*rodsZone = elem(*pathElems, 0);
@@ -102,7 +109,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         }
 
 	# Don't accept request if a status transition is already pending.
-	if (*pending) {
+	if (*pending && *newVaultStatus != PUBLISHED ) {
 		*status = "PermissionDenied";
 		*statusInfo = "Vault package is being processed, please wait until finished.";
 		succeed;
