@@ -70,7 +70,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	uuGetUserType(uuClientFullName, *userType);
-	if ((*newVaultStatus == PUBLISHED && *userType != "rodsadmin") {
+	if (*newVaultStatus == PUBLISHED && *userType != "rodsadmin") {
 		*status = "PermissionDenied";
 		*statusInfo = "Vault status request for published can only be requested by a rodsadmin.";
 		succeed;
