@@ -70,7 +70,6 @@ iiCollectionGroupName(*path, *groupName) {
 		}
 	}
 
-	writeLine("serverLog", "iiCollectionGroupNameAndUserType: path = *path, groupName = *groupName");
 	if (!*isfound) {
 		# No results found. Not a group folder
 		failmsg(-808000, "*path does not belong to a research or intake group or is not available to current user");
@@ -83,10 +82,8 @@ iiCollectionGroupName(*path, *groupName) {
 # \param[out] userType
 # \param[out] isDatamanager
 iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
-	
 	iiCollectionGroupName(*path, *groupName); 
 	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
-
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);	
 	uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
@@ -95,6 +92,4 @@ iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 	} else {
 		*isDatamanager = false;
 	}	
-	
-	writeLine("serverLog", "iiCollectionGroupNameAndUserType: userType = *userType, isDatamanager = *isDatamanager");
 }
