@@ -97,20 +97,20 @@
                                  </xs:complexType>
                                 </xs:element>
 				<xs:element name="Access_Restriction" type="optionsDatasetAccess" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="system" minOccurs="0" maxOccurs="1">
+					<xs:complexType>
+					  <xs:sequence>
+						<xs:element name="Last_Modified_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="Project_ID_Pure" type="xs:string" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="Persistent_Identifier_Datapackage" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+					   </xs:sequence>
+					</xs:complexType>
+				</xs:element>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
 
-	<xs:element name="system">
-		<xs:complexType>
-	          <xs:sequence>
-			<xs:element name="Last_Modified_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="Project_ID_Pure" type="xs:string" minOccurs="0" maxOccurs="1"/>
-			<xs:element name="Persistent_Identifier_Datapackage" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
-			<xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
-		   </xs:sequence>
-		</xs:complexType>
-	</xs:element>
 
 	<xs:simpleType name="stringURI">
 	    <xs:restriction base="xs:anyURI">

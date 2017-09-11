@@ -11,7 +11,7 @@
        xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"
        >
        <identifier identifierType="DOI">
-          <xsl:value-of select="system/Persistent_Identifier_Datapackage" />
+          <xsl:value-of select="metadata/system/Persistent_Identifier_Datapackage" />
        </identifier>
 
         <titles>
@@ -24,7 +24,7 @@
         </descriptions>
         <publisher>Utrecht University</publisher>
         <publicationYear>
-	   <xsl:apply-templates select="system/Publication_Date" />
+	   <xsl:apply-templates select="metadata/system/Publication_Date" />
 	</publicationYear>
 
         <subjects>
@@ -42,7 +42,7 @@
 
 
         <dates>
-          <xsl:if test="system/Last_Modified_Date">
+          <xsl:if test="metadata/system/Last_Modified_Date">
             <date dateType="Updated"><xsl:value-of select="system/Last_Modified_Date" /></date>
           </xsl:if>
           <xsl:if test="metadata/Embargo_End_Date">
@@ -87,7 +87,7 @@
       </creator>
   </xsl:template>
 
-  <xsl:template match="system/Publication_Date">
+  <xsl:template match="metadata/system/Publication_Date">
       <!-- 
         The date is in YYYY-MM-DD form, so we need to extract the first 4 digits for the year.
 	xslt substring indexes start at 1 -->
