@@ -29,7 +29,7 @@ processVaultActions {
 
                                 # Check if vault package is currently pending for status transition.
                                 *pending = false;
-                                *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
+                                *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId";
                                 foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
                                         *pending = true;
                                 }
@@ -42,6 +42,13 @@ processVaultActions {
 						*status = "InternalError";
 						*statusInfo = "";
 					}
+
+                                        # Check if rods can modify metadata and grant temporary write ACL if necessary.
+                                        msiCheckAccess(*collName, "modify metadata", *modifyPermission);
+                                        if (*modifyPermission == 0) {
+                                                writeLine("stdout", "Granting read access to *collName");
+                                                msiSetACL("default", "admin:write", uuClientFullName, *collName);
+                                        }
 
 					if (*status != "Success") {
 						*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
@@ -65,6 +72,12 @@ processVaultActions {
 
 						writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 					}
+
+                                        # Remove the temporary write ACL.
+                                        if (*modifyPermission == 0) {
+                                                writeLine("stdout", "Revoking read access to *collName");
+                                                msiSetACL("default", "admin:null", uuClientFullName, *collName);
+                                        }
 				}
 			}
 		}
