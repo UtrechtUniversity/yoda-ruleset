@@ -44,6 +44,103 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 	uuKvp2JSON(*resourceData, *data);
 }
 
+# /brief uuFrontEndGetUserGroupsForStatistics
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend
+# /param[out] *statusInfo       -return specific information regarding *status
+#
+# Collect all groups current user is a member of. Read only groups count as well
+uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
+{
+	*status = 'Success';
+	*statusInfo = '';
+	
+	# include read only groups as well
+	uuUserGetGroups(uuClientFullName, true, *allUserGroups);
+
+	uuList2JSON(*allUserGroups, *data);
+}
+
+# /brief uuFrontEndGetUserGroupsForStatistics
+# /param[in]  *groupName	-Name of group storage statistics have to be gathered
+# /param[in]  *currentMonth	-Central month that defines the start of the monthly list
+# /param[out] *data             -return actual requested data if applicable
+# /param[out] *status           -return status to frontend
+# /param[out] *statusInfo       -return specific information regarding *status
+#
+# Return an overview that covers a year of storage statistics on a group
+# It returns a key value pair that is indexed with combination of month/tier data as a key
+uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo)
+{
+	*status = 'Success';
+	*statusInfo = '';
+
+
+	uuGroupUserExists(*groupName, uuClientFullName, *membership);
+
+	if (!*membership) {
+		# check whether user is member of group
+		*status = 'ERROR_NO_GROUP_MEMBER';
+		*statusInfo = 'User is not a member of group ' ++ *groupName;
+		succeed;
+	}
+
+
+	*listTierStorages = list();
+
+	*counter = 0;
+
+
+	# Collect storage for each month 1 year back
+        
+	while (*counter < 12) {
+                *newMonth = int(*currentMonth) - *counter;
+                if (*newMonth < 1) {
+                        *newMonth = *newMonth + 12;
+                }
+
+
+		# Collect storages for tiers
+
+		msiString2KeyValPair("", *kvpTierStorage);                
+
+		if (*newMonth<10) {	
+		        *metadataName = UUMETADATASTORAGEMONTH ++ '0' ++ str(*newMonth);
+		}
+		else {
+			  *metadataName = UUMETADATASTORAGEMONTH ++ str(*newMonth);
+		}
+
+        	foreach (*row in SELECT META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME
+        	                        WHERE META_USER_ATTR_NAME = '*metadataName'
+					AND USER_NAME = '*groupName'
+        	                               ) {
+
+         	        # resolve as JSON string holding an array ["category","tier","storage"]
+        	        *tierName = "";
+                	msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1);
+			
+                	*storage = "";
+        	        msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
+
+        	        #*categoryTierStorage."*tierName" = str(double(*categoryTierStorage."*tierName") + double(*storage));
+
+	                # Add month to tiername as it seemd not possible to add a list as a value to a kvp
+			*monthTierName = "month=" ++ str(*newMonth) ++ "-tier=" ++ *tierName;
+        	        *storage = str(double(*storage));
+
+                	*kvpTierStorage."*monthTierName" = *storage;
+
+                	# Build list with storage amounts on tier level
+                	*listTierStorages = cons(*kvpTierStorage, *listTierStorages);
+
+        	}
+		
+		*counter = *counter + 1;
+        }
+	uuKvpList2JSON(*listTierStorages, *data, *size);
+}
+
 
 # /brief uuFrontEndListResourceAndStatisticData - List available resources and their tier & storage data
 # /param[out] *data             -return actual requested data if applicable
@@ -680,6 +777,8 @@ uuGetCurrentStatisticsMonth()
 	*strMonth;
 }
 
+
+
 # /brief uuKvpResourceAndTiers()
 # returns *kvp with resourceName as key and tierName as value 
 # This way it is easy to use the name of a resource as an index and retrieve the corresponding tierName.
@@ -718,6 +817,8 @@ uuListCategoriesDatamanager()
         foreach (
                 *row in
                 SELECT USER_NAME
+# /param[out] *status           -return status to frontend 
+# /param[out] *statusInfo       -return specific information regarding *status
                 WHERE  USER_TYPE            = 'rodsgroup'
                         AND USER_NAME like 'datamanager-%%'
         ) {
