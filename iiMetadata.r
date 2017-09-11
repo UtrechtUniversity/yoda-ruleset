@@ -559,6 +559,14 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		*statusInfo = "Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
 		succeed;
 	}
+	
+
+	*err = errorcode(iiCopyACLsFromParent(*vaultMetadataTarget));
+	if (*err < 0) {
+		*status = "FailedToSetACLs";
+		*statusInfo = "Failed to set ACLs of *vaultMetadataTarget as parent collection";
+		succeed;
+	}
 
 	*err = errorcode(iiRemoveAVUs(*vaultPackagePath, UUUSERMETADATAPREFIX));
 	if (*err < 0) {
