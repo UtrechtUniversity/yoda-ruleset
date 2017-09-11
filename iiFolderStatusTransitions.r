@@ -56,7 +56,7 @@ iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 # \param[in] newStatus
 iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == SUBMITTED) {
-		iiAddActionLogRecord(*actor, *folder, "submit");
+		iiAddActionLogRecord(*actor, *folder, "submitted for vault");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
@@ -66,9 +66,9 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
-			iiAddActionLogRecord(*actor, *folder, "accept");
+			iiAddActionLogRecord(*actor, *folder, "accepted for vault");
 		} else {
-			iiAddActionLogRecord("system", *folder, "accept");
+			iiAddActionLogRecord("system", *folder, "accepted for vault");
 		}
 	}
 	on (*newFolderStatus == FOLDER) {
@@ -78,16 +78,16 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == LOCKED) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
-			iiAddActionLogRecord(*actor, *folder, "unsubmit");
+			iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
 		} else {
-			iiAddActionLogRecord(*actor, *folder, "lock");
+			iiAddActionLogRecord(*actor, *folder, "locked");
 		}
 	}
 	on (*newFolderStatus == REJECTED) {
-		iiAddActionLogRecord(*actor, *folder, "reject");
+		iiAddActionLogRecord(*actor, *folder, "rejected for vault");
 	}
 	on (*newFolderStatus == SECURED) {
-		iiAddActionLogRecord("system", *folder, "secure");
+		iiAddActionLogRecord("system", *folder, "secured in vault");
 	}
 	on (true) {
 		nop;
