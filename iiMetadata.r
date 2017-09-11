@@ -312,11 +312,11 @@ iiRemoveAVUs(*coll, *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
 		if (*attr == *prev) {
-			writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
+			# writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
 		       *duplicates = cons((*attr, *val), *duplicates);
 		} else {	
 			msiAddKeyVal(*kvp, *attr, *val);
-			writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			# writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 			*prev = *attr;
 		}
 	}
@@ -326,7 +326,7 @@ iiRemoveAVUs(*coll, *prefix) {
 	foreach(*pair in *duplicates) {
 
 		(*attr, *val) = *pair;
-		writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		# writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 		msiString2KeyValPair("", *kvp);
 		msiAddKeyVal(*kvp, *attr, *val);
 		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
@@ -347,7 +347,7 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 	if (*err < 0) {
 		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
 	} else {
-		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from XML");
+		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from *metadataxmlpath");
 	}
 }
 
@@ -414,7 +414,7 @@ iiMetadataXmlRenamedPost(*src, *dst, *zone) {
 	# the logical_path in $KVPairs is that of the destination
 	uuChopPath(*dst, *dst_parent, *dst_basename);
 	if (*dst_basename != IIMETADATAXMLNAME && *src_parent == *dst_parent) {
-		writeLine("serverLog", "pep_resource_rename_post: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
+		writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
 		iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
 	} else if (*src_parent != *dst_parent) {
 		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
