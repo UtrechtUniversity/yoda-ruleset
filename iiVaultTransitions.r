@@ -128,7 +128,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		succeed;
 	}
 
-	# Add vault action request to datamanager group.
+	# Add vault action request to actor group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
 	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
@@ -139,7 +139,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 		succeed;
         }
 
-	# Add vault action status to datamanager group.
+	# Add vault action status to actor group.
 	# Used in frontend to check if vault package is in state transition.
 	*vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId=PENDING";
 	msiString2KeyValPair(*vaultStatus, *kvp);
@@ -217,9 +217,6 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
-
-		# Package is approved and can be published now.
-		iiVaultRequestStatusTransition(*folder, PUBLISHED, *status, *statusInfo);
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
