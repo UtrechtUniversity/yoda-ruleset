@@ -324,7 +324,7 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	    ++ "/home/"
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
 	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
-		writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
+		# writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.client_user_name, *KVPairs.client_user_zone);
 	}
 }
@@ -338,7 +338,7 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	    ++ IIGROUPPREFIX
 	    ++ "[^/]+(/.\*)\*/"
 	    ++ IIMETADATAXMLNAME ++ "$") {
-		writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
+		# writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		*zone =  *KVPairs.client_user_zone;
 		*dst = *KVPairs.logical_path;
 		iiLogicalPathFromPhysicalPath(*KVPairs.physical_path, *src, *zone);
@@ -358,7 +358,7 @@ uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
 	    ++ "[^/]+(/.\*)\*/"
 	    ++ IIMETADATAXMLNAME ++ "$") {
 
-		writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
+		# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
 		}
 }
