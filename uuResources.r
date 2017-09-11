@@ -126,11 +126,11 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
         	        #*categoryTierStorage."*tierName" = str(double(*categoryTierStorage."*tierName") + double(*storage));
 
 	                # Add month to tiername as it seemd not possible to add a list as a value to a kvp
-			if (double(*storage)>0){
+			*dblStorage = double(*storage);
+			if (*dblStorage>0) {
 				*monthTierName = "month=" ++ str(*newMonth) ++ "-tier=" ++ *tierName;
-        	        	*storage = str(double(*storage));
 
-                		*kvpTierStorage."*monthTierName" = *storage;
+                		*kvpTierStorage."*monthTierName" = str(*dblStorage); 
 
                 		# Build list with storage amounts on tier level
                 		*listTierStorages = cons(*kvpTierStorage, *listTierStorages);
