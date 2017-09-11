@@ -169,6 +169,17 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 		fail;
 	}
 
+	# Check if status isn't transitioned already.
+        *currentVaultStatus = "";
+        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
+                *currentVaultStatus = *row.META_COLL_ATTR_VALUE;
+        }
+        if (*currentVaultStatus == *newFolderStatus) {
+                 *status = "Success";
+                 *statusInfo = "";
+                succeed;
+        }
+
 	# Set new vault status.
 	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
 	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
