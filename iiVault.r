@@ -72,6 +72,8 @@ iiSetVaultPermissions(*folder, *target) {
 
 	uuChop(*groupName, *_, *baseName, "-", true);
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
+
+
 	
 	# Setting main collection of vault group to noinherit for finegrained access control
 	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
@@ -88,6 +90,12 @@ iiSetVaultPermissions(*folder, *target) {
 		} else {
 			writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
 		}
+	}
+
+	# Ensure vault-groupName has ownership on vault package
+	*err = msiSetACL("recursive", "admin:own", *vaultGroupName, *target); 
+	if (*err < 0) {
+		writeLine("stdout", "iiSetVaultPermissions: Failed to set own on *target");
 	}
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -294,3 +302,28 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	}
 }
 
+# iiCopyACLsFromParent
+# \param[in] path 	path of object that needs the permissions of parent
+iiCopyACLsFromParent(*path) {
+	
+	uuChopPath(*path, *parent, *child);
+
+	foreach(*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *parent) {
+		*accessName = *row.COLL_ACCESS_NAME;
+		*userId = *row.COLL_ACCESS_USER_ID;
+		foreach(*user in SELECT USER_NAME WHERE USER_ID = *userId) {
+			*userName = *user.USER_NAME;
+		}
+		if (*accessName == "own") {
+			writeLine("serverLog", "iiCopyACLsFromParent: granting own to *userName on *path");
+			msiSetACL("default", "own", *userName, *path);
+		} else if (*accessName == "read object") {
+			writeLine("serverLog", "iiCopyACLsFromParent: granting read to *userName on *path");
+			msiSetACL("default", "read", *userName, *path);
+		} else if (*accessName == "modify object") {
+			writeLine("serverLog", "iiCopyACLsFromParent: granting write to *userName on *path");
+			msiSetACL("default", "write", *userName, *path);
+		}
+	}
+
+}
