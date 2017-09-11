@@ -59,15 +59,26 @@ processVaultActions {
 						msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");
 						writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 					} else {
-						*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
-						*vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=PENDING";
-						msiString2KeyValPair(*vaultAction, *vaultActionKvp);
-						msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
-						*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
+                                                *vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+                                                *vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=PENDING";
+                                                msiString2KeyValPair(*vaultAction, *vaultActionKvp);
+                                                msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
+                                                *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
+                                                *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
 
-                                                # Check if vault package is again pending for status transition to published.
-                                                if (*action != APPROVED_FOR_PUBLICATION) {
-                                                        *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
+                                                # If new status is APPROVED_FOR_PUBLICATION add status request for PUBLICATION.
+                                                if (*action == APPROVED_FOR_PUBLICATION) {
+                                                        # Add vault action request to datamanager group.
+                                                        *actor = uuClientFullName;
+                                                        *json_str = "[\"*folder\", \"PUBLISHED\", \"*actor\"]";
+                                                        msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
+                                                        *err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *collName, "-C"), *msg);
+
+                                                        # Add vault action status to datamanager group.
+                                                        *vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId=PENDING";
+                                                        msiString2KeyValPair(*vaultStatus, *kvp);
+                                                        *err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *collName, "-C"), *msg);
+                                                        writeLine("serverLog", "iiVaultRequestStatusTransition: PUBLISHED on *folder by *actor");
                                                 }
 
 						writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
