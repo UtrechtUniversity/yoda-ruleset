@@ -302,7 +302,8 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	}
 }
 
-# iiCopyACLsFromParent
+# 
+# \brief iiCopyACLsFromParent   When inheritance is missing we need to copy ACL's when introducing new data in vault package.
 # \param[in] path 	path of object that needs the permissions of parent
 iiCopyACLsFromParent(*path) {
 	
