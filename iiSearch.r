@@ -1,6 +1,6 @@
 # \brief iiSearchByName		Search for a file or collection by name
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
-# \param[in] searchstring	String to search for in the filesystem
+# \param[in] searchString	String to search for in the filesystem
 # \param[in] collectionOrDataObject	Either "Collection" or "DataObject"
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
@@ -9,7 +9,7 @@
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
-iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
 	*statusInfo = '';
 	*iscollection = iscollection(*collectionOrDataObject);
@@ -41,7 +41,8 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 
 # \brief iiSearchByMetadata	Search for a file or collection by metadata
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
-# \param[in] searchstring	String to search for in the metadata
+# \param[in] searchString	String to search for in the filesystem
+# \param[in] searchStringEscaped	Escaped string to search for in the filesystem
 # \param[in] collectionOrDataObject	Either "Collection" or "DataObject"
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
@@ -50,7 +51,7 @@ iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *as
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
-iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
         *statusInfo = '';
 
@@ -58,7 +59,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 	*likeprefix = UUUSERMETADATAPREFIX ++ "%";
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchstring),
+		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchStringEscaped),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_PARENT_NAME", *startpath));
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
@@ -75,7 +76,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix) {
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_COLL_ATTR_VALUE, *upperValue);
-				msiStrToUpper(*searchstring, *upperSearchstring);
+				msiStrToUpper(*searchString, *upperSearchstring);
 				if (*upperValue like "**upperSearchstring*") {
 					msiString2KeyValPair("", *match);
 					*name_lst = split(*row.META_COLL_ATTR_NAME, "_");
@@ -91,7 +92,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 		}	
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
-		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchstring),
+		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchStringEscaped),
 				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
 				   uumakestartswithcondition("COLL_NAME", *startpath));
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
@@ -108,7 +109,7 @@ iiSearchByMetadata(*startpath, *searchstring, *collectionOrDataObject, *orderby,
 			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix) {
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_DATA_ATTR_VALUE, *upperValue);
-				msiStrToUpper(*searchstring, *upperSearchstring);
+				msiStrToUpper(*searchString, *upperSearchstring);
 				if (*upperValue like "**upperSearchstring*") {
 					msiString2KeyValPair("", *match);
 					*name = triml(*row.META_DATA_ATTR_NAME, UUUSERMETADATAPREFIX);
