@@ -15,7 +15,7 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-		*conditions = list(uumakelikecollcondition("COLL_NAME", *searchstring));
+		*conditions = list(uumakelikecollcondition("COLL_NAME", *searchString));
 		*conditions = cons(uumakestartswithcondition("COLL_PARENT_NAME", *startpath), *conditions);
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
 		if (*status!='Success') {
@@ -25,7 +25,7 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 		iiKvpCollectionTemplate(*rowList, *kvpList);
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
-		*conditions = list(uumakelikecondition("DATA_NAME", *searchstring));
+		*conditions = list(uumakelikecondition("DATA_NAME", *searchString));
 		*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
