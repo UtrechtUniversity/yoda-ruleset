@@ -16,6 +16,7 @@ ingestChangesIntoVault {
 			*metadataXmlPath = *row.COLL_NAME ++ "/" ++ IIMETADATAXMLNAME;
 			
 			if (*collName like regex "/[^/]+/home/datamanager-.*") {	
+				# ensure rodsadmin access to the datamanager collection and metadata
 				*err = errorcode(iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo));
 				if (*err < 0) {
 					writeLine("stdout", "iiIngestDatamanagerMetadataIntoVault: *err");

@@ -507,6 +507,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		*statusInfo = "*vaultPackagePath does not exist";
 		succeed;
 	}
+
+
+	# Ensure access to the metadata xml for rodsadmin
+	msiCheckAccess(*metadataXmlPath, "modify object", *modifyAccess);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:own", uuClientFullName, *metadataXmlPath);
+	}
 	
 	# Generate a new metadata xml filename with a timestamp, to prevent overwriting the old version
 	msiGetIcatTime(*timestamp, "unix");
