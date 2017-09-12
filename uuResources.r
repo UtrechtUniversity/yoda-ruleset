@@ -76,7 +76,7 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 	*statusInfo = '';
 
 
-	uuGroupUserExists(*groupName, uuClientFullName, *membership);
+	uuGroupUserExists(*groupName, uuClientFullName, true, *membership);
 
 	if (!*membership) {
 		# check whether user is member of group
