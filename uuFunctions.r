@@ -37,3 +37,6 @@ uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like",
 # \param[in] *timestamp		irods style timestamp (epoch as string) 
 # \returnvalue uuiso8601	string with timestamp in iso8601 format
 uuiso8601(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z")
+
+# \function uuisod8601date Return irods style timestamp as a iso8601 date
+uuiso8601date(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y-%m-%d")
