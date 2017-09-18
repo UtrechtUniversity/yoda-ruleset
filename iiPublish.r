@@ -43,12 +43,13 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 	*combiXmlPath = "*vaultPackage/*baseName-publication[*publicationDate].*extension";
 
 	*systemMetadata =
-	   "<system>" ++
-	   "  <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
-	   "  <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
-	   "  <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
-           "  <Publication_Date>*publicationDate</Publication_Date>\n" ++
-           "</system>\n</metadata>";
+	   "  <system>\n" ++
+	   "    <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
+	   "    <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
+	   "    <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
+           "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
+           "  </system>\n" ++ 
+           "</metadata>";
 
 	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath);
 
