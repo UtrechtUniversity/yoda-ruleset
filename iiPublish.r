@@ -131,12 +131,12 @@ iiGetDataCiteCredentials(*username, *password) {
 	}
 }
 
-iiGenerateLandingPage(*vaultPackage, *yodaDOI, *combiXmlPath, *landingPage) {
-	# dummy routine
+iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) {
 	*instance = UUINSTANCENAME;
 	*yodaPrefix = UUDOIYODAPREFIX;
-	*landingPage = "https://public.yoda.uu.nl/*instance/*yodaPrefix/*yodaDOI";	
-	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page="++*landingPage, *kvp);
+	*randomId = triml(*yodaDOI, "-");
+	*landingPageUrl = "https://public.yoda.uu.nl/*instance/*yodaPrefix/*randomId";	
+	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page="++*landingPageUrl, *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
 }
 
@@ -160,10 +160,10 @@ iiProcessPublication(*vaultPackage) {
 
 	iiPostMetadataToDataCite(*dataCiteXml);
 	
-	iiGetLandingPageFromMetadata(*vaultPackage, *landingPage);
-	if (*landingPage == "") {	
-		iiGenerateLandingPage(*vaultPackage, *yodaDOI, *combiXmlPath, *landingPage);
+	iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPageUrl);
+	if (*landingPageUrl == "") {	
+		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl);
 	}
 	
-	iiMintDOI(*yodaDOI, *landingPage);
+	iiMintDOI(*yodaDOI, *landingPageUrl);
 }
