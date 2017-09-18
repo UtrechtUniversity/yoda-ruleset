@@ -512,4 +512,20 @@ iiCanTransitionVaultStatus(*folder, *transitionFrom, *transitionTo, *actor, *all
 		*reason = "Illegal status transition. Current status is *transitionFrom.";
 		succeed;
 	}
+
+	if (*transitionTo == PUBLISHED) {
+		iiGetDOIFromMetadata(*folder, *yodaDOI);	
+		if (*yodaDOI == "") {
+			*allowed = false;
+			*reason = "*folder has no DOI"
+			succeed;
+		}
+
+		iiGetLandingPageFromMetadata(*folder, *landingPage);
+		if (*landingPage == "") {
+			*allowed = false;
+			*reason = "*folder has no landing page";
+			succeed;
+		}
+	}
 }

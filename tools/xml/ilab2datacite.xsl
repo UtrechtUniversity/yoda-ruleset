@@ -43,7 +43,7 @@
 
         <dates>
           <xsl:if test="metadata/system/Last_Modified_Date">
-            <date dateType="Updated"><xsl:value-of select="system/Last_Modified_Date" /></date>
+            <date dateType="Updated"><xsl:value-of select="metadata/system/Last_Modified_Date" /></date>
           </xsl:if>
           <xsl:if test="metadata/Embargo_End_Date">
             <date dateType="Available"><xsl:value-of select="metadata/Embargo_End_Date" /></date>

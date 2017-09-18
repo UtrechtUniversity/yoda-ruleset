@@ -598,7 +598,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 # \param[out] metadataXmlPath
 iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath) {
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
-	*dataNameQuery = "%*baseName%*extension";
+	*dataNameQuery = "%*baseName[%].*extension";
 	*metadataXmlPath = "";
 	foreach (*row in SELECT DATA_NAME, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
 		*metadataXmlPath = *vaultPackage ++ "/" ++ *row.DATA_NAME;

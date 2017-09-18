@@ -8,8 +8,8 @@
 # \license GPLv3, see LICENSE
 
 # \brief iiGenerateDataciteXml
-iiGenerateDataciteXml(*metadataXmlPath, *dataCiteXml) {
-	*pathElems = split(*metadataXmlPath, "/");
+iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml) {
+	*pathElems = split(*combiXmlPath, "/");
 	*rodsZone = elem(*pathElems, 0);
 	*vaultGroup = elem(*pathElems, 2);
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
@@ -17,7 +17,7 @@ iiGenerateDataciteXml(*metadataXmlPath, *dataCiteXml) {
 
 	*dataCiteXslPath = "";
 	*xslColl = "/"++*rodsZone++IIXSLCOLLECTION;
-	*xslName = "/"++*category++"2datacite.xml";
+	*xslName = *category++"2datacite.xml";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
 		*dataCiteXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
@@ -25,40 +25,50 @@ iiGenerateDataciteXml(*metadataXmlPath, *dataCiteXml) {
 	if (*dataCiteXslPath == "") {
 		*dataCiteXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IIDATACITEDEFAULTNAME;
 	}
+	msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf);
+ 	msiBytesBufToStr(*buf, *dataCiteXml);
+}
 
-	uuChopPath(*metadataXmlPath, *vaultPackage, *metadataXmlName);
-	*attrNameDOI = IIORGMETADATAPREFIX++"DOI";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *attrNameDOI) {
-		*yodaDOI = *row.META_COLL_ATTR_VALUE;
-	}	
+# \brief iiGenerateCombiXml
+iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
+
+	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
 	
-	iiActionLog(*vaultPackage, *size, *actionLog);
-	msi_json_arrayops(*actionLog, *lastLogItem, "get", *size-1);
-	msi_json_arrayops(*lastLogItem, *lastModifiedTimestamp, "get", 0);
-	*lastModifiedDate = uuiso8601date(*lastModifiedTimestamp);
+	iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate);	
+
 	msiGetIcatTime(*now, "unix");
 	*publicationDate = uuiso8601date(*now);
 
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
-	*combiXmlPath = "*vaultPackage/*baseName-publish[*publicationDate].*extension";
+	*combiXmlPath = "*vaultPackage/*baseName-publication[*publicationDate].*extension";
 
 	*systemMetadata =
 	   "<system>" ++
-	   "  <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
 	   "  <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
 	   "  <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
-	  "  <Publication_Date>*publicationDate</Publication_Date>\n" ++
-	  "</system>\n</metadata>";
+	   "  <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
+           "  <Publication_Date>*publicationDate</Publication_Date>\n" ++
+           "</system>\n</metadata>";
+
+	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath);
 
 	msiDataObjCopy(*metadataXmlPath, *combiXmlPath, "forceFlag=", *status);
 	msiDataObjOpen("objPath=*combiXmlPath++++openFlags=O_RDWR", *fd);
 	msiDataObjLseek(*fd, -12, "SEEK_END", *status);
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
 	msiDataObjClose(*fd, *status);
-
-	msiXsltApply(*dataciteXslPath, *combiXmlPath, *buf);
- 	msiBytesBufToStr(*buf, *dataCiteXml);
 }
+
+# \brief iiGetLastModifiedDate
+iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate) {
+	iiActionLog(*vaultPackage, *size, *actionLog);
+	*lastLogItem = "";
+	msi_json_arrayops(*actionLog, *lastLogItem, "get", *size-1);
+	*lastModifiedTimestamp = "";
+	msi_json_arrayops(*lastLogItem, *lastModifiedTimestamp, "get", 0);
+	*lastModifiedDate = uuiso8601date(*lastModifiedTimestamp);
+}
+
 
 
 # \brief iiGeneratePreliminaryDOI
@@ -66,29 +76,51 @@ iiGeneratePreliminaryDOI(*vaultPackage, *yodaDOI) {
 	*dataCitePrefix = UUDOIPREFIX;
 	*yodaPrefix = UUDOIYODAPREFIX;
 	msiGenerateRandomID(UURANDOMIDLENGTH, *randomID);
-	*yodaDoi = "*dataCitePrefix/*yodaPrefix-*randomID";
-	msiString2KeyValPair(UUORGMETADATAPREFIX++"DOI", *kvp);
+	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomID";
+	msiString2KeyValPair(UUORGMETADATAPREFIX++"DOI="++*yodaDOI, *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
 }
 
-# \brief iiPostMetadataToDataCite
-iiPostMetadataToDataCite(*dataciteXml){ 
-	*dataCiteUrl = UUDATACITESERVER ++ "/metadata";
-	iiGetDataCiteCredentials(*username, *password);
-	msiRegisterDataCiteDOI(*dataciteUrl, *username, *password, *dataciteXml, *httpCode);
+# \brief iiGetDOIFromMetadata
+iiGetDOIFromMetadata(*vaultPackage, *yodaDOI) {
+	*doiAttrName = UUORGMETADATAPREFIX ++ "DOI";
+	*yodaDOI = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE
+			WHERE META_COLL_ATTR_NAME = *doiAttrName
+			AND COLL_NAME = *vaultPackage) {	
+		*yodaDOI = *row.META_COLL_ATTR_VALUE;
+	}
 }
 
+# \brief iiPostMetadataToDataCite
+iiPostMetadataToDataCite(*dataCiteXml){ 
+	*dataCiteUrl = UUDATACITESERVER ++ "/metadata";
+	iiGetDataCiteCredentials(*username, *password);
+	msiRegisterDataCiteDOI(*dataCiteUrl, *username, *password, *dataCiteXml, *httpCode);
+}
+
+# \brief iiMintDOI
+iiMintDOI(*yodaDOI, *landingPage) {
+	*dataCiteUrl = UUDATACITESERVER ++ "/doi";
+	iiGetDataCiteCredentials(*username, *password);
+
+	*request = "doi=*yodaDOI\nurl=*landingPage\n";
+	msiRegisterDataCiteDOI(*dataCiteUrl, *username, *password, *request, *httpCode); 
+}
+
+
+# \brief iiGetDataCiteCredentials
 iiGetDataCiteCredentials(*username, *password) {
 	*username = "";
 	*password = "";
 	*sysColl = "/"++$rodsZoneClient++UUSYSTEMCOLLECTION;
 
-	*prefix = UUORGMETADATAPREFIX++"datacite";
+	*prefix = UUORGMETADATAPREFIX++"datacite_";
 	iiCollectionMetadataKvpList(*sysColl, *prefix, true, *lst);
 	foreach(*kvp in *lst) {
 		if (*kvp.attrName == "username") {
 			*username = *kvp.attrValue;
-		} else if (*kvp.attrName = "password") {
+		} else if (*kvp.attrName == "password") {
 			*password = *kvp.attrValue;
 		}
 	}
@@ -97,4 +129,41 @@ iiGetDataCiteCredentials(*username, *password) {
 		writeLine("serverLog", "iiGetDataCiteCredentials: No credentials found");
 		fail;
 	}
+}
+
+iiGenerateLandingPage(*vaultPackage, *yodaDOI, *combiXmlPath, *landingPage) {
+	# dummy routine
+	*instance = UUINSTANCENAME;
+	*yodaPrefix = UUDOIYODAPREFIX;
+	*landingPage = "https://public.yoda.uu.nl/*instance/*yodaPrefix/*yodaDOI";	
+	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page="++*landingPage, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
+}
+
+iiGetLandingPageFromMetadata(*vaultPackage, *landingPage) {
+	*landingPage = "";
+	*attrName = UUORGMETADATAPREFIX++"landing_page";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *attrName) {
+		*landingPage = *row.META_COLL_ATTR_VALUE;
+	}
+}
+
+iiProcessPublication(*vaultPackage) {
+	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
+	if (*yodaDOI == "") {
+		iiGeneratePreliminaryDOI(*vaultPackage, *yodaDOI);
+	}
+
+	iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
+
+	iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
+
+	iiPostMetadataToDataCite(*dataCiteXml);
+	
+	iiGetLandingPageFromMetadata(*vaultPackage, *landingPage);
+	if (*landingPage == "") {	
+		iiGenerateLandingPage(*vaultPackage, *yodaDOI, *combiXmlPath, *landingPage);
+	}
+	
+	iiMintDOI(*yodaDOI, *landingPage);
 }

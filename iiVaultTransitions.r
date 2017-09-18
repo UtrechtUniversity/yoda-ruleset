@@ -180,6 +180,11 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
                 succeed;
         }
 
+	# Run publish process if newFolderStatus is PUBLISHED
+	if (*newFolderStatus == PUBLISHED) {
+		iiProcessPublication(*folder);
+	}
+
 	# Set new vault status.
 	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
 	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
