@@ -106,6 +106,7 @@ iiPostMetadataToDataCite(*dataCiteXml){
 	*dataCiteUrl = UUDATACITESERVER ++ "/metadata";
 	iiGetDataCiteCredentials(*username, *password);
 	msiRegisterDataCiteDOI(*dataCiteUrl, *username, *password, *dataCiteXml, *httpCode);
+	writeLine("serverLog", "iiPostMetadataToDataCite: HTTP CODE *httpCode");
 }
 
 # \brief iiMintDOI
@@ -115,6 +116,7 @@ iiMintDOI(*yodaDOI, *landingPage) {
 
 	*request = "doi=*yodaDOI\nurl=*landingPage\n";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *username, *password, *request, *httpCode); 
+	writeLine("serverLog", "iiMintDOI: HTTP CODE *httpCode");
 }
 
 
@@ -158,23 +160,30 @@ iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPage) {
 }
 
 iiProcessPublication(*vaultPackage) {
+	writeLine("serverLog", "iiProcessPublication: processiong *vaultPackage");
 	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
+	writeLine("serverLog", "iiProcessPublication: DOI in metadata is *yodaDOI");
 	if (*yodaDOI == "") {
 		iiGeneratePreliminaryDOI(*vaultPackage, *yodaDOI);
+		writeLine("serverLog", "iiProcessPublication: Generated DOI is *yodaDOI");
 	}
 
 	iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
+	writeLine("serverLog", "iiProcessPublication: combiXmlPath is *combiXmlPath");
 
 	iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
+	writeLine("serverLog", "iiProcessPublication: dataCiteXml\n*dataCiteXml");
 	if (*dataCiteXml == "") {
 		fail;
 	}
 
 	iiPostMetadataToDataCite(*dataCiteXml);
-	
+		
 	iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPageUrl);
+	writeLine("serverLog", "iiGetLandingPageUrlFromMetadata: *landingPageUrl");
 	if (*landingPageUrl == "") {	
 		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl);
+		writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 	}
 	
 	iiMintDOI(*yodaDOI, *landingPageUrl);
