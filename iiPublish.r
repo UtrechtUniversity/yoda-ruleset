@@ -62,11 +62,14 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 
 # \brief iiGetLastModifiedDate
 iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate) {
-	iiActionLog(*vaultPackage, *size, *actionLog);
-	*lastLogItem = "";
-	msi_json_arrayops(*actionLog, *lastLogItem, "get", *size-1);
+	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
+	foreach(*row in SELECT order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *actionLog and COLL_NAME = *vaultPackage) {
+		*logRecord = *row.META_COLL_ATTR_VALUE;
+		break;
+	}
+
 	*lastModifiedTimestamp = "";
-	msi_json_arrayops(*lastLogItem, *lastModifiedTimestamp, "get", 0);
+	msi_json_arrayops(*logRecord, *lastModifiedTimestamp, "get", 0);
 	*lastModifiedDate = uuiso8601date(*lastModifiedTimestamp);
 }
 
