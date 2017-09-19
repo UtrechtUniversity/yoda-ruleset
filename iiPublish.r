@@ -25,8 +25,13 @@ iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml) {
 	if (*dataCiteXslPath == "") {
 		*dataCiteXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IIDATACITEDEFAULTNAME;
 	}
-	msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf);
- 	msiBytesBufToStr(*buf, *dataCiteXml);
+	*err = errorcode(msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf));
+	if (*err < 0) {
+		writeLine("serverLog", "iiGenerateDataCiteXml: failed to apply Xslt *dataCiteXslPath to *combiXmlPath. errorcode *err");
+		*dataCiteXml = "";
+	} else {
+ 		msiBytesBufToStr(*buf, *dataCiteXml);
+	}
 }
 
 # \brief iiGenerateCombiXml
@@ -140,13 +145,13 @@ iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) {
 	*yodaPrefix = UUDOIYODAPREFIX;
 	*randomId = triml(*yodaDOI, "-");
 	*landingPageUrl = "https://public.yoda.uu.nl/*instance/*yodaPrefix/*randomId";	
-	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page="++*landingPageUrl, *kvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page_url="++*landingPageUrl, *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
 }
 
-iiGetLandingPageFromMetadata(*vaultPackage, *landingPage) {
+iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPage) {
 	*landingPage = "";
-	*attrName = UUORGMETADATAPREFIX++"landing_page";
+	*attrName = UUORGMETADATAPREFIX++"landing_page_url";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *attrName) {
 		*landingPage = *row.META_COLL_ATTR_VALUE;
 	}
@@ -161,6 +166,9 @@ iiProcessPublication(*vaultPackage) {
 	iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
 
 	iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
+	if (*dataCiteXml == "") {
+		fail;
+	}
 
 	iiPostMetadataToDataCite(*dataCiteXml);
 	
