@@ -115,13 +115,22 @@ createXmlXsdCollections {
 		writeLine("stdout", "Created: *xsldefault");
 	}
 
-        *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEDEFAULTNAME;
+        *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
         if (uuFileExists(*xsldatacite)) {
 		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl++++forceFlag=", *status);
  		writeLine("stdout", "Force Update: *xsldatacite");
  	} else {
 		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl", *status);
 		writeLine("stdout", "Created: *xsldatacite");
+        }
+
+        *xsllandingpage = *xslcoll ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
+        if (uuFileExists(*xsllandingpage)) {
+		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl++++forceFlag=", *status);
+ 		writeLine("stdout", "Force Update: *xsllandingpage");
+ 	} else {
+		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl", *status);
+		writeLine("stdout", "Created: *xsllandingpage");
         }
 
 }

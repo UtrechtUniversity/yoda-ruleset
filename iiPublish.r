@@ -23,7 +23,7 @@ iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml) {
 	}
 
 	if (*dataCiteXslPath == "") {
-		*dataCiteXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IIDATACITEDEFAULTNAME;
+		*dataCiteXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
 	}
 	*err = errorcode(msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf));
 	if (*err < 0) {
@@ -39,8 +39,8 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 
 	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
 	
-	iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate);	
-
+	iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate);
+	*subPath = triml(*vaultPackage, "/home/");
 	msiGetIcatTime(*now, "unix");
 	*publicationDate = uuiso8601date(*now);
 
@@ -49,10 +49,11 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 
 	*systemMetadata =
 	   "  <system>\n" ++
+	   "    <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
 	   "    <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
 	   "    <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
-	   "    <Last_Modified_Date>*lastModifiedDate</Last_Modified_Date>\n" ++
            "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
+           "    <Open_Access_Link>http://public.yoda.uu.nl/*subPath</Open_Access_Link>\n" ++
            "  </system>\n" ++ 
            "</metadata>";
 
@@ -63,12 +64,16 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 	msiDataObjLseek(*fd, -12, "SEEK_END", *status);
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
 	msiDataObjClose(*fd, *status);
+
+	iiCopyACLsFromParent(*combiXmlPath);
 }
 
 # \brief iiGetLastModifiedDate
 iiGetLastModifiedDate(*vaultPackage, *lastModifiedDate) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-	foreach(*row in SELECT order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *actionLog and COLL_NAME = *vaultPackage) {
+	foreach(*row in SELECT order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE
+                                          WHERE META_COLL_ATTR_NAME = *actionLog
+                                          AND COLL_NAME = *vaultPackage) {
 		*logRecord = *row.META_COLL_ATTR_VALUE;
 		break;
 	}
@@ -159,8 +164,42 @@ iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPage) {
 	}
 }
 
+iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
+	*pathElems = split(*combiXmlPath, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*vaultGroup = elem(*pathElems, 2);
+	uuGetBaseGroup(*vaultGroup, *baseGroup);
+	uuGroupGetCategory(*baseGroup, *category, *subcategory);
+
+	*landingPageXslPath = "";
+	*xslColl = "/"++*rodsZone++IIXSLCOLLECTION;
+	*xslName = *category++"2landingpage.xml";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
+		*landingPageXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	}
+
+	if (*landingPageXslPath == "") {
+		*landingPageXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
+	}
+	*err = errorcode(msiXsltApply(*landingPageXslPath, *combiXmlPath, *buf));
+	if (*err < 0) {
+		writeLine("serverLog", "iiGenerateDataCiteXml: failed to apply Xslt *dataCiteXslPath to *combiXmlPath. errorcode *err");
+		*landingPagePath = "";
+	} else {
+		msiGetIcatTime(*now, "unix");
+		*publicationDate = uuiso8601date(*now);
+		uuChopPath(*combiXmlPath, *vaultPackage, *_);
+		*landingPagePath = "*vaultPackage/landingpage[*publicationDate].html";
+ 		msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
+		msiDataObjWrite(*fd, *buf, *len);
+		msiDataObjClose(*fd, *status);
+		
+		iiCopyACLsFromParent(*landingPagePath);
+	}
+}
+
 iiProcessPublication(*vaultPackage) {
-	writeLine("serverLog", "iiProcessPublication: processiong *vaultPackage");
+	writeLine("serverLog", "iiProcessPublication: processing *vaultPackage");
 	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
 	writeLine("serverLog", "iiProcessPublication: DOI in metadata is *yodaDOI");
 	if (*yodaDOI == "") {
@@ -168,17 +207,20 @@ iiProcessPublication(*vaultPackage) {
 		writeLine("serverLog", "iiProcessPublication: Generated DOI is *yodaDOI");
 	}
 
-	iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
-	writeLine("serverLog", "iiProcessPublication: combiXmlPath is *combiXmlPath");
+	#iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
+	#writeLine("serverLog", "iiProcessPublication: combiXmlPath is *combiXmlPath");
 
-	iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
-	writeLine("serverLog", "iiProcessPublication: dataCiteXml\n*dataCiteXml");
-	if (*dataCiteXml == "") {
-		fail;
-	}
+	#iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
+	#writeLine("serverLog", "iiProcessPublication: dataCiteXml\n*dataCiteXml");
+	#if (*dataCiteXml == "") {
+	#	fail;
+	#}
 
-	iiPostMetadataToDataCite(*dataCiteXml);
+	#iiPostMetadataToDataCite(*dataCiteXml);
 		
+	#iiGenerateLandingPage(*combiXmlPath, *landingPagePath);
+	#writeLine("serverLog", "iiProcessPublication: landingPagePath *landingPagePath");
+
 	iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPageUrl);
 	writeLine("serverLog", "iiGetLandingPageUrlFromMetadata: *landingPageUrl");
 	if (*landingPageUrl == "") {	
@@ -186,5 +228,5 @@ iiProcessPublication(*vaultPackage) {
 		writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 	}
 	
-	iiMintDOI(*yodaDOI, *landingPageUrl);
+	# iiMintDOI(*yodaDOI, *landingPageUrl);
 }
