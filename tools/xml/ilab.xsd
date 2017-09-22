@@ -101,9 +101,10 @@
 					<xs:complexType>
 					  <xs:sequence>
 						<xs:element name="Last_Modified_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
-						<xs:element name="Project_ID_Pure" type="xs:string" minOccurs="0" maxOccurs="1"/>
-						<xs:element name="Persistent_Identifier_Datapackage" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="Persistent_Identifier_Datapackage" type="xs:string" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="Persistent_Identifier_Datapackage_Type" type="optionsDatasetPersistentIdentifierType" minOccurs="0" maxOccurs="1"/>
 						<xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+						<xs:element name="Open_Access_Link" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
 					   </xs:sequence>
 					</xs:complexType>
 				</xs:element>
