@@ -159,7 +159,7 @@ iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) {
 iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPage) {
 	*landingPage = "";
 	*attrName = UUORGMETADATAPREFIX++"landing_page_url";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *attrName) {
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *attrName) {
 		*landingPage = *row.META_COLL_ATTR_VALUE;
 	}
 }
