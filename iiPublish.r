@@ -53,7 +53,7 @@ iiGenerateCombiXml(*vaultPackage, *combiXmlPath){
 	   "    <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
 	   "    <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
            "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
-           "    <Open_Access_Link>http://public.yoda.uu.nl/*subPath</Open_Access_Link>\n" ++
+           "    <Open_Access_Link><![CDATA[http://public.yoda.uu.nl/*subPath]]></Open_Access_Link>\n" ++
            "  </system>\n" ++ 
            "</metadata>";
 
@@ -198,7 +198,9 @@ iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
 	}
 }
 
-iiProcessPublication(*vaultPackage) {
+iiProcessPublication(*vaultPackage, *status) {
+	*status = "FAILED";
+
 	writeLine("serverLog", "iiProcessPublication: processing *vaultPackage");
 	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
 	writeLine("serverLog", "iiProcessPublication: DOI in metadata is *yodaDOI");
@@ -207,26 +209,28 @@ iiProcessPublication(*vaultPackage) {
 		writeLine("serverLog", "iiProcessPublication: Generated DOI is *yodaDOI");
 	}
 
-	#iiGenerateCombiXml(*vaultPackage, *combiXmlPath);
-	#writeLine("serverLog", "iiProcessPublication: combiXmlPath is *combiXmlPath");
+	iiGenerateCombiXml(*vaultPackage, *combiXmlPath) ::: succeed;
+	writeLine("serverLog", "iiProcessPublication: combiXmlPath is *combiXmlPath");
 
-	#iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml);
-	#writeLine("serverLog", "iiProcessPublication: dataCiteXml\n*dataCiteXml");
-	#if (*dataCiteXml == "") {
-	#	fail;
-	#}
+	iiGenerateDataCiteXml(*combiXmlPath, *dataCiteXml) ::: succeed;
+	writeLine("serverLog", "iiProcessPublication: dataCiteXml\n*dataCiteXml");
+	if (*dataCiteXml == "") {
+		fail;
+	}
 
-	#iiPostMetadataToDataCite(*dataCiteXml);
+	iiPostMetadataToDataCite(*dataCiteXml) ::: succeed;
 		
-	#iiGenerateLandingPage(*combiXmlPath, *landingPagePath);
-	#writeLine("serverLog", "iiProcessPublication: landingPagePath *landingPagePath");
-
-	iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPageUrl);
+	iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPageUrl) ::: succeed;
 	writeLine("serverLog", "iiGetLandingPageUrlFromMetadata: *landingPageUrl");
 	if (*landingPageUrl == "") {	
-		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl);
+		iiGenerateLandingPage(*combiXmlPath, *landingPagePath) ::: succeed;
+		writeLine("serverLog", "iiProcessPublication: landingPagePath *landingPagePath");
+
+		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) ::: succeed;
 		writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 	}
 	
-	# iiMintDOI(*yodaDOI, *landingPageUrl);
+	iiMintDOI(*yodaDOI, *landingPageUrl) ::: succeed;
+	*status = "OK";
+
 }

@@ -87,7 +87,7 @@ processVaultActions {
 	# Scan for vault packages approved for publication .
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
-	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQ2Inp);
+	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ2Inp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_status", *GenQ2Inp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", APPROVED_FOR_PUBLICATION, *GenQ2Inp);
 
@@ -98,9 +98,20 @@ processVaultActions {
 		foreach(*row in *GenQ2Out) {
 			*collName = *row.COLL_NAME;
 
-			# Check if this is a vault package
+			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				iiProcessPublication(*collName);
+				*err = errorcode(iiProcessPublication(*collName, *status));
+				if (*err == 0) {
+					if (*status == "OK") {
+						msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
+					} else {
+						msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ SUBMITTED_FOR_PUBLICATION, *vaultStatusKvp);
+					}
+				} else {
+					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ SUBMITTED_FOR_PUBLICATION, *vaultStatusKvp);
+				}
+				msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");  
+	
                     	}
 		}
 
