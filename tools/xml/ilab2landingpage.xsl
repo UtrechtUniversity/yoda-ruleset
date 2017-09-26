@@ -21,8 +21,16 @@
 			
 		<title>Data Publication platform of Utrecht University</title>
 
-		<link href="css/bootstrap.min.css" rel="stylesheet"/>
-		<link href="css/custom.css" rel="stylesheet"/>
+		<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
+		<style>
+		.dl-horizontal dt {
+		    white-space: normal;
+		}
+
+		.subproperties {
+			padding-left: 50px;
+		}
+		</style>
 	</head>
 	<body>
 		<div class="container">
@@ -35,7 +43,9 @@
 					</dl>
   					<h2>Descriptive</h2>
   					<dl class="dl-horizontal">
-						<xsl:apply-templates select="Title | Description | Discipline | Research_Type | Version | Related_Datapackage | Language | Tag"/>
+						<xsl:apply-templates select="Title | Description | Discipline | Research_Type | Version | Related_Datapackage | Language | Funder"/>
+					<dt>Tag(s)</dt>
+					<dd><xsl:apply-templates select="Tag" /></dd>
 					</dl>
 					<h2>Rights</h2>
 					<dl class="dl-horizontal">
@@ -49,9 +59,13 @@
 </html>	
 </xsl:template>
 
+<xsl:template match="Tag">
+	<u><xsl:value-of select="."/></u><xsl:text> </xsl:text>
+</xsl:template>
+
 <xsl:template match="system">
 	<dt>Persistent Identifier</dt>
-	<dd><xsl:value-of select="./Persistent_Identifier_Datapackage_Type"/> <xsl:value-of select="./Persistent_Identifier_Datapackage"/></dd>
+	<dd><xsl:value-of select="./Persistent_Identifier_Datapackage_Type"/>:&#160;<xsl:value-of select="./Persistent_Identifier_Datapackage"/></dd>
 	<dt>Last Modification</dt>
 	<dd><xsl:value-of select="./Last_Modified_Date"/></dd>
 	<dt>Publication Date</dt>
@@ -68,7 +82,7 @@
 	<dd><xsl:value-of select="."/></dd>
 </xsl:template>
 
-<xsl:template match="Discipline | Version | Language | Tag | Owner">
+<xsl:template match="Discipline | Version | Language | Owner">
 	<dt><xsl:value-of select="local-name()"/></dt>
 	<dd><xsl:value-of select="."/></dd>
 </xsl:template>
@@ -83,14 +97,21 @@
 	<dt>Related Datapackage</dt>
 	<dd><xsl:value-of select="./Title"/></dd>
 	<dt>Persistent Identifier</dt>
-	<dd><xsl:value-of select="./Properties/Persistent_Identifier_Type"/>:<xsl:value-of select="./Properties/Persistent_Identifier"/></dd>
+	<xsl:apply-templates select="./Properties/Persistent_Identifier"/>
 </xsl:template>
 
 <xsl:template match="Creator | Contributor">
 	<dt><xsl:value-of select="local-name()"/></dt>
 	<dd><xsl:value-of select="./Name"/></dd>
 	<dt>Persistent Identifier</dt>
-	<dd><xsl:value-of select="./Properties/Persistent_identifier_Type"/>:<xsl:value-of select="./Properties/Persistent_Identifier"/></dd>
+	<xsl:apply-templates select="./Properties/Persistent_Identifier"/>
+</xsl:template>
+
+<xsl:template match="Funder">
+	<dt>Funder</dt>
+	<dd><xsl:value-of select="./Name"/></dd>
+	<dt>Grant Number</dt>
+	<dd><xsl:value-of select="./Properties/Grant_Number"/></dd>
 </xsl:template>
 
 <xsl:template match="License">
@@ -102,19 +123,28 @@
 	</a></dd>
 </xsl:template>
 
-<xsl:template match="Access_Restriction[.=Open]">
+<xsl:template match="Access_Restriction[.='Open']">
 	<h2>Data Access</h2>
 	<p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/system/Open_Access_Link"/></xsl:attribute>link</a> to browse through this data with webDAV.</p> 	
 </xsl:template>
 
-<xsl:template match="Access_Restriction[starts-with(.,Restricted)]">
+<xsl:template match="Access_Restriction[starts-with(.,'Restricted')]">
 	<h2>Data Access</h2>
 	<p>The data is restricted. Contact datamanager</p>
 </xsl:template>
 
-<xsl:template match="Access_Restriction[.=Closed]">
+<xsl:template match="Access_Restriction[.='Closed']">
 	<h2>Data Access</h2>
 	<p>The data is closed for access</p>
+</xsl:template>
+
+<xsl:template match="Properties/Persistent_Identifier">
+	<dd>
+	<xsl:if test="../Persistent_Identifier_Type">
+		<xsl:value-of select="../Persistent_Identifier_Type"/>:&#160;
+	</xsl:if>
+	<xsl:value-of select="."/>
+	</dd>
 </xsl:template>
 
 </xsl:stylesheet>
