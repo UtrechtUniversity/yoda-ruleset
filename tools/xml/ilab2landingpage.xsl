@@ -79,7 +79,7 @@
 
 <xsl:template match="Description">
 	<dt>Datapackage Description</dt>
-	<dd><xsl:value-of select="."/></dd>
+	<dd style="whitespace: pre-wrap;"><xsl:value-of select="."/></dd>
 </xsl:template>
 
 <xsl:template match="Discipline | Version | Language | Owner">
@@ -105,6 +105,7 @@
 	<dd><xsl:value-of select="./Name"/></dd>
 	<dt>Persistent Identifier</dt>
 	<xsl:apply-templates select="./Properties/Persistent_Identifier"/>
+	<xsl:apply-templates select="./Properties/Affiliation"/>
 </xsl:template>
 
 <xsl:template match="Funder">
@@ -145,6 +146,11 @@
 	</xsl:if>
 	<xsl:value-of select="."/>
 	</dd>
+</xsl:template>
+
+<xsl:template match="Properties/Affiliation">
+	<dt>Affiliation</dt>
+	<dd><xsl:value-of select="."/></dd>
 </xsl:template>
 
 </xsl:stylesheet>

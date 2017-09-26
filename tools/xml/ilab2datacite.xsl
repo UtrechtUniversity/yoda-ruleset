@@ -72,6 +72,12 @@
             <xsl:apply-templates select="metadata/Location_Covered" />
           </geoLocations>
         </xsl:if>
+
+	<xsl:if test="metadata/Funder">
+	  <fundingReferences>
+	    <xsl:apply-templates select="metadata/Funder"/>
+	  </fundingReferences>
+	</xsl:if>
       </resource>
   </xsl:template>
 
@@ -149,6 +155,15 @@
   <geoLocation>
     <geoLocationPlace><xsl:value-of select="." /></geoLocationPlace>
   </geoLocation>
+</xsl:template>
+
+<xsl:template match="metadata/Funder">
+   <funderReference>
+     <funderName><xsl:value-of select="./Name"/></funderName>
+     <xsl:if test="./Grant_Number">
+       <awardNumber><xsl:value-of select="./Grant_Number"/></awardNumber>
+     </xsl:if>
+   </funderReference>
 </xsl:template>
 
 </xsl:stylesheet>
