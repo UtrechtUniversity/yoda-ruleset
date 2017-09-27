@@ -160,8 +160,8 @@
 <xsl:template match="metadata/Funder">
    <fundingReference>
      <funderName><xsl:value-of select="./Name"/></funderName>
-     <xsl:if test="./Grant_Number">
-       <awardNumber><xsl:value-of select="./Grant_Number"/></awardNumber>
+     <xsl:if test="./Properties/Grant_Number">
+       <awardNumber><xsl:value-of select="./Properties/Grant_Number"/></awardNumber>
      </xsl:if>
    </fundingReference>
 </xsl:template>
