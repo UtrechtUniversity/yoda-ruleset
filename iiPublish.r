@@ -205,14 +205,29 @@ iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
 # \brief iiCopyLandingPage2PublicHost
 iiCopyLandingPage2PublicHost(*landingPagePath, *publicPath) {
 	*publicHost = UUPUBLICHOST;
-	*deployUser = UUDEPLOYUSER;
-	*argv = "*publicHost *deployUser landing_page_key /var/www/yoda/landingpages/*publicPath";
+	*argv = "*publicHost inbox landing_page_key /var/www/yoda/landingpages/*publicPath";
 	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
 	msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
 	msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
 	writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
 	writeLine("serverLog", *stderr);
 	writeLine("serverLog", *stdout);
+}
+
+
+# \brief iiCopyYodaMetataToMOAI
+iiCopyMetadataToMOAI(*combiXmlPath, *randomId) {
+	*publicHost = UUPUBLICHOST
+	*instance = UUINSTANCENAME;
+	*yodaPrefix = UUDOIYODAPREFIX;
+	*argv = "*publicHost inbox /var/www/moai/metadata/*instance/*yodaPrefix/*randomId.xml"
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiXmlPath, 1, *cmdExecOut));
+	msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+	msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+	writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+	writeLine("serverLog", *stderr);
+	writeLine("serverLog", *stdout);
+
 }
 
 # \brief iiProcessPublication
