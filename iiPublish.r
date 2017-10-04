@@ -147,11 +147,14 @@ iiGetDataCiteCredentials(*username, *password) {
 	}
 }
 
-iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) {
+# iiGenerateLandingPageUrl
+iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl, *publicPath) {
+	*publicHost = "localhost";
 	*instance = UUINSTANCENAME;
 	*yodaPrefix = UUDOIYODAPREFIX;
 	*randomId = triml(*yodaDOI, "-");
-	*landingPageUrl = "https://public.yoda.uu.nl/*instance/*yodaPrefix/*randomId";	
+	*publicPath = "*instance/*yodaPrefix/*randomId.html";
+	*landingPageUrl = "http://*publicHost/*publicPath";	
 	msiString2KeyValPair(UUORGMETADATAPREFIX++"landing_page_url="++*landingPageUrl, *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
 }
@@ -164,6 +167,7 @@ iiGetLandingPageUrlFromMetadata(*vaultPackage, *landingPage) {
 	}
 }
 
+# iiGenerateLandingPage
 iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
 	*pathElems = split(*combiXmlPath, "/");
 	*rodsZone = elem(*pathElems, 0);
@@ -198,6 +202,35 @@ iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
 	}
 }
 
+# \brief iiCopyLandingPage2PublicHost
+iiCopyLandingPage2PublicHost(*landingPagePath, *publicPath) {
+	*publicHost = "localhost";
+	*argv = "*publicHost inbox landing_page_key /var/www/yoda/landingpages/*publicPath";
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
+	msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+	msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+	writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
+	writeLine("serverLog", *stderr);
+	writeLine("serverLog", *stdout);
+}
+
+
+# \brief iiCopyYodaMetataToMOAI
+iiCopyMetadataToMOAI(*combiXmlPath, *randomId) {
+	*publicHost = "localhost";
+	*instance = UUINSTANCENAME;
+	*yodaPrefix = UUDOIYODAPREFIX;
+	*argv = "*publicHost inbox /var/www/moai/metadata/*instance/*yodaPrefix/*randomId.xml"
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiXmlPath, 1, *cmdExecOut));
+	msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+	msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+	writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+	writeLine("serverLog", *stderr);
+	writeLine("serverLog", *stdout);
+
+}
+
+# \brief iiProcessPublication
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "FAILED";
 
@@ -224,13 +257,16 @@ iiProcessPublication(*vaultPackage, *status) {
 	writeLine("serverLog", "iiGetLandingPageUrlFromMetadata: *landingPageUrl");
 	if (*landingPageUrl == "") {	
 		iiGenerateLandingPage(*combiXmlPath, *landingPagePath) ::: succeed;
-		writeLine("serverLog", "iiProcessPublication: landingPagePath *landingPagePath");
+		writeLine("serverLog", "iiProcessPublication: landingPagePath *landingPagePath");		
 
-		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl) ::: succeed;
+		iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl, *publicPath) ::: succeed;
 		writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
+		iiCopyLandingPage2PublicHost(*landingPagePath, *publicPath);
 	}
 	
 	iiMintDOI(*yodaDOI, *landingPageUrl) ::: succeed;
+	*randomId = triml(*yodaDOI, "-");
+	iiCopyMetadataToMOAI(*combiXmlPath, *randomId);
 	*status = "OK";
 
 }
