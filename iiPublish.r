@@ -147,22 +147,6 @@ iiGetDataCiteCredentials(*username, *password) {
 	}
 }
 
-iiGetSystemConfig(*config) {
-	*sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
-	*collId = "";
-	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *sysColl) {
-		*collId = *row.CollId;
-	}
-
-	if (*collId == "") {
-		failmsg(-1, "Failed to find System collection");
-	} else {
-		msiString2KeyValuePair("", *config);
-		msiCollectionMetadataKvp(*collId, UUORGMETADATAPREFIX, *config);
-	}
-}
-
-
 # iiGenerateLandingPageUrl
 iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl, *publicPath) {
 	*publicHost = UUPUBLICHOST;
@@ -246,18 +230,12 @@ iiCopyMetadataToMOAI(*combiXmlPath, *randomId) {
 
 }
 
-ii
-
 # \brief iiProcessPublication
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "FAILED";
 
-	msiString2KeyValuePair("", *state);
-
-	iiGetSystemConfig(*config);
-
 	writeLine("serverLog", "iiProcessPublication: processing *vaultPackage");
-	iiGetDOIFromMetadata(*vaultPackage, *config, *state);
+	iiGetDOIFromMetadata(*vaultPackage, *yodaDOI);
 	writeLine("serverLog", "iiProcessPublication: DOI in metadata is *yodaDOI");
 	if (*yodaDOI == "") {
 		iiGeneratePreliminaryDOI(*vaultPackage, *yodaDOI);
