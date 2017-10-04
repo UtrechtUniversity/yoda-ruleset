@@ -149,7 +149,7 @@ iiGetDataCiteCredentials(*username, *password) {
 
 # iiGenerateLandingPageUrl
 iiGenerateLandingPageUrl(*vaultPackage, *yodaDOI, *landingPageUrl, *publicPath) {
-	*publicHost = UUPUBLICHOST;
+	*publicHost = "localhost";
 	*instance = UUINSTANCENAME;
 	*yodaPrefix = UUDOIYODAPREFIX;
 	*randomId = triml(*yodaDOI, "-");
@@ -204,7 +204,7 @@ iiGenerateLandingPage(*combiXmlPath, *landingPagePath) {
 
 # \brief iiCopyLandingPage2PublicHost
 iiCopyLandingPage2PublicHost(*landingPagePath, *publicPath) {
-	*publicHost = UUPUBLICHOST;
+	*publicHost = "localhost";
 	*argv = "*publicHost inbox landing_page_key /var/www/yoda/landingpages/*publicPath";
 	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
 	msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
@@ -217,7 +217,7 @@ iiCopyLandingPage2PublicHost(*landingPagePath, *publicPath) {
 
 # \brief iiCopyYodaMetataToMOAI
 iiCopyMetadataToMOAI(*combiXmlPath, *randomId) {
-	*publicHost = UUPUBLICHOST
+	*publicHost = "localhost";
 	*instance = UUINSTANCENAME;
 	*yodaPrefix = UUDOIYODAPREFIX;
 	*argv = "*publicHost inbox /var/www/moai/metadata/*instance/*yodaPrefix/*randomId.xml"
@@ -265,6 +265,8 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 	
 	iiMintDOI(*yodaDOI, *landingPageUrl) ::: succeed;
+	*randomId = triml(*yodaDOI, "-");
+	iiCopyMetadataToMOAI(*combiXmlPath, *randomId);
 	*status = "OK";
 
 }
