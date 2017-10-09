@@ -30,14 +30,16 @@
 				<help>Title of the previous version of this data package</help>
 			</Title>
 			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier of the previous version of this data package</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>Type of Persistent identifier of the previous version of this data package</help>
-				</Persistent_Identifier_Type>
+				<Combination class="compound">
+					<Persistent_Identifier>
+						<label>Persistent Identifier</label>
+						<help>Persistent identifier of the previous version of this data package</help>
+					</Persistent_Identifier>
+					<Persistent_Identifier_Type>
+						<label>Type of Persistent Identifier</label>
+						<help>Type of Persistent identifier of the previous version of this data package</help>
+					</Persistent_Identifier_Type>
+				</Combination>
 			</Properties>
 		</Related_Datapackage>
 		<Language>
@@ -123,19 +125,22 @@
 				<mandatory>true</mandatory>
 			</Name>
 			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier PI (e.g. an ORCID, DAI, or ScopusID)</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>What type of persistent person identifier</help>
-				</Persistent_Identifier_Type>
-				<Affiliation>
-					<label>Affiliation</label>
-					<help>The organizational or institutional affiliation of the creator</help>
-					<default>Utrecht University</default>
-				</Affiliation>
+                                <Affiliation>
+                                        <label>Affiliation</label>
+                                        <help>The organizational or institutional affiliation of the creator</help>
+                                        <default>Utrecht University</default>
+                                </Affiliation>
+
+				<Combination class="compound">
+					<Persistent_Identifier>
+						<label>Persistent Identifier</label>
+						<help>Persistent identifier PI (e.g. an ORCID, DAI, or ScopusID)</help>
+					</Persistent_Identifier>
+					<Persistent_Identifier_Type>
+						<label>Type of Persistent Identifier</label>
+						<help>What type of persistent person identifier</help>
+					</Persistent_Identifier_Type>
+				</Combination>
 			</Properties>
 		</Creator>
 		<Contributor>
@@ -144,29 +149,32 @@
 				<help>The name(s) of the persons who have contributed to this data package</help>
 			</Name>
 			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>What type of persistent person identifier</help>
-				</Persistent_Identifier_Type>
+				<Combination class="compound">
+					<Persistent_Identifier>
+						<label>Persistent Identifier</label>
+						<help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
+					</Persistent_Identifier>
+					<Persistent_Identifier_Type>
+						<label>Type of Persistent Identifier</label>
+						<help>What type of persistent person identifier</help>
+					</Persistent_Identifier_Type>
+				</Combination>	
 			</Properties>
 		</Contributor>
-		<License>
+
+		<License class="compound">
                         <Name>
 			  <label>License</label>
 			  <help> The license under which you offer the data package for use by third parties. Preferred value is "CC By 3.0"</help>
-			  <default>To be defined</default>
                         </Name>
-                        <Properties>
+                        
                            <URL>
                              <label>Link Webpage</label>
 			     <help> A link to a webpage describing the license and its conditions. In case of CC By 3.0 'https://creativecommons.org/licenses/by/3.0/'</help>
                            </URL>
-                        </Properties>
+
 		</License>
+
 		<Access_Restriction>
 			<label>Data Package Access</label>
 			<help>Once archived, how is your data package accessible to third parties?</help>
