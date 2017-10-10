@@ -419,4 +419,5 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	# Save state to metadata of vault package
 	iiSavePublicationState(*vaultPackage, *publicationState);
+	*status = "OK";
 }
