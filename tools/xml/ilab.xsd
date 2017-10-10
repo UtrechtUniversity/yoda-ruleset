@@ -8,31 +8,21 @@
 				<xs:element name="Discipline" type="optionsDiscipline" minOccurs="0" maxOccurs="unbounded"/>
 				<xs:element name="Research_Type" type="optionsResearchType" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="Version" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-
-                                <xs:element name="Related_Datapackage" minOccurs="0" maxOccurs="unbounded">
-                                        <xs:complexType>
-                                                <xs:sequence>
-                                                        <xs:element name="Title" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                                        <xs:element name="Properties">
-                                                                <xs:complexType>
-                                                                        <xs:sequence>
-                                                                                <xs:element name="Combination" minOccurs="0" maxOccurs="unbounded">
-                                                                                        <xs:complexType>
-                                                                                                <xs:sequence>
-
-                                                                                                        <xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                                                                                        <xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="1"/>
-                                                                                                </xs:sequence>
-                                                                                        </xs:complexType>
-                                                                                </xs:element>
-
-                                                                        </xs:sequence>
-                                                                </xs:complexType>
-                                                        </xs:element>
-                                                </xs:sequence>
-                                        </xs:complexType>
-                                </xs:element>
-
+				<xs:element name="Related_Datapackage" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Title" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="Properties">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsDatasetPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
 				<xs:element name="Language" type="stringNormal" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="Start_Collection_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="End_Collection_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
@@ -63,62 +53,49 @@
 				<xs:element name="Creator" minOccurs="0" maxOccurs="unbounded">
 					<xs:complexType>
 						<xs:sequence>	
-							<xs:element name="Name"	type="stringNormal" minOccurs="0" maxOccurs="1"/>
+							<xs:element name="Name"	type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
 							<xs:element name="Properties">
 								<xs:complexType>
 									<xs:sequence>
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
 										<xs:element name="Affiliation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
-	
-										<xs:element name="Combination" minOccurs="0" maxOccurs="unbounded">
-                                                                			<xs:complexType>
-                                                                        			<xs:sequence>
-
-													<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-													<xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="1"/>
-                                                                        			</xs:sequence>
-                                                                			</xs:complexType>
-                                                        			</xs:element>
-
 									</xs:sequence>
 								</xs:complexType>
 							</xs:element>
 						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
-                                <xs:element name="Contributor" minOccurs="0" maxOccurs="unbounded">
+				<xs:element name="Contributor" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+							<xs:element name="Properties">
+								<xs:complexType>
+									<xs:sequence>
+
+										<xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="unbounded"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="License" minOccurs="0" maxOccurs="1">
+                                  <xs:complexType>
+                                     <xs:sequence>
+                                     <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1" />
+                                     <xs:element name="Properties">
                                         <xs:complexType>
-                                                <xs:sequence>
-                                                        <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                                        <xs:element name="Properties">
-                                                                <xs:complexType>
-                                                                        <xs:sequence>
-                                                                                <xs:element name="Combination" minOccurs="0" maxOccurs="unbounded">
-                                                                                        <xs:complexType>
-                                                                                                <xs:sequence>
-
-                                                                                                        <xs:element name="Persistent_Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                                                                                        <xs:element name="Persistent_Identifier_Type" type="optionsPersonalPersistentIdentifierType" minOccurs="0" maxOccurs="1"/>
-                                                                                                </xs:sequence>
-                                                                                        </xs:complexType>
-                                                                                </xs:element>
-
-                                                                        </xs:sequence>
-                                                                </xs:complexType>
-                                                        </xs:element>
-                                                </xs:sequence>
+					  <xs:sequence>
+					    <xs:element name="URL" type="stringURI" minOccurs="0" maxOccurs="1"/>
+					  </xs:sequence>
                                         </xs:complexType>
+                                     </xs:element>
+                                     </xs:sequence>
+                                 </xs:complexType>
                                 </xs:element>
-
-
-                                <xs:element name="License" minOccurs="0" maxOccurs="unbounded">
-                                        <xs:complexType>
-                                                <xs:sequence>
-                                                        <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-                                                        <xs:element name="URL" type="stringURI" minOccurs="0" maxOccurs="1"/>
-                                                </xs:sequence>
-                                        </xs:complexType>
-                                </xs:element>
-
 				<xs:element name="Access_Restriction" type="optionsDatasetAccess" minOccurs="0" maxOccurs="1"/>
 				<xs:element name="system" minOccurs="0" maxOccurs="1">
 					<xs:complexType>
