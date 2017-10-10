@@ -35,7 +35,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	*err = errorcode(msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf));
 	if (*err < 0) {
 		writeLine("serverLog", "iiGenerateDataCiteXml: failed to apply Xslt *dataCiteXslPath to *combiXmlPath. errorcode *err");
-		*publicationState.status = "UNRECOVERABLE";
+		*publicationState.status = "Unrecoverable";
 	} else {
  		msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
 		msiDataObjWrite(*fd, *buf, *len);
@@ -100,7 +100,7 @@ iiGetLastModifiedDateTime(*publicationState) {
 
 	*lastModifiedTimestamp = "";
 	msi_json_arrayops(*logRecord, *lastModifiedTimestamp, "get", 0);
-	*lastModifiedDateTime = uuiso8601date(*lastModifiedTimestamp);
+	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
 	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
 	writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
 }
@@ -353,6 +353,16 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	}
 }
 
+iiHasKey(*kvp, *key) {
+	*err = errorcode(*kvp."*key");
+	if (*err == 0) {
+		*result = true;
+	} else {
+		*result = false;
+	}
+	*result;
+}
+
 # \brief iiProcessPublication
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "Unknown";
@@ -378,23 +388,40 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Load state 
 	iiGetPublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status == "Unrecoverable") {
-		*status =  "Unrecoverable";
+	*status = *publicationState.status;
+	if (*status == "Unrecoverable") {
 		succeed;
 	}
-		
-	
-	# Generate Yoda DOI
-	iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
 
-	# Determine last modification time
-	iiGetLastModifiedDateTime(*publicationState);	
-	
-	# Generate Combi XML consisting of user and system metadata
-	iiGenerateCombiXml(*publicationConfig, *publicationState);
+	if (!iiHasKey(*publicationState, "yodaDOI")) {
+		# Generate Yoda DOI
+		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
+		iiSavePublicationState(*vaultPackage, *publicationState);
+	}
 
-	# Generate DataCite XML
-	iiGenerateDataCiteXml(*publicationConfig, *publicationState);
+	# Determine last modification time. Always run, no matter if retry.
+	iiGetLastModifiedDateTime(*publicationState);
+	
+	
+	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+		# Generate Combi XML consisting of user and system metadata
+		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+			iiSavePublicationState(*vaultPackage, *publicationState);
+			*status = "Retry";
+			succeed;
+		} else {
+			iiSavePublicationState(*vaultPackage, *publicationState);
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "dataCiteXmlPath")) {
+		# Generate DataCite XML
+		*err = errorcode(iiGenerateDataCiteXml(*publicationConfig, *publicationState));
+		if (*err < 0) {
+		}	
+	}
 
 	# Check if DOI is in use
 	iiCheckDOIAvailability(*publicationConfig, *publicationState);
@@ -416,8 +443,9 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Mint DOI with landing page URL.
 	iiMintDOI(*publicationConfig, *publicationState);
-	
+
+	*status = "OK";
+	*publicationStatus = *status;	
 	# Save state to metadata of vault package
 	iiSavePublicationState(*vaultPackage, *publicationState);
-	*status = "OK";
 }
