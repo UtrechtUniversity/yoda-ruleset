@@ -72,8 +72,6 @@ iiSetVaultPermissions(*folder, *target) {
 
 	uuChop(*groupName, *_, *baseName, "-", true);
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
-
-
 	
 	# Setting main collection of vault group to noinherit for finegrained access control
 	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
@@ -98,6 +96,7 @@ iiSetVaultPermissions(*folder, *target) {
 		writeLine("stdout", "iiSetVaultPermissions: Failed to set own on *target");
 	}
 
+	# Grant datamanager group read access to vault package.
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*datamanagerGroupName = "datamanager-" ++ *category;
 	uuGroupExists(*datamanagerGroupName, *datamanagerExists);
@@ -110,14 +109,15 @@ iiSetVaultPermissions(*folder, *target) {
 			writeLine("stdout", "iiSetVaultPermissions: Granted *datamanagerGroupName read access to *target");
 		}
 	
+	}
+
+	# Grant research group read access to vault package.
+	*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
+	if (*err < 0) {
+		writeLine("stdout", "iiSetVaultPermissions: Failed to give *groupName read access. errorcode: *err");
+		fail;
 	} else {
-		*err = errorcode(msiSetACL("recursive", "admin:read", *groupName, *target));
-		if (*err < 0) {
-			writeLine("stdout", "iiSetVaultPermissions: Failed to give *groupName read access. errorcode: *err");
-			fail;
-		} else {
-			writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to *target");
-		}
+		writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to *target");
 	}
 }
 
