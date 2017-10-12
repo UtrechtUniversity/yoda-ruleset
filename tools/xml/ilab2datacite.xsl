@@ -11,50 +11,50 @@
        xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"
        >
        <identifier identifierType="DOI">
-          <xsl:value-of select="metadata/system/Persistent_Identifier_Datapackage" />
+          <xsl:value-of select="metadata/system/Persistent_Identifier_Datapackage[Identifier_Scheme='DOI']/Identifier"/>
        </identifier>
 
         <titles>
-          <xsl:apply-templates select="metadata/Title" />
+          <xsl:apply-templates select="metadata/Title"/>
         </titles>
         <descriptions>
           <description descriptionType="Abstract">
-          <xsl:value-of select="metadata/Description" />
+          <xsl:value-of select="metadata/Description"/>
           </description>
         </descriptions>
         <publisher>Utrecht University</publisher>
         <publicationYear>
-	   <xsl:apply-templates select="metadata/system/Publication_Date" />
+	   <xsl:apply-templates select="metadata/system/Publication_Date"/>
 	</publicationYear>
 
         <subjects>
-          <xsl:apply-templates select="metadata/Discipline" />
-	  <xsl:apply-templates select="metadata/Tag" />
+          <xsl:apply-templates select="metadata/Discipline"/>
+	  <xsl:apply-templates select="metadata/Tag"/>
         </subjects>
 
         <creators>
-          <xsl:apply-templates select="metadata/Creator" />
+          <xsl:apply-templates select="metadata/Creator"/>
         </creators>
 
         <contributors>
-          <xsl:apply-templates select="metadata/Contributor" />
+          <xsl:apply-templates select="metadata/Contributor"/>
         </contributors>
 
 
         <dates>
           <xsl:if test="metadata/system/Last_Modified_Date">
-            <date dateType="Updated"><xsl:value-of select="metadata/system/Last_Modified_Date" /></date>
+            <date dateType="Updated"><xsl:value-of select="metadata/system/Last_Modified_Date"/></date>
           </xsl:if>
           <xsl:if test="metadata/Embargo_End_Date">
-            <date dateType="Available"><xsl:value-of select="metadata/Embargo_End_Date" /></date>
+            <date dateType="Available"><xsl:value-of select="metadata/Embargo_End_Date"/></date>
           </xsl:if>
-          <xsl:if test="metadata/Start_Collection_Date">
-            <date dateType="Collected"><xsl:value-of select="metadata/Start_Collection_Date" />/<xsl:value-of select="metadata/End_Collection_Date" /></date>
+          <xsl:if test="metadata/Collected">
+            <date dateType="Collected"><xsl:value-of select="metadata/Collected/Start_Date" />/<xsl:value-of select="metadata/Collected/End_Date"/></date>
           </xsl:if>
         </dates>
-        <xsl:apply-templates select="metadata/Version" />
+        <xsl:apply-templates select="metadata/Version"/>
  	<rightsList>
-          <xsl:apply-templates select="metadata/License" />
+          <xsl:apply-templates select="metadata/License"/>
         </rightsList>
 	
         <resourceType resourceTypeGeneral="Dataset">
@@ -63,33 +63,33 @@
 
         <xsl:if test="metadata/Related_Datapackage">
           <relatedIdentifiers>
-            <xsl:apply-templates select="metadata/Related_Datapackage" />
+            <xsl:apply-templates select="metadata/Related_Datapackage"/>
           </relatedIdentifiers>
         </xsl:if>
 	
-	<xsl:if test="metadata/Location_Covered">
+	<xsl:if test="metadata/Covered_Geolocation_Place">
           <geoLocations>
-            <xsl:apply-templates select="metadata/Location_Covered" />
+            <xsl:apply-templates select="metadata/Covered_Geolocation_Place"/>
           </geoLocations>
         </xsl:if>
 
-	<xsl:if test="metadata/Funder">
+	<xsl:if test="metadata/Funding_Reference">
 	  <fundingReferences>
-	    <xsl:apply-templates select="metadata/Funder"/>
+	    <xsl:apply-templates select="metadata/Funding_Reference"/>
 	  </fundingReferences>
 	</xsl:if>
       </resource>
   </xsl:template>
 
   <xsl:template match="metadata/Version">
-    <version><xsl:value-of select="." /></version>
+    <version><xsl:value-of select="."/></version>
   </xsl:template>
 
   <xsl:template match="metadata/Creator">
       <creator>
-         <creatorName><xsl:value-of select="Name" /></creatorName>
-         <xsl:apply-templates select="Properties/Persistent_Identifier" />
-         <xsl:apply-templates select="Properties/Affiliation" />
+         <creatorName><xsl:value-of select="Name"/></creatorName>
+         <xsl:apply-templates select="Properties/Persistent_Identifier"/>
+         <xsl:apply-templates select="Properties/Affiliation"/>
       </creator>
   </xsl:template>
 
@@ -113,7 +113,10 @@
   </xsl:template>
 
   <xsl:template match="metadata/Contributor">
-    <contributor contributorType="Researcher">
+    <contributor>
+      <xsl:attribute name="contributorType">
+	<xsl:value-of select="./Properties/Contributor_Type"/>
+      </xsl:attribute>
       <contributorName><xsl:value-of select="Name" /></contributorName>
       <xsl:apply-templates select="Properties/Persistent_Identifier" /> 
     </contributor>

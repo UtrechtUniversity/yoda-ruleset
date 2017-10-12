@@ -184,7 +184,7 @@
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="ORCID"/>
 			<xs:enumeration value="DAI"/>
-			<xs:enumeration value="Author identifier  (Scopus)"/>
+			<xs:enumeration value="Author identifier (Scopus)"/>
 			<xs:enumeration value="ResearcherID (Web of Science)"/>
 			<xs:enumeration value="ISNI"/>
 		</xs:restriction>
