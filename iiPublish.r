@@ -154,7 +154,7 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	*yodaPrefix = *publicationConfig.yodaPrefix;
 	*randomId = *publicationState.randomId;
 	*publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
-	*landingPageUrl = "http://*publicVHost/*publicPath";	
+	*landingPageUrl = "https://*publicVHost/*publicPath";	
 	*publicationState.landingPageUrl = *landingPageUrl;
 	writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 }
@@ -419,8 +419,6 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (!iiHasKey(*publicationState, "dataCiteXmlPath")) {
 		# Generate DataCite XML
 		*err = errorcode(iiGenerateDataCiteXml(*publicationConfig, *publicationState));
-		if (*err < 0) {
-		}	
 	}
 
 	# Check if DOI is in use
