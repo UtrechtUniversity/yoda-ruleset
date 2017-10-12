@@ -35,6 +35,17 @@
           <Value><xsl:value-of select="." /></Value>
         </AVU>
       </xsl:for-each>
+      <xsl:for-each select="*[*]">
+        <xsl:variable name="subSubAttr" as="xs:string" select="local-name(.)" />
+        <xsl:variable name="subSubSn" as="xs:number" select="count(preceding-sibling::*[local-name()=$subSubAttr])" />
+        <xsl:for-each select="*[not(*)]">
+          <xsl:variable name="subSubSubAttr" as="xs:string" select="local-name(.)" />
+          <AVU>
+            <Attribute>usr_<xsl:number value="$sn" format="1" />_<xsl:value-of select="$attr" />_<xsl:number value="$subSn" format="1" />_<xsl:value-of select="$subAttr" />_<xsl:number value="$subSubSn" format="1" />_<xsl:value-of select="$subSubAttr" />_<xsl:value-of select="$subSubSubAttr" /></Attribute>
+            <Value><xsl:value-of select="." /></Value>
+          </AVU>
+        </xsl:for-each>
+      </xsl:for-each>
     </xsl:for-each>
   </xsl:template>
 
