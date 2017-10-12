@@ -172,6 +172,14 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 			*vaultActionPending = "yes";
 		}
 
+		# Check if vault package is currently in state transition.
+		*vaultNewStatus = "";
+		*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
+		foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultAction) {
+			*vaultNewStatus = "";
+                        msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *vaultNewStatus, "get", 1);
+		}
+
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
@@ -193,7 +201,8 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 
 		*kvp.vaultStatus = *vaultStatus;
 		*kvp.vaultActionPending = *vaultActionPending;
-		
+		*kvp.vaultNewStatus = *vaultNewStatus;
+
 		*isFound = false;
 		# Check Access
 		*kvp.researchGroupAccess = "no";
