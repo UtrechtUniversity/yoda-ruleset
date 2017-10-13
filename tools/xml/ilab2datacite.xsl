@@ -129,7 +129,7 @@
            <xsl:attribute name="nameIdentifierScheme">
               <xsl:value-of select="Name_Identifier_Scheme" />
            </xsl:attribute>
-           <xsl:value-of select="Identifier" />
+           <xsl:value-of select="Name_Identifier" />
         </nameIdentifier>
   </xsl:template>
   

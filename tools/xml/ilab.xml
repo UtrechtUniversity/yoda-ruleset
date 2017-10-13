@@ -122,6 +122,11 @@
         <mandatory>true</mandatory>
       </Name>
       <Properties>
+       <Affiliation>
+          <label>Affiliation</label>
+          <help>The organizational or institutional affiliation of the creator</help>
+          <default>Utrecht University</default>
+        </Affiliation>
          <Identifier_Person class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
@@ -132,11 +137,6 @@
             <help>Persistent identifier (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
         </Identifier_Person>
-       <Affiliation>
-          <label>Affiliation</label>
-          <help>The organizational or institutional affiliation of the creator</help>
-          <default>Utrecht University</default>
-        </Affiliation>
       </Properties>
     </Creator>
     <Contributor>
@@ -150,6 +150,11 @@
           <help>See dataCite</help>
           <mandatory>true</mandatory>
         </Contributor_Type>
+       <Affiliation>
+          <label>Affiliation</label>
+          <help>The organizational or institutional affiliation of the creator</help>
+          <default>Utrecht University</default>
+        </Affiliation>
         <Identifier_Person class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
@@ -160,11 +165,6 @@
             <help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
         </Identifier_Person>
-       <Affiliation>
-          <label>Affiliation</label>
-          <help>The organizational or institutional affiliation of the creator</help>
-          <default>Utrecht University</default>
-        </Affiliation>
       </Properties>
     </Contributor>
     <License>

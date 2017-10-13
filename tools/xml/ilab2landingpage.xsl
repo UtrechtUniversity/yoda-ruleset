@@ -166,7 +166,7 @@
     <dd><xsl:value-of select="Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Identifier"/></dd>
   </xsl:template>
   <xsl:template match="Identifier_Person">
-    <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text>:<xsl:value-of select="Name_Identifier"/></dd>
+    <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Name_Identifier"/></dd>
   </xsl:template>
   <xsl:template match="Affiliation">
     <dt>Affiliation</dt>
