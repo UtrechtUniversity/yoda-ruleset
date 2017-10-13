@@ -65,14 +65,17 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	*systemMetadata =
 	   "  <system>\n" ++
 	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
-	   "    <Persistent_Identifier_Datapackage>*yodaDOI</Persistent_Identifier_Datapackage>\n" ++
-	   "    <Persistent_Identifier_Datapackage_Type>DOI</Persistent_Identifier_Datapackage_Type>\n" ++
+	   "    <Persistent_Identifier_Datapackage>\n" ++ 
+           "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
+           "       <Identifier>*yodaDOI</Identifier>\n" ++ 
+           "    </Persistent_Identifier_Datapackage>\n" ++
            "    <Publication_Date>*publicationDate</Publication_Date>\n";
 	if (*publicationState.accessRestriction == "Open") {
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*publicHost/*subPath]]></Open_Access_Link>\n";
 	}
 	*systemMetadata = *systemMetadata ++
+           "    <License_URL><![CDATA[http://tobedetermined]]></License_URL>\n" ++
            "  </system>\n" ++ 
            "</metadata>";
 

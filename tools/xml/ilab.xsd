@@ -37,7 +37,7 @@
                     <xs:element name="Persistent_Identifier" minOccurs="0" maxOccurs="1">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="Identifier_Scheme" type="optionsDatasetPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
+                          <xs:element name="Identifier_Scheme" type="optionsPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
                           <xs:element name="Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
                         </xs:sequence>
                       </xs:complexType>
@@ -77,7 +77,7 @@
                     <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="Name_Identifier_Scheme" type="optionsPersonalPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
+                          <xs:element name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme" minOccurs="0" maxOccurs="1"/>
                           <xs:element name="Name_Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
                         </xs:sequence>
                       </xs:complexType>
@@ -100,7 +100,7 @@
                     <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="Name_Identifier_Scheme" type="optionsPersonalPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
+                          <xs:element name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme" minOccurs="0" maxOccurs="1"/>
                           <xs:element name="Name_Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
                         </xs:sequence>
                       </xs:complexType>
@@ -113,7 +113,7 @@
           </xs:complexType>
         </xs:element>
         <xs:element name="License" type="optionsLicense" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="Data_Access_Restriction" type="optionsDatasetAccess" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Data_Access_Restriction" type="optionsDataAccessRestriction" minOccurs="0" maxOccurs="1"/>
         <xs:element name="system" minOccurs="0" maxOccurs="1">
           <xs:complexType>
             <xs:sequence>
@@ -121,7 +121,7 @@
               <xs:element name="Persistent_Identifier_Datapackage" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element name="Identifier_Scheme" type="optionsDatasetPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
+                    <xs:element name="Identifier_Scheme" type="optionsPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
                   </xs:sequence>
                 </xs:complexType>
@@ -157,7 +157,7 @@
       <xs:enumeration value="N.A."/>
     </xs:restriction>
   </xs:simpleType>
-  <xs:simpleType name="optionsDatasetAccess">
+  <xs:simpleType name="optionsDataAccessRestriction">
     <xs:restriction base="xs:string">
       <xs:enumeration value="Open - freely retrievable"/>
       <xs:enumeration value="Restricted - available upon request"/>
@@ -172,7 +172,7 @@
       <xs:enumeration value="Critical"/>
     </xs:restriction>
   </xs:simpleType>
-  <xs:simpleType name="optionsPersonalPersistentIdentifierScheme">
+  <xs:simpleType name="optionsNameIdentifierScheme">
     <xs:restriction base="xs:string">
       <xs:enumeration value="ORCID"/>
       <xs:enumeration value="DAI"/>
@@ -182,7 +182,7 @@
     </xs:restriction>
   </xs:simpleType>
   <!-- Source: https://schema.datacite.org/meta/kernel-3.1/doc/DataCite-MetadataKernel_v3.1.pdf -->
-  <xs:simpleType name="optionsDatasetPersistentIdentifierScheme">
+  <xs:simpleType name="optionsPersistentIdentifierScheme">
     <xs:restriction base="xs:string">
       <xs:enumeration value="ARK"/>
       <xs:enumeration value="arXiv"/>
