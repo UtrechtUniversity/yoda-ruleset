@@ -285,19 +285,19 @@
   </xs:simpleType>
   <xs:simpleType name="optionsRelationType">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="IsSupplementedTo"/>
-      <xs:enumeration value="IsSuppementedBy"/>
-      <xs:enumeration value="IsContinuedBy"/>
-      <xs:enumeration value="Continues"/>
-      <xs:enumeration value="IsNewVersionOf"/>
-      <xs:enumeration value="IsPreviousVersionOf"/>
-      <xs:enumeration value="IsPartOf"/>
-      <xs:enumeration value="HasPart"/>
-      <xs:enumeration value="IsReferencedBy"/>
-      <xs:enumeration value="References"/>
-      <xs:enumeration value="IsVariantFormOf"/>
-      <xs:enumeration value="IsOriginalFormOf"/>
-      <xs:enumeration value="IsSourceOf"/>
+	<xs:enumeration value="IsSupplementTo: Current datapackage is supplement to"/>
+	<xs:enumeration value="IsSupplementedBy: Current datapackage is supplemented by"/>
+	<xs:enumeration value="IsContinuedBy: Current datadatapackage is continued by"/>
+	<xs:enumeration value="Continues: Continues this current dataset"/>
+	<xs:enumeration value="IsNewVersionOf: Current datapackage is new version of"/>
+	<xs:enumeration value="IsPreviousVersionOf: Current datapackage is previous version of"/>
+	<xs:enumeration value="IsPartOf: Current datapackage is part of"/>
+	<xs:enumeration value="HasPart: Is part of current datapackage"/>
+	<xs:enumeration value="IsReferencedBy: Current datapackage is referenced by"/>
+	<xs:enumeration value="References: Current datapackages references"/>
+	<xs:enumeration value="IsVariantFormOf: Current datapackage is variant of"/>
+	<xs:enumeration value="IsOriginalFormOf: Current datapackage is original of"/>
+	<xs:enumeration value="IsSourceOf: Raw data for this current datapackage"/>
     </xs:restriction>
   </xs:simpleType>
 <xs:simpleType name="optionsISO639-1">
@@ -307,7 +307,7 @@
       </xs:documentation>
     </xs:annotation>
 
-    <xs:restriction base="xsd:string">
+    <xs:restriction base="xs:string">
       
         <xs:enumeration value="ab - Abkhazian"/>
         <xs:enumeration value="aa - Afar"/>
