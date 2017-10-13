@@ -280,7 +280,7 @@
       <xs:enumeration value="CC-BY"/>
       <xs:enumeration value="CC-BY-SA"/>
       <xs:enumeration value="ODC-BY"/>
-      <xs:enumeration value="Other"/>
+      <xs:enumeration value="Custom License - see details in data package"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsRelationType">

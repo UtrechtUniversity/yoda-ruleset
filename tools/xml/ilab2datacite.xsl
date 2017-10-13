@@ -35,10 +35,12 @@
         <creators>
           <xsl:apply-templates select="metadata/Creator"/>
         </creators>
-
-        <contributors>
-          <xsl:apply-templates select="metadata/Contributor"/>
-        </contributors>
+	
+	<xsl:if test="metadata/Contributor">
+		<contributors>
+		  <xsl:apply-templates select="metadata/Contributor"/>
+		</contributors>
+	</xsl:if>
 
 
         <dates>
@@ -118,16 +120,16 @@
 	<xsl:value-of select="./Properties/Contributor_Type"/>
       </xsl:attribute>
       <contributorName><xsl:value-of select="Name" /></contributorName>
-      <xsl:apply-templates select="Properties/Persistent_Identifier" /> 
+      <xsl:apply-templates select="Properties/Person_Identifier" /> 
     </contributor>
   </xsl:template>
 
-  <xsl:template match="Properties/Persistent_Identifier">
+  <xsl:template match="Properties/Person_Identifier">
         <nameIdentifier>
            <xsl:attribute name="nameIdentifierScheme">
-              <xsl:value-of select="../Persistent_Identifier_Type" />
+              <xsl:value-of select="Name_Identifier_Scheme" />
            </xsl:attribute>
-           <xsl:value-of select="." />
+           <xsl:value-of select="Identifier" />
         </nameIdentifier>
   </xsl:template>
   
@@ -138,33 +140,37 @@
 <xsl:template match="metadata/License">
     <rights>
        <xsl:attribute name="rightsURI">
-           <xsl:value-of select="./Properties/URL" />
+           <xsl:value-of select="/metadata/system/License_URL" />
        </xsl:attribute>
-       <xsl:value-of select="./Name" />
+       <xsl:value-of select="." />
     </rights>
+</xsl:template>
+
+<xsl:template match="metadata/Language">
+ <language><xsl:value-of select="substring(., 1, 2)"/></language>    
 </xsl:template>
 
 <xsl:template match="metadata/Related_Datapackage">
   <relatedIdentifier>
      <xsl:attribute name="relatedIdentifierType">
-       <xsl:value-of select="Properties/Persistent_Identifier_Type" />
+       <xsl:value-of select="Properties/Persistent_Identifier/Identifier_Scheme" />
      </xsl:attribute>
-     <xsl:attribute name="relationType">IsPreviousVersionOf</xsl:attribute>
-     <xsl:value-of select="Properties/Persistent_Identifier" />
+     <xsl:attribute name="relationType"><xsl:value-of select="substring-before(Relation_Type, ':')"/></xsl:attribute>
+     <xsl:value-of select="Properties/Persistent_Identifier/Identifier" />
   </relatedIdentifier>
 </xsl:template>
 
-<xsl:template match="metadata/Location_Covered">
+<xsl:template match="metadata/Covered_Geolocation_Place">
   <geoLocation>
     <geoLocationPlace><xsl:value-of select="." /></geoLocationPlace>
   </geoLocation>
 </xsl:template>
 
-<xsl:template match="metadata/Funder">
+<xsl:template match="metadata/Funding_Reference">
    <fundingReference>
-     <funderName><xsl:value-of select="./Name"/></funderName>
-     <xsl:if test="./Properties/Grant_Number">
-       <awardNumber><xsl:value-of select="./Properties/Grant_Number"/></awardNumber>
+     <funderName><xsl:value-of select="./Funder_Name"/></funderName>
+     <xsl:if test="./Properties/Award_Number">
+       <awardNumber><xsl:value-of select="./Properties/Award_Number"/></awardNumber>
      </xsl:if>
    </fundingReference>
 </xsl:template>

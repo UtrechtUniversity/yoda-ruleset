@@ -49,9 +49,9 @@
 					</dl>
 					<h2>Rights</h2>
 					<dl class="dl-horizontal">
-						<xsl:apply-templates select="Owner | Creator | Contributor | License"/>
+						<xsl:apply-templates select="Creator | Contributor | License"/>
 					</dl>
-					<xsl:apply-templates select="Access_Restriction"/>
+					<xsl:apply-templates select="Data_Access_Restriction"/>
   				</div>
 			</div>
 		</div>
@@ -65,7 +65,7 @@
 
 <xsl:template match="system">
 	<dt>Persistent Identifier</dt>
-	<dd><xsl:value-of select="./Persistent_Identifier_Datapackage_Type"/>:&#160;<xsl:value-of select="./Persistent_Identifier_Datapackage"/></dd>
+	<dd><xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier_Scheme"/>:&#160;<xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/></dd>
 	<dt>Last Modification</dt>
 	<dd><xsl:value-of select="./Last_Modified_Date"/></dd>
 	<dt>Publication Date</dt>
@@ -82,7 +82,7 @@
 	<dd style="whitespace: pre-wrap;"><xsl:value-of select="."/></dd>
 </xsl:template>
 
-<xsl:template match="Discipline | Version | Language | Owner">
+<xsl:template match="Discipline | Version | Language">
 	<dt><xsl:value-of select="local-name()"/></dt>
 	<dd><xsl:value-of select="."/></dd>
 </xsl:template>
@@ -124,17 +124,17 @@
 	</a></dd>
 </xsl:template>
 
-<xsl:template match="Access_Restriction[.='Open']">
+<xsl:template match="Data_Access_Restriction[.='Open']">
 	<h2>Data Access</h2>
 	<p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/system/Open_Access_Link"/></xsl:attribute>link</a> to browse through this data with webDAV.</p> 	
 </xsl:template>
 
-<xsl:template match="Access_Restriction[starts-with(.,'Restricted')]">
+<xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
 	<h2>Data Access</h2>
 	<p>The data is restricted. Contact datamanager</p>
 </xsl:template>
 
-<xsl:template match="Access_Restriction[.='Closed']">
+<xsl:template match="Data_Access_Restriction[.='Closed']">
 	<h2>Data Access</h2>
 	<p>The data is closed for access</p>
 </xsl:template>
