@@ -22,8 +22,8 @@
     </Version>
     <Language>
       <label>Language of the Data</label>
-      <help>The language the data package is in as a iso639-1 two-letter code (e.g. en, nl, fr)</help>
-      <default>en</default>
+      <help>The language the data package with iso639-1 two-letter code (e.g. en, nl, fr)</help>
+      <default>en - English</default>
     </Language>
     <Collected class="compound">
       <Start_Date>
@@ -55,7 +55,7 @@
     </Tag>
     <Related_Datapackage>
       <Relation_Type>
-        <label>Relation</label>
+        <label>Related Datapackage</label>
         <help>Relation to this data package</help>
       </Relation_Type>
       <Properties>
@@ -122,7 +122,7 @@
         <mandatory>true</mandatory>
       </Name>
       <Properties>
-         <Identifier class="compound">
+         <Identifier_Person class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
             <help>What type of persistent person identifier</help>
@@ -131,7 +131,7 @@
             <label>Identifier</label>
             <help>Persistent identifier (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
-        </Identifier>
+        </Identifier_Person>
        <Affiliation>
           <label>Affiliation</label>
           <help>The organizational or institutional affiliation of the creator</help>
@@ -150,7 +150,7 @@
           <help>See dataCite</help>
           <mandatory>true</mandatory>
         </Contributor_Type>
-        <Identifier class="compound">
+        <Identifier_Person class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
             <help>What type of persistent person identifier</help>
@@ -159,7 +159,7 @@
             <label>Persistent Identifier</label>
             <help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
-        </Identifier>
+        </Identifier_Person>
        <Affiliation>
           <label>Affiliation</label>
           <help>The organizational or institutional affiliation of the creator</help>
