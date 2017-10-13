@@ -8,7 +8,7 @@
         <xs:element name="Discipline" type="optionsDiscipline" minOccurs="0" maxOccurs="unbounded"/>
         <xs:element name="Version" type="stringNormal" minOccurs="0" maxOccurs="1"/>
         <xs:element name="Language" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-        <xs:element name="Collected">
+        <xs:element name="Collected" minOccurs="0" maxOccurs="1">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Start_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
@@ -17,7 +17,7 @@
           </xs:complexType>
         </xs:element>
         <xs:element name="Covered_Geolocation_Place" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
-        <xs:element name="Covered_Period">
+        <xs:element name="Covered_Period" minOccurs="0" maxOccurs="1">
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Start_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
@@ -74,7 +74,7 @@
               <xs:element name="Properties">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element name="Identifier" minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element name="Name_Identifier_Scheme" type="optionsPersonalPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
@@ -97,7 +97,7 @@
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Contributor_Type" type="optionsContributorType" minOccurs="0" maxOccurs="1"/>
-                    <xs:element name="Identifier" minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element name="Name_Identifier_Scheme" type="optionsPersonalPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
@@ -159,10 +159,8 @@
   </xs:simpleType>
   <xs:simpleType name="optionsDatasetAccess">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="Open"/>
-      <xs:enumeration value="Restricted to UU"/>
-      <xs:enumeration value="Restricted to UU dpt"/>
-      <xs:enumeration value="Restricted - contact I-lab"/>
+      <xs:enumeration value="Open - freely retrievable"/>
+      <xs:enumeration value="Restricted - available upon request"/>
       <xs:enumeration value="Closed"/>
     </xs:restriction>
   </xs:simpleType>
@@ -287,6 +285,8 @@
   </xs:simpleType>
   <xs:simpleType name="optionsRelationType">
     <xs:restriction base="xs:string">
+      <xs:enumeration value="IsSupplementedTo"/>
+      <xs:enumeration value="IsSuppementedBy"/>
       <xs:enumeration value="IsContinuedBy"/>
       <xs:enumeration value="Continues"/>
       <xs:enumeration value="IsNewVersionOf"/>
@@ -295,12 +295,8 @@
       <xs:enumeration value="HasPart"/>
       <xs:enumeration value="IsReferencedBy"/>
       <xs:enumeration value="References"/>
-      <xs:enumeration value="IsCompiledBy"/>
-      <xs:enumeration value="Compiles"/>
       <xs:enumeration value="IsVariantFormOf"/>
       <xs:enumeration value="IsOriginalFormOf"/>
-      <xs:enumeration value="IsIdenticalTo"/>
-      <xs:enumeration value="IsDerivedFrom"/>
       <xs:enumeration value="IsSourceOf"/>
     </xs:restriction>
   </xs:simpleType>
