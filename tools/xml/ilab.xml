@@ -127,7 +127,7 @@
           <help>The organizational or institutional affiliation of the creator</help>
           <default>Utrecht University</default>
         </Affiliation>
-         <Identifier_Person class="compound">
+         <Person_Identifier class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
             <help>What type of persistent person identifier</help>
@@ -136,7 +136,7 @@
             <label>Identifier</label>
             <help>Persistent identifier (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
-        </Identifier_Person>
+        </Person_Identifier>
       </Properties>
     </Creator>
     <Contributor>
@@ -155,7 +155,7 @@
           <help>The organizational or institutional affiliation of the creator</help>
           <default>Utrecht University</default>
         </Affiliation>
-        <Identifier_Person class="compound">
+        <Person_Identifier class="compound">
           <Name_Identifier_Scheme>
             <label>Type of Persistent Identifier</label>
             <help>What type of persistent person identifier</help>
@@ -164,7 +164,7 @@
             <label>Persistent Identifier</label>
             <help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier>
-        </Identifier_Person>
+        </Person_Identifier>
       </Properties>
     </Contributor>
     <License>

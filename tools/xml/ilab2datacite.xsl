@@ -94,7 +94,7 @@
   <xsl:template match="Creator">
       <creator>
          <creatorName><xsl:value-of select="Name"/></creatorName>
-         <xsl:apply-templates select="Properties/Identifier_Person"/>
+         <xsl:apply-templates select="Properties/Person_Identifier"/>
          <xsl:apply-templates select="Properties/Affiliation"/>
       </creator>
   </xsl:template>
@@ -124,11 +124,11 @@
 	<xsl:value-of select="./Properties/Contributor_Type"/>
       </xsl:attribute>
       <contributorName><xsl:value-of select="Name" /></contributorName>
-      <xsl:apply-templates select="Properties/Identifier_Person" /> 
+      <xsl:apply-templates select="Properties/Person_Identifier" /> 
     </contributor>
   </xsl:template>
 
-  <xsl:template match="Properties/Identifier_Person">
+  <xsl:template match="Properties/Person_Identifier">
         <nameIdentifier>
            <xsl:attribute name="nameIdentifierScheme">
               <xsl:value-of select="Name_Identifier_Scheme" />

@@ -123,7 +123,7 @@
     </dd>
     <dl class="dl-horizontal subproperties">
     <dt>Identifier</dt>
-    <xsl:apply-templates select="./Properties/Identifier_Person"/>
+    <xsl:apply-templates select="./Properties/Person_Identifier"/>
     <dt>Affiliation</dt>
     <xsl:apply-templates select="./Properties/Affiliation"/>
     </dl>
@@ -165,7 +165,7 @@
   <xsl:template match="Persistent_Identifier">
     <dd><xsl:value-of select="Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Identifier"/></dd>
   </xsl:template>
-  <xsl:template match="Identifier_Person">
+  <xsl:template match="Person_Identifier">
     <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Name_Identifier"/></dd>
   </xsl:template>
   <xsl:template match="Affiliation">

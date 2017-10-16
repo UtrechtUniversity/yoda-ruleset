@@ -75,7 +75,7 @@
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Affiliation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
-                    <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="Person_Identifier" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme" minOccurs="0" maxOccurs="1"/>
@@ -98,7 +98,7 @@
                   <xs:sequence>
                     <xs:element name="Contributor_Type" type="optionsContributorType" minOccurs="0" maxOccurs="1"/>
                     <xs:element name="Affiliation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
-                    <xs:element name="Identifier_Person" minOccurs="0" maxOccurs="unbounded">
+                    <xs:element name="Person_Identifier" minOccurs="0" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme" minOccurs="0" maxOccurs="1"/>
