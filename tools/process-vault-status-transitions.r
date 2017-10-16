@@ -104,14 +104,8 @@ processVaultActions {
 				if (*err == 0) {
 					if (*status == "OK") {
 						msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
-					} else {
-						msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ SUBMITTED_FOR_PUBLICATION, *vaultStatusKvp);
 					}
-				} else {
-					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ SUBMITTED_FOR_PUBLICATION, *vaultStatusKvp);
 				}
-				msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");  
-	
                     	}
 		}
 
