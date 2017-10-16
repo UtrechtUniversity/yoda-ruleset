@@ -1,177 +1,182 @@
 <?xml version="1.0" encoding="utf-8"?>
 <formelements>
-	<Group name="Descriptive">
-		<Title>
-			<label>Data Package Title</label>
-			<help>The title of your data package</help>
-			<mandatory>true</mandatory>
-		</Title>
-		<Description>
-			<label>Data Package Description</label>
-			<help>A description of your data package</help>
-			<mandatory>true</mandatory>
-		</Description>
-		<Discipline>
-			<label>(Sub)Discipline of Research</label>
-			<help>Categorize your research to a (sub)discipline</help>
-		</Discipline>
-		<Research_Type>
-			<label>Research type</label>
-			<help>Categorize your Research Type - e.g. survey , longitudinal panel, archival etc.</help>
-		</Research_Type>
-		<Version>
-			<label>Version</label>
-			<help>A version number for the data package</help>
-			<mandatory>true</mandatory>
-		</Version>
-		<Related_Datapackage>
-			<Title>
-				<label>Predecessing Data Package</label>
-				<help>Title of the previous version of this data package</help>
-			</Title>
-			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier of the previous version of this data package</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>Type of Persistent identifier of the previous version of this data package</help>
-				</Persistent_Identifier_Type>
-			</Properties>
-		</Related_Datapackage>
-		<Language>
-			<label>Language of the Data</label>
-			<help>The language the data package is in as a iso639-1 two-letter code (e.g. en, nl, fr)</help>
-			<default>en</default>
-		</Language>
-		<Start_Collection_Date>
-			<label>Start Date of Collection Process</label>
-			<help>Indicate when you've started collecting the data for this data package (YYYY-MM-DD)</help>
-		</Start_Collection_Date>
-		<End_Collection_Date>
-			<label>End Date of Collection Process</label>
-			<help>Indicate when you've finished collecting the data for this data package (YYYY-MM-DD)</help>
-		</End_Collection_Date>
-		<Location_Covered>
-			<label>Location(s) covered</label>
-			<help>Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)</help>
-		</Location_Covered>
-		<Start_Period>
-			<label>Start Period</label>
-			<help>An indication of the start date of the period covered by your data package (format: YYYY-MM-DD)</help>
-		</Start_Period>
-		<End_Period>
-			<label>End Period</label>
-			<help>An indication of the end date of the period covered by your data package (format: YYYY-MM-DD)</help>
-		</End_Period>
-		<Tag>
-			<label>Tag(s)</label>
-			<help>Free text field for adding (searchable) key words to your data package</help>
-		</Tag>
-	</Group>
-	<Group name="Administrative">
-		<Retention_Period>
-			<label>Retention Period</label>
-			<help>The minimal number of years the data will be kept in the archive</help>
-			<default>10</default>
-			<mandatory>true</mandatory>
-		</Retention_Period>
-		<Retention_Justification>
-			<label>Retention Justification</label>
-			<help>Provide the reason when you deviate from the minimum of 10 years retention of the data package</help>
-		</Retention_Justification>
-		<Embargo_End_Date>
-			<label>Embargo End Date</label>
-			<help>If there is an embargo on the data package; when will it end?</help>
-		</Embargo_End_Date>
-		<Publish>
-			<label>Publish?</label>
-			<help>Do you want to have your data package published?</help>
-			<default>no</default>
-			<mandatory>true</mandatory>
-		</Publish>
-		<Sensitive>
-			<label>Anonymized</label>
-			<help>Is your data package anonymized or pseudo-coded?</help>
-			<default>No</default>
-			<mandatory>true</mandatory>
-		</Sensitive>
-                <Funder>
-                  <Name>
-                     <label>Funder</label>
-                     <help>The name(s) of the organisation(s) funding the research. E.g. NWO</help>
-                  </Name> 
-                  <Properties>
-                     <Grant_Number>
-                       <label>Grant Number</label>
-                       <help>The grant number issued by the funding organisation</help>
-                     </Grant_Number>
-                  </Properties>
-                </Funder>
-	</Group>
-	<Group name="Rights">
-		<Owner>
-			<label>Owner Data</label>
-			<help>The person or organisation owning the data</help>
-		</Owner>
-
-		<Creator>
-			<Name>
-				<label>Creator of Data Package</label>
-				<help> The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name</help>
-				<mandatory>true</mandatory>
-			</Name>
-			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier PI (e.g. an ORCID, DAI, or ScopusID)</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>What type of persistent person identifier</help>
-				</Persistent_Identifier_Type>
-				<Affiliation>
-					<label>Affiliation</label>
-					<help>The organizational or institutional affiliation of the creator</help>
-					<default>Utrecht University</default>
-				</Affiliation>
-			</Properties>
-		</Creator>
-		<Contributor>
-			<Name>
-				<label>Contributor(s) to Data Package</label>
-				<help>The name(s) of the persons who have contributed to this data package</help>
-			</Name>
-			<Properties>
-				<Persistent_Identifier>
-					<label>Persistent Identifier</label>
-					<help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
-				</Persistent_Identifier>
-				<Persistent_Identifier_Type>
-					<label>Type of Persistent Identifier</label>
-					<help>What type of persistent person identifier</help>
-				</Persistent_Identifier_Type>
-			</Properties>
-		</Contributor>
-		<License>
-                        <Name>
-			  <label>License</label>
-			  <help> The license under which you offer the data package for use by third parties. Preferred value is "CC By 3.0"</help>
-			  <default>To be defined</default>
-                        </Name>
-                        <Properties>
-                           <URL>
-                             <label>Link Webpage</label>
-			     <help> A link to a webpage describing the license and its conditions. In case of CC By 3.0 'https://creativecommons.org/licenses/by/3.0/'</help>
-                           </URL>
-                        </Properties>
-		</License>
-		<Access_Restriction>
-			<label>Data Package Access</label>
-			<help>Once archived, how is your data package accessible to third parties?</help>
-			<default>Open</default>
-			<mandatory>true</mandatory>
-		</Access_Restriction>
-	</Group>
+  <Group name="Descriptive">
+    <Title>
+      <label>Title</label>
+      <help>The title of your data package</help>
+      <mandatory>true</mandatory>
+    </Title>
+    <Description>
+      <label>Description</label>
+      <help>A description of your data package</help>
+      <mandatory>true</mandatory>
+    </Description>
+    <Discipline>
+      <label>Discipline</label>
+      <help>Categorize your research to a (sub)discipline</help>
+    </Discipline>
+    <Version>
+      <label>Version</label>
+      <help>A version number for the data package</help>
+      <mandatory>true</mandatory>
+    </Version>
+    <Language>
+      <label>Language of the Data</label>
+      <help>The language the data package with iso639-1 two-letter code (e.g. en, nl, fr)</help>
+      <default>en - English</default>
+    </Language>
+    <Collected class="compound">
+      <Start_Date>
+        <label>Start Date of Collection Process</label>
+        <help>Indicate when you've started collecting the data for this data package (YYYY-MM-DD)</help>
+      </Start_Date>
+      <End_Date>
+        <label>End Date of Collection Process</label>
+        <help>Indicate when you've finished collecting the data for this data package (YYYY-MM-DD)</help>
+      </End_Date>
+    </Collected>
+    <Covered_Geolocation_Place>
+      <label>Location(s) covered</label>
+      <help>Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)</help>
+    </Covered_Geolocation_Place>
+    <Covered_Period class="compound">
+      <Start_Date>
+        <label>Start Period</label>
+        <help>An indication of the start date of the period covered by your data package (format: YYYY-MM-DD)</help>
+      </Start_Date>
+      <End_Date>
+        <label>End Period</label>
+        <help>An indication of the end date of the period covered by your data package (format: YYYY-MM-DD)</help>
+      </End_Date>
+    </Covered_Period>
+    <Tag>
+      <label>Tag(s)</label>
+      <help>Free text field for adding (searchable) key words to your data package</help>
+    </Tag>
+    <Related_Datapackage>
+      <Relation_Type>
+        <label>Related Datapackage</label>
+        <help>Relation to this data package</help>
+      </Relation_Type>
+      <Properties>
+        <Title>
+          <label>Title</label>
+          <help>Title of the related data package</help>
+        </Title>
+        <Persistent_Identifier class="compound">
+          <Identifier_Scheme>
+            <label>Type of Indentifier</label>
+            <help>Type of Persistent identifier of the previous version of this data package</help>
+          </Identifier_Scheme>
+          <Identifier>
+            <label>Identifier</label>
+            <help>Persistent identifier of the previous version of this data package</help>
+          </Identifier>
+        </Persistent_Identifier>
+      </Properties>
+    </Related_Datapackage>
+  </Group>
+  <Group name="Administrative">
+    <Retention_Period>
+      <label>Retention Period (years)</label>
+      <help>The minimal number of years the data will be kept in the archive</help>
+      <default>10</default>
+      <mandatory>true</mandatory>
+    </Retention_Period>
+    <Retention_Information>
+      <label>Retention Information</label>
+      <help>Provide the reason when you deviate from the minimum of 10 years retention of the data package</help>
+    </Retention_Information>
+    <Embargo_End_Date>
+      <label>Embargo End Date</label>
+      <help>If there is an embargo on the data package; when will it end?</help>
+    </Embargo_End_Date>
+    <Data_Classification>
+      <label>Data Classification</label>
+      <help>How is your data classified according</help>
+      <default>No</default>
+      <mandatory>true</mandatory>
+    </Data_Classification>
+    <Collection_Name>
+      <label>Name of Collection</label>
+      <help>Collection this Datapackage is a part of. E.g. Project Name</help>
+    </Collection_Name>
+    <Funding_Reference>
+      <Funder_Name>
+        <label>Funder</label>
+        <help>The name(s) of the organisation(s) funding the research. E.g. NWO</help>
+      </Funder_Name>
+      <Properties>
+        <Award_Number>
+          <label>Award Number</label>
+          <help>The award or grant number issued by the funding organisation</help>
+        </Award_Number>
+      </Properties>
+    </Funding_Reference>
+  </Group>
+  <Group name="Rights">
+    <Creator>
+      <Name>
+        <label>Creator of Data Package</label>
+        <help> The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name</help>
+        <mandatory>true</mandatory>
+      </Name>
+      <Properties>
+       <Affiliation>
+          <label>Affiliation</label>
+          <help>The organizational or institutional affiliation of the creator</help>
+          <default>Utrecht University</default>
+        </Affiliation>
+         <Identifier_Person class="compound">
+          <Name_Identifier_Scheme>
+            <label>Type of Persistent Identifier</label>
+            <help>What type of persistent person identifier</help>
+          </Name_Identifier_Scheme>
+          <Name_Identifier>
+            <label>Identifier</label>
+            <help>Persistent identifier (e.g. an ORCID, DAI, or ScopusID)</help>
+          </Name_Identifier>
+        </Identifier_Person>
+      </Properties>
+    </Creator>
+    <Contributor>
+      <Name>
+        <label>Contributor(s) to Data Package</label>
+        <help>The name(s) of the persons who have contributed to this data package</help>
+      </Name>
+      <Properties>
+        <Contributor_Type>
+          <label>Contributor Type</label>
+          <help>See dataCite</help>
+          <mandatory>true</mandatory>
+        </Contributor_Type>
+       <Affiliation>
+          <label>Affiliation</label>
+          <help>The organizational or institutional affiliation of the creator</help>
+          <default>Utrecht University</default>
+        </Affiliation>
+        <Identifier_Person class="compound">
+          <Name_Identifier_Scheme>
+            <label>Type of Persistent Identifier</label>
+            <help>What type of persistent person identifier</help>
+          </Name_Identifier_Scheme>
+          <Name_Identifier>
+            <label>Persistent Identifier</label>
+            <help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
+          </Name_Identifier>
+        </Identifier_Person>
+      </Properties>
+    </Contributor>
+    <License>
+      <label>License</label>
+      <help>The license under which you offer the data package for use by third parties. Preferred value is CC BY</help>
+      <default>To be defined</default>
+    </License>
+    <Data_Access_Restriction>
+      <label>Data Package Access</label>
+      <help>Once archived, how is your data package accessible to third parties?</help>
+      <default>Open - freely retrievable</default>
+      <mandatory>true</mandatory>
+    </Data_Access_Restriction>
+  </Group>
 </formelements>
