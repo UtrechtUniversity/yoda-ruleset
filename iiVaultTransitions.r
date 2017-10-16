@@ -48,14 +48,6 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "canceled publication");
 	}
-	on (*newVaultStatus == PUBLISHED) {
-		# TODO prepare for publication
-		nop;
-	}
-	on (*newVaultStatus == DEPUBLISHED) {
-		# TODO prepare for depublication
-		nop;
-	}
 	on (true) {
 		nop;
 	}
