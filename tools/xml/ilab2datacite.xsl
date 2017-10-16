@@ -15,7 +15,7 @@
        xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"
        >
        <identifier identifierType="DOI">
-          <xsl:value-of select="metadata/system/Persistent_Identifier_Datapackage[Identifier_Scheme='DOI']/Identifier"/>
+          <xsl:value-of select="system/Persistent_Identifier_Datapackage[Identifier_Scheme='DOI']/Identifier"/>
        </identifier>
 
         <titles>
@@ -49,13 +49,13 @@
 
         <dates>
           <xsl:if test="system/Last_Modified_Date">
-            <date dateType="Updated"><xsl:value-of select="metadata/system/Last_Modified_Date"/></date>
+            <date dateType="Updated"><xsl:value-of select="system/Last_Modified_Date"/></date>
           </xsl:if>
           <xsl:if test="Embargo_End_Date">
-            <date dateType="Available"><xsl:value-of select="metadata/Embargo_End_Date"/></date>
+            <date dateType="Available"><xsl:value-of select="Embargo_End_Date"/></date>
           </xsl:if>
           <xsl:if test="Collected">
-            <date dateType="Collected"><xsl:value-of select="metadata/Collected/Start_Date" />/<xsl:value-of select="metadata/Collected/End_Date"/></date>
+            <date dateType="Collected"><xsl:value-of select="Collected/Start_Date" />/<xsl:value-of select="Collected/End_Date"/></date>
           </xsl:if>
         </dates>
         <xsl:apply-templates select="Version"/>
