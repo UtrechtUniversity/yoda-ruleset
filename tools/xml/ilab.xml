@@ -175,7 +175,7 @@
     <Data_Access_Restriction>
       <label>Data Package Access</label>
       <help>Once archived, how is your data package accessible to third parties?</help>
-      <default>Open</default>
+      <default>Open - freely retrievable</default>
       <mandatory>true</mandatory>
     </Data_Access_Restriction>
   </Group>
