@@ -35,7 +35,7 @@
             <div class="col-md-12">
               <h2>System</h2>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="system"/>
+                <xsl:apply-templates select="System"/>
               </dl>
               <h2>Descriptive</h2>
               <dl class="dl-horizontal">
@@ -66,7 +66,7 @@
     </u>
     <xsl:text> </xsl:text>
   </xsl:template>
-  <xsl:template match="system">
+  <xsl:template match="System">
     <dt>Persistent Identifier</dt>
     <dd><xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier_Scheme"/>: <xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/></dd>
     <dt>Last Modification</dt>
@@ -143,7 +143,7 @@
     <dd>
       <a>
         <xsl:attribute name="href">
-          <xsl:value-of select="/metadata/system/License_URL"/>
+          <xsl:value-of select="/metadata/System/License_URL"/>
         </xsl:attribute>
         <xsl:attribute name="target">blank</xsl:attribute>
         <xsl:value-of select="."/>
@@ -152,7 +152,7 @@
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
     <h2>Data Access</h2>
-    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/system/Open_Access_Link"/></xsl:attribute>link</a> to browse through this data with webDAV.</p>
+    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to browse through this data with webDAV.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
     <h2>Data Access</h2>

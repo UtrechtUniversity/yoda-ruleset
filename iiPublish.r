@@ -63,7 +63,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	*combiXmlPath = "*tempColl/*randomId-combi.xml";
 	*publicationState.combiXmlPath = *combiXmlPath;
 	*systemMetadata =
-	   "  <system>\n" ++
+	   "  <System>\n" ++
 	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
 	   "    <Persistent_Identifier_Datapackage>\n" ++ 
            "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
@@ -76,7 +76,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	}
 	*systemMetadata = *systemMetadata ++
            "    <License_URL><![CDATA[http://tobedetermined]]></License_URL>\n" ++
-           "  </system>\n" ++ 
+           "  </System>\n" ++ 
            "</metadata>";
 
 	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath);
