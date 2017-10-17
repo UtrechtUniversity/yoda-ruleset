@@ -532,7 +532,10 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	# Use secure copy to push combi XML to MOAI server
 	*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
-	if (*publicationState.status == "Retry" || *err < 0) {
+	if (*err < 0) {
+		publicationState.status = "Retry";
+	}
+	if (*publicationState.status == "Retry") {
 		*publicationState.status = "Retry";
 		iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
