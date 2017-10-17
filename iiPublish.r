@@ -74,7 +74,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
            "       <Identifier>*yodaDOI</Identifier>\n" ++ 
            "    </Persistent_Identifier_Datapackage>\n" ++
            "    <Publication_Date>*publicationDate</Publication_Date>\n";
-	if (*publicationState.accessRestriction == "Open") {
+	if (*publicationState.accessRestriction like "Open*") {
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*publicHost/*subPath]]></Open_Access_Link>\n";
 	}
@@ -294,7 +294,7 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
         *accessRestriction = *publicationState.accessRestriction;
 
 	*accessLevel = "null";
-	if (*publicationState.accessRestriction == "Open") {
+	if (*publicationState.accessRestriction like "Open*") {
 	   *accessLevel = "read";
 	}
 
