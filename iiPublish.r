@@ -247,6 +247,22 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 
 }
 
+# \brief iiSetAccessRestriction
+iiSetAccessRestriction(*vaultPackage, *publicationState) {
+        *accessRestriction = *publicationState.accessRestriction;
+
+	*accessLevel = "null";
+	if (*publicationState.accessRestriction == "Open") {
+	   *accessLevel = "read";
+	}
+
+	*err = errorcode(msiSetACL("recursive", *accessLevel, "anonymous", *vaultPackage));
+	if (*err < 0) {
+		writeLine("serverLog", "iiSetAccessRestriction: errorcode *err");
+	} else {
+		writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
+	}
+}
 
 iiGetPublicationConfig(*publicationConfig) {
 	# Translation from camelCase config key to snake_case metadata attribute
@@ -441,6 +457,9 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	# Use secure copy to push combi XML to MOAI server
 	iiCopyMetadataToMOAI(*publicationConfig, *publicationState);
+
+	# Set access restriction for vault package.
+	iiSetAccessRestriction(*vaultPackage, *publicationState);
 
 	# Mint DOI with landing page URL.
 	iiMintDOI(*publicationConfig, *publicationState);
