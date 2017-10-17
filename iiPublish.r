@@ -287,7 +287,9 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 
 }
 
-# \brief iiSetAccessRestriction
+# \brief iiSetAccessRestriction     Set access restriction for vault package.
+# \param[in] vaultPackage           Path to the package in the vault
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 iiSetAccessRestriction(*vaultPackage, *publicationState) {
         *accessRestriction = *publicationState.accessRestriction;
 
@@ -558,7 +560,16 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 
 	# Set access restriction for vault package.
-	iiSetAccessRestriction(*vaultPackage, *publicationState);
+	*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
+	if (*err < 0) {
+		publicationState.status = "Retry";
+	}
+	if (*publicationState.status == "Retry") {
+		*publicationState.status = "Retry";
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		*status = *publicationState.status;
+		*succeed;
+	}
 
 	# Mint DOI with landing page URL.
 	*err = errorcode(iiMintDOI(*publicationConfig, *publicationState));
