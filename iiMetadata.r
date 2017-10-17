@@ -591,6 +591,8 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 
 	*status = "Success";
 	*statusInfo = "";
+	# Add action log record
+	iiAddActionLogRecord(*datamanagerGroup, *vaultPackagePath, "modified metadata");
 }
 
 # \brief iiGetLatestVaultMetadataXml

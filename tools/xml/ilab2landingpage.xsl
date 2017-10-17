@@ -124,7 +124,6 @@
     <dl class="dl-horizontal subproperties">
     <dt>Identifier</dt>
     <xsl:apply-templates select="./Properties/Person_Identifier"/>
-    <dt>Affiliation</dt>
     <xsl:apply-templates select="./Properties/Affiliation"/>
     </dl>
   </xsl:template>
