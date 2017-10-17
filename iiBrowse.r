@@ -325,12 +325,12 @@ iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
 	}
 }
 
-# \brief iiFrontSystemMetadata Make system metadata accesible conform standard to the front end.
+# \brief iiFrontEndSystemMetadata Make system metadata accesible conform standard to the front end.
 # \param[in] folder   folder name to be extended with required full qualification name
 # \param[out] result
 # \param[out] status
 # \param[out] statusInfo
-iiFrontSystemMetadata(*folder, *result, *status, *statusInfo) {
+iiFrontEndSystemMetadata(*folder, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = *folder;
 
