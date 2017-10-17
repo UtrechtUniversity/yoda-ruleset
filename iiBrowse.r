@@ -337,7 +337,10 @@ iiFrontEndSystemMetadata(*folder, *result, *status, *statusInfo) {
 	*result = "[]";
 	*size = 0;
 
-	msi_json_arrayops(*result, "TEST1", "add", *size);
-	msi_json_arrayops(*result, "TEST2", "add", *size);
-	msi_json_arrayops(*result, "TEST3", "add", *size);
+	*test = "[]";
+	msi_json_arrayops(*test, "TEST1", "add", *size);
+	msi_json_arrayops(*test, "TEST2", "add", *size);
+
+	msi_json_arrayops(*result, *test, "add", *size);
+	msi_json_arrayops(*result, *test, "add", *size);
 }
