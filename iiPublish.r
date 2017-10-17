@@ -457,7 +457,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	# Load state 
 	iiGetPublicationState(*vaultPackage, *publicationState);
 	*status = *publicationState.status;
-	if (*status == "Unrecoverable") {
+	if (*status == "Unrecoverable" || *status == "Processing") {
 		succeed;
 	}
 
@@ -475,21 +475,24 @@ iiProcessPublication(*vaultPackage, *status) {
 		# Generate Combi XML consisting of user and system metadata
 		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
 		if (*err < 0) {
-			*publicationState.status = "Retry";
-			iiSavePublicationState(*vaultPackage, *publicationState);
-			*status = "Retry";
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
 			succeed;
-		} else {
-			iiSavePublicationState(*vaultPackage, *publicationState);
 		}
 	}
 
 	if (!iiHasKey(*publicationState, "dataCiteXmlPath")) {
 		# Generate DataCite XML
 		*err = errorcode(iiGenerateDataCiteXml(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
 		iiSavePublicationState(*vaultPackage, *publicationState);
-		if (*publicationState.status == "Unrecoverable" || *err < 0) {
-			*status = "Unrecoverable";
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
 			succeed;
 		}
 		
@@ -510,16 +513,12 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (*err < 0) {
 		*publicationState.status = "Retry";
 	}
-	if (*publicationState.status == "Retry") {
-		iiSavePublicationState(*vaultPackage, *publicationState);
+	iiSavePublicationState(*vaultPackage, *publicationState);
+	if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
 		*status = *publicationState.status;
 		succeed;
-	} else if (*publicationState.status == "Unrecoverable") {
-		iiSavePublicationState(*vaultPackage, *publicationState);
-		*status = *publicationState.status;
-		succeed;
-	}
-		
+	}		
+
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
 		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState));
@@ -552,9 +551,8 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (*err < 0) {
 		publicationState.status = "Retry";
 	}
+	iiSavePublicationState(*vaultPackage, *publicationState);
 	if (*publicationState.status == "Retry") {
-		*publicationState.status = "Retry";
-		iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
 		*succeed;
 	}
@@ -565,11 +563,11 @@ iiProcessPublication(*vaultPackage, *status) {
 	# Mint DOI with landing page URL.
 	*err = errorcode(iiMintDOI(*publicationConfig, *publicationState));
 	if (*err < 0) {
-		*publicationState.status = "Unrecoverable";
+		*publicationState.status = "Retry";
 	}
+	iiSavePublicationState(*vaultPackage, *publicationState);
 	if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
 		*status = *publicationState.status;
-		iiSavePublicationState(*vaultPackage, *publicationState);
 		succeed;
 		
 	}
