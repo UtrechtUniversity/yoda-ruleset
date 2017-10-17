@@ -348,8 +348,6 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
 			succeed;
 		}
-		iiCopyACLsFromParent(*destination);
-	
 	}
 }
 
