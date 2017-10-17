@@ -365,7 +365,7 @@ iiGetPublicationConfig(*publicationConfig) {
 # \param[out] publicationState   key-value-pair containing the state
 iiGetPublicationState(*vaultPackage, *publicationState) {
 	# defaults
-	*publicationState.status = "Processing";
+	*publicationState.status = "Unknown";
 	*publicationState.accessRestriction = "Closed";
 
 	iiCollectionMetadataKvpList(*vaultPackage, UUORGMETADATAPREFIX++"publication_", true, *kvpList);
@@ -461,6 +461,9 @@ iiProcessPublication(*vaultPackage, *status) {
 	*status = *publicationState.status;
 	if (*status == "Unrecoverable" || *status == "Processing") {
 		succeed;
+	} else if (*status == "Unknown") {
+		*status = "Processing";
+		*publicationState.status = "Processing";
 	}
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
@@ -500,6 +503,7 @@ iiProcessPublication(*vaultPackage, *status) {
 		
 	}
 
+
 	# Check if DOI is in use
 	*err = errorcode(iiCheckDOIAvailability(*publicationConfig, *publicationState));
 	if (*err < 0) {
@@ -527,8 +531,8 @@ iiProcessPublication(*vaultPackage, *status) {
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
 		if (*publicationState.status == "Unrecoverable") {
-			iiSavePublicationState(*vaultPackage, *publicationState);
 			*status = *publicationState.status;
 			*succeed;
 		}
@@ -542,8 +546,8 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (*err < 0) {
 		*publicationState.status = "Retry";
 	}	
+	iiSavePublicationState(*vaultPackage, *publicationState);
 	if (*publicationState.status == "Retry") {
-		iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
 		*succeed;
 	}
