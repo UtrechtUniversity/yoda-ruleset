@@ -42,8 +42,8 @@ iiDetermineVaultTarget(*folder) {
 
 
 # \brief iiCopyFolderToVault
-# \param[in] folder  		folder to copy to the vault
-# \param[in] target            path of the vault package
+# \param[in] folder  folder to copy to the vault
+# \param[in] target  path of the vault package
 iiCopyFolderToVault(*folder, *target) {
 	
 	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target")
@@ -58,8 +58,8 @@ iiCopyFolderToVault(*folder, *target) {
 }
 
 # \brief iiSetVaultPermissions
-# \param[in] folder
-# \param[in] target
+# \param[in] folder  folder to copy to the vault
+# \param[in] target  path of the vault package
 iiSetVaultPermissions(*folder, *target) {
 
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
@@ -328,3 +328,28 @@ iiCopyACLsFromParent(*path) {
 	}
 
 }
+
+# iiCopyLicenseToVaultPackage     When a license is added to the metadata and it is available in the License collection,
+#                                 this will copy the text to the package in the vault
+# \param[in] folder  	          folder to copy to the vault
+# \param[in] target               path of the vault package
+iiCopyLicenseToVaultPackage(*folder, *target) {
+	*licenseKey = UUUSERMETADATAPREFIX ++ "0_License";
+	*license = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
+		*license = *row.META_COLL_ATTR_VALUE;
+	}	
+	
+	*licenseText = "/" ++ $rodsClientZone ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
+	if (uuFileExists(*licenseText)) {
+		*destination = *target ++ "/License.txt"
+		*err = errorcode(msiDataObjCopy(*licenseText, *destPath, "verifyChksum=", *status));
+		if (*err < 0) {
+			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
+			succeed;
+		}
+		iiCopyACLsFromParent(*destination);
+	
+	}
+}
+
