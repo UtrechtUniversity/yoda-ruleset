@@ -58,9 +58,7 @@
           </xsl:if>
         </dates>
         <xsl:apply-templates select="Version"/>
- 	<rightsList>
-          <xsl:apply-templates select="License"/>
-        </rightsList>
+        <xsl:apply-templates select="License"/>
 	
         <resourceType resourceTypeGeneral="Dataset">
             <xsl:text>Dataset</xsl:text>
@@ -141,16 +139,20 @@
   </xsl:template>
  
 <xsl:template match="License">
+<rightsList>
     <rights>
-       <xsl:attribute name="rightsURI">
+       <xsl:if test="/metadata/System/License_URL">
+         <xsl:attribute name="rightsURI">
            <xsl:value-of select="/metadata/System/License_URL" />
-       </xsl:attribute>
+         </xsl:attribute>
+       </xsl:if>
        <xsl:value-of select="." />
     </rights>
+</rightsList>
 </xsl:template>
 
 <xsl:template match="Language">
- <language><xsl:value-of select="substring(., 1, 2)"/></language>    
+  <language><xsl:value-of select="substring(., 1, 2)"/></language>    
 </xsl:template>
 
 <xsl:template match="Related_Datapackage">

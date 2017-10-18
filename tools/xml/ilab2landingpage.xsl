@@ -140,13 +140,20 @@
   <xsl:template match="License">
     <dt>License</dt>
     <dd>
-      <a>
+      <xsl:choose>
+      <xsl:when test="/metadata/System/License_URL">
+	<a>
         <xsl:attribute name="href">
           <xsl:value-of select="/metadata/System/License_URL"/>
         </xsl:attribute>
         <xsl:attribute name="target">blank</xsl:attribute>
         <xsl:value-of select="."/>
       </a>
+      </xsl:when>
+      <xsl:otherwise>
+	<xsl:value-of select="."/>
+      </xsl:otherwise>
+      </xsl:choose>
     </dd>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
