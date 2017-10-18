@@ -201,7 +201,7 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 		succeed;
 	}
 	if (*err < 0) {
-		iiCanTransitionFolderStatus(*folder, *folderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 		      *status = "PermissionDenied";
 		      *statusInfo = *reason; 
