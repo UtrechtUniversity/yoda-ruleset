@@ -39,7 +39,7 @@
               </dl>
               <h2>Descriptive</h2>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="Title | Description | Discipline | Research_Type | Version | Related_Datapackage | Language | Funding_Reference"/>
+                <xsl:apply-templates select="Title | Description | Discipline | Research_Type | Version | Related_Datapackage | Language"/>
                 <dt>Tag(s)</dt>
                 <dd>
                   <xsl:apply-templates select="Tag"/>

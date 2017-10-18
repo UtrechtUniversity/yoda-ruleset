@@ -42,10 +42,9 @@
 	
 	<xsl:if test="Contributor">
 		<contributors>
-		  <xsl:apply-templates select="metadata/Contributor"/>
+		  <xsl:apply-templates select="Contributor"/>
 		</contributors>
 	</xsl:if>
-
 
         <dates>
           <xsl:if test="System/Last_Modified_Date">
@@ -121,7 +120,7 @@
   <xsl:template match="Contributor">
     <contributor>
       <xsl:attribute name="contributorType">
-	<xsl:value-of select="./Properties/Contributor_Type"/>
+	<xsl:value-of select="Properties/Contributor_Type"/>
       </xsl:attribute>
       <contributorName><xsl:value-of select="Name" /></contributorName>
       <xsl:apply-templates select="Properties/Person_Identifier" /> 
