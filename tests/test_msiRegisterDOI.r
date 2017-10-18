@@ -1,10 +1,7 @@
 testRule {
-	*instance="ilab";
-	msiGenerateYodaDOI("10.5072", "UU01", *doi);
-	*internalId = triml(*doi, "10.5072/UU01-");
-	*xmlIn = "doi=10.5072/UU01-9F0DMK\nurl=https://public.yoda.uu.nl/*instance/UU01/*internalId\n";
-	*err = errorcode(msiRegisterDataCiteDOI(*url, *username, *password, *xmlIn, *httpCode));
+	*xmlIn = "doi=*doi\nurl=*url\n";
+	*err = errorcode(msiRegisterDataCiteDOI(*endpoint, *username, *password, *xmlIn, *httpCode));
 	writeLine("stdout", *httpCode);
 }
-input *url="", *username="", *password=""
+input *doi="", *url="", *endpoint="https://mds.test.datacite.org/doi", *username="", *password=""
 output ruleExecOut

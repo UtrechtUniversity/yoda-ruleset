@@ -101,10 +101,10 @@ processVaultActions {
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessPublication(*collName, *status));
-				if (*err == 0) {
-					if (*status == "OK") {
-						msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
-					}
+				if (*err < 0) {
+					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
+				} else {
+					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
 				}
                     	}
 		}
