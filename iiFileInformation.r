@@ -28,22 +28,26 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *dircount = 0;
     *filecount = 0;
     *totalSize = 0;
-    *data_modified = "0";
-    *coll_modified = "0";
+    *data_modified = 0;
+    *coll_modified = 0;
 
     foreach (*row in SELECT DATA_ID, DATA_SIZE, DATA_MODIFY_TIME
                           WHERE COLL_NAME like "*path%"){
         *filecount = *filecount + 1;
         *totalSize = *totalSize + int(*row."DATA_SIZE");
+	if (*data_modified < int(*row."DATA_MODIFY_TIME")) {
+	    *data_modified = int(*row."DATA_MODIFY_TIME");
+	}
     }
 
     foreach (*row in SELECT COLL_ID, COLL_MODIFY_TIME
                           WHERE COLL_NAME like "*path%"){
         *dircount = *dircount + 1;
+	if (*coll_modified < int(*row."COLL_MODIFY_TIME")) {
+	    *coll_modified = int(*row."COLL_MODIFY_TIME");
+	}
     }
 
-    *data_modified = int(*data_modified);
-    *coll_modified = int(*coll_modified);
     *modified = str(max(*data_modified, *coll_modified));
 }
 
