@@ -338,13 +338,15 @@ iiCopyACLsFromParent(*path) {
 iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = *folder;
-
 	*result = "[]";
 	*size = 0;
 
+	# Package size
+        iiFileCount(*vaultPackage, *totalSize, *dircount, *filecount, *modified);
+
 	*packageSizeArr = "[]";
 	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
-	msi_json_arrayops(*packageSizeArr, "iiFileCount", "add", *size);
+	msi_json_arrayops(*packageSizeArr, "*filecount files, *dircount directories, total of *totalSize bytes", "add", *size);
 	msi_json_arrayops(*result, *packageSizeArr, "add", *size);
 
 
