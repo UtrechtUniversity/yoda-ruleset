@@ -343,6 +343,20 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
 	# Package size
         iiFileCount(*vaultPackage, *totalSize, *dircount, *filecount, *modified);
+        *unit = "bytes";
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
+                *unit = "KB";
+        }
+        if (*totalSize > 10000000) {
+                *totalSize = *totalSize / 1000000;
+                *unit = "MB";
+        }
+        if (*totalSize > 10000000000) {
+                *totalSize = *totalSize / 1000000000;
+                *unit = "GB";
+	}
+        *totalSize = floor(*totalSize);
 
 	*packageSizeArr = "[]";
 	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
