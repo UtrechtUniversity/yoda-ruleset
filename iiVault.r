@@ -398,8 +398,10 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 		*landingpageURL = *row.META_COLL_ATTR_VALUE;
 	}
 
-        *landinpageURLArr = "[]";
-	msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
-	msi_json_arrayops(*landinpageURLArr, *landingpageURL, "add", *size);
-	msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
+	if (*landingpageURL != "null") {
+                *landinpageURLArr = "[]";
+	        msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
+	        msi_json_arrayops(*landinpageURLArr, *landingpageURL, "add", *size);
+	        msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
+	}
 }
