@@ -78,8 +78,11 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
 	}
+	if (iiHasKey(*publicationState.licenseUrl)) {
+    	   *systemMetadata = *systemMetadata ++
+           "    <License_URL><![CDATA[" ++ *publicationState.licenseUrl ++ "</License_URL>\n"; 
+	}
 	*systemMetadata = *systemMetadata ++
-           "    <License_URL><![CDATA[http://tobedetermined]]></License_URL>\n" ++
            "  </System>\n" ++ 
            "</metadata>";
 
@@ -387,6 +390,28 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = *vaultPackage) {
 		*publicationState.accessRestriction = *row.META_COLL_ATTR_VALUE;
 	}
+	
+	*license = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME like '%License' AND COLL_NAME = *vaultPackage) {
+		*license = *row.META_COLL_ATTR_VALUE;
+	}
+
+
+	if (*license != "") {
+
+		*publicationState.license = *license;
+		*licenseColl = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION;
+		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_url";
+		*licenseUrl = "";
+		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME = *licenseColl AND DATA_NAME = "*license.txt" AND META_DATA_ATTR_NAME = *licenseAttrName) {
+			*licenseUrl = *row.META_DATA_ATTR_VALUE;
+		}
+	
+		if (*licenseUrl != "") {
+			*publicationState.licenseUrl = *licenseUrl;
+		}
+	}
+
 	*publicationState.vaultPackage = *vaultPackage;
 	writeKeyValPairs("serverLog", *publicationState, "=");
 }
