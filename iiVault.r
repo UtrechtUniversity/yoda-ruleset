@@ -359,7 +359,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
         *totalSize = floor(*totalSize);
 
 	# Don't count vault package.
-	*dircount = *dircount - 1;
+	*dircount = int(*dircount) - 1;
 
 	*packageSizeArr = "[]";
 	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
