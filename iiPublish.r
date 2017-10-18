@@ -78,8 +78,11 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*publicHost/*subPath]]></Open_Access_Link>\n";
 	}
+	if (iiHasKey(*publicationState.licenseUrl)) {
+    	   *systemMetadata = *systemMetadata ++
+           "    <License_URL><![CDATA[" ++ *publicationState.licenseUrl ++ "</License_URL>\n"; 
+	}
 	*systemMetadata = *systemMetadata ++
-           "    <License_URL><![CDATA[http://tobedetermined]]></License_URL>\n" ++
            "  </System>\n" ++ 
            "</metadata>";
 

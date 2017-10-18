@@ -338,8 +338,13 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 	*license = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
 		*license = *row.META_COLL_ATTR_VALUE;
+	}		
+
+	if (*license == "") {
+		writeLine("serverLog", "iiCopyLicenseToVaultPackage: No license found in user metadata");
+		succeed;
 	}	
-	
+
 	*licenseText = "/" ++ $rodsClientZone ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
 	if (uuFileExists(*licenseText)) {
 		*destination = *target ++ "/License.txt"
@@ -348,6 +353,8 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
 			succeed;
 		}
+	} else {
+		writLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
 	}
 }
 
