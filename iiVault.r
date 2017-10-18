@@ -425,10 +425,10 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 		succeed;
 	}	
 
-	*licenseText = "/" ++ $rodsClientZone ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
+	*licenseText = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
 	if (uuFileExists(*licenseText)) {
 		*destination = *target ++ "/License.txt"
-		*err = errorcode(msiDataObjCopy(*licenseText, *destPath, "verifyChksum=", *status));
+		*err = errorcode(msiDataObjCopy(*licenseText, *destination, "verifyChksum=", *status));
 		if (*err < 0) {
 			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
 			succeed;
