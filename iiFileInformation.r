@@ -34,7 +34,7 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     foreach (*row in SELECT DATA_ID, DATA_SIZE, DATA_MODIFY_TIME
                           WHERE COLL_NAME like "*path%"){
         *filecount = *filecount + 1;
-        *totalSize = *totalSize + *row."DATA_SIZE";
+        *totalSize = *totalSize + int(*row."DATA_SIZE");
     }
 
     foreach (*row in SELECT COLL_ID, COLL_MODIFY_TIME
