@@ -54,7 +54,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 iiGenerateCombiXml(*publicationConfig, *publicationState){
 	
 	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
-	*publicHost = *publicationConfig.publicHost;
+	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
 
 	*vaultPackage = *publicationState.vaultPackage;
 	*randomId = *publicationState.randomId;
@@ -76,7 +76,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
            "    <Publication_Date>*publicationDate</Publication_Date>\n";
 	if (*publicationState.accessRestriction like "Open*") {
 	   *systemMetadata = *systemMetadata ++ 
-           "    <Open_Access_Link><![CDATA[https://*publicHost/*subPath]]></Open_Access_Link>\n";
+           "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
 	}
 	*systemMetadata = *systemMetadata ++
            "    <License_URL><![CDATA[http://tobedetermined]]></License_URL>\n" ++
@@ -145,6 +145,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiBytesBufToStr(*buf, *dataCiteXml);
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
+		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
 	} else if (*httpCode == "400") {
 		# invalid XML
@@ -167,7 +168,9 @@ iiMintDOI(*publicationConfig, *publicationState) {
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode); 
+	writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
+		*publicationState.DOIMinted = "yes";
 		succeed;
 	} else if (*httpCode == "400") {
 		*publicationState.status = "Unrecoverable";
@@ -300,6 +303,7 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 
 	*err = errorcode(msiSetACL("recursive", *accessLevel, "anonymous", *vaultPackage));
 	if (*err < 0) {
+		*publicationState.anonymousAccessLevel = *accessLevel;
 		writeLine("serverLog", "iiSetAccessRestriction: errorcode *err");
 	} else {
 		writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
@@ -320,7 +324,9 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "yodaPrefix",
 		 "dataCitePrefix",
 		 "randomIdLength",
-		 "yodaInstance");
+		 "yodaInstance",
+		 "davrodsAnonymousVHost"
+		 );
 	*metadataAttributes = list(
 		 "datacite_username",
 		 "datacite_password",
@@ -331,7 +337,10 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "yoda_prefix",
 		 "datacite_prefix",
 		 "random_id_length",
-		 "yoda_instance");
+		 "yoda_instance",
+		 "davrods_anonymous_vhost");
+	
+	*nKeys = size(*configKeys);
 
 	msiString2KeyValPair("randomIdLength=6%yodaInstance=" ++ UUINSTANCENAME, *publicationConfig);
 	*sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
@@ -339,7 +348,7 @@ iiGetPublicationConfig(*publicationConfig) {
 	iiCollectionMetadataKvpList(*sysColl, UUORGMETADATAPREFIX, true, *kvpList);
 	# Add all metadata keys found to publicationConfig with the configKey as key.
 	foreach(*kvp in *kvpList) {
-		for(*idx = 0;*idx < 10;*idx = *idx + 1) {
+		for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
 			if (*kvp.attrName == elem(*metadataAttributes, *idx)) {
 				*configKey = elem(*configKeys, *idx);
 				*publicationConfig."*configKey" = *kvp.attrValue;
@@ -348,7 +357,7 @@ iiGetPublicationConfig(*publicationConfig) {
 		}
 	}
 	# Check if all config keys are set;
-	for(*idx = 0;*idx < 10;*idx = *idx + 1) {
+	for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
 		*configKey = elem(*configKeys, *idx);
 		*err = errorcode(*publicationConfig."*configKey");
 		if (*err < 0) {
@@ -382,6 +391,9 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	writeKeyValPairs("serverLog", *publicationState, "=");
 }
 
+# \brief iiSavePublicationState  Save the publicationState key-value-pair to AVU's on the vaultPackage
+# \param[in] vaultPackage        path to the package in the vault
+# \param[out] publicationState   key-value-pair containing the state
 iiSavePublicationState(*vaultPackage, *publicationState) {
 	msiString2KeyValPair("", *kvp);
 	foreach(*key in *publicationState) {
@@ -406,6 +418,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);	
 	if (*httpCode == "404") {
 		# DOI is available!
+		*publicationState.DOIAvailable = "yes";
 		succeed;
 	} else if (*httpCode == "500" || *httpCode == "403" || *httpCode == "401") {
 		# request failed, worth a retry
@@ -461,10 +474,11 @@ iiProcessPublication(*vaultPackage, *status) {
 	*status = *publicationState.status;
 	if (*status == "Unrecoverable" || *status == "Processing") {
 		succeed;
-	} else if (*status == "Unknown") {
+	} else if (*status == "Unknown" || *status == "Retry") {
 		*status = "Processing";
 		*publicationState.status = "Processing";
 	}
+	
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
@@ -503,28 +517,31 @@ iiProcessPublication(*vaultPackage, *status) {
 		
 	}
 
-
-	# Check if DOI is in use
-	*err = errorcode(iiCheckDOIAvailability(*publicationConfig, *publicationState));
-	if (*err < 0) {
-		*publicationStatus.status = "Retry";
+	if (!iiHasKey(*publicationState, "DOIAvailable")) {
+		# Check if DOI is in use
+		*err = errorcode(iiCheckDOIAvailability(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationStatus.status = "Retry";
+		}
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
 	}
-	if (*publicationState.status == "Retry") {
-		*status = *publicationState.status;
-		succeed;
-	}
 
-	# Send DataCite XML to metadata end point
-	*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
-	if (*err < 0) {
-		*publicationState.status = "Retry";
+	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
+		# Send DataCite XML to metadata end point
+		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
+			*status = *publicationState.status;
+			succeed;
+		}		
 	}
-	iiSavePublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
-		*status = *publicationState.status;
-		succeed;
-	}		
-
+	
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
 		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState));
@@ -534,61 +551,72 @@ iiProcessPublication(*vaultPackage, *status) {
 		iiSavePublicationState(*vaultPackage, *publicationState);
 		if (*publicationState.status == "Unrecoverable") {
 			*status = *publicationState.status;
-			*succeed;
+			succeed;
 		}
 	}
 	
 	# Create Landing page URL
 	iiGenerateLandingPageUrl(*publicationConfig, *publicationState);
 	
-	# Use secure copy to push landing page to the public host
-	*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
-	if (*err < 0) {
-		*publicationState.status = "Retry";
-	}	
-	iiSavePublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status == "Retry") {
-		*status = *publicationState.status;
-		*succeed;
+	if(!iiHasKey(*publicationState, "landingPageUploaded")) {
+		# Use secure copy to push landing page to the public host
+		*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}	
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
 	}
 	
-	# Use secure copy to push combi XML to MOAI server
-	*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
-	if (*err < 0) {
-		publicationState.status = "Retry";
-	}
-	iiSavePublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status == "Retry") {
-		*status = *publicationState.status;
-		*succeed;
-	}
-
-	# Set access restriction for vault package.
-	*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
-	if (*err < 0) {
-		publicationState.status = "Retry";
-	}
-	if (*publicationState.status == "Retry") {
-		*publicationState.status = "Retry";
+	if(!iiHasKey(*publicationState, "oaiUploaded")) {
+		# Use secure copy to push combi XML to MOAI server
+		*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			publicationState.status = "Retry";
+		}
 		iiSavePublicationState(*vaultPackage, *publicationState);
-		*status = *publicationState.status;
-		*succeed;
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
 	}
 
-	# Mint DOI with landing page URL.
-	*err = errorcode(iiMintDOI(*publicationConfig, *publicationState));
-	if (*err < 0) {
-		*publicationState.status = "Retry";
+	if (!iiHasKey(*publicationState, "anonymousAccessLevel")) {
+		# Set access restriction for vault package.
+		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
+		if (*err < 0) {
+			writeLine("stdout", "iiSetAccessRestriction: *err");
+			publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
 	}
-	iiSavePublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
-		*status = *publicationState.status;
-		succeed;
-		
+	
+	if (!iiHasKey(*publicationState, "DOIMinted")) {
+		# Mint DOI with landing page URL.
+		*err = errorcode(iiMintDOI(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		#iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+			
+		} else {
+			writeLine("serverLog", "iiProcessPublication: All steps for publication completed");
+			# The publication was a success;
+			*publicationState.status = "OK";
+			iiSavePublicationState(*vaultPackage, *publicationState);
+			*status = *publicationState.status;	
+			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
+			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
+		}
 	}
-
-	*status = "OK";
-	*publicationStatus.status = *status;	
-	# Save state to metadata of vault package
-	iiSavePublicationState(*vaultPackage, *publicationState);
 }
