@@ -328,3 +328,62 @@ iiCopyACLsFromParent(*path) {
 	}
 
 }
+
+
+# \brief iiFrontEndSystemMetadata Make system metadata accesible conform standard to the front end.
+# \param[in] vaultPackage Package in the vault to retrieve system metadata from
+# \param[out] result
+# \param[out] status
+# \param[out] statusInfo
+iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = *folder;
+
+	*result = "[]";
+	*size = 0;
+
+	*packageSizeArr = "[]";
+	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
+	msi_json_arrayops(*packageSizeArr, "iiFileCount", "add", *size);
+	msi_json_arrayops(*result, *packageSizeArr, "add", *size);
+
+
+        # Modified date
+	*modifiedDate = "null";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_lastModifiedDateTime") {
+		*modifiedDate = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*modifiedDate != "null") {
+	        *modifiedDateArr = "[]";
+	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, *modifiedDate, "add", *size);
+	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
+	}
+
+
+        # Package DOI
+	*yodaDOI = "null";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_yodaDOI") {
+		*yodaDOI = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*yodaDOI != "null") {
+	        *packageDOIArr = "[]";
+	        msi_json_arrayops(*packageDOIArr, "Package DOI", "add", *size);
+	        msi_json_arrayops(*packageDOIArr, *yodaDOI, "add", *size);
+	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
+	}
+
+
+        # Landingpage URL
+	*landingpageURL = "null";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_landingPageUrl") {
+		*landingpageURL = *row.META_COLL_ATTR_VALUE;
+	}
+
+        *landinpageURLArr = "[]";
+	msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
+	msi_json_arrayops(*landinpageURLArr, *landingpageURL, "add", *size);
+	msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
+}

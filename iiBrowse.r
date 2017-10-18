@@ -324,23 +324,3 @@ iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
 		*lst = cons(*kvp, *lst);
 	}
 }
-
-# \brief iiFrontEndSystemMetadata Make system metadata accesible conform standard to the front end.
-# \param[in] folder   folder name to be extended with required full qualification name
-# \param[out] result
-# \param[out] status
-# \param[out] statusInfo
-iiFrontEndSystemMetadata(*folder, *result, *status, *statusInfo) {
-	*status = 'Success';
-	*statusInfo = *folder;
-
-	*result = "[]";
-	*size = 0;
-
-	*test = "[]";
-	msi_json_arrayops(*test, "TEST1", "add", *size);
-	msi_json_arrayops(*test, "TEST2", "add", *size);
-
-	msi_json_arrayops(*result, *test, "add", *size);
-	msi_json_arrayops(*result, *test, "add", *size);
-}
