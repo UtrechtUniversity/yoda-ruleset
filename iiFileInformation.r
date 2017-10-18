@@ -31,12 +31,12 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *data_modified = 0;
     *coll_modified = 0;
 
-    foreach (*row in SELECT DATA_ID WHERE COLL_NAME like "*path%"){
+    foreach (*row in SELECT DATA_ID WHERE COLL_NAME like "*path%") {
         *filecount = *filecount + 1;
     }
 
-    foreach (*row in SELECT DATA_ID, DATA_SIZE, min(DATA_MODIFY_TIME)
-                     WHERE COLL_NAME like "*path%"){
+    foreach (*row in SELECT DATA_ID, DATA_SIZE, max(DATA_MODIFY_TIME)
+                     WHERE COLL_NAME like "*path%") {
         *totalSize = *totalSize + int(*row."DATA_SIZE");
 	if (*data_modified < int(*row."DATA_MODIFY_TIME")) {
 	    *data_modified = int(*row."DATA_MODIFY_TIME");
@@ -44,7 +44,7 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     }
 
     foreach (*row in SELECT COLL_ID, COLL_MODIFY_TIME
-                     WHERE COLL_NAME like "*path%"){
+                     WHERE COLL_NAME like "*path%") {
         *dircount = *dircount + 1;
 	if (*coll_modified < int(*row."COLL_MODIFY_TIME")) {
 	    *coll_modified = int(*row."COLL_MODIFY_TIME");
