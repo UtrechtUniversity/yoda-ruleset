@@ -35,7 +35,7 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
         *filecount = *filecount + 1;
     }
 
-    foreach (*row in SELECT DATA_ID, DATA_SIZE, max(DATA_MODIFY_TIME)
+    foreach (*row in SELECT DATA_ID, DATA_SIZE, DATA_MODIFY_TIME
                      WHERE COLL_NAME like "*path%") {
         *totalSize = *totalSize + int(*row."DATA_SIZE");
 	if (*data_modified < int(*row."DATA_MODIFY_TIME")) {
