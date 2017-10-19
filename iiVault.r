@@ -376,10 +376,20 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	if (*modifiedDate != "null") {
 	        *splitModifiedDate = split(*modifiedDate, "T");
 		*date = elem(*splitModifiedDate, 0);
-		*time = elem(*splitModifiedDate, 1);
-	        *modifiedDateArr = "[]";
+		*timeAndZone = elem(*splitModifiedDate, 1);
+
+		*splitTimeAndZone = split(*timeAndZone, "+");
+		*sign = "+";
+		if (size(*splitTimeAndZone) < 2) {
+		   *splitTimeAndZone = split(*timeAndZone, "-");
+		   *sign = "-";
+		}
+		*time = elem(*splitTimeAndZone, 0);
+		*zone = elem(*splitTimeAndZone, 1);
+
+		*modifiedDateArr = "[]";
 	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
-	        msi_json_arrayops(*modifiedDateArr, "*date *time", "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC *sign*zone", "add", *size);
 	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
 	}
 
