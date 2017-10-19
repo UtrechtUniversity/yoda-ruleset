@@ -231,7 +231,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 # \param[in]  folder      Path of folder in vault to submit for publication
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
-iiVaultSubmit(*folder, *confirmationVersion, *status, *statusInfo) {
+iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
@@ -258,3 +258,18 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
+
+
+# \brief iiGetPublicationLicenseText  Get the license text to be accepted by researcher
+# \param[in] folder            	Path of vault folder
+# \param[out] result		License text 
+# \param[out] status     	Status of the action
+# \param[out] statusInfo        Information message when action was not successful
+
+iiGetPublicationLicenseText(*folder, *result, *status, *statusInfo)
+{
+	*status = "Success";
+	*statusInfo = "";
+	*result = "<strong>License for publication</strong>";	
+}
+
