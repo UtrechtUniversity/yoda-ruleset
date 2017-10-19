@@ -374,9 +374,12 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	}
 
 	if (*modifiedDate != "null") {
+	        *splitModifiedDate = split(*modifiedDate, "T");
+		*date = *splitModifiedDate[0];
+		*time = *splitModifiedDate[1];
 	        *modifiedDateArr = "[]";
 	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
-	        msi_json_arrayops(*modifiedDateArr, *modifiedDate, "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, "*date *time", "add", *size);
 	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
 	}
 
@@ -389,8 +392,8 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
 	if (*yodaDOI != "null") {
 	        *packageDOIArr = "[]";
-	        msi_json_arrayops(*packageDOIArr, "Package DOI", "add", *size);
-	        msi_json_arrayops(*packageDOIArr, *yodaDOI, "add", *size);
+	        msi_json_arrayops(*packageDOIArr, "Peristent Identifier", "add", *size);
+	        msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
 	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
 	}
 
