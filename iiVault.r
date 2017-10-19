@@ -389,7 +389,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
 		*modifiedDateArr = "[]";
 	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
-	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC *sign*zone", "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC*sign*zone", "add", *size);
 	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
 	}
 
