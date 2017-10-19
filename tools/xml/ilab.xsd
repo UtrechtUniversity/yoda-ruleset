@@ -29,7 +29,7 @@
         <xs:element name="Related_Datapackage" minOccurs="0" maxOccurs="unbounded">
           <xs:complexType>
             <xs:sequence>
-              <xs:element name="Relation_Type" type="optionsRelationType" minOccurs="0" maxOccurs="unbounded"/>
+              <xs:element name="Relation_Type" type="optionsRelationType" minOccurs="0" maxOccurs="1"/>
               <xs:element name="Properties">
                 <xs:complexType>
                   <xs:sequence>
