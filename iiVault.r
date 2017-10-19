@@ -434,7 +434,7 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 			succeed;
 		}
 	} else {
-		writLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
+		writeLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
 	}
 }
 

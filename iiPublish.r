@@ -65,7 +65,6 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	msiGetIcatTime(*now, "unix");
 	*publicationDate = uuiso8601date(*now);
 	*combiXmlPath = "*tempColl/*randomId-combi.xml";
-	*publicationState.combiXmlPath = *combiXmlPath;
 	*systemMetadata =
 	   "  <System>\n" ++
 	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
@@ -78,9 +77,9 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
 	}
-	if (iiHasKey(*publicationState.licenseUrl)) {
+	if (iiHasKey(*publicationState, "licenseUrl")) {
     	   *systemMetadata = *systemMetadata ++
-           "    <License_URL><![CDATA[" ++ *publicationState.licenseUrl ++ "</License_URL>\n"; 
+           "    <License_URL><![CDATA[" ++ *publicationState.licenseUrl ++ "]]></License_URL>\n"; 
 	}
 	*systemMetadata = *systemMetadata ++
            "  </System>\n" ++ 
@@ -94,6 +93,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
 	msiDataObjClose(*fd, *status);
 	writeLine("serverLog", "iiGenerateCombiXml: generated *combiXmlPath");
+	*publicationState.combiXmlPath = *combiXmlPath;
 
 }
 
