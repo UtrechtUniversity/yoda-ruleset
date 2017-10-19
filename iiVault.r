@@ -375,8 +375,8 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
 	if (*modifiedDate != "null") {
 	        *splitModifiedDate = split(*modifiedDate, "T");
-		*date = *splitModifiedDate[0];
-		*time = *splitModifiedDate[1];
+		*date = elem(*splitModifiedDate, 0);
+		*time = elem(*splitModifiedDate, 1);
 	        *modifiedDateArr = "[]";
 	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
 	        msi_json_arrayops(*modifiedDateArr, "*date *time", "add", *size);
