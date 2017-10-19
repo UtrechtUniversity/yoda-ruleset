@@ -260,6 +260,12 @@ iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 }
 
 
+# \brief iiGetPublicationLicenseText  Get the license text to be accepted by researcher
+# \param[in] folder            	Path of vault folder
+# \param[out] result		License text 
+# \param[out] status     	Status of the action
+# \param[out] statusInfo        Information message when action was not successful
+
 iiGetPublicationLicenseText(*folder, *result, *status, *statusInfo)
 {
 	*status = "Success";
