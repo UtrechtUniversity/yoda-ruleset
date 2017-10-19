@@ -128,7 +128,7 @@
               </xs:element>
               <xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
               <xs:element name="Open_Access_Link" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
-              <xs:element name="License_URL" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
+              <xs:element name="License_URI" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
           </xs:complexType>
         </xs:element>
@@ -276,11 +276,10 @@
   </xs:simpleType>
   <xs:simpleType name="optionsLicense">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="CC-0"/>
       <xs:enumeration value="CC-BY"/>
       <xs:enumeration value="CC-BY-SA"/>
       <xs:enumeration value="ODC-BY"/>
-      <xs:enumeration value="Custom License - see details in data package"/>
+      <xs:enumeration value="Custom"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsRelationType">

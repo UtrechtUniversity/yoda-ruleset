@@ -77,9 +77,9 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	   *systemMetadata = *systemMetadata ++ 
            "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
 	}
-	if (iiHasKey(*publicationState, "licenseUrl")) {
+	if (iiHasKey(*publicationState, "licenseUri")) {
     	   *systemMetadata = *systemMetadata ++
-           "    <License_URL><![CDATA[" ++ *publicationState.licenseUrl ++ "]]></License_URL>\n"; 
+           "    <License_URI><![CDATA[" ++ *publicationState.licenseUri ++ "]]></License_URI>\n"; 
 	}
 	*systemMetadata = *systemMetadata ++
            "  </System>\n" ++ 
@@ -400,15 +400,14 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	if (*license != "") {
 
 		*publicationState.license = *license;
-		*licenseColl = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION;
-		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_url";
-		*licenseUrl = "";
-		foreach(*row in SELECT META_DATA_ATTR_VALUE WHERE COLL_NAME = *licenseColl AND DATA_NAME = "*license.txt" AND META_DATA_ATTR_NAME = *licenseAttrName) {
-			*licenseUrl = *row.META_DATA_ATTR_VALUE;
+		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_uri";	
+		*licenseUri = "";
+		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *licenseAttrName AND COLL_NAME = *vaultPackage) {
+			*licenseUri = *row.META_COLL_ATTR_VALUE;
 		}
-	
-		if (*licenseUrl != "") {
-			*publicationState.licenseUrl = *licenseUrl;
+
+		if (*licenseUri != "") {
+			*publicationState.licenseUri = *licenseUri;
 		}
 	}
 

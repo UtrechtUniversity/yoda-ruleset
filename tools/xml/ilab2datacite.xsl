@@ -141,9 +141,9 @@
 <xsl:template match="License">
 <rightsList>
     <rights>
-       <xsl:if test="/metadata/System/License_URL">
+       <xsl:if test="/metadata/System/License_URI">
          <xsl:attribute name="rightsURI">
-           <xsl:value-of select="/metadata/System/License_URL" />
+           <xsl:value-of select="/metadata/System/License_URI" />
          </xsl:attribute>
        </xsl:if>
        <xsl:value-of select="." />

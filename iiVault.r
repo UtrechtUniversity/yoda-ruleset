@@ -449,5 +449,15 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 	} else {
 		writeLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
 	}
+	
+	*licenseUriFile = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".uri";
+	if (uuFileExists(*licenseUriFile)) {
+		msiDataObjOpen("objPath=*licenseUriFile", *fd);
+		msiDataObjRead(*fd, 2000, *buf);
+		msiDataObjClose(*fd, *status);
+		msiBytesBufToStr(*buf, *licenseUri);
+		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
+		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
+	}	
 }
 
