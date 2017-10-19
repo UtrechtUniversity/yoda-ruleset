@@ -456,6 +456,8 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 		msiDataObjRead(*fd, 2000, *buf);
 		msiDataObjClose(*fd, *status);
 		msiBytesBufToStr(*buf, *licenseUri);
+		# Remove qoutes from string. This prevents whitespace and linefeeds from slipping into the URI
+		*licenseUri = triml(trimr(*licenseUri, '"'), '"');
 		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
 		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
 	}	

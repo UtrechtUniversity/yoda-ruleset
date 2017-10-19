@@ -143,9 +143,7 @@
       <xsl:choose>
       <xsl:when test="/metadata/System/License_URI">
 	<a>
-        <xsl:attribute name="href">
-          <xsl:value-of select="/metadata/System/License_URI"/>
-        </xsl:attribute>
+        <xsl:attribute name="href"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
         <xsl:attribute name="target">blank</xsl:attribute>
         <xsl:value-of select="."/>
       </a>
