@@ -260,16 +260,16 @@ iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 }
 
 
-# \brief iiGetPublicationLicenseText  Get the license text to be accepted by researcher
+# \brief iiGetPublicationTermsText  Get the terms and agreements as text to be accepted by researcher
 # \param[in] folder            	Path of vault folder
-# \param[out] result		License text 
+# \param[out] result		Terms and agreements text 
 # \param[out] status     	Status of the action
 # \param[out] statusInfo        Information message when action was not successful
 
-iiGetPublicationLicenseText(*folder, *result, *status, *statusInfo)
+iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 {
 	*status = "Success";
 	*statusInfo = "";
-	*result = "<strong>License for publication</strong>";	
+	*result = "<strong>Terms and agreements for publication</strong>";	
 }
 
