@@ -265,11 +265,46 @@ iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 # \param[out] result		Terms and agreements text 
 # \param[out] status     	Status of the action
 # \param[out] statusInfo        Information message when action was not successful
-
 iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 {
-	*status = "Success";
+	*status = "Unknown";
 	*statusInfo = "";
-	*result = "<strong>Terms and agreements for publication</strong>";	
-}
+	
+	*termsColl = "/" ++ $rodsZoneClient ++ IITERMSCOLLECTION;
+
+	*dataName = "";
+	foreach (*row in SELECT DATA_NAME, DATA_SIZE, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *termsColl) {
+		*dataModifyTime = *row.DATA_MODIFY_TIME;
+		*dataName = *row.DATA_NAME;
+		*dataSize = *row.DATA_SIZE;
+		break;
+	}
+
+	if (*dataName == "") {
+		*status = "NotFound";
+		*statusInfo = "No Terms and Agreements found. Please contact YoDa administrators";
+		succeed;
+	}
+ 
+	writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName last modified at *dataModifyTime");
+
+	*err = errorcode(msiDataObjOpen("objPath=*termsColl/*dataName", *fd));
+	if (*err < 0) {
+		writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName failed with errorcode: *err");
+		*status = "PermissionDenied";
+		*statusInfo = "Could not open Terms and Agreements. Please contact YoDa administrators";
+		succeed;
+	}
+
+	*err1 = errorcode(msiDataObjRead(*fd, *dataSize, *buf));
+	*err2 = errorcode(msiDataObjClose(*fd, *status));
+	*err3 = errorcode(msiBytesBufToStr(*buf, *result));
+	if (*err1 == 0 && *err2 == 0 && *err3 == 0) {
+		*status = "Success";
+	} else {
+		writeLine("serverLog", "iiGetPublicationTermsText: Reading *termsColl/*dataName failed with errorcode: *err1, *err2, *err3.");
+		*status = "ReadFailure";
+		*statusInfo = "Failed to read Terms and Agreements from disk. Please contact YoDa administrators";
+	}
+}	
 
