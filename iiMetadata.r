@@ -488,6 +488,8 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "";
+
+	
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
@@ -508,6 +510,12 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
+	# The actor (active datamanager) is registered as DATA_OWNER_NAME on the metadata xml
+	# We need this information for the action log.
+	uuChopPath(*metadataXmlPath, *collName, *dataName);
+	foreach (*row in SELECT DATA_OWNER_NAME WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
+		*actor = *row.DATA_OWNER_NAME;
+	}
 
 	# Ensure access to the metadata xml for rodsadmin
 	msiCheckAccess(*metadataXmlPath, "modify object", *modifyAccess);
@@ -592,7 +600,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";
 	# Add action log record
-	iiAddActionLogRecord(*datamanagerGroup, *vaultPackagePath, "modified metadata");
+	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
 }
 
 # \brief iiGetLatestVaultMetadataXml
