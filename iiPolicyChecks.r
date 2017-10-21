@@ -335,10 +335,10 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 			foreach(*rootCollection in *locks) {
 				if (strlen(*rootCollection) > strlen(*itemName)) {
 					*allowed = true;
-					*reason = "Lock *lockName found, but starting from *rootCollection";
+					*reason = "Lock found, but in subcollection *rootCollection";
 				} else {
 					*allowed = false;
-					*reason = "Lock *LockName found on *rootCollection";
+					*reason = "Lock found, starting from *rootCollection";
 					break;
 				}
 			}
