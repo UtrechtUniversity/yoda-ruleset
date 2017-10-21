@@ -286,7 +286,7 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 		succeed;
 	}
  
-	writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName last modified at *dataModifyTime");
+	#DEBUG writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName last modified at *dataModifyTime");
 
 	*err = errorcode(msiDataObjOpen("objPath=*termsColl/*dataName", *fd));
 	if (*err < 0) {
