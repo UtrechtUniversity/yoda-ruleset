@@ -32,6 +32,7 @@ RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o
 
 RULESET_NAME ?= rules-research.re
 RULESET_FILE := $(RULESET_NAME)
+DEBUG_FILE := $(RULESET_NAME).debug
 
 INSTALL_DIR  ?= ..
 
@@ -50,3 +51,12 @@ clean:
 
 update:
 	git pull
+
+$(DEBUG_FILE): $(RULE_FILES)
+	cat $(RULE_FILES) | sed 's/#DEBUG\s//' | sed '/^\s*\(#.*\)\?$$/d' > $(DEBUG_FILE)
+
+debug: $(DEBUG_FILE)
+
+debug-install: $(DEBUG_FILE)
+	cp --backup $(DEBUG_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
+

@@ -361,7 +361,7 @@ iiRevisionList(*path, *result) {
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
 			*val = *meta.META_DATA_ATTR_VALUE;
-			# writeLine("serverLog","metada: *name - *val");
+			#DEBUG writeLine("serverLog","metadata: *name - *val");
 			msiAddKeyVal(*kvp, *name, *val);	
 		}
 
@@ -514,7 +514,7 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 
 	# If no revisions are found, no revisions need to be removed
 	if (size(*revisions) < 1) {
-		writeLine("serverLog", "iiRevisionStrategyImplementation: Nothing to do, no revisions found for *path");
+		#DEBUG writeLine("serverLog", "iiRevisionStrategyImplementation: Nothing to do, no revisions found for *path");
 		succeed;
 	}
 
@@ -529,7 +529,7 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 		}
 		# Use a pseudo constructor on the bucket to put each integer in the proper variable
 		iibucket(*offset, *sizeOfBucket, *startIdx) = *bucket;
-	#	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket] startIdx[*startIdx]");
+		#DEBUG	writeLine("stdout", "Bucket: offset[*offset] sizeOfBucket[*sizeOfBucket] startIdx[*startIdx]");
 		*startTime = *endOfCalendarDay - *offset; 
 		# each revision newer than the startTime of the bucket is a candidate to keep or remove in that bucket
 		*candidates = list();
@@ -538,13 +538,13 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 			*revision = hd(*revisions);
 			# use pseudo data constructor iirevisioncandidate to initialize timeInt and id.
 			iirevisioncandidate(*timeDouble, *id) = *revision;
-	#		writeLine("stdout", "*timeInt: *id");
+			#DEBUG writeLine("stdout", "*timeInt: *id");
 			if (*timeDouble > *startTime) {
-	#			writeLine("stdout", "*timeInt > *offset");
+				#DEBUG writeLine("stdout", "*timeInt > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
 			} else {
-	#			writeLine("stdout", "break;");
+				#DEBUG writeLine("stdout", "break;");
 				break;	
 			}	
 		}
