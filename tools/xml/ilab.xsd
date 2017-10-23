@@ -30,7 +30,7 @@
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Relation_Type" type="optionsRelationType" minOccurs="0" maxOccurs="1"/>
-              <xs:element name="Properties">
+              <xs:element name="Properties" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Title" type="stringNormal" minOccurs="0" maxOccurs="1"/>
@@ -57,7 +57,7 @@
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Funder_Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-              <xs:element name="Properties">
+              <xs:element name="Properties" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Award_Number" type="stringNormal" minOccurs="0" maxOccurs="1"/>
@@ -71,7 +71,7 @@
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-              <xs:element name="Properties">
+              <xs:element name="Properties"  minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Affiliation" type="stringNormal" minOccurs="0" maxOccurs="unbounded"/>
@@ -93,7 +93,7 @@
           <xs:complexType>
             <xs:sequence>
               <xs:element name="Name" type="stringNormal" minOccurs="0" maxOccurs="1"/>
-              <xs:element name="Properties">
+              <xs:element name="Properties" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element name="Contributor_Type" type="optionsContributorType" minOccurs="0" maxOccurs="1"/>
