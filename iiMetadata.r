@@ -295,14 +295,16 @@ iiRemoveAllMetadata(*path) {
 	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
 	msiAddKeyValToMspStr("forceFlag", "", *options);
 	*err = errorcode(msiDataObjUnlink(*options, *status));
-	writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
+	if (*err < 0) {
+		writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
+	}
 }
 
 # \brief iiRemoveAVUs   Remove the User AVU's from the irods AVU store
 # \param[in] coll	    Collection to scrub of user metadata
 # \param[in] prefix	    prefix of metadata to remov
 iiRemoveAVUs(*coll, *prefix) {
-	writeLine("serverLog", "iiRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
+	#DEBUG writeLine("serverLog", "iiRemoveAVUs: Remove all AVU's from *coll prefixed with *prefix");
 	msiString2KeyValPair("", *kvp);
 	*prefix = *prefix ++ "%";
 
@@ -312,11 +314,11 @@ iiRemoveAVUs(*coll, *prefix) {
 		*attr = *row.META_COLL_ATTR_NAME;
 		*val = *row.META_COLL_ATTR_VALUE;
 		if (*attr == *prev) {
-			# writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
+			#DEBUG writeLine("serverLog", "iiRemoveAVUs: Duplicate attribute " ++ *attr);
 		       *duplicates = cons((*attr, *val), *duplicates);
 		} else {	
 			msiAddKeyVal(*kvp, *attr, *val);
-			# writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+			#DEBUG writeLine("serverLog", "iiRemoveAVUs: Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 			*prev = *attr;
 		}
 	}
@@ -326,7 +328,7 @@ iiRemoveAVUs(*coll, *prefix) {
 	foreach(*pair in *duplicates) {
 
 		(*attr, *val) = *pair;
-		# writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
+		#DEBUG writeLine("serverLog", "iiRemoveUserAVUs: Duplicate key Attribute=\"*attr\", Value=\"*val\" from *coll will be removed");
 		msiString2KeyValPair("", *kvp);
 		msiAddKeyVal(*kvp, *attr, *val);
 		msiRemoveKeyValuePairsFromObj(*kvp, *coll, "-C");
@@ -369,16 +371,17 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d"); 
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
-		writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
+		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
 		iiPrepareMetadataImport(*xmlPath, *userZone, *xsdPath, *xslPath);
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlPath, *xsdPath, *statusBuf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
 		} else if (*err == 0) {
-			writeLine("serverLog", "XSD validation successful. Start indexing");
+			#DEBUG writeLine("serverLog", "XSD validation successful. Start indexing");
 			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 			iiImportMetadataFromXML(*xmlPath, *xslPath);
 		} else {
+			writeLine("serverLog", "iiMetadataXmlModifiedPost: Validation report of *xmlPath below.");
 			writeBytesBuf("serverLog", *statusBuf);
 		}
 	}
@@ -404,7 +407,7 @@ iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
 	*lst	= cons(*zone, *lst);
 	uuJoin("/", *lst, *logicalPath);
 	*logicalPath = "/" ++ *logicalPath;
-	writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
+	#DEBUG writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
 }
 
 
@@ -414,15 +417,15 @@ iiMetadataXmlRenamedPost(*src, *dst, *zone) {
 	# the logical_path in $KVPairs is that of the destination
 	uuChopPath(*dst, *dst_parent, *dst_basename);
 	if (*dst_basename != IIMETADATAXMLNAME && *src_parent == *dst_parent) {
-		writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
+		#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
 		iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
 	} else if (*src_parent != *dst_parent) {
 		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
 		if (uuCollectionExists(*src_parent)) {
 			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
+			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
 		} else {
-			writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
+			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
 		}
 	}
 }
@@ -432,10 +435,10 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 	# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
 	uuChopPath(*logicalPath, *parent, *basename);
 	if (uuCollectionExists(*parent)) {
-		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename removed. Removing user metadata from *parent");
+		#DEBUG writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename removed. Removing user metadata from *parent");
 		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
 	} else {
-		writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
+		#DEBUG writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
 	}			
 }
 
@@ -488,6 +491,8 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "";
+
+	
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)
@@ -508,6 +513,12 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
+	# The actor (active datamanager) is registered as DATA_OWNER_NAME on the metadata xml
+	# We need this information for the action log.
+	uuChopPath(*metadataXmlPath, *collName, *dataName);
+	foreach (*row in SELECT DATA_OWNER_NAME WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
+		*actor = *row.DATA_OWNER_NAME;
+	}
 
 	# Ensure access to the metadata xml for rodsadmin
 	msiCheckAccess(*metadataXmlPath, "modify object", *modifyAccess);
@@ -592,7 +603,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";
 	# Add action log record
-	iiAddActionLogRecord(*datamanagerGroup, *vaultPackagePath, "modified metadata");
+	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
 }
 
 # \brief iiGetLatestVaultMetadataXml

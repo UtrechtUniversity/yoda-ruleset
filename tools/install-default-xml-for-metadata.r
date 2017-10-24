@@ -33,7 +33,7 @@ createXmlXsdCollections {
 	} else {
 
 		msiCollCreate(*systemcoll, 1, *status);
-		writeLine("stdout", "Created: *systemcoll");
+		writeLine("stdout", "Installed: *systemcoll");
 	}
 
 	*isfound = false;
@@ -48,12 +48,21 @@ createXmlXsdCollections {
 		msiCollCreate(*xsdcoll, 1, *status);
 		msiSetACL("default", "admin:read", "public", *xsdcoll);
 		msiSetACL("default", "admin:inherit", "public", *xsdcoll);
-		writeLine("stdout", "Created: *xsdcoll");
+		writeLine("stdout", "Installed: *xsdcoll");
 	}
 
 	*xsdforxsd = *xsdcoll ++ "/" ++ "schema-for-xsd.xsd";
-	msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
-	writeLine("stdout", "Installed: *xsdforxsd");
+	if (uuFileExists(*xsdforxsd)) {
+		if (*update == 1) {
+			msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
+			writeLine("stdout", "Update: *xsdforxsd");
+		} else {
+			writeLine("stdout", "Present: *xsdforxsd");
+		}
+	} else {
+		msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd", *status);
+		writeLine("stdout", "Installed: *xsdforxsd");
+	}
 
 	*xsdforformelements = *xsdcoll ++ "/" ++ "schema-for-formelements.xsd";
 	msiDataObjPut(*xsdforformelements, *resc, "localPath=*src/schema-for-formelements.xsd++++forceFlag=", *status);
@@ -61,11 +70,15 @@ createXmlXsdCollections {
 	
 	*xsddefault = *xsdcoll ++ "/" ++ IIXSDDEFAULTNAME;	
         if (uuFileExists(*xsddefault)) {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd++++forceFlag=", *status);
-                writeLine("stdout", "Force Update: *xsddefault");
+		if (*update == 1) {
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xsddefault");
+		} else {
+			writeLine("stdout", "Present: *xsddefault");
+		}
 	} else {
 		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd", *status);
-		writeLine("stdout", "Created: *xsddefault");
+		writeLine("stdout", "Installed: *xsddefault");
 	}
 
 	*isfound = false;
@@ -79,16 +92,20 @@ createXmlXsdCollections {
 		msiCollCreate(*xmlcoll, 1, *status);
 		msiSetACL("default", "read", "public", *xmlcoll);
 		msiSetACL("default", "admin:inherit", "public", *xmlcoll);
-		writeLine("stdout", "Created: *xmlcoll");
+		writeLine("stdout", "Installed: *xmlcoll");
 	}
 
 	*xmldefault = *xmlcoll ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;	
         if (uuFileExists(*xmldefault)) {
-		msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml++++forceFlag=", *status);
-		writeLine("stdout", "Force Update: *xmldefault");
+		if (*update == 1) {
+			msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xmldefault");
+		} else {
+			writeLine("stdout", "Present: *xmldefault");
+		}
         } else {
 		msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml", *status);
-		writeLine("stdout", "Created: *xmldefault");
+		writeLine("stdout", "Installed: *xmldefault");
 	}	
 
         *isfound = false;
@@ -103,37 +120,49 @@ createXmlXsdCollections {
 		msiCollCreate(*xslcoll, 1, *status);
 		msiSetACL("default", "read", "public", *xslcoll);
 		msiSetACL("default", "admin:inherit", "public", *xslcoll);
-		writeLine("stdout", "Created: *xslcoll");
+		writeLine("stdout", "Installed: *xslcoll");
 	}
 
 	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
         if (uuFileExists(*xsldefault)) {
-		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl++++forceFlag=", *status)
-                writeLine("stdout", "Force Update: *xsldefault");
+		if (*update == 1) {
+			msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl++++forceFlag=", *status)
+			writeLine("stdout", "Updated: *xsldefault");
+		} else {
+			writeLine("stdout", "Present: *xsldefault");
+		}
 	} else {
 		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl", *status);
-		writeLine("stdout", "Created: *xsldefault");
+		writeLine("stdout", "Installed: *xsldefault");
 	}
 
         *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
         if (uuFileExists(*xsldatacite)) {
-		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl++++forceFlag=", *status);
- 		writeLine("stdout", "Force Update: *xsldatacite");
+		if (*update == 1) {	
+			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xsldatacite");
+		} else {
+			writeLine("stdout", "Present: *xsldatacite");
+		}
  	} else {
 		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl", *status);
-		writeLine("stdout", "Created: *xsldatacite");
+		writeLine("stdout", "Installed: *xsldatacite");
         }
 
         *xsllandingpage = *xslcoll ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
         if (uuFileExists(*xsllandingpage)) {
-		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl++++forceFlag=", *status);
- 		writeLine("stdout", "Force Update: *xsllandingpage");
+		if (*update == 1) {
+			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl++++forceFlag=", *status);
+ 			writeLine("stdout", "Updated: *xsllandingpage");
+		} else {
+			writeLine("stdout", "Present: *xsllandingpage");
+		}
  	} else {
 		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl", *status);
-		writeLine("stdout", "Created: *xsllandingpage");
+		writeLine("stdout", "Installed: *xsllandingpage");
         }
 
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="ilab"
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="ilab", *update=0
 output ruleExecOut

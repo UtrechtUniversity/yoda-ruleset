@@ -44,7 +44,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 		msiDataObjClose(*fd, *status);
 		*publicationState.dataCiteXmlPath = *dataCiteXmlPath;
 		*publicationState.dataCiteXmlLen = str(*len);
-		writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
+		#DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
 	}
 }
 
@@ -92,7 +92,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	msiDataObjLseek(*fd, -12, "SEEK_END", *status);
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
 	msiDataObjClose(*fd, *status);
-	writeLine("serverLog", "iiGenerateCombiXml: generated *combiXmlPath");
+	#DEBUG writeLine("serverLog", "iiGenerateCombiXml: generated *combiXmlPath");
 	*publicationState.combiXmlPath = *combiXmlPath;
 
 }
@@ -115,7 +115,7 @@ iiGetLastModifiedDateTime(*publicationState) {
 	# iso8601 compliant datetime with UTC offset
 	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
 	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
-	writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
+	#DEBUG writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
 }
 
 
@@ -131,7 +131,7 @@ iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomId";
 	*publicationState.randomId = *randomId;
 	*publicationState.yodaDOI = *yodaDOI;
-	writeLine("serverLog", "iiGeneratePreliminaryDOI: *yodaDOI");
+	#DEBUG writeLine("serverLog", "iiGeneratePreliminaryDOI: *yodaDOI");
 }
 
 
@@ -171,7 +171,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode); 
-	writeLine("serverLog", "iiMintDOI: *httpCode");
+	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
 		*publicationState.DOIMinted = "yes";
 		succeed;
@@ -200,7 +200,7 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	*publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
 	*landingPageUrl = "https://*publicVHost/*publicPath";	
 	*publicationState.landingPageUrl = *landingPageUrl;
-	writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
+	#DEBUG writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 }
 
 
@@ -236,10 +236,10 @@ iiGenerateLandingPage(*publicationConfig, *publicationState) {
  		msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
 		msiDataObjWrite(*fd, *buf, *len);
 		msiDataObjClose(*fd, *status);
-		writeLine("serverLog", "landing page len=*len");
+		#DEBUG writeLine("serverLog", "landing page len=*len");
 		*publicationState.landingPageLen = str(*len);
 		*publicationState.landingPagePath = *landingPagePath;	
-		writeLine("serverLog", "iiGenerateLandingPage: Generated *landingPagePath");
+		#DEBUG writeLine("serverLog", "iiGenerateLandingPage: Generated *landingPagePath");
 	}
 }
 
@@ -264,7 +264,7 @@ iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
 		writeLine("serverLog", *stdout);
 	} else {
 		*publicationState.landingPageUploaded = "yes";
-		writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
+		#DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
 	}
 }
 
@@ -288,7 +288,7 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 		writeLine("serverLog", *stdout);
 	} else {
 		*publicationState.oaiUploaded = "yes";
-		writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
+		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
 	}
 
 }
@@ -309,7 +309,7 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 		*publicationState.anonymousAccessLevel = *accessLevel;
 		writeLine("serverLog", "iiSetAccessRestriction: errorcode *err");
 	} else {
-		writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
+		#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
 	}
 }
 
@@ -347,7 +347,7 @@ iiGetPublicationConfig(*publicationConfig) {
 
 	msiString2KeyValPair("randomIdLength=6%yodaInstance=" ++ UUINSTANCENAME, *publicationConfig);
 	*sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
-	writeLine("serverLog", "iiGetPublicationConfig: fetching publication configuration from *sysColl");
+	#DEBUG writeLine("serverLog", "iiGetPublicationConfig: fetching publication configuration from *sysColl");
 	iiCollectionMetadataKvpList(*sysColl, UUORGMETADATAPREFIX, true, *kvpList);
 	# Add all metadata keys found to publicationConfig with the configKey as key.
 	foreach(*kvp in *kvpList) {
@@ -369,7 +369,7 @@ iiGetPublicationConfig(*publicationConfig) {
 			fail;
 		}
 	}
-	writeKeyValPairs("serverLog", *publicationConfig, "=");
+	#DEBUG writeKeyValPairs("serverLog", *publicationConfig, "=");
 }
 
 # \brief iiGetPublicationState   The publication state is kept as metadata on the vaultPackage
@@ -412,7 +412,7 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	}
 
 	*publicationState.vaultPackage = *vaultPackage;
-	writeKeyValPairs("serverLog", *publicationState, "=");
+	#DEBUG writeKeyValPairs("serverLog", *publicationState, "=");
 }
 
 # \brief iiSavePublicationState  Save the publicationState key-value-pair to AVU's on the vaultPackage
@@ -438,7 +438,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*url = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi/" ++ *yodaDOI;
 	*username = *publicationConfig.dataCiteUsername;
 	*password = *publicationConfig.dataCitePassword;
-	writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");	
+	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");	
 	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);	
 	if (*httpCode == "404") {
 		# DOI is available!
@@ -446,12 +446,12 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 		succeed;
 	} else if (*httpCode == "500" || *httpCode == "403" || *httpCode == "401") {
 		# request failed, worth a retry
+		writeLine("serverLog", "iiCheckDOIAvailability: returned *httpCode; Could be retried later"); 
 		*publicationState.status = "Retry";
 	} else if (*httpCode == "200" || *httpCode == "204") {
-		# DOI already in use. Scrub doi for retry.
-		writeLine("stdout", "DOI *yodaDOI already in use.\n*result");
-		*publicationState.yodaDOI = "";
-		*publicationState.randomId = "";
+		# DOI already in use.
+		writeLine("serverLog", "DOI *yodaDOI already in use.\n*result");
+		*publicationState.DOIAvailable = "no";
 		*publicationState.status = "Retry";
 	}
 }
@@ -507,6 +507,12 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
 		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
+		iiSavePublicationState(*vaultPackage, *publicationState);
+	} else if (iiHasKey(*publicationState, "DOIAvailable") && *publicationState.DOIAvailable == "no") {
+		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
+		# We need to generate new XMLs
+		*publicationState.combiXmlPath = "";
+		*publicationState.dataCiteXmlPath = "";
 		iiSavePublicationState(*vaultPackage, *publicationState);
 	}
 
@@ -612,7 +618,6 @@ iiProcessPublication(*vaultPackage, *status) {
 		# Set access restriction for vault package.
 		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
 		if (*err < 0) {
-			writeLine("stdout", "iiSetAccessRestriction: *err");
 			publicationState.status = "Retry";
 		}
 		iiSavePublicationState(*vaultPackage, *publicationState);

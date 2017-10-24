@@ -9,7 +9,7 @@ iiRenameInvalidXML(*xmlpath, *xsdpath) {
 			msiBytesBufToStr(*status_buf, *status_str);
 			*len = strlen(*status_str);
 			if (*len == 0) {
-				writeLine("serverLog", "XSD validation returned no output. This implies successful validation.");
+				#DEBUG writeLine("serverLog", "*xmlpath validates");
 			} else {
 				writeBytesBuf("serverLog", *status_buf);
 				*invalid = true;
@@ -101,7 +101,7 @@ iiCanCollCreate(*path, *allowed, *reason) {
 		*allowed = true;
 	}
 
-	writeLine("serverLog", "iiCanCollCreate: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanCollCreate: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollRename 
@@ -136,7 +136,7 @@ iiCanCollRename(*src, *dst, *allowed, *reason) {
 		}
 	}
 
-	writeLine("serverLog", "iiCanCollRename: *src -> *dst; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanCollRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -156,7 +156,7 @@ iiCanCollDelete(*path, *allowed, *reason) {
 		*reason = "No locks found";
 	}
 
-	writeLine("serverLog", "iiCanCollDelete: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanCollDelete: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -186,7 +186,7 @@ iiCanDataObjCreate(*path, *allowed, *reason) {
 		*reason = "No locks found";
 	}
 
-	writeLine("serverLog", "iiCanDataObjCreate: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanDataObjCreate: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -222,7 +222,7 @@ iiCanDataObjWrite(*path, *allowed, *reason) {
 		}
 	}
 	
-	writeLine("serverLog", "iiCanDataObjWrite: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanDataObjWrite: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -257,7 +257,7 @@ iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 		}
 	}
 
-	writeLine("serverLog", "iiCanDataObjRename: *src -> *dst; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanDataObjRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -276,7 +276,7 @@ iiCanDataObjDelete(*path, *allowed, *reason) {
 		*allowed = true;
 		*reason = "No locks found";
 	}
-	writeLine("serverLog", "iiCanDataObjDelete: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanDataObjDelete: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -318,7 +318,7 @@ iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *t
 		*reason = "Restrictions only apply on Collections and DataObjects";
 	}
 
-	writeLine("serverLog", "iiCanCopyMetadata: *sourceItemName -> *targetItemName; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanCopyMetadata: *sourceItemName -> *targetItemName; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -335,10 +335,10 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 			foreach(*rootCollection in *locks) {
 				if (strlen(*rootCollection) > strlen(*itemName)) {
 					*allowed = true;
-					*reason = "Lock *lockName found, but starting from *rootCollection";
+					*reason = "Lock found, but in subcollection *rootCollection";
 				} else {
 					*allowed = false;
-					*reason = "Lock *LockName found on *rootCollection";
+					*reason = "Lock found, starting from *rootCollection";
 					break;
 				}
 			}
@@ -350,7 +350,7 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 		*reason = "No locks found";
 	}
 
-	writeLine("serverLog", "iiCanModifyUserMetadata: *itemName; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanModifyUserMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanCollDelete 
@@ -360,7 +360,7 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
 	*allowed = true;
 	*reason = "No reason to lock OrgMetatadata yet";
-	writeLine("serverLog", "iiCanModifyOrgMetadata: *itemName; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanModifyOrgMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanModifyFolderStatus 
@@ -393,7 +393,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 
 	iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
 
-	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanModifyFolderStatus 
@@ -411,7 +411,7 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 		*reason = "*attributeName should not be changed to *newAttributeName";
 	}
 
-	writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
+	#DEBUG writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
 # \brief iiCanTransitionFolderStatus 

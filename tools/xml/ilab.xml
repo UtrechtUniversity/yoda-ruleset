@@ -170,7 +170,7 @@
     <License>
       <label>License</label>
       <help>The license under which you offer the data package for use by third parties. Preferred value is CC BY</help>
-      <default>To be defined</default>
+      <mandatory>true</mandatory>
     </License>
     <Data_Access_Restriction>
       <label>Data Package Access</label>
