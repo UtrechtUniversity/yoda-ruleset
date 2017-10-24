@@ -348,12 +348,12 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
                 *totalSize = *totalSize / 1000;
                 *unit = "KB";
         }
-        if (*totalSize > 10000000) {
-                *totalSize = *totalSize / 1000000;
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
                 *unit = "MB";
         }
-        if (*totalSize > 10000000000) {
-                *totalSize = *totalSize / 1000000000;
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
                 *unit = "GB";
 	}
         *totalSize = floor(*totalSize);
