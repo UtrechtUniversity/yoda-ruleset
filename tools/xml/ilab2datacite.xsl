@@ -64,7 +64,7 @@
             <xsl:text>Dataset</xsl:text>
         </resourceType>
 
-        <xsl:if test="Related_Datapackage">
+        <xsl:if test="Related_Datapackage/Properties/Persistent_Identifier/Identifier">
           <relatedIdentifiers>
             <xsl:apply-templates select="Related_Datapackage"/>
           </relatedIdentifiers>
@@ -154,6 +154,7 @@
 </xsl:template>
 
 <xsl:template match="Related_Datapackage">
+  <xsl:if test="Properties/Persistent_Identifier/Identifier">
   <relatedIdentifier>
      <xsl:attribute name="relatedIdentifierType">
        <xsl:value-of select="Properties/Persistent_Identifier/Identifier_Scheme" />
@@ -161,6 +162,7 @@
      <xsl:attribute name="relationType"><xsl:value-of select="substring-before(Relation_Type, ':')"/></xsl:attribute>
      <xsl:value-of select="Properties/Persistent_Identifier/Identifier" />
   </relatedIdentifier>
+  </xsl:if>
 </xsl:template>
 
 <xsl:template match="Covered_Geolocation_Place">
