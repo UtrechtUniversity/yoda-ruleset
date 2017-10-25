@@ -72,28 +72,67 @@ iiSetVaultPermissions(*folder, *target) {
 
 	uuChop(*groupName, *_, *baseName, "-", true);
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
-	
-	# Setting main collection of vault group to noinherit for finegrained access control
-	*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
-	if (*err < 0) {
-		writeLine("stdout", "iiSetVaultPermissions: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
-		fail;
-	} else {
-		writeLine("stdout", "iiSetVaultPermissions: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
-		# Grant the research group read-only acccess to the collection to enable browsing through the vault.
-		*err = errorcode(msiSetACL("default", "admin:read", *groupName, "/$rodsZoneClient/home/*vaultGroupName"));
+
+	# Check if noinherit is set
+	*inherit = "0"; # COLL_INHERITANCE can be empty which is interpreted as noinherit
+	foreach(*row in SELECT COLL_INHERITANCE WHERE COLL_NAME = "/$rodsZoneClient/home/*vaultGroupName") {
+		*inherit = *row.COLL_INHERITANCE;
+	}
+
+	#DEBUG writeLine("stdout", "iiSetVaultPermissions: COLL_INHERITANCE = '*inherit' on /$rodsZoneClient/home/*vaultGroupName");
+
+	if (*inherit == "1") {
+		# Setting main collection of vault group to noinherit for finegrained access control
+		*err = errorcode(msiSetACL("recursive", "admin:noinherit", "", "/$rodsZoneClient/home/*vaultGroupName"));
 		if (*err < 0) {
-			writeLine("stdout", "iiSetVaultPermissions: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+			writeLine("stdout", "iiSetVaultPermissions: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
 			fail;
 		} else {
-			writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
+			writeLine("stdout", "iiSetVaultPermissions: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
+			# Check if research group has reas-only access
+			foreach(*row in SELECT USER_ID WHERE USER_NAME = *groupName) {
+				*groupId =  *row.USER_ID;
+				#DEBUG writeLine("stdout", "iiSetVaultPermissions: USER_ID = *groupId WHERE USER_NAME = *groupName");
+			}
+			*accessName = "null";
+			foreach(*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *groupId) {
+				*accessName = *row.COLL_ACCESS_NAME;
+				#DEBUG writeLine("stdout", "iiSetVaultPermissions: COLL_ACCESS_NAME = *accessName WHERE COLL_ACCESS_USER_ID = *groupId");
+			}
+
+			if (*accessName !=  "read object") {
+				# Grant the research group read-only acccess to the collection to enable browsing through the vault.
+				*err = errorcode(msiSetACL("default", "admin:read", *groupName, "/$rodsZoneClient/home/*vaultGroupName"));
+				if (*err < 0) {
+					writeLine("stdout", "iiSetVaultPermissions: Failed to grant *groupName read access to *vaultGroupName. errorcode: *err");
+					fail;
+				} else {
+					writeLine("stdout", "iiSetVaultPermissions: Granted *groupName read access to /$rodsZoneClient/home/*vaultGroupName");
+				}
+			}
 		}
 	}
 
+	# Check if vault group has ownership
+	foreach(*row in SELECT USER_ID WHERE USER_NAME = *vaultGroupName) {
+		*vaultGroupId = *row.USER_ID;
+		#DEBUG writeLine("stdout", "iiSetVaultPermissions: USER_ID = *vaultGroupId WHERE USER_NAME = *vaultGroupName");
+	}
+
+	*vaultGroupAccessName = "null";
+	foreach (*row in SELECT COLL_ACCESS_NAME WHERE COLL_ACCESS_USER_ID = *vaultGroupId) {
+		*vaultGroupAccessName = *row.COLL_ACCESS_NAME;
+		#DEBUG writeLine("stdout", "iiSetVaultPermissions: COLL_ACCESS_NAME = *vaultGroupAccessName WHERE COLL_ACCESS_USER_ID = *vaultGroupId");
+	}
+
 	# Ensure vault-groupName has ownership on vault package
-	*err = msiSetACL("recursive", "admin:own", *vaultGroupName, *target); 
-	if (*err < 0) {
-		writeLine("stdout", "iiSetVaultPermissions: Failed to set own on *target");
+	if (*vaultGroupAccessName != "own") {
+		*err = msiSetACL("recursive", "admin:own", *vaultGroupName, *target); 
+		if (*err < 0) {
+			writeLine("stdout", "iiSetVaultPermissions: Failed to set own for *vaultGroupName on *target");
+		} else {
+			writeLine("stdout", "iiSetVaultPermissions: Set own for *vaultGroupName on *target");
+		}
 	}
 
 	# Grant datamanager group read access to vault package.
@@ -162,6 +201,7 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
 		}
 	} else {
+#               The checksum code in the comments below, segfaulted iRodsAgent in 4.1.8.
 #		*error = errorcode(msiDataObjChksum(*sourcePath, "ChksumAll=++++forceChksum=", *chksum));
 #		if (*error < 0) {
 #			*buffer.msg = "Failed to Checksum *sourcePath";
