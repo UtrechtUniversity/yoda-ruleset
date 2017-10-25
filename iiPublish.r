@@ -306,11 +306,13 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 
 	*err = errorcode(msiSetACL("recursive", *accessLevel, "anonymous", *vaultPackage));
 	if (*err < 0) {
-		*publicationState.anonymousAccessLevel = *accessLevel;
-		writeLine("serverLog", "iiSetAccessRestriction: errorcode *err");
-	} else {
-		#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
+		writeLine("serverLog", "iiSetAccessRestriction: msiSetACL *accessLevel on *vaultPackage to anonymous returned errorcode *err");
+		*publicationState.status = "Unrecoverable";
+		succeed;
 	}
+
+	*publicationState.anonymousAccessLevel = *accessLevel;
+	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
 
 # iiGetPublicationConfig         Configuration is extracted from metadata on the UUSYSTEMCOLLECTION
