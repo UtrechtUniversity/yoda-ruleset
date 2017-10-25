@@ -457,7 +457,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	if (*landingpageURL != "null") {
                 *landinpageURLArr = "[]";
 	        msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
-	        msi_json_arrayops(*landinpageURLArr, *landingpageURL, "add", *size);
+	        msi_json_arrayops(*landinpageURLArr, "<a href=\"*landingpageURL\">*landingpageURL</a>", "add", *size);
 	        msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
 	}
 }
