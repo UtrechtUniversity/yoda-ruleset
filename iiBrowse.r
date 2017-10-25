@@ -53,8 +53,6 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 			*kvp."irods_type" = "Collection";
 			*kvp."create_time" = *row.COLL_CREATE_TIME;
 			*kvp."modify_time" = *row.COLL_MODIFY_TIME;
-			# Add collection metadata with ilab prefix 	
-			uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 			*kvpList = cons(*kvp, *kvpList);
 		}
 	} else {
@@ -68,8 +66,6 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 			*kvp."create_time" = *row.DATA_CREATE_TIME;
 			*kvp."modify_time" = *row.DATA_MODIFY_TIME;
 			*kvp."irods_type" = "DataObject";
-			# Add Dataobject metadata with ilab prefix
-			uuObjectMetadataKvp(*data_id, UUORGMETADATAPREFIX, *kvp);
 			*kvpList = cons(*kvp, *kvpList);
 		}
 	}
