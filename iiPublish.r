@@ -306,11 +306,18 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 
 	*err = errorcode(msiSetACL("recursive", *accessLevel, "anonymous", *vaultPackage));
 	if (*err < 0) {
-		*publicationState.anonymousAccessLevel = *accessLevel;
-		writeLine("serverLog", "iiSetAccessRestriction: errorcode *err");
-	} else {
-		#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel");
+		writeLine("serverLog", "iiSetAccessRestriction: msiSetACL *accessLevel on *vaultPackage to anonymous returned errorcode *err");
+		*publicationState.status = "Unrecoverable";
+		succeed;
 	}
+
+	# We cannot set "null" as value in a kvp as this will crash msi_json_objops if we ever perform a uuKvp2JSON on it.
+	if (*accessLevel == "null") {
+		*publicationState.anonymousAccess = "no";
+	} else {
+		*publicationState.anonymousAccess = "yes";
+	}
+	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
 
 # iiGetPublicationConfig         Configuration is extracted from metadata on the UUSYSTEMCOLLECTION
@@ -614,7 +621,7 @@ iiProcessPublication(*vaultPackage, *status) {
 		}
 	}
 
-	if (!iiHasKey(*publicationState, "anonymousAccessLevel")) {
+	if (!iiHasKey(*publicationState, "anonymousAccess")) {
 		# Set access restriction for vault package.
 		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
 		if (*err < 0) {
