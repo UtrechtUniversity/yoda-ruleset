@@ -26,12 +26,14 @@
       <default>en - English</default>
     </Language>
     <Collected class="compound">
+      <label>Collection process</label>
+      <help>Indicate when collecting the data for this data package started and ended</help>
       <Start_Date>
-        <label>Start Date of Collection Process</label>
+        <label>Start Date</label>
         <help>Indicate when you've started collecting the data for this data package (YYYY-MM-DD)</help>
       </Start_Date>
       <End_Date>
-        <label>End Date of Collection Process</label>
+        <label>End Date</label>
         <help>Indicate when you've finished collecting the data for this data package (YYYY-MM-DD)</help>
       </End_Date>
     </Collected>
@@ -40,6 +42,8 @@
       <help>Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)</help>
     </Covered_Geolocation_Place>
     <Covered_Period class="compound">
+      <label>Datapackage period</label>
+      <help>An indication of the period covered by your data package</help>
       <Start_Date>
         <label>Start Period</label>
         <help>An indication of the start date of the period covered by your data package (format: YYYY-MM-DD)</help>
