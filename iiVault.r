@@ -403,7 +403,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
 	*packageSizeArr = "[]";
 	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
-	msi_json_arrayops(*packageSizeArr, "*filecount files, *dircount directories, total of *totalSize *unit", "add", *size);
+	msi_json_arrayops(*packageSizeArr, "*filecount files, *dircount folders, total of *totalSize *unit", "add", *size);
 	msi_json_arrayops(*result, *packageSizeArr, "add", *size);
 
 
