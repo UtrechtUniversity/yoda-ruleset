@@ -423,9 +423,9 @@ iiMetadataXmlRenamedPost(*src, *dst, *zone) {
 		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
 		if (uuCollectionExists(*src_parent)) {
 			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
+			DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
 		} else {
-			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
+			DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
 		}
 	}
 }
