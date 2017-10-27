@@ -70,8 +70,8 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 		iiKvpCollectionTemplate(*rowList, *kvpList);	
 		foreach(*kvp in tl(*kvpList)) {
 			*coll_id = *kvp.id;
-			*matches = "[]";
 			*msize = 0;
+			*matches_lst = list();
 
 			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix) {
 				# Convert value and searchstring to uppercase for case insensitive search.
@@ -85,9 +85,12 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 					msiAddKeyVal(*match, *name, *val);
 					*match_json = "";
 					msi_json_objops(*match_json, *match, "set");
-					msi_json_arrayops(*matches, *match_json, "add", *msize);
+					*matches_lst = cons(*match_json, *matches_lst);
 				}
 			}
+			# Cannot rely on msi_json_arrayops as it removes double entries
+			uuJoin(",", *matches_lst, *matches);
+			*matches = "[" ++ *matches ++ "]";	
 			*kvp.matches = *matches;
 		}	
 	} else {
@@ -104,7 +107,7 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 		# skip index 0, it contains the summary and then add user metadata matches to each kvp
 		foreach(*kvp in tl(*kvpList)) {
 			*data_id = *kvp.id;
-			*matches = "[]";
+			*matches_lst = list();
 			*msize = 0;
 			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix) {
 				# Convert value and searchstring to uppercase for case insensitive search.
@@ -117,9 +120,12 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 					msiAddKeyVal(*match, *name, *val);
 					*match_json = "";
 					msi_json_objops(*match_json, *match, "set");
-					msi_json_arrayops(*matches, *match_json, "add", *msize);
+					*matches_lst = cons(*match_json, *matches_lst);
 				}
 			}
+			# Cannot rely on msi_json_arrayops as it removes double entries
+			uuJoin(",", *matches_lst, *matches);
+			*matches = "[" ++ *matches ++ "]";	
 			*kvp.matches = *matches;
 		}	
 
