@@ -39,11 +39,13 @@
               </dl>
               <h2>Descriptive</h2>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="Title | Description | Discipline | Research_Type | Version | Related_Datapackage | Language"/>
+                <xsl:apply-templates select="Title | Description | Discipline | Version | Related_Datapackage | Language"/>
+              <xsl:if test="Tag">
                 <dt>Tag(s)</dt>
                 <dd>
                   <xsl:apply-templates select="Tag"/>
                 </dd>
+              </xsl:if>
               </dl>
               <h2>Administrative</h2>
               <dl class="dl-horizontal">
@@ -98,7 +100,7 @@
       <xsl:value-of select="."/>
     </dd>
   </xsl:template>
-  <xsl:template match="Research_Type | Collection_Name | Data_Classification">
+  <xsl:template match="Collection_Name | Data_Classification">
     <dt>
       <xsl:value-of select="translate(local-name(),'_',' ')"/>
     </dt>
@@ -109,10 +111,12 @@
   <xsl:template match="Related_Datapackage">
     <dt>Related Datapackage</dt>
     <dd>
-      <xsl:value-of select="./Title"/>
+      <xsl:value-of select="./Properties/Title"/>
     </dd>
-    <dt>Persistent Identifier</dt>
-    <xsl:apply-templates select="./Properties/Persistent_Identifier"/>
+    <dl class="dl-horizontal subproperties">
+      <xsl:apply-templates select="Relation_Type"/>
+      <xsl:apply-templates select="./Properties/Persistent_Identifier"/>
+    </dl>
   </xsl:template>
   <xsl:template match="Creator | Contributor">
     <dt>
@@ -122,7 +126,6 @@
       <xsl:value-of select="./Name"/>
     </dd>
     <dl class="dl-horizontal subproperties">
-    <dt>Identifier</dt>
     <xsl:apply-templates select="./Properties/Person_Identifier"/>
     <xsl:apply-templates select="./Properties/Affiliation"/>
     </dl>
@@ -156,7 +159,7 @@
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
     <h2>Data Access</h2>
-    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to browse through this data with webDAV.</p>
+    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to access this data package with webDAV.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
     <h2>Data Access</h2>
@@ -167,10 +170,16 @@
     <p>The data is closed for access</p>
   </xsl:template>
   <xsl:template match="Persistent_Identifier">
+    <dt>Persistent Identifier</dt>
     <dd><xsl:value-of select="Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Identifier"/></dd>
   </xsl:template>
   <xsl:template match="Person_Identifier">
+    <dt>Person Identifier</dt>
     <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Name_Identifier"/></dd>
+  </xsl:template>
+  <xsl:template match="Relation_Type">
+      <dt>Type of relation</dt>
+      <dd><xsl:value-of select="Relation_Type"/></dd>
   </xsl:template>
   <xsl:template match="Affiliation">
     <dt>Affiliation</dt>

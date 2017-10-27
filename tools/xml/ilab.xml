@@ -42,7 +42,7 @@
       <help>Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)</help>
     </Covered_Geolocation_Place>
     <Covered_Period class="compound">
-      <label>Datapackage period</label>
+      <label>Period covered</label>
       <help>An indication of the period covered by your data package</help>
       <Start_Date>
         <label>Start Period</label>
@@ -54,7 +54,7 @@
       </End_Date>
     </Covered_Period>
     <Tag>
-      <label>Tag(s)</label>
+      <label>Tag</label>
       <help>Free text field for adding (searchable) key words to your data package</help>
     </Tag>
     <Related_Datapackage>
@@ -66,15 +66,16 @@
         <Title>
           <label>Title</label>
           <help>Title of the related data package</help>
+          <mandatory>true</mandatory>
         </Title>
         <Persistent_Identifier class="compound">
           <Identifier_Scheme>
-            <label>Type of Indentifier</label>
-            <help>Type of Persistent identifier of the previous version of this data package</help>
+            <label>Type of Persistent Identifier</label>
+            <help>Type of Persistent identifier of the related data package</help>
           </Identifier_Scheme>
           <Identifier>
-            <label>Identifier</label>
-            <help>Persistent identifier of the previous version of this data package</help>
+            <label>Persistent Identifier</label>
+            <help>The identifier as it can be resolved on the appropriate service</help>
           </Identifier>
         </Persistent_Identifier>
       </Properties>
@@ -97,7 +98,7 @@
     </Embargo_End_Date>
     <Data_Classification>
       <label>Data Classification</label>
-      <help>How is your data classified according</help>
+      <help>How is your data classified with regards to information security policy</help>
       <default>No</default>
       <mandatory>true</mandatory>
     </Data_Classification>
@@ -134,12 +135,12 @@
         </Affiliation>
          <Person_Identifier class="compound">
           <Name_Identifier_Scheme>
-            <label>Type of Persistent Identifier</label>
-            <help>What type of persistent person identifier</help>
+            <label>Type of Person Identifier</label>
+            <help>What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier_Scheme>
           <Name_Identifier>
-            <label>Identifier</label>
-            <help>Persistent identifier (e.g. an ORCID, DAI, or ScopusID)</help>
+            <label>Person Identifier</label>
+            <help>Identifier as it can be resolved on the appropriate service</help>
           </Name_Identifier>
         </Person_Identifier>
       </Properties>
@@ -152,7 +153,7 @@
       <Properties>
         <Contributor_Type>
           <label>Contributor Type</label>
-          <help>See dataCite</help>
+          <help>The type of contributor. List of values is derived from DataCite</help>
           <mandatory>true</mandatory>
         </Contributor_Type>
        <Affiliation>
@@ -161,14 +162,14 @@
           <default>Utrecht University</default>
           <mandatory>true</mandatory>
         </Affiliation>
-        <Person_Identifier class="compound">
+         <Person_Identifier class="compound">
           <Name_Identifier_Scheme>
-            <label>Type of Persistent Identifier</label>
-            <help>What type of persistent person identifier</help>
+            <label>Type of Person Identifier</label>
+            <help>What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier_Scheme>
           <Name_Identifier>
-            <label>Persistent Identifier</label>
-            <help>Persistent identifier of contributor (e.g. an ORCID, DAI, or ScopusID)</help>
+            <label>Person Identifier</label>
+            <help>Identifier as it can be resolved on the appropriate service</help>
           </Name_Identifier>
         </Person_Identifier>
       </Properties>
