@@ -30,11 +30,13 @@
         <publicationYear>
 	   <xsl:apply-templates select="System/Publication_Date"/>
 	</publicationYear>
-
-        <subjects>
-          <xsl:apply-templates select="Discipline"/>
-	  <xsl:apply-templates select="Tag"/>
-        </subjects>
+	
+	<xsl:if test="Discipline or Tag">
+          <subjects>
+            <xsl:apply-templates select="Discipline"/>
+       	    <xsl:apply-templates select="Tag"/>
+          </subjects>
+	</xsl:if>
 
         <creators>
           <xsl:apply-templates select="Creator"/>
