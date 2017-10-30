@@ -456,7 +456,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	        *packageDOIArr = "[]";
 	        msi_json_arrayops(*packageDOIArr, "Peristent Identifier", "add", *size);
 		if (*landingpageURL != "null") {
-	                msi_json_arrayops(*packageDOIArr, "<a href=\"*landingpageURL\">*yodaDOI</a>", "add", *size);
+	                msi_json_arrayops(*packageDOIArr, "DOI: <a href=\"*landingpageURL\">*yodaDOI</a>", "add", *size);
 		} else {
 	                msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
 		}
