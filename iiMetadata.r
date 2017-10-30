@@ -477,7 +477,7 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 	}
 
 	*tempMetadataXmlPath = *tempPath ++ "/" ++ IIMETADATAXMLNAME;
-	
+	#DEBUG writeLine("serverLog", "iiPrepareVaultMetadataForEditing: *tempMetadataXmlPath");
 	*status = "Success";
 	*statusInfo = "";
 	
@@ -571,10 +571,10 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 
-	*err = errorcode(msiDataObjRename(*metadataXmlPath, *vaultMetadataTarget, "-d", *status));
+	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "", *status));
 	if (*err < 0) {
-		*status = "FailedToMoveXML";
-		*statusInfo = "Move to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
+		*status = "FailedToCopyXML";
+		*statusInfo = "Copy to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
 		succeed;
 	}
 	
@@ -582,7 +582,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*err = errorcode(iiCopyACLsFromParent(*vaultMetadataTarget));
 	if (*err < 0) {
 		*status = "FailedToSetACLs";
-		*statusInfo = "Failed to set ACLs of *vaultMetadataTarget as parent collection";
+		*statusInfo = "Failed to set vault permissions to *vaultMetadataTarget";
 		succeed;
 	}
 
@@ -600,10 +600,40 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
+	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
+	# Add action log record
+	#DEBUG writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Removing metadata xml from datamanager folder");
+	*err = errorcode(msiDataObjUnlink("objPath=*metadataXmlPath++++forceFlag=", *status));
+	if (*err < 0) {
+		*status = "FailedToRemoveDatamanagerXML";
+		*statusInfo = "Failed to remove *metadataXmlPath";
+		succeed;
+	}
+	
+	# Cleanup collection created for this process
+	*collToRemove = "/*rodsZone/home/*datamanagerGroup/*vaultGroup";	
+	# Check if no data is left
+	*empty = true;
+	foreach(*row in SELECT DATA_ID WHERE COLL_NAME like "*collToRemove%/") {
+		*empty = false;
+	}
+	foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *collToRemove) {
+		*empty = false;
+	}
+
+	if (*empty) {
+		*err = errorcode(msiRmColl(*collToRemove, "forceFlag=",*status));	
+		if (*err < 0) {
+			*status = "FailedToRemoveColl";
+			*statusInfo = "Failed to remove *collToRemove";
+			succeed;
+		}
+	} else {
+		writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Could not remove *collToRemove as it is not empty");
+	}
+
 	*status = "Success";
 	*statusInfo = "";
-	# Add action log record
-	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
 }
 
 # \brief iiGetLatestVaultMetadataXml
