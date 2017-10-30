@@ -433,21 +433,6 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
 	}
 
-
-        # Package DOI
-	*yodaDOI = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_yodaDOI") {
-		*yodaDOI = *row.META_COLL_ATTR_VALUE;
-	}
-
-	if (*yodaDOI != "null") {
-	        *packageDOIArr = "[]";
-	        msi_json_arrayops(*packageDOIArr, "Peristent Identifier", "add", *size);
-	        msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
-	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
-	}
-
-
         # Landingpage URL
 	*landingpageURL = "null";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_landingPageUrl") {
@@ -459,6 +444,23 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	        msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
 	        msi_json_arrayops(*landinpageURLArr, "<a href=\"*landingpageURL\">*landingpageURL</a>", "add", *size);
 	        msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
+	}
+
+        # Package DOI
+	*yodaDOI = "null";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_yodaDOI") {
+		*yodaDOI = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*yodaDOI != "null") {
+	        *packageDOIArr = "[]";
+	        msi_json_arrayops(*packageDOIArr, "Peristent Identifier", "add", *size);
+		if (*landingpageURL != "null") {
+	                msi_json_arrayops(*packageDOIArr, "<a href=\"*landingpageURL\">*yodaDOI</a>", "add", *size);
+		} else {
+	                msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
+		}
+	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
 	}
 }
 
