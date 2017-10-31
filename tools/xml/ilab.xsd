@@ -276,9 +276,9 @@
   </xs:simpleType>
   <xs:simpleType name="optionsLicense">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="CC-BY"/>
-      <xs:enumeration value="CC-BY-SA"/>
-      <xs:enumeration value="ODC-BY"/>
+      <xs:enumeration value="Creative Commons Attribution 4.0 International Public License"/>
+      <xs:enumeration value="Creative Commons Attribution-ShareAlike 4.0 International Public License"/>
+      <xs:enumeration value="Open Data Commons Attribution License (ODC-By) v1.0"/>
       <xs:enumeration value="Custom"/>
     </xs:restriction>
   </xs:simpleType>
