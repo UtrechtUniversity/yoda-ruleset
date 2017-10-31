@@ -69,12 +69,13 @@
           <mandatory>true</mandatory>
         </Title>
         <Persistent_Identifier class="compound">
+	  <label>Persistent Identifier</label>	
           <Identifier_Scheme>
-            <label>Type of Persistent Identifier</label>
+            <label>Type</label>
             <help>Type of Persistent identifier of the related data package</help>
           </Identifier_Scheme>
           <Identifier>
-            <label>Persistent Identifier</label>
+            <label>Identifier</label>
             <help>The identifier as it can be resolved on the appropriate service</help>
           </Identifier>
         </Persistent_Identifier>
@@ -134,12 +135,13 @@
           <mandatory>true</mandatory>
         </Affiliation>
          <Person_Identifier class="compound">
+	  <label>Person identifier</label>
           <Name_Identifier_Scheme>
-            <label>Type of Person Identifier</label>
+            <label>Type</label>
             <help>What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier_Scheme>
           <Name_Identifier>
-            <label>Person Identifier</label>
+            <label>Identifier</label>
             <help>Identifier as it can be resolved on the appropriate service</help>
           </Name_Identifier>
         </Person_Identifier>
@@ -163,12 +165,13 @@
           <mandatory>true</mandatory>
         </Affiliation>
          <Person_Identifier class="compound">
+	  <label>Person identifier</label>
           <Name_Identifier_Scheme>
-            <label>Type of Person Identifier</label>
+            <label>Type</label>
             <help>What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)</help>
           </Name_Identifier_Scheme>
           <Name_Identifier>
-            <label>Person Identifier</label>
+            <label>Identifier</label>
             <help>Identifier as it can be resolved on the appropriate service</help>
           </Name_Identifier>
         </Person_Identifier>
