@@ -54,30 +54,30 @@ createXmlXsdCollections {
 	*xsdforxsd = *xsdcoll ++ "/" ++ "schema-for-xsd.xsd";
 	if (uuFileExists(*xsdforxsd)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
+			msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/xsd/schema-for-xsd.xsd++++forceFlag=", *status);
 			writeLine("stdout", "Update: *xsdforxsd");
 		} else {
 			writeLine("stdout", "Present: *xsdforxsd");
 		}
 	} else {
-		msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd", *status);
+		msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/xsd/schema-for-xsd.xsd", *status);
 		writeLine("stdout", "Installed: *xsdforxsd");
 	}
 
 	*xsdforformelements = *xsdcoll ++ "/" ++ "schema-for-formelements.xsd";
-	msiDataObjPut(*xsdforformelements, *resc, "localPath=*src/schema-for-formelements.xsd++++forceFlag=", *status);
+	msiDataObjPut(*xsdforformelements, *resc, "localPath=*src/xsd/schema-for-formelements.xsd++++forceFlag=", *status);
 	writeLine("stdout", "Installed: *xsdforformelements");
 	
 	*xsddefault = *xsdcoll ++ "/" ++ IIXSDDEFAULTNAME;	
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd++++forceFlag=", *status);
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default.xsd++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default.xsd", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
@@ -98,13 +98,13 @@ createXmlXsdCollections {
 	*xmldefault = *xmlcoll ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;	
         if (uuFileExists(*xmldefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml++++forceFlag=", *status);
+			msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements/*default.xml++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xmldefault");
 		} else {
 			writeLine("stdout", "Present: *xmldefault");
 		}
         } else {
-		msiDataObjPut(*xmldefault, *resc, "localPath=*src/*default.xml", *status);
+		msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements/*default.xml", *status);
 		writeLine("stdout", "Installed: *xmldefault");
 	}	
 
@@ -126,39 +126,39 @@ createXmlXsdCollections {
 	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
         if (uuFileExists(*xsldefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl++++forceFlag=", *status)
+			msiDataObjPut(*xsldefault, *resc, "localPath=*src/xsl/*default.xsl++++forceFlag=", *status)
 			writeLine("stdout", "Updated: *xsldefault");
 		} else {
 			writeLine("stdout", "Present: *xsldefault");
 		}
 	} else {
-		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default.xsl", *status);
+		msiDataObjPut(*xsldefault, *resc, "localPath=*src/xsl/*default.xsl", *status);
 		writeLine("stdout", "Installed: *xsldefault");
 	}
 
         *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
         if (uuFileExists(*xsldatacite)) {
 		if (*update == 1) {	
-			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl++++forceFlag=", *status);
+			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/xsl/*default"++"2datacite.xsl++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsldatacite");
 		} else {
 			writeLine("stdout", "Present: *xsldatacite");
 		}
  	} else {
-		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default"++"2datacite.xsl", *status);
+		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/xsl/*default"++"2datacite.xsl", *status);
 		writeLine("stdout", "Installed: *xsldatacite");
         }
 
         *xsllandingpage = *xslcoll ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
         if (uuFileExists(*xsllandingpage)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl++++forceFlag=", *status);
+			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/xsl/*default"++"2landingpage.xsl++++forceFlag=", *status);
  			writeLine("stdout", "Updated: *xsllandingpage");
 		} else {
 			writeLine("stdout", "Present: *xsllandingpage");
 		}
  	} else {
-		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default"++"2landingpage.xsl", *status);
+		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/xsl/*default"++"2landingpage.xsl", *status);
 		writeLine("stdout", "Installed: *xsllandingpage");
         }
 

@@ -189,7 +189,7 @@
   </xsl:template>
   <xsl:template match="Relation_Type">
     <dt>Type of relation</dt>
-    <dd><xsl:value-of select="Relation_Type"/></dd>
+    <dd><xsl:value-of select="."/></dd>
   </xsl:template>
   <xsl:template match="Affiliation">
     <dt>Affiliation</dt>

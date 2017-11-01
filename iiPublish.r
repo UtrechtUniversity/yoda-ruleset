@@ -513,9 +513,11 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGeneratePreliminaryDOI");
 		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
 		iiSavePublicationState(*vaultPackage, *publicationState);
 	} else if (iiHasKey(*publicationState, "DOIAvailable") && *publicationState.DOIAvailable == "no") {
+		#DEBUG writeLine("serverLog", "iiProcessPublication: DOI not available, starting iiGeneratePreliminaryDOI");
 		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
 		# We need to generate new XMLs
 		*publicationState.combiXmlPath = "";
@@ -529,6 +531,8 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	if (!iiHasKey(*publicationState, "combiXmlPath")) {
 		# Generate Combi XML consisting of user and system metadata
+
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiXml");
 		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
@@ -543,6 +547,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	if (!iiHasKey(*publicationState, "dataCiteXmlPath")) {
 		# Generate DataCite XML
 		*err = errorcode(iiGenerateDataCiteXml(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateDataCiteXml");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
@@ -556,6 +561,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "DOIAvailable")) {
 		# Check if DOI is in use
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCheckDOIAvailability");
 		*err = errorcode(iiCheckDOIAvailability(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationStatus.status = "Retry";
@@ -568,6 +574,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
 		# Send DataCite XML to metadata end point
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
 		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";
@@ -582,6 +589,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
 		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPage");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
@@ -593,10 +601,12 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 	
 	# Create Landing page URL
+	#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPageUrl");
 	iiGenerateLandingPageUrl(*publicationConfig, *publicationState);
 	
 	if(!iiHasKey(*publicationState, "landingPageUploaded")) {
 		# Use secure copy to push landing page to the public host
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCopyLandingPage2PublicHost");
 		*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";
@@ -610,6 +620,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	if(!iiHasKey(*publicationState, "oaiUploaded")) {
 		# Use secure copy to push combi XML to MOAI server
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCopyMetadataToMOAI");
 		*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			publicationState.status = "Retry";
@@ -623,6 +634,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "anonymousAccess")) {
 		# Set access restriction for vault package.
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiSetAccessRestriction");
 		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
 		if (*err < 0) {
 			publicationState.status = "Retry";
@@ -636,12 +648,13 @@ iiProcessPublication(*vaultPackage, *status) {
 	
 	if (!iiHasKey(*publicationState, "DOIMinted")) {
 		# Mint DOI with landing page URL.
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiMintDOI");
 		*err = errorcode(iiMintDOI(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";
 		}
-		#iiSavePublicationState(*vaultPackage, *publicationState);
 		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			iiSavePublicationState(*vaultPackage, *publicationState);
 			*status = *publicationState.status;
 			succeed;
 			
