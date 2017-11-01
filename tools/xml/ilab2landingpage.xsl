@@ -4,7 +4,7 @@
   <xsl:strip-space elements="*"/>
   <xsl:template match="/">
     <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;
-</xsl:text>
+    </xsl:text>
     <xsl:apply-templates select="/metadata"/>
   </xsl:template>
   <xsl:template select="text()"/>
@@ -14,44 +14,48 @@
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
         <meta charset="utf-8"/>
         <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-        <meta name="description" content=""/>
-        <meta name="author" content=""/>
+        <meta name="description" content="Data Publication platform of Utrecht University"/>
+        <meta name="author" content="Utrecht University"/>
         <title>Data Publication platform of Utrecht University</title>
-        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
-        <style>
-		.dl-horizontal dt {
-		    white-space: normal;
-		}
-
-		.subproperties {
-			padding-left: 50px;
-		}
-		</style>
+	<link href="static/css/yoda-landingpage.css" rel="stylesheet"/>
       </head>
       <body>
+	<div class="brandbar container">
+	  <div class="logo pull-left">
+            <a href="http://www.uu.nl">
+              <img src="/static/img/logo-uu.svg" />
+            </a>
+	  </div>
+	</div>
+	<nav class="navbar navbar-inverse navbar-static-top">
+	  <div class="container">
+            <div class="navbar-header">
+	      <span class="navbar-brand">Data Publication platform of Utrecht University</span>
+	    </div>
+	  </div>
+	</nav>
         <div class="container">
-          <h1>Data Publication platform of Utrecht University</h1>
           <div class="row">
             <div class="col-md-12">
-              <h2>System</h2>
+              <h3>System</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="System"/>
               </dl>
-              <h2>Descriptive</h2>
+              <h3>Descriptive</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="Title | Description | Discipline | Version | Related_Datapackage | Language"/>
-              <xsl:if test="Tag">
-                <dt>Tag(s)</dt>
-                <dd>
-                  <xsl:apply-templates select="Tag"/>
-                </dd>
-              </xsl:if>
+		<xsl:if test="Tag">
+                  <dt>Tag(s)</dt>
+                  <dd>
+                    <xsl:apply-templates select="Tag"/>
+                  </dd>
+		</xsl:if>
               </dl>
-              <h2>Administrative</h2>
+              <h3>Administrative</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="Collection_Name | Data_Classification | Funding_Reference"/>
               </dl>
-              <h2>Rights</h2>
+              <h3>Rights</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="Creator | Contributor | License"/>
               </dl>
@@ -59,6 +63,11 @@
             </div>
           </div>
         </div>
+	<footer class="footer">
+	  <div class="container">
+            <img src="/static/img/logo_footer.svg" />
+	  </div>
+	</footer>
       </body>
     </html>
   </xsl:template>
@@ -126,8 +135,8 @@
       <xsl:value-of select="./Name"/>
     </dd>
     <dl class="dl-horizontal subproperties">
-    <xsl:apply-templates select="./Properties/Person_Identifier"/>
-    <xsl:apply-templates select="./Properties/Affiliation"/>
+      <xsl:apply-templates select="./Properties/Person_Identifier"/>
+      <xsl:apply-templates select="./Properties/Affiliation"/>
     </dl>
   </xsl:template>
   <xsl:template match="Funding_Reference">
@@ -144,30 +153,30 @@
     <dt>License</dt>
     <dd>
       <xsl:choose>
-      <xsl:when test="/metadata/System/License_URI">
-	<a>
-        <xsl:attribute name="href"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
-        <xsl:attribute name="target">blank</xsl:attribute>
-        <xsl:value-of select="."/>
-      </a>
-      </xsl:when>
-      <xsl:otherwise>
-	<xsl:value-of select="."/>
-      </xsl:otherwise>
+	<xsl:when test="/metadata/System/License_URI">
+	  <a>
+            <xsl:attribute name="href"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
+            <xsl:attribute name="target">blank</xsl:attribute>
+            <xsl:value-of select="."/>
+	  </a>
+	</xsl:when>
+	<xsl:otherwise>
+	  <xsl:value-of select="."/>
+	</xsl:otherwise>
       </xsl:choose>
     </dd>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
-    <h2>Data Access</h2>
+    <h3>Data Access</h3>
     <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to access this data package with webDAV.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
-    <h2>Data Access</h2>
-    <p>The data is restricted. Contact datamanager</p>
+    <h3>Data Access</h3>
+    <p>The data is restricted. Contact datamanager.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[.='Closed']">
-    <h2>Data Access</h2>
-    <p>The data is closed for access</p>
+    <h3>Data Access</h3>
+    <p>The data is closed for access.</p>
   </xsl:template>
   <xsl:template match="Persistent_Identifier">
     <dt>Persistent Identifier</dt>
@@ -178,8 +187,8 @@
     <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Name_Identifier"/></dd>
   </xsl:template>
   <xsl:template match="Relation_Type">
-      <dt>Type of relation</dt>
-      <dd><xsl:value-of select="Relation_Type"/></dd>
+    <dt>Type of relation</dt>
+    <dd><xsl:value-of select="Relation_Type"/></dd>
   </xsl:template>
   <xsl:template match="Affiliation">
     <dt>Affiliation</dt>
