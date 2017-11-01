@@ -384,6 +384,7 @@ iiGetPublicationConfig(*publicationConfig) {
 # \param[out] publicationState   key-value-pair containing the state
 iiGetPublicationState(*vaultPackage, *publicationState) {
 	# defaults
+	msiString2KeyValuePair("", *publicationState);
 	*publicationState.status = "Unknown";
 	*publicationState.accessRestriction = "Closed";
 
@@ -516,13 +517,15 @@ iiProcessPublication(*vaultPackage, *status) {
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGeneratePreliminaryDOI");
 		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
 		iiSavePublicationState(*vaultPackage, *publicationState);
-	} else if (iiHasKey(*publicationState, "DOIAvailable") && *publicationState.DOIAvailable == "no") {
-		#DEBUG writeLine("serverLog", "iiProcessPublication: DOI not available, starting iiGeneratePreliminaryDOI");
-		iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
-		# We need to generate new XMLs
-		*publicationState.combiXmlPath = "";
-		*publicationState.dataCiteXmlPath = "";
-		iiSavePublicationState(*vaultPackage, *publicationState);
+	} else if (iiHasKey(*publicationState, "DOIAvailable")) {
+		if  (*publicationState.DOIAvailable == "no") {
+			#DEBUG writeLine("serverLog", "iiProcessPublication: DOI not available, starting iiGeneratePreliminaryDOI");
+			iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
+			# We need to generate new XMLs
+			*publicationState.combiXmlPath = "";
+			*publicationState.dataCiteXmlPath = "";
+			iiSavePublicationState(*vaultPackage, *publicationState);
+		}
 	}
 
 	# Determine last modification time. Always run, no matter if retry.
