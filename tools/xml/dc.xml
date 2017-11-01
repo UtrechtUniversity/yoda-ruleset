@@ -4,6 +4,7 @@
 		<title>
 			<label>Title</label>
 			<help>A name given to the resource.</help>
+			<mandatory>true</mandatory>
 		</title>
 
 		<creator>
@@ -14,6 +15,7 @@
 				or a service.  Typically, the name of a Creator should
 				be used to indicate the entity.
 			</help>
+			<mandatory>true</mandatory>
 		</creator>
 
 		<subject>
@@ -39,6 +41,7 @@
 				representation, or a free-text account of
 				the resource.
 			</help>
+			<mandatory>true</mandatory>
 		</description>
 
 		<publisher>
