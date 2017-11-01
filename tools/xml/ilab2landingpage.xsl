@@ -36,14 +36,13 @@
 	</nav>
         <div class="container">
           <div class="row">
-            <div class="col-md-12">
-              <h3>System</h3>
-              <dl class="dl-horizontal">
-                <xsl:apply-templates select="System"/>
-              </dl>
+            <div class="col-md-10">
+	      <xsl:apply-templates select="Title"/>
+	      <xsl:apply-templates select="Description"/>
+	      <hr />
               <h3>Descriptive</h3>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="Title | Description | Discipline | Version | Related_Datapackage | Language"/>
+                <xsl:apply-templates select="Discipline | Version | Related_Datapackage | Language"/>
 		<xsl:if test="Tag">
                   <dt>Tag(s)</dt>
                   <dd>
@@ -54,6 +53,10 @@
               <h3>Administrative</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="Collection_Name | Data_Classification | Funding_Reference"/>
+              </dl>
+              <h3>System</h3>
+              <dl class="dl-horizontal">
+                <xsl:apply-templates select="System"/>
               </dl>
               <h3>Rights</h3>
               <dl class="dl-horizontal">
@@ -90,16 +93,14 @@
     </dd>
   </xsl:template>
   <xsl:template match="Title">
-    <dt>Datapackage Title</dt>
-    <dd>
+    <h1>
       <xsl:value-of select="."/>
-    </dd>
+    </h1>
   </xsl:template>
   <xsl:template match="Description">
-    <dt>Datapackage Description</dt>
-    <dd style="whitespace: pre-wrap;">
+    <p>
       <xsl:value-of select="."/>
-    </dd>
+    </p>
   </xsl:template>
   <xsl:template match="Discipline | Version | Language">
     <dt>
