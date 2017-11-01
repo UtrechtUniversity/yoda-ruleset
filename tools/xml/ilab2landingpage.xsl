@@ -17,7 +17,7 @@
         <meta name="description" content="Data Publication platform of Utrecht University"/>
         <meta name="author" content="Utrecht University"/>
         <title>Data Publication platform of Utrecht University</title>
-	<link href="static/css/yoda-landingpage.css" rel="stylesheet"/>
+	<link href="/static/css/yoda-landingpage.css" rel="stylesheet"/>
       </head>
       <body>
 	<div class="brandbar container">
