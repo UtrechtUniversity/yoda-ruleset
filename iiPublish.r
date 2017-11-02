@@ -384,7 +384,7 @@ iiGetPublicationConfig(*publicationConfig) {
 # \param[out] publicationState   key-value-pair containing the state
 iiGetPublicationState(*vaultPackage, *publicationState) {
 	# defaults
-	msiString2KeyValuePair("", *publicationState);
+	msiString2KeyValPair("", *publicationState);
 	*publicationState.status = "Unknown";
 	*publicationState.accessRestriction = "Closed";
 
