@@ -167,19 +167,26 @@
     </dd>
   </xsl:template>
   <xsl:template match="Last_Modified_Date">
+    <xsl:variable name="localtime" as="xs:dateTime" select="substring(.,0,19)"/>
+    <xsl:variable name="utcoffset" as="xs:string" select="substring(.,20)"/>
     <dt>Last Modification</dt>
     <dd>
-      <xsl:value-of select="date:year(.)"/>
+      <xsl:value-of select="date:year(localtime)"/>
       <xsl:text> </xsl:text>
-      <xsl:value-of select="date:month-name(.)"/>
+      <xsl:value-of select="date:month-name(localtime)"/>
       <xsl:text> </xsl:text>
-      <xsl:value-of select="date:day-in-month(.)"/>
+      <xsl:value-of select="date:day-in-month(localtime)"/>
       <xsl:text>, </xsl:text>
-      <xsl:value-of select="date:hour-in-day(.)"/>
+      <xsl:value-of select="date:hour-in-day(localtime)"/>
       <xsl:text>:</xsl:text>
-      <xsl:value-of select="date:minute-in-hour(.)"/>
+      <xsl:value-of select="date:minute-in-hour(localtime)"/>
       <xsl:text> GMT</xsl:text>
-      <xsl:value-of select="substring(.,20)"/>
+      <xsl:value-of select="utcoffset"/>
+    </dd>
+    <dd>
+
+      <xsl:value-of select="localtime"/>
+      <xsl:value-of select="utcoffset"/>
     </dd>
   </xsl:template>
   <xsl:template match="Publication_Date">
