@@ -400,7 +400,11 @@ iiFolderSecure(*folder) {
 iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
 	writeLine("serverLog", "iiAddActionLogRecord: *actor has *action *folder");
-	*json_str = "[\"*timestamp\", \"*action\", \"*actor\"]";
+        *json_str = "[]";
+        *size = 0;
+        msi_json_arrayops(*json_str, *timestamp, "add", *size);
+        msi_json_arrayops(*json_str, *action, "add", *size);
+        msi_json_arrayops(*json_str, *actor, "add", *size);
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
 }
