@@ -762,14 +762,14 @@ uuGetCurrentStatisticsMonth()
 
 # When you want to prevent changes to the statistics after a probe date use the code below
 # I.e. each statistics probe that is stored after the 15th, is related to the month after.
-	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
+#	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
 	
-	if (*day > 15) {
-		*month = *month + 1;
-		if (*month > 12) {
-			*month = 1;
-		}
-	}
+#	if (*day > 15) {
+#		*month = *month + 1;
+#		if (*month > 12) {
+#			*month = 1;
+#		}
+#	}
 
 	# Format month as '01'-'12'
 	*strMonth = str(*month);
