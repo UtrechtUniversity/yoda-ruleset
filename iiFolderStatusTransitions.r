@@ -441,9 +441,9 @@ iiActionLog(*folder, *size, *result) {
 # 									if false, the lock is removed (if allowed)
 # \param[out] status 			Zero if no errors, non-zero otherwise
 iiFolderLockChange(*rootCollection, *lockIt, *status){
-	*lock_str = IILOCKATTRNAME ++ "=" ++ *rootCollection;
-	msiString2KeyValPair(*lock_str, *buffer);
-	#DEBUG writeLine("ServerLog", "iiFolderLockChange: *lock_str");
+	msiString2KeyValPair("", *buffer);
+	msiAddKeyVal(*buffer, IILOCKATTRNAME, *rootCollection)
+	#DEBUG writeLine("ServerLog", "iiFolderLockChange: *buffer");
 	if (*lockIt) {
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
