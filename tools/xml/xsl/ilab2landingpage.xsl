@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns="http://www.w3.org/1999/xhtml" version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+ xmlns:str="http://exslt.org/strings"
+ xmlns:date="http://exslt.org/dates-and-times"
+ extension-element-prefixes="str date"
+ xmlns="http://www.w3.org/1999/xhtml"
+ version="1.0">
   <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="yes"/>
   <xsl:strip-space elements="*"/>
   <xsl:template match="/">
@@ -83,14 +88,8 @@
   <xsl:template match="System">
     <dt>Persistent Identifier</dt>
     <dd><xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier_Scheme"/>: <xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/></dd>
-    <dt>Last Modification</dt>
-    <dd>
-      <xsl:value-of select="./Last_Modified_Date"/>
-    </dd>
-    <dt>Publication Date</dt>
-    <dd>
-      <xsl:value-of select="./Publication_Date"/>
-    </dd>
+    <xsl:apply-templates select="./Last_Modified_Date"/>
+    <xsl:apply-templates select="./Publication_Date"/>
   </xsl:template>
   <xsl:template match="Title">
     <h1>
@@ -167,9 +166,36 @@
       </xsl:choose>
     </dd>
   </xsl:template>
+  <xsl:template match="Last_Modified_Date">
+    <dt>Last Modification</dt>
+    <dd>
+      <xsl:value-of select="date:year(.)"/>
+      <xsl:text> </xsl:text>
+      <xsl:value-of select="date:month-name(.)"/>
+      <xsl:text> </xsl:text>
+      <xsl:value-of select="date:day-in-month(.)"/>
+      <xsl:text>, </xsl:text>
+      <xsl:value-of select="date:hour-in-day(.)"/>
+      <xsl:text>:</xsl:text>
+      <xsl:value-of select="date:minute-in-hour(.)"/>
+      <xsl:text> GMT</xsl:text>
+      <xsl:value-of select="substring(.,20)"/>
+    </dd>
+  </xsl:template>
+  <xsl:template match="Publication_Date">
+    <dt>Publication Date</dt>
+    <dd>
+      <xsl:value-of select="date:year(.)"/>
+      <xsl:text> </xsl:text>
+      <xsl:value-of select="date:month-name(.)"/>
+      <xsl:text> </xsl:text>
+      <xsl:value-of select="date:day-in-month(.)"/>
+    </dd>
+  </xsl:template>
+
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
     <h3>Data Access</h3>
-    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to access this data package with webDAV.</p>
+    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="str:encode-uri(/metadata/System/Open_Access_Link,false())"/></xsl:attribute>link</a> to access this data package with webDAV.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
     <h3>Data Access</h3>
