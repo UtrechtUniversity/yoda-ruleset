@@ -91,8 +91,8 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		succeed;
 	}
 
-	msiString2KeyValPair("path=*path", *kvp);
-
+	msiString2KeyValPair("", *kvp);
+	msiAddKeyVal(*kvp, "path", *path);
 	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
 		*parent = *row.COLL_PARENT_NAME;
 		*kvp.parent = *parent;
