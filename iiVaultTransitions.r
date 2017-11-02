@@ -122,7 +122,11 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 
 	# Add vault action request to actor group.
 	writeLine("serverLog", "iiVaultRequestStatusTransition: *newVaultStatus on *folder by *actor");
-	*json_str = "[\"*folder\", \"*newVaultStatus\", \"*actor\"]";
+        *json_str = "[]";
+        *size = 0;
+        msi_json_arrayops(*json_str, *folder, "add", *size);
+        msi_json_arrayops(*json_str, *newVaultStatus, "add", *size);
+        msi_json_arrayops(*json_str, *actor, "add", *size);
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
