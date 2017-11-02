@@ -92,7 +92,7 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 	}
 
 	msiString2KeyValPair("", *kvp);
-	*kvp.path = *path;
+	msiAddKeyVal(*kvp, "path", *path);
 	foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
 		*parent = *row.COLL_PARENT_NAME;
 		*kvp.parent = *parent;
