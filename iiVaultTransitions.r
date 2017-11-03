@@ -127,7 +127,8 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         msi_json_arrayops(*json_str, *folder, "add", *size);
         msi_json_arrayops(*json_str, *newVaultStatus, "add", *size);
         msi_json_arrayops(*json_str, *actor, "add", *size);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
+        msiString2KeyValPair("", *kvp);
+        msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";
