@@ -88,8 +88,8 @@
   <xsl:template match="System">
     <dt>Persistent Identifier</dt>
     <dd><xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier_Scheme"/>: <xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/></dd>
-    <xsl:apply-templates select="./Last_Modified_Date"/>
     <xsl:apply-templates select="./Publication_Date"/>
+    <xsl:apply-templates select="./Last_Modified_Date"/>
   </xsl:template>
   <xsl:template match="Title">
     <h1>
@@ -167,36 +167,31 @@
     </dd>
   </xsl:template>
   <xsl:template match="Last_Modified_Date">
-    <xsl:variable name="localtime" as="xs:dateTime" select="substring(.,0,19)"/>
+    <xsl:variable name="localtime" as="xs:dateTime" select="substring(.,0,20)"/>
     <xsl:variable name="utcoffset" as="xs:string" select="substring(.,20)"/>
     <dt>Last Modification</dt>
-    <dd>
-      <xsl:value-of select="date:year(localtime)"/>
+   <dd>
+      <xsl:value-of select="date:month-name($localtime)"/>
       <xsl:text> </xsl:text>
-      <xsl:value-of select="date:month-name(localtime)"/>
-      <xsl:text> </xsl:text>
-      <xsl:value-of select="date:day-in-month(localtime)"/>
+      <xsl:value-of select="date:day-in-month($localtime)"/>
       <xsl:text>, </xsl:text>
-      <xsl:value-of select="date:hour-in-day(localtime)"/>
+      <xsl:value-of select="date:year($localtime)"/>
+      <xsl:text>, </xsl:text>
+      <xsl:value-of select="date:hour-in-day($localtime)"/>
       <xsl:text>:</xsl:text>
-      <xsl:value-of select="date:minute-in-hour(localtime)"/>
+      <xsl:value-of select="date:minute-in-hour($localtime)"/>
       <xsl:text> GMT</xsl:text>
-      <xsl:value-of select="utcoffset"/>
-    </dd>
-    <dd>
-
-      <xsl:value-of select="localtime"/>
-      <xsl:value-of select="utcoffset"/>
+      <xsl:value-of select="$utcoffset"/>
     </dd>
   </xsl:template>
   <xsl:template match="Publication_Date">
     <dt>Publication Date</dt>
     <dd>
-      <xsl:value-of select="date:year(.)"/>
-      <xsl:text> </xsl:text>
       <xsl:value-of select="date:month-name(.)"/>
       <xsl:text> </xsl:text>
       <xsl:value-of select="date:day-in-month(.)"/>
+      <xsl:text>, </xsl:text>
+      <xsl:value-of select="date:year(.)"/>
     </dd>
   </xsl:template>
 
