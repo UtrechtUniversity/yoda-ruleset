@@ -536,11 +536,11 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 		*n = size(*revisions);
 		for(*i = 0;*i < *n; *i = *i + 1) {
 			*revision = hd(*revisions);
-			# use pseudo data constructor iirevisioncandidate to initialize timeInt and id.
+			# use pseudo data constructor iirevisioncandidate to initialize timeDouble and id.
 			iirevisioncandidate(*timeDouble, *id) = *revision;
-			#DEBUG writeLine("stdout", "*timeInt: *id");
+			#DEBUG writeLine("stdout", "*timeDouble: *id");
 			if (*timeDouble > *startTime) {
-				#DEBUG writeLine("stdout", "*timeInt > *offset");
+				#DEBUG writeLine("stdout", "*timeDouble > *offset");
 				*candidates = cons(*revision, *candidates);
 				*revisions = tl(*revisions);
 			} else {

@@ -113,7 +113,7 @@ iiGetLastModifiedDateTime(*publicationState) {
 	*lastModifiedTimestamp = "";
 	msi_json_arrayops(*logRecord, *lastModifiedTimestamp, "get", 0);
 	# iso8601 compliant datetime with UTC offset
-	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%:z");
+	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
 	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
 	#DEBUG writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
 }
