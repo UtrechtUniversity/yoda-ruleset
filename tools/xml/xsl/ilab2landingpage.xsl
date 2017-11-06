@@ -179,7 +179,7 @@
       <xsl:text>, </xsl:text>
       <xsl:value-of select="date:hour-in-day($localtime)"/>
       <xsl:text>:</xsl:text>
-      <xsl:value-of select="date:minute-in-hour($localtime)"/>
+      <xsl:value-of select="substring(string(100 + date:minute-in-hour($localtime)), 2)"/>
       <xsl:text> GMT</xsl:text>
       <xsl:value-of select="$utcoffset"/>
     </dd>
