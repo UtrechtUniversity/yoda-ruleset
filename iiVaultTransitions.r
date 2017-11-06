@@ -28,8 +28,8 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 	# Retrieve vault folder action actor.
 	*actionActor = "";
         foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
-	         msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
-		 succeed;
+	        *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
+		writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
 	}
 
 	# Fallback actor (rodsadmin).
