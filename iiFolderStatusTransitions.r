@@ -405,7 +405,8 @@ iiAddActionLogRecord(*actor, *folder, *action) {
         msi_json_arrayops(*json_str, *timestamp, "add", *size);
         msi_json_arrayops(*json_str, *action, "add", *size);
         msi_json_arrayops(*json_str, *actor, "add", *size);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "action_log=" ++ *json_str, *kvp);
+	msiString2KeyValPair("", *kvp);
+	msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "action_log", *json_str);
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
 }
 
