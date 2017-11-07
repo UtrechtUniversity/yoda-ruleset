@@ -169,7 +169,7 @@
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
     <h3>Data Access</h3>
-    <p>The data is open access. Use this <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute>link</a> to access this data package with webDAV.</p>
+    <p>The data is open access. Use this link <a><xsl:attribute name="href"><xsl:value-of select="/metadata/System/Open_Access_Link"/></xsl:attribute><xsl:value-of select="/metadata/System/Open_Access_Link"/></a> to access this data package.</p>
   </xsl:template>
   <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
     <h3>Data Access</h3>
