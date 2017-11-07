@@ -28,8 +28,8 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 	# Retrieve vault folder action actor.
 	*actionActor = "";
         foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
-	         msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2);
-		 succeed;
+	        *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
+		writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
 	}
 
 	# Fallback actor (rodsadmin).
@@ -127,7 +127,8 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
         msi_json_arrayops(*json_str, *folder, "add", *size);
         msi_json_arrayops(*json_str, *newVaultStatus, "add", *size);
         msi_json_arrayops(*json_str, *actor, "add", *size);
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId=" ++ *json_str, *kvp);
+        msiString2KeyValPair("", *kvp);
+        msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "Unrecoverable";

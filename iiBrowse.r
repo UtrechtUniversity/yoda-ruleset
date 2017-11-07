@@ -172,8 +172,10 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		*vaultNewStatus = "";
 		*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
 		foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultAction) {
-			*vaultNewStatus = "";
-                        msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *vaultNewStatus, "get", 1);
+                        *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *vaultNewStatus, "get", 1));
+			if (*err < 0) {
+				writeLine("serverLog", "iiBrowse: *vaultAction contains invalid JSON");
+			}
 		}
 
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
