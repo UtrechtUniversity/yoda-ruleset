@@ -439,7 +439,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
 		if (*err < 0) { 
 			*allowed = false;
-			*reason = "Folder submitted without metadata.";
+			*reason = "Metadata missing, unable to submit this folder.";
 			succeed;
 		} else {
 			*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
