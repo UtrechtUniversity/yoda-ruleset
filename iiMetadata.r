@@ -339,13 +339,14 @@ iiRemoveAVUs(*coll, *prefix) {
 # /param[in] metadataxmlpath	path of metadataxml to ingest
 # /param[in] xslpath		path of XSL stylesheet
 iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
-
+	#DEBUG writeLine("serverLog", "iiImportMetadataFromXML: calling msiXstlApply '*xslpath' '*metadataxmlpath'");
 	# apply xsl stylesheet to metadataxml
 	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
-	#writeBytesBuf("serverLog", *buf);
+	#DEBUG writeBytesBuf("serverLog", *buf);
 
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
-	*err = errormsg(msiLoadMetadataFromXmlBuf(*metadataxml_coll, *buf), *msg);
+	#DEBUG writeLine("serverLog", "iiImportMetadataFromXML: Calling msiLoadMetadataFromXml");
+	*err = errormsg(msiLoadMetadataFromXml(*metadataxml_coll, *buf), *msg);
 	if (*err < 0) {
 		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
 	} else {
