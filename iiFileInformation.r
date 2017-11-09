@@ -72,8 +72,20 @@ iiCollectionGroupName(*path, *groupName) {
 	}
 
 	if (!*isfound) {
+		foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*id = *accessid.COLL_ACCESS_USER_ID;
+			foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
+					*groupName = *group.USER_GROUP_NAME;
+			}
+			if (*groupName like regex "(datamanager|vault)-.*") {
+				*isfound = true;
+				break;
+			}
+		}	
+	}
+	if (!*isfound){
 		# No results found. Not a group folder
-		failmsg(-808000, "*path does not belong to a research or intake group or is not available to current user");
+		writeLine("serverLog", "*path does not belong to a research or intake group or is not available to current user");
 	}
 }
 
