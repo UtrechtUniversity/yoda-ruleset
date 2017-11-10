@@ -15,7 +15,7 @@ processVaultActions {
 			# Check if vault status transition is requested in research or datamanager group.
 			if (*collName like regex "/[^/]+/home/research-.*" ||
 			    *collName like regex "/[^/]+/home/datamanager-.*") {
-				
+
                                 *folder = "";
                                 *action = "";
                                 *actor = "";
@@ -24,7 +24,7 @@ processVaultActions {
                                 *err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 					writeLine("stdout", "Failed to process vault request on *collName");
-				} else { # skip processing this vault request	
+				} else { # skip processing this vault request
                                 # Retrieve collection id from folder.
                                 foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
                                         *collId = *row.COLL_ID;
@@ -54,18 +54,32 @@ processVaultActions {
                                         }
 
 					if (*status != "Success") {
-						*vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+                                                *json_str = "[]";
+                                                *size = 0;
+                                                msi_json_arrayops(*json_str, *folder, "add", *size);
+                                                msi_json_arrayops(*json_str, *action, "add", *size);
+                                                msi_json_arrayops(*json_str, *actor, "add", *size);
+                                                msiString2KeyValPair("", *vaultActionKvp);
+                                                msiAddKeyVal(*vaultActionKvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
+
 						*vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=FAIL";
-						msiString2KeyValPair(*vaultAction, *vaultActionKvp);
 						msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
+
 						*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
 						msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");
 						writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 					} else {
-                                                *vaultAction = UUORGMETADATAPREFIX ++ "vault_action_" ++ "*collId" ++ "=" ++ *row.META_COLL_ATTR_VALUE;
+                                                *json_str = "[]";
+                                                *size = 0;
+                                                msi_json_arrayops(*json_str, *folder, "add", *size);
+                                                msi_json_arrayops(*json_str, *action, "add", *size);
+                                                msi_json_arrayops(*json_str, *actor, "add", *size);
+                                                msiString2KeyValPair("", *vaultActionKvp);
+                                                msiAddKeyVal(*vaultActionKvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
+
                                                 *vaultStatus = UUORGMETADATAPREFIX ++ "vault_status_action_" ++ "*collId" ++ "=PENDING";
-                                                msiString2KeyValPair(*vaultAction, *vaultActionKvp);
                                                 msiString2KeyValPair(*vaultStatus, *vaultStatusKvp);
+
                                                 *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
                                                 *err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
 
