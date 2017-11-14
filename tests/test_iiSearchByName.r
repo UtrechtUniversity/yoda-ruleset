@@ -1,7 +1,12 @@
 testSearchByName {
 	
-	iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result);
+	iiSearchByName(*startpath, *searchstring, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo);
 	writeLine("stdout", *result);
+	if (*status != "Success") {
+	writeLine("stdout", *status);
+	writeLine("stdout", *statusInfo);
+	}
+
 }
 
  

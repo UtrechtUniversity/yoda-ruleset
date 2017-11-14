@@ -12,6 +12,13 @@
 iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
 	*statusInfo = '';
+
+	if (strlen(*searchString)>250) {
+		*status = 'StringTooLong';
+		*statusInfo = 'The search string is too long';
+		succeed;
+        }
+
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
@@ -54,6 +61,12 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
         *statusInfo = '';
+
+	if (strlen(*searchString)>250) {
+		*status = 'StringTooLong';
+		*statusInfo = 'The search string is too long';
+		succeed;
+        }
 
 	*iscollection = iscollection(*collectionOrDataObject);
 	*likeprefix = UUUSERMETADATAPREFIX ++ "%";
@@ -136,8 +149,8 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 }
 
 # \brief iiSearchByOrgMetadata	Search for a collection by organisational metadata
-# \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
-# \param[in] searchstring	String to search for in the organisational metadata
+# \param[in] startPath		Path to start searching.
+# \param[in] searchString	String to search for in the organisational metadata
 # \param[in] attrname		Name of the metadata attribute to query (without UUORGMETADATAPREFIX)
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
@@ -147,15 +160,21 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
 
-iiSearchByOrgMetadata(*startpath, *searchstring, *attrname, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+iiSearchByOrgMetadata(*startPath, *searchString, *attrname, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = '';
 
+	if (strlen(*searchString)>250) {
+		*status = 'StringTooLong';
+		*statusInfo = 'The search string is too long';
+		succeed;
+        }
+
 	*attr = UUORGMETADATAPREFIX ++ *attrname;
 	*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-	*conditions = list(uumakestartswithcondition("META_COLL_ATTR_VALUE", *searchstring));
+	*conditions = list(uumakestartswithcondition("META_COLL_ATTR_VALUE", *searchString));
 	*conditions = cons(uucondition("META_COLL_ATTR_NAME", "=", *attr), *conditions);
-	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startpath), *conditions);
+	*conditions = cons(uumakestartswithcondition("COLL_NAME", *startPath), *conditions);
 	uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
         if (*status!='Success') {
                 succeed;
