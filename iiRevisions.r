@@ -256,10 +256,19 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
                 # Get original name for check whether file exists
                 msiGetValByKey(*kvp, UUORGMETADATAPREFIX ++ "original_data_name", *oriDataName);
 
+		# Check if target file exists.
                 foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = *target AND DATA_NAME = *oriDataName ) {
                         *existsTargetFile = true;
                         break;
                 }
+
+		# Check if directory with same name as target file exists.
+                *targetPath = *target ++ "/" ++ *oriDataName;
+                foreach (*row in SELECT COLL_NAME WHERE COLL_NAME = *targetPath){
+                        *existsTargetFile = true;
+                        break;
+                }
+
                 if(*existsTargetFile) {
                         # User decision required
                         writeLine("serverLog", "File exists already");
