@@ -13,7 +13,7 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 	*status='Success';
 	*statusInfo = '';
 
-	if (strlen(*searchString)>250) {
+	if (strlen(*searchString)>IIMAXSEARCHSTRINGLENGTH) {
 		*status = 'StringTooLong';
 		*statusInfo = 'The search string is too long';
 		succeed;
@@ -62,7 +62,7 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 	*status='Success';
         *statusInfo = '';
 
-	if (strlen(*searchString)>250) {
+	if (strlen(*searchString)>IIMAXSEARCHSTRINGLENGTH) {
 		*status = 'StringTooLong';
 		*statusInfo = 'The search string is too long';
 		succeed;
@@ -164,7 +164,7 @@ iiSearchByOrgMetadata(*startPath, *searchString, *attrname, *orderby, *ascdesc, 
 	*status = 'Success';
 	*statusInfo = '';
 
-	if (strlen(*searchString)>250) {
+	if (strlen(*searchString)>IIMAXSEARCHSTRINGLENGTH) {
 		*status = 'StringTooLong';
 		*statusInfo = 'The search string is too long';
 		succeed;

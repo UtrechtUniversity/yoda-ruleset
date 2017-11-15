@@ -9,6 +9,12 @@
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
 
+#\brief the length of the search string should be below 1075, as this hits the MAX_SQL_SIZE limit in iRODS.
+#       The search field is limited to 255 characters to be consistent with the metadata text field maxLength
+#       255 * 4 = 1020 bytes when all characters are 4 byte utf-8 encoded, like in chinese.
+#\constant IIMAXSEARCHSTRINGLENGTH
+IIMAXSEARCHSTRINGLENGTH = 1020;
+
 # \constant IIGROUPPREFIX
 IIGROUPPREFIX = "research-"
 
