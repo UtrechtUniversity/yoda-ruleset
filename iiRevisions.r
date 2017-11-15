@@ -322,7 +322,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
                                 *executeRestoration = true;
                         }
                         else {
-                                *status = "FileExistsEnteredByUser";
+                                *status = "FileEnteredByUserExistsAsFolder";
                                 succeed;
                         }
                 }
