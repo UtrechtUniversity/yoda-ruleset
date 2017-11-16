@@ -114,6 +114,52 @@ acPreProcForObjRename(*src, *dst) {
 	}
 }
 
+# This policy is triggered after a rename/move of a collection or dataObject
+acPostProcForObjRename(*src, *dst) {
+	# When the destination is in a research group, but the source is outside this group,
+	# we need to check if the destination research group has own rights.
+	on(*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+		*dstPathElems = split(*dst, '/');
+		*dstResearchGroup = elem(*dstPathElems, 2);
+		*srcPathElems = split(*src, '/');
+		*srcGroup = elem(*srcPathElems, 2);
+		if (*dstResearchGroup == *srcGroup) {
+			#DEBUG writeLine("serverLog", "acPostProcForObjRename: nothing to do. Source and destination group are the same: *srcGroup");
+			succeed;
+		}
+
+		foreach(*row in SELECT USER_ID WHERE USER_NAME = *dstResearchGroup) {
+			*dstResearchGroupId = *row.USER_ID;
+		}
+		#DEBUG writeLine("serverLog", "acPostProcForObjRename: *dstResearchGroup has USER_ID *dstResearchGroupId");
+
+		*hasOwn = false;
+		msiGetObjType(*dst, *objType);
+
+		if (*objType == "-c") {
+			*recursiveFlag = "recursive";
+			foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *dst 
+							 AND COLL_ACCESS_USER_ID = *dstResearchGroupId
+							 AND COLL_ACCESS_NAME = 'own') {
+				*hasOwn = true;
+			}
+		} else {
+			uuChopPath(*dst, *collName, *dataName);
+			*recursiveFlag = "default";
+			foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *collName
+                                                         AND DATA_NAME = *dataName
+							 AND DATA_ACCESS_USER_ID = *dstResearchGroupId
+							 AND DATA_ACCESS_NAME = 'own') {
+				*hasOwn = true;
+			}			
+		}
+
+		if (!*hasOwn) {
+			iiCopyACLsFromParent(*dst, *recursiveFlag);
+		}
+	}
+}
+
 # This policy is fired before a data object is opened.
 # The policy does not prohibit opening data objects for reading,
 # but if the data object is locked, opening for writing is 

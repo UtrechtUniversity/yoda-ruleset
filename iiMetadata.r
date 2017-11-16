@@ -580,7 +580,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 	
 
-	*err = errorcode(iiCopyACLsFromParent(*vaultMetadataTarget));
+	*err = errorcode(iiCopyACLsFromParent(*vaultMetadataTarget, "default"));
 	if (*err < 0) {
 		*status = "FailedToSetACLs";
 		*statusInfo = "Failed to set vault permissions to *vaultMetadataTarget";

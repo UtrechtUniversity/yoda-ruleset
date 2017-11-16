@@ -344,8 +344,9 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 # 
 # \brief iiCopyACLsFromParent   When inheritance is missing we need to copy ACL's when introducing new data in vault package.
-# \param[in] path 	path of object that needs the permissions of parent
-iiCopyACLsFromParent(*path) {
+# \param[in] path 		path of object that needs the permissions of parent
+# \param[in] recursiveFlag 	either "default" for no recursion or "recursive"
+iiCopyACLsFromParent(*path, *recursiveFlag) {
 	
 	uuChopPath(*path, *parent, *child);
 
@@ -356,14 +357,14 @@ iiCopyACLsFromParent(*path) {
 			*userName = *user.USER_NAME;
 		}
 		if (*accessName == "own") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting own to *userName on *path");
-			msiSetACL("default", "own", *userName, *path);
+			writeLine("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+			msiSetACL(*recursiveFlag, "own", *userName, *path);
 		} else if (*accessName == "read object") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting read to *userName on *path");
-			msiSetACL("default", "read", *userName, *path);
+			writeLine("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+			msiSetACL(*recursiveFlag, "read", *userName, *path);
 		} else if (*accessName == "modify object") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting write to *userName on *path");
-			msiSetACL("default", "write", *userName, *path);
+			writeLine("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+			msiSetACL(*recursiveFlag, "write", *userName, *path);
 		}
 	}
 
