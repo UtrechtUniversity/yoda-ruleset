@@ -124,6 +124,7 @@
       </xsl:attribute>
       <contributorName><xsl:value-of select="Name" /></contributorName>
       <xsl:apply-templates select="Properties/Person_Identifier" /> 
+      <xsl:apply-templates select="Properties/Affiliation"/>
     </contributor>
   </xsl:template>
 
