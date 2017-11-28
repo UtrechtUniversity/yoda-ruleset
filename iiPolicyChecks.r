@@ -434,15 +434,14 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 	}
 
 	if (*transitionTo == SUBMITTED) {
-		*xmlpath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*zone = hd(split(triml(*folder, "/"), "/"));
-		*err = errorcode(iiPrepareMetadataImport(*xmlpath, *zone, *xsdpath, *xslpath));
+		*metadataXmlPath = *folder ++ "/" ++ IIMETADATAXMLNAME;
+		*err = errorcode(iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath));
 		if (*err < 0) { 
 			*allowed = false;
 			*reason = "Metadata missing, unable to submit this folder.";
 			succeed;
 		} else {
-			*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
+			*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 			if (*err < 0) {
 				*allowed = false;
 				*reason = "Metadata does not conform to schema.";

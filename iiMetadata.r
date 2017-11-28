@@ -7,54 +7,35 @@
 # \license GPLv3, see LICENSE
 
 # /brief iiPrepareMetadataImport	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
-# /param[in] metadataxmlpath		path of the metadata XML file that needs to be validated
-# /param[in] rodsZone			irods zone to use
-# /param[out] xsdpath			path of the XSD to use for validation
-# /param[out] xslpath			path of the XSL to use for conversion to an AVU xml
-iiPrepareMetadataImport(*metadataxmlpath, *rodsZone, *xsdpath, *xslpath) {
-	*xsdpath = "";
-	*xslpath = "";
-	*isfound = false;
-	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
-	foreach(*row in
-	       	SELECT USER_NAME
-	       	WHERE COLL_NAME = *metadataxml_coll
-	          AND DATA_NAME = *metadataxml_basename
-	          AND USER_NAME like "research-%"
-		  ) {
-		if(!*isfound) {
-			*groupName = *row.USER_NAME;
-			*isfound = true;
-	 	} else {
-			# Too many query results. More than one group associated with file.
-			fail(-54000);
-		}
-	}
-
-	if (!*isfound) {
-		# No results found. Not a research group
-		fail(-808000);
-	}
+# /param[in] metadataXmlPath		path of the metadata XML file that needs to be validated
+# /param[out] xsdPath			path of the XSD to use for validation
+# /param[out] xslPath			path of the XSL to use for conversion to an AVU xml
+iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath) {
+	*xsdPath = "";
+	*xslPath = "";
+	*pathElems = split(*metadataXmlPath, '/');
+	*rodsZone = elem(*pathElems, 0);
+	*groupName = elem(*pathElems, 2);
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*xsdcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdname = "*category.xsd";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
-		*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xsdName = "*category.xsd";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
-	if (*xsdpath == "") {
-		*xsdpath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+	if (*xsdPath == "") {
+		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
 	}
 	
-	*xslcoll = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xslname = "*category.xsl";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslcoll AND DATA_NAME = *xslname) {
-		*xslpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+	*xslName = "*category.xsl";
+	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
+		*xslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
-	if (*xslpath == "") {
-		*xslpath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
+	if (*xslPath == "") {
+		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 }
 
@@ -373,7 +354,7 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
 		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
-		iiPrepareMetadataImport(*xmlPath, *userZone, *xsdPath, *xslPath);
+		iiPrepareMetadataImport(*xmlPath, *xsdPath, *xslPath);
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlPath, *xsdPath, *statusBuf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
