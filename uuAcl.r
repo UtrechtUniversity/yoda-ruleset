@@ -22,6 +22,8 @@ uuAclEqual(*aclA, *aclB) {
 	
 
 uuAclToStrings(*acl, *userName, *accessLevel) {
+	*userName = "";
+	*accessLevel = "";
 	uuacl(*userId, *accessType) = *acl;
 	foreach(*row in SELECT USER_NAME WHERE USER_ID = "*userId") {
 		*userName = *row.USER_NAME;
@@ -36,6 +38,7 @@ uuAclToStrings(*acl, *userName, *accessLevel) {
 	} else {
 		*accessLevel = 'null';
 	}
+	
 }
 
 
