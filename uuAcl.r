@@ -1,6 +1,15 @@
 data uuacl = 
 	| uuacl : int * int -> uuacl
 
+uuids(*aclList) {
+	*ids = list();
+	foreach(*acl in *aclList) {
+		uuacl(*userId, *accessType) = *acl;
+		*ids = cons(*userId, *ids);
+	}
+	*ids;
+}
+
 uuAclEqual(*aclA, *aclB) {
 	uuacl(*userIdA, *accessTypeA) = *aclA;
 	uuacl(*userIdB, *accessTypeB) = *aclB;
@@ -28,6 +37,8 @@ uuAclToStrings(*acl, *userName, *accessLevel) {
 		*accessLevel = 'null';
 	}
 }
+
+
 
 uuAclListOfPath(*path, *aclList) {
 	*aclList = list();
