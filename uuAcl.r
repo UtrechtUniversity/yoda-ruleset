@@ -41,25 +41,32 @@ uuAclToStrings(*acl, *userName, *accessLevel) {
 	
 }
 
-
-
 uuAclListOfPath(*path, *aclList) {
-	*aclList = list();
 	msiGetObjType(*path, *objType);
 	if (*objType == "-c") {
-		foreach(*row in SELECT ORDER_DESC(COLL_ACCESS_USER_ID), COLL_ACCESS_TYPE WHERE COLL_NAME = *path) {
-			*acl = uuacl(int(*row.COLL_ACCESS_USER_ID), int(*row.COLL_ACCESS_TYPE));
-			*aclList = cons(*acl, *aclList);
-		}
+		uuAclListOfColl(*path, *aclList);
 	} else {
-		uuChopPath(*path, *collName, *dataName);
-		foreach(*row in SELECT ORDER_DESC(DATA_ACCESS_USER_ID), DATA_ACCESS_TYPE WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
-			*acl = uuacl(int(*row.DATA_ACCESS_USER_ID), int(*row.DATA_ACCESS_TYPE));
-			*aclList = cons(*acl, *aclList);
-		}
+		uuAclListOfDataObj(*path, *aclList);
 	}
-		
 }
+
+uuAclListOfColl(*collName, *aclList) {
+	*aclList = list();
+	foreach(*row in SELECT ORDER_DESC(COLL_ACCESS_USER_ID), COLL_ACCESS_TYPE WHERE COLL_NAME = *collName) {
+		*acl = uuacl(int(*row.COLL_ACCESS_USER_ID), int(*row.COLL_ACCESS_TYPE));
+		*aclList = cons(*acl, *aclList);
+	}
+}
+
+uuAclListOfDataObj(*path, *aclList) {
+	*aclList = list();
+	uuChopPath(*path, *collName, *dataName);
+	foreach(*row in SELECT ORDER_DESC(DATA_ACCESS_USER_ID), DATA_ACCESS_TYPE WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
+		*acl = uuacl(int(*row.DATA_ACCESS_USER_ID), int(*row.DATA_ACCESS_TYPE));
+		*aclList = cons(*acl, *aclList);
+	}
+}
+
 
 uuAclListSetDiff(*aclListA, *aclListB, *setDiff) {
 	*setDiff = list();
@@ -80,4 +87,50 @@ uuAclListSetDiff(*aclListA, *aclListB, *setDiff) {
 			*setDiff = cons(*aclA, *setDiff);
 		}
 	}
+}
+
+# \brief uuEnforceGroupAcl   Enforce the ACL's of the group collection on a child path
+# \param[in] path	     Path to apply group ACL's to
+uuEnforceGroupAcl(*path) {
+		*pathElems = split(*path, '/');
+		if (elem(*pathElems, 1) != "home") {
+			failmsg(-1, "*path not in a group home collection");
+		}
+
+		*groupName = elem(*pathElems, 2);
+		*rodsZone =  elem(*pathElems, 0);
+
+		msiGetObjType(*path, *objType);
+
+		if (*objType == "-c") {
+			uuAclListOfColl(*path, *aclList);
+		} else {
+			uuAclListOfDataObj(*path, *aclList);
+		}
+
+		#DEBUG writeLine("serverLog", "aclList: *aclList");
+		uuAclListOfColl("/*rodsZone/home/*groupName", *groupAclList);
+		#DEBUG writeLine("serverLog", "groupAclList: *groupAclList");
+		uuAclListSetDiff(*aclList, *groupAclList, *aclsToRemove);
+		#DEBUG writeLine("serverLog", "aclsToRemove: *aclsToRemove");
+		uuAclListSetDiff(*groupAclList, *aclList, *aclsToAdd);
+		#DEBUG writeLine("serverLog", "aclsToAdd: *aclsToAdd");
+		*idsToAdd = uuids(*aclsToAdd);
+
+		*recurse = if *objType == "-c" then "recursive" else "default"
+		 
+		foreach(*acl in *aclsToAdd) {
+			uuAclToStrings(*acl, *userName, *accessLevel);
+			#DEBUG writeLine("serverLog", "acPostProcForObjRename: Setting ACL *accessLevel *userName *path");
+			msiSetACL(*recurse, *accessLevel, *userName, *path);
+		}
+		
+		foreach(*acl in *aclsToRemove) {
+			uuacl(*userId, *accessType) = *acl;
+			if (!uuinlist(*userId, *idsToAdd)) {
+				uuAclToStrings(*acl, *userName, *accessLevel);
+				#DEBUG writeLine("serverLog", "acPostProcForObjRename: Removing ACL *accessLevel *userName *path");
+				msiSetACL(*recurse, "null", *userName, *path);	
+			}
+		}
 }
