@@ -435,12 +435,12 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 
 	if (*transitionTo == SUBMITTED) {
 		*metadataXmlPath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		*err = errorcode(iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath));
-		if (*err < 0) { 
+		if (!uuFileExists(*metadataXmlPath)) { 
 			*allowed = false;
 			*reason = "Metadata missing, unable to submit this folder.";
 			succeed;
 		} else {
+			iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath);
 			*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 			if (*err < 0) {
 				*allowed = false;
