@@ -597,7 +597,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*collToRemove = "/*rodsZone/home/*datamanagerGroup/*vaultGroup";	
 	# Check if no data is left
 	*empty = true;
-	foreach(*row in SELECT DATA_ID WHERE COLL_NAME like "*collToRemove%/") {
+	foreach(*row in SELECT DATA_ID WHERE COLL_NAME like "*collToRemove/%") {
 		*empty = false;
 	}
 	foreach(*row in SELECT DATA_ID WHERE COLL_NAME = *collToRemove) {
