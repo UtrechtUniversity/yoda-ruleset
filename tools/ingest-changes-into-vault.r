@@ -59,8 +59,18 @@ ingestChangesIntoVault {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessPublication(*collName, *status));
 				if (*err < 0) {
+                                        msiString2KeyValPair("", *publicationUpdateKvp);
+                                        *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Error";
+					msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
+					msiSetKeyValuePairsToObj(*publicationUpdateKvp, *collName, "-C");
+
 					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
 				} else {
+                                        msiString2KeyValPair("", *publicationUpdateKvp);
+                                        *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
+                                        msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
+                                        *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
+
 					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
 				}
 			}

@@ -484,7 +484,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
-	if (*vaultStatus != APPROVED_FOR_PUBLICATION ||
+	if (*vaultStatus != APPROVED_FOR_PUBLICATION &&
 	    *vaultStatus != PUBLISHED) {
 		*status = "NotAllowed";
 		succeed;
