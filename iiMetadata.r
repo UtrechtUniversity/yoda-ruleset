@@ -614,6 +614,23 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Could not remove *collToRemove as it is not empty");
 	}
 
+	# Add publication update status to vault package.
+	# Also used in frontend to check if vault package metadata update is pending.
+	*publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
+	msiString2KeyValPair(*publicationUpdate, *kvp);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *vaultPackagePath, "-C"), *msg);
+	if (*err < 0) {
+		*status = "FailedToSetPublicationUpdateStatus";
+		*statusInfo = "Failed to set publication update status on *vaultPackagePath";
+		succeed;
+	}
+	*err = errorcode(iiSetUpdatePublicationState(*vaultPackagePath, *status));
+	if (*err < 0) {
+		*status = "FailedToSetPublicationUpdateStatus";
+		*statusInfo = "Failed to set publication update status on *vaultPackagePath";
+		succeed;
+	}
+
 	*status = "Success";
 	*statusInfo = "";
 }

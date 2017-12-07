@@ -39,6 +39,39 @@ ingestChangesIntoVault {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+
+
+	# Scan for vault packages with a pending publication update.
+	*ContInxOld = 1;
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
+	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ2Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "publication_update", *GenQ2Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", "Pending", *GenQ2Inp);
+
+	msiExecGenQuery(*GenQ2Inp, *GenQ2Out);
+	msiGetContInxFromGenQueryOut(*GenQ2Out, *ContInxNew);
+
+	while(*ContInxOld > 0) {
+		foreach(*row in *GenQ2Out) {
+			*collName = *row.COLL_NAME;
+
+			# Check if this really is a vault package
+			if (*collName like regex "/[^/]+/home/vault-.*") {
+				*err = errorcode(iiProcessPublication(*collName, *status));
+				if (*err < 0) {
+					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
+				} else {
+					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
+				}
+			}
+		}
+
+		*ContInxOld = *ContInxNew;
+		if(*ContInxOld > 0) {
+			msiGetMoreRows(*GenQ2Inp, *GenQ2Out, *ContInxNew);
+		}
+	}
+
 }
 input null
 output ruleExecOut

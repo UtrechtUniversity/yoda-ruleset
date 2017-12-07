@@ -481,9 +481,11 @@ iiHasKey(*kvp, *key) {
 # \param[out] status		status of the publication
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "Unknown";
+
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
-	if (*vaultStatus != APPROVED_FOR_PUBLICATION) {
+	if (*vaultStatus != APPROVED_FOR_PUBLICATION ||
+	    *vaultStatus != PUBLISHED) {
 		*status = "NotAllowed";
 		succeed;
 	}
@@ -670,5 +672,64 @@ iiProcessPublication(*vaultPackage, *status) {
 			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 		}
+	}
+}
+
+# \brief iiSetUpdatePublicationState   Routine to set publication state of vault package pending to update
+# \param[in] vaultPackage      path to package in the vault to update
+# \param[out] status           status of the publication state update
+iiSetUpdatePublicationState(*vaultPackage, *status) {
+	*status = "Unknown";
+	# Check preconditions
+	iiVaultStatus(*vaultPackage, *vaultStatus);
+	if (*vaultStatus != PUBLISHED) {
+		*status = "NotAllowed";
+		succeed;
+	}
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		*status = "NotAllowed" ;
+		succeed;
+	}
+
+	# Load configuration
+	*err = errorcode(iiGetPublicationConfig(*publicationConfig));
+	if (*err < 0) {
+		*status = "UnkownError";
+		succeed;
+	}
+
+	# Load state
+	iiGetPublicationState(*vaultPackage, *publicationState);
+	if (*publicationState.status != "OK") {
+		*status = "PublicationNotOK";
+		succeed;
+	}
+
+	# Set publication status
+	*publicationState.status = "Unknown";
+
+	# Generate new XML's
+	*publicationState.combiXmlPath = "";
+	*publicationState.dataCiteXmlPath = "";
+
+	# Post metadata to DataCite
+	*publicationState.dataCiteMetadataPosted = "";
+
+	# Generate new landingpage
+	*publicationState.landingPageUploaded = "";
+
+	# Update OAI-PMH metadata
+	*publicationState.oaiUploaded = "";
+
+	# Update anonymous access
+	*publicationState.anonymousAccess = "";
+
+	# Save state
+	*err = errorcode(iiSavePublicationState(*vaultPackage, *publicationState));
+	if (*err < 0) {
+		*status = "UnkownError";
+		succeed;
 	}
 }
