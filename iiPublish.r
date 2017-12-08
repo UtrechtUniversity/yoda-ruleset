@@ -430,12 +430,23 @@ iiSavePublicationState(*vaultPackage, *publicationState) {
 	msiString2KeyValPair("", *kvp);
 	foreach(*key in *publicationState) {
 		msiGetValByKey(*publicationState, *key, *val);
-		if (*val != "") {
-			*attrName = UUORGMETADATAPREFIX ++ "publication_" ++ *key;
-			*kvp."*attrName" = *val;
-		}
+                if (*val == "") {
+                        *val = "REMOVE_KEY";
+                }
+		*attrName = UUORGMETADATAPREFIX ++ "publication_" ++ *key;
+		*kvp."*attrName" = *val;
 	}
 	msiSetKeyValuePairsToObj(*kvp, *vaultPackage, "-C");
+
+	msiString2KeyValPair("", *kvp);
+	foreach(*key in *publicationState) {
+		msiGetValByKey(*publicationState, *key, *val);
+                if (*val == "") {
+                        *attrName = UUORGMETADATAPREFIX ++ "publication_" ++ *key;
+                        *kvp."*attrName" = "REMOVE_KEY";
+                }
+	}
+	msiRemoveKeyValuePairsFromObj(*kvp, *vaultPackage, "-C");
 }
 
 # iiCheckDOIAvailability            Request DOI to check on availibity. We want a 404 as return code
@@ -702,10 +713,6 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 
 	# Load state
 	iiGetPublicationState(*vaultPackage, *publicationState);
-	if (*publicationState.status != "OK") {
-		*status = "PublicationNotOK";
-		succeed;
-	}
 
 	# Set publication status
 	*publicationState.status = "Unknown";
