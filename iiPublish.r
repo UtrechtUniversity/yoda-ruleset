@@ -683,6 +683,12 @@ iiProcessPublication(*vaultPackage, *status) {
 			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 		}
+	} else {
+	        writeLine("serverLog", "iiProcessPublication: All steps for publication completed");
+	        # The publication was a success;
+	        *publicationState.status = "OK";
+	        iiSavePublicationState(*vaultPackage, *publicationState);
+		*status = *publicationState.status;
 	}
 }
 
@@ -713,6 +719,10 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 
 	# Load state
 	iiGetPublicationState(*vaultPackage, *publicationState);
+	if (*publicationState.status != "OK") {
+		*status = "PublicationNotOK";
+		succeed;
+	}
 
 	# Set publication status
 	*publicationState.status = "Unknown";
@@ -725,6 +735,7 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 	*publicationState.dataCiteMetadataPosted = "";
 
 	# Generate new landingpage
+	*publicationState.landingPagePath = "";
 	*publicationState.landingPageUploaded = "";
 
 	# Update OAI-PMH metadata
