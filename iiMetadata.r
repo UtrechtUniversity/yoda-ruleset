@@ -605,6 +605,11 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 
 	if (*empty) {
+		*datamanagerFolder = "/*rodsZone/home/*datamanagerGroup";
+		msiCheckAccess(*datamanagerFolder, "delete object", *deleteAccess);
+		if (*deleteAccess == 0) {
+			msiSetACL("recursive", "admin:own", uuClientFullName, *datamanagerFolder);
+		}
 		*err = errorcode(msiRmColl(*collToRemove, "forceFlag=",*status));	
 		if (*err < 0) {
 			*status = "FailedToRemoveColl";

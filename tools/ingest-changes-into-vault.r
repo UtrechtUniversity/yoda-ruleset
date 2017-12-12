@@ -26,7 +26,10 @@ ingestChangesIntoVault {
 				if (*status != "Success") {
 					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_ingest=*status%"
 						     ++ UUORGMETADATAPREFIX ++ "vault_ingest_info=*statusInfo", *kvp);
-					msiSetKeyValuePairsToObj(*kvp, *metadataXmlPath, "-d");
+					*err = errorcode(msiSetKeyValuePairsToObj(*kvp, *metadataXmlPath, "-d"));
+					if (*err < 0) {
+						writeLine("stdout", "iiIngestDatamanagerIntoVault: could not set error status on *metadataXmlPath");
+					}
 					writeLine("stdout", "iiIngestDatamanagerIntoVault: *status - *statusInfo");
 				} else {
 					writeLine("stdout", "iiIngestDatamanagerIntoVault: Successfully processed *metadataXmlPath");
