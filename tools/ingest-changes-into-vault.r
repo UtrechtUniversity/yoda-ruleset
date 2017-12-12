@@ -59,11 +59,6 @@ ingestChangesIntoVault {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessPublication(*collName, *status));
 				if (*err < 0) {
-                                        msiString2KeyValPair("", *publicationUpdateKvp);
-                                        *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Error";
-					msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
-					msiSetKeyValuePairsToObj(*publicationUpdateKvp, *collName, "-C");
-
 					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
 				} else {
                                         msiString2KeyValPair("", *publicationUpdateKvp);
@@ -81,7 +76,6 @@ ingestChangesIntoVault {
 			msiGetMoreRows(*GenQ2Inp, *GenQ2Out, *ContInxNew);
 		}
 	}
-
 }
 input null
 output ruleExecOut
