@@ -697,6 +697,7 @@ iiProcessPublication(*vaultPackage, *status) {
 # \param[out] status           status of the publication state update
 iiSetUpdatePublicationState(*vaultPackage, *status) {
 	*status = "Unknown";
+
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
 	if (*vaultStatus != PUBLISHED) {

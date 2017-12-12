@@ -615,6 +615,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Could not remove *collToRemove as it is not empty");
 	}
 
+	# Only update publication if package is published.
+	iiVaultStatus(*vaultPackagePath, *vaultStatus);
+	if (*vaultStatus != PUBLISHED) {
+	   *status = "Success";
+	   *statusInfo = "";
+	}
+
 	# Add publication update status to vault package.
 	# Also used in frontend to check if vault package metadata update is pending.
 	*publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
