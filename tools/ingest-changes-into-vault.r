@@ -64,11 +64,12 @@ ingestChangesIntoVault {
 				if (*err < 0) {
 					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
 				} else {
-                                        msiString2KeyValPair("", *publicationUpdateKvp);
-                                        *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
-                                        msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
-                                        *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
-
+				        if (*status == "OK") {
+                                           msiString2KeyValPair("", *publicationUpdateKvp);
+                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
+                                           msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
+                                           *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
+					}
 					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
 				}
 			}
