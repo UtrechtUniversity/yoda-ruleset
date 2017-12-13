@@ -689,6 +689,8 @@ iiProcessPublication(*vaultPackage, *status) {
 	        *publicationState.status = "OK";
 	        iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
+
+		iiAddActionLogRecord("system", *folder, "publication updated");
 	}
 }
 
