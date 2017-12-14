@@ -1,3 +1,9 @@
+# \file
+# \brief     Resources and tiers.
+# \author    Harm de Raaff
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
 # Resources and tiers 
 #
 # A tier designates a cost level of storage, i.e. resource.
@@ -14,6 +20,7 @@
 # /param[out] *status		-return status to frontend 
 # /param[out] *statusInfo	-return specific information regarding *status
 # /param[in]  *resourceName
+#
 uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -44,12 +51,12 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 	uuKvp2JSON(*resourceData, *data);
 }
 
-# /brief uuFrontEndGetUserGroupsForStatistics
+# /brief Collect all groups current user is a member of. Read only groups count as well.
+#
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend
 # /param[out] *statusInfo       -return specific information regarding *status
 #
-# Collect all groups current user is a member of. Read only groups count as well
 uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 {
 	*status = 'Success';
@@ -61,15 +68,15 @@ uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 	uuList2JSON(*allUserGroups, *data);
 }
 
-# /brief uuFrontEndGetUserGroupsForStatistics
+# /brief Return an overview that covers a year of storage statistics on a group
+#        It returns a key value pair that is indexed with combination of month/tier data as a key
+#
 # /param[in]  *groupName	-Name of group storage statistics have to be gathered
 # /param[in]  *currentMonth	-Central month that defines the start of the monthly list
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend
 # /param[out] *statusInfo       -return specific information regarding *status
 #
-# Return an overview that covers a year of storage statistics on a group
-# It returns a key value pair that is indexed with combination of month/tier data as a key
 uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo)
 {
 	*status = 'Success';
@@ -144,10 +151,12 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 }
 
 
-# /brief uuFrontEndListResourceAndStatisticData - List available resources and their tier & storage data
+# /brief List available resources and their tier & storage data
+#
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
 # /param[out] *statusInfo       -return specific information regarding *status
+#
 uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -170,10 +179,12 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
         }
 }
 
-# /brief uuFrontEndListResourceTiers - List available resources and their tier & storage data
+# /brief List available resources and their tier & storage data
+#
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
 # /param[out] *statusInfo       -return specific information regarding *status
+#
 uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -191,12 +202,14 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 	uuList2JSON(*allResourceTiers, *data);
 }
 
-# /brief uuFrontEndSetResourceTier - sets (creates/updates) tier as metadata for given resource
+# /brief sets (creates/updates) tier as metadata for given resource
+#
 # /param[out] *data             -return actual requested data if applicable
 # /param[out] *status           -return status to frontend 
 # /param[out] *statusInfo       -return specific information regarding *status
 # /param[in]  *resourceName
 # /param[in]  *tierName
+#
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -226,11 +239,13 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 }
 
 
-# /brief uuGetMonthlyCategoryStorageOverview() 
+# /brief uuGetMonthlyCategoryStorageOverview()
+#
 # FrontEnd function for retrieving storage overview for all
 # /param[out] *result - JSON data with category overview
 # /param[out] *status - 
 # /param[out] *statusInfo
+#
 uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -247,15 +262,14 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 }
 
 
-#/ brief uuGetMonthlyCategoryStorageOverviewDatamanager()
-# Front end function for retrieving storage overview for a datamanager and its 
+# /brief Front end function for retrieving storage overview for a datamanager.
+#        Anyone can use this function - it will not yield anything if not a datamanager.
+#        So no check for permissions is required.
+#
 # /param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
 # /param[out] *status
 # /param[out] *statusInfo
-
-# Anyone can use this function - it will not yield anything if not a datamanager.
-# So no check for permissions is required.
-
+#
 uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -265,11 +279,12 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 }
 
 
-#/ brief uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
-# Front end function for retrieving storage overview for a datamanager and its 
+# /brief Front end function for retrieving storage overview for a datamanager
+# 
 # /param[out] *isDatamanager {'yes', 'no'}
 # /param[out] *status
 # /param[out] *statusInfo
+#
 uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 {
         *status = 'Success';
@@ -300,8 +315,10 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 
 
 # /brief uuResourceExistst - check whether given resource actually exists
+#
 # /param[in] *resourceName
 # /param[out] *exists
+#
 uuResourceExists(*resourceName, *exists)
 {
         *exists = false;
