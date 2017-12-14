@@ -1,9 +1,8 @@
-# \file iiVault.r
-# \brief Copy folders to the vault
-#
-# \author Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \file
+# \brief     Copy folders to the vault
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE
 
 # \brief iiDetermineVaultTarget
 # \param[in] folder

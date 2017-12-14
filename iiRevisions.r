@@ -1,8 +1,8 @@
 # \file
 # \brief     Revision management. Each new file or file modification creates a timestamped backup file in the revision store.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht university. All rights reserved
-# \license   GPLv3, see LICENSE
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 #
 #####################################################
 #
