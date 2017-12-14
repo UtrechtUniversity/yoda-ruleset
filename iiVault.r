@@ -1,5 +1,5 @@
 # \file iiVault.r
-# \brief Copy folders to the vault
+# \brief Functions to copy packages to the vault and manage permissions of vault packages
 #
 # \author Paul Frederiks
 # \copyright Copyright (c) 2016, Utrecht university. All rights reserved

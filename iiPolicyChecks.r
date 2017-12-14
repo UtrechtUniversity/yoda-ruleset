@@ -1,4 +1,15 @@
-# \brief iiRenameInvalidXML
+# \file iiPolicyChecks
+# \brief  helper function to check for policy pre and post conditions
+#         used by the locking mechanism and the folder status transition mechanism
+# \author Paul Frederiks
+# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
+# \license GPLv3, see LICENSE
+
+
+# \brief iiRenameInvalidXML  Rename invalid formelements xml or xsd when added to a systemcollection
+#                            to prevent breakage of the metadata form editor
+# \param[in] xmlpath         Path of xml file added to a systemcollection
+# \param[in] xsdpath         Path to XSD to check against
 iiRenameInvalidXML(*xmlpath, *xsdpath) {
 		*invalid = false;
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
@@ -23,9 +34,12 @@ iiRenameInvalidXML(*xmlpath, *xsdpath) {
 		}
 }
 
-# \brief iiIsStatusTransitionLegal
+# \brief iiIsStatusTransitionLegal    Check validity of requested folder status transition in a research area
+# \param[in] fromstatus    folder status before requested transition
+# \param[in] tostatus      folder status after requested transition
 iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal = false;
+	# IIFOLDERTRANSTIONS should be defined in iiConstants.r and lists all the legal status transitions
 	foreach(*legaltransition in IIFOLDERTRANSITIONS) {
 		(*legalfrom, *legalto) = *legaltransition;
 		if (*legalfrom == *fromstatus && *legalto == *tostatus) {
@@ -36,7 +50,9 @@ iiIsStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal;
 }
 
-# \brief iiIsVaultStatusTransitionLegal
+# \brief iiIsVaultStatusTransitionLegal  Check validity of requested status transition in the vault
+# \param[in] fromstatus    folder status before requested transition
+# \param[in] tostatus      folder status after requested transition
 iiIsVaultStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal = false;
 	foreach(*legaltransition in IIVAULTTRANSITIONS) {
@@ -49,7 +65,9 @@ iiIsVaultStatusTransitionLegal(*fromstatus, *tostatus) {
 	*legal;
 }
 
-# \brief iiGetLocks
+# \brief iiGetLocks   return a list of locks on an object
+# \param[in] objPath  path of collection or data object 
+# \param[out] locks   list of locks with the rootCollection of each lock as value
 iiGetLocks(*objPath, *locks) {
 	*locks = list();
 	*lockattrname = IILOCKATTRNAME;
@@ -75,10 +93,10 @@ iiGetLocks(*objPath, *locks) {
 	}
 }
 
-# \brief iiCanCollCreate 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanCollCreate  Check if parent folder isn't locked before creating a new collection
+# \param[in] path       path of collection to be created
+# \param[out] allowed   boolean to indicate if the action is allowed
+# \param[out] reason    reason the action is not allowed
 iiCanCollCreate(*path, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown failure";
@@ -104,11 +122,11 @@ iiCanCollCreate(*path, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanCollCreate: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollRename 
-# \param[in] src
-# \param[in] dst
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanCollRename  Check if renaming of collection is allowed
+# \param[in] src          source collection
+# \param[in] dst          destination collection 
+# \param[out] allowed   boolean to indicate if the action is allowed
+# \param[out] reason    reason the action is not allowed
 iiCanCollRename(*src, *dst, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
@@ -139,10 +157,10 @@ iiCanCollRename(*src, *dst, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanCollRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanCollDelete  check if removing a collection is allowed
+# \param[in] path       path of collection
+# \param[out] allowed   boolean to indicate if the action is allowed
+# \param[out] reason    reason the action is not allowed
 iiCanCollDelete(*path, *allowed, *reason) {
 
 	*allowed = false;
@@ -159,10 +177,10 @@ iiCanCollDelete(*path, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanCollDelete: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanDataObjCreate  Check if a new data object can be created
+# \param[in] path            path of data object
+# \param[out] allowed        boolean to indicate if the action is allowed
+# \param[out] reason         reason the action is not allowed
 iiCanDataObjCreate(*path, *allowed, *reason) {
 	
 	*allowed = false;
@@ -189,10 +207,10 @@ iiCanDataObjCreate(*path, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanDataObjCreate: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanDataObjWrite  Check if writing to a data object is allowed
+# \param[in] path           path of data object
+# \param[out] allowed       boolean to indicate if the action is allowed
+# \param[out] reason        reason the action is not allowed
 iiCanDataObjWrite(*path, *allowed, *reason) {
 
 	*allowed = false;
@@ -225,10 +243,11 @@ iiCanDataObjWrite(*path, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanDataObjWrite: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanDataObjRename   Check if data object can be renamed
+# \param[in] src       source name of data object        
+# \param[in] dst       destination name of data object
+# \param[out] allowed  boolean to indicate if the action is allowed
+# \param[out] reason   reason the action is not allowed
 iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 
 	*allowed = false;
@@ -260,10 +279,10 @@ iiCanDataObjRename(*src, *dst, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanDataObjRename: *src -> *dst; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanDataObjDelete   Check if data object can be deleted
+# \param[in] path       path of data object      
+# \param[out] allowed   boolean to indicate if the action is allowed
+# \param[out] reason    reason the action is not allowed
 iiCanDataObjDelete(*path, *allowed, *reason) {
 
 	*allowed = false;
@@ -279,10 +298,14 @@ iiCanDataObjDelete(*path, *allowed, *reason) {
 	#DEBUG writeLine("serverLog", "iiCanDataObjDelete: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanCopyMetadata   Check if metadata can be copied from one item to the other
+# \param[in] option          ignored parameter passed to acPreProcForModifyAVUMetadata PEP, always 'cp' when this check is called
+# \param[in] sourceItemType  type of source object (c for collection, d for data object)
+# \param[in] targetItemType  type of target object (c for collection, d for data object)
+# \param[in] sourceItemName  name (path in case of collection or data object) of source object
+# \param[in] targetItemName  name (path in case of collection or data object) of target object
+# \param[out] allowed        boolean to indicate if the action is allowed
+# \param[out] reason         reason the action is not allowed
 iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *targetItemName, *allowed, *reason) {	
 	*allowed = false;
 	*reason = "Unknown error";
@@ -321,10 +344,13 @@ iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *t
 	#DEBUG writeLine("serverLog", "iiCanCopyMetadata: *sourceItemName -> *targetItemName; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanModifyUserMetadata   check if user metadata can be modified
+# \param[in] option          parameter of the action passed to the PEP. 'add', 'set' or 'rm' 
+# \param[in] itemType        type of item (-C for collection, -d for data object)
+# \param[in] itemName        name of item (path in case of collection or data object)
+# \param[in] attributeName   attribute name of AVU
+# \param[out] allowed        boolean to indicate if the action is allowed
+# \param[out] reason         reason the action is not allowed
 iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
@@ -353,20 +379,29 @@ iiCanModifyUserMetadata(*option, *itemType, *itemName, *attributeName, *allowed,
 	#DEBUG writeLine("serverLog", "iiCanModifyUserMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanCollDelete 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanModifyOrgMetadata   currently all modifications on organisational metadata is controlled by ACL's.
+#                                 If locked folder would disallow the modification of the lock, it would not be possible
+#                                 to remove the lock
+# \param[in] option          parameter of the action passed to the PEP. 'add', 'set' or 'rm' 
+# \param[in] itemType        type of item (-C for collection, -d for data object)
+# \param[in] itemName        name of item (path in case of collection or data object)
+# \param[in] attributeName   attribute name of AVU
+# \param[out] allowed   boolean to indicate if the action is allowed
+# \param[out] reason    reason the action is not allowed
 iiCanModifyOrgMetadata(*option, *itemType, *itemName, *attributeName, *allowed, *reason) {
 	*allowed = true;
 	*reason = "No reason to lock OrgMetatadata yet";
 	#DEBUG writeLine("serverLog", "iiCanModifyOrgMetadata: *itemName; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanModifyFolderStatus 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanModifyFolderStatus   Prevent illegal folder status modifications
+# \param[in] option         parameter of the action performed on the folder status metadata. 'rm', 'add' or 'set'
+# \param[in] path           path of folder
+# \param[in] attributeName  (new) attribute name of AVU
+# \param[in] attributeValue (new) attribute value of AVU
+# \param[in] actor          user name of actor
+# \param[out] allowed       boolean to indicate if the action is allowed
+# \param[out] reason        reason the action is not allowed
 iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
@@ -391,15 +426,22 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *actor,
 		*transitionTo = *attributeValue;
 	}
 
+	# All metadata actions can be checked with the same function
 	iiCanTransitionFolderStatus(*path, *transitionFrom, *transitionTo, *actor, *allowed, *reason); 
 
 	#DEBUG writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanModifyFolderStatus 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanModifyFolderStatus  Check if metadata modification with the mod action is allowed 
+# \param[in] option             parameter of the action performed on the folder status metadata. always 'mod'
+# \param[in] path               path of folder
+# \param[in] attributeName      current attribute name of AVU
+# \param[in] attributeValue     current attribute value of AVU
+# \param[in] newAttributeName   new attribute name of AVU
+# \param[in] newAttributeValue  new attribute value of AVU
+# \param[in] actor              user name of actor
+# \param[out] allowed           boolean to indicate if the action is allowed
+# \param[out] reason            reason the action is not allowed
 iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
@@ -414,10 +456,12 @@ iiCanModifyFolderStatus(*option, *path, *attributeName, *attributeValue, *newAtt
 	#DEBUG writeLine("serverLog", "iiCanModifyFolderStatus: *path; allowed=*allowed; reason=*reason");
 }
 
-# \brief iiCanTransitionFolderStatus 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \brief iiCanTransitionFolderStatus  Check if a folder status transition is legal
+# \param[in] folder
+# \param[in] transitionFrom  current status to transition from
+# \param[in] transitionTo    new status to transition to
+# \param[out] allowed        boolean to indicate if the action is allowed
+# \param[out] reason         reason the action is not allowed
 iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
@@ -498,9 +542,12 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 
 
 # \brief iiCanTransitionVaultStatus 
-# \param[in] path
-# \param[out] allowed
-# \param[out] reason
+# \param[in] folder
+# \param[in] transitionFrom  current status
+# \param[in] transitionTo    status to transition to
+# \param[in] actor           user name of actor requesting the transition
+# \param[out] allowed        boolean to indicate if the action is allowed
+# \param[out] reason         reason the action is not allowed
 iiCanTransitionVaultStatus(*folder, *transitionFrom, *transitionTo, *actor, *allowed, *reason) {
 	*allowed = false;
 	*reason = "Unknown error";
