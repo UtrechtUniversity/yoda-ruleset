@@ -1,5 +1,5 @@
 # \file
-# \brief     Revision management
+# \brief     Revision management. Each new file or file modification creates a timestamped backup file in the revision store.
 # \author    Paul Frederiks
 # \copyright Copyright (c) 2017, Utrecht university. All rights reserved
 # \license   GPLv3, see LICENSE
@@ -37,6 +37,8 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *fi
 }
 
 # \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
+#                                        Schedule the creation of a revision as a delayed to avoid a slow down
+#                                        of the main process.
 # \param[in] resource   The resource where the original is written to
 # \param[in] path	The path of the added or modified file.
 # \param[in] maxSize    The maximum file size of original
@@ -52,7 +54,7 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	}
 }
 
-# \brief iiRevisionCreate create a revision of a dataobject in a revision folder
+# \brief iiRevisionCreate       create a revision of a dataobject in a revision folder
 # \param[in] resource		resource to retreive original from
 # \param[in] path		path of data object to create a revision for
 # \param[in] maxSize		max size of files in bytes
@@ -91,6 +93,9 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 		*userZone = *row.USER_ZONE;
 	}
 
+	# All revisions are stored in a group with the same name as the research group in a system collection
+	# When this collection is missing, no revisions will be created. When the group manager is used to 
+	# create new research groups, the revision collection will be created as well.
 	*revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
 	*revisionStoreExists = false;	
@@ -99,6 +104,7 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
        	}
 
 	if (*revisionStoreExists) {
+		# generate a timestamp in iso8601 format to append to the filename of the revised file.
 		msiGetIcatTime(*timestamp, "icat");
 		*iso8601 = uuiso8601(*timestamp);
 		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
@@ -110,6 +116,8 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 		*err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
 		if (*err < 0) {
 			if (*err == -312000) {
+			# When a file is modified multiple times in a second, only the first modification can be stored as the revision name with timestamp will be the same
+			# iRODS returns timestamps in seconds only.
 			# -312000 OVERWRITE_WITHOUT_FORCE_FLAG
 				writeLine("serverLog", "iiRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
 				succeed;
@@ -146,8 +154,8 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 }
 
 
-# \brief iiRevisionRemove
-# \param[in] revisionId
+# \brief iiRevisionRemove     Remove a revision from the revision store
+# \param[in] revisionId       DATA_ID of the revision to remove
 iiRevisionRemove(*revisionId) {
 	*isfound = false;
 	*revisionStore =  "/$rodsZoneClient" ++ UUREVISIONCOLLECTION;
@@ -176,8 +184,8 @@ iiRevisionRemove(*revisionId) {
 }
 
 
-# \brief iiRevisionRestore
-# \param[in] revisionId        id of revision data object
+# \brief iiRevisionRestore	Copy a revision from the revision store into a research area
+# \param[in] revisionId         id of revision data object
 # \param[in] target             target collection to write in
 # \param[in] overwrite          {restore_no_overwrite, restore_overwrite, restore_next_to} 
 #				With "restore_no_overwrite" the front end tries to copy the selected revision in *target 
@@ -370,13 +378,13 @@ iiRevisionList(*path, *result) {
 		msiString2KeyValPair("", *kvp);
 		*isFound = true;
 		*id = *row.DATA_ID;
-		# writeLine("serverLog", "DataID: *id");
+		#DEBUG writeLine("serverLog", "iiRevisionList: DataID: *id");
 		*kvp.id = *id;
 		*kvp.revisionPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		foreach(*meta in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *id) {
 			*name = *meta.META_DATA_ATTR_NAME;
 			*val = *meta.META_DATA_ATTR_VALUE;
-			#DEBUG writeLine("serverLog","metadata: *name - *val");
+			#DEBUG writeLine("serverLog","iiRevisionList: metadata: *name - *val");
 			msiAddKeyVal(*kvp, *name, *val);	
 		}
 
@@ -398,7 +406,7 @@ iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
 }
 
 # \datatype iirevisioncandidate    Represents a revision with a timestamp with an double for the timestamp and a string for the DATA_ID.
-#                                  A removed candidate is represented with an empty dataconstructor
+#                                  A removed candidate is represented with an empty data constructor
 data iirevisioncandidate = 
 	| iirevisioncandidate : double * string -> iirevisioncandidate
 	| iirevisionremoved : iirevisioncandidate
@@ -429,6 +437,7 @@ iiweeks(*w) = *w * iidays(7)
 # \returnvalue lst   A bucket list
 iiRevisionBucketList(*case) {
 	if (*case == "A") {
+		# keep one revision per time bucket
 		*lst = list(
 			 iibucket(iihours(6),  1, 1),
 			 iibucket(iihours(12), 1, 0),
@@ -470,6 +479,7 @@ iiRevisionBucketList(*case) {
 		*lst = list(iibucket(iiweeks(16), 16, 4));
 	} else {
 		# Case B and default
+		# By keeping two revisions per time bucket, the oldest and the newest, the spread over time
 		*lst = list(
 			 iibucket(iihours(12), 2, 0),
 			 iibucket(iidays(1),   2, 1),
