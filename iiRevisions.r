@@ -610,7 +610,13 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 	}
 }
 
-# \brief iiRevisionSearchByOriginalPath 
+# \brief iiRevisionSearchByOriginalPath  This search function is currently not used by the frontend as it also returns every file with the search string one of the folders in its path. Could still be useful in development and testing.
+# \param[in] searchString	String to search for in the filesystem
+# \param[in] orderby		Column to sort on, Defaults to COLL_NAME
+# \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
+# \param[in] limit		Maximum number of results returned
+# \param[in] offset		Offset in result set before returning results
+# \param[out] result		List of results in JSON format
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	# Generic exception handling intialisation for possible later purposes
         *status = 'Success';
@@ -637,8 +643,13 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 	*result = *json_str;
 }
 
-# \brief iiRevisionSearchByOriginalFilename
-# \ Used by frontend to search for revisions. Hence presence of *status and *statusInfo
+# \brief iiRevisionSearchByOriginalFilename  Used by frontend to search for revisions. Hence presence of *status and *statusInfo
+# \param[in] searchString	String to search for in the filesystem
+# \param[in] orderby		Column to sort on, Defaults to COLL_NAME
+# \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
+# \param[in] limit		Maximum number of results returned
+# \param[in] offset		Offset in result set before returning results
+# \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
@@ -703,8 +714,7 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*result = *json_str;
 }
 
-# \brief iiRevisionSearchByOriginalId
-# Id stays the same after file renames.
+# \brief iiRevisionSearchByOriginalId Not used by the frontend, but is still useful when debugging the revision system and to detect renames as the Id stays the same after file renames.
 iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
         # Generic exception handling intialisation for possible later purposes
         *status = 'Success';
@@ -730,6 +740,8 @@ iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *re
 }
 
 
+# \datatype iirevisionwithpath
+# combination of revisionId and original path of the revised file
 data iirevisionwithpath =
 	| iirevisionwithpath : string * string -> iirevisionwithpath
 
