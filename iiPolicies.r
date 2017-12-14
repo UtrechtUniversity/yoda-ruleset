@@ -335,6 +335,19 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	}
 }
 
+acPostProcForObjRename(*src, *dst) {
+	on(*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+		# enforce research group ACL's on folder moved from outside of research group
+		*srcPathElems = split(*src, "/");
+		*dstPathElems = split(*dst, "/");		
+		#DEBUG writeLine("serverLog", "acPostProcForObjRename: *src -> *dst");
+		if (elem(*srcPathElems, 2) != elem(*dstPathElems, 2)) {
+			uuEnforceGroupAcl(*dst);
+		}
+	}
+
+}
+
 # \brief uuResourceRenamePostResearch    This policy is created to support the moving, renaming and trashing of the .yoda-metadata.xml file as well as enforcing group ACL's when collections or data objects are moved from outside a research group into it
 # \param[in] pluginInstanceName   a copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
