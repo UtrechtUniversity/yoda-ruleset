@@ -2,9 +2,8 @@
 # \brief This file contains rules related to metadata
 #                       to a dataset
 # \author Paul Frederiks
-
-# \copyright Copyright (c) 2017, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license GPLv3, see LICENSE.
 
 # /brief iiPrepareMetadataImport	Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable
 # /param[in] metadataXmlPath		path of the metadata XML file that needs to be validated

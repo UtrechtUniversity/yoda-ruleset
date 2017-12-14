@@ -2,10 +2,10 @@
 # \brief File statistics functions
 #			Functions in this file extract statistics from files
 #			and collections
-# \author Jan de Mooij
-# \author Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \author    Jan de Mooij
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 #
 
 # \brief iiFileCount 		Obtain a count of all files in a collection
