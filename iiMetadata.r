@@ -625,6 +625,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	if (*vaultStatus != PUBLISHED) {
 	   *status = "Success";
 	   *statusInfo = "";
+	   succeed;
 	}
 
 	# Add publication update status to vault package.
