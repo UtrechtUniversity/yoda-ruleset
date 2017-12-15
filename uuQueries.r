@@ -1,7 +1,7 @@
 # \file       uuQueries.r
 # \brief      Helper rules for common queries.
 # \author     Paul Frederiks
-# \copyright  Copyright (c) 2015, Utrecht University. All rights reserved.
+# \copyright  Copyright (c) 2015-2017, Utrecht University. All rights reserved.
 # \license    GPLv3, see LICENSE.
 
 # \brief Checks if a collection exists.
