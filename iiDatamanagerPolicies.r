@@ -4,7 +4,7 @@
 # \copyright Copyright (c) 2017, Utrecht University. All rights reserved
 # \licens GPLv3 LICENSE
 
-# \brief iiDatamanagerPreSudoObjAclSet
+# \brief iiDatamanagerPreSudoObjAclSet  this rule should be called from iiSudoPolicies on sudo ACL set actions
 # \param[in] recursive
 # \param[in] accessLevel
 # \param[in] otherName
@@ -20,7 +20,11 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 	fail;
 }
 
-# \brief iiDatamanagerGroupFromVaultGroup
+# \brief iiDatamanagerGroupFromVaultGroup  determine the datamanager group belonging to a vault group as vault
+#                                          groups do not have metadata on the category themselves
+# \param[in] vaultGroup         group name starting with vault-
+# \param[out] datamanagerGroup  group name of the datamanager group belonging to the category of the research group
+#                               associated with the vault
 iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {	
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
@@ -31,7 +35,7 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 	}
 }
 
-# \brief iiCanDatamanagerAclSet
+# \brief iiCanDatamanagerAclSet  Check if the requester is allowed to change ACL's in the vault
 # \param[in] objPath
 # \param[in] actor
 # \param[in] otherName
@@ -40,7 +44,7 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 # \param[out] allowed
 # \param[out] reason
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
-
+	# When the datamanager needs write/read access to the root of a vault package this rule is run
 	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to obtain <*accessLevel> on <*objPath>");
 		if (*accessLevel != "write" && *accessLevel != "read") {
@@ -74,6 +78,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 
 	}
 
+	# When a datamanager wants to grant or revoke read access for a research or read group in the vault, this rule will run
 	on (*objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
 		writeLine("serverLog", "iiCanDatamanagerAclSet: <*actor> wants to set <*accessLevel> for <*otherName> on <*objPath>");
 		if (*accessLevel != "read" && *accessLevel != "null") {
@@ -116,7 +121,8 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "*objPath is not part of *vaultGroupName";
 		}
 	}
-       
+      
+	# when a status transition in the research area is invoked by the datamanager, he needs temporary write access to change the folder status  
 	on (*objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
 		if (*recursive == 1 || *accessLevel == "own") {
@@ -149,7 +155,9 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 				*reason = "Currently a datamanager has no permission to alter the state of  *objPath with status '*folderStatus'.";
 			}
 		}
-	} 
+	}
+	
+	# fallback to prevent users defining and using there own iiCanDatamanagerAclSet. This is also reached when the frontend requests a status change it is not allowed to
 	on (true) {
 		*allowed = false;
 		*reason = "Current status of folder *objPath is not 'submitted', 'accepted' or 'rejected'. Therefore the requested action can not be completed as a datamanager.";
