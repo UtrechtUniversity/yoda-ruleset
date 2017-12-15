@@ -1,20 +1,10 @@
-# \file
-# \brief Locking functions
-# \author Ton Smeele
-# \copyright Copyright (c) 2015, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
-#
+# \file      uuLock.r
+# \brief     Locking functions.
+# \author    Ton Smeele
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
-#test {
-#	uuLock("/tsm/home/rods",*result);
-#	writeLine("stdout","lock result = *result");
-#	uuUnlock("/tsm/home/rods");
-#	writeLine("stdout","and unlocked again");
-#}
-
-
-
-# \brief uuLock  obtain a lock on a collection
+# \brief Obtain a lock on a collection.
 # 
 # \param[in] collection  name of the collection to be locked 
 # \param[out] status     0 = locked, nonzero  = lock failed (e.g. in use) 
@@ -102,10 +92,11 @@ uuUnlock(*collection) {
 	}
 }
 
-# \brief see if a collection has a lock on it
+# \brief See if a collection has a lock on it.
 #
 # \param[in] collection  name of the collection
 # \param[out] isLocked     true if collection has a lock(request)
+#
 uuLockExists(*collection, *isLocked) {
 	# NB: reports true for both existing locks and lock requests
 	*isLocked = false;
@@ -134,19 +125,16 @@ uuLockExists(*collection, *isLocked) {
 	}
 }
 
-# \brief function to get the username part of a lock
+# \brief Function to get the username part of a lock.
 #
 # \param[in] lock  name of the lock
 # \return username
-uuLockGetUser(*lock) = substr(*lock,0,
-								strlen(*lock) - strlen(triml(*lock,":")) -1);
+#
+uuLockGetUser(*lock) = substr(*lock, 0, strlen(*lock) - strlen(triml(*lock,":")) -1);
 
-# \brief fucntion to get the datestamp part of a lock
+# \brief Function to get the datestamp part of a lock.
 # 
 # \param[in] lock  name of the lock
 # \return datetimestamp (in seconds since epoch)
+#
 uuLockGetDateTime(*lock) = triml(*lock,":");
-
-
-#input null
-#output ruleExecOut

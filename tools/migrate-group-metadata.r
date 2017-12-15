@@ -1,8 +1,8 @@
-# \file
+# \file      migrate-group-metadata.r
 # \brief     Migrate group manager 0.9.x to the groupmgr-msi-backend version.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016, Utrecht university
-# \license   GPLv3
+# \copyright Copyright (c) 2016, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # This moves all collection metadata on /zone/group/* to group metadata for
 # groups that start with 'priv-' or 'grp-'.

@@ -1,8 +1,8 @@
-# \file
-# \brief       Constants that apply to all yoda implementations
+# \file        uuConstants.r
+# \brief       Constants that apply to all yoda implementations.
 # \author      Paul Frederiks
-# \copyright   Copyright (c) 2016-2017 Utrecht University. All rights reserved
-# \license     GPLv3, see LICENSE
+# \copyright   Copyright (c) 2016-2017 Utrecht University. All rights reserved.
+# \license     GPLv3, see LICENSE.
 
 # \constants uuORGMETADATAPREFIX Prefix for organisational metadata
 UUORGMETADATAPREFIX = "org_"
@@ -26,4 +26,3 @@ UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX ++ 'storage_tier';
 
 # \Metadata for calculated storage month
 UUMETADATASTORAGEMONTH =  UUORGMETADATAPREFIX ++ 'storage_data_month';
-

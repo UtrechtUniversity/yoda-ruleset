@@ -1,8 +1,8 @@
-# \file
+# \file      uuSudoPolicies.r
 # \brief     Sudo microservices policies.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016, 2017, Utrecht University. All rights reserved
-# \license   GPLv3, see LICENSE
+# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # Sudo policies {{{
 

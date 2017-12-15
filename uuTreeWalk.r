@@ -1,8 +1,8 @@
-# \file
-# \brief generic function to walk collection trees
-# \author Ton Smeele
-# \copyright Copyright (c) 2015, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \file      uuTreeWalk.r
+# \brief     Generic function to walk collection trees
+# \author    Ton Smeele
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 #test {
 #	*buffer."count" = "0";   # initialize buffer
@@ -14,7 +14,7 @@
 #
 uuTreeWalkTestrule(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	writeLine("stdout","*itemParent - *itemName - *itemIsCollection - " ++ *buffer."count");
-	*error = 0; # zero means no error 
+	*error = 0; # zero means no error
    if (*itemName == "tutorial.pdf" ) {
 		*error = 1;
 	} else {
@@ -23,9 +23,9 @@ uuTreeWalkTestrule(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 }
 
 
-# \brief walks through a collection tree and calls an arbitrary rule for each tree-item
-# 
-# \param[in] direction           can be "forward" or "reverse" 
+# \brief Walks through a collection tree and calls an arbitrary rule for each tree-item.
+#
+# \param[in] direction           can be "forward" or "reverse"
 #                                forward means process collection itself, then childs
 #                                reverse means process childs first
 #                                reverse is useful e.g. to delete collection trees
@@ -47,28 +47,31 @@ uuTreeWalkTestrule(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 # \param[out] error             error result as may be set by the rule that is processed
 #                                  a value of 0 means no error
 #                                  other values indicate an error and process is interrupted
+#
 uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess, *buffer, *error) {
 	*error = 0;
 # start walking at the root of the tree...
 	uuTreeWalkCollection(
 			*direction,
 			*topLevelCollection,
-			*buffer, 
+			*buffer,
 			*ruleToProcess,
 			*error
 	);
 }
 
-# \brief walk a subtree 
+# \brief Walk a subtree.
+#
 # \param [in] direction   can be "forward" or "reverse"
 # \param [in] path
 # \param [in/out] buffer  (exclusively to be used by the rule we will can)
-# \param [in] rule        name of the rule to be executed in the context of a tree-item 
+# \param [in] rule        name of the rule to be executed in the context of a tree-item
 # \param [out] error      0 if ok else nonzero
+#
 uuTreeWalkCollection(
 			*direction,
 			*path,
-			*buffer, 
+			*buffer,
 			*ruleToProcess,
 			*error
 	) {
@@ -96,7 +99,7 @@ uuTreeWalkCollection(
 			uuTreeWalkCollection(
 						*direction,
 						*subCollectionPath,
-						*buffer, 
+						*buffer,
 						*ruleToProcess,
 						*error
 				);
@@ -109,8 +112,8 @@ uuTreeWalkCollection(
 			foreach (*row in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *path) {
 				msiGetValByKey(*row, "COLL_NAME", *subCollectionPath);
 				uuTreeWalkCollection(
-						*direction, 
-						*subCollectionPath, 
+						*direction,
+						*subCollectionPath,
 						*buffer,
 						*ruleToProcess,
 						*error
@@ -133,8 +136,3 @@ uuTreeWalkCollection(
 		}
 	}
 }
-
-
-#
-#input *direction="forward",*topLevelCollection="/nluu1ot/home/ton",*ruleToProcess="uuTreeWalkTestrule"
-#output ruleExecOut
