@@ -8,6 +8,7 @@
 # \description Used to be iicollectionexists from Jan de Mooij
 #
 # \param[in] collectionname	name of the collection
+# \returnvalue boolean, true if collection exists, false if not
 uuCollectionExists(*collectionname) {
 	*exists = false;
 	foreach (*row in SELECT COLL_NAME WHERE COLL_NAME = '*collectionname') {
@@ -19,6 +20,7 @@ uuCollectionExists(*collectionname) {
 
 # \brief uuFileExists Check if a file exists in the catalog
 # \param[in] *path
+# \returnvalue  boolean, true if collection exists, false if not
 uuFileExists(*path) {
 	*exists = false;
 	uuChopPath(*path, *collName, *dataName);
@@ -83,6 +85,9 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 }
 
 # \brief uuPaginatedQuery	This is a rule to do arbitrary paginated queries
+#                               iRODS general queries do not have direct support for query offsets or limits which are needed
+#                               to do a paginated query. This rule works around this limitation. results are returned as a list
+#                               of key-value-pairs as they can be converted to a json array of json objects for the frontend.
 # \param[in] fields		A list of fields to include in the results
 # \param[in] conditions		A list of condition. Each element should be of datatype condition
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
@@ -93,6 +98,7 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 # \param[out] status		Status code: 'Success' of all ok
 # \param[out] statusInfo	Extra information if something went wrong
 uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo) {
+
 	*status = 'Success';
 	*statusInfo = '';
 
@@ -104,11 +110,15 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	#succeed;
 
 	foreach(*field in *fields) {
+		# each field could contain an aggregation function. extract this aggregation function
+		# and add to the general query input GenQInp
 		if (*field like regex "(MIN|MAX|SUM|AVG|COUNT)\(.*") {
 			*action = trimr(*field, "(");
 			*field = trimr(triml(*field, "("), ")");
 			msiAddSelectFieldToGenQuery(*field, *action, *GenQInp);
 		} else {
+			# if a field is used as order by column uuorderclass returns the correct order clause to add
+			# will be an empty string if not.
 			*orderclause =	uuorderclause(*field, *orderby, *ascdesc);
 			msiAddSelectFieldToGenQuery(*field, *orderclause, *GenQInp);
 		}
@@ -116,10 +126,12 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 
 	foreach(*condition in *conditions) {
 		# deconstruct condition into its parts
+		# conditions are defined by the helper functions found in uuFunctions
 		uucondition(*column, *comparison, *expression) =  *condition;
 		msiAddConditionToGenQuery(*column, *comparison, *expression, *GenQInp);
 	}
 
+	# Execute the query. GenQOut will contain all the results, but we only want the results of one page
 	*err = errormsg(msiExecGenQuery(*GenQInp, *GenQOut), *errmsg);
         if (*err < 0) {
 		*status = 'ErrorExecutingQuery';		
@@ -127,10 +139,6 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 		succeed;
 	}
 
-	#msiExecGenQuery(*GenQInp, *GenQOut);
-
-	# msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
-        
 	*err = errormsg(msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew), *errmsg);
         if (*err < 0) {
                 *status = 'ErrorGetContFromQuery';
@@ -139,7 +147,10 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
         }
 
 	
-	# FastForward to Rowset of GENQMAXROWS based on offset
+	# FastForward to Rowset of GENQMAXROWS based on offset.
+	# GENQMAXROWS is defined as 256 in standard iRODS
+	# msiGetMoreRows will return rows in groups of 256 until no more results can be returned
+	# then it will set contInxNew to 0
 	*offsetInGenQ = *offset;
 	while (*offsetInGenQ > GENQMAXROWS && *ContInxNew > 0) {
 		msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
@@ -147,6 +158,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	}
 
 	#! writeLine("stdout", "offsetInGenQ: *offsetInGenQ");
+	# within a row set of max 256 rows we need to fetch each row within our page
 	*step = 0;
 	*stop = *offsetInGenQ + *limit;
 	*remainingInGenQ = 0;
@@ -254,9 +266,9 @@ uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset,
 
 	foreach(*condition in *conditions) {
 		# deconstruct condition into its parts
-		uucondition(*column, *comparison, *expression) =  *condition;
+		uucondition(*column, *comparison, *expression) = *condition;
 
-		# Convert expression to uppercase to prepare for case insensitve search.
+		# Convert expression to uppercase to prepare for case insensitive search.
 		msiStrToUpper(*expression, *expressionOut);
 		msiAddConditionToGenQuery(*column, *comparison, *expressionOut, *GenQInp);
 	}

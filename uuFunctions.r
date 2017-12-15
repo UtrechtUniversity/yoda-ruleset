@@ -1,3 +1,11 @@
+# \file uuFunctions.r
+# \brief contains functions used to define queries and return timestamps in iso8601 form
+#        within iRODS functions are defined differently from rules. A function should have
+#        no side effects and should always return a value instead of mutating an output parameter
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE
+
 # \brief orderclause	helper functions to determine order clause
 # \param[in] column	Column to check
 # \param[in] orderby	The column to orderby
@@ -9,7 +17,10 @@ uuorderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER
 uuiscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
 
 # \datatype	uucondition
-# \description  a triple of strings to represent the elements of a condition query
+# \brief  a triple of strings to represent the elements of a condition query
+#         first string represents the irods column, i.e. COLL_NAME
+#         second string represents the operator, i.e. '=' or 'like'
+#         third string represents the expression, i.e. '/tempZone/home'
 # \constructor uucondition	Construct new conditions with condition(*column, *operator, *expression)	
 data uucondition =
 	| uucondition : string * string * string -> uucondition
