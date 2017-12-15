@@ -1,9 +1,9 @@
-# \file
-# \brief     UU - List functions.
+# \file      uuList.r
+# \brief     List functions.
 # \author    Chris Smeele
 # \author    Paul Frederiks
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE
+# \license   GPLv3, see LICENSE.
 
 # \brief Check if a list contains a certain string value.
 #

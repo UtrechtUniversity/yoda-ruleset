@@ -1,8 +1,8 @@
-# \file
+# \file      uuGroupPolicies.r
 # \brief     Sudo microservices policy implementations for group manager.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016, 2017, Utrecht University. All rights reserved
-# \license   GPLv3, see LICENSE
+# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # This file contains Group Manager implementations of pre- and postproc rules
 # for Sudo actions.

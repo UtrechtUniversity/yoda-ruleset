@@ -1,15 +1,10 @@
-# \file
-# \brief iRODS policies for Yoda (changes to core.re)
-# \author Ton Smeele
-# \copyright Copyright (c) 2015, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
-#
-#test {
-#	acPreProcForExecCmd("foo");
-#}
+# \file      uuPolicies.r
+# \brief     iRODS policies for Yoda (changes to core.re).
+# \author    Ton Smeele
+# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
-# \brief preProcForExecCmd
-# 			limit the use of OS callouts to a user group "priv-execcmd-all"
+# \brief Limit the use of OS callouts to a user group "priv-execcmd-all".
 #
 # \param[in]		cmd  name of executable
 #
@@ -52,7 +47,6 @@ acCreateUserZoneCollections {
 	}
 }
 
-
 # acPreProcForObjRename is fired before a data object is renamed or moved.
 # Disallows renaming or moving the data object if it is directly under home.
 acPreProcForObjRename(*src, *dst) {
@@ -64,6 +58,3 @@ acPreProcForObjRename(*src, *dst) {
                 }
         }
 }
-
-#input null
-#output ruleExecOut

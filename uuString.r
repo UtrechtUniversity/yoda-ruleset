@@ -1,8 +1,9 @@
-# \file
-# \brief     UU - String functions.
-# \author    Chris Smeele, Ton Smeele
+# \file      uuString.r
+# \brief     String functions.
+# \author    Chris Smeele
+# \author    Ton Smeele
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE
+# \license   GPLv3, see LICENSE.
 
 # \brief Chop part of a string based on a split character.
 #
@@ -64,7 +65,7 @@ uuChopPath(*path, *parent, *baseName) {
 # \brief Split a checksum into a checksum type and a value
 #
 # \param[in]  checksum
-# \param[out] checksumType  e.g. "md5" or "sha2" 
+# \param[out] checksumType  e.g. "md5" or "sha2"
 # \param[out] checksumValue
 #
 uuChopChecksum(*checksum, *checksumType, *checksumValue) {
@@ -72,9 +73,9 @@ uuChopChecksum(*checksum, *checksumType, *checksumValue) {
    *checksumType = "md5";
    *checksumValue = *checksum;
    *checksumParts = split(*checksum, ":");
-   if (size(*checksumParts) > 1 ) { 
+   if (size(*checksumParts) > 1 ) {
       *checksumType = hd(*checksumParts);
-      *checksumValue = ""; 
+      *checksumValue = "";
       foreach (*value in tl(*checksumParts)) {
          *checksumValue = "*checksumValue*value";
       }
@@ -82,6 +83,7 @@ uuChopChecksum(*checksum, *checksumType, *checksumValue) {
 }
 
 # \brief Convert a string to uppercase characters
+#
 # \param[in]	strIn
 # \param[out]	strOut
 #
@@ -90,6 +92,7 @@ uuStrToUpper(*strIn, *strOut) {
 }
 
 # \brief Convert a string to lowercase characters
+#
 # \param[in]	strIn
 # \param[out]	strOut
 #
@@ -98,12 +101,13 @@ uuStrToLower(*strIn, *strOut) {
 }
 
 # \brief (internal function) Convert a string to lowercase or uppercase
+#
 # \param[in]	strIn
 # \param[out]	strOut
 # \param[in]	toCase	should be either "lower" or "upper"
 #
 uuStrShift(*strIn, *strOut, *toCase) {
-	*strOut = ''; 
+	*strOut = '';
 	for (*pos = 0; *pos < strlen(*strIn); *pos = *pos + 1) {
 		*c = substr(*strIn, *pos, *pos + 1);
 		uuChrShift(*c, *toCase);
@@ -112,8 +116,9 @@ uuStrShift(*strIn, *strOut, *toCase) {
 }
 
 # \brief Convert a single characterstring to lowercase or uppercase
+#
 # \param[in/out]	strIn
-# \param[in]		toCase	should be either "lower" or "upper"	
+# \param[in]		toCase	should be either "lower" or "upper"
 #
 uuChrShift(*c, *toCase) {
 	*a1 = split("a b c d e f g h i j k l m n o p q r s t u v w x y z", " ");
@@ -133,5 +138,4 @@ uuChrShift(*c, *toCase) {
 		}
 		*element = *element + 1;
 	}
-} 
-
+}

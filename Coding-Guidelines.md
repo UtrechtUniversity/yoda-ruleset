@@ -20,7 +20,7 @@ Example rule file
 below is purely to demonstrate the formatting guidelines.*
 
 ```
-# \file
+# \file      uuFilename.r
 # \brief     Description of this file.
 # \author    Author Name 1
 # \author    Author Name 2
