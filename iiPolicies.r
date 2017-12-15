@@ -1,4 +1,4 @@
-# This policy is fired when a file is put onto iRODS. 
+# This policy is fired when a file is put onto iRODS.
 acPostProcForPut {
 	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Check for locks in the research area
@@ -10,20 +10,20 @@ acPostProcForPut {
 		iiCanDataObjCreate($objPath, *allowed, *reason);
 		if (!*allowed) {
 			# There is no acPreProcForPut, so we can only remove the object after the fact.
-			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);	
+			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);
 		}
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
 		# Check new XSD against a schema for xsd validity. Rename the file when invalid
 
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";		
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
 	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
 		# Check  for invalid formelements XML files and rename them.
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";		
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
@@ -103,7 +103,7 @@ acPreProcForObjRename(*src, *dst) {
 			if(!*allowed) {
 				cut;
 				msiOprDisallowed;
-			}	
+			}
 		} else {
 			iiCanDataObjRename(*src, *dst, *allowed, *reason);
 			if(!*allowed) {
@@ -117,7 +117,7 @@ acPreProcForObjRename(*src, *dst) {
 
 # This policy is fired before a data object is opened.
 # The policy does not prohibit opening data objects for reading,
-# but if the data object is locked, opening for writing is 
+# but if the data object is locked, opening for writing is
 # disallowed. Many editors open a file for reading while editing and
 # store the file locally. Only when saving the changes, the file is
 # opened for writing. IF the file is locked, this means changes can be
@@ -163,7 +163,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 
 # This policy is fired when AVU metadata is added or set.
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" 
+	on (*attributeName like UUUSERMETADATAPREFIX ++ "*"
 	    && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
@@ -183,7 +183,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
 			*allowed = true;
-		} else {	
+		} else {
 			#DEBUG writeLine("serverLog", "Calling iiCanModifyFolderStatus");
 			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *actor, *allowed, *reason);
 		}
@@ -250,7 +250,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		if (*userType == "rodsadmin") {
 			*allowed = true;
 		} else {
-			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason); 
+			iiCanModifyFolderStatus(*option, *itemName, *attributeName, *attributeValue, *newAttributeName, *newAttributeValue, *actor, *allowed, *reason);
 		}
 		if (*allowed) {
 			iiFolderStatus(*itemName, *currentStatus);
@@ -309,7 +309,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
         on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
-		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);	
+		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
         on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
@@ -335,9 +335,14 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	}
 }
 
-# \brief uuResourceRenamePostResearch    This policy is created to support the moving, renaming and trashing of the .yoda-metadata.xml file as well as enforcing group ACL's when collections or data objects are moved from outside a research group into it
+# \brief This policy is created to support the moving, renaming
+#        and trashing of the .yoda-metadata.xml file as well as
+#        enforcing group ACL's when collections or data objects
+#        are moved from outside a research group into it.
+#
 # \param[in] pluginInstanceName   a copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
+#
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
 	#DEBUG writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
@@ -347,12 +352,12 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 
 	if (*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*srcPathElems = split(*src, "/");
-		*dstPathElems = split(*dst, "/");		
-		
+		*dstPathElems = split(*dst, "/");
+
 		if (elem(*srcPathElems, 2) != elem(*dstPathElems, 2)) {
 			uuEnforceGroupAcl(*dst);
 		}
-	
+
 	}
 
 	if (*src like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*/" ++ IIMETADATAXMLNAME ++ "$") {
@@ -361,14 +366,16 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	}
 }
 
-# \brief uuResourceUnregisteredPostResearch	Policy to act upon the removal of a METADATAXMLNAME file.
+# \brief Policy to act upon the removal of a METADATAXMLNAME file.
+#
 # \param[in] pluginInstanceName   a copy of $pluginInstanceName
 # \param[in] KVPairs  a copy of $KVPairs
+#
 uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
 	# Example match: "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
 	if (*KVPairs.logical_path like regex "^/"
 	    ++ *KVPairs.client_user_zone
-	    ++ "/home/" ++ IIGROUPPREFIX 
+	    ++ "/home/" ++ IIGROUPPREFIX
 	    ++ "[^/]+(/.\*)\*/"
 	    ++ IIMETADATAXMLNAME ++ "$") {
 

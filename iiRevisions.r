@@ -1,21 +1,22 @@
-# \file
-# \brief     Revision management. Each new file or file modification creates a timestamped backup file in the revision store.
+# \file      iiRevisions.r
+# \brief     Revision management. Each new file or file modification creates
+#            a timestamped backup file in the revision store.
 # \author    Paul Frederiks
 # \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
-#
-#####################################################
-#
 
-# \brief uuResourceModifiedPostRevision Create revisions on file modifications
-# \description				This policy should trigger whenever a new file is added or modified
-#					in the workspace of a Research team. This should be done asynchronously.
-#					Triggered from instance specific rulesets.
+# \brief Create revisions on file modifications.
+#
+#        This policy should trigger whenever a new file is added or modified
+#	 in the workspace of a Research team. This should be done asynchronously.
+#	 Triggered from instance specific rulesets.
+#
 # \param[in] resource			The resource where the original is written to
 # \param[in] rodsZone			Zone where the original can be found
 # \param[in] logicalPath		path of the original
 # \param[in] maxsize			Maximum file size of original
 # \param[in] filterlist			A list with like expressions to blacklist
+#
 uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *filterlist) {
 	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
 		uuChopPath(*logicalPath, *parent, *basename);
@@ -37,12 +38,14 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *fi
 	}
 }
 
-# \brief iiRevisionCreateAsynchronously  Asynchronous call to iiRevisionCreate
-#                                        Schedule the creation of a revision as a delayed to avoid a slow down
-#                                        of the main process.
+# \brief  Asynchronous call to iiRevisionCreate.
+#         Schedule the creation of a revision as a delayed to avoid a slow down
+#         of the main process.
+#
 # \param[in] resource   The resource where the original is written to
 # \param[in] path	The path of the added or modified file.
 # \param[in] maxSize    The maximum file size of original
+#
 iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	remote("localhost", "") {
 		delay("<PLUSET>1s</PLUSET>") {
@@ -55,11 +58,13 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 	}
 }
 
-# \brief iiRevisionCreate       create a revision of a dataobject in a revision folder
+# \brief Create a revision of a dataobject in a revision folder.
+#
 # \param[in] resource		resource to retreive original from
 # \param[in] path		path of data object to create a revision for
 # \param[in] maxSize		max size of files in bytes
 # \param[out] id		object id of revision
+#
 iiRevisionCreate(*resource, *path, *maxSize, *id) {
 	*id = "";
 	uuChopPath(*path, *parent, *basename);
@@ -157,9 +162,11 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
 }
 
 
-# \brief iiRevisionRemove     Remove a revision from the revision store.
-#                             Called by revision-cleanup.r cronjob.
+# \brief Remove a revision from the revision store.
+#        Called by revision-cleanup.r cronjob.
+#
 # \param[in] revisionId       DATA_ID of the revision to remove
+#
 iiRevisionRemove(*revisionId) {
 	*isfound = false;
 	*revisionStore =  "/$rodsZoneClient" ++ UUREVISIONCOLLECTION;
@@ -188,8 +195,9 @@ iiRevisionRemove(*revisionId) {
 }
 
 
-# \brief iiRevisionRestore	Copy a revision from the revision store into a research area.
-#                               Called by frontoffice when user restores a revision.
+# \brief Copy a revision from the revision store into a research area.
+#        Called by frontoffice when user restores a revision.
+#
 # \param[in] revisionId         id of revision data object
 # \param[in] target             target collection to write in
 # \param[in] overwrite          {restore_no_overwrite, restore_overwrite, restore_next_to}
@@ -202,6 +210,7 @@ iiRevisionRemove(*revisionId) {
 # \param[in] newFileName	Name as entered by user when chosing option 'restore_next_to'
 # \param[out] status            status of the process
 # \param[out] statusInfo	Contextual info regarding status
+#
 iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *statusInfo) {
       #| writeLine("stdout", "Restore a revision");
         *status = "Unknown error";
@@ -250,7 +259,7 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
                 succeed;
         }
 
-       # Get MetaData
+        # Get MetaData
         msiString2KeyValPair("", *kvp);
         uuObjectMetadataKvp(*revisionId, UUORGMETADATAPREFIX, *kvp);
 
@@ -367,9 +376,11 @@ iiRevisionRestore(*revisionId, *target, *overwrite, *newFileName, *status, *stat
 }
 
 
-# \brief iiRevisionList list revisions of path
+# \brief List revisions of path.
+#
 # \param[in]  path     Path of original file
 # \param[out] result   List in JSON format with all revisions of the original path
+#
 iiRevisionList(*path, *result) {
 	*revisions = list();
 	*startpath = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
@@ -398,8 +409,10 @@ iiRevisionList(*path, *result) {
 	uuKvpList2JSON(*revisions, *result, *size);
 }
 
-# \brief iiRevisionCalculateEndOfCalendarDay    Calculate the unix timestamp for the end of the current day (Same as start of next day).
+# \brief Calculate the unix timestamp for the end of the current day (Same as start of next day).
+#
 # param[out] endOfCalendarDay		Timestamp of the end of the current day
+#
 iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
 		msiGetIcatTime(*timestamp, "unix"); # Get current Timestamp
 		*bdY = timestrf(datetime(double(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).
@@ -436,9 +449,11 @@ iihours(*h) = *h * iiminutes(60)
 iidays(*d) = *d * iihours(24)
 iiweeks(*w) = *w * iidays(7)
 
-# \brief iiRevisionBucketList   Return a list of time buckets to determine revisions to keep
+# \brief Return a list of time buckets to determine revisions to keep.
+#
 # \param[in] case    Select a bucketlist based on a string
-# \returnvalue lst   A bucket list
+# \return    lst   A bucket list
+#
 iiRevisionBucketList(*case) {
 	if (*case == "A") {
 		# keep one revision per time bucket
@@ -500,12 +515,14 @@ iiRevisionBucketList(*case) {
 }
 
 
-# \brief iiRevisionStrategy    Determine which revisions should be removed and which to remove based on a bucketlist
+# \brief Determine which revisions should be removed and which to remove based on a bucketlist.
+#
 # \param[in]  path             full path of original
 # \param[in]  endOfCalendarDay Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
 # \param[in]  bucketlist       list of iibuckets consisting of an offset, size and start index
 # \param[out] keep             list of revisions to keep
 # \param[out] remove           list of revisions to remove
+#
 iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	if (*endOfCalendarDay == 0) {
 		iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay);
@@ -514,9 +531,11 @@ iiRevisionStrategy(*path, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove);
 }
 
-# iiRevisionCandidates   Return list of revisioncandidates of a path
+# \brief Return list of revisioncandidates of a path.
+#
 # \param[in]  path       path of original
 # \param[out] revisions  list of revisioncandidates
+#
 iiRevisionCandidates(*path, *revisions) {
 
 	*revisions = list();
@@ -533,12 +552,14 @@ iiRevisionCandidates(*path, *revisions) {
 	}
 }
 
-# \brief iiRevisionStrategyImplementation Algorithm to find all removal candidates
+# \brief Algorithm to find all removal candidates.
+#
 # \param[in] revisions     	list of iirevisioncandidates
 # \param[in] endOfCalendarDay   Unix timestamp of the end of the calendar day you want regard as startpoint of the time buckets
 # \param[in]  bucketlist        list of iibuckets consisting of an offset, size and start index
 # \param[out] keep             list of revisions to keep
 # \param[out] remove           list of revisions to remove
+#
 iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *keep, *remove) {
 	*keep = list();
 	*remove = list();
@@ -616,13 +637,17 @@ iiRevisionStrategyImplementation(*revisions, *endOfCalendarDay, *bucketlist, *ke
 	}
 }
 
-# \brief iiRevisionSearchByOriginalPath  This search function is currently not used by the frontend as it also returns every file with the search string one of the folders in its path. Could still be useful in development and testing.
+# \brief This search function is currently not used by the frontend as it also returns every file
+#         with the search string one of the folders in its path.
+#         Could still be useful in development and testing.
+#
 # \param[in] searchString	String to search for in the filesystem
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
 # \param[in] limit		Maximum number of results returned
 # \param[in] offset		Offset in result set before returning results
 # \param[out] result		List of results in JSON format
+#
 iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offset, *result) {
 	# Generic exception handling intialisation for possible later purposes
         *status = 'Success';
@@ -649,7 +674,8 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 	*result = *json_str;
 }
 
-# \brief iiRevisionSearchByOriginalFilename  Used by frontend to search for revisions. Hence presence of *status and *statusInfo
+# \brief Used by frontend to search for revisions. Hence presence of *status and *statusInfo.
+#
 # \param[in] searchString	String to search for in the filesystem
 # \param[in] orderby		Column to sort on, Defaults to COLL_NAME
 # \param[in] ascdesc		"asc" for ascending order and "desc" for descending order
@@ -658,6 +684,7 @@ iiRevisionSearchByOriginalPath(*searchstring, *orderby, *ascdesc, *limit, *offse
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
+#
 iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = '';
@@ -720,7 +747,9 @@ iiRevisionSearchByOriginalFilename(*searchstring, *orderby, *ascdesc, *limit, *o
 	*result = *json_str;
 }
 
-# \brief iiRevisionSearchByOriginalId Not used by the frontend, but is still useful when debugging the revision system and to detect renames as the Id stays the same after file renames.
+# \brief Not used by the frontend, but is still useful when debugging
+#        the revision system and to detect renames as the Id stays the same after file renames.
+#
 iiRevisionSearchByOriginalId(*searchid, *orderby, *ascdesc, *limit, *offset, *result) {
         # Generic exception handling intialisation for possible later purposes
         *status = 'Success';
@@ -752,9 +781,11 @@ data iirevisionwithpath =
 	| iirevisionwithpath : string * string -> iirevisionwithpath
 
 # \brief iiRevisionListOfCollectionBeforeTimestamp
+#
 # \param[in] collName	   name of collection
 # \param[in] timestamp     only revisions created before this timestamp will be returned
 # \param[out] revisions    list of revisions
+#
 iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 	*revisions = list();
 	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
@@ -768,9 +799,11 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
 }
 
 # \brief iiRevisionLastBefore
+#
 # \param[in] path        original path
 # \param[in] timestamp   the first revision before this timestamp will be returned
 # \param[out] revisionId  ID of revision
+#
 iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 	*revisionId = "";
 	iiRevisionCandidates(*path, *candidates);
@@ -781,5 +814,4 @@ iiRevisionLastBefore(*path, *timestamp, *revisionId) {
 			break;
 		}
 	}
-
 }

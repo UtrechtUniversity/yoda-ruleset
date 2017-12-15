@@ -1,13 +1,14 @@
-# \file iiVault.r
-# \brief Functions to copy packages to the vault and manage permissions of vault packages
-#
-# \author Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \file      iiVault.r
+# \brief     Functions to copy packages to the vault and manage permissions of vault packages.
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2016, Utrecht university. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # \brief iiDetermineVaultTarget
+#
 # \param[in] folder
 # \returnvalue target path
+#
 iiDetermineVaultTarget(*folder) {
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
@@ -29,7 +30,7 @@ iiDetermineVaultTarget(*folder) {
         *vaultGroupName = IIVAULTPREFIX ++ *baseName;
 
 	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp]";
-		
+
 	*i = 0;
 	while (uuCollectionExists(*target)) {
 		writeLine("stdout", "iiDetermineVaultTarget: *target already exists");
@@ -42,10 +43,12 @@ iiDetermineVaultTarget(*folder) {
 
 
 # \brief iiCopyFolderToVault
+#
 # \param[in] folder  folder to copy to the vault
 # \param[in] target  path of the vault package
+#
 iiCopyFolderToVault(*folder, *target) {
-	
+
 	writeLine("stdout", "iiCopyFolderToVault: Copying *folder to *target")
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
@@ -58,8 +61,10 @@ iiCopyFolderToVault(*folder, *target) {
 }
 
 # \brief iiSetVaultPermissions
+#
 # \param[in] folder  folder to copy to the vault
 # \param[in] target  path of the vault package
+#
 iiSetVaultPermissions(*folder, *target) {
 
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
@@ -88,7 +93,7 @@ iiSetVaultPermissions(*folder, *target) {
 			writeLine("stdout", "iiSetVaultPermissions: Failed to set noinherit on /$rodsZoneClient/home/*vaultGroupName. errorcode: *err");
 			fail;
 		} else {
-			writeLine("stdout", "iiSetVaultPermissions: No inherit set on /$rodsZoneClient/home/*vaultGroupName"); 
+			writeLine("stdout", "iiSetVaultPermissions: No inherit set on /$rodsZoneClient/home/*vaultGroupName");
 			# Check if research group has reas-only access
 			foreach(*row in SELECT USER_ID WHERE USER_NAME = *groupName) {
 				*groupId =  *row.USER_ID;
@@ -127,7 +132,7 @@ iiSetVaultPermissions(*folder, *target) {
 
 	# Ensure vault-groupName has ownership on vault package
 	if (*vaultGroupAccessName != "own") {
-		*err = msiSetACL("recursive", "admin:own", *vaultGroupName, *target); 
+		*err = msiSetACL("recursive", "admin:own", *vaultGroupName, *target);
 		if (*err < 0) {
 			writeLine("stdout", "iiSetVaultPermissions: Failed to set own for *vaultGroupName on *target");
 		} else {
@@ -147,7 +152,7 @@ iiSetVaultPermissions(*folder, *target) {
 		} else {
 			writeLine("stdout", "iiSetVaultPermissions: Granted *datamanagerGroupName read access to *target");
 		}
-	
+
 	}
 
 	# Grant research group read access to vault package.
@@ -160,18 +165,20 @@ iiSetVaultPermissions(*folder, *target) {
 	}
 }
 
-# \brief iiIngestObject       called by uuTreeWalk for each collection and dataobject to copy to the vault.
+# \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
+#
 # \param[in] itemParent
 # \param[in] itemName
 # \param[in] itemIsCollection
 # \param[in/out] buffer
 # \param[in/out] error
+#
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
 	msiCheckAccess(*sourcePath, "read object", *readAccess);
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
-		if (*error < 0) { 
+		if (*error < 0) {
 			*buffer.msg = "Failed to acquire read access to *sourcePath";
 			succeed;
 		} else {
@@ -225,9 +232,11 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 }
 
 
-# \brief iiCopyUserMetadata    Copy user metadata from source to destination
+# \brief Copy user metadata from source to destination.
+#
 # \param[in] source
 # \param[in] destination
+#
 iiCopyUserMetadata(*source, *destination) {
 	*userMetadataPrefix = UUUSERMETADATAPREFIX ++ "%";
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
@@ -237,15 +246,17 @@ iiCopyUserMetadata(*source, *destination) {
 		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
 		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
 	}
-	
+
 }
 
 
-# \brief iiCopyActionLog   Copy the action log from the source to destination
+# \brief Copy the action log from the source to destination.
+#
 # \param[in] source
 # \param[in] destination
+#
 iiCopyActionLog(*source, *destination) {
-	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
 	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
 	       		WHERE META_COLL_ATTR_NAME = *actionLog
 		       	AND COLL_NAME = *source) {
@@ -255,8 +266,10 @@ iiCopyActionLog(*source, *destination) {
 	}
 }
 
-# \brief iiCopyOriginalMetadataToVault    Copy the original metadata xml into the root of the package
+# \brief Copy the original metadata xml into the root of the package.
+#
 # \param[in] vaultPackage  path of a new package in the vault
+#
 iiCopyOriginalMetadataToVault(*vaultPackage) {
 	*originalMetadataXml = "*vaultPackage/original/" ++ IIMETADATAXMLNAME;
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
@@ -266,15 +279,17 @@ iiCopyOriginalMetadataToVault(*vaultPackage) {
 	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget, "verifyChksum=", *status);
 }
 
-# \brief iiGrantReadAccessToResearchGroup Rule to grant read access to the vault package managed by a datamanger
+# \brief Rule to grant read access to the vault package managed by a datamanger.
+#
 # \param[in] path
 # \param[out] status
 # \param[out] statusInfo
+#
 iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
 
-	# Vault packages start four directories deep	
+	# Vault packages start four directories deep
 	*pathElems = split(*path, "/");
 	if (size(*pathElems) != 4) {
 		*status = "PermissionDenied";
@@ -294,7 +309,7 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 			*statusInfo = "Could not acquire datamanager access to *path.";
 			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
 		} else {
-			*statusInfo = *reason;		
+			*statusInfo = *reason;
 		}
 		succeed;
 	} else {
@@ -305,14 +320,16 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 
 }
 
-# \brief iiRevokeReadAccessToResearchGroup  Rule to revoke read access to the vault package managed by a datamanger
-# \param[in] path 
+# \brief Rule to revoke read access to the vault package managed by a datamanger.
+#
+# \param[in] path
 # \param[out] status
 # \param[out] statusInfo
+#
 iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error occured";
-	
+
 	*pathElems = split(*path, "/");
 	if (size(*pathElems) != 4) {
 		*status = "PermissionDenied";
@@ -332,7 +349,7 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 			*statusInfo = "Could not acquire datamanager access to *path.";
 			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
 		} else {
-			*statusInfo = *reason;		
+			*statusInfo = *reason;
 		}
 		succeed;
 	} else {
@@ -342,12 +359,13 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	}
 }
 
-# 
-# \brief iiCopyACLsFromParent   When inheritance is missing we need to copy ACL's when introducing new data in vault package.
+# \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
+#
 # \param[in] path 		path of object that needs the permissions of parent
 # \param[in] recursiveFlag 	either "default" for no recursion or "recursive"
+#
 iiCopyACLsFromParent(*path, *recursiveFlag) {
-	
+
 	uuChopPath(*path, *parent, *child);
 
 	foreach(*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *parent) {
@@ -371,11 +389,13 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
 }
 
 
-# \brief iiFrontEndSystemMetadata Make system metadata accesible conform standard to the front end.
+# \brief Make system metadata accesible conform standard to the front end.
+#
 # \param[in] vaultPackage Package in the vault to retrieve system metadata from
 # \param[out] result
 # \param[out] status
 # \param[out] statusInfo
+#
 iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = *folder;
@@ -465,21 +485,23 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	}
 }
 
-# iiCopyLicenseToVaultPackage     When a license is added to the metadata and it is available in the License collection,
-#                                 this will copy the text to the package in the vault
+# \brief When a license is added to the metadata and it is available in the License collection,
+#        this will copy the text to the package in the vault.
+#
 # \param[in] folder  	          folder to copy to the vault
 # \param[in] target               path of the vault package
+#
 iiCopyLicenseToVaultPackage(*folder, *target) {
 	*licenseKey = UUUSERMETADATAPREFIX ++ "0_License";
 	*license = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
 		*license = *row.META_COLL_ATTR_VALUE;
-	}		
+	}
 
 	if (*license == "") {
 		writeLine("serverLog", "iiCopyLicenseToVaultPackage: No license found in user metadata");
 		succeed;
-	}	
+	}
 
 	*licenseText = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
 	if (uuFileExists(*licenseText)) {
@@ -492,7 +514,7 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 	} else {
 		writeLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
 	}
-	
+
 	*licenseUriFile = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".uri";
 	if (uuFileExists(*licenseUriFile)) {
 		msiDataObjOpen("objPath=*licenseUriFile", *fd);
@@ -503,6 +525,5 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 		*licenseUri = triml(trimr(*licenseUri, '"'), '"');
 		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
 		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
-	}	
+	}
 }
-
