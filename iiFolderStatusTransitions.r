@@ -1,12 +1,14 @@
-# \file
+# \file      iiFolderStatusTransitions.r
 # \brief     Status transitions for Folders in the Research & Vault area.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 # \brief iiFolderStatus
+#
 # \param[in]  folder	    Path of folder
 # \param[out] folderStatus  Current status of folder
+#
 iiFolderStatus(*folder, *folderStatus) {
 	*folderStatusKey = IISTATUSATTRNAME;
 	*folderStatus = FOLDER;
@@ -15,19 +17,23 @@ iiFolderStatus(*folder, *folderStatus) {
 	}
 }
 
-# \brief iiFolderDatamanagerExists    Check if a datamanager group exists for the category that the group of a folder belongs to
-# \param[in] folder
+# \brief Check if a datamanager group exists for the category that the group of a folder belongs to.
+#
+# \param[in]  folder
 # \param[out] datamananagerExists
+#
 iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 	iiCollectionGroupName(*folder, *groupName);
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	uuGroupExists("datamanager-*category", *datamanagerExists);
 }
 
-# \brief iiPreFolderStatusTransition  Actions taken before status transition    
-# \param[in] folder              Path of folder
+# \brief Actions taken before status transition.
+#
+# \param[in] folder            Path of folder
 # \param[in] currentStatus     Current status of folder
 # \param[in] newStatus         New status of folder
+#
 iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 	on (*currentFolderStatus == FOLDER && *newFolderStatus == LOCKED) {
 		# Add locks to folder, descendants and ancestors
@@ -49,11 +55,12 @@ iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 
 }
 
-
-# \brief iiPostFolderStatusTransition   Processing after Status had changed
+# \brief Processing after status had changed.
+#
 # \param[in] folder
 # \param[in] actor
 # \param[in] newStatus
+#
 iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == SUBMITTED) {
 		iiAddActionLogRecord(*actor, *folder, "submitted for vault");
@@ -94,10 +101,12 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	}
 }
 
-# \brief iiFolderLock
-# \param[in] path of folder to lock
+# \brief Lock a folder in the research area.
+#
+# \param[in]  folder        path of folder to lock
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -133,10 +142,12 @@ iiFolderLock(*folder, *status, *statusInfo) {
 	}
 }
 
-# \brief iiFolderUnlock
-# \param[in] folder	path of folder to unlock
+# \brief Unlock a folder in the research area.
+#
+# \param[in]  folder        path of folder to unlock
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderUnlock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -177,10 +188,12 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 }
 
 # \brief iiFolderSubmit
-# \param[in] folder	    path of folder to submit to vault 
+#
+# \param[in]  folder	    path of folder to submit to vault 
 # \param[out] folderStatus  status of the folder after submission 
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -221,10 +234,12 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	}		
 }
 
-# \brief iiFolderUnsubmit
-# \param[in] folder            path of folder to unsubmit when set saving to vault
+# \brief Unsubmit a folder submitted to the vault.
+#
+# \param[in]  folder        path of folder to unsubmit when set saving to vault
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -271,12 +286,13 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	}
 }
 
-
 # \brief iiFolderDatamanagerAction    
+#
 # \param[in] folder
 # \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
 # \param[out] status          status of the action
 # \param[out] statusInfo      Informative message when action was not successfull
+#
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -340,26 +356,31 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	}
 }
 
-# \brief iiFolderAccept    Accept a folder for the vault
+# \brief Accept a folder for the vault.
+#
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderAccept(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
 }
 
-# \brief iiFolderReject   Reject a folder for the vault
+# \brief Reject a folder for the vault.
+#
 # \param[in] folder
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
+#
 iiFolderReject(*folder, *status, *statusInfo) {
 	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
-
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
 #			  and should not be called from the portal. Thus no statusInfo is returned, but 
 #			  log messages are sent to stdout instead 
+#
 # \param[in] folder
+#
 iiFolderSecure(*folder) {
 
 	uuGetUserType(uuClientFullName, *userType);
@@ -392,11 +413,12 @@ iiFolderSecure(*folder) {
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 }
 
-
 # \brief iiAddActionLogRecord
+#
 # \param[in] actor
 # \param[in] folder
 # \param[in] action
+#
 iiAddActionLogRecord(*actor, *folder, *action) {
 	msiGetIcatTime(*timestamp, "icat");
 	writeLine("serverLog", "iiAddActionLogRecord: *actor has *action *folder");
@@ -410,15 +432,13 @@ iiAddActionLogRecord(*actor, *folder, *action) {
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
 }
 
-
-# \brief iiFrontActionLog
-# 
-
-# Wrapper for iiActionLog to make it accessible conform standard to the front end
-# \param[in] folder - folder name to be extended with required full qualification name
+# \brief Wrapper for iiActionLog to make it accessible conform standard to the front end.
+#
+# \param[in]  folder     folder name to be extended with required full qualification name
 # \param[out] result
 # \param[out] status
 # \param[out] statusInfo
+#
 iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = *folder;
@@ -427,9 +447,11 @@ iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
 }
 
 # \brief iiActionLog
-# \param[in] folder
+#
+# \param[in]  folder
 # \param[out] size
 # \param[out] result
+#
 iiActionLog(*folder, *size, *result) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
 	*result = "[]";
@@ -441,10 +463,12 @@ iiActionLog(*folder, *size, *result) {
 }
 
 # \brief iiFolderLockChange
+#
 # \param[in] rootCollection 	The COLL_NAME of the collection the dataset resides in
-# \param[in] lockIt 			Boolean, true if the object should be locked.
-# 									if false, the lock is removed (if allowed)
-# \param[out] status 			Zero if no errors, non-zero otherwise
+# \param[in] lockIt 		Boolean, true if the object should be locked.
+#				if false, the lock is removed (if allowed)
+# \param[out] status 		Zero if no errors, non-zero otherwise
+#
 iiFolderLockChange(*rootCollection, *lockIt, *status){
 	msiString2KeyValPair("", *buffer);
 	msiAddKeyVal(*buffer, IILOCKATTRNAME, *rootCollection)
@@ -479,17 +503,21 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 	*status = *error;
 }
 
-# \brief iitypeabbreviation    return objectType string based on boolean itemIsCollection
+# \brief Return objectType string based on boolean itemIsCollection.
+#
 # \param[in] itemIsCollection	boolean usually returned by treewalk when item is a Collection
 # \returnvalue		        iRODS objectType string. "-C" for Collection, "-d" for DataObject
+#
 iitypeabbreviation(*itemIsCollection) =  if *itemIsCollection then "-C" else "-d"
 
-# \brief iiAddMetadataToItem        For use by uuTreewalk to add metadata
+# \brief For use by uuTreewalk to add metadata.
+#
 # \param[in] itemParent            full iRODS path to the parent of this object
 # \param[in] itemName              basename of collection or dataobject
 # \param[in] itemIsCollection      true if the item is a collection
 # \param[in,out] buffer            in/out Key-Value variable
 # \param[out] error                errorcode in case of failure
+#
 iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
@@ -497,12 +525,14 @@ iiAddMetadataToItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) 
 	*error = errorcode(msiAssociateKeyValuePairsToObj(*buffer, *objPath, *objType));
 }
 
-# \brief iiRemoveMetadataFromItem  For use by uuTreeWalk to remove metadata
+# \brief For use by uuTreeWalk to remove metadata.
+#
 # \param[in] itemParent            full iRODS path to the parent of this object
 # \param[in] itemName              basename of collection or dataobject
 # \param[in] itemIsCollection      true if the item is a collection
 # \param[in,out] buffer            in/out Key-Value variable
 # \param[out] error                errorcode in case of failure
+#
 iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*objPath = "*itemParent/*itemName";
 	*objType = iitypeabbreviation(*itemIsCollection);
@@ -518,4 +548,3 @@ iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *er
 		}
 	}
 }
-

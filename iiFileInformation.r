@@ -1,14 +1,13 @@
-# \file
-# \brief File statistics functions
-#			Functions in this file extract statistics from files
-#			and collections
+# \file      iiFileInformation.r
+# \brief     File statistics functions
+#            Functions in this file extract statistics from files and collections.
 # \author    Jan de Mooij
 # \author    Paul Frederiks
 # \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 #
 
-# \brief iiFileCount 		Obtain a count of all files in a collection
+# \brief Obtain a count of all files in a collection.
 #
 # \param[in] path 		The full path to a collection (not a file). This
 #				is the COLL_NAME.
@@ -22,8 +21,9 @@
 #				number is determined recursively, so this does include
 #				all subfiles and not just those directly under the
 #				given collection.
-# \param[out] modified      Unix timestamp of the modify datetime of the file that
-#                           was modified last
+# \param[out] modified          Unix timestamp of the modify datetime of the file that
+#                               was modified last
+#
 iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *dircount = 0;
     *filecount = 0;
@@ -54,9 +54,11 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *modified = str(max(*data_modified, *coll_modified));
 }
 
-# \brief iiCollectionGroupName    return the name of the group a collection belongs to
-# \param[in] path
+# \brief Return the name of the group a collection belongs to.
+#
+# \param[in]  path
 # \param[out] groupName
+#
 iiCollectionGroupName(*path, *groupName) {
 	*isfound = false;
 	*groupName = "";
@@ -90,10 +92,12 @@ iiCollectionGroupName(*path, *groupName) {
 }
 
 # \brief iiCollectionGroupNameAndUserType
-# \param[in] path
+#
+# \param[in]  path
 # \param[out] groupName
 # \param[out] userType
 # \param[out] isDatamanager
+#
 iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
 	iiCollectionGroupName(*path, *groupName); 
 	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);

@@ -278,6 +278,7 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 # \param[in]  folder      Path of folder in vault to depublish
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
+#
 iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
@@ -285,7 +286,7 @@ iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 
 # \brief Get the terms and agreements as text to be accepted by researcher
 #
-# \param[in] folder            	Path of vault folder
+# \param[in]  folder           	Path of vault folder
 # \param[out] result		Terms and agreements text
 # \param[out] status     	Status of the action
 # \param[out] statusInfo        Information message when action was not successful

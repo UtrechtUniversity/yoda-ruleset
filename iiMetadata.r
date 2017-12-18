@@ -501,7 +501,6 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "";
 
-
 	# Changes to metadata should be written to the datamanagers area first
 	# Example path: /nluu1dev/home/datamanager-category/vault-group/path/to/vaultPackage/yoda-metadata.xml
 	# index:        /0       /1   /2                   /3          /(4)/(5)/(6)         /(7)

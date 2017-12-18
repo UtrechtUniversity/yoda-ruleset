@@ -1,15 +1,17 @@
-# \file
-# \brief Sudo microservices policy implementations to enable datamanager control of vault process
-# \author Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved
-# \licens GPLv3 LICENSE
+# \file      iiDatamanagerPolicies.r
+# \brief     Sudo microservices policy implementations to enable datamanager control of vault process.
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \licens    GPLv3 see LICENSE.
 
-# \brief iiDatamanagerPreSudoObjAclSet  this rule should be called from iiSudoPolicies on sudo ACL set actions
+# \brief This rule should be called from iiSudoPolicies on sudo ACL set actions.
+#
 # \param[in] recursive
 # \param[in] accessLevel
 # \param[in] otherName
 # \param[in] objPath
 # \param[in] policyKv
+#
 iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
 	*actor = *policyKv.actor;
 	iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason);
@@ -20,11 +22,13 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 	fail;
 }
 
-# \brief iiDatamanagerGroupFromVaultGroup  determine the datamanager group belonging to a vault group as vault
-#                                          groups do not have metadata on the category themselves
+# \brief Determine the datamanager group belonging to a vault group as vault
+#        groups do not have metadata on the category themselves.
+#
 # \param[in] vaultGroup         group name starting with vault-
 # \param[out] datamanagerGroup  group name of the datamanager group belonging to the category of the research group
 #                               associated with the vault
+#
 iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {	
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
@@ -35,7 +39,8 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 	}
 }
 
-# \brief iiCanDatamanagerAclSet  Check if the requester is allowed to change ACL's in the vault
+# \brief Check if the requester is allowed to change ACL's in the vault.
+#
 # \param[in] objPath
 # \param[in] actor
 # \param[in] otherName
@@ -43,6 +48,7 @@ iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 # \param[in] accessLevel
 # \param[out] allowed
 # \param[out] reason
+#
 iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *allowed, *reason) {
 	# When the datamanager needs write/read access to the root of a vault package this rule is run
 	on (*otherName like "datamanager-*" && *objPath like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++".*") {
