@@ -308,7 +308,7 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 
 	if (*dataName == "") {
 		*status = "NotFound";
-		*statusInfo = "No Terms and Agreements found. Please contact YoDa administrators";
+		*statusInfo = "No Terms and Agreements found. Please contact Yoda administrators";
 		succeed;
 	}
 
@@ -318,7 +318,7 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 	if (*err < 0) {
 		writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName failed with errorcode: *err");
 		*status = "PermissionDenied";
-		*statusInfo = "Could not open Terms and Agreements. Please contact YoDa administrators";
+		*statusInfo = "Could not open Terms and Agreements. Please contact Yoda administrators";
 		succeed;
 	}
 
@@ -330,6 +330,6 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 	} else {
 		writeLine("serverLog", "iiGetPublicationTermsText: Reading *termsColl/*dataName failed with errorcode: *err1, *err2, *err3.");
 		*status = "ReadFailure";
-		*statusInfo = "Failed to read Terms and Agreements from disk. Please contact YoDa administrators";
+		*statusInfo = "Failed to read Terms and Agreements from disk. Please contact Yoda administrators";
 	}
 }

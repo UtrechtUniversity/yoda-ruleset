@@ -1,14 +1,14 @@
-Research module Rules and Policies for YoDa/iRODS
+Research module Rules and Policies for Yoda/iRODS
 ==========
 
 NAME
 ----
-irods-ruleset-research - Subset of rules and policies for iRODS based YoDa required for the yoda-portal-research module 
+irods-ruleset-research - Subset of rules and policies for iRODS based Yoda required for the yoda-portal-research module
 
 DESCRIPTION
 -----------
 Yoda is configuration of an iRODS server for dataset management.
-These rules are required on top of the rules-uu rules to use the YoDa Portal research module designed.
+These rules are required on top of the rules-uu rules to use the Yoda Portal research module designed.
 
 It consists of:
 - Research module specific rules and policies
@@ -17,7 +17,7 @@ DEPENDENCIES
 ------------
 - A ruleset with implementation specific configuration. For example: [irods-ruleset-i-lab](https://github.com/UtrechtUniversity/irods-ruleset-i-lab)
 - [irods-ruleset-uu](https://github.com/UtrechtUniversity/irods-ruleset-uu)
-- [irods-xml-microservices](https://github.com/UtrechtUniversity/irods-xml-microservices)
+- [irods-uu-microservices](https://github.com/UtrechtUniversity/irods-uu-microservices)
 - All dependencies of the above
 
 INSTALLATION
@@ -54,7 +54,7 @@ $ irule -F ./tools/install-default-xml-for-metadata.r '*resc="demoResc"'
 ```
 */2 * * * * /bin/irule -F /etc/irods/irods-ruleset-research/tools/copy-accepted-folders-to-vault.r >>$HOME/iRODS/server/log/job_copy-accepted-folder-to-vault.r 2>&1
 ```
-    
+
 LICENSE
 -------
 This project is licensed under the GPLv3 license.
@@ -65,4 +65,4 @@ AUTHORS
 -------
 - [Paul Frederiks](https://github.com/pfrederiks)
 - [Jan de Mooij](https://github.com/ajdemooij)
-
+- [Lazlo Westerhof](https://github.com/lwesterhof)
