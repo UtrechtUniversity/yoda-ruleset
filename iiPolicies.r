@@ -1,4 +1,16 @@
-# This policy is fired when a file is put onto iRODS.
+# \file      iiPolicies.r
+# \brief     Policy Enforcement Points (PEP) used for the research area are defined here.
+#            All processing or policy checks are defined in separate rules outside this file.
+#            The arguments and session variables passed to the PEP's are defined in iRODS itself.
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved
+# \license   GPLv3, see LICENSE
+
+# \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
+#         for locks. To prevent breaking the metadata form, whenever a formelements XML or XSD is
+#         uploaded they are validated against a XSD. We can't prevent breakage caused by inconsistencies
+#         between the XSD and formelements
+#
 acPostProcForPut {
 	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Check for locks in the research area
@@ -29,9 +41,10 @@ acPostProcForPut {
 
 }
 
-# This policy is fired before a collection is deleted.
-# The policy prohibits deleting the collection if the collection
-# is locked
+# \brief This policy is fired before a collection is deleted.
+#        The policy prohibits deleting the collection if the collection
+#        is locked
+#
 acPreprocForRmColl {
 	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Check for locks in the research area
@@ -49,9 +62,10 @@ acPreprocForRmColl {
 	}
 }
 
-# This policy is fired before a data object is deleted
-# The policy prohibits deleting the data object if the data object
-# is locked. The parent collection is not checked
+# \brief  This policy is fired before a data object is deleted
+#         The policy prohibits deleting the data object if the data object
+#         is locked. The parent collection is not checked
+#
 acDataDeletePolicy {
 	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
@@ -68,9 +82,9 @@ acDataDeletePolicy {
 	}
 }
 
-# This policy is fired before a collection is created
-# The policy prohibits creating a new collection if the
-# parent collection is locked
+# \brief  This policy is fired before a collection is created. The policy prohibits creating
+#         a new collection if the parent collection is locked
+#
 acPreprocForCollCreate {
 	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
@@ -86,10 +100,11 @@ acPreprocForCollCreate {
 	}
 }
 
-# This policy is fired before a data object is renamed or moved
-# The policy disallows renaming or moving the data object, if the
-# object is locked, or if the collection that will be the new parent
-# collection of the data object after the rename is locked
+# \brief  This policy is fired before a data object is renamed or moved
+#         The policy disallows renaming or moving the data object, if the
+#         object is locked, or if the collection that will be the new parent
+#         collection of the data object after the rename is locked
+#
 acPreProcForObjRename(*src, *dst) {
 	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		uuGetUserType(uuClientFullName, *userType);
@@ -115,13 +130,14 @@ acPreProcForObjRename(*src, *dst) {
 }
 
 
-# This policy is fired before a data object is opened.
-# The policy does not prohibit opening data objects for reading,
-# but if the data object is locked, opening for writing is
-# disallowed. Many editors open a file for reading while editing and
-# store the file locally. Only when saving the changes, the file is
-# opened for writing. IF the file is locked, this means changes can be
-# created in the file, but they cannot be saved.
+# \brief  This policy is fired before a data object is opened.
+#         The policy does not prohibit opening data objects for reading,
+#         but if the data object is locked, opening for writing is
+#         disallowed. Many editors open a file for reading while editing and
+#         store the file locally. Only when saving the changes, the file is
+#         opened for writing. If the file is locked, this means changes can be
+#         created in the file, but they cannot be saved.
+#
 acPreprocForDataObjOpen {
 	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
@@ -139,8 +155,9 @@ acPreprocForDataObjOpen {
 	}
 }
 
-# This policy is fired if AVU meta data is copied from one object to another.
-# Copying of metadata is prohibited by this policy if the target object is locked
+# \brief  This policy is fired when AVU meta data is copied from one object to another.
+#         Copying of metadata is prohibited by this policy if the target object is locked
+#
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
 	on (
 	(*SourceItemType == "-C" || *SourceItemType == "-d")
@@ -161,7 +178,13 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 	}
 }
 
-# This policy is fired when AVU metadata is added or set.
+# \brief  This policy is fired when AVU metadata is added or set. Status transitions for folders and vault packages are
+#         implemented as AVU metadata changes on attributes defined in iiConstants.r
+#         When the status metadata is changed Pre condition transition rules are called in iiFolderStatusTransitsions.r and 
+#         iiVaultTransitions.r
+#         Organisational metadata is needed for these status transitions and actions belonging to them. So we can't lock
+#         the organisational metadata when a folder is locked.
+#
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*"
 	    && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
@@ -177,6 +200,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+
         on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
@@ -205,6 +229,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+
         on (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
@@ -229,7 +254,10 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 }
 
-# This policy gets triggered when metadata is modified
+# \brief This policy gets triggered when metadata is modified. This cannot be triggered from a rule as the
+#        current set of microservices have no 'mod' variant. When imeta is used however, the behaviour should
+#        be the same for locked folders and folder transitions as the PEP above.
+#
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
 	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
@@ -244,6 +272,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+
         on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -267,6 +296,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 			msiOprDisallowed;
 		}
 	}
+
         on (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -291,7 +321,8 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 	}
 }
 
-
+# \brief  This PEP is called after a AVU is added (option = 'add'), set (option = 'set') or removed (option = 'rm') in the research area or the vault. Post conditions
+#         defined in iiFolderStatusTransitions.r and iiVaultTransitions.r are called here.
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
         on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		if (*option == "rm") {
@@ -301,16 +332,20 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 	       	};
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
+
         on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *attributeValue);
 	}
 }
 
+# \brief This PEP is called after an AVU is modified (option = 'mod') in the research area or the vault. Post conditions are called
+#        in iiFolderStatusTransitions.r and iiVaultTransitions.r
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
         on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
+
         on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *newStatus);
@@ -318,9 +353,11 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 }
 
 
-# \brief uuResourceModifiedPostResearch   	Policy to import metadata when a IIMETADATAXMLNAME file appears
-# \param[in] *pluginInstanceName		A copy of $pluginInstanceName
-# \param[in] KVPairs  a copy of $KVPairs
+# \brief uuResourceModifiedPostResearch  Policy to import metadata when a IIMETADATAXMLNAME file appears. Instance specific rulesets
+#                                        should call this rule from the appropriate dynamic PEP. As the call signatures for dynamic PEPs
+#                                        are in flux between iRODS versions, these rules should be changed.
+# \param[in] pluginInstanceName		 a copy of $pluginInstanceName from the dynamic PEP
+# \param[in] KVPairs                     a copy of $KVPairs from the dynamic PEP
 uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	# possible match
 	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
@@ -340,8 +377,8 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 #        enforcing group ACL's when collections or data objects
 #        are moved from outside a research group into it.
 #
-# \param[in] pluginInstanceName   a copy of $pluginInstanceName
-# \param[in] KVPairs  a copy of $KVPairs
+# \param[in] pluginInstanceName  a copy of $pluginInstanceName
+# \param[in] KVPairs             a copy of $KVPairs
 #
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
