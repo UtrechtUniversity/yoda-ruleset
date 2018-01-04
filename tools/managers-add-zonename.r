@@ -1,8 +1,8 @@
-# \file
+# \file      manager-add-zonename.r
 # \brief     Modify group manager managers metadata to include zone names.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2017, Utrecht university
-# \license   GPLv3
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # Note: This update rule depends on the 'migrate-group-metadata.r' migration to
 #       have been completed succesfully before this script is run.

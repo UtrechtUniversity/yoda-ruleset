@@ -1,20 +1,9 @@
-# \file
+# \file      uuGroup.r
 # \brief     Functions for group management and group queries.
 # \author    Ton Smeele
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
-# \license   GPLv3, see LICENSE
-
-#test() {
-#	*user = "ton#nluu1ot";
-#   *group = "groupyoda";
-#	uuGroupUserExists(*group, *user, *membership);
-#	writeLine("stdout","*user membership of group *group : *membership");
-#	uuGroupMemberships(*user, *groups);
-#	foreach (*grp in *groups){
-#		writeLine("stdout","grp = *grp");
-#	}
-#}
+# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # \brief Get the user type for a given user
 #
@@ -217,10 +206,10 @@ uuUserNameIsAvailable(*name, *available, *existingType) {
 uuGroupMemberships(*user, *groupList) {
 	uuGetUserAndZone(*user,*userName,*userZone);
 	*groups = "";
-	foreach (*row in SELECT USER_GROUP_NAME, USER_GROUP_ID 
+	foreach (*row in SELECT USER_GROUP_NAME, USER_GROUP_ID
 				WHERE USER_NAME = '*userName' AND USER_ZONE = '*userZone') {
 		msiGetValByKey(*row,"USER_GROUP_NAME",*group);
-		# workasround needed: iRODS returns username also as a group !! 
+		# workasround needed: iRODS returns username also as a group !!
 		if (*group != *userName) {
 			*groups = "*groups:*group";
 		}
@@ -984,5 +973,3 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 		succeed;
 	}
 }
-
-# }}}
