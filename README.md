@@ -20,7 +20,7 @@ DEPENDENCIES
 ------------
 - [irods > 4.1.8](https://irods.org/download/)
 - [sudo microservices](https://github.com/UtrechtUniversity/irods-sudo-microservices) 
-- [json microservices](https://github.com/UtrechtUniversity/irods-json-microservices)
+- [uu microservices](https://github.com/UtrechtUniversity/irods-uu-microservices)
 
 LICENSE
 -------
