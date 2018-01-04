@@ -1,15 +1,15 @@
-# \file iiPublish.r
-# \brief This file contains rules related to publishing a datapackage
-# 		for a research group
-#
-# \author Paul Frederiks
-#
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved
-# \license GPLv3, see LICENSE
+# \file      iiPublish.r
+# \brief     This file contains rules related to publishing a datapackage
+# 	     for a research group.
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
-# \brief iiGenerateDataciteXml      Generate a dataCite compliant XML using XSLT
+# \brief Generate a dataCite compliant XML using XSLT.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
+#
 iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	*combiXmlPath = *publicationState.combiXmlPath;
 	*randomId = *publicationState.randomId;
@@ -48,11 +48,13 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	}
 }
 
-# \brief iiGenerateCombiXml         Join system metadata with the user metadata in yoda-metadata.xml 
+# \brief Join system metadata with the user metadata in yoda-metadata.xml.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiGenerateCombiXml(*publicationConfig, *publicationState){
-	
+
 	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
 	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
 
@@ -68,21 +70,21 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 	*systemMetadata =
 	   "  <System>\n" ++
 	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
-	   "    <Persistent_Identifier_Datapackage>\n" ++ 
+	   "    <Persistent_Identifier_Datapackage>\n" ++
            "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
-           "       <Identifier>*yodaDOI</Identifier>\n" ++ 
+           "       <Identifier>*yodaDOI</Identifier>\n" ++
            "    </Persistent_Identifier_Datapackage>\n" ++
            "    <Publication_Date>*publicationDate</Publication_Date>\n";
 	if (*publicationState.accessRestriction like "Open*") {
-	   *systemMetadata = *systemMetadata ++ 
+	   *systemMetadata = *systemMetadata ++
            "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
 	}
 	if (iiHasKey(*publicationState, "licenseUri")) {
     	   *systemMetadata = *systemMetadata ++
-           "    <License_URI><![CDATA[" ++ *publicationState.licenseUri ++ "]]></License_URI>\n"; 
+           "    <License_URI><![CDATA[" ++ *publicationState.licenseUri ++ "]]></License_URI>\n";
 	}
 	*systemMetadata = *systemMetadata ++
-           "  </System>\n" ++ 
+           "  </System>\n" ++
            "</metadata>";
 
 	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath);
@@ -97,9 +99,11 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 
 }
 
-# \brief iiGetLastModifiedDate      Determine the time of last modification as a datetime with UTC offset 
+# \brief Determine the time of last modification as a datetime with UTC offset.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiGetLastModifiedDateTime(*publicationState) {
 	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
 	*vaultPackage = *publicationState.vaultPackage;
@@ -118,11 +122,11 @@ iiGetLastModifiedDateTime(*publicationState) {
 	#DEBUG writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
 }
 
-
-
-# \brief iiGeneratePreliminaryDOI   Generate a Preliminary DOI. Preliminary, because we check for collision later.
+# \brief Generate a Preliminary DOI. Preliminary, because we check for collision later.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 	*dataCitePrefix = *publicationConfig.dataCitePrefix;
 	*yodaPrefix = *publicationConfig.yodaPrefix;
@@ -135,10 +139,12 @@ iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 }
 
 
-# \brief iiPostMetadataToDataCite   Upload dataCite XML to dataCite. This will register the DOI, without minting it.
+# \brief Upload dataCite XML to dataCite. This will register the DOI, without minting it.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
-iiPostMetadataToDataCite(*publicationConfig, *publicationState){ 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata";
 	*dataCiteXmlPath = *publicationState.dataCiteXmlPath;
 	*len = int(*publicationState.dataCiteXmlLen);
@@ -161,16 +167,18 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 
 }
 
-# \brief iiMintDOI                  Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
+# \brief Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiMintDOI(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 	*landingPageUrl = *publicationState.landingPageUrl;
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi";
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
-	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode); 
+	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode);
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
 		*publicationState.DOIMinted = "yes";
@@ -186,10 +194,11 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	}
 }
 
-
-# iiGenerateLandingPageUrl          Generate a URL for the landing page
+# \brief Generate a URL for the landing page.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	*vaultPackage = *publicationState.vaultPackage;
 	*yodaDOI = *publicationState.yodaDOI;
@@ -198,15 +207,16 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	*yodaPrefix = *publicationConfig.yodaPrefix;
 	*randomId = *publicationState.randomId;
 	*publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
-	*landingPageUrl = "https://*publicVHost/*publicPath";	
+	*landingPageUrl = "https://*publicVHost/*publicPath";
 	*publicationState.landingPageUrl = *landingPageUrl;
 	#DEBUG writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 }
 
-
-# iiGenerateLandingPage             Generate a Landing page from the combi XML using XSLT 
+# \brief Generate a Landing page from the combi XML using XSLT.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiGenerateLandingPage(*publicationConfig, *publicationState) {
 	*combiXmlPath = *publicationState.combiXmlPath;
 	uuChopPath(*combiXmlPath, *tempColl, *_);
@@ -238,14 +248,16 @@ iiGenerateLandingPage(*publicationConfig, *publicationState) {
 		msiDataObjClose(*fd, *status);
 		#DEBUG writeLine("serverLog", "landing page len=*len");
 		*publicationState.landingPageLen = str(*len);
-		*publicationState.landingPagePath = *landingPagePath;	
+		*publicationState.landingPagePath = *landingPagePath;
 		#DEBUG writeLine("serverLog", "iiGenerateLandingPage: Generated *landingPagePath");
 	}
 }
 
 # \brief iiCopyLandingPage2PublicHost
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
 	*publicHost = *publicationConfig.publicHost;
 	*landingPagePath = *publicationState.landingPagePath;
@@ -268,10 +280,11 @@ iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
 	}
 }
 
-
-# \brief iiCopyYodaMetataToMOAI     Use secure copy to push the combi XML to MOAI
+# \brief Use secure copy to push the combi XML to MOAI.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 	*publicHost = *publicationConfig.publicHost;
 	*yodaInstance = *publicationConfig.yodaInstance;
@@ -293,9 +306,11 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 
 }
 
-# \brief iiSetAccessRestriction     Set access restriction for vault package.
+# \brief Set access restriction for vault package.
+#
 # \param[in] vaultPackage           Path to the package in the vault
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
 iiSetAccessRestriction(*vaultPackage, *publicationState) {
         *accessRestriction = *publicationState.accessRestriction;
 
@@ -320,8 +335,10 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
 
-# iiGetPublicationConfig         Configuration is extracted from metadata on the UUSYSTEMCOLLECTION
+# \brief Configuration is extracted from metadata on the UUSYSTEMCOLLECTION.
+#
 # \param[out] publicationConfig  a key-value-pair containing the configuration
+#
 iiGetPublicationConfig(*publicationConfig) {
 	# Translation from camelCase config key to snake_case metadata attribute
 	*configKeys = list(
@@ -349,7 +366,7 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "random_id_length",
 		 "yoda_instance",
 		 "davrods_anonymous_vhost");
-	
+
 	*nKeys = size(*configKeys);
 
 	msiString2KeyValPair("randomIdLength=6%yodaInstance=" ++ UUINSTANCENAME, *publicationConfig);
@@ -379,9 +396,11 @@ iiGetPublicationConfig(*publicationConfig) {
 	#DEBUG writeKeyValPairs("serverLog", *publicationConfig, "=");
 }
 
-# \brief iiGetPublicationState   The publication state is kept as metadata on the vaultPackage
+# \brief The publication state is kept as metadata on the vaultPackage.
+#
 # \param[in] vaultPackage        path to the package in the vault
 # \param[out] publicationState   key-value-pair containing the state
+#
 iiGetPublicationState(*vaultPackage, *publicationState) {
 	# defaults
 	msiString2KeyValPair("", *publicationState);
@@ -398,7 +417,7 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = *vaultPackage) {
 		*publicationState.accessRestriction = *row.META_COLL_ATTR_VALUE;
 	}
-	
+
 	*license = "";
 	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME like '%License' AND COLL_NAME = *vaultPackage) {
 		*license = *row.META_COLL_ATTR_VALUE;
@@ -408,7 +427,7 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	if (*license != "") {
 
 		*publicationState.license = *license;
-		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_uri";	
+		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_uri";
 		*licenseUri = "";
 		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *licenseAttrName AND COLL_NAME = *vaultPackage) {
 			*licenseUri = *row.META_COLL_ATTR_VALUE;
@@ -423,9 +442,11 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	#DEBUG writeKeyValPairs("serverLog", *publicationState, "=");
 }
 
-# \brief iiSavePublicationState  Save the publicationState key-value-pair to AVU's on the vaultPackage
+# \brief Save the publicationState key-value-pair to AVU's on the vaultPackage.
+#
 # \param[in] vaultPackage        path to the package in the vault
 # \param[out] publicationState   key-value-pair containing the state
+#
 iiSavePublicationState(*vaultPackage, *publicationState) {
 	msiString2KeyValPair("", *kvp);
 	foreach(*key in *publicationState) {
@@ -449,23 +470,25 @@ iiSavePublicationState(*vaultPackage, *publicationState) {
 	msiRemoveKeyValuePairsFromObj(*kvp, *vaultPackage, "-C");
 }
 
-# iiCheckDOIAvailability            Request DOI to check on availibity. We want a 404 as return code
+# \brief Request DOI to check on availibity. We want a 404 as return code.
+#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pair 
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pair
+#
 iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 	*url = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi/" ++ *yodaDOI;
 	*username = *publicationConfig.dataCiteUsername;
 	*password = *publicationConfig.dataCitePassword;
-	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");	
-	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);	
+	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");
+	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);
 	if (*httpCode == "404") {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
 		succeed;
 	} else if (*httpCode == "500" || *httpCode == "403" || *httpCode == "401") {
 		# request failed, worth a retry
-		writeLine("serverLog", "iiCheckDOIAvailability: returned *httpCode; Could be retried later"); 
+		writeLine("serverLog", "iiCheckDOIAvailability: returned *httpCode; Could be retried later");
 		*publicationState.status = "Retry";
 	} else if (*httpCode == "200" || *httpCode == "204") {
 		# DOI already in use.
@@ -487,9 +510,11 @@ iiHasKey(*kvp, *key) {
 	*result;
 }
 
-# \brief iiProcessPublication   Routine to process a publication with sanity checks at every step
+# \brief Routine to process a publication with sanity checks at every step.
+#
 # \param[in] vaultPackage       path to package in the vault to publish
 # \param[out] status		status of the publication
+#
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "Unknown";
 
@@ -514,7 +539,7 @@ iiProcessPublication(*vaultPackage, *status) {
 		succeed;
 	}
 
-	# Load state 
+	# Load state
 	iiGetPublicationState(*vaultPackage, *publicationState);
 	*status = *publicationState.status;
 	if (*status == "Unrecoverable" || *status == "Processing") {
@@ -523,7 +548,7 @@ iiProcessPublication(*vaultPackage, *status) {
 		*status = "Processing";
 		*publicationState.status = "Processing";
 	}
-	
+
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
@@ -543,8 +568,8 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
-	
-	
+
+
 	if (!iiHasKey(*publicationState, "combiXmlPath")) {
 		# Generate Combi XML consisting of user and system metadata
 
@@ -572,7 +597,7 @@ iiProcessPublication(*vaultPackage, *status) {
 			*status = *publicationState.status;
 			succeed;
 		}
-		
+
 	}
 
 	if (!iiHasKey(*publicationState, "DOIAvailable")) {
@@ -599,9 +624,9 @@ iiProcessPublication(*vaultPackage, *status) {
 		if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
 			*status = *publicationState.status;
 			succeed;
-		}		
+		}
 	}
-	
+
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
 		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState));
@@ -615,25 +640,25 @@ iiProcessPublication(*vaultPackage, *status) {
 			succeed;
 		}
 	}
-	
+
 	# Create Landing page URL
 	#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPageUrl");
 	iiGenerateLandingPageUrl(*publicationConfig, *publicationState);
-	
+
 	if(!iiHasKey(*publicationState, "landingPageUploaded")) {
 		# Use secure copy to push landing page to the public host
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCopyLandingPage2PublicHost");
 		*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";
-		}	
+		}
 		iiSavePublicationState(*vaultPackage, *publicationState);
 		if (*publicationState.status == "Retry") {
 			*status = *publicationState.status;
 			succeed;
 		}
 	}
-	
+
 	if(!iiHasKey(*publicationState, "oaiUploaded")) {
 		# Use secure copy to push combi XML to MOAI server
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCopyMetadataToMOAI");
@@ -661,7 +686,7 @@ iiProcessPublication(*vaultPackage, *status) {
 			succeed;
 		}
 	}
-	
+
 	if (!iiHasKey(*publicationState, "DOIMinted")) {
 		# Mint DOI with landing page URL.
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiMintDOI");
@@ -673,14 +698,14 @@ iiProcessPublication(*vaultPackage, *status) {
 			iiSavePublicationState(*vaultPackage, *publicationState);
 			*status = *publicationState.status;
 			succeed;
-			
+
 		} else {
 			writeLine("serverLog", "iiProcessPublication: All steps for publication completed");
 			# The publication was a success;
 			*publicationState.status = "OK";
 			iiSavePublicationState(*vaultPackage, *publicationState);
-			*status = *publicationState.status;	
-			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);	
+			*status = *publicationState.status;
+			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 		}
 	} else {
@@ -694,9 +719,11 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 }
 
-# \brief iiSetUpdatePublicationState   Routine to set publication state of vault package pending to update
-# \param[in] vaultPackage      path to package in the vault to update
-# \param[out] status           status of the publication state update
+# \brief Routine to set publication state of vault package pending to update.
+#
+# \param[in]  vaultPackage   path to package in the vault to update
+# \param[out] status         status of the publication state update
+#
 iiSetUpdatePublicationState(*vaultPackage, *status) {
 	*status = "Unknown";
 

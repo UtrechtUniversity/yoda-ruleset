@@ -2,9 +2,9 @@
 # \brief Constants for the ii rules. If architecture changes, only
 # 			this file needs be adapted
 #
-# \author Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256

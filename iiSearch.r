@@ -1,4 +1,12 @@
-# \brief iiSearchByName		Search for a file or collection by name
+# \file      iiSearch.r
+# \brief     Search functions.
+# \author    Paul Frederiks
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
+# \brief Search for a file or collection by name.
+#
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] searchString	String to search for in the filesystem
 # \param[in] collectionOrDataObject	Either "Collection" or "DataObject"
@@ -9,6 +17,7 @@
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
+#
 iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
 	*statusInfo = '';
@@ -46,7 +55,8 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 	*result = *json_str;
 }
 
-# \brief iiSearchByMetadata	Search for a file or collection by metadata
+# \brief Search for a file or collection by metadata.
+#
 # \param[in] startpath		Path to start searching. Defaults to /{rodsZoneClient}/home/
 # \param[in] searchString	String to search for in the filesystem
 # \param[in] searchStringEscaped	Escaped string to search for in the filesystem
@@ -58,6 +68,7 @@ iiSearchByName(*startpath, *searchString, *collectionOrDataObject, *orderby, *as
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
+#
 iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status='Success';
         *statusInfo = '';
@@ -80,7 +91,7 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
                         succeed;
                 }
 
-		iiKvpCollectionTemplate(*rowList, *kvpList);	
+		iiKvpCollectionTemplate(*rowList, *kvpList);
 		foreach(*kvp in tl(*kvpList)) {
 			*coll_id = *kvp.id;
 			*msize = 0;
@@ -103,9 +114,9 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 			}
 			# Cannot rely on msi_json_arrayops as it removes double entries
 			uuJoin(",", *matches_lst, *matches);
-			*matches = "[" ++ *matches ++ "]";	
+			*matches = "[" ++ *matches ++ "]";
 			*kvp.matches = *matches;
-		}	
+		}
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchStringEscaped),
@@ -138,9 +149,9 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 			}
 			# Cannot rely on msi_json_arrayops as it removes double entries
 			uuJoin(",", *matches_lst, *matches);
-			*matches = "[" ++ *matches ++ "]";	
+			*matches = "[" ++ *matches ++ "]";
 			*kvp.matches = *matches;
-		}	
+		}
 
 	}
 
@@ -148,7 +159,8 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 	*result = *json_str;
 }
 
-# \brief iiSearchByOrgMetadata	Search for a collection by organisational metadata
+# \brief Search for a collection by organisational metadata.
+#
 # \param[in] startPath		Path to start searching.
 # \param[in] searchString	String to search for in the organisational metadata
 # \param[in] attrname		Name of the metadata attribute to query (without UUORGMETADATAPREFIX)
@@ -159,7 +171,7 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 # \param[out] result		List of results in JSON format
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
-
+#
 iiSearchByOrgMetadata(*startPath, *searchString, *attrname, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = '';
@@ -185,9 +197,11 @@ iiSearchByOrgMetadata(*startPath, *searchString, *attrname, *orderby, *ascdesc, 
 }
 
 
-# \brief iiKvpCollectionTemplate	convert a list of irods general query rows into a kvp list for collections
+# \brief Convert a list of irods general query rows into a kvp list for collections.
+#
 # \param[in] rowList	list of general query rows of collections
 # \param[out] kvpList	list of key-value-pairs representing collections
+#
 iiKvpCollectionTemplate(*rowList, *kvpList) {
 	*kvpList = list();
 	foreach(*row in tl(*rowList)) {
@@ -205,7 +219,7 @@ iiKvpCollectionTemplate(*rowList, *kvpList) {
 		*kvp."irods_type" = "Collection";
 		*kvp."create_time" = *row.COLL_CREATE_TIME;
 		*kvp."modify_time" = *row.COLL_MODIFY_TIME;
-		# Add collection metadata with org prefix 	
+		# Add collection metadata with org prefix
 		uuCollectionMetadataKvp(*coll_id, UUORGMETADATAPREFIX, *kvp);
 		#! writeLine("stdout", *kvp);
 		*kvpList = cons(*kvp, *kvpList);
@@ -213,9 +227,11 @@ iiKvpCollectionTemplate(*rowList, *kvpList) {
 	*kvpList = cons(hd(*rowList), *kvpList);
 }
 
-# \brief iiKvpDataObjectsTemplate	convert a list of irods general query rows into a kvp list for collections
+# \brief Convert a list of irods general query rows into a kvp list for collections.
+#
 # \param[in] rowList	list of General Query rows for DataObjects
 # \param[out] kvpList   list of key-value-pairs representing DataObjects
+#
 iiKvpDataObjectsTemplate(*rowList, *kvpList) {
 	*kvpList = list();
 	foreach(*row in tl(*rowList)) {

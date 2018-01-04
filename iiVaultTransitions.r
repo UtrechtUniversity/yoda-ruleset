@@ -1,13 +1,15 @@
-# \file iiVaultTransitions.r
-# \brief Copy folders to the vault
+# \file      iiVaultTransitions.r
+# \brief     Copy folders to the vault
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
+
+# \brief Retrieve current vault folder status
 #
-# \copyright Copyright (c) 2017, Utrecht university. All rights reserved
-# \license GPLv3, see LICENSE
-
-
-# \brief iiVaultStatus Retrieve current vault folder status
 # \param[in]  folder	    Path of vault folder
 # \param[out] folderStatus  Current status of vault folder
+#
 iiVaultStatus(*folder, *vaultStatus) {
 	*vaultStatusKey = IIVAULTSTATUSATTRNAME;
 	*vaultStatus = UNPUBLISHED;
@@ -16,9 +18,11 @@ iiVaultStatus(*folder, *vaultStatus) {
 	}
 }
 
-# \brief iiVaultGetActionActor Retrieve actor of action on vault folder
+# \brief Retrieve actor of action on vault folder
+#
 # \param[in]  folder      Path of action vault folder
 # \param[out] actionActor Actor of action on vault folder
+#
 iiVaultGetActionActor(*folder, *actor, *actionActor) {
 	# Retrieve vault folder collection id.
 	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
@@ -38,10 +42,12 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
         }
 }
 
-# \brief iiPreVaultStatusTransition  Actions taken before vault status transition
+# \brief Actions taken before vault status transition
+#
 # \param[in] folder            Path of vault folder
 # \param[in] currentStatus     Current status of vault folder
 # \param[in] newStatus         New status of vault folder
+#
 iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
 		*actor = uuClientFullName;
@@ -53,10 +59,12 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	}
 }
 
-# \brief iiVaultRequestStatusTransition   Request vault status transition action
+# \brief Request vault status transition action
+#
 # \param[in] folder
 # \param[in] newFolderStatus
 # \param[in] actor
+#
 iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -152,10 +160,12 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	}
 }
 
-# \brief iiVaultProcessStatusTransition   Processing vault status transition request
+# \brief Processing vault status transition request
+#
 # \param[in] folder
 # \param[in] newFolderStatus
 # \param[in] actor
+#
 iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
@@ -207,10 +217,12 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 	}
 }
 
-# \brief iiPostVaultStatusTransition   Processing after vault status is changed
+# \brief Processing after vault status is changed
+#
 # \param[in] folder         Folder in vault for state transition
 # \param[in] actor          Actor of the status transition
 # \param[in] newVaultStatus New vault status
+#
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
@@ -232,15 +244,18 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 }
 
-# \brief iiVaultSubmit    Submit a folder in the vault for publication
+# \brief Submit a folder in the vault for publication
+#
 # \param[in]  folder      Path of folder in vault to submit for publication
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
+#
 iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
-# \brief iiVaultApprove   Approve a folder in the vault for publication
+# \brief Approve a folder in the vault for publication
+#
 # \param[in]  folder      Path of folder in vault to approve for publication
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
@@ -248,33 +263,39 @@ iiVaultApprove(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 }
 
-# \brief iiVaultCancel    Cancel a submission in the vault for publication
+# \brief Cancel a submission in the vault for publication
+#
 # \param[in]  folder      Path of folder in vault to cancel publication
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
+#
 iiVaultCancel(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, UNPUBLISHED, *status, *statusInfo);
 }
 
-# \brief iiVaultDepublish Depublish a folder in the vault
+# \brief Depublish a folder in the vault
+#
 # \param[in]  folder      Path of folder in vault to depublish
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
+#
 iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
 }
 
 
-# \brief iiGetPublicationTermsText  Get the terms and agreements as text to be accepted by researcher
-# \param[in] folder            	Path of vault folder
-# \param[out] result		Terms and agreements text 
+# \brief Get the terms and agreements as text to be accepted by researcher
+#
+# \param[in]  folder           	Path of vault folder
+# \param[out] result		Terms and agreements text
 # \param[out] status     	Status of the action
 # \param[out] statusInfo        Information message when action was not successful
+#
 iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 {
 	*status = "Unknown";
 	*statusInfo = "";
-	
+
 	*termsColl = "/" ++ $rodsZoneClient ++ IITERMSCOLLECTION;
 
 	*dataName = "";
@@ -287,17 +308,17 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 
 	if (*dataName == "") {
 		*status = "NotFound";
-		*statusInfo = "No Terms and Agreements found. Please contact YoDa administrators";
+		*statusInfo = "No Terms and Agreements found. Please contact Yoda administrators";
 		succeed;
 	}
- 
+
 	#DEBUG writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName last modified at *dataModifyTime");
 
 	*err = errorcode(msiDataObjOpen("objPath=*termsColl/*dataName", *fd));
 	if (*err < 0) {
 		writeLine("serverLog", "iiGetPublicationTermsText: Opening *termsColl/*dataName failed with errorcode: *err");
 		*status = "PermissionDenied";
-		*statusInfo = "Could not open Terms and Agreements. Please contact YoDa administrators";
+		*statusInfo = "Could not open Terms and Agreements. Please contact Yoda administrators";
 		succeed;
 	}
 
@@ -309,7 +330,6 @@ iiGetPublicationTermsText(*folder, *result, *status, *statusInfo)
 	} else {
 		writeLine("serverLog", "iiGetPublicationTermsText: Reading *termsColl/*dataName failed with errorcode: *err1, *err2, *err3.");
 		*status = "ReadFailure";
-		*statusInfo = "Failed to read Terms and Agreements from disk. Please contact YoDa administrators";
+		*statusInfo = "Failed to read Terms and Agreements from disk. Please contact Yoda administrators";
 	}
-}	
-
+}
