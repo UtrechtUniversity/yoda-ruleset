@@ -535,7 +535,7 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 # \param[in] target               path of the research area target
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	# Add request to copy vault package to research area.
-	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" + *folder;
+	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" ++ *folder;
 	msiString2KeyValPair(*copyVaultPackage, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
 	if (*err < 0) {
