@@ -1,7 +1,7 @@
 # \file      iiVault.r
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht university. All rights reserved.
+# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief iiDetermineVaultTarget
@@ -521,9 +521,48 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 		msiDataObjRead(*fd, 2000, *buf);
 		msiDataObjClose(*fd, *status);
 		msiBytesBufToStr(*buf, *licenseUri);
+
 		# Remove qoutes from string. This prevents whitespace and linefeeds from slipping into the URI
 		*licenseUri = triml(trimr(*licenseUri, '"'), '"');
 		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
 		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
+	}
+}
+
+# \brief
+#
+# \param[in] folder  	          folder to copy from the vault
+# \param[in] target               path of the research area target
+iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+	# Add request to copy vault package to research area.
+	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" + *folder;
+	msiString2KeyValPair(*copyVaultPackage, *kvp);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
+	if (*err < 0) {
+		*status = "Unrecoverable";
+		*statusInfo = "*err - *msg";
+		succeed;
+	} else {
+		*status = "Success";
+		*statusInfo = "";
+		succeed;
+	}
+}
+
+
+# \brief iiCopyFolderToResearch
+#
+# \param[in] folder  folder to copy from the vault
+# \param[in] target  path of the research area target
+#
+iiCopyFolderToResearch(*folder, *target) {
+	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target")
+	*buffer.source = *folder;
+	*buffer.destination = *target;
+	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
+	if (*error != 0) {
+		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
+		writeLine("stdout", "iiIngestObject: *error: *msg");
+		fail;
 	}
 }
