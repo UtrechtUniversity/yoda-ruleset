@@ -529,7 +529,7 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 	}
 }
 
-# \brief
+# \brief Request a copy action of a vault package to the research area.
 #
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
@@ -550,15 +550,21 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 }
 
 
-# \brief iiCopyFolderToResearch
+# \brief Copy a vault package to the research area.
 #
 # \param[in] folder  folder to copy from the vault
 # \param[in] target  path of the research area target
 #
 iiCopyFolderToResearch(*folder, *target) {
 	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target")
+
+	# Determine vault package.
+	*pathElems = split(*folder, "/");
+	*elemSize = size(*pathElems);
+        *vaultPackage = elem(*pathElems, *elemSize - 1);
+
 	*buffer.source = *folder;
-	*buffer.destination = *target;
+	*buffer.destination = *target ++ "/" ++ *vaultPackage;
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
 	if (*error != 0) {
 		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
