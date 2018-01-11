@@ -534,6 +534,14 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+	# Check if user has read access to vault package.
+	msiCheckAccess(*folder, "read object", *readAccess);
+	if (*readAccess != 1) {
+		*status = "PermissionDenied";
+		*statusInfo = "No read access to vault package.";
+		succeed;
+	}
+
 	# Add request to copy vault package to research area.
 	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" ++ *folder;
 	msiString2KeyValPair(*copyVaultPackage, *kvp);
