@@ -547,11 +547,11 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	msiString2KeyValPair(*copyVaultPackage, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
 	if (*err < 0) {
-		*status = "Unrecoverable";
+		*status = "UNRECOVERABLE";
 		*statusInfo = "*err - *msg";
 		succeed;
 	} else {
-		*status = "Success";
+		*status = "SUCCESS";
 		*statusInfo = "";
 		succeed;
 	}
