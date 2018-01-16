@@ -625,7 +625,7 @@ iiCopyFolderToResearch(*folder, *target) {
 	uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
 	if (*error != 0) {
 		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-		writeLine("stdout", "iiIngestObject: *error: *msg");
+		writeLine("stdout", "iiCopyObject: *error: *msg");
 		fail;
 	}
 }
