@@ -4,6 +4,60 @@
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+#------------------------------ Start of Yoda Front Office wrapper
+# \brief Request a copy action of a vault package to the research area.
+#
+# \param[in] folder               folder to copy from the vault
+# \param[in] target               path of the research area target
+iiFORequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+
+	# Check whether datapackage folder already present in target folder.
+	uuChopPath(*folder, *parent, *datapackageName);
+
+
+        *newTargetCollection = "*target/*datapackageName";
+
+        if (uuCollectionExists(*newTargetCollection)) {
+
+            *status = 'ErrorCollectionAlreadyExists';
+            *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
+            succeed;
+	}	
+
+        #Check origin circumstances
+        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
+
+        if (*stat=='ErrorPathNotExists') {
+            *status = 'FO-ErrorVaultCollectionDoesNotExist';
+            *statusInfo = 'The datapackage does not exist';
+            succeed;
+        }
+
+
+        # Check target circumstances
+        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
+
+        if (*kvpCollDetails.lockCount!='0') {
+                *status = 'FO-ErrorTargetLocked';
+                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
+                succeed;
+        }
+
+        if (*kvpCollDetails.userType=='reader') {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
+                succeed;
+        }
+  
+
+	iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo);
+}
+
+
+
+#------------------------------ End of Yoda Front Office wrapper
+
+
 # \brief iiDetermineVaultTarget
 #
 # \param[in] folder
@@ -583,13 +637,14 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+
 	# Check if user has read access to vault package.
-	#msiCheckAccess(*folder, "read object", *readAccess);
-	#if (*readAccess != 1) {
-	#	*status = "PermissionDenied";
-	#	*statusInfo = "No read access to vault package.";
-	#	succeed;
-	#}
+	msiCheckAccess(*folder, "read object", *readAccess);
+	if (*readAccess != 1) {
+		*status = "PermissionDenied";
+		*statusInfo = "No read access to vault package.";
+		succeed;
+	}
 
 	# Add request to copy vault package to research area.
 	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" ++ *folder;
