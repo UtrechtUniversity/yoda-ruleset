@@ -4,6 +4,22 @@
 # \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
+# ---------------- Start of Yoda FrontOffice API ------------------------------------------------------
+
+# \brief iiFOCollectionDetails return a json object containing the details of a collection
+# \param[in] path      path of collection (COLL_NAME)
+# \param[out] result   JSON object containing details of the Collection
+iiFOCollectionDetails(*path, *result, *status, *statusInfo) {
+	msiString2KeyValPair("", *kvp);	
+
+	iiCollectionDetails(*path, *kvp, *status, *statusInfo); 
+	uuKvp2JSON(*kvp, *result);
+}
+
+
+
+#----------------- End of Yoda Front Office API --------------------------------------------------------
+
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			
 orderclause(*column, *orderby, *ascdesc) = if *column == *orderby then orderdirection(*ascdesc) else ""
@@ -74,10 +90,10 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *r
 
 }
 
-# \brief iiCollectionDetails return a json object containing the details of a collection
+# \brief iiCollectionDetails return a key value pair  containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
-# \param[out] result   JSON object containing Details of the Collection
-iiCollectionDetails(*path, *result, *status, *statusInfo) {
+# \param[out] kvp   key value pair with all required info on current collection (=*path)
+iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = '';
 
@@ -238,8 +254,6 @@ iiCollectionDetails(*path, *result, *status, *statusInfo) {
 		        *kvp.isDatamanager = "no";
 		}
 	}
-
-	uuKvp2JSON(*kvp, *result);
 }
 
 # \brief iiListLocks
