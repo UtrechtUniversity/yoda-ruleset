@@ -139,20 +139,21 @@ acPreProcForObjRename(*src, *dst) {
 #         created in the file, but they cannot be saved.
 #
 acPreprocForDataObjOpen {
-	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
-		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
-		}
-
-		iiCanDataObjWrite($objPath, *allowed, *reason);
-		if (!*allowed) {
-			cut;
-			msiOprDisallowed;
-		}
-	}
+# TODO fix for iRODS 4.2 compatibility
+#	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+#
+#		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
+#		uuGetUserType(uuClientFullName, *userType);
+#		if (*userType == "rodsadmin") {
+#			succeed;
+#		}
+#
+#		iiCanDataObjWrite($objPath, *allowed, *reason);
+#		if (!*allowed) {
+#			cut;
+#			msiOprDisallowed;
+#		}
+#	}
 }
 
 # \brief  This policy is fired when AVU meta data is copied from one object to another.
