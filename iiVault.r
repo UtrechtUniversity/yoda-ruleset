@@ -9,47 +9,7 @@
 #
 # \param[in] folder               folder to copy from the vault
 # \param[in] target               path of the research area target
-iiFORequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
-
-	# Check whether datapackage folder already present in target folder.
-	uuChopPath(*folder, *parent, *datapackageName);
-
-
-        *newTargetCollection = "*target/*datapackageName";
-
-        if (uuCollectionExists(*newTargetCollection)) {
-
-            *status = 'ErrorCollectionAlreadyExists';
-            *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
-            succeed;
-	}	
-
-        #Check origin circumstances
-        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
-
-        if (*stat=='ErrorPathNotExists') {
-            *status = 'FO-ErrorVaultCollectionDoesNotExist';
-            *statusInfo = 'The datapackage does not exist';
-            succeed;
-        }
-
-
-        # Check target circumstances
-        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
-
-        if (*kvpCollDetails.lockCount!='0') {
-                *status = 'FO-ErrorTargetLocked';
-                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
-                succeed;
-        }
-
-        if (*kvpCollDetails.userType=='reader') {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
-                succeed;
-        }
-  
-
+iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo);
 }
 
@@ -637,6 +597,44 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+        # Check whether datapackage folder already present in target folder.
+        uuChopPath(*folder, *parent, *datapackageName);
+
+
+        *newTargetCollection = "*target/*datapackageName";
+
+        if (uuCollectionExists(*newTargetCollection)) {
+
+            *status = 'ErrorCollectionAlreadyExists';
+            *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
+            succeed;
+        }
+
+        #Check origin circumstances
+        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
+
+        if (*stat=='ErrorPathNotExists') {
+            *status = 'FO-ErrorVaultCollectionDoesNotExist';
+            *statusInfo = 'The datapackage does not exist';
+            succeed;
+        }
+
+
+        # Check target circumstances
+        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
+
+        if (*kvpCollDetails.lockCount!='0') {
+                *status = 'FO-ErrorTargetLocked';
+                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
+                succeed;
+        }
+
+        if (*kvpCollDetails.userType=='reader') {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
+                succeed;
+        }
+
 
 	# Check if user has read access to vault package.
 	msiCheckAccess(*folder, "read object", *readAccess);

@@ -9,7 +9,7 @@
 # \brief iiFOCollectionDetails return a json object containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
 # \param[out] result   JSON object containing details of the Collection
-iiFOCollectionDetails(*path, *result, *status, *statusInfo) {
+iiFrontCollectionDetails(*path, *result, *status, *statusInfo) {
 	msiString2KeyValPair("", *kvp);	
 
 	iiCollectionDetails(*path, *kvp, *status, *statusInfo); 
