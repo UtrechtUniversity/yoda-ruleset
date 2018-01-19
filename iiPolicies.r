@@ -88,15 +88,15 @@ acDataDeletePolicy {
 acPreprocForCollCreate {
 # TODO fix for iRODS 4.2 compatibility
 	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
+		# uuGetUserType(uuClientFullName, *userType);
+		# if (*userType == "rodsadmin") {
+		# 	succeed;
+		# }
+		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
+		iiCanCollCreate($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
 		}
-#		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
-#		iiCanCollCreate($collName, *allowed, *reason);
-#		if (!*allowed) {
-#			cut;
-#		}
 	}
 }
 
@@ -142,18 +142,18 @@ acPreprocForDataObjOpen {
 # TODO fix for iRODS 4.2 compatibility
 	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
-		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
-		}
+		# #DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
+		# uuGetUserType(uuClientFullName, *userType);
+		# if (*userType == "rodsadmin") {
+		# 	succeed;
+		# }
 
-#		iiCanDataObjWrite($objPath, *allowed, *reason);
-#		if (!*allowed) {
-#			cut;
-#			msiOprDisallowed;
-#		}
-#	}
+		iiCanDataObjWrite($objPath, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
 }
 
 # \brief  This policy is fired when AVU meta data is copied from one object to another.
