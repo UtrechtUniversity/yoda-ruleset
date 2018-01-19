@@ -86,18 +86,18 @@ acDataDeletePolicy {
 #         a new collection if the parent collection is locked
 #
 acPreprocForCollCreate {
-	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		uuGetUserType(uuClientFullName, *userType);
-		if (*userType == "rodsadmin") {
-			succeed;
-		}
-		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
-		iiCanCollCreate($collName, *allowed, *reason);
-		if (!*allowed) {
-			cut;
-			msiOprDisallowed;
-		}
-	}
+# TODO fix for iRODS 4.2 compatibility
+#	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+#		uuGetUserType(uuClientFullName, *userType);
+#		if (*userType == "rodsadmin") {
+#			succeed;
+#		}
+#		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
+#		iiCanCollCreate($collName, *allowed, *reason);
+#		if (!*allowed) {
+#			cut;
+#		}
+#	}
 }
 
 # \brief  This policy is fired before a data object is renamed or moved
