@@ -77,6 +77,10 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		} else {
 			iiAddActionLogRecord("system", *folder, "accepted for vault");
 		}
+
+		# Set cronjob state.
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PENDING, *kvp);
+		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newFolderStatus == FOLDER) {
 		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
@@ -389,6 +393,10 @@ iiFolderSecure(*folder) {
 		fail;
 	}
 
+	# Set cronjob state.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PROCESSING, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+
 	*target = iiDetermineVaultTarget(*folder);
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
@@ -411,6 +419,10 @@ iiFolderSecure(*folder) {
 	*vaultStatus = IIVAULTSTATUSATTRNAME;
 	msiString2KeyValPair("*vaultStatus=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
+
+	# Set cronjob state.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 }
 
 # \brief iiAddActionLogRecord
