@@ -393,9 +393,18 @@ iiFolderSecure(*folder) {
 		fail;
 	}
 
-	# Set cronjob state.
+	# Check modify access on research folder.
+	msiCheckAccess(*folder, "modify object", *modifyAccess);
+
+	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PROCESSING, *kvp);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
 
 	*target = iiDetermineVaultTarget(*folder);
 	iiCopyFolderToVault(*folder, *target);
@@ -404,9 +413,9 @@ iiFolderSecure(*folder) {
 	iiCopyLicenseToVaultPackage(*folder, *target);
 	iiSetVaultPermissions(*folder, *target);
 
+	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	msiCheckAccess(*folder, "modify object", *modifyAccess);
 	if (*modifyAccess != 1) {
 		msiSetACL("default", "admin:write", uuClientFullName, *folder);
 	}
@@ -416,13 +425,21 @@ iiFolderSecure(*folder) {
 	}
 
 	iiCopyActionLog(*folder, *target);
+
+	# Set vaulte package status.
 	*vaultStatus = IIVAULTSTATUSATTRNAME;
 	msiString2KeyValPair("*vaultStatus=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
 
-	# Set cronjob state.
+	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK, *kvp);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
 }
 
 # \brief iiAddActionLogRecord
