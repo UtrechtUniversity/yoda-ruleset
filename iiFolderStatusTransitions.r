@@ -426,7 +426,7 @@ iiFolderSecure(*folder) {
 
 	iiCopyActionLog(*folder, *target);
 
-	# Set vaulte package status.
+	# Set vault package status.
 	*vaultStatus = IIVAULTSTATUSATTRNAME;
 	msiString2KeyValPair("*vaultStatus=" ++ UNPUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *target, "-C");
