@@ -18,7 +18,7 @@ copyToVault {
 
 			*cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK";
 			msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
-			*err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *target, "-C"), *msg);
+			*err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *folder, "-C"), *msg);
 		}
 
 		*ContInxOld = *ContInxNew;
