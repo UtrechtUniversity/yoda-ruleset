@@ -599,42 +599,34 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         # Check whether datapackage folder already present in target folder.
         uuChopPath(*folder, *parent, *datapackageName);
-
-
         *newTargetCollection = "*target/*datapackageName";
-
         if (uuCollectionExists(*newTargetCollection)) {
-
-            *status = 'ErrorCollectionAlreadyExists';
-            *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
-            succeed;
+                *status = 'ErrorCollectionAlreadyExists';
+                *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
+                succeed;
         }
 
-        #Check origin circumstances
+        # Check origin circumstances.
         iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
-
-        if (*stat=='ErrorPathNotExists') {
-            *status = 'FO-ErrorVaultCollectionDoesNotExist';
-            *statusInfo = 'The datapackage does not exist';
-            succeed;
+        if (*stat == 'ErrorPathNotExists') {
+                *status = 'FO-ErrorVaultCollectionDoesNotExist';
+                *statusInfo = 'The datapackage does not exist';
+                succeed;
         }
-
 
         # Check target circumstances
         iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
-
-        if (*kvpCollDetails.lockCount!='0') {
+        if (*kvpCollDetails.lockCount != "0") {
                 *status = 'FO-ErrorTargetLocked';
                 *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
                 succeed;
         }
 
-        if (*kvpCollDetails.userType=='reader') {
+        if (*kvpCollDetails.userType == "reader") {
                 *status = 'ErrorTargetPermissions';
                 *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
                 succeed;
         }
-
 
 	# Check if user has read access to vault package.
 	msiCheckAccess(*folder, "read object", *readAccess);
@@ -666,7 +658,11 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 # \param[in] target  path of the research area target
 #
 iiCopyFolderToResearch(*folder, *target) {
-	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target")
+	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
+
+	# Set cronjob status.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 
 	# Determine vault package.
 	*pathElems = split(*folder, "/");
@@ -681,4 +677,8 @@ iiCopyFolderToResearch(*folder, *target) {
 		writeLine("stdout", "iiCopyObject: *error: *msg");
 		fail;
 	}
+
+	# Set cronjob status.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 }
