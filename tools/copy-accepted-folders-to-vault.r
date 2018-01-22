@@ -16,7 +16,7 @@ copyToVault {
 			# When iiFolderSecure fails continue with the other folders.
 			iiFolderSecure(*folder) ::: nop;
 
-			*cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK";
+			*cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK;
 			msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
 			*err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *folder, "-C"), *msg);
 		}
