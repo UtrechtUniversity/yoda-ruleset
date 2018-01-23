@@ -66,7 +66,7 @@ ingestChangesIntoVault {
 				} else {
 				        if (*status == "OK") {
                                            msiString2KeyValPair("", *publicationUpdateKvp);
-                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING,;
+                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
                                            msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
                                            *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
 					}
