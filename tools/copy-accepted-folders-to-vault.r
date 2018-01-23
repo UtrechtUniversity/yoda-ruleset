@@ -44,9 +44,10 @@ copyToVault {
                         writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
 
 			# Check if copy request is being processed.
+			*processing = false;
 			foreach(*row in SELECT COLL_NAME WHERE
 			                COLL_NAME = *target AND
-			                META_COLL_ATTR_NAME = UUORGMETADATAPREFIX ++ "cronjob_copy_to_research" AND
+			                META_COLL_ATTR_NAME = "org_cronjob_copy_to_research" AND
 			                META_COLL_ATTR_VALUE = 'CRONJOB_PROCESSING') {
                                 *processing = true;
 			}
