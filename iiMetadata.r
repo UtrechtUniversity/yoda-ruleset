@@ -655,7 +655,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 
 	# Add publication update status to vault package.
 	# Also used in frontend to check if vault package metadata update is pending.
-	*publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" + CRONJOB_PENDING;
+	*publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
 	msiString2KeyValPair(*publicationUpdate, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *vaultPackagePath, "-C"), *msg);
 	if (*err < 0) {
