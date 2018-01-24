@@ -631,7 +631,7 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         # Check if user has write acces to research folder
         if (*kvpCollDetails.userType != "normal" || *kvpCollDetails.userType != "manager") {
                 *status = 'ErrorTargetPermissions';
-                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
+                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder.';
                 succeed;
         }
 
@@ -677,7 +677,12 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 # \param[in] target  path of the research area target
 #
 iiCopyFolderToResearch(*folder, *target) {
-	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		writeLine("stdout", "iiCopyFolderToResearch: Should only be called by a rodsadmin.");
+		fail;
+	}
+	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
 
 	# Determine target collection group and actor.
 	*pathElems = split(*target, "/");
@@ -693,9 +698,18 @@ iiCopyFolderToResearch(*folder, *target) {
 	}
 	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
+	# Check modify access on target folder.
+	msiCheckAccess(*target, "modify object", *modifyAccess);
+
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
 
 	# Determine vault package.
 	*pathElems = split(*folder, "/");
@@ -713,5 +727,11 @@ iiCopyFolderToResearch(*folder, *target) {
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
 	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
 }
