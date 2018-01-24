@@ -267,19 +267,6 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	}
 
 	*destPath = *buffer.destination;
-
-	# Acquire write access to destination path.
-	msiCheckAccess(*destPath, "modify object", *writeAccess);
-	if (*writeAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *destPath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to acquire write access to *destPath";
-			succeed;
-		} else {
-			writeLine("stdout", "iiCopyObject: Write access to *destPath acquired");
-		}
-	}
-
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
 		*sourceLength = strlen(*sourcePath);
@@ -306,16 +293,6 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			*buffer.msg = "Failed to revoke read access to *sourcePath";
 		} else {
 			writeLine("stdout", "iiCopyObject: Read access to *sourcePath revoked");
-		}
-	}
-
-	# Revoke write access on destination path.
-	if (*readAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *destPath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to revoke write access to *destPath";
-		} else {
-			writeLine("stdout", "iiCopyObject: Write access to *destPath revoked");
 		}
 	}
 }
@@ -743,6 +720,18 @@ iiCopyFolderToResearch(*folder, *target) {
 	*elemSize = size(*pathElems);
         *vaultPackage = elem(*pathElems, *elemSize - 1);
 
+	# Acquire write access to target path.
+	msiCheckAccess(*target, "modify object", *writeAccess);
+	if (*writeAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *target));
+		if (*error < 0) {
+			*buffer.msg = "Failed to acquire write access to *target.";
+			succeed;
+		} else {
+			writeLine("stdout", "iiCopyFolderToResearch: Write access to *target acquired.");
+		}
+	}
+
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/" ++ *vaultPackage;
 	uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
@@ -750,6 +739,16 @@ iiCopyFolderToResearch(*folder, *target) {
 		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
 		writeLine("stdout", "iiCopyObject: *error: *msg");
 		fail;
+	}
+
+	# Revoke write access on target path.
+	if (*writeAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *target));
+		if (*error < 0) {
+			*buffer.msg = "Failed to revoke write access to *target.";
+		} else {
+			writeLine("stdout", "iiCopyFolderToResearch: Write access to *target revoked.");
+		}
 	}
 
 	# Set cronjob status.
