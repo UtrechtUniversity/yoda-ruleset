@@ -39,32 +39,45 @@ copyToVault {
 
         while(*CopyContInxOld > 0) {
                 foreach(*row in *CopyGenQOut) {
-                        *folder = *row.META_COLL_ATTR_VALUE;
-                        *target = *row.COLL_NAME;
-                        writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
+                        *collName = *row.COLL_NAME;
 
-			# Check if copy request is being processed.
-			*processing = false;
-			foreach(*row in SELECT COLL_NAME WHERE
-			                COLL_NAME = *target AND
+			# Check if vault package copy is requested in research or datamanager group.
+			if (*collName like regex "/[^/]+/home/research-.*" ||
+			    *collName like regex "/[^/]+/home/datamanager-.*") {
+
+			       # Check if copy request is being processed.
+			       *processing = false;
+			       foreach(*row in SELECT COLL_NAME WHERE
+			                COLL_NAME = *collName AND
 			                META_COLL_ATTR_NAME = "org_cronjob_copy_to_research" AND
 			                META_COLL_ATTR_VALUE = 'CRONJOB_PROCESSING') {
-                                *processing = true;
-			}
+                                	*processing = true;
+			       }
+				
+                               *folder = "";
+                               *target = "";
+                               *err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0));
+                               *err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *target, "get", 1));
 
-			if (!*processing) {
-                                # When iiCopyFolderToResearch fails continue with the other folders.
-                                iiCopyFolderToResearch(*folder, *target) ::: nop;
+				if (*err1 < 0 || *err2 < 0) {
+					writeLine("stdout", "Failed to process copy request on *collName,");
+					*processing = false;
+				}
+				
+				if (!*processing) {
+                                   # When iiCopyFolderToResearch fails continue with the other folders.
+                                   iiCopyFolderToResearch(*folder, *target) ::: nop;
 
-                                # Remove copy request.
-                                *copyRequest = UUORGMETADATAPREFIX ++ "copy_vault_package" ++ "=*folder";
-                                msiString2KeyValPair(*copyRequest, *copyRequestKvp);
-                                *err = errormsg(msiRemoveKeyValuePairsFromObj(*copyRequestKvp, *target, "-C"), *msg);
+                                   # Remove copy request.
+                                   *copyRequest = UUORGMETADATAPREFIX ++ "copy_vault_package" ++ "=*row.META_COLL_ATTR_VALUE";
+                                   msiString2KeyValPair(*copyRequest, *copyRequestKvp);
+                                   *err = errormsg(msiRemoveKeyValuePairsFromObj(*copyRequestKvp, *collName, "-C"), *msg);
 
-                                # Remove cronjob status.
-                                *cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK;
-                                msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
-                                *err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *target, "-C"), *msg);
+                                   # Remove cronjob status.
+                                   *cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK;
+                                	      msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
+                                	      *err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *collName, "-C"), *msg);
+				}
 			}
                 }
 

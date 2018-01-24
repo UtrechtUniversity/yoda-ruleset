@@ -4,7 +4,8 @@
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-#------------------------------ Start of Yoda Front Office wrapper
+# ---------------- Start of Yoda FrontOffice API ----------------
+
 # \brief Request a copy action of a vault package to the research area.
 #
 # \param[in] folder               folder to copy from the vault
@@ -13,9 +14,7 @@ iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo);
 }
 
-
-
-#------------------------------ End of Yoda Front Office wrapper
+#---------------- End of Yoda Front Office API ----------------
 
 
 # \brief iiDetermineVaultTarget
@@ -635,10 +634,25 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
+	# Determine target collection group and actor.
+	*pathElems = split(*target, "/");
+	*rodsZone = elem(*pathElems, 0);
+        *vaultGroup = elem(*pathElems, 2);
+	*actor = uuClientFullName;
+
+	# Retrieve path of the actor group.
+	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
+	*actorGroupPath = "/*rodsZone/home/*actorGroup";
+
 	# Add request to copy vault package to research area.
-	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" ++ *folder;
-	msiString2KeyValPair(*copyVaultPackage, *kvp);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
+	writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested.");
+        *json_str = "[]";
+        *size = 0;
+        msi_json_arrayops(*json_str, *folder, "add", *size);
+        msi_json_arrayops(*json_str, *target, "add", *size);
+        msiString2KeyValPair("", *kvp);
+        msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
 	if (*err < 0) {
 		*status = "UNRECOVERABLE";
 		*statusInfo = "*err - *msg";
@@ -658,7 +672,7 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 #
 iiCopyFolderToResearch(*folder, *target) {
 	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
-
+			
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
 	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
