@@ -1,8 +1,27 @@
 # \file      iiFolderStatusTransitions.r
 # \brief     Status transitions for Folders in the Research & Vault area.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved
-# \license   GPLv3, see LICENSE
+# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
+# ---------------- Start of Yoda FrontOffice API ----------------
+
+# \brief Wrapper for iiActionLog to make it accessible conform standard to the front office.
+#
+# \param[in]  folder     folder name to be extended with required full qualification name
+# \param[out] result
+# \param[out] status
+# \param[out] statusInfo
+#
+iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = *folder;
+
+	iiActionLog(*folder, *size, *result);
+}
+
+#---------------- End of Yoda Front Office API ----------------
+
 
 # \brief iiFolderStatus
 #
@@ -49,7 +68,7 @@ iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
-	on (true) { 
+	on (true) {
 		nop;
 	}
 
@@ -83,7 +102,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newFolderStatus == FOLDER) {
-		*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+		*actionLog = UUORGMETADATAPREFIX ++ "action_log";
 		iiRemoveAVUs(*folder, *actionLog);
 	}
 	on (*newFolderStatus == LOCKED) {
@@ -114,11 +133,11 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 iiFolderLock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
-	
+
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus != FOLDER) {
 		*status = "WrongStatus";
-		*statusInfo = "Cannot lock folder as it is currently in *currentFolderStatus state"; 
+		*statusInfo = "Cannot lock folder as it is currently in *currentFolderStatus state";
 		succeed;
 	}
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
@@ -127,7 +146,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 	if (*err < 0) {
 		iiFolderStatus(*folder, *currentFolderStatus);
 		*actor = uuClientFullName;
-                iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, *actor, *allowed, *reason); 
+                iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, *actor, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -155,12 +174,12 @@ iiFolderLock(*folder, *status, *statusInfo) {
 iiFolderUnlock(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
-	
+
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SECURED || *currentFolderStatus == REJECTED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);	
+		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
 		if (*currentFolderStatus == FOLDER) {
@@ -193,8 +212,8 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 
 # \brief iiFolderSubmit
 #
-# \param[in]  folder	    path of folder to submit to vault 
-# \param[out] folderStatus  status of the folder after submission 
+# \param[in]  folder	    path of folder to submit to vault
+# \param[out] folderStatus  status of the folder after submission
 # \param[out] status        status of the action
 # \param[out] statusInfo    Informative message when action was not successfull
 #
@@ -221,7 +240,7 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 		      *status = "PermissionDenied";
-		      *statusInfo = *reason; 
+		      *statusInfo = *reason;
 		} else {
 			if (*err == -818000) {
 				*status = "PermissionDenied";
@@ -230,12 +249,12 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 				*status = "Unrecoverable";
 				*statusInfo = "*err - *msg";
 			}
-	 	}		
+	 	}
 	} else {
 		*status = "Success";
 		*statusInfo = "";
 		iiFolderStatus(*folder, *folderStatus);
-	}		
+	}
 }
 
 # \brief Unsubmit a folder submitted to the vault.
@@ -259,11 +278,11 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
-		
+
 		*extraReason = '';
 		if (*currentFolderStatus != '') {
 			*extraReason = " or folder is currently in *currentFolderStatus state";
-		}		
+		}
 
 		*statusInfo = "Cannot unsubmit folder due to insufficient permissions"; # *extraReason";
 
@@ -290,7 +309,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	}
 }
 
-# \brief iiFolderDatamanagerAction    
+# \brief iiFolderDatamanagerAction
 #
 # \param[in] folder
 # \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
@@ -322,7 +341,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		if (*allowed) {
 			*statusInfo = "Could not acquire datamanager access to *folder.";
 		} else {
-			*statusInfo = *reason;		
+			*statusInfo = *reason;
 		}
 		succeed;
 	}
@@ -352,7 +371,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		if (*allowed) {
 			*statusInfo = "*err - *msg";
 		} else {
-			*statusInfo = *reason;		
+			*statusInfo = *reason;
 		}
 	} else if (*status == "Unknown") {
 		*status = "Success";
@@ -380,8 +399,8 @@ iiFolderReject(*folder, *status, *statusInfo) {
 }
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
-#			  and should not be called from the portal. Thus no statusInfo is returned, but 
-#			  log messages are sent to stdout instead 
+#			  and should not be called from the portal. Thus no statusInfo is returned, but
+#			  log messages are sent to stdout instead
 #
 # \param[in] folder
 #
@@ -409,7 +428,7 @@ iiFolderSecure(*folder) {
 	*target = iiDetermineVaultTarget(*folder);
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
-	iiCopyOriginalMetadataToVault(*target); 
+	iiCopyOriginalMetadataToVault(*target);
 	iiCopyLicenseToVaultPackage(*folder, *target);
 	iiSetVaultPermissions(*folder, *target);
 
@@ -461,20 +480,6 @@ iiAddActionLogRecord(*actor, *folder, *action) {
 	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
 }
 
-# \brief Wrapper for iiActionLog to make it accessible conform standard to the front end.
-#
-# \param[in]  folder     folder name to be extended with required full qualification name
-# \param[out] result
-# \param[out] status
-# \param[out] statusInfo
-#
-iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
-	*status = 'Success';
-	*statusInfo = *folder;
-
-	 iiActionLog(*folder, *size, *result);	
-}
-
 # \brief iiActionLog
 #
 # \param[in]  folder
@@ -482,7 +487,7 @@ iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
 # \param[out] result
 #
 iiActionLog(*folder, *size, *result) {
-	*actionLog = UUORGMETADATAPREFIX ++ "action_log";	
+	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
 	*result = "[]";
 	*size = 0;
 	foreach(*row in SELECT order(META_COLL_ATTR_VALUE) WHERE META_COLL_ATTR_NAME = *actionLog AND COLL_NAME = *folder) {
@@ -510,19 +515,19 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 			uuChopPath(*rootCollection, *parent, *child);
 			while(*parent != "/$rodsZoneClient/home") {
 				uuChopPath(*parent, *coll, *child);
-				iiAddMetadataToItem(*coll, *child, true, *buffer, *error); 
+				iiAddMetadataToItem(*coll, *child, true, *buffer, *error);
 			 	*parent = *coll;
 			}
 		}
 	} else {
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive unlocking of *rootCollection");
 		*direction="reverse";
-		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataFromItem", *buffer, *error);	
+		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataFromItem", *buffer, *error);
 		if (*error == 0) {
 			uuChopPath(*rootCollection, *parent, *child);
 			while(*parent != "/$rodsZoneClient/home") {
 				uuChopPath(*parent, *coll, *child);
-				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error); 
+				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error);
 			 	*parent = *coll;
 			}
 		}
