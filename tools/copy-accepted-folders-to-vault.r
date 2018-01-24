@@ -69,14 +69,18 @@ copyToVault {
                                    iiCopyFolderToResearch(*folder, *target) ::: nop;
 
                                    # Remove copy request.
-                                   *copyRequest = UUORGMETADATAPREFIX ++ "copy_vault_package" ++ "=*row.META_COLL_ATTR_VALUE";
-                                   msiString2KeyValPair(*copyRequest, *copyRequestKvp);
-                                   *err = errormsg(msiRemoveKeyValuePairsFromObj(*copyRequestKvp, *collName, "-C"), *msg);
+                                   *json_str = "[]";
+                                   *size = 0;
+                                   msi_json_arrayops(*json_str, *folder, "add", *size);
+                                   msi_json_arrayops(*json_str, *target, "add", *size);
+                                   msiString2KeyValPair("", *copyKvp);
+                                   msiAddKeyVal(*copyKvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
+                                   *err = errormsg(msiRemoveKeyValuePairsFromObj(*copyKvp, *collName, "-C"), *msg);
 
                                    # Remove cronjob status.
                                    *cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK;
-                                	      msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
-                                	      *err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *collName, "-C"), *msg);
+                                   msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
+                                   *err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *collName, "-C"), *msg);
 				}
 			}
                 }

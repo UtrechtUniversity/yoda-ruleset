@@ -637,15 +637,20 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	# Determine target collection group and actor.
 	*pathElems = split(*target, "/");
 	*rodsZone = elem(*pathElems, 0);
-        *vaultGroup = elem(*pathElems, 2);
 	*actor = uuClientFullName;
 
 	# Retrieve path of the actor group.
 	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
+	if (*isDatamanager) {
+		# Determine datamanager group of vault package.
+		*pathElems = split(*target, "/");
+		*vaultGroup = elem(*pathElems, 2);
+		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+	}
 	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
 	# Add request to copy vault package to research area.
-	writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested.");
+        writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
         *json_str = "[]";
         *size = 0;
         msi_json_arrayops(*json_str, *folder, "add", *size);
