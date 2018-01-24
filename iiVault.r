@@ -253,6 +253,8 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 #
 iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
+
+	# Acquire read access to source path.
 	msiCheckAccess(*sourcePath, "read object", *readAccess);
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
@@ -265,6 +267,19 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	}
 
 	*destPath = *buffer.destination;
+
+	# Acquire write access to destination path.
+	msiCheckAccess(*destPath, "modify object", *writeAccess);
+	if (*writeAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *destPath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to acquire write access to *destPath";
+			succeed;
+		} else {
+			writeLine("stdout", "iiCopyObject: Write access to *destPath acquired");
+		}
+	}
+
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
 		*sourceLength = strlen(*sourcePath);
@@ -283,12 +298,24 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			*buffer.msg = "Failed to copy *sourcePath to *destPath";
 		}
 	}
+
+	# Revoke read access on source path.
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
 		if (*error < 0) {
 			*buffer.msg = "Failed to revoke read access to *sourcePath";
 		} else {
 			writeLine("stdout", "iiCopyObject: Read access to *sourcePath revoked");
+		}
+	}
+
+	# Revoke write access on destination path.
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *destPath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to revoke write access to *destPath";
+		} else {
+			writeLine("stdout", "iiCopyObject: Write access to *destPath revoked");
 		}
 	}
 }
