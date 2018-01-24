@@ -698,17 +698,17 @@ iiCopyFolderToResearch(*folder, *target) {
 	}
 	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
-	# Check modify access on target folder.
-	msiCheckAccess(*target, "modify metadata", *modifyAccess);
+	# Check modify access on actor group path.
+	msiCheckAccess(*actorGroupPath, "modify metadata", *modifyAccess);
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+		msiSetACL("default", "admin:write", uuClientFullName, *actorGroupPath);
 	}
 	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+		msiSetACL("default", "admin:null", uuClientFullName, *actorGroupPath);
 	}
 
 	# Determine vault package.
@@ -728,10 +728,10 @@ iiCopyFolderToResearch(*folder, *target) {
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+		msiSetACL("default", "admin:write", uuClientFullName, *actorGroupPath);
 	}
 	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+		msiSetACL("default", "admin:null", uuClientFullName, *actorGroupPath);
 	}
 }
