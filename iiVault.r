@@ -699,7 +699,7 @@ iiCopyFolderToResearch(*folder, *target) {
 	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
 	# Check modify access on target folder.
-	msiCheckAccess(*target, "modify object", *modifyAccess);
+	msiCheckAccess(*target, "modify metadata", *modifyAccess);
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
