@@ -600,6 +600,14 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
 iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+	# Check if target is a research folder.
+	if (*target like regex "/[^/]+/home/research-.*") {
+	} else {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'Please select a folder in the research area.';
+                succeed;
+	}
+
         # Check whether datapackage folder already present in target folder.
         uuChopPath(*folder, *parent, *datapackageName);
         *newTargetCollection = "*target/*datapackageName";
