@@ -678,6 +678,11 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 iiCopyFolderToResearch(*folder, *target) {
 	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
 
+	# Determine target collection group and actor.
+	*pathElems = split(*target, "/");
+	*rodsZone = elem(*pathElems, 0);
+	*actor = uuClientFullName;
+
 	# Retrieve path of the actor group.
 	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
 	if (*isDatamanager) {
