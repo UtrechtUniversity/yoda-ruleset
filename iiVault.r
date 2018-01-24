@@ -633,7 +633,7 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         }
 
         # Check if user has write acces to research folder
-        if (*kvpCollDetails.userType != "normal" || *kvpCollDetails.userType != "manager") {
+        if (*kvpCollDetails.userType != "normal" && *kvpCollDetails.userType != "manager") {
                 *status = 'ErrorTargetPermissions';
                 *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder.';
                 succeed;
