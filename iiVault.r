@@ -677,10 +677,20 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 #
 iiCopyFolderToResearch(*folder, *target) {
 	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target");
-			
+
+	# Retrieve path of the actor group.
+	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
+	if (*isDatamanager) {
+		# Determine datamanager group of vault package.
+		*pathElems = split(*target, "/");
+		*vaultGroup = elem(*pathElems, 2);
+		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+	}
+	*actorGroupPath = "/*rodsZone/home/*actorGroup";
+
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
-	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
 
 	# Determine vault package.
 	*pathElems = split(*folder, "/");
@@ -698,5 +708,5 @@ iiCopyFolderToResearch(*folder, *target) {
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
-	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
 }
