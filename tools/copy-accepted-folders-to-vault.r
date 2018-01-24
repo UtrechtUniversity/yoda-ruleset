@@ -68,6 +68,13 @@ copyToVault {
                                    # When iiCopyFolderToResearch fails continue with the other folders.
                                    iiCopyFolderToResearch(*folder, *target) ::: nop;
 
+                                   # Check if rods can modify metadata and grant temporary write ACL if necessary.
+                                   msiCheckAccess(*collName, "modify metadata", *modifyPermission);
+                                   if (*modifyPermission == 0) {
+                                           writeLine("stdout", "Granting read access to *collName");
+                                           msiSetACL("default", "admin:write", uuClientFullName, *collName);
+                                   }
+
                                    # Remove copy request.
                                    *json_str = "[]";
                                    *size = 0;
@@ -81,7 +88,13 @@ copyToVault {
                                    *cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK;
                                    msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
                                    *err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *collName, "-C"), *msg);
-				}
+
+                                   # Remove the temporary write ACL.
+                                   if (*modifyPermission == 0) {
+                                           writeLine("stdout", "Revoking read access to *collName");
+                                           msiSetACL("default", "admin:null", uuClientFullName, *collName);
+                                   }
+			        }
 			}
                 }
 
