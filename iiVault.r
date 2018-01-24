@@ -628,7 +628,8 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
-        if (*kvpCollDetails.userType == "reader") {
+        # Check if user has write acces to research folder
+        if (*kvpCollDetails.userType != "normal" || *kvpCollDetails.userType != "manager") {
                 *status = 'ErrorTargetPermissions';
                 *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
                 succeed;
@@ -681,7 +682,6 @@ iiCopyFolderToResearch(*folder, *target) {
 	# Determine target collection group and actor.
 	*pathElems = split(*target, "/");
 	*rodsZone = elem(*pathElems, 0);
-	*actor = uuClientFullName;
 
 	# Retrieve path of the actor group.
 	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
