@@ -56,17 +56,18 @@ copyToVault {
 				
                                *folder = "";
                                *target = "";
+			       *actor = "";
                                *err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0));
                                *err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *target, "get", 1));
-
-				if (*err1 < 0 || *err2 < 0) {
+                               *err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
+				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 					writeLine("stdout", "Failed to process copy request on *collName,");
 					*processing = false;
 				}
 				
 				if (!*processing) {
                                    # When iiCopyFolderToResearch fails continue with the other folders.
-                                   iiCopyFolderToResearch(*folder, *target) ::: nop;
+                                   iiCopyFolderToResearch(*folder, *target, *actor) ::: nop;
 
                                    # Check if rods can modify metadata and grant temporary write ACL if necessary.
                                    msiCheckAccess(*collName, "modify metadata", *modifyPermission);
@@ -80,6 +81,7 @@ copyToVault {
                                    *size = 0;
                                    msi_json_arrayops(*json_str, *folder, "add", *size);
                                    msi_json_arrayops(*json_str, *target, "add", *size);
+                                   msi_json_arrayops(*json_str, *actor, "add", *size);
                                    msiString2KeyValPair("", *copyKvp);
                                    msiAddKeyVal(*copyKvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
                                    *err = errormsg(msiRemoveKeyValuePairsFromObj(*copyKvp, *collName, "-C"), *msg);

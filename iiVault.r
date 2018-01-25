@@ -621,7 +621,7 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
         if (*stat == 'ErrorPathNotExists') {
                 *status = 'FO-ErrorVaultCollectionDoesNotExist';
-                *statusInfo = 'The datapackage does not exist';
+                *statusInfo = 'The datapackage does not exist.';
                 succeed;
         }
 
@@ -647,26 +647,11 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
-	# Determine target collection group and actor.
-	*pathElems = split(*target, "/");
-	*rodsZone = elem(*pathElems, 0);
-	*actor = uuClientFullName;
-
-	# Retrieve path of the actor group.
-	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
-	if (*isDatamanager) {
-		# Determine datamanager group of vault package.
-		*pathElems = split(*target, "/");
-		*vaultGroup = elem(*pathElems, 2);
-		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-	}
-	*actorGroupPath = "/*rodsZone/home/*actorGroup";
-
 	# Check if copy request already exists.
 	*requestExists = false;
 	*copyAttr = UUORGMETADATAPREFIX ++ "copy_vault_package";
 	foreach(*row in SELECT COLL_NAME WHERE
-			COLL_NAME = *actorGroupPath AND
+			COLL_NAME = *target AND
 		        META_COLL_ATTR_NAME = *copyAttr) {
                 *requestExists = true;
 	}
@@ -677,14 +662,16 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	}
 
 	# Add request to copy vault package to research area.
+	*actor = uuClientFullName;
         writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
         *json_str = "[]";
         *size = 0;
         msi_json_arrayops(*json_str, *folder, "add", *size);
         msi_json_arrayops(*json_str, *target, "add", *size);
+        msi_json_arrayops(*json_str, *actor, "add", *size);
         msiString2KeyValPair("", *kvp);
         msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *actorGroupPath, "-C"), *msg);
+	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
 	if (*err < 0) {
 		*status = "UNRECOVERABLE";
 		*statusInfo = "*err - *msg";
@@ -702,7 +689,7 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 # \param[in] folder  folder to copy from the vault
 # \param[in] target  path of the research area target
 #
-iiCopyFolderToResearch(*folder, *target) {
+iiCopyFolderToResearch(*folder, *target, *actor) {
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") {
 		writeLine("stdout", "iiCopyFolderToResearch: Should only be called by a rodsadmin.");
@@ -714,27 +701,17 @@ iiCopyFolderToResearch(*folder, *target) {
 	*pathElems = split(*target, "/");
 	*rodsZone = elem(*pathElems, 0);
 
-	# Retrieve path of the actor group.
-	iiCollectionGroupNameAndUserType(*target, *actorGroup, *userType, *isDatamanager);
-	if (*isDatamanager) {
-		# Determine datamanager group of vault package.
-		*pathElems = split(*target, "/");
-		*vaultGroup = elem(*pathElems, 2);
-		iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-	}
-	*actorGroupPath = "/*rodsZone/home/*actorGroup";
-
 	# Check modify access on actor group path.
-	msiCheckAccess(*actorGroupPath, "modify metadata", *modifyAccess);
+	msiCheckAccess(*target, "modify metadata", *modifyAccess);
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *actorGroupPath);
+		msiSetACL("default", "admin:write", uuClientFullName, *target);
 	}
-	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *actorGroupPath);
+		msiSetACL("default", "admin:null", uuClientFullName, *target);
 	}
 
 	# Determine vault package.
@@ -773,13 +750,22 @@ iiCopyFolderToResearch(*folder, *target) {
 		}
 	}
 
+	# Set correct owner of data.
+	*error = errorcode(msiSetACL("recursive", "own", *actor, *target));
+	if (*error < 0) {
+		*buffer.msg = "Failed to set owner of *target to *actor.";
+		succeed;
+	} else {
+		writeLine("stdout", "iiCopyFolderToResearch: Owner of *target set to *actor.");
+	}
+
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *actorGroupPath);
+		msiSetACL("default", "admin:write", uuClientFullName, *target);
 	}
-	msiSetKeyValuePairsToObj(*kvp, *actorGroupPath, "-C");
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *actorGroupPath);
+		msiSetACL("default", "admin:null", uuClientFullName, *target);
 	}
 }
