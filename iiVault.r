@@ -1,20 +1,9 @@
 # \file      iiVault.r
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
-
-# ---------------- Start of Yoda FrontOffice API ----------------
-
-# \brief Request a copy action of a vault package to the research area.
-#
-# \param[in] folder               folder to copy from the vault
-# \param[in] target               path of the research area target
-iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
-	iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo);
-}
-
-#---------------- End of Yoda Front Office API ----------------
 
 
 # \brief iiDetermineVaultTarget
@@ -454,6 +443,75 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
 
 }
 
+# \brief When a license is added to the metadata and it is available in the License collection,
+#        this will copy the text to the package in the vault.
+#
+# \param[in] folder  	          folder to copy to the vault
+# \param[in] target               path of the vault package
+#
+iiCopyLicenseToVaultPackage(*folder, *target) {
+	*licenseKey = UUUSERMETADATAPREFIX ++ "0_License";
+	*license = "";
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
+		*license = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*license == "") {
+		writeLine("serverLog", "iiCopyLicenseToVaultPackage: No license found in user metadata");
+		succeed;
+	}
+
+	*licenseText = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
+	if (uuFileExists(*licenseText)) {
+		*destination = *target ++ "/License.txt"
+		*err = errorcode(msiDataObjCopy(*licenseText, *destination, "verifyChksum=", *status));
+		if (*err < 0) {
+			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
+			succeed;
+		}
+	} else {
+		writeLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
+	}
+
+	*licenseUriFile = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".uri";
+	if (uuFileExists(*licenseUriFile)) {
+		msiDataObjOpen("objPath=*licenseUriFile", *fd);
+		msiDataObjRead(*fd, 2000, *buf);
+		msiDataObjClose(*fd, *status);
+		msiBytesBufToStr(*buf, *licenseUri);
+
+		# Remove qoutes from string. This prevents whitespace and linefeeds from slipping into the URI
+		*licenseUri = triml(trimr(*licenseUri, '"'), '"');
+		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
+		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
+	}
+}
+
+# \brief Copy a vault package to the research area.
+#
+# \param[in] folder  folder to copy from the vault
+# \param[in] target  path of the research area target
+#
+iiCopyFolderToResearch(*folder, *target) {
+        writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
+
+        # Determine target collection group and actor.
+        *pathElems = split(*folder, "/");
+        *elemSize = size(*pathElems);
+        *vaultPackage = elem(*pathElems, *elemSize - 1);
+
+        *buffer.source = *folder;
+        *buffer.destination = *target ++ "/" ++ *vaultPackage;
+        uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
+        if (*error != 0) {
+                msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
+                writeLine("stdout", "iiCopyObject: *error: *msg");
+                fail;
+        }
+}
+
+
+# ---------------- Start of Yoda FrontOffice API ----------------
 
 # \brief Make system metadata accesible conform standard to the front end.
 #
@@ -551,55 +609,11 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	}
 }
 
-# \brief When a license is added to the metadata and it is available in the License collection,
-#        this will copy the text to the package in the vault.
-#
-# \param[in] folder  	          folder to copy to the vault
-# \param[in] target               path of the vault package
-#
-iiCopyLicenseToVaultPackage(*folder, *target) {
-	*licenseKey = UUUSERMETADATAPREFIX ++ "0_License";
-	*license = "";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
-		*license = *row.META_COLL_ATTR_VALUE;
-	}
-
-	if (*license == "") {
-		writeLine("serverLog", "iiCopyLicenseToVaultPackage: No license found in user metadata");
-		succeed;
-	}
-
-	*licenseText = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".txt";
-	if (uuFileExists(*licenseText)) {
-		*destination = *target ++ "/License.txt"
-		*err = errorcode(msiDataObjCopy(*licenseText, *destination, "verifyChksum=", *status));
-		if (*err < 0) {
-			writeLine("serverLog", "iiCopyLicenseToVaultPackage:*err; Failed to copy *licenseText to *destination");
-			succeed;
-		}
-	} else {
-		writeLine("serverLog", "iiCopyLicenseToVaultPackage: License text not available for: *license");
-	}
-
-	*licenseUriFile = "/" ++ $rodsZoneClient ++ IILICENSECOLLECTION ++ "/" ++ *license ++ ".uri";
-	if (uuFileExists(*licenseUriFile)) {
-		msiDataObjOpen("objPath=*licenseUriFile", *fd);
-		msiDataObjRead(*fd, 2000, *buf);
-		msiDataObjClose(*fd, *status);
-		msiBytesBufToStr(*buf, *licenseUri);
-
-		# Remove qoutes from string. This prevents whitespace and linefeeds from slipping into the URI
-		*licenseUri = triml(trimr(*licenseUri, '"'), '"');
-		msiAddKeyVal(*licenseKvp, UUORGMETADATAPREFIX ++ "license_uri", *licenseUri);
-		msiAssociateKeyValuePairsToObj(*licenseKvp, *target, "-C");
-	}
-}
-
 # \brief Request a copy action of a vault package to the research area.
 #
 # \param[in] folder  	          folder to copy from the vault
 # \param[in] target               path of the research area target
-iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	# Check if target is a research folder.
 	if (*target like regex "/[^/]+/home/research-.*") {
 	} else {
@@ -647,140 +661,12 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
-	iiRequestCopyVaultPackageAsynchronously(*folder, *target);
-
-
-	# # Check if copy request already exists.
-	# *requestExists = false;
-	# *copyAttr = UUORGMETADATAPREFIX ++ "copy_vault_package";
-	# foreach(*row in SELECT COLL_NAME WHERE
-	# 		COLL_NAME = *target AND
-	# 	        META_COLL_ATTR_NAME = *copyAttr) {
-        #         *requestExists = true;
-	# }
-	# if (*requestExists) {
-        #         *status = 'ErrorTargetPermissions';
-        #         *statusInfo = 'There is a pending copy request for this folder. Please wait until completed.';
-        #         succeed;
-	# }
-
-	# # Add request to copy vault package to research area.
-	# *actor = uuClientFullName;
-        # writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
-        # *json_str = "[]";
-        # *size = 0;
-        # msi_json_arrayops(*json_str, *folder, "add", *size);
-        # msi_json_arrayops(*json_str, *target, "add", *size);
-        # msi_json_arrayops(*json_str, *actor, "add", *size);
-        # msiString2KeyValPair("", *kvp);
-        # msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
-	# *err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
-	# if (*err < 0) {
-	# 	*status = "UNRECOVERABLE";
-	# 	*statusInfo = "*err - *msg";
-	# 	succeed;
-	# } else {
-	 	*status = "SUCCESS";
-	 	*statusInfo = "";
-	 	succeed;
-	# }
+	# Add copy action to delayed rule queue.
+	*status = "SUCCESS";
+	*statusInfo = "";
+	delay("<PLUSET>1s</PLUSET>") {
+                iiCopyFolderToResearch(*folder, *target);
+        }
 }
 
-
-iiRequestCopyVaultPackageAsynchronously(*folder, *target) {
-	remote("localhost", "") {
-		delay("<PLUSET>1s</PLUSET>") {
-			iiCopyFolderToResearch(*folder, *target);
-			if (*folder != "") {
-				writeLine("serverLog", "iiCopyFolderToResearch: *folder copied to *target");
-			}
-
-		}
-	}
-}
-
-# \brief Copy a vault package to the research area.
-#
-# \param[in] folder  folder to copy from the vault
-# \param[in] target  path of the research area target
-#
-iiCopyFolderToResearch(*folder, *target) {
-	# uuGetUserType(uuClientFullName, *userType);
-	# if (*userType != "rodsadmin") {
-	# 	writeLine("stdout", "iiCopyFolderToResearch: Should only be called by a rodsadmin.");
-	# 	fail;
-	# }
-	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
-
-	# Determine target collection group and actor.
-	*pathElems = split(*target, "/");
-	*rodsZone = elem(*pathElems, 0);
-
-	# # Check modify access on actor group path.
-	# msiCheckAccess(*target, "modify metadata", *modifyAccess);
-
-	# # Set cronjob status.
-	# msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
-	# if (*modifyAccess != 1) {
-	# 	msiSetACL("default", "admin:write", uuClientFullName, *target);
-	# }
-	# msiSetKeyValuePairsToObj(*kvp, *target, "-C");
-	# if (*modifyAccess != 1) {
-	# 	msiSetACL("default", "admin:null", uuClientFullName, *target);
-	# }
-
-	# Determine vault package.
-	*pathElems = split(*folder, "/");
-	*elemSize = size(*pathElems);
-        *vaultPackage = elem(*pathElems, *elemSize - 1);
-
-	# # Acquire write access to target path.
-	# msiCheckAccess(*target, "modify object", *writeAccess);
-	# if (*writeAccess != 1) {
-	# 	*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *target));
-	# 	if (*error < 0) {
-	# 		*buffer.msg = "Failed to acquire write access to *target.";
-	# 		succeed;
-	# 	} else {
-	# 		writeLine("stdout", "iiCopyFolderToResearch: Write access to *target acquired.");
-	# 	}
-	# }
-
-	*buffer.source = *folder;
-	*buffer.destination = *target ++ "/" ++ *vaultPackage;
-	uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
-	if (*error != 0) {
-		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-		writeLine("stdout", "iiCopyObject: *error: *msg");
-		fail;
-	}
-
-	# # Revoke write access on target path.
-	# if (*writeAccess != 1) {
-	# 	*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *target));
-	# 	if (*error < 0) {
-	# 		*buffer.msg = "Failed to revoke write access to *target.";
-	# 	} else {
-	# 		writeLine("stdout", "iiCopyFolderToResearch: Write access to *target revoked.");
-	# 	}
-	# }
-
-	# # Set correct owner of data.
-	# *error = errorcode(msiSetACL("recursive", "own", *actor, *target));
-	# if (*error < 0) {
-	# 	*buffer.msg = "Failed to set owner of *target to *actor.";
-	# 	succeed;
-	# } else {
-	# 	writeLine("stdout", "iiCopyFolderToResearch: Owner of *target set to *actor.");
-	# }
-
-	# # Set cronjob status.
-	# msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
-	# if (*modifyAccess != 1) {
-	# 	msiSetACL("default", "admin:write", uuClientFullName, *target);
-	# }
-	# msiSetKeyValuePairsToObj(*kvp, *target, "-C");
-	# if (*modifyAccess != 1) {
-	# 	msiSetACL("default", "admin:null", uuClientFullName, *target);
-	# }
-}
+#---------------- End of Yoda Front Office API ----------------
