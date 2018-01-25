@@ -647,15 +647,8 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
-	remote("localhost", "") {
-		delay("<PLUSET>1s</PLUSET>") {
-			iiCopyFolderToResearch(*folder, *target);
-			if (*folder != "") {
-				writeLine("serverLog", "iiCopyFolderToResearch: *folder copied to *target");
-			}
+	iiRequestCopyVaultPackageAsynchronously(*folder, *target);
 
-		}
-	}
 
 	# # Check if copy request already exists.
 	# *requestExists = false;
@@ -693,6 +686,18 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	# }
 }
 
+
+iiRequestCopyVaultPackageAsynchronously(*folder, *target) {
+	remote("localhost", "") {
+		delay("<PLUSET>1s</PLUSET>") {
+			iiCopyFolderToResearch(*folder, *target);
+			if (*folder != "") {
+				writeLine("serverLog", "iiCopyFolderToResearch: *folder copied to *target");
+			}
+
+		}
+	}
+}
 
 # \brief Copy a vault package to the research area.
 #
