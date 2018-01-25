@@ -647,40 +647,50 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
                 succeed;
         }
 
-	# Check if copy request already exists.
-	*requestExists = false;
-	*copyAttr = UUORGMETADATAPREFIX ++ "copy_vault_package";
-	foreach(*row in SELECT COLL_NAME WHERE
-			COLL_NAME = *target AND
-		        META_COLL_ATTR_NAME = *copyAttr) {
-                *requestExists = true;
-	}
-	if (*requestExists) {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'There is a pending copy request for this folder. Please wait until completed.';
-                succeed;
+	remote("localhost", "") {
+		delay("<PLUSET>1s</PLUSET>") {
+			iiCopyFolderToResearch(*folder, *target);
+			if (*folder != "") {
+				writeLine("serverLog", "iiCopyFolderToResearch: *folder copied to *target");
+			}
+
+		}
 	}
 
-	# Add request to copy vault package to research area.
-	*actor = uuClientFullName;
-        writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
-        *json_str = "[]";
-        *size = 0;
-        msi_json_arrayops(*json_str, *folder, "add", *size);
-        msi_json_arrayops(*json_str, *target, "add", *size);
-        msi_json_arrayops(*json_str, *actor, "add", *size);
-        msiString2KeyValPair("", *kvp);
-        msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
-	if (*err < 0) {
-		*status = "UNRECOVERABLE";
-		*statusInfo = "*err - *msg";
-		succeed;
-	} else {
-		*status = "SUCCESS";
-		*statusInfo = "";
-		succeed;
-	}
+	# # Check if copy request already exists.
+	# *requestExists = false;
+	# *copyAttr = UUORGMETADATAPREFIX ++ "copy_vault_package";
+	# foreach(*row in SELECT COLL_NAME WHERE
+	# 		COLL_NAME = *target AND
+	# 	        META_COLL_ATTR_NAME = *copyAttr) {
+        #         *requestExists = true;
+	# }
+	# if (*requestExists) {
+        #         *status = 'ErrorTargetPermissions';
+        #         *statusInfo = 'There is a pending copy request for this folder. Please wait until completed.';
+        #         succeed;
+	# }
+
+	# # Add request to copy vault package to research area.
+	# *actor = uuClientFullName;
+        # writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
+        # *json_str = "[]";
+        # *size = 0;
+        # msi_json_arrayops(*json_str, *folder, "add", *size);
+        # msi_json_arrayops(*json_str, *target, "add", *size);
+        # msi_json_arrayops(*json_str, *actor, "add", *size);
+        # msiString2KeyValPair("", *kvp);
+        # msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "copy_vault_package", *json_str);
+	# *err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
+	# if (*err < 0) {
+	# 	*status = "UNRECOVERABLE";
+	# 	*statusInfo = "*err - *msg";
+	# 	succeed;
+	# } else {
+	 	*status = "SUCCESS";
+	 	*statusInfo = "";
+	 	succeed;
+	# }
 }
 
 
@@ -689,47 +699,47 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 # \param[in] folder  folder to copy from the vault
 # \param[in] target  path of the research area target
 #
-iiCopyFolderToResearch(*folder, *target, *actor) {
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin") {
-		writeLine("stdout", "iiCopyFolderToResearch: Should only be called by a rodsadmin.");
-		fail;
-	}
+iiCopyFolderToResearch(*folder, *target) {
+	# uuGetUserType(uuClientFullName, *userType);
+	# if (*userType != "rodsadmin") {
+	# 	writeLine("stdout", "iiCopyFolderToResearch: Should only be called by a rodsadmin.");
+	# 	fail;
+	# }
 	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
 
 	# Determine target collection group and actor.
 	*pathElems = split(*target, "/");
 	*rodsZone = elem(*pathElems, 0);
 
-	# Check modify access on actor group path.
-	msiCheckAccess(*target, "modify metadata", *modifyAccess);
+	# # Check modify access on actor group path.
+	# msiCheckAccess(*target, "modify metadata", *modifyAccess);
 
-	# Set cronjob status.
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *target);
-	}
-	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *target);
-	}
+	# # Set cronjob status.
+	# msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_PROCESSING, *kvp);
+	# if (*modifyAccess != 1) {
+	# 	msiSetACL("default", "admin:write", uuClientFullName, *target);
+	# }
+	# msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	# if (*modifyAccess != 1) {
+	# 	msiSetACL("default", "admin:null", uuClientFullName, *target);
+	# }
 
 	# Determine vault package.
 	*pathElems = split(*folder, "/");
 	*elemSize = size(*pathElems);
         *vaultPackage = elem(*pathElems, *elemSize - 1);
 
-	# Acquire write access to target path.
-	msiCheckAccess(*target, "modify object", *writeAccess);
-	if (*writeAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *target));
-		if (*error < 0) {
-			*buffer.msg = "Failed to acquire write access to *target.";
-			succeed;
-		} else {
-			writeLine("stdout", "iiCopyFolderToResearch: Write access to *target acquired.");
-		}
-	}
+	# # Acquire write access to target path.
+	# msiCheckAccess(*target, "modify object", *writeAccess);
+	# if (*writeAccess != 1) {
+	# 	*error = errorcode(msiSetACL("default", "admin:write", uuClientFullName, *target));
+	# 	if (*error < 0) {
+	# 		*buffer.msg = "Failed to acquire write access to *target.";
+	# 		succeed;
+	# 	} else {
+	# 		writeLine("stdout", "iiCopyFolderToResearch: Write access to *target acquired.");
+	# 	}
+	# }
 
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/" ++ *vaultPackage;
@@ -740,32 +750,32 @@ iiCopyFolderToResearch(*folder, *target, *actor) {
 		fail;
 	}
 
-	# Revoke write access on target path.
-	if (*writeAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *target));
-		if (*error < 0) {
-			*buffer.msg = "Failed to revoke write access to *target.";
-		} else {
-			writeLine("stdout", "iiCopyFolderToResearch: Write access to *target revoked.");
-		}
-	}
+	# # Revoke write access on target path.
+	# if (*writeAccess != 1) {
+	# 	*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *target));
+	# 	if (*error < 0) {
+	# 		*buffer.msg = "Failed to revoke write access to *target.";
+	# 	} else {
+	# 		writeLine("stdout", "iiCopyFolderToResearch: Write access to *target revoked.");
+	# 	}
+	# }
 
-	# Set correct owner of data.
-	*error = errorcode(msiSetACL("recursive", "own", *actor, *target));
-	if (*error < 0) {
-		*buffer.msg = "Failed to set owner of *target to *actor.";
-		succeed;
-	} else {
-		writeLine("stdout", "iiCopyFolderToResearch: Owner of *target set to *actor.");
-	}
+	# # Set correct owner of data.
+	# *error = errorcode(msiSetACL("recursive", "own", *actor, *target));
+	# if (*error < 0) {
+	# 	*buffer.msg = "Failed to set owner of *target to *actor.";
+	# 	succeed;
+	# } else {
+	# 	writeLine("stdout", "iiCopyFolderToResearch: Owner of *target set to *actor.");
+	# }
 
-	# Set cronjob status.
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *target);
-	}
-	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *target);
-	}
+	# # Set cronjob status.
+	# msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_research=" ++ CRONJOB_OK, *kvp);
+	# if (*modifyAccess != 1) {
+	# 	msiSetACL("default", "admin:write", uuClientFullName, *target);
+	# }
+	# msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	# if (*modifyAccess != 1) {
+	# 	msiSetACL("default", "admin:null", uuClientFullName, *target);
+	# }
 }
