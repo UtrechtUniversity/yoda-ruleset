@@ -500,7 +500,7 @@ iiCopyFolderToResearch(*folder, *target) {
 #
 iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 	*status = 'Success';
-	*statusInfo = *folder;
+	*statusInfo = *vaultPackage;
 	*result = "[]";
 	*size = 0;
 
@@ -532,7 +532,13 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
         # Modified date
 	*modifiedDate = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_lastModifiedDateTime") {
+	foreach (
+		# Retrieve package modified date.
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+	        WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_lastModifiedDateTime"
+	) {
 		*modifiedDate = *row.META_COLL_ATTR_VALUE;
 	}
 
@@ -558,7 +564,13 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
         # Landingpage URL
 	*landingpageURL = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_landingPageUrl") {
+	foreach (
+		# Retrieve package landingpage URL.
+	        *row in
+	        SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_landingPageUrl"
+	) {
 		*landingpageURL = *row.META_COLL_ATTR_VALUE;
 	}
 
@@ -571,7 +583,13 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 
         # Package DOI
 	*yodaDOI = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_yodaDOI") {
+	foreach (
+		# Retrieve package DOI.
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_yodaDOI"
+	) {
 		*yodaDOI = *row.META_COLL_ATTR_VALUE;
 	}
 
