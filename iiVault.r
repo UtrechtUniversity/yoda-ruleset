@@ -662,6 +662,20 @@ iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
 	}
 	*actorGroupPath = "/*rodsZone/home/*actorGroup";
 
+	# Check if copy request already exists.
+	*requestExists = false;
+	*copyAttr = UUORGMETADATAPREFIX ++ "copy_vault_package";
+	foreach(*row in SELECT COLL_NAME WHERE
+			COLL_NAME = *actorGroupPath AND
+		        META_COLL_ATTR_NAME = *copyAttr) {
+                *requestExists = true;
+	}
+	if (*requestExists) {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'There is a pending copy request for this folder. Please wait until completed.';
+                succeed;
+	}
+
 	# Add request to copy vault package to research area.
         writeLine("serverLog", "iiRequestCopyVaultPackage: Copy *folder to *target requested by *actor.");
         *json_str = "[]";
