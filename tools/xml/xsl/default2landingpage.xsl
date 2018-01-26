@@ -82,12 +82,11 @@
                 <img src="/static/img/logo_footer.svg" />
             </div>
         </footer>
-        </body>
-        </html>
 	<script async="async" defer="defer" src="//maps.googleapis.com/maps/api/js?key=AIzaSyB4FLR7gvdcA590_tNXU-0UKm-l7cgwJ5Y"></script>
 	<script type="text/javascript" src="static/js/jquery-3.2.1.min.js"></script>
 	<script type="text/javascript" src="static/js/main.js"></script>
-	<script>alert('1');</script>
+	</body>
+        </html>
     </xsl:template>
     <xsl:template match="Tag">
         <u>
@@ -227,10 +226,10 @@
         </dd>
     </xsl:template>
 
-    <!--<xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">-->
-        <!--<h3>Data Access</h3>-->
-        <!--<p>The data is open access. Use this link <a><xsl:attribute name="href"><xsl:value-of select="str:encode-uri(/metadata/System/Open_Access_Link,false())"/></xsl:attribute><xsl:value-of select="/metadata/System/Open_Access_Link"/></a> to access this data package.</p>-->
-    <!--</xsl:template>-->
+    <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
+        <h3>Data Access</h3>
+        <p>The data is open access. Use this link <a><xsl:attribute name="href"><xsl:value-of select="str:encode-uri(/metadata/System/Open_Access_Link,false())"/></xsl:attribute><xsl:value-of select="/metadata/System/Open_Access_Link"/></a> to access this data package.</p>
+    </xsl:template>
     <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
         <h3>Data Access</h3>
         <p>The data is restricted. Contact datamanager.</p>
