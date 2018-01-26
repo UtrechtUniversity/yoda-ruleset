@@ -1,10 +1,10 @@
 # \file
 # \brief Rules to support the research area browser
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015 - 2017 Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
-# ---------------- Start of Yoda FrontOffice API ------------------------------------------------------
+# ---------------- Start of Yoda FrontOffice API ----------------
 
 # \brief iiFOCollectionDetails return a json object containing the details of a collection
 # \param[in] path      path of collection (COLL_NAME)
@@ -16,9 +16,8 @@ iiFrontCollectionDetails(*path, *result, *status, *statusInfo) {
 	uuKvp2JSON(*kvp, *result);
 }
 
+#---------------- End of Yoda Front Office API ----------------
 
-
-#----------------- End of Yoda Front Office API --------------------------------------------------------
 
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order			

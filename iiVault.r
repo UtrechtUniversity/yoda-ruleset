@@ -1,21 +1,9 @@
 # \file      iiVault.r
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
-
-#------------------------------ Start of Yoda Front Office wrapper
-# \brief Request a copy action of a vault package to the research area.
-#
-# \param[in] folder               folder to copy from the vault
-# \param[in] target               path of the research area target
-iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
-	iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo);
-}
-
-
-
-#------------------------------ End of Yoda Front Office wrapper
 
 
 # \brief iiDetermineVaultTarget
@@ -254,18 +242,8 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 #
 iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
-	msiCheckAccess(*sourcePath, "read object", *readAccess);
-	if (*readAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to acquire read access to *sourcePath";
-			succeed;
-		} else {
-			writeLine("stdout", "iiCopyObject: Read access to *sourcePath acquired");
-		}
-	}
-
 	*destPath = *buffer.destination;
+
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
 		*sourceLength = strlen(*sourcePath);
@@ -282,14 +260,6 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 		*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
 		if (*error < 0) {
 			*buffer.msg = "Failed to copy *sourcePath to *destPath";
-		}
-	}
-	if (*readAccess != 1) {
-		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
-		if (*error < 0) {
-			*buffer.msg = "Failed to revoke read access to *sourcePath";
-		} else {
-			writeLine("stdout", "iiCopyObject: Read access to *sourcePath revoked");
 		}
 	}
 }
@@ -451,103 +421,6 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
 
 }
 
-
-# \brief Make system metadata accesible conform standard to the front end.
-#
-# \param[in] vaultPackage Package in the vault to retrieve system metadata from
-# \param[out] result
-# \param[out] status
-# \param[out] statusInfo
-#
-iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
-	*status = 'Success';
-	*statusInfo = *folder;
-	*result = "[]";
-	*size = 0;
-
-	# Package size
-        iiFileCount(*vaultPackage, *totalSize, *dircount, *filecount, *modified);
-        *unit = "bytes";
-        if (*totalSize > 10000) {
-                *totalSize = *totalSize / 1000;
-                *unit = "KB";
-        }
-        if (*totalSize > 10000) {
-                *totalSize = *totalSize / 1000;
-                *unit = "MB";
-        }
-        if (*totalSize > 10000) {
-                *totalSize = *totalSize / 1000;
-                *unit = "GB";
-	}
-        *totalSize = floor(*totalSize);
-
-	# Don't count vault package.
-	*dircount = int(*dircount) - 1;
-
-	*packageSizeArr = "[]";
-	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
-	msi_json_arrayops(*packageSizeArr, "*filecount files, *dircount folders, total of *totalSize *unit", "add", *size);
-	msi_json_arrayops(*result, *packageSizeArr, "add", *size);
-
-
-        # Modified date
-	*modifiedDate = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_lastModifiedDateTime") {
-		*modifiedDate = *row.META_COLL_ATTR_VALUE;
-	}
-
-	if (*modifiedDate != "null") {
-	        *splitModifiedDate = split(*modifiedDate, "T");
-		*date = elem(*splitModifiedDate, 0);
-		*timeAndZone = elem(*splitModifiedDate, 1);
-
-		*splitTimeAndZone = split(*timeAndZone, "+");
-		*sign = "+";
-		if (size(*splitTimeAndZone) < 2) {
-		   *splitTimeAndZone = split(*timeAndZone, "-");
-		   *sign = "-";
-		}
-		*time = elem(*splitTimeAndZone, 0);
-		*zone = elem(*splitTimeAndZone, 1);
-
-		*modifiedDateArr = "[]";
-	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
-	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC*sign*zone", "add", *size);
-	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
-	}
-
-        # Landingpage URL
-	*landingpageURL = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_landingPageUrl") {
-		*landingpageURL = *row.META_COLL_ATTR_VALUE;
-	}
-
-	if (*landingpageURL != "null") {
-                *landinpageURLArr = "[]";
-	        msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
-	        msi_json_arrayops(*landinpageURLArr, "<a href=\"*landingpageURL\">*landingpageURL</a>", "add", *size);
-	        msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
-	}
-
-        # Package DOI
-	*yodaDOI = "null";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = "org_publication_yodaDOI") {
-		*yodaDOI = *row.META_COLL_ATTR_VALUE;
-	}
-
-	if (*yodaDOI != "null") {
-	        *packageDOIArr = "[]";
-	        msi_json_arrayops(*packageDOIArr, "Persistent Identifier", "add", *size);
-		if (*landingpageURL != "null") {
-	                msi_json_arrayops(*packageDOIArr, "DOI: <a href=\"*landingpageURL\">*yodaDOI</a>", "add", *size);
-		} else {
-	                msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
-		}
-	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
-	}
-}
-
 # \brief When a license is added to the metadata and it is available in the License collection,
 #        this will copy the text to the package in the vault.
 #
@@ -592,93 +465,204 @@ iiCopyLicenseToVaultPackage(*folder, *target) {
 	}
 }
 
-# \brief Request a copy action of a vault package to the research area.
-#
-# \param[in] folder  	          folder to copy from the vault
-# \param[in] target               path of the research area target
-iiRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
-        # Check whether datapackage folder already present in target folder.
-        uuChopPath(*folder, *parent, *datapackageName);
-
-
-        *newTargetCollection = "*target/*datapackageName";
-
-        if (uuCollectionExists(*newTargetCollection)) {
-
-            *status = 'ErrorCollectionAlreadyExists';
-            *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
-            succeed;
-        }
-
-        #Check origin circumstances
-        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
-
-        if (*stat=='ErrorPathNotExists') {
-            *status = 'FO-ErrorVaultCollectionDoesNotExist';
-            *statusInfo = 'The datapackage does not exist';
-            succeed;
-        }
-
-
-        # Check target circumstances
-        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
-
-        if (*kvpCollDetails.lockCount!='0') {
-                *status = 'FO-ErrorTargetLocked';
-                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
-                succeed;
-        }
-
-        if (*kvpCollDetails.userType=='reader') {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder';
-                succeed;
-        }
-
-
-	# Check if user has read access to vault package.
-	msiCheckAccess(*folder, "read object", *readAccess);
-	if (*readAccess != 1) {
-		*status = "PermissionDenied";
-		*statusInfo = "No read access to vault package.";
-		succeed;
-	}
-
-	# Add request to copy vault package to research area.
-	*copyVaultPackage = UUORGMETADATAPREFIX ++ "copy_vault_package=" ++ *folder;
-	msiString2KeyValPair(*copyVaultPackage, *kvp);
-	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *target, "-C"), *msg);
-	if (*err < 0) {
-		*status = "UNRECOVERABLE";
-		*statusInfo = "*err - *msg";
-		succeed;
-	} else {
-		*status = "SUCCESS";
-		*statusInfo = "";
-		succeed;
-	}
-}
-
-
 # \brief Copy a vault package to the research area.
 #
 # \param[in] folder  folder to copy from the vault
 # \param[in] target  path of the research area target
 #
 iiCopyFolderToResearch(*folder, *target) {
-	writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target")
+        writeLine("stdout", "iiCopyFolderToResearch: Copying *folder to *target.");
 
-	# Determine vault package.
-	*pathElems = split(*folder, "/");
-	*elemSize = size(*pathElems);
+        # Determine target collection group and actor.
+        *pathElems = split(*folder, "/");
+        *elemSize = size(*pathElems);
         *vaultPackage = elem(*pathElems, *elemSize - 1);
 
-	*buffer.source = *folder;
-	*buffer.destination = *target ++ "/" ++ *vaultPackage;
-	uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
-	if (*error != 0) {
-		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
-		writeLine("stdout", "iiCopyObject: *error: *msg");
-		fail;
+        *buffer.source = *folder;
+        *buffer.destination = *target ++ "/" ++ *vaultPackage;
+        uuTreeWalk("forward", *folder, "iiCopyObject", *buffer, *error);
+        if (*error != 0) {
+                msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
+                writeLine("stdout", "iiCopyObject: *error: *msg");
+                fail;
+        }
+}
+
+
+# ---------------- Start of Yoda FrontOffice API ----------------
+
+# \brief Make system metadata accesible conform standard to the front end.
+#
+# \param[in] vaultPackage Package in the vault to retrieve system metadata from
+# \param[out] result
+# \param[out] status
+# \param[out] statusInfo
+#
+iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
+	*status = 'Success';
+	*statusInfo = *vaultPackage;
+	*result = "[]";
+	*size = 0;
+
+	# Package size
+        iiFileCount(*vaultPackage, *totalSize, *dircount, *filecount, *modified);
+        *unit = "bytes";
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
+                *unit = "KB";
+        }
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
+                *unit = "MB";
+        }
+        if (*totalSize > 10000) {
+                *totalSize = *totalSize / 1000;
+                *unit = "GB";
+	}
+        *totalSize = floor(*totalSize);
+
+	# Don't count vault package.
+	*dircount = int(*dircount) - 1;
+
+	*packageSizeArr = "[]";
+	msi_json_arrayops(*packageSizeArr, "Package size", "add", *size);
+	msi_json_arrayops(*packageSizeArr, "*filecount files, *dircount folders, total of *totalSize *unit", "add", *size);
+	msi_json_arrayops(*result, *packageSizeArr, "add", *size);
+
+
+        # Modified date
+	*modifiedDate = "null";
+	foreach (
+		# Retrieve package modified date.
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+	        WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_lastModifiedDateTime"
+	) {
+		*modifiedDate = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*modifiedDate != "null") {
+	        *splitModifiedDate = split(*modifiedDate, "T");
+		*date = elem(*splitModifiedDate, 0);
+		*timeAndZone = elem(*splitModifiedDate, 1);
+
+		*splitTimeAndZone = split(*timeAndZone, "+");
+		*sign = "+";
+		if (size(*splitTimeAndZone) < 2) {
+		   *splitTimeAndZone = split(*timeAndZone, "-");
+		   *sign = "-";
+		}
+		*time = elem(*splitTimeAndZone, 0);
+		*zone = elem(*splitTimeAndZone, 1);
+
+		*modifiedDateArr = "[]";
+	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC*sign*zone", "add", *size);
+	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
+	}
+
+        # Landingpage URL
+	*landingpageURL = "null";
+	foreach (
+		# Retrieve package landingpage URL.
+	        *row in
+	        SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_landingPageUrl"
+	) {
+		*landingpageURL = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*landingpageURL != "null") {
+                *landinpageURLArr = "[]";
+	        msi_json_arrayops(*landinpageURLArr, "Landingpage URL", "add", *size);
+	        msi_json_arrayops(*landinpageURLArr, "<a href=\"*landingpageURL\">*landingpageURL</a>", "add", *size);
+	        msi_json_arrayops(*result, *landinpageURLArr, "add", *size);
+	}
+
+        # Package DOI
+	*yodaDOI = "null";
+	foreach (
+		# Retrieve package DOI.
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_publication_yodaDOI"
+	) {
+		*yodaDOI = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*yodaDOI != "null") {
+	        *packageDOIArr = "[]";
+	        msi_json_arrayops(*packageDOIArr, "Persistent Identifier", "add", *size);
+		if (*landingpageURL != "null") {
+	                msi_json_arrayops(*packageDOIArr, "DOI: <a href=\"*landingpageURL\">*yodaDOI</a>", "add", *size);
+		} else {
+	                msi_json_arrayops(*packageDOIArr, "DOI: *yodaDOI", "add", *size);
+		}
+	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
 	}
 }
+
+# \brief Request a copy action of a vault package to the research area.
+#
+# \param[in] folder  	          folder to copy from the vault
+# \param[in] target               path of the research area target
+iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
+	# Check if target is a research folder.
+	if (*target like regex "/[^/]+/home/research-.*") {
+	} else {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'Please select a folder in the research area.';
+                succeed;
+	}
+
+        # Check whether datapackage folder already present in target folder.
+        uuChopPath(*folder, *parent, *datapackageName);
+        *newTargetCollection = "*target/*datapackageName";
+        if (uuCollectionExists(*newTargetCollection)) {
+                *status = 'ErrorCollectionAlreadyExists';
+                *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
+                succeed;
+        }
+
+        # Check origin circumstances.
+        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
+        if (*stat == 'ErrorPathNotExists') {
+                *status = 'FO-ErrorVaultCollectionDoesNotExist';
+                *statusInfo = 'The datapackage does not exist.';
+                succeed;
+        }
+
+	# Check if user has read access to vault package.
+        if (*kvpCollDetails.researchGroupAccess != "yes") {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'You have insufficient permissions to copy the datapackage.';
+                succeed;
+        }
+
+        # Check target circumstances
+        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
+        if (*kvpCollDetails.lockCount != "0") {
+                *status = 'FO-ErrorTargetLocked';
+                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
+                succeed;
+        }
+
+        # Check if user has write acces to research folder
+        if (*kvpCollDetails.userType != "normal" && *kvpCollDetails.userType != "manager") {
+                *status = 'ErrorTargetPermissions';
+                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder.';
+                succeed;
+        }
+
+	# Add copy action to delayed rule queue.
+	*status = "SUCCESS";
+	*statusInfo = "";
+	delay("<PLUSET>1s</PLUSET>") {
+                iiCopyFolderToResearch(*folder, *target);
+        }
+}
+
+#---------------- End of Yoda Front Office API ----------------

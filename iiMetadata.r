@@ -228,10 +228,10 @@ iiPrepareMetadataForm(*path, *result) {
 				*kvp.hasShadowMetadataXml = "yes";
 				iiDataObjectMetadataKvpList(*shadowMetadataXml, UUORGMETADATAPREFIX, true, *kvpList);
 				foreach(*item in *kvpList) {
-					if (*item.attrName == "vault_ingest") {
+					if (*item.attrName == "cronjob_vault_ingest") {
 						*kvp.vaultIngestStatus = *item.attrValue;
 					}
-					if (*item.attrName == "vault_ingest_info") {
+					if (*item.attrName == "cronjob_vault_ingest_info") {
 						*kvp.vaultIngestStatusInfo = *item.attrValue;
 					}
 				}
@@ -363,7 +363,7 @@ iiCloneMetadataXml(*src, *dst) {
 #
 iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
-		 msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_ingest=Pending", *kvp);
+		 msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_vault_ingest=" ++ CRONJOB_PENDING, *kvp);
 		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d");
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
@@ -655,7 +655,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 
 	# Add publication update status to vault package.
 	# Also used in frontend to check if vault package metadata update is pending.
-	*publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
+	*publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
 	msiString2KeyValPair(*publicationUpdate, *kvp);
 	*err = errormsg(msiAssociateKeyValuePairsToObj(*kvp, *vaultPackagePath, "-C"), *msg);
 	if (*err < 0) {

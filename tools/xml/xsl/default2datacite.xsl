@@ -53,12 +53,13 @@
                     <date dateType="Updated"><xsl:value-of select="System/Last_Modified_Date"/></date>
                 </xsl:if>
                 <xsl:if test="Embargo_End_Date">
-                    <date dateType="Available"><xsl:value-of select="Embargo_End_Date"/></date>
-                </xsl:if>
+                  <xsl:apply-templates select="Embargo_End_Date"/>
+	        </xsl:if>
                 <xsl:if test="Collected">
                     <date dateType="Collected"><xsl:value-of select="Collected/Start_Date" />/<xsl:value-of select="Collected/End_Date"/></date>
                 </xsl:if>
             </dates>
+
             <xsl:apply-templates select="Version"/>
             <xsl:apply-templates select="License"/>
 
@@ -77,13 +78,6 @@
                     <xsl:apply-templates select="geoLocation"/>
                 </geoLocations>
             </xsl:if>
-
-            <!--<xsl:if test="Contributor">-->
-                <!--<contributors>-->
-                    <!--<xsl:apply-templates select="Contributor"/>-->
-                <!--</contributors>-->
-            <!--</xsl:if>-->
-
 
             <xsl:if test="Funding_Reference">
                 <fundingReferences>
@@ -122,6 +116,10 @@
 
     <xsl:template match="Tag">
         <subject subjectScheme="Keyword"><xsl:value-of select="." /></subject>
+    </xsl:template>
+
+    <xsl:template match="Embargo_End_Date">
+        <date dateType="Available"><xsl:value-of select="."/></date>
     </xsl:template>
 
     <xsl:template match="Contributor">

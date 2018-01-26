@@ -3,8 +3,8 @@ ingestChangesIntoVault {
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
 	msiAddConditionToGenQuery("DATA_NAME", "=", IIMETADATAXMLNAME, *GenQInp);
-	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_ingest", *GenQInp);
-	msiAddConditionToGenQuery("META_DATA_ATTR_VALUE", "=", "Pending", *GenQInp);
+	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_vault_ingest", *GenQInp);
+	msiAddConditionToGenQuery("META_DATA_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 
@@ -24,8 +24,8 @@ ingestChangesIntoVault {
 					*statusInfo = "";
 				}
 				if (*status != "Success") {
-					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_ingest=*status%"
-						     ++ UUORGMETADATAPREFIX ++ "vault_ingest_info=*statusInfo", *kvp);
+					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_vault_ingest=CRONJOB_UNRECOVERABLE"
+						     ++ UUORGMETADATAPREFIX ++ "cronjob_vault_ingest_info=*statusInfo", *kvp);
 					*err = errorcode(msiSetKeyValuePairsToObj(*kvp, *metadataXmlPath, "-d"));
 					if (*err < 0) {
 						writeLine("stdout", "iiIngestDatamanagerIntoVault: could not set error status on *metadataXmlPath");
@@ -48,8 +48,8 @@ ingestChangesIntoVault {
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
 	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ2Inp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "publication_update", *GenQ2Inp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", "Pending", *GenQ2Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_publication_update", *GenQ2Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQ2Inp);
 
 	msiExecGenQuery(*GenQ2Inp, *GenQ2Out);
 	msiGetContInxFromGenQueryOut(*GenQ2Out, *ContInxNew);
@@ -66,7 +66,7 @@ ingestChangesIntoVault {
 				} else {
 				        if (*status == "OK") {
                                            msiString2KeyValPair("", *publicationUpdateKvp);
-                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "publication_update=Pending";
+                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
                                            msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
                                            *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
 					}
