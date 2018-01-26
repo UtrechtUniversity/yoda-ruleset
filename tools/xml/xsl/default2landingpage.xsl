@@ -5,7 +5,7 @@
                 extension-element-prefixes="str date"
                 xmlns="http://www.w3.org/1999/xhtml"
                 version="1.0">
-    <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="yes"/>
+  <xsl:output method="html" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="yes"/>
     <xsl:strip-space elements="*"/>
     <xsl:template match="/">
         <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;
@@ -56,11 +56,9 @@
                         </xsl:if>
                     </dl>
                     <h3>Geolocation</h3>
-		    <xsl:if test="geoLocation">	
-		    	<dl class="dl-horizontal">
-				<xsl:apply-templates select="geoLocation"/>
-                    	</dl>
-		    </xsl:if>	
+		    <xsl:if test="geoLocation">
+			<xsl:apply-templates select="geoLocation"/>
+		    </xsl:if>
                     <h3>Administrative</h3>
                     <dl class="dl-horizontal">
                         <xsl:apply-templates select="Collection_Name | Data_Classification | Funding_Reference"/>
@@ -82,9 +80,9 @@
                 <img src="/static/img/logo_footer.svg" />
             </div>
         </footer>
-	<script async="async" defer="defer" src="//maps.googleapis.com/maps/api/js?key=AIzaSyB4FLR7gvdcA590_tNXU-0UKm-l7cgwJ5Y"></script>
-	<script type="text/javascript" src="static/js/jquery-3.2.1.min.js"></script>
-	<script type="text/javascript" src="static/js/main.js"></script>
+	<script type="text/javascript" async="async" defer="defer" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB4FLR7gvdcA590_tNXU-0UKm-l7cgwJ5Y"></script>
+	<script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="/static/js/main.js"></script>
 	</body>
         </html>
     </xsl:template>
@@ -121,25 +119,27 @@
 
     <xsl:template match="geoLocation">
         <xsl:variable name="mapCounter" select="position()-1" />
-	<xsl:variable name="maxMaps" select="4" />
-	<xsl:variable name="maxRest" select="3" />         
- 
-	<xsl:if test="($mapCounter mod $maxMaps) = 0">
-           <xsl:text disable-output-escaping="yes">&lt;div class="row"&gt;</xsl:text>
-	</xsl:if>	
-	<br/>
-        <div class="map-placeholder col-md-3">
-           <div class="map-init google-maps"></div>
-           <input type="text" class="west"  hidden="hidden" value="{westBoundLongitude}" />
-           <input type="text" class="east"  hidden="hidden" value="{eastBoundLongitude}" />
-           <input type="text" class="south" hidden="hidden" value="{southBoundLatitude}" />
-           <input type="text" class="north" hidden="hidden" value="{northBoundLatitude}" />
-        </div>
+        <xsl:variable name="maxMaps" select="4" />
+        <xsl:variable name="maxRest" select="3" />
 
-        <xsl:if test="(($mapCounter mod $maxMaps) = $maxRest) or (position()=last())">
-           <xsl:text disable-output-escaping="yes">&lt;/div&gt;</xsl:text>
+        <xsl:if test="($mapCounter mod $maxMaps) = 0">
+             <xsl:text disable-output-escaping="yes">&lt;div class="row"&gt;</xsl:text>
         </xsl:if>
-    </xsl:template>	
+        <div class="map-placeholder col-md-3">
+	    <div class="map-init google-maps"></div>
+            <input type="text" class="west"  hidden="hidden" value="{westBoundLongitude}" />
+            <input type="text" class="east"  hidden="hidden" value="{eastBoundLongitude}" />
+            <input type="text" class="south" hidden="hidden" value="{southBoundLatitude}" />
+            <input type="text" class="north" hidden="hidden" value="{northBoundLatitude}" />
+        </div>
+        <xsl:if test="(($mapCounter mod $maxMaps) = $maxRest) or (position()=last())">
+            <xsl:text disable-output-escaping="yes">&lt;/div&gt;</xsl:text>
+        </xsl:if>
+        <xsl:if test="(($mapCounter mod $maxMaps) = $maxRest) and (position()!=last())">
+            <br />
+        </xsl:if>
+    </xsl:template>
+
     <xsl:template match="Collection_Name | Data_Classification">
         <dt>
             <xsl:value-of select="translate(local-name(),'_',' ')"/>
