@@ -130,10 +130,10 @@
 	<br/>
         <div class="map-placeholder col-md-3">
            <div class="map-init google-maps"></div>
-           <input type="text" class="west"  value="{westBoundLongitude}" />
-           <input type="text" class="east"  value="{eastBoundLongitude}" />
-           <input type="text" class="south" value="{southBoundLatitude}" />
-           <input type="text" class="north" value="{northBoundLatitude}" />
+           <input type="text" class="west"  hidden="hidden" value="{westBoundLongitude}" />
+           <input type="text" class="east"  hidden="hidden" value="{eastBoundLongitude}" />
+           <input type="text" class="south" hidden="hidden" value="{southBoundLatitude}" />
+           <input type="text" class="north" hidden="hidden" value="{northBoundLatitude}" />
         </div>
 
         <xsl:if test="(($mapCounter mod $maxMaps) = $maxRest) or (position()=last())">
