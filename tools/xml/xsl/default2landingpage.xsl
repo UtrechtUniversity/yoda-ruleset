@@ -126,8 +126,7 @@
 	<xsl:variable name="maxRest" select="3" />         
  
 	<xsl:if test="($mapCounter mod $maxMaps) = 0">
-		<!-- <div class="row">	-->
-		<p>START NEW ROW</p>
+           <xsl:text disable-output-escaping="yes">&lt;div class="row"&gt;</xsl:text>
 	</xsl:if>	
 	<br/>
         <div class="map-placeholder col-md-3">
@@ -139,8 +138,7 @@
         </div>
 
         <xsl:if test="(($mapCounter mod $maxMaps) = $maxRest) or (position()=last())">
-        	<p>END OF ROW </p>
-		<!-- </div> -->
+           <xsl:text disable-output-escaping="yes">&lt;/div&gt;</xsl:text>
         </xsl:if>
     </xsl:template>	
     <xsl:template match="Collection_Name | Data_Classification">
