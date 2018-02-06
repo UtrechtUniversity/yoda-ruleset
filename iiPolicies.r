@@ -187,7 +187,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 #         the organisational metadata when a folder is locked.
 #
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*"
+	if (*attributeName like UUUSERMETADATAPREFIX ++ "*"
 	    && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
@@ -202,7 +202,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        else if (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -231,7 +231,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -260,7 +260,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 #        be the same for locked folders and folder transitions as the PEP above.
 #
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+	if (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -274,7 +274,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+        else if (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -298,7 +298,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -325,7 +325,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 # \brief  This PEP is called after a AVU is added (option = 'add'), set (option = 'set') or removed (option = 'rm') in the research area or the vault. Post conditions
 #         defined in iiFolderStatusTransitions.r and iiVaultTransitions.r are called here.
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        if (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		if (*option == "rm") {
 		       	*newStatus = FOLDER;
 	       	} else {
@@ -334,7 +334,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *attributeValue);
 	}
 }
@@ -342,12 +342,12 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 # \brief This PEP is called after an AVU is modified (option = 'mod') in the research area or the vault. Post conditions are called
 #        in iiFolderStatusTransitions.r and iiVaultTransitions.r
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        if (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
