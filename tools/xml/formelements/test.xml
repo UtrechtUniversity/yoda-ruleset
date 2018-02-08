@@ -6,6 +6,11 @@
       <help>The title of your data package</help>
       <mandatory>true</mandatory>
     </Title>
+    <geoLocation geoLocation='openStreetMap'>
+	<label>Geo Location</label>
+	<help>Prsent the geoLocation</help>
+	<mandatory>true</mandatory>
+    </geoLocation>
     <Description>
       <label>Description</label>
       <help>A description of your data package</help>
@@ -25,18 +30,6 @@
       <help>The language the data package with iso639-1 two-letter code (e.g. en, nl, fr)</help>
       <default>en - English</default>
     </Language>
-    <Collected class="compound">
-      <label>Collection process</label>
-      <help>Indicate when collecting the data for this data package started and ended</help>
-      <Start_Date>
-        <label>Start Date</label>
-        <help>Indicate when you've started collecting the data for this data package (YYYY-MM-DD)</help>
-      </Start_Date>
-      <End_Date>
-        <label>End Date</label>
-        <help>Indicate when you've finished collecting the data for this data package (YYYY-MM-DD)</help>
-      </End_Date>
-    </Collected>
     <Covered_Geolocation_Place>
       <label>Location(s) covered</label>
       <help>Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)</help>
@@ -68,6 +61,10 @@
           <help>Title of the related data package</help>
           <mandatory>true</mandatory>
         </Title>
+    	<geoSub geoLocation='openStreetMap'>
+        	<label>Geo Location</label>
+        	<help>Prsent the geoLocation</help>
+	</geoSub>
         <Persistent_Identifier class="compound">
 	  <label>Persistent Identifier</label>	
           <Identifier_Scheme>
@@ -93,8 +90,8 @@
       <label>Retention Information</label>
       <help>Provide the reason when you deviate from the minimum of 10 years retention of the data package</help>
     </Retention_Information>
-    <Embargo_End_Date>
-      <label>Embargo End Date</label>
+    <Embargo_End_Date flexdate='true'>
+      <label>FLEX End Date</label>
       <help>If there is an embargo on the data package; when will it end?</help>
     </Embargo_End_Date>
     <Data_Classification>
@@ -128,6 +125,10 @@
         <mandatory>true</mandatory>
       </Name>
       <Properties>
+	<TheDate flexdate="true">
+		<label>The date</label>
+		<help>The date help!</help>
+	</TheDate>
        <Affiliation>
           <label>Affiliation</label>
           <help>The organizational or institutional affiliation of the creator</help>
@@ -185,7 +186,7 @@
     <Data_Access_Restriction>
       <label>Data Package Access</label>
       <help>Once archived, how is your data package accessible to third parties?</help>
-      <default>Restricted - available upon request</default>
+      <default>Open - freely retrievable</default>
       <mandatory>true</mandatory>
     </Data_Access_Restriction>
   </Group>
