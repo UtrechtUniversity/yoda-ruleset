@@ -1,7 +1,7 @@
 # \file      uuGroupPolicies.r
 # \brief     Sudo microservices policy implementations for group manager.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # This file contains Group Manager implementations of pre- and postproc rules
@@ -395,7 +395,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			msiSudoGroupAdd(*roGroupName, "", "", "", "");
 
 			# Give the RO group read access.
-			msiSudoObjAclSet(1, "read", *roGroupName, "/$rodsZoneClient/home/*groupName", "");
+			msiSudoObjAclSet("recursive", "read", *roGroupName, "/$rodsZoneClient/home/*groupName", "");
 
 			# Create vault group.
 
@@ -425,7 +425,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 				if (*catGroup like regex "(intake|research)-.*") {
 
 					*aclKv."forGroup" = *catGroup;
-					msiSudoObjAclSet(1, "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
+					msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
 
 					uuChop(*catGroup, *_, *catGroupBase, "-", true);
 					*vaultGroupName = "vault-*catGroupBase";
@@ -433,7 +433,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 					uuGroupExists(*vaultGroupName, *vaultExists);
 					if (*vaultExists) {
 						*aclKv."forGroup" = *vaultGroupName;
-						msiSudoObjAclSet(1, "read", *groupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+						msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
 					}
 				}
 			}
@@ -458,7 +458,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 	*aclKv."forGroup" = *groupName;
 
 	# Enable inheritance for the new group.
-	msiSudoObjAclSet(1, "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+	msiSudoObjAclSet("recursive", "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
@@ -481,7 +481,7 @@ uuPostSudoGroupMemberRemove(*groupName, *userName, *policyKv) {
 	# The manager attribute only grants a user group manager rights if they are
 	# also a member of the group. As such it is not a critical error if this
 	# call fails.
-	errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *userName, "", ""));
+	errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *userName, "", ""));
 }
 
 #uuPostSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) { }

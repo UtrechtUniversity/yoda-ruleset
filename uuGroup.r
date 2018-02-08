@@ -884,7 +884,7 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 		}
 
 	} else if (*oldRole == "manager") {
-		*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *fullName, "", ""));
+		*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *fullName, "", ""));
 		if (*status != 0) {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
 			if (*allowed == 0) {
