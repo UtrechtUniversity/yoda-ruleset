@@ -3,7 +3,7 @@
 #            All processing or policy checks are defined in separate rules outside this file.
 #            The arguments and session variables passed to the PEP's are defined in iRODS itself.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved
+# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
 # \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
