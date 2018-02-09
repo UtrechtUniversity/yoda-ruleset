@@ -12,8 +12,8 @@
 #         between the XSD and formelements
 #
 acPostProcForPut {
-	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		# Check for locks in the research area
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -26,19 +26,17 @@ acPostProcForPut {
 		}
 	}
 
-	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
-		# Check new XSD against a schema for xsd validity. Rename the file when invalid
-
+	else if ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+		# Check new XSD against a schema for xsd validity. Rename the file when invalid.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
-	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+	else if ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
 		# Check  for invalid formelements XML files and rename them.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
-
 }
 
 # \brief This policy is fired before a collection is deleted.
@@ -46,8 +44,8 @@ acPostProcForPut {
 #        is locked
 #
 acPreprocForRmColl {
-	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		# Check for locks in the research area
+	if ($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -58,7 +56,6 @@ acPreprocForRmColl {
 			cut;
 			msiOprDisallowed;
 		}
-
 	}
 }
 
@@ -67,8 +64,8 @@ acPreprocForRmColl {
 #         is locked. The parent collection is not checked
 #
 acDataDeletePolicy {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -86,18 +83,18 @@ acDataDeletePolicy {
 #         a new collection if the parent collection is locked
 #
 acPreprocForCollCreate {
-# TODO fix for iRODS 4.2 compatibility
-#	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-#		uuGetUserType(uuClientFullName, *userType);
-#		if (*userType == "rodsadmin") {
-#			succeed;
-#		}
-#		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
-#		iiCanCollCreate($collName, *allowed, *reason);
-#		if (!*allowed) {
-#			cut;
-#		}
-#	}
+	if ($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
+		iiCanCollCreate($collName, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+		}
+	}
 }
 
 # \brief  This policy is fired before a data object is renamed or moved
@@ -106,7 +103,7 @@ acPreprocForCollCreate {
 #         collection of the data object after the rename is locked
 #
 acPreProcForObjRename(*src, *dst) {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -139,28 +136,26 @@ acPreProcForObjRename(*src, *dst) {
 #         created in the file, but they cannot be saved.
 #
 acPreprocForDataObjOpen {
-# TODO fix for iRODS 4.2 compatibility
-#	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-#
-#		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
-#		uuGetUserType(uuClientFullName, *userType);
-#		if (*userType == "rodsadmin") {
-#			succeed;
-#		}
-#
-#		iiCanDataObjWrite($objPath, *allowed, *reason);
-#		if (!*allowed) {
-#			cut;
-#			msiOprDisallowed;
-#		}
-#	}
+	if ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
+		uuGetUserType(uuClientFullName, *userType);
+		if (*userType == "rodsadmin") {
+			succeed;
+		}
+
+		iiCanDataObjWrite($objPath, *allowed, *reason);
+		if (!*allowed) {
+			cut;
+			msiOprDisallowed;
+		}
+	}
 }
 
 # \brief  This policy is fired when AVU meta data is copied from one object to another.
 #         Copying of metadata is prohibited by this policy if the target object is locked
 #
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	on (
+	if (
 	(*SourceItemType == "-C" || *SourceItemType == "-d")
 	&& (*SourceItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*"
 	|| *TargetItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*")
@@ -376,7 +371,7 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 # \brief This PEP is called whenever a data object or collection is renamed or moved. Will enforce the ACL's of a research group
 #        when data is moved from outside of the research group.
 acPostProcForObjRename(*src, *dst) {
-	on(*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+	if (*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		# enforce research group ACL's on folder moved from outside of research group
 		*srcPathElems = split(*src, "/");
 		*dstPathElems = split(*dst, "/");		
@@ -385,7 +380,6 @@ acPostProcForObjRename(*src, *dst) {
 			uuEnforceGroupAcl(*dst);
 		}
 	}
-
 }
 
 # \brief This policy is created to support the moving, renaming
