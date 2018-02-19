@@ -557,7 +557,7 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 		*zone = elem(*splitTimeAndZone, 1);
 
 		*modifiedDateArr = "[]";
-	        msi_json_arrayops(*modifiedDateArr, "Modifed date", "add", *size);
+	        msi_json_arrayops(*modifiedDateArr, "Modified date", "add", *size);
 	        msi_json_arrayops(*modifiedDateArr, "*date *time UTC*sign*zone", "add", *size);
 	        msi_json_arrayops(*result, *modifiedDateArr, "add", *size);
 	}
