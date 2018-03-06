@@ -605,7 +605,7 @@ iiProcessPublication(*vaultPackage, *status) {
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiCheckDOIAvailability");
 		*err = errorcode(iiCheckDOIAvailability(*publicationConfig, *publicationState));
 		if (*err < 0) {
-			*publicationStatus.status = "Retry";
+			*publicationState.status = "Retry";
 		}
 		if (*publicationState.status == "Retry") {
 			*status = *publicationState.status;
