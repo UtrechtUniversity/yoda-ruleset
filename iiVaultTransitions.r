@@ -280,7 +280,7 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 # \param[out] statusInfo  Informative message when action was not successful
 #
 iiVaultDepublish(*folder, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, REQUEST_DEPUBLICATION, *status, *statusInfo);
 }
 
 
