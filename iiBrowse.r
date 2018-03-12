@@ -196,7 +196,7 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == REQUEST_DEPUBLICATION ||
+		    *vaultStatus == REQUESTED_FOR_DEPUBLICATION ||
 		    *vaultStatus == DEPUBLISHED || *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
