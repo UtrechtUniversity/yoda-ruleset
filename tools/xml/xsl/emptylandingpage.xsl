@@ -5,7 +5,7 @@
  extension-element-prefixes="str date"
  xmlns="http://www.w3.org/1999/xhtml"
  version="1.0">
-  <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="yes"/>
+  <xsl:output method="html" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="yes"/>
   <xsl:strip-space elements="*"/>
   <xsl:template match="/">
     <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;
@@ -43,7 +43,7 @@
           <div class="row">
             <div class="col-md-10">
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="Depublished"/>
+		<dd>This data package (<xsl:value-of select="./System/Persistent_Identifier_Datapackage/Identifier"/>) has been made temporarily unavailable.</dd>
               </dl>
             </div>
           </div>
@@ -55,8 +55,5 @@
 	</footer>
       </body>
     </html>
-  </xsl:template>
-  <xsl:template match="Depublished">
-    <dd>This data package (<xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/>) has been made temporarily unavailable.</dd>
   </xsl:template>
 </xsl:stylesheet>
