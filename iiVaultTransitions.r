@@ -249,7 +249,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		iiAddActionLogRecord(*actionActor, *folder, "depublished");
+		iiAddActionLogRecord("system", *folder, "depublished");
 	}
 	on (true) {
 		nop;

@@ -814,6 +814,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 	if (*publicationState.status == "OK") {
 		iiSetUpdatePublicationState(*vaultPackage, *status);
 		iiGetPublicationState(*vaultPackage, *publicationState);
+		*publicationState.accessRestriction = "Closed";
 	}
 	*status = *publicationState.status;
 	if (*status == "Unrecoverable" || *status == "Processing") {
@@ -919,8 +920,6 @@ iiProcessDepublication(*vaultPackage, *status) {
 	*publicationState.status = "OK";
 	iiSavePublicationState(*vaultPackage, *publicationState);
 	*status = *publicationState.status;
-
-	iiAddActionLogRecord("system", *vaultPackage, "depublished");
 }
 
 # \brief Routine to set publication state of vault package pending to update.
