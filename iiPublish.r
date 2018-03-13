@@ -814,6 +814,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 	if (*publicationState.status == "OK") {
 		iiSetUpdatePublicationState(*vaultPackage, *status);
 		iiGetPublicationState(*vaultPackage, *publicationState);
+		*publicationState.accessRestriction = "Closed";
 	}
 	*status = *publicationState.status;
 	if (*status == "Unrecoverable" || *status == "Processing") {
