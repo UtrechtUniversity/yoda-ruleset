@@ -171,7 +171,7 @@ createXmlXsdCollections {
 			writeLine("stdout", "Present: *xslemptylandingpage");
 		}
 	} else {
-		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/xsl/emptylandingpage.xsl", *status);
+		msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/xsl/emptylandingpage.xsl", *status);
 		writeLine("stdout", "Installed: *xslemptylandingpage");
         }
 
