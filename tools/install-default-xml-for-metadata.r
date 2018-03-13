@@ -162,6 +162,19 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsllandingpage");
         }
 
+        *xslemptylandingpage = *xslcoll ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
+        if (uuFileExists(*xslemptylandingpage)) {
+		if (*update == 1) {
+			msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/xsl/emptylandingpage.xsl++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xslemptylandingpage");
+		} else {
+			writeLine("stdout", "Present: *xslemptylandingpage");
+		}
+	} else {
+		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/xsl/emptylandingpage.xsl", *status);
+		writeLine("stdout", "Installed: *xslemptylandingpage");
+        }
+
 }
 
 input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="ilab", *update=0
