@@ -133,6 +133,33 @@ processVaultActions {
 		}
 	}
 
+	# Scan for vault packages for which depublication is requested.
+	*ContInxOld = 1;
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ3Inp);
+	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ3Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_status", *GenQ3Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", REQUESTED_FOR_DEPUBLICATION, *GenQ3Inp);
+
+	msiExecGenQuery(*GenQ3Inp, *GenQ3Out);
+	msiGetContInxFromGenQueryOut(*GenQ3Out, *ContInxNew);
+
+	while(*ContInxOld > 0) {
+		foreach(*row in *GenQ3Out) {
+			*collName = *row.COLL_NAME;
+
+			*err = errorcode(iiProcessDepublication(*collName, *status));
+			if (*err < 0) {
+				writeLine("stdout", "iiProcessDepublication *collName returned errorcode *err");
+			} else {
+				writeLine("stdout", "iiProcessDepublication *collName returned with status: *status");
+			}
+		}
+
+		*ContInxOld = *ContInxNew;
+		if(*ContInxOld > 0) {
+			msiGetMoreRows(*GenQ3Inp, *GenQ3Out, *ContInxNew);
+		}
+	}
 }
 input null
 output ruleExecOut

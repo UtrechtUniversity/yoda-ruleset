@@ -99,6 +99,43 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 
 }
 
+# \brief Overwrite combi metadata with system-only metadata.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiGenerateSystemXml(*publicationConfig, *publicationState) {
+	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
+	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
+
+	*vaultPackage = *publicationState.vaultPackage;
+	*randomId = *publicationState.randomId;
+	*yodaDOI = *publicationState.yodaDOI;
+        *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
+
+	msiGetIcatTime(*now, "unix");
+	*publicationDate = uuiso8601date(*now);
+	*combiXmlPath = "*tempColl/*randomId-combi.xml";
+	*systemMetadata =
+	   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" ++
+	   "<metadata>\n" ++
+	   "  <System>\n" ++
+	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
+	   "    <Persistent_Identifier_Datapackage>\n" ++
+	   "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
+	   "       <Identifier>*yodaDOI</Identifier>\n" ++
+	   "    </Persistent_Identifier_Datapackage>\n" ++
+	   "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
+           "  </System>\n" ++
+           "</metadata>";
+
+	msiDataObjOpen("objPath=*combiXmlPath++++openFlags=O_RDWRO_TRUNC", *fd);
+	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
+	msiDataObjClose(*fd, *status);
+	#DEBUG writeLine("serverLog", "iiGenerateSystemXml: generated *combiXmlPath");
+	*publicationState.combiXmlPath = *combiXmlPath;
+}
+
 # \brief Determine the time of last modification as a datetime with UTC offset.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -167,6 +204,28 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 
 }
 
+# \brief Remove metadata XML from DataCite.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
+	*yodaDOI = *publicationState.yodaDOI;
+	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata/*yodaDOI";
+	msiRemoveDataCiteMetadata(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *httpCode);
+	if (*httpCode == "200") {
+		*publicationState.dataCiteMetadataPosted = "yes";
+		succeed;
+	} else if (*httpCode == "404") {
+		# invalid DOI
+		*publicationState.status = "Unrecoverable";
+		writeLine("serverLog", "iiRemoveMetadataFromDataCite: 404 Not Found - Invalid DOI");
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500") {
+		*publicationState.status = "Retry";
+		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Could be retried later");
+	}
+}
+
 # \brief Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -217,7 +276,8 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
-iiGenerateLandingPage(*publicationConfig, *publicationState) {
+iiGenerateLandingPage(*publicationConfig, *publicationState, *xsltScript)
+{
 	*combiXmlPath = *publicationState.combiXmlPath;
 	uuChopPath(*combiXmlPath, *tempColl, *_);
 	*randomId = *publicationState.randomId;
@@ -235,7 +295,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState) {
 	}
 
 	if (*landingPageXslPath == "") {
-		*landingPageXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
+		*landingPageXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ *xsltScript;
 	}
 	*err = errorcode(msiXsltApply(*landingPageXslPath, *combiXmlPath, *buf));
 	if (*err < 0) {
@@ -629,7 +689,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
-		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState));
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IILANDINGPAGEXSLDEFAULTNAME));
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPage");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
@@ -719,6 +779,150 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 }
 
+
+# \brief Process a depublication with sanity checks at every step.
+#
+# \param[in] vaultPackage       path to package in the vault to depublish
+# \param[out] status		status of the depublication
+#
+iiProcessDepublication(*vaultPackage, *status) {
+	*status = "Unknown";
+
+	# Check preconditions
+	iiVaultStatus(*vaultPackage, *vaultStatus);
+	if (*vaultStatus != REQUESTED_FOR_DEPUBLICATION) {
+		*status = "NotAllowed";
+		succeed;
+	}
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		*status = "NotAllowed" ;
+		succeed;
+	}
+
+	# Load configuration
+	*err = errorcode(iiGetPublicationConfig(*publicationConfig));
+	if (*err < 0) {
+		*status = "Retry";
+		succeed;
+	}
+
+	# Load state
+	iiGetPublicationState(*vaultPackage, *publicationState);
+	# Reset state on first call
+	if (*publicationState.status == "OK") {
+		iiSetUpdatePublicationState(*vaultPackage, *status);
+		iiGetPublicationState(*vaultPackage, *publicationState);
+	}
+	*status = *publicationState.status;
+	if (*status == "Unrecoverable" || *status == "Processing") {
+		succeed;
+	} else if (*status == "Unknown" || *status == "Retry") {
+		*status = "Processing";
+		*publicationState.status = "Processing";
+	}
+
+
+	# Determine last modification time. Always run, no matter if retry.
+	iiGetLastModifiedDateTime(*publicationState);
+
+	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+		# Generate "Combi" XML consisting of only system metadata
+
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiGenerateSystemXml");
+		*err = errorcode(iiGenerateSystemXml(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
+		# Remove metadata from DataCite
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiRemoveMetadataFromDataCite");
+		*err = errorcode(iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	# Create landing page
+	if (!iiHasKey(*publicationState, "landingPagePath")) {
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IIEMPTYLANDINGPAGEXSLNAME));
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiGenerateLandingPage");
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if(!iiHasKey(*publicationState, "landingPageUploaded")) {
+		# Use secure copy to push landing page to the public host
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiCopyLandingPage2PublicHost");
+		*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if(!iiHasKey(*publicationState, "oaiUploaded")) {
+		# Use secure copy to push combi XML to MOAI server
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiCopyMetadataToMOAI");
+		*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "anonymousAccess")) {
+		# Set access restriction for vault package.
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiSetAccessRestriction");
+		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
+		if (*err < 0) {
+			publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ DEPUBLISHED, *vaultStatusKvp);
+	msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
+	writeLine("serverLog", "iiProcessDepublication: All steps for depublication completed");
+	# The depublication was a success;
+	*publicationState.status = "OK";
+	iiSavePublicationState(*vaultPackage, *publicationState);
+	*status = *publicationState.status;
+
+	iiAddActionLogRecord("system", *vaultPackage, "depublished");
+}
+
 # \brief Routine to set publication state of vault package pending to update.
 #
 # \param[in]  vaultPackage   path to package in the vault to update
@@ -729,7 +933,8 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
-	if (*vaultStatus != PUBLISHED) {
+	if (*vaultStatus != PUBLISHED &&
+	    *vaultStatus != REQUESTED_FOR_DEPUBLICATION) {
 		*status = "NotAllowed";
 		succeed;
 	}

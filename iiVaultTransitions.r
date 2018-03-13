@@ -70,11 +70,17 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	uuGetUserType(uuClientFullName, *userType);
-	if (*newVaultStatus == PUBLISHED && *userType != "rodsadmin") {
-		*status = "PermissionDenied";
-		*statusInfo = "Vault status request for published can only be requested by a rodsadmin.";
-		succeed;
-        }
+	if (*userType != "rodsadmin") {
+		if (*newVaultStatus == PUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to published can only be requested by a rodsadmin.";
+			succeed;
+		} else if (*newVaultStatus == DEPUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to depublished can only be requested by a rodsadmin.";
+			succeed;
+		}
+	}
 
 	# Determine vault group and actor.
 	*pathElems = split(*folder, "/");
@@ -104,7 +110,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	# Check if vault package is currently pending for status transition.
 	# Except for status transition to PUBLISHED, becuase it is requested
 	# by the system before previous pending transition is removed.
-	if (*newVaultStatus != PUBLISHED) {
+	if (*newVaultStatus != PUBLISHED && *newVaultStatus != DEPUBLISHED) {
 		*pending = false;
 		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
@@ -187,9 +193,11 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
                 succeed;
         }
 
-	# Run publish process if newFolderStatus is PUBLISHED
+	# Run processing if newFolderStatus is PUBLISHED or DEPUBLISHED
 	if (*newFolderStatus == PUBLISHED) {
 		iiProcessPublication(*folder);
+	} else if (*newFolderStatus == DEPUBLISHED) {
+		iiProcessDepublication(*folder);
 	}
 
 	# Set new vault status.
@@ -234,6 +242,10 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
+	}
+	on (*newVaultStatus == REQUESTED_FOR_DEPUBLICATION) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "requested for depublication");
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
