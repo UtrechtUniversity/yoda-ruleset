@@ -104,7 +104,7 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
-iiGenerateSystemXml(*publicationCondig, *publicationState) {
+iiGenerateSystemXml(*publicationConfig, *publicationState) {
 	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
 	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
 
