@@ -920,8 +920,6 @@ iiProcessDepublication(*vaultPackage, *status) {
 	*publicationState.status = "OK";
 	iiSavePublicationState(*vaultPackage, *publicationState);
 	*status = *publicationState.status;
-
-	iiAddActionLogRecord("system", *vaultPackage, "depublished");
 }
 
 # \brief Routine to set publication state of vault package pending to update.
