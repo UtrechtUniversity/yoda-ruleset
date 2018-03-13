@@ -147,11 +147,14 @@ processVaultActions {
 		foreach(*row in *GenQ3Out) {
 			*collName = *row.COLL_NAME;
 
-			*err = errorcode(iiProcessDepublication(*collName, *status));
-			if (*err < 0) {
-				writeLine("stdout", "iiProcessDepublication *collName returned errorcode *err");
-			} else {
-				writeLine("stdout", "iiProcessDepublication *collName returned with status: *status");
+			# Check if this really is a vault package
+			if (*collName like regex "/[^/]+/home/vault-.*") {
+				*err = errorcode(iiProcessDepublication(*collName, *status));
+				if (*err < 0) {
+					writeLine("stdout", "iiProcessDepublication *collName returned errorcode *err");
+				} else {
+					writeLine("stdout", "iiProcessDepublication *collName returned with status: *status");
+				}
 			}
 		}
 

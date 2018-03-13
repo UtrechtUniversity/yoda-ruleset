@@ -126,8 +126,8 @@ iiGenerateSystemXml(*publicationConfig, *publicationState) {
 	   "       <Identifier>*yodaDOI</Identifier>\n" ++
 	   "    </Persistent_Identifier_Datapackage>\n" ++
 	   "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
-           "  </System>\n" ++
-           "</metadata>";
+	   "  </System>\n" ++
+	   "</metadata>";
 
 	msiDataObjOpen("objPath=*combiXmlPath++++openFlags=O_RDWRO_TRUNC", *fd);
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
