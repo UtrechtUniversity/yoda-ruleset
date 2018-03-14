@@ -40,13 +40,7 @@
 	  </div>
 	</nav>
         <div class="container">
-          <div class="row">
-            <div class="col-md-10">
-              <dl class="dl-horizontal">
-		<dd>This data package (<xsl:value-of select="./System/Persistent_Identifier_Datapackage/Identifier"/>) has been made temporarily unavailable.</dd>
-              </dl>
-            </div>
-          </div>
+	  <p>This data package (<xsl:value-of select="./System/Persistent_Identifier_Datapackage/Identifier"/>) has been made temporarily unavailable.</p>
         </div>
 	<footer class="footer">
 	  <div class="container">
