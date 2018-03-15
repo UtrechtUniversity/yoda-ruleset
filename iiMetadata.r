@@ -182,7 +182,7 @@ iiPrepareMetadataForm(*path, *result) {
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == REQUESTED_FOR_DEPUBLICATION ||
+		    *vaultStatus == PENDING_DEPUBLICATION ||
 		    *vaultStatus == DEPUBLISHED || *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 		} else {
