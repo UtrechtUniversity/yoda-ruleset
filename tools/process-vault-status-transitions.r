@@ -138,7 +138,7 @@ processVaultActions {
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ3Inp);
 	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ3Inp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_status", *GenQ3Inp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", REQUESTED_FOR_DEPUBLICATION, *GenQ3Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", PENDING_DEPUBLICATION, *GenQ3Inp);
 
 	msiExecGenQuery(*GenQ3Inp, *GenQ3Out);
 	msiGetContInxFromGenQueryOut(*GenQ3Out, *ContInxNew);

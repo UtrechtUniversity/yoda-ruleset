@@ -790,7 +790,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
-	if (*vaultStatus != REQUESTED_FOR_DEPUBLICATION) {
+	if (*vaultStatus != PENDING_DEPUBLICATION) {
 		*status = "NotAllowed";
 		succeed;
 	}
@@ -933,7 +933,7 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
 	if (*vaultStatus != PUBLISHED &&
-	    *vaultStatus != REQUESTED_FOR_DEPUBLICATION) {
+	    *vaultStatus != PENDING_DEPUBLICATION) {
 		*status = "NotAllowed";
 		succeed;
 	}

@@ -243,7 +243,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
 	}
-	on (*newVaultStatus == REQUESTED_FOR_DEPUBLICATION) {
+	on (*newVaultStatus == PENDING_DEPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "requested for depublication");
 	}
@@ -292,7 +292,7 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 # \param[out] statusInfo  Informative message when action was not successful
 #
 iiVaultDepublish(*folder, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, REQUESTED_FOR_DEPUBLICATION, *status, *statusInfo);
+	iiVaultRequestStatusTransition(*folder, PENDING_DEPUBLICATION, *status, *statusInfo);
 }
 
 
