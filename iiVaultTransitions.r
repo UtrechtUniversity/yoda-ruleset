@@ -295,6 +295,16 @@ iiVaultDepublish(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, PENDING_DEPUBLICATION, *status, *statusInfo);
 }
 
+# \brief Republish a folder in the vault
+#
+# \param[in]  folder      Path of folder in vault to republish
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Informative message when action was not successful
+#
+iiVaultRepublish(*folder, *status, *statusInfo) {
+	iiVaultRequestStatusTransition(*folder, PENDING_REPUBLICATION, *status, *statusInfo);
+}
+
 
 # \brief Get the terms and agreements as text to be accepted by researcher
 #
