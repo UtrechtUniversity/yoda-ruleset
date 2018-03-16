@@ -70,11 +70,21 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	uuGetUserType(uuClientFullName, *userType);
-	if (*newVaultStatus == PUBLISHED && *userType != "rodsadmin") {
-		*status = "PermissionDenied";
-		*statusInfo = "Vault status request for published can only be requested by a rodsadmin.";
-		succeed;
-        }
+	if (*userType != "rodsadmin") {
+		if (*newVaultStatus == PUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to published can only be requested by a rodsadmin.";
+			succeed;
+		} else if (*newVaultStatus == DEPUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to depublished can only be requested by a rodsadmin.";
+			succeed;
+		} else if (*newVaultStatus == REPUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to republished can only be requested by a rodsadmin.";
+			succeed;
+		}
+	}
 
 	# Determine vault group and actor.
 	*pathElems = split(*folder, "/");
@@ -102,9 +112,11 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	}
 
 	# Check if vault package is currently pending for status transition.
-	# Except for status transition to PUBLISHED, becuase it is requested
-	# by the system before previous pending transition is removed.
-	if (*newVaultStatus != PUBLISHED) {
+	# Except for status transition to PUBLISHED/DEPUBLISHED/REPUBLISHED,
+	# because it is requested by the system before previous pending
+	# transition is removed.
+	if (*newVaultStatus != PUBLISHED && *newVaultStatus != DEPUBLISHED &&
+	    *newVaultStatus != REPUBLISHED) {
 		*pending = false;
 		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
@@ -187,9 +199,13 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
                 succeed;
         }
 
-	# Run publish process if newFolderStatus is PUBLISHED
+	# Run processing if newFolderStatus is PUBLISHED, DEPUBLISHED or REPUBLISHED
 	if (*newFolderStatus == PUBLISHED) {
 		iiProcessPublication(*folder);
+	} else if (*newFolderStatus == DEPUBLISHED) {
+		iiProcessDepublication(*folder);
+	} else if (*newFolderStatus == REPUBLISHED) {
+		iiProcessRepublication(*folder);
 	}
 
 	# Set new vault status.
@@ -235,9 +251,21 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
 	}
+	on (*newVaultStatus == PENDING_DEPUBLICATION) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "pending depublication");
+	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		iiAddActionLogRecord(*actionActor, *folder, "depublished");
+		iiAddActionLogRecord("system", *folder, "depublished");
+	}
+	on (*newVaultStatus == PENDING_REPUBLICATION) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "pending republication");
+	}
+	on (*newVaultStatus == REPUBLISHED) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord("system", *folder, "republished");
 	}
 	on (true) {
 		nop;
@@ -279,8 +307,18 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Informative message when action was not successful
 #
-iiVaultDepublish(*folder, *confirmationVersion, *status, *statusInfo) {
-	iiVaultRequestStatusTransition(*folder, DEPUBLISHED, *status, *statusInfo);
+iiVaultDepublish(*folder, *status, *statusInfo) {
+	iiVaultRequestStatusTransition(*folder, PENDING_DEPUBLICATION, *status, *statusInfo);
+}
+
+# \brief Republish a folder in the vault
+#
+# \param[in]  folder      Path of folder in vault to republish
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Informative message when action was not successful
+#
+iiVaultRepublish(*folder, *status, *statusInfo) {
+	iiVaultRequestStatusTransition(*folder, PENDING_REPUBLICATION, *status, *statusInfo);
 }
 
 

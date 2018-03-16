@@ -196,7 +196,10 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
 		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
 		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
 		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == DEPUBLISHED || *vaultStatus == COMPLETE) {
+		    *vaultStatus == PENDING_DEPUBLICATION ||
+		    *vaultStatus == DEPUBLISHED ||
+		    *vaultStatus == PENDING_REPUBLICATION ||
+		    *vaultStatus == REPUBLISHED || *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
 			if (*metadataXmlPath == "") {
