@@ -253,7 +253,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PENDING_DEPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		iiAddActionLogRecord(*actionActor, *folder, "requested for depublication");
+		iiAddActionLogRecord(*actionActor, *folder, "pending depublication");
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
@@ -261,7 +261,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PENDING_REPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		iiAddActionLogRecord(*actionActor, *folder, "requested for republication");
+		iiAddActionLogRecord(*actionActor, *folder, "pending republication");
 	}
 	on (*newVaultStatus == REPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
