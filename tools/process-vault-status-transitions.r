@@ -163,6 +163,37 @@ processVaultActions {
 			msiGetMoreRows(*GenQ3Inp, *GenQ3Out, *ContInxNew);
 		}
 	}
+
+	# Scan for vault packages for which republication is requested.
+	*ContInxOld = 1;
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ4Inp);
+	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ4Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "vault_status", *GenQ4Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", PENDING_REPUBLICATION, *GenQ4Inp);
+
+	msiExecGenQuery(*GenQ4Inp, *GenQ4Out);
+	msiGetContInxFromGenQueryOut(*GenQ4Out, *ContInxNew);
+
+	while(*ContInxOld > 0) {
+		foreach(*row in *GenQ4Out) {
+			*collName = *row.COLL_NAME;
+
+			# Check if this really is a vault package
+			if (*collName like regex "/[^/]+/home/vault-.*") {
+				*err = errorcode(iiProcessRepublication(*collName, *status));
+				if (*err < 0) {
+					writeLine("stdout", "iiProcessRepublication *collName returned errorcode *err");
+				} else {
+					writeLine("stdout", "iiProcessRepublication *collName returned with status: *status");
+				}
+			}
+		}
+
+		*ContInxOld = *ContInxNew;
+		if(*ContInxOld > 0) {
+			msiGetMoreRows(*GenQ4Inp, *GenQ4Out, *ContInxNew);
+		}
+	}
 }
 input null
 output ruleExecOut
