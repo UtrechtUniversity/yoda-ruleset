@@ -79,6 +79,10 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 			*status = "PermissionDenied";
 			*statusInfo = "Vault status transition to depublished can only be requested by a rodsadmin.";
 			succeed;
+		} else if (*newVaultStatus == REPUBLISHED) {
+			*status = "PermissionDenied";
+			*statusInfo = "Vault status transition to republished can only be requested by a rodsadmin.";
+			succeed;
 		}
 	}
 
@@ -108,9 +112,11 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	}
 
 	# Check if vault package is currently pending for status transition.
-	# Except for status transition to PUBLISHED, becuase it is requested
-	# by the system before previous pending transition is removed.
-	if (*newVaultStatus != PUBLISHED && *newVaultStatus != DEPUBLISHED) {
+	# Except for status transition to PUBLISHED/DEPUBLISHED/REPUBLISHED,
+	# because it is requested by the system before previous pending
+	# transition is removed.
+	if (*newVaultStatus != PUBLISHED && *newVaultStatus != DEPUBLISHED &&
+	    *newVaultStatus != REPUBLISHED) {
 		*pending = false;
 		*vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*collId";
 		foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
@@ -193,11 +199,13 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
                 succeed;
         }
 
-	# Run processing if newFolderStatus is PUBLISHED or DEPUBLISHED
+	# Run processing if newFolderStatus is PUBLISHED, DEPUBLISHED or REPUBLISHED
 	if (*newFolderStatus == PUBLISHED) {
 		iiProcessPublication(*folder);
 	} else if (*newFolderStatus == DEPUBLISHED) {
 		iiProcessDepublication(*folder);
+	} else if (*newFolderStatus == REPUBLISHED) {
+		iiProcessRepublication(*folder);
 	}
 
 	# Set new vault status.
@@ -250,6 +258,14 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord("system", *folder, "depublished");
+	}
+	on (*newVaultStatus == PENDING_REPUBLICATION) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord(*actionActor, *folder, "requested for republication");
+	}
+	on (*newVaultStatus == REPUBLISHED) {
+	        iiVaultGetActionActor(*folder, *actor, *actionActor);
+		iiAddActionLogRecord("system", *folder, "republished");
 	}
 	on (true) {
 		nop;

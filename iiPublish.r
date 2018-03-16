@@ -922,6 +922,162 @@ iiProcessDepublication(*vaultPackage, *status) {
 	*status = *publicationState.status;
 }
 
+
+# \brief Routine to process a republication with sanity checks at every step.
+#
+# \param[in] vaultPackage       path to package in the vault to publish
+# \param[out] status		status of the publication
+#
+iiProcessRepublication(*vaultPackage, *status) {
+	*status = "Unknown";
+
+	# Check preconditions
+	iiVaultStatus(*vaultPackage, *vaultStatus);
+	if (*vaultStatus != PENDING_REPUBLICATION) {
+		*status = "NotAllowed";
+		succeed;
+	}
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		*status = "NotAllowed" ;
+		succeed;
+	}
+
+	# Load configuration
+	*err = errorcode(iiGetPublicationConfig(*publicationConfig));
+	if (*err < 0) {
+		*status = "Retry";
+		succeed;
+	}
+
+	# Load state
+	iiGetPublicationState(*vaultPackage, *publicationState);
+	# Reset state on first call
+	if (*publicationState.status == "OK") {
+		iiSetUpdatePublicationState(*vaultPackage, *status);
+		iiGetPublicationState(*vaultPackage, *publicationState);
+	}
+	*status = *publicationState.status;
+	if (*status == "Unrecoverable" || *status == "Processing") {
+		succeed;
+	} else if (*status == "Unknown" || *status == "Retry") {
+		*status = "Processing";
+		*publicationState.status = "Processing";
+	}
+
+
+	# Determine last modification time. Always run, no matter if retry.
+	iiGetLastModifiedDateTime(*publicationState);
+
+	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+		# Generate Combi XML consisting of user and system metadata
+
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateCombiXml");
+		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "dataCiteXmlPath")) {
+		# Generate DataCite XML
+		*err = errorcode(iiGenerateDataCiteXml(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateDataCiteXml");
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable" || *publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
+		# Send DataCite XML to metadata end point
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiPostMetadataToDataCite");
+		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry" || *publicationState.status == "Unrecoverable") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	# Create landing page
+	if (!iiHasKey(*publicationState, "landingPagePath")) {
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IILANDINGPAGEXSLDEFAULTNAME));
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateLandingPage");
+		if (*err < 0) {
+			*publicationState.status = "Unrecoverable";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Unrecoverable") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if(!iiHasKey(*publicationState, "landingPageUploaded")) {
+		# Use secure copy to push landing page to the public host
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiCopyLandingPage2PublicHost");
+		*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			*publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if(!iiHasKey(*publicationState, "oaiUploaded")) {
+		# Use secure copy to push combi XML to MOAI server
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiCopyMetadataToMOAI");
+		*err = errorcode(iiCopyMetadataToMOAI(*publicationConfig, *publicationState));
+		if (*err < 0) {
+			publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	if (!iiHasKey(*publicationState, "anonymousAccess")) {
+		# Set access restriction for vault package.
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiSetAccessRestriction");
+		*err = errorcode(iiSetAccessRestriction(*vaultPackage, *publicationState));
+		if (*err < 0) {
+			publicationState.status = "Retry";
+		}
+		iiSavePublicationState(*vaultPackage, *publicationState);
+		if (*publicationState.status == "Retry") {
+			*status = *publicationState.status;
+			succeed;
+		}
+	}
+
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ REPUBLISHED, *vaultStatusKvp);
+	msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
+	writeLine("serverLog", "iiProcessRepublication: All steps for republication completed");
+	# The depublication was a success;
+	*publicationState.status = "OK";
+	iiSavePublicationState(*vaultPackage, *publicationState);
+	*status = *publicationState.status;
+}
+
 # \brief Routine to set publication state of vault package pending to update.
 #
 # \param[in]  vaultPackage   path to package in the vault to update
@@ -933,7 +1089,8 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
 	if (*vaultStatus != PUBLISHED &&
-	    *vaultStatus != PENDING_DEPUBLICATION) {
+	    *vaultStatus != PENDING_DEPUBLICATION &&
+	    *vaultStatus != PENDING_REPUBLICATION) {
 		*status = "NotAllowed";
 		succeed;
 	}
