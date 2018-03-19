@@ -3,6 +3,7 @@
 #            All processing or policy checks are defined in separate rules outside this file.
 #            The arguments and session variables passed to the PEP's are defined in iRODS itself.
 # \author    Paul Frederiks
+# \author    Felix Croes
 # \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
@@ -359,12 +360,12 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
 	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.xml"
 	if (*KVPairs.logical_path like regex "^/"
-	    ++ *KVPairs.client_user_zone
+	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/"
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
 	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
 		#DEBUG writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
-		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.client_user_name, *KVPairs.client_user_zone);
+		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.user_name, *KVPairs.user_rods_zone);
 	}
 }
 
@@ -393,7 +394,7 @@ acPostProcForObjRename(*src, *dst) {
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
 	#DEBUG writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
-	*zone = *KVPairs.client_user_zone;
+	*zone = *KVPairs.user_rods_zone;
 	*dst = *KVPairs.logical_path;
 	iiLogicalPathFromPhysicalPath(*KVPairs.physical_path, *src, *zone);
 
@@ -421,12 +422,12 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
 	# Example match: "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
 	if (*KVPairs.logical_path like regex "^/"
-	    ++ *KVPairs.client_user_zone
+	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/" ++ IIGROUPPREFIX
 	    ++ "[^/]+(/.\*)\*/"
 	    ++ IIMETADATAXMLNAME ++ "$") {
 
 		#DEBUG writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
-		}
+	}
 }
