@@ -365,7 +365,7 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
 	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
 		#DEBUG writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
-		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.user_name, *KVPairs.user_rods_zone);
+		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
 	}
 }
 
