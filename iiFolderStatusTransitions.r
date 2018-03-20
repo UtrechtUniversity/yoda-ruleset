@@ -1,6 +1,7 @@
 # \file      iiFolderStatusTransitions.r
 # \brief     Status transitions for Folders in the Research & Vault area.
 # \author    Paul Frederiks
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
@@ -221,10 +222,6 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 
-	#*status = "WrongStatus";
-        #*statusInfo = "Cannot unlock folder as it is currently in blablas state";
-	#succeed;
-
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == FOLDER || *currentFolderStatus == LOCKED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
@@ -267,10 +264,6 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 	*status = "Unknown";
 	*statusInfo = "An internal error has occurred";
 
-	#*status = "PermissionDenied";
-        #*statusInfo = 'Geen permissies om dit te doen';
-	#succeed;
-
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == SUBMITTED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
@@ -278,15 +271,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
-
-		*extraReason = '';
-		if (*currentFolderStatus != '') {
-			*extraReason = " or folder is currently in *currentFolderStatus state";
-		}
-
-		*statusInfo = "Cannot unsubmit folder due to insufficient permissions"; # *extraReason";
-
-		*folderStatus = *currentFolderStatus;
+		*statusInfo = "Folder cannot be unsubmitted because its state has changed.";
 		succeed;
 	}
 	if (*err < 0) {
