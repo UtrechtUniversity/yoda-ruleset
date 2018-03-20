@@ -47,13 +47,10 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *fi
 # \param[in] maxSize    The maximum file size of original
 #
 iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
-	remote("localhost", "") {
-		delay("<PLUSET>1s</PLUSET>") {
-			iiRevisionCreate(*resource, *path, *maxSize, *id);
-			if (*id != "") {
-				writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
-			}
-
+	delay("<PLUSET>1s</PLUSET>") {
+		iiRevisionCreate(*resource, *path, *maxSize, *id);
+		if (*id != "") {
+			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
 		}
 	}
 }
