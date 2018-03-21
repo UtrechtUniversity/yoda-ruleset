@@ -185,7 +185,7 @@ iiPrepareMetadataForm(*path, *result) {
 		    *vaultStatus == PENDING_DEPUBLICATION ||
 		    *vaultStatus == DEPUBLISHED ||
 		    *vaultStatus == PENDING_REPUBLICATION ||
-		    *vaultStatus == REPUBLISHED || *vaultStatus == COMPLETE) {
+		    *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
 		} else {
 			*kvp.isVaultPackage = "no";
