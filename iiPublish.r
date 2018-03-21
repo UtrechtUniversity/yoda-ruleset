@@ -1069,7 +1069,7 @@ iiProcessRepublication(*vaultPackage, *status) {
 		}
 	}
 
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ REPUBLISHED, *vaultStatusKvp);
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);
 	msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 	writeLine("serverLog", "iiProcessRepublication: All steps for republication completed");
 	# The depublication was a success;
