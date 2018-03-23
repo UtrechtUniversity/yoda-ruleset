@@ -9,7 +9,6 @@
     <geoLocation geoLocation='openStreetMap'>
 	<label>Geo Location</label>
 	<help>Prsent the geoLocation</help>
-	<mandatory>true</mandatory>
     </geoLocation>
     <Description>
       <label>Description</label>
