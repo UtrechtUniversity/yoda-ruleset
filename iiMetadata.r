@@ -213,7 +213,7 @@ iiPrepareMetadataForm(*path, *result) {
 			*kvp.isDatamanager = "no";
 		}
 
-		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath, *metadataXmlSize);
 		if (*metadataXmlPath == "") {
 			*hasMetadataXml = false;
 			*kvp.hasMetadataXml = "no";
@@ -682,12 +682,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 # \param[in] vaultPackage
 # \param[out] metadataXmlPath
 #
-iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath) {
+iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize) {
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
 	*dataNameQuery = "%*baseName[%].*extension";
 	*metadataXmlPath = "";
-	foreach (*row in SELECT DATA_NAME, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
+	foreach (*row in SELECT DATA_NAME, DATA_SIZE, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
 		*metadataXmlPath = *vaultPackage ++ "/" ++ *row.DATA_NAME;
+		*metadataXmlSize = int(*row."DATA_SIZE");
 		break;
 	}
 }

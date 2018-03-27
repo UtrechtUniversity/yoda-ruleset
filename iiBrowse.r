@@ -201,7 +201,7 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
 		    *vaultStatus == PENDING_REPUBLICATION ||
 		    *vaultStatus == COMPLETE) {
 			*kvp.isVaultPackage = "yes";
-			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath);
+			iiGetLatestVaultMetadataXml(*path, *metadataXmlPath, *metadataXmlSize);
 			if (*metadataXmlPath == "") {
 				*kvp.hasMetadataXml = "no";
 			} else {
