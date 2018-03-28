@@ -70,7 +70,7 @@ updateGroup(*groupName) {
                     *status = errorcode(msiSudoObjMetaAdd   (*groupName, "-u", "manager", *new,     "", ""));
                 }
                 if (*status == 0) {
-                    *status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", 0, "manager", *manager, "", ""));
+                    *status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *manager, "", ""));
                     if (*status != 0) {
                         writeLine("stdout", "!! MetaRemove FAILED");
                     }
