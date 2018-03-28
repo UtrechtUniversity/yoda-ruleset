@@ -334,7 +334,7 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
-	*err = errormsg(msiSudoObjAclSet(1, "read", *researchGroup, *path, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet("recursive", "read", *researchGroup, *path, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "PermissionDenied";
 		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
@@ -374,7 +374,7 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
-	*err = errormsg(msiSudoObjAclSet(1, "null", *researchGroup, *path, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet("recursive", "null", *researchGroup, *path, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "PermissionDenied";
 		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "null", *allowed, *reason);

@@ -131,7 +131,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 	# when a status transition in the research area is invoked by the datamanager, he needs temporary write access to change the folder status  
 	on (*objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
-		if (*recursive == 1 || *accessLevel == "own") {
+		if (*recursive == "recursive" || *accessLevel == "own") {
 			*allowed = false;
 			*reason = "Cannot grant own or inherit to *objPath";
 			succeed;

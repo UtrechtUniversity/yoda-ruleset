@@ -319,7 +319,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
-	*err = errorcode(msiSudoObjAclSet(0, "write", *datamanagerGroup, *folder, *aclKv));
+	*err = errorcode(msiSudoObjAclSet("", "write", *datamanagerGroup, *folder, *aclKv));
 	if (*err < 0) {
 		*status = "PermissionDenied";
 		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, 0, "write", *allowed, *reason);
@@ -349,7 +349,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 			}
 		}
 	}
-	*err = errormsg(msiSudoObjAclSet(0, "read", *datamanagerGroup, *folder, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet("", "read", *datamanagerGroup, *folder, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
 		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, 0, "read", *allowed, *reason);

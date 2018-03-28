@@ -3,7 +3,8 @@
 #            All processing or policy checks are defined in separate rules outside this file.
 #            The arguments and session variables passed to the PEP's are defined in iRODS itself.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved
+# \author    Felix Croes
+# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
 # \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
@@ -12,8 +13,8 @@
 #         between the XSD and formelements
 #
 acPostProcForPut {
-	on ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		# Check for locks in the research area
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -26,19 +27,17 @@ acPostProcForPut {
 		}
 	}
 
-	on ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
-		# Check new XSD against a schema for xsd validity. Rename the file when invalid
-
+	else if ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+		# Check new XSD against a schema for xsd validity. Rename the file when invalid.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 
-	on ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
+	else if ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
 		# Check  for invalid formelements XML files and rename them.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
-
 }
 
 # \brief This policy is fired before a collection is deleted.
@@ -46,8 +45,8 @@ acPostProcForPut {
 #        is locked
 #
 acPreprocForRmColl {
-	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		# Check for locks in the research area
+	if ($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -58,7 +57,6 @@ acPreprocForRmColl {
 			cut;
 			msiOprDisallowed;
 		}
-
 	}
 }
 
@@ -67,8 +65,8 @@ acPreprocForRmColl {
 #         is locked. The parent collection is not checked
 #
 acDataDeletePolicy {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+		# Check for locks in the research area.
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -86,16 +84,16 @@ acDataDeletePolicy {
 #         a new collection if the parent collection is locked
 #
 acPreprocForCollCreate {
-	on($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+	if ($collName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
 		}
+
 		#DEBUG writeLine("serverLog", "acPreprocForCollCreate: $collName");
 		iiCanCollCreate($collName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
-			msiOprDisallowed;
 		}
 	}
 }
@@ -106,7 +104,7 @@ acPreprocForCollCreate {
 #         collection of the data object after the rename is locked
 #
 acPreProcForObjRename(*src, *dst) {
-	on($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -139,8 +137,7 @@ acPreProcForObjRename(*src, *dst) {
 #         created in the file, but they cannot be saved.
 #
 acPreprocForDataObjOpen {
-	on ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-
+	if ($writeFlag == "1" && $objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		#DEBUG writeLine("serverLog", "acPreprocForDataObjOpen: $objPath");
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
@@ -159,7 +156,7 @@ acPreprocForDataObjOpen {
 #         Copying of metadata is prohibited by this policy if the target object is locked
 #
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) {
-	on (
+	if (
 	(*SourceItemType == "-C" || *SourceItemType == "-d")
 	&& (*SourceItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*"
 	|| *TargetItemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*")
@@ -186,7 +183,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 #         the organisational metadata when a folder is locked.
 #
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*"
+	if (*attributeName like UUUSERMETADATAPREFIX ++ "*"
 	    && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
@@ -201,7 +198,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        else if (*attributeName == IISTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -230,7 +227,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		# Special rules for the folder status. Subfolders and ancestors  of a special folder are locked.
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
@@ -259,7 +256,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 #        be the same for locked folders and folder transitions as the PEP above.
 #
 acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-	on (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+	if (*attributeName like UUUSERMETADATAPREFIX ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		uuGetUserType(uuClientFullName, *userType);
 		if (*userType == "rodsadmin") {
 			succeed;
@@ -273,7 +270,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
+        else if (*attributeName == IISTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -297,7 +294,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 		}
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME ++ "*" && *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*" ) {
 		*actor = uuClientFullName;
 		uuGetUserType(*actor, *userType);
 		if (*userType == "rodsadmin") {
@@ -324,7 +321,7 @@ acPreProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *at
 # \brief  This PEP is called after a AVU is added (option = 'add'), set (option = 'set') or removed (option = 'rm') in the research area or the vault. Post conditions
 #         defined in iiFolderStatusTransitions.r and iiVaultTransitions.r are called here.
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        if (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		if (*option == "rm") {
 		       	*newStatus = FOLDER;
 	       	} else {
@@ -333,7 +330,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *attributeValue);
 	}
 }
@@ -341,12 +338,12 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 # \brief This PEP is called after an AVU is modified (option = 'mod') in the research area or the vault. Post conditions are called
 #        in iiFolderStatusTransitions.r and iiVaultTransitions.r
 acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *attributeValue, *attributeUnit,  *newAttributeName, *newAttributeValue, *newAttributeUnit) {
-        on (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+        if (*attributeName == IISTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostFolderStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
 
-        on (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        else if (*attributeName == IIVAULTSTATUSATTRNAME &&  *itemName like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*newStatus = triml(*newAttributeValue, "v:");
 		iiPostVaultStatusTransition(*itemName, uuClientFullName, *newStatus);
 	}
@@ -363,19 +360,19 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
 	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.xml"
 	if (*KVPairs.logical_path like regex "^/"
-	    ++ *KVPairs.client_user_zone
+	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/"
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
 	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
 		#DEBUG writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
-		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.client_user_name, *KVPairs.client_user_zone);
+		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
 	}
 }
 
 # \brief This PEP is called whenever a data object or collection is renamed or moved. Will enforce the ACL's of a research group
 #        when data is moved from outside of the research group.
 acPostProcForObjRename(*src, *dst) {
-	on(*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+	if (*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		# enforce research group ACL's on folder moved from outside of research group
 		*srcPathElems = split(*src, "/");
 		*dstPathElems = split(*dst, "/");		
@@ -384,7 +381,6 @@ acPostProcForObjRename(*src, *dst) {
 			uuEnforceGroupAcl(*dst);
 		}
 	}
-
 }
 
 # \brief This policy is created to support the moving, renaming
@@ -398,7 +394,7 @@ acPostProcForObjRename(*src, *dst) {
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
 	#DEBUG writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
-	*zone = *KVPairs.client_user_zone;
+	*zone = *KVPairs.user_rods_zone;
 	*dst = *KVPairs.logical_path;
 	iiLogicalPathFromPhysicalPath(*KVPairs.physical_path, *src, *zone);
 
@@ -426,12 +422,12 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
 	# Example match: "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
 	if (*KVPairs.logical_path like regex "^/"
-	    ++ *KVPairs.client_user_zone
+	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/" ++ IIGROUPPREFIX
 	    ++ "[^/]+(/.\*)\*/"
 	    ++ IIMETADATAXMLNAME ++ "$") {
 
 		#DEBUG writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
-		}
+	}
 }
