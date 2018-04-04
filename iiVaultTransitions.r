@@ -1,7 +1,7 @@
 # \file      iiVaultTransitions.r
 # \brief     Copy folders to the vault
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -29,14 +29,18 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 	        *collId = *row.COLL_ID;
 	}
 
-	# Retrieve vault folder action actor.
-	*actionActor = "";
+        # Retrieve vault folder action actor.
+        *actionActor = "";
         foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
-	        *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
-		writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
-	}
+                *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
+                if (*err < 0) {
+                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
+                } else {
+                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId actor is *actionActor");
+                }
+        }
 
-	# Fallback actor (rodsadmin).
+        # Fallback actor (rodsadmin).
         if (*actionActor == "") {
                 *actionActor = *actor;
         }
