@@ -28,8 +28,7 @@ for GROUP_NAME in priv-group-add priv-category-add ; do
 	iadmin mkgroup "$GROUP_NAME"
 	iadmin atg "$GROUP_NAME" "$RODS_USER"
 	ichmod -M own "$RODS_USER" "/$RODS_ZONE/home/$GROUP_NAME"
-	# TODO iRODS 4.2 compatibility
-	#irm -r "/$RODS_ZONE/home/$GROUP_NAME"
+	irm -r "/$RODS_ZONE/home/$GROUP_NAME"
 	imeta set -u "$GROUP_NAME" manager       "$RODS_USER"
 	imeta set -u "$GROUP_NAME" category      "System"
 	imeta set -u "$GROUP_NAME" subcategory   "Privileges"
