@@ -256,9 +256,15 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			*buffer.msg = "Failed to create collection *destPath";
 		}
 	} else {
-		*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+		*error = errorcode(msiDataObjChksum(*sourcePath, "ChksumAll=++++forceChksum=", *chksum));
 		if (*error < 0) {
-			*buffer.msg = "Failed to copy *sourcePath to *destPath";
+			*buffer.msg = "Failed to Checksum *sourcePath";
+		} else {
+			writeLine("stdout", "iiCopyObject: *sourcePath has checksum *chksum");
+			*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+			if (*error < 0) {
+				*buffer.msg = "Failed to copy *sourcePath to *destPath";
+			}
 		}
 	}
 }
