@@ -24,12 +24,11 @@ uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
                 *objectId = 0;
 	        *found = false;
 
-	        foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID
+		foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER
 			WHERE DATA_NAME      = *basename
 			AND   COLL_NAME      = *parent
-			AND   DATA_RESC_NAME = *sourceResource
 		       ) {
-		        if (!*found) {
+			if (!*found && *row.DATA_RESC_HIER like regex *sourceResource ++ ";.*") {
 			        *found = true;
 			        break;
                         }
