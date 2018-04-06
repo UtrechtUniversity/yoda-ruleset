@@ -582,7 +582,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 
-	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "", *status));
+	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "", *statusBuf));
 	if (*err < 0) {
 		*status = "FailedToCopyXML";
 		*statusInfo = "Copy to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
@@ -614,7 +614,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
 	# Add action log record
 	#DEBUG writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Removing metadata xml from datamanager folder");
-	*err = errorcode(msiDataObjUnlink("objPath=*metadataXmlPath++++forceFlag=", *status));
+	*err = errorcode(msiDataObjUnlink("objPath=*metadataXmlPath++++forceFlag=", *statusBuf));
 	if (*err < 0) {
 		*status = "FailedToRemoveDatamanagerXML";
 		*statusInfo = "Failed to remove *metadataXmlPath";
@@ -638,7 +638,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		if (*deleteAccess == 0) {
 			msiSetACL("recursive", "admin:own", uuClientFullName, *datamanagerFolder);
 		}
-		*err = errorcode(msiRmColl(*collToRemove, "forceFlag=",*status));
+		*err = errorcode(msiRmColl(*collToRemove, "forceFlag=",*statusBuf));
 		if (*err < 0) {
 			*status = "FailedToRemoveColl";
 			*statusInfo = "Failed to remove *collToRemove";
@@ -666,7 +666,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		*statusInfo = "Failed to set publication update status on *vaultPackagePath";
 		succeed;
 	}
-	*err = errorcode(iiSetUpdatePublicationState(*vaultPackagePath, *status));
+	*err = errorcode(iiSetUpdatePublicationState(*vaultPackagePath, *statusBuf));
 	if (*err < 0) {
 		*status = "FailedToSetPublicationUpdateStatus";
 		*statusInfo = "Failed to set publication update status on *vaultPackagePath";
