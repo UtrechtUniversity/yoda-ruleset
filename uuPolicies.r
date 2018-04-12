@@ -4,11 +4,20 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \brief Limit the use of OS callouts to a user group "priv-execcmd-all".
+# reroute msiExecCmd to msiSecureExecCmd
+msiExecCmd(*cmd, *argv, *addr, *hint, *resource, *out) {
+	msiSecureExecCmd(*cmd, *argv, *addr, *hint, *resource, *out);
+}
+
+# \brief Limit the use of OS callouts to rodsadmin, and users in group "priv-execcmd-all".
 #
 # \param[in]		cmd  name of executable
 #
 acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType == "rodsadmin") {
+		succeed;
+	}
 	*accessAllowed = false;
 	foreach (*rows in SELECT USER_GROUP_NAME WHERE USER_NAME='$userNameClient'
 		             AND USER_ZONE='$rodsZoneClient') {
