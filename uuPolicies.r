@@ -1,7 +1,8 @@
 # \file      uuPolicies.r
 # \brief     iRODS policies for Yoda (changes to core.re).
 # \author    Ton Smeele
-# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \author    Felix Croes
+# \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # reroute msiExecCmd to msiSecureExecCmd
@@ -9,15 +10,25 @@ msiExecCmd(*cmd, *argv, *addr, *hint, *resource, *out) {
 	msiSecureExecCmd(*cmd, *argv, *addr, *hint, *resource, *out);
 }
 
-# \brief Limit the use of OS callouts to rodsadmin, and users in group "priv-execcmd-all".
+# \brief Restrict access to OS callouts
 #
 # \param[in]		cmd  name of executable
 #
 acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
+	# rodsadmin is always permitted
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType == "rodsadmin") {
 		succeed;
 	}
+
+	# permit all local commands starting with "scheduled-"
+	msiSubstr(*cmd, "0", "10", *scheduled);
+	if (*args == "" && *addr == "" && *hint == "" &&
+	    *scheduled == "scheduled-") {
+		succeed;
+	}
+
+	# permit access to users in group priv-execcmd-all
 	*accessAllowed = false;
 	foreach (*rows in SELECT USER_GROUP_NAME WHERE USER_NAME='$userNameClient'
 		             AND USER_ZONE='$rodsZoneClient') {
