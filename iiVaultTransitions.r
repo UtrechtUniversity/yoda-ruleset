@@ -167,8 +167,15 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	} else {
 		*status = "Success";
 		*statusInfo = "";
+		iiScheduledVaultActions();
 		succeed;
 	}
+}
+
+# \brief Perform scheduled operations on the vault.
+#
+iiScheduledVaultActions() {
+	msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
 }
 
 # \brief Processing vault status transition request
