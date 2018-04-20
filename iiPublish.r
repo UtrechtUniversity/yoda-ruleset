@@ -87,11 +87,13 @@ iiGenerateCombiXml(*publicationConfig, *publicationState){
            "  </System>\n" ++
            "</metadata>";
 
-	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath);
+	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize);
 
-	msiDataObjCopy(*metadataXmlPath, *combiXmlPath, "forceFlag=", *status);
-	msiDataObjOpen("objPath=*combiXmlPath++++openFlags=O_RDWR", *fd);
-	msiDataObjLseek(*fd, -12, "SEEK_END", *status);
+	msiDataObjOpen("objPath=*metadataXmlPath", *fd);
+	msiDataObjRead(*fd, *metadataXmlSize - 12, *buf);
+	msiDataObjClose(*fd, *status);
+	msiDataObjCreate(*combiXmlPath, "forceFlag=", *fd);
+	msiDataObjWrite(*fd, *buf, *lenOut);
 	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
 	msiDataObjClose(*fd, *status);
 	#DEBUG writeLine("serverLog", "iiGenerateCombiXml: generated *combiXmlPath");
