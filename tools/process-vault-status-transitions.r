@@ -123,6 +123,11 @@ processVaultActions {
 					writeLine("serverLog", "iiProcessPublication *collName returned errorcode *err");
 				} else {
 					writeLine("serverLog", "iiProcessPublication *collName returned with status: *status");
+					if (*status == "Retry") {
+						delay ("<PLUSET>60s</PLUSET>") {
+							iiScheduledVaultActions();
+						}
+					}
 				}
                     	}
 		}
@@ -154,6 +159,11 @@ processVaultActions {
 					writeLine("serverLog", "iiProcessDepublication *collName returned errorcode *err");
 				} else {
 					writeLine("serverLog", "iiProcessDepublication *collName returned with status: *status");
+					if (*status == "Retry") {
+						delay ("<PLUSET>60s</PLUSET>") {
+							iiScheduledVaultActions();
+						}
+					}
 				}
 			}
 		}
@@ -185,6 +195,11 @@ processVaultActions {
 					writeLine("serverLog", "iiProcessRepublication *collName returned errorcode *err");
 				} else {
 					writeLine("serverLog", "iiProcessRepublication *collName returned with status: *status");
+					if (*status == "Retry") {
+						delay ("<PLUSET>60s</PLUSET>") {
+							iiScheduledVaultActions();
+						}
+					}
 				}
 			}
 		}

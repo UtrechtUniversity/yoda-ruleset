@@ -71,6 +71,11 @@ ingestChangesIntoVault {
                                            *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
 					}
 					writeLine("serverLog", "iiProcessPublication *collName returned with status: *status");
+					if (*status == "Retry") {
+						delay ("<PLUSET>60s</PLUSET>") {
+							iiScheduledVaultActions();
+						}
+					}
 				}
 			}
 		}
