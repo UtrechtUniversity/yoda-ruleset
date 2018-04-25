@@ -167,15 +167,16 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	} else {
 		*status = "Success";
 		*statusInfo = "";
-		iiScheduledVaultActions();
 		succeed;
 	}
 }
 
-# \brief Perform scheduled operations on the vault.
+# \brief Schedule operations on the vault (asynchronously).
 #
-iiScheduledVaultActions() {
-	errorcode(msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out));
+iiScheduleVaultActions() {
+	delay ("<PLUSET>1s</PLUSET>") {
+		msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
+	}
 }
 
 # \brief Processing vault status transition request
@@ -289,6 +290,9 @@ iiVaultSubmit(*folder, *status, *statusInfo) {
 # \param[out] statusInfo  Informative message when action was not successful
 iiVaultApprove(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
+	if (*status == "Success") {
+		iiScheduleVaultActions();
+	}
 }
 
 # \brief Cancel a submission in the vault for publication
@@ -309,6 +313,9 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 #
 iiVaultDepublish(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, PENDING_DEPUBLICATION, *status, *statusInfo);
+	if (*status == "Success") {
+		iiScheduleVaultActions();
+	}
 }
 
 # \brief Republish a folder in the vault
@@ -319,6 +326,9 @@ iiVaultDepublish(*folder, *status, *statusInfo) {
 #
 iiVaultRepublish(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, PENDING_REPUBLICATION, *status, *statusInfo);
+	if (*status == "Success") {
+		iiScheduleVaultActions();
+	}
 }
 
 

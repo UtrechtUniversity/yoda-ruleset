@@ -101,7 +101,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		# Set cronjob state.
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PENDING, *kvp);
 		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-		iiScheduledCopyToVault();
+		iiScheduleCopyToVault();
 	}
 	on (*newFolderStatus == FOLDER) {
 		*actionLog = UUORGMETADATAPREFIX ++ "action_log";
@@ -126,10 +126,12 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	}
 }
 
-# \brief Perform a scheduled copy-to-vault (asynchronously).
+# \brief Schedule copy-to-vault (asynchronously).
 #
-iiScheduledCopyToVault() {
-	msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
+iiScheduleCopyToVault() {
+	delay ("<PLUSET>1s</PLUSET>") {
+		msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
+	}
 }
 
 # \brief Lock a folder in the research area.
