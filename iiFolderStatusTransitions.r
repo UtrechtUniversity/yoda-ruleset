@@ -129,9 +129,7 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 # \brief Schedule copy-to-vault (asynchronously).
 #
 iiScheduleCopyToVault() {
-	delay ("<PLUSET>1s</PLUSET>") {
-		msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
-	}
+	msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
 }
 
 # \brief Lock a folder in the research area.
