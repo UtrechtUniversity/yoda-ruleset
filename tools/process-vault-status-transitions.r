@@ -102,6 +102,8 @@ processVaultActions {
 		}
 	}
 
+	*retry = false;
+
 	# Scan for vault packages approved for publication .
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
@@ -124,9 +126,7 @@ processVaultActions {
 				} else {
 					writeLine("serverLog", "iiProcessPublication *collName returned with status: *status");
 					if (*status == "Retry") {
-						delay ("<PLUSET>60s</PLUSET>") {
-							iiScheduledVaultActions();
-						}
+						*retry = true;
 					}
 				}
                     	}
@@ -160,9 +160,7 @@ processVaultActions {
 				} else {
 					writeLine("serverLog", "iiProcessDepublication *collName returned with status: *status");
 					if (*status == "Retry") {
-						delay ("<PLUSET>60s</PLUSET>") {
-							iiScheduledVaultActions();
-						}
+						*retry = true;
 					}
 				}
 			}
@@ -196,9 +194,7 @@ processVaultActions {
 				} else {
 					writeLine("serverLog", "iiProcessRepublication *collName returned with status: *status");
 					if (*status == "Retry") {
-						delay ("<PLUSET>60s</PLUSET>") {
-							iiScheduledVaultActions();
-						}
+						*retry = true;
 					}
 				}
 			}
@@ -208,6 +204,15 @@ processVaultActions {
 		if(*ContInxOld > 0) {
 			msiGetMoreRows(*GenQ4Inp, *GenQ4Out, *ContInxNew);
 		}
+	}
+
+	if (*retry) {
+		retryVaultActions();
+	}
+}
+retryVaultActions() {
+	delay ("<PLUSET>60s</PLUSET>") {
+		iiScheduledVaultActions();
 	}
 }
 input null
