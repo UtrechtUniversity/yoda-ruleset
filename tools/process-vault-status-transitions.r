@@ -212,6 +212,7 @@ processVaultActions {
 }
 retryVaultActions() {
 	delay ("<PLUSET>60s</PLUSET>") {
+		writeLine("serverLog", "Retrying failed publications");
 		iiScheduledVaultActions();
 	}
 }
