@@ -129,6 +129,14 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 # \brief Schedule copy-to-vault (asynchronously).
 #
 iiScheduleCopyToVault() {
+	delay ("<PLUSET>1s</PLUSET>") {
+		iiScheduledCopyToVault();
+	}
+}
+
+# \brief Perform copy-to-vault
+#
+iiScheduledCopyToVault() {
 	msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
 }
 

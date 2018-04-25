@@ -1,9 +1,4 @@
 processVaultActions() {
-	delay ("<PLUSET>1s</PLUSET>") {
-		delayedVaultActions();
-	}
-}
-delayedVaultActions() {
 	# Scan for any pending vault actions.
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
@@ -212,12 +207,7 @@ delayedVaultActions() {
 	}
 
 	if (*retry) {
-		retryVaultActions();
-	}
-}
-retryVaultActions() {
-	delay ("<PLUSET>60s</PLUSET>") {
-		writeLine("serverLog", "Retrying failed publications");
+		writeLine("serverLog", "Will retry failed publications");
 		iiScheduleVaultActions();
 	}
 }
