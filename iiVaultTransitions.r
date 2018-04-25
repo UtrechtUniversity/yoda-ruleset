@@ -281,6 +281,9 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 #
 iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
+	if (*status == "Success") {
+		iiScheduleVaultActions();
+	}
 }
 
 # \brief Approve a folder in the vault for publication
