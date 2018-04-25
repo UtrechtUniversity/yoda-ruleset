@@ -174,15 +174,10 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 # \brief Schedule operations on the vault (asynchronously).
 #
 iiScheduleVaultActions() {
+	*out = "";
 	delay ("<PLUSET>1s</PLUSET>") {
-		iiScheduledVaultActions();
+		msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
 	}
-}
-
-# \brief Perform scheduled operations on the vault
-#
-iiScheduledVaultActions() {
-	msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
 }
 
 # \brief Processing vault status transition request
