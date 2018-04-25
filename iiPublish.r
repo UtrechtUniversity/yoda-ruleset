@@ -199,7 +199,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 		# invalid XML
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiPostMetadataToDataCite: 400 Bad Request - Invalid XML, wrong prefix");
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500") {
+	} else {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Could be retried later");
 	}
@@ -248,7 +248,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiMintDOI: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix");
 		succeed;
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || *httpCode == "500") {
+	} else {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiMintDOI: *httpCode received. Could be retried later");
 		succeed;
