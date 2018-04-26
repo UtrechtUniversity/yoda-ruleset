@@ -191,6 +191,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiDataObjRead(*fd, *len, *buf);
 	msiDataObjClose(*fd, *status);
 	msiBytesBufToStr(*buf, *dataCiteXml);
+	*httpCode = "0";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -214,6 +215,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata/*yodaDOI";
+	*httpCode = "0";
 	msiRemoveDataCiteMetadata(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *httpCode);
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -239,6 +241,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi";
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
+	*httpCode = "0";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode);
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
@@ -543,6 +546,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*username = *publicationConfig.dataCiteUsername;
 	*password = *publicationConfig.dataCitePassword;
 	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");
+	*httpCode = "0";
 	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);
 	if (*httpCode == "404") {
 		# DOI is available!
