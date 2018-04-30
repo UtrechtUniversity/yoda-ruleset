@@ -174,7 +174,6 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 # \brief Schedule operations on the vault (asynchronously).
 #
 iiScheduleVaultActions() {
-	*out = "";
 	delay ("<PLUSET>1s</PLUSET>") {
 		msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
 	}
@@ -307,6 +306,9 @@ iiVaultApprove(*folder, *status, *statusInfo) {
 #
 iiVaultCancel(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, UNPUBLISHED, *status, *statusInfo);
+	if (*status == "Success") {
+		iiScheduleVaultActions();
+	}
 }
 
 # \brief Depublish a folder in the vault
