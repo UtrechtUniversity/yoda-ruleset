@@ -1,5 +1,5 @@
 # \file        uuMail.r
-# \brief       Rules to send e-mails from Yoda.
+# \brief       Rules to send emails from Yoda.
 # \author      Lazlo Westerhof
 # \copyright   Copyright (c) 2018 Utrecht University. All rights reserved.
 # \license     GPLv3, see LICENSE.
@@ -23,14 +23,31 @@ uuMail(*to, *actor, *title, *status, *message) {
 }
 
 
-# \brief New user invitation email.
+# \brief New internal user invitation email.
 #
 # \param[in]  newUser new user to be informed
 # \param[in]  actor   actor of the email
 # \param[out] status  zero on success, non-zero on failure
 # \param[out] message a user friendly error message
 #
-uuNewUserMail(*newUser, *actor, *status, *message) {
+uuNewInternalUserMail(*newUser, *actor, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*to = *newUser;
+        *title = "*actor invites you to join Yoda.";
+        uuMail(*to, *actor, *title, *status, *message);
+}
+
+
+# \brief New external user invitation email.
+#
+# \param[in]  newUser new user to be informed
+# \param[in]  actor   actor of the email
+# \param[out] status  zero on success, non-zero on failure
+# \param[out] message a user friendly error message
+#
+uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
