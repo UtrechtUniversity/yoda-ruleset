@@ -776,7 +776,7 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 		}
 
 		# Send user invitation mail.
-		uuNewInternalUserMail(*userName, *actor, *status, *message);
+		uuNewInternalUserMail(*userName, uuClientFullName, *status, *message);
 		if (*status != 0) {
 			succeed; # Return here (don't fail as that would ruin the status and error message).
 		}
