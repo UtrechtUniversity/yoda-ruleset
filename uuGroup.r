@@ -762,6 +762,8 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 	*fullName = "*userName#*userZone";
 
 	uuUserExists(*fullName, *exists);
+
+	# User does not exist, add user to iRODS first.
 	if (!*exists) {
 		*kv."forGroup" = *groupName;
 		*status = errorcode(msiSudoUserAdd(*fullName, "", "", "", *kv));
@@ -772,7 +774,14 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 			}
 			succeed; # Return here (don't fail as that would ruin the status and error message).
 		}
+
+		# Send user invitation mail.
+		uuNewInternalUserMail(*userName, *actor, *status, *message);
+		if (*status != 0) {
+			succeed; # Return here (don't fail as that would ruin the status and error message).
+		}
 	}
+
 	# User exists, now add them to the group.
 	*status = errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, ""));
 	if (*status == 0) {

@@ -16,10 +16,31 @@ uuMail(*to, *actor, *title, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	writeLine("serverLog", "[EMAIL] Send email to *to by *actor with title *title.");
+	uuValidMail(*to, *valid);
+	if (*valid > 0) {
+	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with title *title.");
+	}
 
 	*status = 0;
 	*message = "";
+}
+
+
+# \brief Check if email address is valid.
+#
+# \param[in]  email email address to validate
+# \param[out] valid one on true, zero on false
+#
+uuValidMail(*email, *valid) {
+        *valid = 0;
+
+        *splitEmail = split(*email, "@");
+
+	if (size(*splitEmail) > 1) {
+	        *valid = 1;
+	} else {
+	        *valid = 0;
+	}
 }
 
 
