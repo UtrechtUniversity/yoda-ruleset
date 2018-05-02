@@ -27,7 +27,7 @@ uuMail(*to, *actor, *subject, *status, *message) {
 		 *smtpServer = "";
 		 *userName = "";
 		 *password = "";
-		 *status = errorcode(msiSendMail(to, from, nameFrom, subject, body, smtpServer, userName, password));
+		 *status = errorcode(msiSendMail(*to, *from, *nameFrom, *subject, *body, *smtpServer, *userName, *password));
 	}
 
 	*status = 0;
