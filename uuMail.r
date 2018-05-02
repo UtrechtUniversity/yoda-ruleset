@@ -12,13 +12,22 @@
 # \param[out] status  zero on success, non-zero on failure
 # \param[out] message a user friendly error message
 #
-uuMail(*to, *actor, *title, *status, *message) {
+uuMail(*to, *actor, *subject, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
 	uuValidMail(*to, *valid);
 	if (*valid > 0) {
-	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with title *title.");
+	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with sibject *subject.");
+		 *to = "";
+		 *from = "";
+		 *nameFrom = "";
+		 *subject = "";
+		 *body = "";
+		 *smtpServer = "";
+		 *userName = "";
+		 *password = "";
+		 *status = errorcode(msiSendMail(to, from, nameFrom, subject, body, smtpServer, userName, password));
 	}
 
 	*status = 0;
@@ -56,8 +65,8 @@ uuNewInternalUserMail(*newUser, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *newUser;
-        *title = "*actor invites you to join Yoda.";
-        uuMail(*to, *actor, *title, *status, *message);
+        *subject = "*actor invites you to join Yoda.";
+        uuMail(*to, *actor, *subject, *status, *message);
 }
 
 
@@ -73,8 +82,8 @@ uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *newUser;
-        *title = "*actor invites you to join Yoda.";
-        uuMail(*to, *actor, *title, *status, *message);
+        *subject = "*actor invites you to join Yoda.";
+        uuMail(*to, *actor, *subject, *status, *message);
 }
 
 
@@ -90,8 +99,8 @@ uuNewPackagePublishedMail(*datamanager, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *datamanager;
-        *title = "New package published.";
-        uuMail(*to, *actor, *title, *status, *message);
+        *subject = "New package published.";
+        uuMail(*to, *actor, *subject, *status, *message);
 }
 
 
@@ -107,6 +116,6 @@ uuYourPackagePublishedMail(*researcher, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *researcher;
-        *title = "Your package is published.";
-        uuMail(*to, *actor, *title, *status, *message);
+        *subject = "Your package is published.";
+        uuMail(*to, *actor, *subject, *status, *message);
 }
