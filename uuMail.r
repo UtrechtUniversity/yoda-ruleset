@@ -17,8 +17,8 @@ uuMail(*to, *actor, *subject, *status, *message) {
 	*message = "An internal error occured.";
 
         uuGetMailConfig(*mailConfig);
-	if (*mailConfig.sendNotifications != 1) {
-	         writeLine("serverLog", "[EMAIL] Notofications are off.");
+	if (int(*mailConfig.sendNotifications) != 1) {
+	         writeLine("serverLog", "[EMAIL] Notifications are off.");
 		 *status = 0;
 		 *message = "";
 		 succeed;
