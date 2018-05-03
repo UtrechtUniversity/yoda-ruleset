@@ -16,22 +16,103 @@ uuMail(*to, *actor, *subject, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	uuValidMail(*to, *valid);
-	if (*valid > 0) {
-	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with sibject *subject.");
-		 *to = "";
-		 *from = "";
-		 *nameFrom = "";
-		 *subject = "";
-		 *body = "";
-		 *smtpServer = "";
-		 *userName = "";
-		 *password = "";
-		 *status = errorcode(msiSendMail(*to, *from, *nameFrom, *subject, *body, *smtpServer, *userName, *password));
+        uuGetMailConfig(*mailConfig);
+	if (*mailConfig.sendNotifications != 1) {
+	         writeLine("serverLog", "[EMAIL] Notofications are off.");
+		 *status = 0;
+		 *message = "";
+		 succeed;
 	}
 
-	*status = 0;
-	*message = "";
+	uuValidMail(*to, *valid);
+	if (*valid > 0) {
+	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with subject *subject.");
+
+		 *body = "Test body";
+
+		 msiSendMail(*to,
+		             *mailConfig.senderEmail,
+			     *mailConfig.senderName,
+			     *subject, *body,
+		             *mailConfig.smtpServer,
+		             *mailConfig.smtpUsername,
+		             *mailConfig.smtpPassword,
+		             *curlCode);
+
+		 if (*curlCode == 0) {
+		         writeLine("serverLog", "[EMAIL] Mail sent to *smtpServer.");
+		         *status = 0;
+		         *message = "";
+		 } else {
+		         writeLine("serverLog", "[EMAIL] Sending mail failed, CURL error *curlCode.");
+		         *status = 1;
+		         *message = "Sending mail failed.";
+		 }
+	} else {
+		 *status = 1;
+		 *message = "Invalid email address";
+	}
+}
+
+
+# \brief Mail configuration is extracted from metadata on the UUSYSTEMCOLLECTION.
+#
+# \param[out] mailConfig  a key-value-pair containing the configuration
+#
+uuGetMailConfig(*mailConfig) {
+	# Translation from camelCase config key to snake_case metadata attribute
+	*configKeys = list(
+		 "sendNotifications",
+		 "senderEmail",
+		 "senderName",
+		 "smtpServer",
+		 "smtpUsername",
+		 "smtpPassword");
+	*metadataAttributes = list(
+		 "send_notifications",
+		 "sender_email",
+		 "sender_name",
+		 "smtp_server",
+		 "smtp_username",
+		 "smtp_password");
+
+	*nKeys = size(*configKeys);
+	*sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
+	*prefix = UUORGMETADATAPREFIX;
+	#DEBUG writeLine("serverLog", "uuGetMailConfig: fetching mail configuration from *sysColl");
+
+	# Retrieve all metadata on system collection.
+	*kvpList = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *sysColl
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		*kvp.attrName = triml(*row.META_COLL_ATTR_NAME, *prefix);
+		*kvp.attrValue = *row.META_COLL_ATTR_VALUE;
+		*kvpList = cons(*kvp, *kvpList);
+	}
+
+	# Add all metadata keys found to mailConfig with the configKey as key.
+	foreach(*kvp in *kvpList) {
+		for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
+			if (*kvp.attrName == elem(*metadataAttributes, *idx)) {
+				*configKey = elem(*configKeys, *idx);
+				*mailConfig."*configKey" = *kvp.attrValue;
+				break;
+			}
+		}
+	}
+
+	# Check if all config keys are set.
+	for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
+		*configKey = elem(*configKeys, *idx);
+		*err = errorcode(*mailConfig."*configKey");
+		if (*err < 0) {
+			*metadataAttribute = elem(*metadataAttributes, *idx);
+			writeLine("serverLog", "uuGetMailConfig: *configKey missing; please set *metadataAttribute on *sysColl");
+			fail;
+		}
+	}
 }
 
 
