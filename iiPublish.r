@@ -191,7 +191,6 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiDataObjRead(*fd, *len, *buf);
 	msiDataObjClose(*fd, *status);
 	msiBytesBufToStr(*buf, *dataCiteXml);
-	*httpCode = "0";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -200,7 +199,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 		# invalid XML
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiPostMetadataToDataCite: 400 Bad Request - Invalid XML, wrong prefix");
-	} else if (*httpCode == "401" || *httpCode == "403" || int(*httpCode) >= 500) {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Could be retried later");
 	}
@@ -215,7 +214,6 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata/*yodaDOI";
-	*httpCode = "0";
 	msiRemoveDataCiteMetadata(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *httpCode);
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -224,7 +222,7 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 		# invalid DOI
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: 404 Not Found - Invalid DOI");
-	} else if (*httpCode == "401" || *httpCode == "403" || int(*httpCode) >= 500) {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Could be retried later");
 	}
@@ -241,7 +239,6 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi";
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
-	*httpCode = "0";
 	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode);
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
@@ -251,7 +248,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiMintDOI: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix");
 		succeed;
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || int(*httpCode) >= 500) {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || *httpCode == "500" || *httpCode == "503") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiMintDOI: *httpCode received. Could be retried later");
 		succeed;
@@ -546,13 +543,12 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*username = *publicationConfig.dataCiteUsername;
 	*password = *publicationConfig.dataCitePassword;
 	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");
-	*httpCode = "0";
 	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);
 	if (*httpCode == "404") {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
 		succeed;
-	} else if (*httpCode == "403" || *httpCode == "401" || int(*httpCode) >= 500) {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
 		# request failed, worth a retry
 		writeLine("serverLog", "iiCheckDOIAvailability: returned *httpCode; Could be retried later");
 		*publicationState.status = "Retry";
