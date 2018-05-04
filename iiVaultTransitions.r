@@ -246,10 +246,20 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "submitted for publication");
+
+		# Store actor of publication submission.
+		msiString2KeyValPair("", *kvp);
+		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_submission_actor", actionActor);
+		msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
+
+		# Store actor of publication approval.
+		msiString2KeyValPair("", *kvp);
+		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_approval_actor", actionActor);
+		msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");

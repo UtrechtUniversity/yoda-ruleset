@@ -769,6 +769,30 @@ iiProcessPublication(*vaultPackage, *status) {
 			*status = *publicationState.status;
 			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
+
+		        # Send datamanager publication notification.
+			*actor = "";
+			*actorKey = UUORGMETADATAPREFIX ++ "publication_approval_actor";
+			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
+			*actor = *row.META_COLL_ATTR_VALUE;
+			break;
+			}
+			uuNewPackagePublishedMail(*userName, uuClientFullName, *status, *message);
+			if (*status != 0) {
+			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
+			}
+
+			# Send researcher publication notification.
+			*actor = "";
+			*actorKey = UUORGMETADATAPREFIX ++ "publication_submission_actor";
+			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
+			*actor = *row.META_COLL_ATTR_VALUE;
+			break;
+			}
+			uuYourPackagePublishedMail(*userName, uuClientFullName, *status, *message);
+			if (*status != 0) {
+			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
+			}
 		}
 	} else {
 	        writeLine("serverLog", "iiProcessPublication: All steps for publication completed");
