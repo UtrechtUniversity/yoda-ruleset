@@ -45,7 +45,7 @@ uuMail(*to, *actor, *subject, *status, *message) {
 		             *mailConfig.smtpPassword,
 		             *curlCode);
 
-		 if (*curlCode == 0) {
+		 if (int(*curlCode) == 0) {
 		         writeLine("serverLog", "[EMAIL] Mail sent to *smtpServer.");
 		         *status = 0;
 		         *message = "";
