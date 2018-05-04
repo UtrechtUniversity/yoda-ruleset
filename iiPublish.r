@@ -779,7 +779,7 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
-			uuNewPackagePublishedMail(*email, uuClientFullName, *status, *message);
+			uuNewPackagePublishedMail(*datamanager, uuClientFullName, *status, *message);
 			if (*status != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
 			}
