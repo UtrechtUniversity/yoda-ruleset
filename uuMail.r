@@ -36,7 +36,7 @@ uuMail(*to, *actor, *subject, *status, *message) {
 
 		 *body = "Test body";
 
-		 msiSendMail(*to,
+		 msiCurlMail(*to,
 		             *mailConfig.senderEmail,
 			     *mailConfig.senderName,
 			     *subject, *body,
