@@ -249,7 +249,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 
 		# Store actor of publication submission.
 		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_submission_actor", actionActor);
+		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_submission_actor", *actionActor);
 		msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
@@ -258,7 +258,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 
 		# Store actor of publication approval.
 		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_approval_actor", actionActor);
+		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_approval_actor", *actionActor);
 		msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newVaultStatus == PUBLISHED) {
