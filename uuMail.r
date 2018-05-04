@@ -180,15 +180,16 @@ uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 #
 # \param[in]  datamanager datamanager to be informed
 # \param[in]  actor       actor of the email
+# \param[in]  yodaDOI     DOI of the published package
 # \param[out] status      zero on success, non-zero on failure
 # \param[out] message     a user friendly error message
 #
-uuNewPackagePublishedMail(*datamanager, *actor, *status, *message) {
+uuNewPackagePublishedMail(*datamanager, *actor, *yodaDOI, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
 	*to = *datamanager;
-        *subject = "New package published.";
+        *subject = "New package is published with DOI: *yodaDOI.";
         uuMail(*to, *actor, *subject, *status, *message);
 }
 
@@ -197,14 +198,15 @@ uuNewPackagePublishedMail(*datamanager, *actor, *status, *message) {
 #
 # \param[in]  researcher  researcher to be informed
 # \param[in]  actor       actor of the email
+# \param[in]  yodaDOI     DOI of the published package
 # \param[out] status      zero on success, non-zero on failure
 # \param[out] message     a user friendly error message
 #
-uuYourPackagePublishedMail(*researcher, *actor, *status, *message) {
+uuYourPackagePublishedMail(*researcher, *actor, *yodaDOI, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
 	*to = *researcher;
-        *subject = "Your package is published.";
+        *subject = "Your package is published with DOI: *yodaDOI.";
         uuMail(*to, *actor, *subject, *status, *message);
 }
