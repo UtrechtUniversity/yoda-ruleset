@@ -12,7 +12,7 @@
 # \param[out] status  zero on success, non-zero on failure
 # \param[out] message a user friendly error message
 #
-uuMail(*to, *actor, *subject, *status, *message) {
+uuMail(*to, *actor, *subject, *body, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
@@ -33,9 +33,6 @@ uuMail(*to, *actor, *subject, *status, *message) {
 	uuValidMail(*to, *valid);
 	if (*valid > 0) {
 	         writeLine("serverLog", "[EMAIL] Send email to *to by *actor with subject *subject.");
-
-		 *body = "Test body";
-
 		 msiCurlMail(*to,
 		             *mailConfig.senderEmail,
 			     *mailConfig.senderName,
@@ -154,8 +151,9 @@ uuNewInternalUserMail(*newUser, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *newUser;
-        *subject = "*actor invites you to join Yoda.";
-        uuMail(*to, *actor, *subject, *status, *message);
+        *subject = "[Yoda] *actor invites you to join Yoda.";
+	*body = "Hi *newUser,\n\n*actor invite you to join Yoda.\n\nBest regards,\nYoda system";
+        uuMail(*to, *actor, *subject, *body, *status, *message);
 }
 
 
@@ -171,8 +169,9 @@ uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *newUser;
-        *subject = "*actor invites you to join Yoda.";
-        uuMail(*to, *actor, *subject, *status, *message);
+        *subject = "[Yoda] *actor invites you to join Yoda.";
+	*body = "Hi *newUser,\n\n*actor invite you to join Yoda.\n\nBest regards,\nYoda system";
+        uuMail(*to, *actor, *subject, *body, *status, *message);
 }
 
 
@@ -189,8 +188,9 @@ uuNewPackagePublishedMail(*datamanager, *actor, *yodaDOI, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *datamanager;
-        *subject = "New package is published with DOI: *yodaDOI.";
-        uuMail(*to, *actor, *subject, *status, *message);
+        *subject = "[Yoda] New package is published with DOI: *yodaDOI.";
+	*body = "Hi *datamanager,\n\nYoda data package with DOI *yodaDOI has been published.\n\nBest regards,\nYoda system";
+        uuMail(*to, *actor, *subject, *body, *status, *message);
 }
 
 
@@ -207,6 +207,7 @@ uuYourPackagePublishedMail(*researcher, *actor, *yodaDOI, *status, *message) {
 	*message = "An internal error occured.";
 
 	*to = *researcher;
-        *subject = "Your package is published with DOI: *yodaDOI.";
-        uuMail(*to, *actor, *subject, *status, *message);
+        *subject = "[Yoda] Your package is published with DOI: *yodaDOI.";
+	*body = "Hello *researcher,\n\nYour Yoda data package with DOI *yodaDOI has been published.\n\nKind regards,\nYoda system";
+        uuMail(*to, *actor, *subject, *body, *status, *message);
 }
