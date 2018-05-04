@@ -776,10 +776,10 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 		}
 
 		# Send user invitation mail.
-		uuNewInternalUserMail(*userName, uuClientFullName, *status, *message);
-		if (*status != 0) {
-			succeed; # Return here (don't fail as that would ruin the status and error message).
-		}
+		#uuNewInternalUserMail(*userName, uuClientFullName, *status, *message);
+		#if (*status != 0) {
+		#	succeed; # Return here (don't fail as that would ruin the status and error message).
+		#}
 	}
 
 	# User exists, now add them to the group.
