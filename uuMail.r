@@ -16,6 +16,12 @@ uuMail(*to, *actor, *subject, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		*message = "Not allowed.";
+		succeed;
+	}
+
         uuGetMailConfig(*mailConfig);
 	if (int(*mailConfig.sendNotifications) != 1) {
 	         writeLine("serverLog", "[EMAIL] Notifications are off.");
