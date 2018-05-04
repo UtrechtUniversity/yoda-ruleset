@@ -771,25 +771,25 @@ iiProcessPublication(*vaultPackage, *status) {
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 
 		        # Send datamanager publication notification.
-			*actor = "";
+			*datamanager = "";
 			*actorKey = UUORGMETADATAPREFIX ++ "publication_approval_actor";
 			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
-			*actor = *row.META_COLL_ATTR_VALUE;
-			break;
+			        *datamanager = *row.META_COLL_ATTR_VALUE;
+			        break;
 			}
-			uuNewPackagePublishedMail(*userName, uuClientFullName, *status, *message);
+			uuNewPackagePublishedMail(*datamanager, uuClientFullName, *status, *message);
 			if (*status != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
 			}
 
 			# Send researcher publication notification.
-			*actor = "";
+			*researcher = "";
 			*actorKey = UUORGMETADATAPREFIX ++ "publication_submission_actor";
 			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
-			*actor = *row.META_COLL_ATTR_VALUE;
-			break;
+			        *researcher = *row.META_COLL_ATTR_VALUE;
+			        break;
 			}
-			uuYourPackagePublishedMail(*userName, uuClientFullName, *status, *message);
+			uuYourPackagePublishedMail(*researcher, uuClientFullName, *status, *message);
 			if (*status != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
 			}
