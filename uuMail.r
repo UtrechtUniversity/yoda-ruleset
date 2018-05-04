@@ -55,8 +55,9 @@ uuMail(*to, *actor, *subject, *status, *message) {
 		         *message = "Sending mail failed.";
 		 }
 	} else {
-		 *status = 1;
-		 *message = "Invalid email address";
+		 *status = 0;
+		 *message = "";
+	         writeLine("serverLog", "[EMAIL] Ignoring invalid email address: *to.");
 	}
 }
 
