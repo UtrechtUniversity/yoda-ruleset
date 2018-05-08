@@ -199,7 +199,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 		# invalid XML
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiPostMetadataToDataCite: 400 Bad Request - Invalid XML, wrong prefix");
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Could be retried later");
 	}
@@ -222,7 +222,7 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 		# invalid DOI
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: 404 Not Found - Invalid DOI");
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Could be retried later");
 	}
@@ -248,7 +248,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiMintDOI: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix");
 		succeed;
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || *httpCode == "500" || *httpCode == "503") {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiMintDOI: *httpCode received. Could be retried later");
 		succeed;
@@ -548,7 +548,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
 		succeed;
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503") {
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 		# request failed, worth a retry
 		writeLine("serverLog", "iiCheckDOIAvailability: returned *httpCode; Could be retried later");
 		*publicationState.status = "Retry";
