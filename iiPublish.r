@@ -430,11 +430,11 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "davrods_anonymous_vhost");
 
 	*nKeys = size(*configKeys);
-
-	msiString2KeyValPair("randomIdLength=6%yodaInstance=" ++ UUINSTANCENAME, *publicationConfig);
 	*sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
+
 	#DEBUG writeLine("serverLog", "iiGetPublicationConfig: fetching publication configuration from *sysColl");
 	iiCollectionMetadataKvpList(*sysColl, UUORGMETADATAPREFIX, true, *kvpList);
+
 	# Add all metadata keys found to publicationConfig with the configKey as key.
 	foreach(*kvp in *kvpList) {
 		for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
@@ -445,6 +445,7 @@ iiGetPublicationConfig(*publicationConfig) {
 			}
 		}
 	}
+
 	# Check if all config keys are set;
 	for(*idx = 0;*idx < *nKeys;*idx = *idx + 1) {
 		*configKey = elem(*configKeys, *idx);
