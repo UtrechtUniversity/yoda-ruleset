@@ -448,7 +448,7 @@ iiweeks(*w) = *w * iidays(7)
 
 # \brief Return a list of time buckets to determine revisions to keep.
 #
-# \param[in] case    Select a bucketlist based on a string
+# \param[in] case  Select a bucketlist based on a string
 # \return    lst   A bucket list
 #
 iiRevisionBucketList(*case) {
@@ -472,26 +472,6 @@ iiRevisionBucketList(*case) {
 			 iibucket(iiweeks(12), 1, 0),
 			 iibucket(iiweeks(16), 1, 0)
 		);
-	} else if (*case == "J")  {
-	        # Only used for testing purposes. Can be removed.
-		*lst = list(
-                         iibucket(iiminutes(5),    1, 1),
-                         iibucket(iiminutes(10),   1, 0),
-                         iibucket(iiminutes(15),   1, 0),
-                         iibucket(iiminutes(20),   1, 0),
-                         iibucket(iiminutes(40),   1, 0),
-                         iibucket(iiminutes(60),   1, 0),
-                         iibucket(iiminutes(80),   1, 0),
-                         iibucket(iiminutes(100),  1, 0),
-                         iibucket(iiminutes(120),  1, 0),
-                         iibucket(iiminutes(140),  1, 0),
-                         iibucket(iiminutes(280),  1, 0),
-                         iibucket(iiminutes(320),  1, 0),
-                         iibucket(iiminutes(460),  1, 0),
-                         iibucket(iiminutes(920),  1, 0),
-                         iibucket(iiminutes(1380), 1, 0),
-                         iibucket(iiminutes(1820), 1, 0)
-                         );
 	} else if (*case == "Simple") {
 		*lst = list(iibucket(iiweeks(16), 16, 4));
 	} else {
