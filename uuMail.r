@@ -36,7 +36,9 @@ uuMail(*to, *actor, *subject, *body, *status, *message) {
                  msiCurlMail(*to,
                              *mailConfig.senderEmail,
                              *mailConfig.senderName,
-                             *subject, *body,
+                             *subject,
+                             *mailConfig.replyTo,
+                             *body,
                              *mailConfig.smtpServer,
                              *mailConfig.smtpUsername,
                              *mailConfig.smtpPassword,
@@ -70,6 +72,7 @@ uuGetMailConfig(*mailConfig) {
                  "sendNotifications",
                  "senderEmail",
                  "senderName",
+                 "replyTo",
                  "smtpServer",
                  "smtpUsername",
                  "smtpPassword");
@@ -77,6 +80,7 @@ uuGetMailConfig(*mailConfig) {
                  "send_notifications",
                  "sender_email",
                  "sender_name",
+                 "reply_to",
                  "smtp_server",
                  "smtp_username",
                  "smtp_password");
