@@ -771,6 +771,14 @@ iiProcessPublication(*vaultPackage, *status) {
 			msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);
 			msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
 
+		        # Retrieve package title for notifications.
+			*title = "";
+			*titleKey = UUUSERMETADATAPREFIX ++ "0_Title";
+			foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *titleKey) {
+			        *title = *row.META_COLL_ATTR_VALUE;
+			        break;
+			}
+
 		        # Send datamanager publication notification.
 			*datamanager = "";
 			*actorKey = UUORGMETADATAPREFIX ++ "publication_approval_actor";
@@ -780,7 +788,7 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
-			uuNewPackagePublishedMail(*datamanager, uuClientFullName, *publicationState.yodaDOI, *mailStatus, *message);
+			uuNewPackagePublishedMail(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
 			}
@@ -794,7 +802,7 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
-			uuYourPackagePublishedMail(*researcher, uuClientFullName, *publicationState.yodaDOI, *mailStatus, *message);
+			uuYourPackagePublishedMail(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
 			}
