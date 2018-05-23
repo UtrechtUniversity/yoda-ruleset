@@ -184,7 +184,7 @@ uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 # \param[out] status      zero on success, non-zero on failure
 # \param[out] message     a user friendly error message
 #
-uuNewPackagePublishedMail(*datamanager, *actor, *vaultPackage, *yodaDOI, *status, *message) {
+uuNewPackagePublishedMail(*datamanager, *actor, *title, *yodaDOI, *status, *message) {
         *status  = 1;
         *message = "An internal error occured.";
 
