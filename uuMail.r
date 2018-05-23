@@ -191,7 +191,7 @@ uuNewPackagePublishedMail(*datamanager, *actor, *yodaDOI, *status, *message) {
         *subject = "[Yoda] New package is published with DOI: *yodaDOI";
         *title = "placeholder";
         *doiUrl = "https://doi.org/*yodaDOI";
-        *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI ()\n\nBest regards,\nYoda system";
+        *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
         uuMail(*to, *actor, *subject, *body, *status, *message);
 }
 
@@ -212,6 +212,6 @@ uuYourPackagePublishedMail(*researcher, *actor, *yodaDOI, *status, *message) {
         *subject = "[Yoda] Your package is published with DOI: *yodaDOI";
         *title = "placeholder";
         *doiUrl = "https://doi.org/*yodaDOI";
-        *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI ()\n\nBest regards,\nYoda system";
+        *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
         uuMail(*to, *actor, *subject, *body, *status, *message);
 }
