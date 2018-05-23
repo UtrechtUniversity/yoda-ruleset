@@ -179,17 +179,17 @@ uuNewExternalUserMail(*newUser, *actor, *status, *message) {
 #
 # \param[in]  datamanager datamanager to be informed
 # \param[in]  actor       actor of the email
+# \param[in]  title       title of the published package
 # \param[in]  yodaDOI     DOI of the published package
 # \param[out] status      zero on success, non-zero on failure
 # \param[out] message     a user friendly error message
 #
-uuNewPackagePublishedMail(*datamanager, *actor, *yodaDOI, *status, *message) {
+uuNewPackagePublishedMail(*datamanager, *actor, *vaultPackage, *yodaDOI, *status, *message) {
         *status  = 1;
         *message = "An internal error occured.";
 
         *to = *datamanager;
         *subject = "[Yoda] New package is published with DOI: *yodaDOI";
-        *title = "placeholder";
         *doiUrl = "https://doi.org/*yodaDOI";
         *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
         uuMail(*to, *actor, *subject, *body, *status, *message);
@@ -198,19 +198,19 @@ uuNewPackagePublishedMail(*datamanager, *actor, *yodaDOI, *status, *message) {
 
 # \brief Your package published email.
 #
-# \param[in]  researcher  researcher to be informed
-# \param[in]  actor       actor of the email
-# \param[in]  yodaDOI     DOI of the published package
-# \param[out] status      zero on success, non-zero on failure
-# \param[out] message     a user friendly error message
+# \param[in]  researcher   researcher to be informed
+# \param[in]  actor        actor of the email
+# \param[in]  title       title of the published package
+# \param[in]  yodaDOI      DOI of the published package
+# \param[out] status       zero on success, non-zero on failure
+# \param[out] message      a user friendly error message
 #
-uuYourPackagePublishedMail(*researcher, *actor, *yodaDOI, *status, *message) {
+uuYourPackagePublishedMail(*researcher, *actor, *title, *yodaDOI, *status, *message) {
         *status  = 1;
         *message = "An internal error occured.";
 
         *to = *researcher;
         *subject = "[Yoda] Your package is published with DOI: *yodaDOI";
-        *title = "placeholder";
         *doiUrl = "https://doi.org/*yodaDOI";
         *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
         uuMail(*to, *actor, *subject, *body, *status, *message);
