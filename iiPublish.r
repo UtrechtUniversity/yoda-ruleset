@@ -184,14 +184,13 @@ iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
 iiPostMetadataToDataCite(*publicationConfig, *publicationState){
-	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata";
 	*dataCiteXmlPath = *publicationState.dataCiteXmlPath;
 	*len = int(*publicationState.dataCiteXmlLen);
 	msiDataObjOpen("objPath=*dataCiteXmlPath", *fd);
 	msiDataObjRead(*fd, *len, *buf);
 	msiDataObjClose(*fd, *status);
 	msiBytesBufToStr(*buf, *dataCiteXml);
-	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *dataCiteXml, *httpCode);
+	msiRegisterDataCiteDOI(*dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
@@ -213,8 +212,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 #
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
-	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/metadata/*yodaDOI";
-	msiRemoveDataCiteMetadata(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *httpCode);
+	msiRemoveDataCiteMetadata(*yodaDOI, *httpCode);
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
@@ -236,10 +234,9 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 iiMintDOI(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 	*landingPageUrl = *publicationState.landingPageUrl;
-	*dataCiteUrl = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi";
 
 	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
-	msiRegisterDataCiteDOI(*dataCiteUrl, *publicationConfig.dataCiteUsername, *publicationConfig.dataCitePassword, *request, *httpCode);
+	msiRegisterDataCiteDOI(*request, *httpCode);
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
 		*publicationState.DOIMinted = "yes";
@@ -540,11 +537,7 @@ iiSavePublicationState(*vaultPackage, *publicationState) {
 #
 iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
-	*url = "https://" ++ *publicationConfig.dataCiteServer ++ "/doi/" ++ *yodaDOI;
-	*username = *publicationConfig.dataCiteUsername;
-	*password = *publicationConfig.dataCitePassword;
-	#DEBUG writeLine("serverLog", "msiGetDataCiteDOI: *url, *username, *password");
-	msiGetDataCiteDOI(*url, *username, *password, *result, *httpCode);
+	msiGetDataCiteDOI(*yodaDOI, *result, *httpCode);
 	if (*httpCode == "404") {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
