@@ -33,20 +33,10 @@ uuMail(*to, *actor, *subject, *body, *status, *message) {
         uuValidMail(*to, *valid);
         if (*valid > 0) {
                  writeLine("serverLog", "[EMAIL] Send email to *to by *actor with subject *subject.");
-                 msiCurlMail(*to,
-                             *mailConfig.senderEmail,
-                             *mailConfig.senderName,
-                             *subject,
-                             *mailConfig.replyTo,
-                             *body,
-                             *mailConfig.smtpServer,
-                             *mailConfig.smtpUsername,
-                             *mailConfig.smtpPassword,
-                             *curlCode);
+                 msiCurlMail(*to, *subject, *body, *curlCode);
 
                  if (int(*curlCode) == 0) {
-                         *smtpServer = *mailConfig.smtpServer;
-                         writeLine("serverLog", "[EMAIL] Mail sent to *smtpServer.");
+                         writeLine("serverLog", "[EMAIL] Mail sent to *to.");
                          *status = 0;
                          *message = "";
                  } else {
@@ -69,21 +59,9 @@ uuMail(*to, *actor, *subject, *body, *status, *message) {
 uuGetMailConfig(*mailConfig) {
         # Translation from camelCase config key to snake_case metadata attribute
         *configKeys = list(
-                 "sendNotifications",
-                 "senderEmail",
-                 "senderName",
-                 "replyTo",
-                 "smtpServer",
-                 "smtpUsername",
-                 "smtpPassword");
+                 "sendNotifications");
         *metadataAttributes = list(
-                 "send_notifications",
-                 "sender_email",
-                 "sender_name",
-                 "reply_to",
-                 "smtp_server",
-                 "smtp_username",
-                 "smtp_password");
+                 "send_notifications");
 
         *nKeys = size(*configKeys);
         *sysColl = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
