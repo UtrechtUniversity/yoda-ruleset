@@ -401,9 +401,6 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 iiGetPublicationConfig(*publicationConfig) {
 	# Translation from camelCase config key to snake_case metadata attribute
 	*configKeys = list(
-		 "dataCiteUsername",
- 		 "dataCitePassword",
-		 "dataCiteServer",
 		 "publicHost",
 		 "publicVHost",
 		 "moaiHost",
@@ -414,9 +411,6 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "davrodsAnonymousVHost"
 		 );
 	*metadataAttributes = list(
-		 "datacite_username",
-		 "datacite_password",
-		 "datacite_server",
 		 "public_host",
 		 "public_vhost",
 		 "moai_host",
