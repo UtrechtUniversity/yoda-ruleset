@@ -426,6 +426,21 @@ iiFolderSecure(*folder) {
 	iiCopyLicenseToVaultPackage(*folder, *target);
 	iiSetVaultPermissions(*folder, *target);
 
+	# save EPIC Persistent ID in metadata
+	iiGetPublicationConfig(*config);
+	*host = *config.davrodsAnonymousVHost;
+	*subpath = triml(*target, "/home/");
+	*url = "https://*host/*subpath";
+	msiGenerateEpicPID(*url, *pid, *httpCode);
+	if (*httpCode == "200" || *httpCode == "201") {
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
+		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
+		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+	} else {
+		writeLine("serverLog", "msiGenerateEpicPID returned *httpCode");
+	}
+
 	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);

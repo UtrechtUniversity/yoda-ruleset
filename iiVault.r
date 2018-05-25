@@ -603,6 +603,41 @@ iiFrontEndSystemMetadata(*vaultPackage, *result, *status, *statusInfo) {
 		}
 	        msi_json_arrayops(*result, *packageDOIArr, "add", *size);
 	}
+
+	# EPIC PID
+	*epicPID = "null";
+	foreach (
+		# Retrieve package EPIC PID
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_epic_pid"
+	) {
+		*epicPID = *row.META_COLL_ATTR_VALUE;
+	}
+
+	# EPIC URL
+	*epicURL = "null";
+	foreach (
+		# Retrieve package EPIC URL
+	        *row in
+		SELECT META_COLL_ATTR_VALUE
+		WHERE  COLL_NAME           = *vaultPackage
+		AND    META_COLL_ATTR_NAME = "org_epic_url"
+	) {
+		*epicURL = *row.META_COLL_ATTR_VALUE;
+	}
+
+	if (*epicPID != "null") {
+		*epicPIDArr = "[]";
+	        msi_json_arrayops(*epicPIDArr, "EPIC Persistent Identifier", "add", *size);
+		if (*epicURL != "null") {
+	                msi_json_arrayops(*epicPIDArr, "<a href=\"*epicURL\">*epicPID</a>", "add", *size);
+		} else {
+	                msi_json_arrayops(*epicPIDArr, "*epicPID", "add", *size);
+		}
+	        msi_json_arrayops(*result, *epicPIDArr, "add", *size);
+	}
 }
 
 # \brief Request a copy action of a vault package to the research area.
