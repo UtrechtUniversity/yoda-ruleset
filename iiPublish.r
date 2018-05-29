@@ -408,6 +408,7 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "dataCitePrefix",
 		 "randomIdLength",
 		 "yodaInstance",
+		 "davrodsVHost",
 		 "davrodsAnonymousVHost"
 		 );
 	*metadataAttributes = list(
@@ -418,6 +419,7 @@ iiGetPublicationConfig(*publicationConfig) {
 		 "datacite_prefix",
 		 "random_id_length",
 		 "yoda_instance",
+		 "davrods_vhost",
 		 "davrods_anonymous_vhost");
 
 	*nKeys = size(*configKeys);

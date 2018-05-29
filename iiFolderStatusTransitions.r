@@ -428,7 +428,7 @@ iiFolderSecure(*folder) {
 
 	# save EPIC Persistent ID in metadata
 	iiGetPublicationConfig(*config);
-	*host = *config.davrodsAnonymousVHost;
+	*host = *config.davrodsVHost;
 	*subpath = triml(*target, "/home/");
 	*url = "https://*host/*subpath";
 	msiGenerateEpicPID(*url, *pid, *httpCode);
