@@ -204,13 +204,6 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
                 succeed;
         }
 
-	# Run processing if newFolderStatus is PUBLISHED or DEPUBLISHED
-	if (*newFolderStatus == PUBLISHED) {
-		iiProcessPublication(*folder);
-	} else if (*newFolderStatus == DEPUBLISHED) {
-		iiProcessDepublication(*folder);
-	}
-
 	# Set new vault status.
 	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
 	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
