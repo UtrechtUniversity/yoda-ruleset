@@ -38,12 +38,12 @@ checkResearchACL() {
 
 # retrieve the ACLs of a collection
 getCollAccess(*coll) {
-    msiString2KeyValPair("", *access);
+    *access.own = "";
     foreach (*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *coll) {
 	*name = *row.COLL_ACCESS_NAME;
 	*userId = *row.COLL_ACCESS_USER_ID;
 	if (*name == "own") {
-	    *access.own = *userId;
+	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
 	} else if (*name == "read object") {
 	    *access."*userId" = "read";
@@ -51,23 +51,31 @@ getCollAccess(*coll) {
 	    *access."*userId" = "write";
 	}
     }
+    if (*access.own != "") {
+	msiSubstr(*access.own, "1", "-1", *own);
+	*access.own = *own;
+    }
     *access;
 }
 
 # retrieve the ACLs of a data object
 getDataAccess(*coll, *data) {
-    msiString2KeyValPair("", *access);
+    *access.own = "";
     foreach (*row in SELECT DATA_ACCESS_NAME, DATA_ACCESS_USER_ID WHERE COLL_NAME = *coll AND DATA_NAME = *data) {
 	*name = *row.DATA_ACCESS_NAME;
 	*userId = *row.DATA_ACCESS_USER_ID;
 	if (*name == "own") {
-	    *access.own = *userId;
+	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
 	} else if (*name == "read object") {
 	    *access."*userId" = "read";
 	} else if (*name == "modify object") {
 	    *access."*userId" = "write";
 	}
+    }
+    if (*access.own != "") {
+	msiSubstr(*access.own, "1", "-1", *own);
+	*access.own = *own;
     }
     *access;
 }
@@ -76,9 +84,17 @@ getDataAccess(*coll, *data) {
 updateAccess(*path, *oldAccess, *newAccess, *update) {
     if (*oldAccess.own != *newAccess.own) {
 	*own = *oldAccess.own;
-	foreach (*user in SELECT USER_NAME WHERE USER_ID = *own) {
-	    *own = *user.USER_NAME;
-	    break;
+	if (*own != "") {
+	    msiString2StrArray(*own, *owners);
+	    *own = "";
+	    foreach (*owner in *owners) {
+		foreach (*user in SELECT USER_NAME WHERE USER_ID = *owner) {
+		    *owner = *user.USER_NAME;
+		    break;
+		}
+		*own = *own ++ "," ++ *owner;
+	    }
+	    msiSubstr(*own, "1", "-1", *own);
 	}
 	*newOwn = *newAccess.own;
 	foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
@@ -90,7 +106,7 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	if (*update) {
 	    # add new owner
 	    msiSetACL("default", "own", *newOwn, *path);
-	    # remove old access 
+	    # remove old access
 	    foreach (*key in *oldAccess) {
 		if (*key != "own") {
 		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
