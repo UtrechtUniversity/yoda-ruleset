@@ -107,8 +107,6 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	writeLine("stdout", "*path: owner *own should be *newOwn");
 
 	if (*update) {
-	    # add new owner
-	    msiSetACL("default", "own", *newOwn, *path);
 	    # remove old access
 	    foreach (*key in *oldAccess) {
 		if (*key != "own") {
