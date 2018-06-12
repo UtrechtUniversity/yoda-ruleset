@@ -24,6 +24,9 @@ checkResearchACL() {
 	    foreach (*entry in SELECT COLL_NAME WHERE COLL_NAME like *topColl) {
 		*coll = *entry.COLL_NAME;
 		updateAccess(*coll, getCollAccess(*coll), *access, *update);
+		if (*update != 0) {
+		    msiSetACL("default", "inherit", "", *coll);
+		}
 
 		# check data objects in subcollection
 		foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *coll) {
