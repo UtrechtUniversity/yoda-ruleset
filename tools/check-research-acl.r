@@ -14,9 +14,10 @@ checkResearchACL() {
 
 	    # check data objects in research collection
 	    foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *topColl) {
-		updateAccess("/*topColl/*data",
-			     getDataAccess(*topColl, *data.DATA_NAME),
-			     *access, *update);
+		*dataName = *data.DATA_NAME;
+		updateAccess("*topColl/*dataName",
+			     getDataAccess(*topColl, *dataName), *access,
+			     *update);
 	    }
 
 	    # check subcollections
@@ -30,9 +31,10 @@ checkResearchACL() {
 
 		# check data objects in subcollection
 		foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *coll) {
-		    updateAccess("/*coll/*data",
-				 getDataAccess(*coll, *data.DATA_NAME),
-				 *access, *update);
+		    *dataName = *data.DATA_NAME;
+		    updateAccess("*coll/*dataName",
+				 getDataAccess(*coll, *dataName), *access,
+				 *update);
 		}
 	    }
 	}
