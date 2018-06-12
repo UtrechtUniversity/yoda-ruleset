@@ -101,14 +101,19 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	    }
 	    msiSubstr(*own, "1", "-1", *own);
 	}
-	*newOwn = *newAccess.own;
-	foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
-	    *newOwn = *user.USER_NAME;
-	    break;
+	msiString2StrArray(*newAccess.own, *owners);
+	foreach (*owner in *owners) {
+	    *newOwn = *owner;
+	    foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
+		*newOwn = *user.USER_NAME;
+		break;
+	    }
 	}
 	writeLine("stdout", "*path: owner *own should be *newOwn");
 
 	if (*update) {
+	    # add new owner
+	    msiSetACL("default", "own", *newOwn, *path);
 	    # remove old access
 	    foreach (*key in *oldAccess) {
 		if (*key != "own") {
