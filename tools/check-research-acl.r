@@ -104,6 +104,7 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	msiString2StrArray(*newAccess.own, *owners);
 	foreach (*owner in *owners) {
 	    *newOwn = *owner;
+	    *oldAccess."*newOwn" = "";
 	    foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
 		*newOwn = *user.USER_NAME;
 		break;
@@ -116,7 +117,7 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	    msiSetACL("default", "own", *newOwn, *path);
 	    # remove old access
 	    foreach (*key in *oldAccess) {
-		if (*key != "own") {
+		if (*key != "own" && *oldAccess."*key" != "") {
 		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
 			msiSetACL("default", "null", *user.USER_NAME, *path);
 			break;
