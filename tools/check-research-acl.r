@@ -26,7 +26,7 @@ checkResearchACL() {
 		*coll = *entry.COLL_NAME;
 		updateAccess(*coll, getCollAccess(*coll), *access, *update);
 		if (*update != 0) {
-		    msiSetACL("default", "inherit", "", *coll);
+		    msiSetACL("default", "admin:inherit", "", *coll);
 		}
 
 		# check data objects in subcollection
@@ -114,12 +114,12 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 
 	if (*update) {
 	    # add new owner
-	    msiSetACL("default", "own", *newOwn, *path);
+	    msiSetACL("default", "admin:own", *newOwn, *path);
 	    # remove old access
 	    foreach (*key in *oldAccess) {
 		if (*key != "own" && *oldAccess."*key" != "") {
 		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
-			msiSetACL("default", "null", *user.USER_NAME, *path);
+			msiSetACL("default", "admin:null", *user.USER_NAME, *path);
 			break;
 		    }
 		}
@@ -128,7 +128,7 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	    foreach (*key in *newAccess) {
 		if (*key != "own") {
 		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
-			msiSetACL("default", *newAccess."*key", *user.USER_NAME, *path);
+			msiSetACL("default", "admin:" ++ *newAccess."*key", *user.USER_NAME, *path);
 			break;
 		    }
 		}
