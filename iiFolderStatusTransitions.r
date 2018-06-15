@@ -55,18 +55,16 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 # \param[in] newStatus         New status of folder
 #
 iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
-	on (*currentFolderStatus == FOLDER && *newFolderStatus == LOCKED) {
+	on (*currentFolderStatus != LOCKED &&
+	    (*newFolderStatus == LOCKED || *newFolderStatus == SUBMITTED)) {
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
-	on (*newFolderStatus == FOLDER && (*currentFolderStatus == LOCKED || *currentFolderStatus == REJECTED || *currentFolderStatus == SECURED)) {
+	on (*newFolderStatus == FOLDER || *newFolderStatus == REJECTED ||
+	    *newFolderStatus == SECURED) {
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
-		if (*status != 0) { fail; }
-	}
-	on (*currentFolderStatus == FOLDER && *newFolderStatus == SUBMITTED) {
-		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
 	on (true) {
@@ -104,10 +102,6 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		iiScheduleCopyToVault();
 	}
 	on (*newFolderStatus == FOLDER) {
-		*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-		iiRemoveAVUs(*folder, *actionLog);
-	}
-	on (*newFolderStatus == LOCKED) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
 			iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
@@ -145,7 +139,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus != FOLDER) {
+	if (*currentFolderStatus != FOLDER && *currentFolderStatus != REJECTED && *currentFolderStatus != SECURED) {
 		*status = "WrongStatus";
 		*statusInfo = "Cannot lock folder as it is currently in *currentFolderStatus state";
 		succeed;
@@ -186,7 +180,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SECURED || *currentFolderStatus == REJECTED) {
+	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SUBMITTED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -232,7 +226,8 @@ iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == FOLDER || *currentFolderStatus == LOCKED) {
+	if (*currentFolderStatus == FOLDER || *currentFolderStatus == SECURED ||
+	    *currentFolderStatus == REJECTED || *currentFolderStatus == LOCKED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -275,7 +270,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == SUBMITTED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ FOLDER;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
@@ -284,7 +279,7 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 		succeed;
 	}
 	if (*err < 0) {
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, uuClientFullName, *allowed, *reason);
+		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, FOLDER, uuClientFullName, *allowed, *reason);
 		if (!*allowed) {
 			*status = "PermissionDenied";
 			*statusInfo = *reason;
@@ -328,7 +323,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 
 	*actor = uuClientFullName;
 	*aclKv.actor = *actor;
-	*err = errorcode(msiSudoObjAclSet("", "write", *datamanagerGroup, *folder, *aclKv));
+	*err = errorcode(msiSudoObjAclSet("recursive", "write", *datamanagerGroup, *folder, *aclKv));
 	if (*err < 0) {
 		*status = "PermissionDenied";
 		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, 0, "write", *allowed, *reason);
@@ -358,7 +353,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 			}
 		}
 	}
-	*err = errormsg(msiSudoObjAclSet("", "read", *datamanagerGroup, *folder, *aclKv), *msg);
+	*err = errormsg(msiSudoObjAclSet("recursive", "read", *datamanagerGroup, *folder, *aclKv), *msg);
 	if (*err < 0) {
 		*status = "FailedToRemoveTemporaryAccess";
 		iiCanDatamanagerAclSet(*folder, *actor, *datamanagerGroup, 0, "read", *allowed, *reason);
@@ -445,11 +440,11 @@ iiFolderSecure(*folder) {
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+		msiSetACL("recursive", "admin:write", uuClientFullName, *folder);
 	}
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
 	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+		msiSetACL("recursive", "admin:null", uuClientFullName, *folder);
 	}
 
 	iiCopyActionLog(*folder, *target);
@@ -520,26 +515,26 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
 		uuTreeWalk(*direction, *rootCollection, "iiAddMetadataToItem", *buffer, *error);
-		if (*error == 0) {
-			uuChopPath(*rootCollection, *parent, *child);
-			while(*parent != "/$rodsZoneClient/home") {
-				uuChopPath(*parent, *coll, *child);
-				iiAddMetadataToItem(*coll, *child, true, *buffer, *error);
-			 	*parent = *coll;
-			}
-		}
+#		if (*error == 0) {
+#			uuChopPath(*rootCollection, *parent, *child);
+#			while(*parent != "/$rodsZoneClient/home") {
+#				uuChopPath(*parent, *coll, *child);
+#				iiAddMetadataToItem(*coll, *child, true, *buffer, *error);
+#			 	*parent = *coll;
+#			}
+#		}
 	} else {
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive unlocking of *rootCollection");
 		*direction="reverse";
 		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataFromItem", *buffer, *error);
-		if (*error == 0) {
-			uuChopPath(*rootCollection, *parent, *child);
-			while(*parent != "/$rodsZoneClient/home") {
-				uuChopPath(*parent, *coll, *child);
-				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error);
-			 	*parent = *coll;
-			}
-		}
+#		if (*error == 0) {
+#			uuChopPath(*rootCollection, *parent, *child);
+#			while(*parent != "/$rodsZoneClient/home") {
+#				uuChopPath(*parent, *coll, *child);
+#				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error);
+#			 	*parent = *coll;
+#			}
+#		}
 
 	}
 
