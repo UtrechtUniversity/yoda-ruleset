@@ -103,10 +103,6 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 		iiScheduleCopyToVault();
 	}
-	on (*newFolderStatus == FOLDER) {
-		*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-		iiRemoveAVUs(*folder, *actionLog);
-	}
 	on (*newFolderStatus == LOCKED) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
