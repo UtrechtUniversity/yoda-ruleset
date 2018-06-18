@@ -106,8 +106,11 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 		if (*size > 0) {
 			iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
 		} else {
-			iiAddActionLogRecord(*actor, *folder, "locked");
+			iiAddActionLogRecord(*actor, *folder, "unlocked");
 		}
+	}
+	on (*newFolderStatus == LOCKED) {
+		iiAddActionLogRecord(*actor, *folder, "locked");
 	}
 	on (*newFolderStatus == REJECTED) {
 		iiAddActionLogRecord(*actor, *folder, "rejected for vault");
