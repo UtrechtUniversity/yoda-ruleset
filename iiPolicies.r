@@ -94,6 +94,7 @@ acPreprocForCollCreate {
 		iiCanCollCreate($collName, *allowed, *reason);
 		if (!*allowed) {
 			cut;
+			msiOprDisallowed;
 		}
 	}
 }
