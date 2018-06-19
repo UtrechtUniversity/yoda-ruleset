@@ -136,30 +136,20 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "Cannot grant own or inherit to *objPath";
 			succeed;
 		}
-		iiFolderStatus(*objPath, *folderStatus);
-		if (*folderStatus == SUBMITTED || *folderStatus == ACCEPTED || *folderStatus == REJECTED) {
-			iiCollectionGroupName(*objPath, *groupName);
-			uuGroupGetCategory(*groupName, *category, *subcategory);
-			if (*otherName == "datamanager-*category") {
-				uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
-				if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-					*allowed = true;
-					*reason = "User is a datamanager of category *category.";
-				} else {
-					*allowed = false;
-					*reason = "User is not a datamanager.";
-				}
+		iiCollectionGroupName(*objPath, *groupName);
+		uuGroupGetCategory(*groupName, *category, *subcategory);
+		if (*otherName == "datamanager-*category") {
+			uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);
+			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+				*allowed = true;
+				*reason = "User is a datamanager of category *category.";
 			} else {
 				*allowed = false;
-				*reason = "Permission can only be granted to the datamanager-*category group, not *otherName.";
+				*reason = "User is not a datamanager.";
 			}
 		} else {
 			*allowed = false;
-			if (*folderStatus == FOLDER) {
-				*reason = "Currently a datamanager has no permission to alter the state of *objPath.";
-			} else {
-				*reason = "Currently a datamanager has no permission to alter the state of  *objPath with status '*folderStatus'.";
-			}
+			*reason = "Permission can only be granted to the datamanager-*category group, not *otherName.";
 		}
 	}
 	
