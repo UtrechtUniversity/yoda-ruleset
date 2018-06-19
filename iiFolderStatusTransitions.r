@@ -337,6 +337,15 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		}
 		succeed;
 	}
+	if (*newFolderStatus == REJECTED) {
+		# get permission to unlock ancestors, too
+		uuChopPath(*folder, *parent, *child);
+		while(*parent != "/$rodsZoneClient/home") {
+			msiSudoObjAclSet("", "write", *datamanagerGroup, *parent, *aclKv);
+			uuChopPath(*parent, *coll, *child);
+			*parent = *coll;
+		}
+	}
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *newFolderStatus;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
@@ -365,7 +374,18 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		} else {
 			*statusInfo = *reason;
 		}
-	} else if (*status == "Unknown") {
+		succeed;
+	}
+	if (*newFolderStatus == REJECTED) {
+		# remove permission to modify ancestors
+		uuChopPath(*folder, *parent, *child);
+		while(*parent != "/$rodsZoneClient/home") {
+			msiSudoObjAclSet("", "read", *datamanagerGroup, *parent, *aclKv);
+			uuChopPath(*parent, *coll, *child);
+			*parent = *coll;
+		}
+	}
+	if (*status == "Unknown") {
 		*status = "Success";
 		*statusInfo = "";
 	}
@@ -442,12 +462,20 @@ iiFolderSecure(*folder) {
 	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
 	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	if (*modifyAccess != 1) {
-		msiSetACL("recursive", "admin:write", uuClientFullName, *folder);
+	msiSetACL("recursive", "admin:write", uuClientFullName, *folder);
+	uuChopPath(*folder, *parent, *child);
+	while(*parent != "/$rodsZoneClient/home") {
+		msiSetACL("default", "admin:write", uuClientFullName, *parent);
+		uuChopPath(*parent, *coll, *child);
+		*parent = *coll;
 	}
 	msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C");
-	if (*modifyAccess != 1) {
-		msiSetACL("recursive", "admin:null", uuClientFullName, *folder);
+	msiSetACL("recursive", "admin:null", uuClientFullName, *folder);
+	uuChopPath(*folder, *parent, *child);
+	while(*parent != "/$rodsZoneClient/home") {
+		msiSetACL("default", "admin:null", uuClientFullName, *parent);
+		uuChopPath(*parent, *coll, *child);
+		*parent = *coll;
 	}
 
 	iiCopyActionLog(*folder, *target);
@@ -518,26 +546,26 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
 		uuTreeWalk(*direction, *rootCollection, "iiAddMetadataToItem", *buffer, *error);
-#		if (*error == 0) {
-#			uuChopPath(*rootCollection, *parent, *child);
-#			while(*parent != "/$rodsZoneClient/home") {
-#				uuChopPath(*parent, *coll, *child);
-#				iiAddMetadataToItem(*coll, *child, true, *buffer, *error);
-#			 	*parent = *coll;
-#			}
-#		}
+		if (*error == 0) {
+			uuChopPath(*rootCollection, *parent, *child);
+			while(*parent != "/$rodsZoneClient/home") {
+				uuChopPath(*parent, *coll, *child);
+				iiAddMetadataToItem(*coll, *child, true, *buffer, *error);
+				*parent = *coll;
+			}
+		}
 	} else {
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive unlocking of *rootCollection");
 		*direction="reverse";
 		uuTreeWalk(*direction, *rootCollection, "iiRemoveMetadataFromItem", *buffer, *error);
-#		if (*error == 0) {
-#			uuChopPath(*rootCollection, *parent, *child);
-#			while(*parent != "/$rodsZoneClient/home") {
-#				uuChopPath(*parent, *coll, *child);
-#				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error);
-#			 	*parent = *coll;
-#			}
-#		}
+		if (*error == 0) {
+			uuChopPath(*rootCollection, *parent, *child);
+			while(*parent != "/$rodsZoneClient/home") {
+				uuChopPath(*parent, *coll, *child);
+				iiRemoveMetadataFromItem(*coll, *child, true, *buffer, *error);
+				*parent = *coll;
+			}
+		}
 
 	}
 
