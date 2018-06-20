@@ -44,9 +44,9 @@ checkResearchACL() {
 # retrieve the ACLs of a collection
 getCollAccess(*coll) {
     *access.own = "";
-    foreach (*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *coll) {
-	*name = *row.COLL_ACCESS_NAME;
+    foreach (*row in SELECT ORDER(COLL_ACCESS_USER_ID), COLL_ACCESS_NAME WHERE COLL_NAME = *coll) {
 	*userId = *row.COLL_ACCESS_USER_ID;
+	*name = *row.COLL_ACCESS_NAME;
 	if (*name == "own") {
 	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
@@ -66,9 +66,9 @@ getCollAccess(*coll) {
 # retrieve the ACLs of a data object
 getDataAccess(*coll, *data) {
     *access.own = "";
-    foreach (*row in SELECT DATA_ACCESS_NAME, DATA_ACCESS_USER_ID WHERE COLL_NAME = *coll AND DATA_NAME = *data) {
-	*name = *row.DATA_ACCESS_NAME;
+    foreach (*row in SELECT ORDER(DATA_ACCESS_USER_ID), DATA_ACCESS_NAME WHERE COLL_NAME = *coll AND DATA_NAME = *data) {
 	*userId = *row.DATA_ACCESS_USER_ID;
+	*name = *row.DATA_ACCESS_NAME;
 	if (*name == "own") {
 	    *access.own = *access.own ++ "%" ++ *userId;
 	    *access."*userId" = "own";
