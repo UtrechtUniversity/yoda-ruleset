@@ -15,16 +15,16 @@ checkResearchACL() {
 	    # check data objects in research collection
 	    foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *topColl) {
 		*dataName = *data.DATA_NAME;
-		updateAccess("*topColl/*dataName",
-			     getDataAccess(*topColl, *dataName), *access,
-			     *update);
+		checkAccess("*topColl/*dataName",
+			    getDataAccess(*topColl, *dataName), *access,
+			    *update);
 	    }
 
 	    # check subcollections
 	    *topColl = *topColl ++ "/%";
 	    foreach (*entry in SELECT COLL_NAME WHERE COLL_NAME like *topColl) {
 		*coll = *entry.COLL_NAME;
-		updateAccess(*coll, getCollAccess(*coll), *access, *update);
+		checkAccess(*coll, getCollAccess(*coll), *access, *update);
 		if (*update != 0) {
 		    msiSetACL("default", "admin:inherit", "", *coll);
 		}
@@ -32,9 +32,9 @@ checkResearchACL() {
 		# check data objects in subcollection
 		foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *coll) {
 		    *dataName = *data.DATA_NAME;
-		    updateAccess("*coll/*dataName",
-				 getDataAccess(*coll, *dataName), *access,
-				 *update);
+		    checkAccess("*coll/*dataName",
+				getDataAccess(*coll, *dataName), *access,
+				*update);
 		}
 	    }
 	}
@@ -85,8 +85,8 @@ getDataAccess(*coll, *data) {
     *access;
 }
 
-# update ACLs
-updateAccess(*path, *oldAccess, *newAccess, *update) {
+# check ACLs
+checkAccess(*path, *oldAccess, *newAccess, *update) {
     if (*oldAccess.own != *newAccess.own) {
 	*own = *oldAccess.own;
 	if (*own != "") {
@@ -94,12 +94,13 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 	    *own = "";
 	    foreach (*owner in *owners) {
 		foreach (*user in SELECT USER_NAME WHERE USER_ID = *owner) {
-		    *owner = *user.USER_NAME;
+		    *own = *own ++ "," ++ *user.USER_NAME;
 		    break;
 		}
-		*own = *own ++ "," ++ *owner;
 	    }
-	    msiSubstr(*own, "1", "-1", *own);
+	    if (*own != "") {
+		msiSubstr(*own, "1", "-1", *own);
+	    }
 	}
 	msiString2StrArray(*newAccess.own, *owners);
 	foreach (*owner in *owners) {
@@ -110,30 +111,32 @@ updateAccess(*path, *oldAccess, *newAccess, *update) {
 		break;
 	    }
 	}
-	writeLine("stdout", "*path: owner *own should be *newOwn");
+	if (*own != *newOwn) {
+	    writeLine("stdout", "*path: owner *own should be *newOwn");
 
-	if (*update) {
-	    # add new owner
-	    msiSetACL("default", "admin:own", *newOwn, *path);
-	    # remove old access
-	    foreach (*key in *oldAccess) {
-		if (*key != "own" && *oldAccess."*key" != "") {
-		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
-			msiSetACL("default", "admin:null", *user.USER_NAME, *path);
-			break;
+	    if (*update) {
+		# add new owner
+		msiSetACL("default", "admin:own", *newOwn, *path);
+		# remove old access
+		foreach (*key in *oldAccess) {
+		    if (*key != "own" && *oldAccess."*key" != "") {
+			foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
+			    msiSetACL("default", "admin:null", *user.USER_NAME, *path);
+			    break;
+			}
 		    }
 		}
-	    }
-	    # add new access
-	    foreach (*key in *newAccess) {
-		if (*key != "own") {
-		    foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
-			msiSetACL("default", "admin:" ++ *newAccess."*key", *user.USER_NAME, *path);
-			break;
+		# add new access
+		foreach (*key in *newAccess) {
+		    if (*key != "own") {
+			foreach (*user in SELECT USER_NAME WHERE USER_ID = *key) {
+			    msiSetACL("default", "admin:" ++ *newAccess."*key", *user.USER_NAME, *path);
+			    break;
+			}
 		    }
 		}
+		writeLine("stdout", "    ...fixed");
 	    }
-	    writeLine("stdout", "    ...fixed");
 	}
     }
 }
