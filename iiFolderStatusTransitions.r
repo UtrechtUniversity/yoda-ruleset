@@ -104,10 +104,15 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == FOLDER) {
 		iiActionLog(*folder, *size, *actionLog);
 		if (*size > 0) {
-			iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
-		} else {
-			iiAddActionLogRecord(*actor, *folder, "unlocked");
+			*log = "";
+			msi_json_arrayops(*actionLog, *log, "get", *size - 1);
+			msi_json_arrayops(*log, *log, "get", 1);
+			if (*log == "submitted for vault") {
+				iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
+				succeed;
+			}
 		}
+		iiAddActionLogRecord(*actor, *folder, "unlocked");
 	}
 	on (*newFolderStatus == LOCKED) {
 		iiAddActionLogRecord(*actor, *folder, "locked");
