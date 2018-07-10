@@ -473,24 +473,28 @@ uuGetGroupData(*json) {
 
 	foreach (*item in
 		 SELECT ORDER(USER_GROUP_NAME), USER_NAME, USER_ZONE
-		 WHERE USER_TYPE = 'rodsgroup') {
+		 WHERE USER_TYPE != 'rodsgroup') {
 		*groupName = *item.USER_GROUP_NAME;
 		*userName = *item.USER_NAME;
 		*userZone = *item.USER_ZONE;
-		*user = "*userName#*userZone";
-		if (*groupName like "read-*") {
-			msiSubstr(*groupName, "5", "-1", *groupName);
-			uuGroupMembers(*groups, *rgroup, *rname, *rindex,
-				       "research-" ++ *groupName, "read",
-				       *user);
-		} else if (*groupName like "vault-*") {
-			msiSubstr(*groupName, "6", "-1", *groupName);
-			uuGroupMembers(*groups, *vgroup, *vname, *vindex,
-				       "research-" ++ *groupName, "vault",
-				       *user);
-		} else {
-			uuGroupMembers(*groups, *group, *name, *index,
-				       *groupName, "members", *user);
+		if (*groupName != *userName) {
+			*user = "*userName#*userZone";
+			if (*groupName like "read-*") {
+				msiSubstr(*groupName, "5", "-1", *groupName);
+				uuGroupMembers(*groups, *rgroup, *rname,
+					       *rindex,
+					       "research-" ++ *groupName,
+					       "read", *user);
+			} else if (*groupName like "vault-*") {
+				msiSubstr(*groupName, "6", "-1", *groupName);
+				uuGroupMembers(*groups, *vgroup, *vname,
+					       *vindex,
+					       "research-" ++ *groupName,
+					       "vault", *user);
+			} else {
+				uuGroupMembers(*groups, *group, *name, *index,
+					       *groupName, "members", *user);
+			}
 		}
 	}
 
