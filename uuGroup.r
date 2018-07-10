@@ -413,13 +413,18 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
-uuGroupMembers(*groups, *group, *name, *index, *groupName, *member, *user) {
+uuGroupMembers(*groups, *subgroups, *group, *name, *index, *subindex, *groupName, *member, *user) {
 	while (*name < *groupName) {
 		*index = *index + 1;
-		if (*index >= size(*groups)) {
-			break;
+		if (*index >= size(*subgroups)) {
+			*subindex = *subindex + 1;
+			if (*subindex >= size(*groups)) {
+				break;
+			}
+			*subgroups = elem(*groups, *subindex);
+			*index = 0;
 		}
-		*group = elem(*groups, *index);
+		*group = elem(*subgroups, *index);
 		*name = *group.name;
 	}
 	if (*name == *groupName) {
@@ -432,12 +437,17 @@ uuGroupMembers(*groups, *group, *name, *index, *groupName, *member, *user) {
 
 uuGetGroupData(*json) {
 	*groups = list();
+	*subgroups = list();
 	*name = "";
 	foreach (*item in
 		 SELECT ORDER_DESC(USER_GROUP_NAME), META_USER_ATTR_NAME, META_USER_ATTR_VALUE
 		 WHERE USER_TYPE = 'rodsgroup') {
 		if (*name != *item.USER_GROUP_NAME) {
 			*name = *item.USER_GROUP_NAME;
+			if (size(*subgroups) >= 256) {
+				*groups = cons(*subgroups, *groups);
+				*subgroups = list();
+			}
 			msiString2KeyValPair("", *group);
 			*group.name = *name;
 			*group.managers = "[]";
@@ -445,7 +455,7 @@ uuGetGroupData(*json) {
 			*group.read = "[]";
 			*group.vault = "[]";
 
-			*groups = cons(*group, *groups);
+			*subgroups = cons(*group, *subgroups);
 		}
 
 		if (*item.META_USER_ATTR_NAME == "description") {
@@ -462,15 +472,21 @@ uuGetGroupData(*json) {
 			*group.managers = *managers;
 		}
 	}
+	*groups = cons(*subgroups, *groups);
 
 	*index = 0;
+	*subindex = 0;
 
 	*rindex = 0;
+	*rsubindex = 0;
 	*rgroup = *group;
+	*rsubgroups = *subgroups;
 	*rname = *name;
 
 	*vindex = 0;
+	*vsubindex = 0;
 	*vgroup = *group;
+	*vsubgroups = *subgroups;
 	*vname = *name;
 
 	foreach (*item in
@@ -483,24 +499,32 @@ uuGetGroupData(*json) {
 			*user = "*userName#*userZone";
 			if (*groupName like "read-*") {
 				msiSubstr(*groupName, "5", "-1", *groupName);
-				uuGroupMembers(*groups, *rgroup, *rname,
-					       *rindex,
+				uuGroupMembers(*groups, *rsubgroups, *rgroup,
+					       *rname, *rindex, *rsubindex,
 					       "research-" ++ *groupName,
 					       "read", *user);
 			} else if (*groupName like "vault-*") {
 				msiSubstr(*groupName, "6", "-1", *groupName);
-				uuGroupMembers(*groups, *vgroup, *vname,
-					       *vindex,
+				uuGroupMembers(*groups, *vsubgroups, *vgroup,
+					       *vname, *vindex, *vsubindex,
 					       "research-" ++ *groupName,
 					       "vault", *user);
 			} else {
-				uuGroupMembers(*groups, *group, *name, *index,
+				uuGroupMembers(*groups, *subgroups, *group,
+					       *name, *index, *subindex,
 					       *groupName, "members", *user);
 			}
 		}
 	}
 
-	uuKvpList2JSON(*groups, *json, *size);
+	*json = "[";
+	*i = size(*groups);
+	while (*i > 0) {
+		*i = *i - 1;
+		uuKvpList2JSON(elem(*groups, *i), *chunk, *size);
+		*json = *json ++ substr(*chunk, 1, strlen(*chunk) - 1);
+	}
+	*json = *json ++ "]";
 }
 
 uuGetAllGroupData(*groupData) {
