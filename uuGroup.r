@@ -414,7 +414,7 @@ uuGroupGetDescription(*groupName, *description) {
 }
 
 uuGroupMembers(*groups, *group, *name, *index, *groupName, *member, *user) {
-	while (*name != *groupName) {
+	while (*name < *groupName) {
 		*index = *index + 1;
 		if (*index >= size(*groups)) {
 			break;
@@ -422,10 +422,12 @@ uuGroupMembers(*groups, *group, *name, *index, *groupName, *member, *user) {
 		*group = elem(*groups, *index);
 		*name = *group.name;
 	}
-	*members = *group."*member";
-	*size = 0;
-	msi_json_arrayops(*members, *user, "add", *size);
-	*group."*member" = *members;
+	if (*name == *groupName) {
+		*members = *group."*member";
+		*size = 0;
+		msi_json_arrayops(*members, *user, "add", *size);
+		*group."*member" = *members;
+	}
 }
 
 uuGetGroupData(*json) {
