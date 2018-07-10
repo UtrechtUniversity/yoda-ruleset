@@ -413,6 +413,90 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
+uuGroupMembers(*groups, *group, *name, *index, *groupName, *member, *user) {
+	while (*name != *groupName) {
+		*index = *index + 1;
+		if (*index >= size(*groups)) {
+			break;
+		}
+		*group = elem(*groups, *index);
+		*name = *group.name;
+	}
+	*members = *group."*member";
+	*size = 0;
+	msi_json_arrayops(*members, *user, "add", *size);
+	*group."*member" = *members;
+}
+
+uuGetGroupData(*json) {
+	*groups = list();
+	*name = "";
+	foreach (*item in
+		 SELECT ORDER_DESC(USER_GROUP_NAME), META_USER_ATTR_NAME, META_USER_ATTR_VALUE
+		 WHERE USER_TYPE = 'rodsgroup') {
+		if (*name != *item.USER_GROUP_NAME) {
+			*name = *item.USER_GROUP_NAME;
+			msiString2KeyValPair("", *group);
+			*group.name = *name;
+			*group.managers = "[]";
+			*group.members = "[]";
+			*group.read = "[]";
+			*group.vault = "[]";
+
+			*groups = cons(*group, *groups);
+		}
+
+		if (*item.META_USER_ATTR_NAME == "description") {
+			*group.description = *item.META_USER_ATTR_VALUE;
+		} else if (*item.META_USER_ATTR_NAME == "category") {
+			*group.category = *item.META_USER_ATTR_VALUE;
+		} else if (*item.META_USER_ATTR_NAME == "subcategory") {
+			*group.subcategory = *item.META_USER_ATTR_VALUE;
+		} else if (*item.META_USER_ATTR_NAME == "manager") {
+			*managers = *group.managers;
+			*size = 0;
+			msi_json_arrayops(*managers, *item.META_USER_ATTR_VALUE,
+					  "add", *size);
+			*group.managers = *managers;
+		}
+	}
+
+	*index = 0;
+
+	*rindex = 0;
+	*rgroup = *group;
+	*rname = *name;
+
+	*vindex = 0;
+	*vgroup = *group;
+	*vname = *name;
+
+	foreach (*item in
+		 SELECT ORDER(USER_GROUP_NAME), USER_NAME, USER_ZONE
+		 WHERE USER_TYPE = 'rodsgroup') {
+		*groupName = *item.USER_GROUP_NAME;
+		*userName = *item.USER_NAME;
+		*userZone = *item.USER_ZONE;
+		*user = "*userName#*userZone";
+		if (*groupName like "read-*") {
+			msiSubstr(*groupName, "5", "-1", *groupName);
+			uuGroupMembers(*groups, *rgroup, *rname, *rindex,
+				       "research-" ++ *groupName, "read",
+				       *user);
+		} else if (*groupName like "vault-*") {
+			msiSubstr(*groupName, "6", "-1", *groupName);
+			uuGroupMembers(*groups, *vgroup, *vname, *vindex,
+				       "research-" ++ *groupName, "vault",
+				       *user);
+		} else {
+			uuGroupMembers(*groups, *group, *name, *index,
+				       *groupName, "members", *user);
+		}
+	}
+
+	uuKvpList2JSON(*groups, *json, *size);
+}
+
 uuGetAllGroupData(*groupData) {
 	*user = uuClientFullName();
 	uuGetUserType(*user, *userType);
