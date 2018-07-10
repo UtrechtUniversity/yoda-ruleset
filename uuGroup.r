@@ -413,6 +413,39 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
+uuGroupSearch(*groups, *subgroups, *group, *index, *subindex, *name) {
+	*low = 0;
+	*high = size(*groups);
+	while (*low < *high) {
+		*subindex = int((*low + *high) / 2);
+		*subgroups = elem(*groups, *subindex);
+		if (*name < elem(*subgroups, 0).name) {
+			*high = *subindex;
+		} else if (*name > elem(*subgroups, size(*subgroups) - 1).name)
+		{
+			*low = *subindex + 1;
+		} else {
+
+			*low = 0;
+			*high = size(*subgroups);
+			while (*low < *high) {
+				*index = int((*low + *high) / 2);
+				*group = elem(*subgroups, *index);
+				if (*name < *group.name) {
+					*high = *index;
+				} else if (*name > *group.name) {
+					*low = *index + 1;
+				} else {
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	*name = *group.name;
+}
+
 uuGroupMembers(*groups, *subgroups, *group, *name, *index, *subindex, *groupName, *member, *user) {
 	while (*name < *groupName) {
 		*index = *index + 1;
@@ -453,7 +486,6 @@ uuGetGroupData(*json) {
 			*group.managers = "[]";
 			*group.members = "[]";
 			*group.read = "[]";
-			*group.vault = "[]";
 
 			*subgroups = cons(*group, *subgroups);
 		}
@@ -481,13 +513,17 @@ uuGetGroupData(*json) {
 	*rsubindex = 0;
 	*rgroup = *group;
 	*rsubgroups = *subgroups;
-	*rname = *name;
+	*rname = "research-";
+	uuGroupSearch(*groups, *rsubgroups, *rgroup, *rindex, *rsubindex,
+		      *rname);
 
-	*vindex = 0;
-	*vsubindex = 0;
-	*vgroup = *group;
-	*vsubgroups = *subgroups;
-	*vname = *name;
+	*iindex = 0;
+	*isubindex = 0;
+	*igroup = *group;
+	*isubgroups = *subgroups;
+	*iname = "initial-";
+	uuGroupSearch(*groups, *isubgroups, *igroup, *iindex, *isubindex,
+		      *iname);
 
 	foreach (*item in
 		 SELECT ORDER(USER_GROUP_NAME), USER_NAME, USER_ZONE
@@ -499,17 +535,17 @@ uuGetGroupData(*json) {
 			*user = "*userName#*userZone";
 			if (*groupName like "read-*") {
 				msiSubstr(*groupName, "5", "-1", *groupName);
-				uuGroupMembers(*groups, *rsubgroups, *rgroup,
-					       *rname, *rindex, *rsubindex,
+				uuGroupMembers(*groups, *rsubgroups,
+					       *rgroup, *rname, *rindex,
+					       *rsubindex,
 					       "research-" ++ *groupName,
 					       "read", *user);
-			} else if (*groupName like "vault-*") {
-				msiSubstr(*groupName, "6", "-1", *groupName);
-				uuGroupMembers(*groups, *vsubgroups, *vgroup,
-					       *vname, *vindex, *vsubindex,
-					       "research-" ++ *groupName,
-					       "vault", *user);
-			} else {
+				uuGroupMembers(*groups, *isubgroups,
+					       *igroup, *iname, *iindex,
+					       *isubindex,
+					       "initial-" ++ *groupName,
+					       "read", *user);
+			} else if (*groupName not like "vault-*") {
 				uuGroupMembers(*groups, *subgroups, *group,
 					       *name, *index, *subindex,
 					       *groupName, "members", *user);
