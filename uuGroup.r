@@ -413,11 +413,6 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
-uuGetGroupData(*json) {
-	msiExecCmd("get-group-data.sh", "null", "null", "null", 0, *cmdExecOut);
-	msiGetStdoutInExecCmdOut(*cmdExecOut, *json);
-}
-
 # \brief Get a list of both manager and non-manager members of a group.
 #
 # This function ignores zone names, this is usually a bad idea.

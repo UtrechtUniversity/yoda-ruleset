@@ -1,4 +1,5 @@
-def main(rule_args, callback, rei):
+def uuGetGroupData(rule_args, callback, rei):
+    import irods_types
     import json
 
     groups = {}
@@ -66,6 +67,3 @@ def main(rule_args, callback, rei):
 	ret_val = callback.msiGetMoreRows(query, result, 0)
 
     callback.writeString("stdout", json.dumps(groups.values()))
-
-INPUT null
-OUTPUT ruleExecOut
