@@ -2,7 +2,6 @@
 # \brief     iRODS policies for Yoda (changes to core.re).
 # \author    Ton Smeele
 # \author    Felix Croes
-# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
@@ -79,6 +78,3 @@ acPreProcForObjRename(*src, *dst) {
                 }
         }
 }
-
-# Enforce server to use TLS encryption.
-acPreConnect(*OUT) { *OUT="CS_NEG_REQUIRE"; }
