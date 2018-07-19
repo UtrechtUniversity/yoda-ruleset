@@ -454,14 +454,15 @@ iiFolderSecure(*folder) {
 	*host = *config.davrodsVHost;
 	*subpath = triml(*target, "/home/");
 	*url = "https://*host/*subpath";
-	msiGenerateEpicPID(*url, *pid, *httpCode);
+	msiGenerateUUID(*pid);
+	msiRegisterEpicPID(*url, *pid, *httpCode);
 	if (*httpCode == "200" || *httpCode == "201") {
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
 		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
 		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
 	} else {
-		writeLine("serverLog", "msiGenerateEpicPID returned *httpCode");
+		writeLine("serverLog", "msiRegisterEpicPID returned *httpCode");
 	}
 
 	# Set research folder status.
