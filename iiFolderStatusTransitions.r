@@ -442,7 +442,29 @@ iiFolderSecure(*folder) {
 		msiSetACL("default", "admin:null", uuClientFullName, *folder);
 	}
 
+	# Generate and register EPIC PID
 	*target = iiDetermineVaultTarget(*folder);
+	iiGetPublicationConfig(*config);
+	*host = *config.davrodsVHost;
+	*subpath = triml(*target, "/home/");
+	*url = "https://*host/*subpath";
+	msiGenerateUUID(*pid);
+	msiRegisterEpicPID(*url, *pid, *httpCode);
+	if (*httpCode != "200" && *httpCode != "201") {
+		# Always retry
+		writeLine("serverLog", "iiFolderSecure: msiRegisterEpicPID returned *httpCode");
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_RETRY, *kvp);
+		if (*modifyAccess != 1) {
+			msiSetACL("default", "admin:write", uuClientFullName, *folder);
+		}
+		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+		if (*modifyAccess != 1) {
+			msiSetACL("default", "admin:null", uuClientFullName, *folder);
+		}
+		fail;
+	}
+
+	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
 	iiCopyOriginalMetadataToVault(*target);
@@ -450,20 +472,10 @@ iiFolderSecure(*folder) {
 	iiSetVaultPermissions(*folder, *target);
 
 	# save EPIC Persistent ID in metadata
-	iiGetPublicationConfig(*config);
-	*host = *config.davrodsVHost;
-	*subpath = triml(*target, "/home/");
-	*url = "https://*host/*subpath";
-	msiGenerateUUID(*pid);
-	msiRegisterEpicPID(*url, *pid, *httpCode);
-	if (*httpCode == "200" || *httpCode == "201") {
-		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
-		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
-		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
-		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
-	} else {
-		writeLine("serverLog", "msiRegisterEpicPID returned *httpCode");
-	}
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
+	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
+	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
 
 	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;

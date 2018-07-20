@@ -1,11 +1,11 @@
-copyToVault {
+retryCopyToVault {
 	# Copy research folder to vault.
 	# This script is kept as dumb as possible.
 	# All processing and error handling is done by iiFolderSecure
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault", *GenQInp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", CRONJOB_RETRY, *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
