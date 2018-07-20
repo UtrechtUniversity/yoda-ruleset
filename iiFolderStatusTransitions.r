@@ -438,22 +438,47 @@ iiFolderSecure(*folder) {
 		msiSetACL("default", "admin:write", uuClientFullName, *folder);
 	}
 	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+	*found = false;
+	foreach (*row in SELECT META_COLL_ATTR_VALUE
+			 WHERE COLL_NAME = '*folder'
+			 AND META_COLL_ATTR_NAME = IICOPYPARAMSNAME) {
+		# retry with previous parameters
+		*value = *row.META_COLL_ATTR_VALUE;
+		*list = split(*value, "%");
+		*target = elem(*list, 0);
+		*pid = elem(*list, 1);
+
+		*found = true;
+	}
+	if (*found) {
+		# Remove parameters from metadata
+		msiString2KeyValPair("", *kvp);
+		*key = IICOPYPARAMSNAME;
+		*kvp."*key" = "*target%*pid";
+		msiRemoveKeyValuePairsFromObj(*kvp, *folder, "-C");
+	}
 	if (*modifyAccess != 1) {
 		msiSetACL("default", "admin:null", uuClientFullName, *folder);
 	}
 
-	# Generate and register EPIC PID
-	*target = iiDetermineVaultTarget(*folder);
+	if (!*found) {
+		# Generate new EPIC PID
+		*target = iiDetermineVaultTarget(*folder);
+		msiGenerateUUID(*pid);
+	}
 	iiGetPublicationConfig(*config);
 	*host = *config.davrodsVHost;
 	*subpath = triml(*target, "/home/");
 	*url = "https://*host/*subpath";
-	msiGenerateUUID(*pid);
-	msiRegisterEpicPID(*url, *pid, *httpCode);
+
+	*httpCode = "-1";
+	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
 	if (*httpCode != "200" && *httpCode != "201") {
 		# Always retry
 		writeLine("serverLog", "iiFolderSecure: msiRegisterEpicPID returned *httpCode");
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_RETRY, *kvp);
+		*key = IICOPYPARAMSNAME;
+		*kvp."*key" = "*target%*pid";
 		if (*modifyAccess != 1) {
 			msiSetACL("default", "admin:write", uuClientFullName, *folder);
 		}
