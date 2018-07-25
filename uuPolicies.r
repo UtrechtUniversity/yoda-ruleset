@@ -5,11 +5,6 @@
 # \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# reroute msiExecCmd to msiSecureExecCmd
-msiExecCmd(*cmd, *argv, *addr, *hint, *resource, *out) {
-	msiSecureExecCmd(*cmd, *argv, *addr, *hint, *resource, *out);
-}
-
 # \brief Restrict access to OS callouts
 #
 # \param[in]		cmd  name of executable
