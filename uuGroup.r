@@ -413,39 +413,6 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
-uuGetAllGroupData(*groupData) {
-	*user = uuClientFullName();
-	uuGetUserType(*user, *userType);
-	if (*userType == "rodsadmin") {
-		uuGetAllGroups(*groups);
-	} else {
-		uuUserGetGroups(*user, true, *groups);
-	}
-
-	*data = list();
-	foreach (*groupName in *groups) {
-		uuGroupGetCategory(*groupName, *category, *subCategory);
-		uuGroupGetDescription(*groupName, *description);
-		uuGroupGetMembers(*groupName, true, true, *members);
-
-		msiString2KeyValPair("", *group);
-		*group.name = *groupName;
-		uuList2JSON(*members, *jsonMembers);
-		*group.members = *jsonMembers;
-		if (*description != "") {
-			*group.description = *description;
-		}
-		if (*category != "") {
-			*group.category = *category;
-		}
-		if (*subCategory != "") {
-			*group.subCategory = *subCategory;
-		}
-		*data = cons(*group, *data);
-	}
-	uuKvpList2JSON(*data, *groupData, *size);
-}
-
 # \brief Get a list of both manager and non-manager members of a group.
 #
 # This function ignores zone names, this is usually a bad idea.
