@@ -1,9 +1,6 @@
 # \brief Write group data for all users to stdout.
 #
 def uuGetGroupData(rule_args, callback, rei):
-    import irods_types
-    import json
-
     groups = {}
 
     #
@@ -76,7 +73,7 @@ def uuGetGroupData(rule_args, callback, rei):
 		    group = groups[name]
 		    group["members"].append(user)
 
-	# continue wirth query
+	# continue with this query
 	if result.continueInx == 0:
 	    break
 	ret_val = callback.msiGetMoreRows(query, result, 0)
