@@ -29,7 +29,7 @@ PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune 
 RULESET_NAME ?= rules-uu.re
 RULESET_FILE := $(RULESET_NAME)
 DEBUG_FILE := $(RULESET_NAME).debug
-PYRULESET_NAME ?= rules_uu.py
+PYRULESET_NAME ?= rules_uu
 PYRULESET_FILE := $(PYRULESET_NAME)
 
 INSTALL_DIR  ?= ..
