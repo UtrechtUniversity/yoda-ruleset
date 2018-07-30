@@ -1,3 +1,4 @@
+
 # \brief Write group data for all users to stdout.
 #
 def uuGetGroupData(rule_args, callback, rei):
