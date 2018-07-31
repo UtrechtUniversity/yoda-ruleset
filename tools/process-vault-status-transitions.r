@@ -23,7 +23,7 @@ processVaultActions() {
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
-					writeLine("serverLog", "Failed to process vault request on *collName");
+					writeLine("stdout", "Failed to process vault request on *collName");
 				} else { # skip processing this vault request
 					# Retrieve collection id from folder.
 					foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
@@ -41,7 +41,7 @@ processVaultActions() {
 					if (*pending) {
 						*err = errorcode(iiVaultProcessStatusTransition(*folder, *action, *actor, *status, *statusInfo));
 						if (*err < 0) {
-							writeLine("serverLog", "iiVaultProcessStatusTransition: *err");
+							writeLine("stdout", "iiVaultProcessStatusTransition: *err");
 							*status = "InternalError";
 							*statusInfo = "";
 						}
@@ -49,7 +49,7 @@ processVaultActions() {
 						# Check if rods can modify metadata and grant temporary write ACL if necessary.
 						msiCheckAccess(*collName, "modify metadata", *modifyPermission);
 						if (*modifyPermission == 0) {
-							writeLine("serverLog", "Granting read access to *collName");
+							writeLine("stdout", "Granting read access to *collName");
 							msiSetACL("default", "admin:write", uuClientFullName, *collName);
 						}
 
@@ -67,7 +67,7 @@ processVaultActions() {
 
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
 							msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");
-							writeLine("serverLog", "iiVaultProcessStatusTransition: *status - *statusInfo");
+							writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
 						} else {
 							*json_str = "[]";
 							*size = 0;
@@ -83,12 +83,12 @@ processVaultActions() {
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
 
-							writeLine("serverLog", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
+							writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
 						}
 
 						# Remove the temporary write ACL.
 						if (*modifyPermission == 0) {
-							writeLine("serverLog", "Revoking read access to *collName");
+							writeLine("stdout", "Revoking read access to *collName");
 							msiSetACL("default", "admin:null", uuClientFullName, *collName);
 						}
 					}

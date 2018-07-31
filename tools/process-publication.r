@@ -17,9 +17,9 @@ processPublication() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessPublication(*collName, *status));
 				if (*err < 0) {
-					writeLine("serverLog", "iiProcessPublication *collName returned errorcode *err");
+					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
 				} else {
-					writeLine("serverLog", "iiProcessPublication *collName returned with status: *status");
+					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
 				}
 			}
 		}
@@ -48,9 +48,9 @@ processPublication() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessDepublication(*collName, *status));
 				if (*err < 0) {
-					writeLine("serverLog", "iiProcessDepublication *collName returned errorcode *err");
+					writeLine("stdout", "iiProcessDepublication *collName returned errorcode *err");
 				} else {
-					writeLine("serverLog", "iiProcessDepublication *collName returned with status: *status");
+					writeLine("stdout", "iiProcessDepublication *collName returned with status: *status");
 				}
 			}
 		}
@@ -79,9 +79,9 @@ processPublication() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessRepublication(*collName, *status));
 				if (*err < 0) {
-					writeLine("serverLog", "iiProcessRepublication *collName returned errorcode *err");
+					writeLine("stdout", "iiProcessRepublication *collName returned errorcode *err");
 				} else {
-					writeLine("serverLog", "iiProcessRepublication *collName returned with status: *status");
+					writeLine("stdout", "iiProcessRepublication *collName returned with status: *status");
 				}
 			}
 		}

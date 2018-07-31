@@ -19,7 +19,7 @@ ingestChangesIntoVault {
 				# ensure rodsadmin access to the datamanager collection and metadata
 				*err = errorcode(iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo));
 				if (*err < 0) {
-					writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: *err");
+					writeLine("stdout", "iiIngestDatamanagerMetadataIntoVault: *err");
 					*status = "InternalError";
 					*statusInfo = "";
 				}
@@ -28,11 +28,11 @@ ingestChangesIntoVault {
 						     ++ UUORGMETADATAPREFIX ++ "cronjob_vault_ingest_info=*statusInfo", *kvp);
 					*err = errorcode(msiSetKeyValuePairsToObj(*kvp, *metadataXmlPath, "-d"));
 					if (*err < 0) {
-						writeLine("serverLog", "iiIngestDatamanagerIntoVault: could not set error status on *metadataXmlPath");
+						writeLine("stdout", "iiIngestDatamanagerIntoVault: could not set error status on *metadataXmlPath");
 					}
-					writeLine("serverLog", "iiIngestDatamanagerIntoVault: *status - *statusInfo");
+					writeLine("stdout", "iiIngestDatamanagerIntoVault: *status - *statusInfo");
 				} else {
-					writeLine("serverLog", "iiIngestDatamanagerIntoVault: Successfully processed *metadataXmlPath");
+					writeLine("stdout", "iiIngestDatamanagerIntoVault: Successfully processed *metadataXmlPath");
 				}
 			}
 		}
@@ -62,7 +62,7 @@ ingestChangesIntoVault {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
 				*err = errorcode(iiProcessPublication(*collName, *status));
 				if (*err < 0) {
-					writeLine("serverLog", "iiProcessPublication *collName returned errorcode *err");
+					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
 				} else {
 				        if (*status == "OK") {
                                            msiString2KeyValPair("", *publicationUpdateKvp);
@@ -70,7 +70,7 @@ ingestChangesIntoVault {
                                            msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
                                            *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
 					}
-					writeLine("serverLog", "iiProcessPublication *collName returned with status: *status");
+					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
 					if (*status == "Retry") {
 						delay ("<PLUSET>60s</PLUSET>") {
 							iiScheduledVaultActions();
