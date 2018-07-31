@@ -1,7 +1,7 @@
 
-# \brief Write group data for all users to stdout.
+# \brief Return groups and related data
 #
-def uuGetGroupData(rule_args, callback, rei):
+def getGroupData(callback):
     groups = {}
 
     #
@@ -79,5 +79,24 @@ def uuGetGroupData(rule_args, callback, rei):
 	    break
 	ret_val = callback.msiGetMoreRows(query, result, 0)
 
+    return groups.values()
+
+
+# \brief Write group data for all users to stdout.
+#
+def uuGetGroupData(rule_args, callback, rei):
+    groups = getGroupData(callback)
+
     # convert to json string and write to stdout
-    callback.writeString("stdout", json.dumps(groups.values()))
+    callback.writeString("stdout", json.dumps(groups))
+
+
+# \brief Write group data for a single user to stdout.
+#
+def uuGetUserGroupData(rule_args, callback, rei):
+    groups = getGroupData(callback)
+    user = global_vars["*user"][1:-1]
+
+    # filter groups, convert to json and write to stdout
+    groups = list(filter(lambda group: user in group["members"], groups))
+    callback.writeString("stdout", json.dumps(groups))
