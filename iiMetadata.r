@@ -368,7 +368,7 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
 		 msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_vault_ingest=" ++ CRONJOB_PENDING, *kvp);
 		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d");
-		 iiScheduledVaultIngest();
+		 iiAdminVaultIngest();
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
 		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
@@ -387,10 +387,10 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	}
 }
 
-# \brief Perform a scheduled vault ingest.
+# \brief Perform a vault ingest as rodsadmin.
 #
-iiScheduledVaultIngest() {
-	msiExecCmd("scheduled-vaultingest.sh", "", "", "", 0, *out);
+iiAdminVaultIngest() {
+	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
 }
 
 # \brief iiLogicalPathFromPhysicalPath

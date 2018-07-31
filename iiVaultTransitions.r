@@ -171,10 +171,10 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	}
 }
 
-# \brief Schedule operations on the vault
+# \brief Perform admin operations on the vault
 #
-iiScheduledVaultActions() {
-	msiExecCmd("scheduled-vaultactions.sh", "", "", "", 0, *out);
+iiAdminVaultActions() {
+	msiExecCmd("admin-vaultactions.sh", uuClientFullName, "", "", 0, *out);
 }
 
 # \brief Processing vault status transition request
@@ -283,7 +283,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 iiVaultSubmit(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, SUBMITTED_FOR_PUBLICATION, *status, *statusInfo);
 	if (*status == "Success") {
-		iiScheduledVaultActions();
+		iiAdminVaultActions();
 	}
 }
 
@@ -295,7 +295,7 @@ iiVaultSubmit(*folder, *status, *statusInfo) {
 iiVaultApprove(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, APPROVED_FOR_PUBLICATION, *status, *statusInfo);
 	if (*status == "Success") {
-		iiScheduledVaultActions();
+		iiAdminVaultActions();
 	}
 }
 
@@ -308,7 +308,7 @@ iiVaultApprove(*folder, *status, *statusInfo) {
 iiVaultCancel(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, UNPUBLISHED, *status, *statusInfo);
 	if (*status == "Success") {
-		iiScheduledVaultActions();
+		iiAdminVaultActions();
 	}
 }
 
@@ -321,7 +321,7 @@ iiVaultCancel(*folder, *status, *statusInfo) {
 iiVaultDepublish(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, PENDING_DEPUBLICATION, *status, *statusInfo);
 	if (*status == "Success") {
-		iiScheduledVaultActions();
+		iiAdminVaultActions();
 	}
 }
 
@@ -334,7 +334,7 @@ iiVaultDepublish(*folder, *status, *statusInfo) {
 iiVaultRepublish(*folder, *status, *statusInfo) {
 	iiVaultRequestStatusTransition(*folder, PENDING_REPUBLICATION, *status, *statusInfo);
 	if (*status == "Success") {
-		iiScheduledVaultActions();
+		iiAdminVaultActions();
 	}
 }
 
