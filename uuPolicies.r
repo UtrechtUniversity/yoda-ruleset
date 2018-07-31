@@ -16,10 +16,17 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 		succeed;
 	}
 
+	# permit local commands starting with "admin-", when the argument is the current user
+	msiSubstr(*cmd, "0", "6", *prefix);
+	if (*args == uuClientFullName && *addr == "" && *hint == "" &&
+	    *prefix == "admin-") {
+		succeed;
+	}
+
 	# permit all local commands starting with "scheduled-"
-	msiSubstr(*cmd, "0", "10", *scheduled);
+	msiSubstr(*cmd, "0", "10", *prefix);
 	if (*args == "" && *addr == "" && *hint == "" &&
-	    *scheduled == "scheduled-") {
+	    *prefix == "scheduled-") {
 		succeed;
 	}
 
