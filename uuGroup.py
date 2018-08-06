@@ -1,3 +1,9 @@
+# \file      uuGroup.py
+# \brief     Functions for group management and group queries.
+# \author    Felix Croes
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 
 # \brief Return groups and related data
 #
