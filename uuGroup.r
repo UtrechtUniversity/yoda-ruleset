@@ -81,6 +81,28 @@ uuGroupExists(*groupName, *exists) {
 	}
 }
 
+# \brief Check if the home collection belonging to a group is empty.
+#
+# NB: This check is only meaningful when the executing user has read access on
+# the collection and all its members.
+#
+# \param[in]  groupName group name (no zone)
+# \param[out] empty
+#
+uuGroupCollIsEmpty(*groupName, *empty) {
+	*coll = "/$rodsZoneClient/home/*groupName";
+	*empty = true;
+
+	foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = '*coll') {
+		*empty = false; break;
+	}
+	if (*empty) {
+		foreach (*row in SELECT COLL_ID WHERE COLL_PARENT_NAME LIKE '*coll') {
+			*empty = false; break;
+		}
+	}
+}
+
 # \brief Check if a rodsuser or rodsadmin with the given name exists.
 #
 # \param[in]  userName	 username(#zone)
