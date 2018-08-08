@@ -254,15 +254,8 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	if (*isManager) {
 		#                           v  These groups are user-removable  v
 		if (*groupName like regex "(grp|intake|research|vault|datamanager)-.*") {
-			*homeCollection = "/$rodsZoneClient/home/*groupName";
-			*homeCollectionIsEmpty = true;
 
-			foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = '*homeCollection') {
-				*homeCollectionIsEmpty = false; break;
-			}
-			foreach (*row in SELECT COLL_ID WHERE COLL_PARENT_NAME LIKE '*homeCollection') {
-				*homeCollectionIsEmpty = false; break;
-			}
+			uuGroupCollIsEmpty(*groupName, *homeCollectionIsEmpty);
 
 			if (*homeCollectionIsEmpty) {
 				*allowed = 1;
