@@ -116,27 +116,6 @@ uuGroupPreSudoGroupRemove(*groupName, *policyKv) {
 			# Read groups may not be deleted if their base group still exists.
 			fail;
 		}
-	} else if (*groupName like "vault-*") {
-		uuGetBaseGroup(*groupName, *baseGroup);
-		if (*baseGroup == *groupName) {
-			uuGroupCollIsEmpty(*groupName, *empty);
-			if (*empty) {
-				# If there's no base group [anymore], AND the vault directory is empty,
-				# anyone can delete the vault group.
-				# Vault groups can proliferate if their corresponding research or
-				# intake groups are deleted while the vault is NOT empty.
-
-				succeed;
-			} else {
-				# Vault groups may not be deleted if they are not empty.
-				fail;
-			}
-
-		} else {
-			# Vault groups may not be deleted if their base group still exists.
-			fail;
-		}
-
 	} else {
 		uuGroupPolicyCanGroupRemove(uuClientFullName, *groupName, *allowed, *reason);
 		if (*allowed == 1) {
@@ -490,13 +469,6 @@ uuPostSudoGroupRemove(*groupName, *policyKv) {
 		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
-
-		# Clean up the vault group - if it's empty.
-		*vaultGroupName = "vault-*baseName";
-		uuGroupCollIsEmpty(*vaultGroupName, *vaultEmpty);
-		if (*vaultEmpty) {
-			msiSudoGroupRemove(*vaultGroupName, "");
-		}
 	}
 }
 
