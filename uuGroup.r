@@ -218,17 +218,6 @@ uuGroupMemberships(*user, *groupList) {
 	*groupList = split(*groups, ":");
 }
 
-# \brief Write group data to stdout for all groups that user belongs to.
-#
-# This function executes a script to run a python rule with admin privileges
-# on behalf of the current user.
-#
-uuAdminGetGroupData() {
-	msiExecCmd("admin-groupdata.sh", uuClientFullName, "", "", 0, *out);
-	msiGetStdoutInExecCmdOut(*out, *stdout);
-	writeString("stdout", "*stdout");
-}
-
 # \brief List all groups the user belongs to.
 #
 # This function has special handling for 'read-*' groups:

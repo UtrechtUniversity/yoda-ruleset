@@ -101,7 +101,7 @@ def uuGetGroupData(rule_args, callback, rei):
 #
 def uuGetUserGroupData(rule_args, callback, rei):
     groups = getGroupData(callback)
-    user = global_vars["*user"][1:-1]
+    user = rule_args[0] + '#' + rule_args[1]
 
     # Filter groups (only return groups user is part of), convert to json and write to stdout
     groups = list(filter(lambda group: user in group["read"] or user in group["members"], groups))
