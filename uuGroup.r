@@ -665,13 +665,14 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 # \param[out] status  zero on success, non-zero on failure
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message) {
+uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassification, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-	*kv."category"    = *category;
-	*kv."subcategory" = *subcategory;
-	*kv."description" = *description;
+	*kv."category"            = *category;
+	*kv."subcategory"         = *subcategory;
+	*kv."description"         = *description;
+	*kv."data_classification" = *dataClassification;
 
 	# Shoot first, ask questions later.
 	*status = errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv));
@@ -686,6 +687,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message)
 			*category,
 			*subcategory,
 			*description,
+			*dataClassification,
 			*allowed,
 			*reason
 		);
@@ -703,7 +705,8 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message)
 # \brief Modify a group.
 #
 # This is mostly a shortcut for setting single-value attributes on a group
-# object. Allowed properties are: 'category', 'subcategory' and 'description'.
+# object. Allowed properties are: 'category', 'subcategory', 'description', and
+# 'data_classification'.
 #
 # \param[in]  groupName
 # \param[in]  property  the property to change
