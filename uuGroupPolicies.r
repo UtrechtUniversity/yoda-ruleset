@@ -454,7 +454,9 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		*description = if *policyKv."description" != "" then *policyKv."description" else ".";
 		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
 
-		errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
+		if (*policyKv."data_classification" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
+		}
 	}
 
 	# Put the group name in the policyKv to assist the acl policy.

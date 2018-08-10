@@ -78,10 +78,10 @@ uuGroupSubcategoryNameIsValid(*name)
 #
 uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 	uuChop(*groupName, *prefix, *base, "-", true);
-	if (*prefix == "research") {
+	if (*prefix == "research" || *prefix == "intake") {
 		uuListContains(list("critical", "sensitive", "basic", "public", "unspecified"), *dataClassification, *valid);
 	} else {
-		uuListContains(list("critical", "sensitive", "basic", "public"               ), *dataClassification, *valid);
+		*valid = (*dataClassification == "");
 	}
 }
 
