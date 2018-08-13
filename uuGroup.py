@@ -36,7 +36,7 @@ def getGroupData(callback):
                     "read": []
                 }
                 groups[name] = group
-            if attr == "description" or attr == "category" or attr == "subcategory":
+            if attr == "description" or attr == "data_classification" or attr == "category" or attr == "subcategory":
                 group[attr] = value
             if attr == "manager":
                 group["managers"].append(value)
