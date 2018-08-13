@@ -30,6 +30,14 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 		succeed;
 	}
 
+	# Permit all local commands starting with "unauthorized-".
+	# These commands can be accessed by any user regardless of argument list.
+	msiSubstr(*cmd, "0", "13", *prefix);
+	if (*addr == "" && *hint == "" &&
+		*prefix == "unauthorized-") {
+		succeed;
+	}
+
 	# permit access to users in group priv-execcmd-all
 	*accessAllowed = false;
 	foreach (*rows in SELECT USER_GROUP_NAME WHERE USER_NAME='$userNameClient'

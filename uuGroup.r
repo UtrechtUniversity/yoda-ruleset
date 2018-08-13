@@ -218,6 +218,23 @@ uuGroupMemberships(*user, *groupList) {
 	*groupList = split(*groups, ":");
 }
 
+# \brief Remove an empty vault and any revision collection of a research/intake group that no longer exists.
+#
+# This will fail if (1) The given vault does not exist,
+# or (2) The corresponding research/intake group still exists.
+#
+# If the vault group is non-empty, it will not be removed, and the rule will succeed.
+#
+# \param[in] vaultName the group name of the vault to remove
+#
+uuGroupRemoveOrphanVaultIfEmpty(*vaultName) {
+	msiExecCmd("unauthorized-remove-orphan-vault-if-empty.sh",
+	           *vaultName,
+	           "", "", 0, *out);
+	msiGetStdoutInExecCmdOut(*out, *stdout);
+	writeString("stdout", "*stdout");
+}
+
 # \brief List all groups the user belongs to.
 #
 # This function has special handling for 'read-*' groups:
