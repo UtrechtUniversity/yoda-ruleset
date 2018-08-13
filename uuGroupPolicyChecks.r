@@ -33,7 +33,7 @@
 uuUserNameIsValid(*name)
 	= *name like regex ``([a-z.]+|[a-z0-9_.-]+@[a-z0-9_.-]+)(#[a-zA-Z0-9_-]+)?``;
 
-# \brief Check if a group name is valid.
+# \brief Check if a group name is valid for creation by a priv-group-add member.
 #
 # Group names must:
 #
@@ -43,10 +43,14 @@ uuUserNameIsValid(*name)
 #
 # NB: Update the category name check below if you change the second half of this pattern.
 #
+# NB: Datamanager is missing in this list. It can only be created by rodsadmin,
+#     and rodsadmin currently bypasses all checks anyway.
+#     This check is applicable only to rodsusers with priv-group-add.
+#
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research|datamanager)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a category name is valid.
 #
@@ -118,35 +122,20 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 
 					uuChop(*groupName, *prefix, *base, "-", true);
 
-					if (*prefix == "datamanager") {
-						# Datamanager groups may only be created with priv-category-add.
-						uuGroupUserExists("priv-category-add", *actor, *hasCatPriv);
-						if (*hasCatPriv) {
-							if (*groupName == "datamanager-*category") {
-								# Last check.
-								uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-							} else {
-								*reason = "Datamanager groups must be named after their category.";
-							}
-						} else {
-							*reason = "You cannot create a datamanager group because you are not a member of the priv-category-add group.";
-						}
+					# For research and intake groups: Make sure their ro and
+					# vault groups do not exist yet.
+
+					*roName = "read-*base";
+					uuGroupExists(*roName, *roExists);
+
+					*vaultName = "vault-*base";
+					uuGroupExists(*vaultName, *vaultExists);
+
+					if (*roExists || *vaultExists) {
+						*reason = "This group name is not available.";
 					} else {
-						# For research and intake groups: Make sure their ro and
-						# vault groups do not exist yet.
-
-						*roName = "read-*base";
-						uuGroupExists(*roName, *roExists);
-
-						*vaultName = "vault-*base";
-						uuGroupExists(*vaultName, *vaultExists);
-
-						if (*roExists || *vaultExists) {
-							*reason = "This group name is not available.";
-						} else {
-							# Last check.
-							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-						}
+						# Last check.
+						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
@@ -160,7 +149,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-', 'research-', or 'datamanager-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-' or 'research-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -285,7 +274,9 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		#                           v  These groups are user-removable  v
-		if (*groupName like regex "(grp|intake|research|vault|datamanager)-.*") {
+		if (*groupName like regex "(grp|intake|research|vault)-.*") {
+			# NB: Only rodsadmin can remove datamanager groups.
+			#     Even datamanager group managers cannot remove their own group.
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
 			*homeCollectionIsEmpty = true;
 
@@ -302,7 +293,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 				*reason = "The group's directory is not empty. Please remove all of its files and subdirectories before removing this group.";
 			}
 		} else {
-			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault or datamanager.";
+			*reason = "'*groupName' is not a regular group. You can only remove groups that have one of the following prefixes: grp, intake, research, vault.";
 		}
 	} else {
 		*reason = "You are not a manager of group *groupName.";
