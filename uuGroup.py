@@ -36,9 +36,13 @@ def getGroupData(callback):
                     "read": []
                 }
                 groups[name] = group
-            if attr == "description" or attr == "category" or attr == "subcategory":
+            if attr in ["data_classification", "category", "subcategory"]:
                 group[attr] = value
-            if attr == "manager":
+            elif attr == "description":
+                # Deal with legacy use of '.' for empty description metadata.
+                # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+                group[attr] = '' if value == '.' else value
+            elif attr == "manager":
                 group["managers"].append(value)
 
         # Continue with this query.

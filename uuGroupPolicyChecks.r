@@ -68,6 +68,23 @@ uuGroupCategoryNameIsValid(*name)
 uuGroupSubcategoryNameIsValid(*name)
 	= *name like regex ``[a-zA-Z0-9 ,.()_-]+``;
 
+# \brief Check if a data classification is valid in combination with a group name.
+#
+# The valid set of classifications depends on the group prefix.
+#
+# \param[in]  groupName
+# \param[in]  dataClassification
+# \param[out] valid
+#
+uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
+	uuChop(*groupName, *prefix, *base, "-", true);
+	if (*prefix == "research" || *prefix == "intake") {
+		uuListContains(list("critical", "sensitive", "basic", "public", "unspecified"), *dataClassification, *valid);
+	} else {
+		*valid = (*dataClassification == "");
+	}
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -77,10 +94,11 @@ uuGroupSubcategoryNameIsValid(*name)
 # \param[in]  category
 # \param[in]  subcategory
 # \param[in]  description
+# \param[in]  dataClassification
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *dataClassification, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
@@ -94,37 +112,44 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
 			if (*nameAvailable) {
 
-				uuChop(*groupName, *prefix, *base, "-", true);
+				uuGroupDataClassificationIsValid(*groupName, *dataClassification, *dataclasValid);
 
-				if (*prefix == "datamanager") {
-					# Datamanager groups may only be created with priv-category-add.
-					uuGroupUserExists("priv-category-add", *actor, *hasCatPriv);
-					if (*hasCatPriv) {
-						if (*groupName == "datamanager-*category") {
-							# Last check.
-							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+				if (*dataclasValid) {
+
+					uuChop(*groupName, *prefix, *base, "-", true);
+
+					if (*prefix == "datamanager") {
+						# Datamanager groups may only be created with priv-category-add.
+						uuGroupUserExists("priv-category-add", *actor, *hasCatPriv);
+						if (*hasCatPriv) {
+							if (*groupName == "datamanager-*category") {
+								# Last check.
+								uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+							} else {
+								*reason = "Datamanager groups must be named after their category.";
+							}
 						} else {
-							*reason = "Datamanager groups must be named after their category.";
+							*reason = "You cannot create a datamanager group because you are not a member of the priv-category-add group.";
 						}
 					} else {
-						*reason = "You cannot create a datamanager group because you are not a member of the priv-category-add group.";
+						# For research and intake groups: Make sure their ro and
+						# vault groups do not exist yet.
+
+						*roName = "read-*base";
+						uuGroupExists(*roName, *roExists);
+
+						*vaultName = "vault-*base";
+						uuGroupExists(*vaultName, *vaultExists);
+
+						if (*roExists || *vaultExists) {
+							*reason = "This group name is not available.";
+						} else {
+							# Last check.
+							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+						}
 					}
 				} else {
-					# For research and intake groups: Make sure their ro and
-					# vault groups do not exist yet.
-
-					*roName = "read-*base";
-					uuGroupExists(*roName, *roExists);
-
-					*vaultName = "vault-*base";
-					uuGroupExists(*vaultName, *vaultExists);
-
-					if (*roExists || *vaultExists) {
-						*reason = "This group name is not available.";
-					} else {
-						# Last check.
-						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-					}
+					*reason = "The chosen data classification is invalid for this type of group.";
 				}
 			} else {
 				if (*existingType == "rodsuser") {
@@ -199,7 +224,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 #
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  groupName the group name
-# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description')
+# \param[in]  attribute the group attribute to set (one of 'category', 'subcategory', 'description', 'data_classification')
 # \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
@@ -228,6 +253,13 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 			}
 		} else if (*attribute == "description") {
 			*allowed = 1;
+		} else if (*attribute == "data_classification") {
+			uuGroupDataClassificationIsValid(*groupName, *value, *dataclasValid);
+			if (*dataclasValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen data classification is invalid for this type of group.";
+			}
 		} else {
 			*reason = "Invalid group attribute name.";
 		}

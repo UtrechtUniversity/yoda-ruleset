@@ -85,6 +85,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*policyKv."category",
 				*policyKv."subcategory",
 				*policyKv."description",
+				*policyKv."data_classification",
 				*allowed, *reason
 			);
 			if (*allowed == 1) {
@@ -278,8 +279,8 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 
 uuGroupPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 
-	# MetaSet applies to group properties 'category', 'subcategory' and
-	# 'description'.
+	# MetaSet applies to group properties 'category', 'subcategory',
+	# 'description', and 'data_classification'.
 
 	# The 'manager' attributes are managed only with MetaAdd and MetaRemove
 	# (see below this rule).
@@ -452,6 +453,10 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 
 		*description = if *policyKv."description" != "" then *policyKv."description" else ".";
 		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
+
+		if (*policyKv."data_classification" != "") {
+			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
+		}
 	}
 
 	# Put the group name in the policyKv to assist the acl policy.
