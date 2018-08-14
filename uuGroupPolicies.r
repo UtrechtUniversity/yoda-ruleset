@@ -474,6 +474,13 @@ uuPostSudoGroupRemove(*groupName, *policyKv) {
 		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
+
+		# Remove the vault group if it is empty.
+		# We need a msiExecCmd here because the user removing this
+		# research/intake group does not necessarily have read access to the
+		# vault, and thus cannot check whether the vault is empty.
+		# This will also remove the orphan revision collection, if it exists.
+		uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
 	}
 }
 
