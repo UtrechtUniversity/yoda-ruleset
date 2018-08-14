@@ -93,6 +93,74 @@ def getGroupData(callback):
 
     return groups.values()
 
+# \brief Get a list of all group categories.
+#
+def getCategories(callback):
+    cats = []
+
+    ret_val = callback.msiMakeGenQuery(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val["arguments"][1]
+        for row in range(result.rowCnt):
+            cats.append(result.sqlResult[0].row(row))
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+
+    return cats
+
+# \brief Get a list of all subcategories within a given group category.
+#
+# \param[in] category
+#
+def getSubcategories(callback, category):
+    cats = set()   # Unique subcategories.
+    groupcats = {} # group name => { category => ... , subcategory => ... }
+
+    # Collect metadata of each group into `groupcats` until both the category
+    # and subcategory are available, then add the subcategory to `cats` if the
+    # category name matches.
+
+    ret_val = callback.msiMakeGenQuery(
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        irods_types.GenQueryInp())
+    query = ret_val['arguments'][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val['arguments'][1]
+        for row in range(result.rowCnt):
+            group = result.sqlResult[0].row(row)
+            k     = result.sqlResult[1].row(row)
+            v     = result.sqlResult[2].row(row)
+
+            if group not in groupcats:
+                groupcats[group] = {}
+
+            if k in ['category', 'subcategory']:
+                groupcats[group][k] = v
+
+            if 'category' in groupcats[group] and 'subcategory' in groupcats[group]:
+                # Metadata complete, now filter on category.
+                if groupcats[group]['category'] == category:
+                    # Bingo, add to the subcategory list.
+                    cats.add(groupcats[group]['subcategory'])
+
+                del groupcats[group]
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+
+    return list(cats)
 
 # \brief Write group data for all users to stdout.
 #
@@ -112,3 +180,13 @@ def uuGetUserGroupData(rule_args, callback, rei):
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     groups = list(filter(lambda group: user in group["read"] or user in group["members"], groups))
     callback.writeString("stdout", json.dumps(groups))
+
+# \brief Write category list to stdout.
+#
+def uuGroupGetCategoriesJson(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getCategories(callback)))
+
+# \brief Write subcategory list to stdout.
+#
+def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))
