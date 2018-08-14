@@ -56,27 +56,5 @@ removeOrphanVaultIfEmpty {
 	}
 }
 
-# \brief Check if the home collection belonging to a group is empty.
-#
-# \param[in]  groupName group name (no zone)
-# \param[out] empty
-#
-uuGroupCollIsEmpty(*groupName, *empty) {
-	*coll = "/$rodsZoneClient/home/*groupName";
-	*empty = true;
-
-	# rods will already be owner of a vault group collection, so no ACLs need
-	# to be changed.
-
-	foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = '*coll') {
-		*empty = false; break;
-	}
-	if (*empty) {
-		foreach (*row in SELECT COLL_ID WHERE COLL_PARENT_NAME LIKE '*coll') {
-			*empty = false; break;
-		}
-	}
-}
-
 input *vaultName=""
 output ruleExecOut
