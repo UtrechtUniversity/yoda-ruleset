@@ -250,8 +250,8 @@ uuGroupMemberships(*user, *groupList) {
 # \param[in] vaultName the group name of the vault to remove
 #
 uuGroupRemoveOrphanVaultIfEmpty(*vaultName) {
-	msiExecCmd("unauthorized-remove-orphan-vault-if-empty.sh",
-	           *vaultName,
+	msiExecCmd("admin-remove-orphan-vault-if-empty.sh",
+	           uuClientFullName ++ " " ++ *vaultName,
 	           "", "", 0, *out);
 	msiGetStdoutInExecCmdOut(*out, *stdout);
 	writeString("stdout", "*stdout");

@@ -16,25 +16,21 @@ acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
 		succeed;
 	}
 
-	# permit local commands starting with "admin-", when the argument is the current user
+	# permit local commands starting with "admin-", when the first argument is the current user
 	msiSubstr(*cmd, "0", "6", *prefix);
-	if (*args == uuClientFullName && *addr == "" && *hint == "" &&
-	    *prefix == "admin-") {
-		succeed;
+	if (*prefix == "admin-" && *addr == "" && *hint == "") {
+		*name = uuClientFullName;
+		# Name is guaranteed to contain no quoting or escaping characters.
+		# See uuUserNameIsValid in uuGroupPolicyChecks.r
+		if (*args == *name || *args like "*name *") {
+			succeed;
+		}
 	}
 
 	# permit all local commands starting with "scheduled-"
 	msiSubstr(*cmd, "0", "10", *prefix);
 	if (*args == "" && *addr == "" && *hint == "" &&
 	    *prefix == "scheduled-") {
-		succeed;
-	}
-
-	# Permit all local commands starting with "unauthorized-".
-	# These commands can be accessed by any user regardless of argument list.
-	msiSubstr(*cmd, "0", "13", *prefix);
-	if (*addr == "" && *hint == "" &&
-		*prefix == "unauthorized-") {
 		succeed;
 	}
 
