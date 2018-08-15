@@ -697,6 +697,19 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 	*status  = 1;
 	*message = "An internal error occured.";
 
+	if (*description == "") {
+		# XXX This exact workaround exists in the `uuGroupModify` rule as well.
+		#     If you change this block, change it there too.
+
+		# Work around an iRODS bug that causes errors when changing metadata
+		# values to an empty string in specific situations.
+		# 'description' is currently the only property that can be set to empty
+		# by the user, and we handle that case here.
+		*description = ".";
+		# This dot must be treated specially (as an empty string) in query
+		# functions.
+	}
+
 	*kv."category"            = *category;
 	*kv."subcategory"         = *subcategory;
 	*kv."description"         = *description;
@@ -747,6 +760,19 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 	*message = "An internal error occured.";
 
 	*kv.'.' = ".";
+
+	if (*value == "") {
+		# XXX This exact workaround exists in the `uuGroupAdd` rule as well.
+		#     If you change this block, change it there too.
+
+		# Work around an iRODS bug that causes errors when changing metadata
+		# values to an empty string in specific situations.
+		# 'description' is currently the only property that can be set to empty
+		# by the user, and we handle that case here.
+		*value = ".";
+		# This dot must be treated specially (as an empty string) in query
+		# functions.
+	}
 
 	if (*property == "category") {
 		# We must pass the current category name such that the postproc rule
