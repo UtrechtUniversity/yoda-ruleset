@@ -5,7 +5,7 @@
 # \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \brief Return groups and related data
+# \brief Return groups and related data.
 #
 def getGroupData(callback):
     groups = {}
@@ -36,9 +36,13 @@ def getGroupData(callback):
                     "read": []
                 }
                 groups[name] = group
-            if attr == "description" or attr == "data_classification" or attr == "category" or attr == "subcategory":
+            if attr in ["data_classification", "category", "subcategory"]:
                 group[attr] = value
-            if attr == "manager":
+            elif attr == "description":
+                # Deal with legacy use of '.' for empty description metadata.
+                # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+                group[attr] = '' if value == '.' else value
+            elif attr == "manager":
                 group["managers"].append(value)
 
         # Continue with this query.
@@ -90,6 +94,77 @@ def getGroupData(callback):
     return groups.values()
 
 
+# \brief Get a list of all group categories.
+#
+def getCategories(callback):
+    categories = []
+
+    ret_val = callback.msiMakeGenQuery(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val["arguments"][1]
+        for row in range(result.rowCnt):
+            categories.append(result.sqlResult[0].row(row))
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+
+    return categories
+
+
+# \brief Get a list of all subcategories within a given group category.
+#
+# \param[in] category
+#
+def getSubcategories(callback, category):
+    categories = set()    # Unique subcategories.
+    groupCategories = {}  # Group name => { category => .., subcategory => .. }
+
+    # Collect metadata of each group into `groupCategories` until both
+    # the category and subcategory are available, then add the subcategory
+    # to `categories` if the category name matches.
+    ret_val = callback.msiMakeGenQuery(
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
+        irods_types.GenQueryInp())
+    query = ret_val['arguments'][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val['arguments'][1]
+        for row in range(result.rowCnt):
+            group = result.sqlResult[0].row(row)
+            key = result.sqlResult[1].row(row)
+            value = result.sqlResult[2].row(row)
+
+            if group not in groupCategories:
+                groupCategories[group] = {}
+
+            if key in ['category', 'subcategory']:
+                groupCategories[group][key] = value
+
+            if ('category' in groupCategories[group] and
+                'subcategory' in groupCategories[group]):
+                # Metadata complete, now filter on category.
+                if groupCategories[group]['category'] == category:
+                    # Bingo, add to the subcategory list.
+                    categories.add(groupCategories[group]['subcategory'])
+
+                del groupCategories[group]
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+
+    return list(categories)
+
+
 # \brief Write group data for all users to stdout.
 #
 def uuGetGroupData(rule_args, callback, rei):
@@ -108,3 +183,15 @@ def uuGetUserGroupData(rule_args, callback, rei):
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     groups = list(filter(lambda group: user in group["read"] or user in group["members"], groups))
     callback.writeString("stdout", json.dumps(groups))
+
+
+# \brief Write category list to stdout.
+#
+def uuGroupGetCategoriesJson(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getCategories(callback)))
+
+
+# \brief Write subcategory list to stdout.
+#
+def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))

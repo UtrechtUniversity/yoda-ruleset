@@ -288,26 +288,33 @@ uuGroupPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyK
 	if (*objType == "-u") {
 		uuGetUserType(*objName, *targetUserType);
 		if (*targetUserType == "rodsgroup") {
-			if (# We do not use / allow the unit field here.
-				*unit == ""
-			) {
-				if (*attribute == "category") {
-					# When setting a group's category, require that the old
-					# category name (if any) be passed in *policyKv, so that
-					# datamanager-*oldCategory read access can be revoked in
-					# the postproc action of metaset.
-					uuGroupGetCategory(*objName, *category, *_);
-					# (*category will be empty ("") if the group isn't currently in a category)
-					if (*category != *policyKv."oldCategory") {
-						# This will fail if 'oldCategory' is not given in
-						# *policyKv or if it doesn't match the current category.
-						fail;
-					}
+			if (*unit != "") {
+				# We do not use / allow the unit field here.
+				fail;
+			}
+			if (*value == "") {
+				# Empty metadata values trigger iRODS bugs.
+				# If a field is allowed to be empty (currently only
+				# 'description', it should be set to '.' instead.
+				# This should of course be hidden by query functions.
+				fail;
+			}
+			if (*attribute == "category") {
+				# When setting a group's category, require that the old
+				# category name (if any) be passed in *policyKv, so that
+				# datamanager-*oldCategory read access can be revoked in
+				# the postproc action of metaset.
+				uuGroupGetCategory(*objName, *category, *_);
+				# (*category will be empty ("") if the group isn't currently in a category)
+				if (*category != *policyKv."oldCategory") {
+					# This will fail if 'oldCategory' is not given in
+					# *policyKv or if it doesn't match the current category.
+					fail;
 				}
-				uuGroupPolicyCanGroupModify(uuClientFullName, *objName, *attribute, *value, *allowed, *reason);
-				if (*allowed == 1) {
-					succeed;
-				}
+			}
+			uuGroupPolicyCanGroupModify(uuClientFullName, *objName, *attribute, *value, *allowed, *reason);
+			if (*allowed == 1) {
+				succeed;
 			}
 		}
 	}
@@ -450,9 +457,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		*categoryKv.'oldCategory' = "";
 		errorcode(msiSudoObjMetaSet(*groupName, "-u", "category",      *policyKv."category",    "", *categoryKv));
 		errorcode(msiSudoObjMetaSet(*groupName, "-u", "subcategory",   *policyKv."subcategory", "", ""));
-
-		*description = if *policyKv."description" != "" then *policyKv."description" else ".";
-		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *description, "", ""));
+		errorcode(msiSudoObjMetaSet(*groupName, "-u", "description",   *policyKv."description", "", ""));
 
 		if (*policyKv."data_classification" != "") {
 			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
@@ -474,6 +479,13 @@ uuPostSudoGroupRemove(*groupName, *policyKv) {
 		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroupName = "read-*baseName";
 		msiSudoGroupRemove(*roGroupName, "");
+
+		# Remove the vault group if it is empty.
+		# We need a msiExecCmd here because the user removing this
+		# research/intake group does not necessarily have read access to the
+		# vault, and thus cannot check whether the vault is empty.
+		# This will also remove the orphan revision collection, if it exists.
+		uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
 	}
 }
 

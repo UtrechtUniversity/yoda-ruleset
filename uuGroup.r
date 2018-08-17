@@ -159,6 +159,28 @@ uuGroupUserExists(*group, *user, *includeRo, *membership) {
 	}
 }
 
+# \brief Check if the home collection belonging to a group is empty.
+#
+# \param[in]  groupName group name (no zone)
+# \param[out] empty
+#
+uuGroupCollIsEmpty(*groupName, *empty) {
+	*coll = "/$rodsZoneClient/home/*groupName";
+	*empty = true;
+
+	# rods will already be owner of a vault group collection, so no ACLs need
+	# to be changed.
+
+	foreach (*row in SELECT DATA_NAME WHERE COLL_NAME = '*coll') {
+		*empty = false; break;
+	}
+	if (*empty) {
+		foreach (*row in SELECT COLL_ID WHERE COLL_PARENT_NAME LIKE '*coll') {
+			*empty = false; break;
+		}
+	}
+}
+
 # \brief Check if a name is available in the iRODS username namespace.
 #
 # The username namespace includes names of the following user types:
@@ -216,6 +238,23 @@ uuGroupMemberships(*user, *groupList) {
 	}
 	*groups = triml(*groups,":");
 	*groupList = split(*groups, ":");
+}
+
+# \brief Remove an empty vault and any revision collection of a research/intake group that no longer exists.
+#
+# This will fail if (1) The given vault does not exist,
+# or (2) The corresponding research/intake group still exists.
+#
+# If the vault group is non-empty, it will not be removed, and the rule will succeed.
+#
+# \param[in] vaultName the group name of the vault to remove
+#
+uuGroupRemoveOrphanVaultIfEmpty(*vaultName) {
+	msiExecCmd("admin-remove-orphan-vault-if-empty.sh",
+	           uuClientFullName ++ " " ++ *vaultName,
+	           "", "", 0, *out);
+	msiGetStdoutInExecCmdOut(*out, *stdout);
+	writeString("stdout", "*stdout");
 }
 
 # \brief List all groups the user belongs to.
@@ -658,6 +697,19 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 	*status  = 1;
 	*message = "An internal error occured.";
 
+	if (*description == "") {
+		# XXX This exact workaround exists in the `uuGroupModify` rule as well.
+		#     If you change this block, change it there too.
+
+		# Work around an iRODS bug that causes errors when changing metadata
+		# values to an empty string in specific situations.
+		# 'description' is currently the only property that can be set to empty
+		# by the user, and we handle that case here.
+		*description = ".";
+		# This dot must be treated specially (as an empty string) in query
+		# functions.
+	}
+
 	*kv."category"            = *category;
 	*kv."subcategory"         = *subcategory;
 	*kv."description"         = *description;
@@ -708,6 +760,19 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 	*message = "An internal error occured.";
 
 	*kv.'.' = ".";
+
+	if (*value == "") {
+		# XXX This exact workaround exists in the `uuGroupAdd` rule as well.
+		#     If you change this block, change it there too.
+
+		# Work around an iRODS bug that causes errors when changing metadata
+		# values to an empty string in specific situations.
+		# 'description' is currently the only property that can be set to empty
+		# by the user, and we handle that case here.
+		*value = ".";
+		# This dot must be treated specially (as an empty string) in query
+		# functions.
+	}
 
 	if (*property == "category") {
 		# We must pass the current category name such that the postproc rule
