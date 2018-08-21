@@ -23,6 +23,8 @@ def flattenSchema(j, uri):
     #documents.add(uri)
 
     def resolvePath(doc, *path):
+        if len(path) != 0:
+            assert(path[0] in doc)
         return doc if len(path) == 0 else resolvePath(doc[path[0]], *path[1:])
 
     def flattenDocument(doc, uri):
@@ -82,81 +84,51 @@ def annotateTypes(j):
         v.jsosd_typename = k
     return j
 
-def convertType(body, typename=None, fieldname=None):
+def markRequiredElements(elements, required):
+    for child in filter(lambda x: x.get('name') in required, elements):
+        child.set('minOccurs', '1')
+
+def convertType(body, typename=None):
     """
-    Generate a type declaration or element.
+    Generate a type or an element.
     """
     v = body # XXX
 
-    # Either typename or fieldname must be given.
-    assert((typename is None) != (fieldname is None))
-
     if 'jsosd_typename' in dir(body) and typename is None:
-        typ = v.jsosd_typename
         # Return an element of this type.
         return [El('xs:element',
-                   {'name': fieldname, 'type': typ})]
+                   {'name': fieldname, 'type': v.jsosd_typename})]
 
     assert('type' in v)
 
     typ = None # The generated type, either a string (name), or an element describing the type.
-    el  = None # The generated element.
 
-    if (('comment' in v and v['comment'] == 'group')
-            or 'yoda:structure' in v and v['yoda:structure'] in ('compound', 'subproperties')):
+    if 'yoda:structure' in v and v['yoda:structure'] in ('compound', 'subproperties'):
 
         assert('properties' in v)
 
         # Convert child elements.
-        #subs = reduce(add, [convertProperty(context, k, v) for k, v in v['properties'].items()], [])
-        subs = reduce(add, [convertType(v, None, k) for k, v in v['properties'].items()], [])
+        subs = reduce(add, [convertProperty(k, v) for k, v in v['properties'].items()], [])
+        #subs = reduce(add, [convertType(v, None, k) for k, v in v['properties'].items()], [])
 
         # Annotate requiredness.
         if 'required' in v:
-            for child in filter(lambda x: x.get('name') in v['required'], subs):
-                child.set('minOccurs', '1')
+            markRequiredElements(subs, v['required'])
 
-            # Verify that the set of required elements is the same as or a
-            # subset of the actual child elements (i.e. no non-existent
-            # required elements).
-            assert(set(v['required']) <= set(map(lambda x: x.get('name'), subs)))
-
-        if 'comment' in v and v['comment'] == 'group':
-            assert(typename is None) # Groups can't be declared as named types.
-            assert('yoda:structure' not in v)
-            # For 'groups', return child elements directly.
-            # (the group level is ignored completely)
-            return subs
-        else:
-            assert('comment' not in v or v['comment'] != 'group')
-            # For compound / subproperties, add three levels.
-            typ = El('xs:complexType',
-                     {} if typename is None else {'name': typename},
-                     El('xs:sequence', {},
-                        *subs))
-
-    elif v['type'] == 'array':
-        # Repeated element.
-
-        assert(isinstance(v['items'], dict)) # No tuple support.
-        assert(typename is None) # Arrays can't be declared as named types.
-                                 # (min/max occurrences need to be set on elements, not on types)
-
-        # Delegate to convertProperty of the single child element.
-        el = convertType(v['items'], None, fieldname)
-        assert(len(el) == 1) # There should be just one item.
-        el = el[0]
-
-        # Check min/max occurrences and annotate.
-        el.set('minOccurs', str(v['minItems']) if 'minItems' in v else '0')
-        el.set('maxOccurs', str(v['maxItems']) if 'maxItems' in v else 'unbounded')
+        assert('comment' not in v or v['comment'] != 'group')
+        # For compound / subproperties, add three levels.
+        typ = El('xs:complexType',
+                 {} if typename is None else {'name': typename},
+                 El('xs:sequence', {},
+                    *subs))
 
     elif 'enum' in v:
         # Type should be string, or the like.
         assert(v['type'] in builtinTypes())
         enumType = builtinTypes()[v['type']] if v['type'] in builtinTypes() else v['type']
 
-        typ = El('xs:simpleType', {},
+        typ = El('xs:simpleType',
+                 {} if typename is None else {'name': typename},
                  El('xs:restriction', {'base': enumType},
                     # Turn the possible enum values into xs:enumeration tags.
                     *map(lambda val: El('xs:enumeration', {'value': val}),
@@ -185,30 +157,73 @@ def convertType(body, typename=None, fieldname=None):
                  restriction)
 
     if typename is None:
-        if el is None:
-            if isinstance(typ, str):
-                el = El('xs:element',
-                        {'name': fieldname, 'type': typ})
-            else:
-                el = El('xs:element',
-                        {'name': fieldname},
-                        typ)
-        # Set min/max occurrences, if unset.
-        if el.get('minOccurs') is None:
-            el.set('minOccurs', '0')
-        if el.get('maxOccurs') is None:
-            el.set('maxOccurs', '1')
-
-        return [el]
-
+        return typ
     else:
         if isinstance(typ, str):
+            # We are declaring a type, so we are forced to create a type element.
             return El('xs:simpleType',
                       {'name': typename},
                       El('xs:restriction',
                          {'base': typ}))
         else:
             return typ
+
+def convertProperty(name, body):
+    if 'jsosd_typename' in dir(body):
+        # Return an element of this type.
+        el = El('xs:element',
+                {'name': name, 'type': body.jsosd_typename})
+
+    else:
+        assert('type' in body)
+
+        if 'comment' in body and body['comment'] == 'group':
+            assert(body['type'] == 'object')
+
+            subs = reduce(add, [convertProperty(k, v) for k, v in body['properties'].items()], [])
+
+            if 'required' in body:
+                markRequiredElements(subs, body['required'])
+                # Verify that the set of required elements is the same as or a
+                # subset of the actual child elements (i.e. no non-existent
+                # required elements).
+                assert(set(body['required']) <= set(map(lambda x: x.get('name'), subs)))
+
+            return subs
+
+        if body['type'] == 'array':
+            # Repeated element.
+
+            assert(isinstance(body['items'], dict)) # No tuple support.
+
+            # Delegate to convertProperty of the single child element.
+            el = convertProperty(name, body['items'])
+            assert(len(el) == 1) # There should be just one item.
+            el = el[0]
+
+            # Check min/max occurrences and annotate.
+            el.set('minOccurs', str(body['minItems']) if 'minItems' in body else '0')
+            el.set('maxOccurs', str(body['maxItems']) if 'maxItems' in body else 'unbounded')
+
+        else:
+            typ = convertType(body)
+            if isinstance(typ, str):
+                el = El('xs:element',
+                        {'name': name, 'type': typ})
+            else:
+                el = El('xs:element',
+                        {'name': name},
+                        typ)
+
+    # Set min/max occurrences, if unset.
+    if el.get('minOccurs') is not None and el.get('maxOccurs') is None:
+        el.set('maxOccurs', 'unbounded')
+    if el.get('minOccurs') is None:
+        el.set('minOccurs', '0')
+    if el.get('maxOccurs') is None:
+        el.set('maxOccurs', '1')
+
+    return [el]
 
 
 def builtinTypes():
@@ -217,9 +232,6 @@ def builtinTypes():
             'integer': 'xs:integer',
             'number':  'xs:decimal',
             'uri':     'xs:anyURI'}
-
-def convertProperty(context, k, v):
-    return convertType(v, None, v)
 
 if __name__ == '__main__':
     # Parse arguments, choose input / output handles {{{
@@ -260,8 +272,6 @@ if __name__ == '__main__':
 
     #for t in (convertType(k, v) for k, v in getTypes(j).items()):
     #    root.append(t)
-    for t in (convertType(v, k) for k, v in getTypes(j).items()):
-        root.append(t)
 
     # Convert and insert all fields into the XSD.
 
@@ -269,9 +279,12 @@ if __name__ == '__main__':
                    {'name': 'metadata'},
                    El('xs:complexType', {},
                       El('xs:sequence', {},
-                         *reduce(add, (convertProperty(None, k, v)
+                         *reduce(add, (convertProperty(k, v)
                                        for k, v in j['properties'].items()),
                                  [])))))
+
+    for t in (convertType(v, k) for k, v in getTypes(j).items()):
+        root.append(t)
 
     # Print the generated XML document.
 
