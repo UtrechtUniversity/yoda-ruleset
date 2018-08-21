@@ -9,6 +9,7 @@ from collections  import OrderedDict
 from copy         import deepcopy
 from functools    import reduce
 from operator     import add
+from argparse     import ArgumentParser
 
 def flattenSchema(j, uri):
     """
@@ -97,11 +98,39 @@ def builtinTypes():
             'number':  'xs:decimal'}
 
 def convertElement(context, k, v):
-    # Skip the 'group' level.
-    if 'comment' in v and v['comment'] == 'group':
-        # Return a list of all converted child elements.
-        return reduce(add, [convertElement(context, k, v)
-                            for k, v in v['properties'].items()])
+
+    # First handle the group/compound/subproperties types. {{{
+
+    if (('comment' in v and v['comment'] == 'group')
+            or 'yoda:structure' in v and v['yoda:structure'] in ('compound', 'subproperties')):
+
+        # Convert child elements.
+        subs = reduce(add, [convertElement(context, k, v) for k, v in v['properties'].items()], [])
+
+        # Annotate requiredness.
+        if 'required' in v:
+            for child in filter(lambda x: x.get('name') in v['required'], subs):
+                child.set('minOccurs', '1')
+
+            # Verify that the set of required elements is a strict subset
+            # of the actual child elements (i.e. no non-existent required elements).
+            assert(set(v['required']) <= set(map(lambda x: x.get('name'), subs)))
+
+        if 'comment' in v and v['comment'] == 'group':
+            assert('yoda:structure' not in v)
+            # For 'groups', return child elements directly.
+            # (the group level is ignored completely)
+            return subs
+        else:
+            assert('comment' not in v or v['comment'] != 'group')
+            # For compound / subproperties, add three levels.
+            return [El('xs:element', {'name': k},
+                       El('xs:complexType', {},
+                          El('xs:sequence', {},
+                             *subs)))]
+
+    # }}}
+    # Element is not of group/compound/subproperties type. {{{
 
     el = El('xs:element', {'name': k})
 
@@ -109,24 +138,6 @@ def convertElement(context, k, v):
         # Type is only a reference, this one is easy.
         # Set the type attr and move on.
         el.set('type', v.jsosd_typename)
-
-    elif 'yoda:structure' in v:
-        # Compound or subproperties.
-        # Handle required elements and embed each child element.
-
-        assert(v['yoda:structure'] in ('compound', 'subproperties'))
-
-        subs = reduce(add, [convertElement(context, k, v) for k, v in v['properties'].items()])
-
-        # Annotate requiredness.
-        if 'required' in v:
-            for child in filter(lambda x: x.get('name') in v['required'], subs):
-                child.set('minOccurs', '1')
-
-        # Insert child elements.
-        el.append(El('xs:complexType', {},
-                     El('xs:sequence', {},
-                        *subs)))
 
     elif v['type'] == 'array':
         # Repeated element.
@@ -170,37 +181,59 @@ def convertElement(context, k, v):
     # (only in the case of 'group' objects do we return more than one element)
     return [el]
 
+    # }}}
+
 if __name__ == '__main__':
-    fhout = sys.stdout
+    # Parse arguments, choose input / output handles {{{
 
-    if len(sys.argv) == 2:
-        fhin = open(sys.argv[1])
-    elif len(sys.argv) == 1:
-        fhin = sys.stdin
-    else:
-        print('usage: %s [schema.json]' % sys.argv[0])
-        sys.exit(1)
+    argparse = ArgumentParser(description=
+            """Converts JSON schema into a Yoda metadata XSD and XML form elements.
 
-    j = flattenSchema(annotateTypes(json.load(fhin, object_pairs_hook=OrderedDict)),
+               Unless specified otherwise with arguments, this will accept JSON on stdin
+               and output XSD on stdout.
+            """
+            )
+    argparse.add_argument('-o', '--output')
+    argparse.add_argument('input', nargs='?')
+    args = argparse.parse_args()
+
+    file_in  = sys.stdin  if args.input  is None else open(args.input)
+    file_out = sys.stdout if args.output is None else open(args.output, 'w')
+
+    # }}}
+
+    # Parse and preprocess the JSON schema document, resolving all references.
+
+    j = flattenSchema(annotateTypes(json.load(file_in, object_pairs_hook=OrderedDict)),
                       'default.json')
-
-    root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified"></xs:schema>')
-
     #print(json.dumps(j, indent=2))
     #sys.exit(0)
+
+    # Sanity check.
+    assert('type'       in j and j['type'] == 'object')
+    assert('properties' in j and isinstance(j['properties'], dict))
+
+    # Generate the toplevel XML schema element.
+
+    root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
+                         + ' elementFormDefault="qualified"></xs:schema>')
+
+    # Generate toplevel type declaration elements.
 
     for t in (convertTypeDeclaration(k, v) for k, v in getTypes(j).items()):
         root.append(t)
 
-    assert('type'       in j and j['type'] == 'object')
-    assert('properties' in j and isinstance(j['properties'], dict))
+    # Convert and insert all fields into the XSD.
 
     root.append(El('xs:element',
                    {'name': 'metadata'},
                    El('xs:complexType', {},
                       El('xs:sequence', {},
                          *reduce(add, (convertElement(None, k, v)
-                                       for k, v in j['properties'].items()))))))
+                                       for k, v in j['properties'].items()),
+                                 [])))))
 
-    print('<?xml version="1.0" encoding="utf-8"?>', file=fhout)
-    print(ET.tostring(root, encoding='unicode'), file=fhout)
+    # Print the generated XML document.
+
+    print('<?xml version="1.0" encoding="utf-8"?>', file=file_out)
+    print(ET.tostring(root, encoding='unicode'),    file=file_out)
