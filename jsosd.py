@@ -136,7 +136,8 @@ def convertType(body, typename=None):
     elif 'enum' in v:
         # Type should be string, or the like.
         assert(v['type'] in builtinTypes())
-        enumType = builtinTypes()[v['type']] if v['type'] in builtinTypes() else v['type']
+        enumType = (convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
+                    if v['type'] in builtinTypes() else v['type'])
 
         typ = El('xs:simpleType',
                  {} if typename is None else {'name': typename},
@@ -147,7 +148,7 @@ def convertType(body, typename=None):
 
     elif v['type'] in builtinTypes():
         # Simple builtin type.
-        typ = builtinTypes()[v['type']]
+        typ = convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
 
     else:
         # Unknown type.
@@ -249,11 +250,19 @@ def convertProperty(name, body, topLevel = False):
 
 
 def builtinTypes():
-    # XXX What to do with 'date' types?
     return {'string':  'xs:string',
             'integer': 'xs:integer',
             'number':  'xs:decimal',
             'uri':     'xs:anyURI'}
+
+def convertBuiltinType(name, fmt):
+    assert(name in builtinTypes())
+    # Special cases for string types with certain 'format' values.
+    if name == 'string' and fmt == 'date':
+        return 'xs:date'
+    else:
+        return builtinTypes()[name]
+
 
 if __name__ == '__main__':
     # Parse arguments, choose input / output handles {{{
