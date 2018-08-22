@@ -103,24 +103,35 @@ def convertType(body, typename=None):
 
     typ = None # The generated type, either a string (name), or an element describing the type.
 
-    if 'yoda:structure' in v and v['yoda:structure'] in ('compound', 'subproperties'):
+    if 'yoda:structure' in v:
+        # Handle compounds and subproperties.
 
+        assert v['yoda:structure'] in ('compound', 'subproperties')
         assert('properties' in v)
 
         # Convert child elements.
         subs = reduce(add, [convertProperty(k, v) for k, v in v['properties'].items()], [])
-        #subs = reduce(add, [convertType(v, None, k) for k, v in v['properties'].items()], [])
 
         # Annotate requiredness.
         if 'required' in v:
             markRequiredElements(subs, v['required'])
 
-        assert('comment' not in v or v['comment'] != 'group')
-        # For compound / subproperties, add three levels.
+        if v['yoda:structure'] == 'subproperties':
+            main, subs = subs[0], subs[1:]
+
         typ = El('xs:complexType',
                  {} if typename is None else {'name': typename},
-                 El('xs:sequence', {},
-                    *subs))
+                 # Subproperties case:
+                 (El('xs:sequence', {},
+                     main,
+                     El('xs:element', {'name': 'Properties',
+                                       'minOccurs': '0',#'1',
+                                       'maxOccurs': '1'},
+                        El('xs:complexType', {},
+                           El('xs:sequence', {}, *subs))))
+                  if v['yoda:structure'] == 'subproperties' else
+                  # Compound case:
+                  El('xs:sequence', {}, *subs)))
 
     elif 'enum' in v:
         # Type should be string, or the like.
@@ -168,28 +179,39 @@ def convertType(body, typename=None):
         else:
             return typ
 
-def convertProperty(name, body):
+def convertProperty(name, body, topLevel = False):
+
+    assert('type' in body)
+
+    if topLevel:
+        # Toplevel properties always indicate grouping.
+        # This level is not emitted in the XSD, so as a special case here we
+        # immediately generate the child elements and return them.
+        assert(body['type'] == 'object')
+
+        subs = reduce(add, [convertProperty(k, v) for k, v in body['properties'].items()], [])
+
+        if 'required' in body:
+            markRequiredElements(subs, body['required'])
+            # Verify that the set of required elements is the same as or a
+            # subset of the actual child elements (i.e. no non-existent
+            # required elements).
+            assert(set(body['required']) <= set(map(lambda x: x.get('name'), subs)))
+
+        # Return the child properties directly.
+        return subs
+
+    # Process a single property, and any child properties it may have.
+
     if 'jsosd_typename' in dir(body):
-        # Return an element of this type.
+        # This property is a reference to an existing type.
+        # The type can be simply named in a 'type' attribute.
         el = El('xs:element',
                 {'name': name, 'type': body.jsosd_typename})
 
     else:
-        assert('type' in body)
-
-        if 'comment' in body and body['comment'] == 'group':
-            assert(body['type'] == 'object')
-
-            subs = reduce(add, [convertProperty(k, v) for k, v in body['properties'].items()], [])
-
-            if 'required' in body:
-                markRequiredElements(subs, body['required'])
-                # Verify that the set of required elements is the same as or a
-                # subset of the actual child elements (i.e. no non-existent
-                # required elements).
-                assert(set(body['required']) <= set(map(lambda x: x.get('name'), subs)))
-
-            return subs
+        # The type is specified by name (without using a reference), and
+        # possible extra restrictions (e.g. maxLength) may be applied.
 
         if body['type'] == 'array':
             # Repeated element.
@@ -279,7 +301,7 @@ if __name__ == '__main__':
                    {'name': 'metadata'},
                    El('xs:complexType', {},
                       El('xs:sequence', {},
-                         *reduce(add, (convertProperty(k, v)
+                         *reduce(add, (convertProperty(k, v, topLevel=True)
                                        for k, v in j['properties'].items()),
                                  [])))))
 
