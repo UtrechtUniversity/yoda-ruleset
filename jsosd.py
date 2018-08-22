@@ -30,7 +30,7 @@ def flattenSchema(j, uri):
     def flattenDocument(doc, uri):
         """Flatten the references for a single JSON document"""
 
-        def flattenElement(el, fragment):
+        def flattenObject(el, fragment):
             """Flatten the references for a single JSON element"""
 
             def resolve(uri):
@@ -48,13 +48,13 @@ def flattenSchema(j, uri):
                 else:
                     # Nothing to see here, move on.
                     for k, v in el.items():
-                        el[k] = flattenElement(v, fragment)
+                        el[k] = flattenObject(v, fragment)
             elif isinstance(el, list):
                 for i, v in enumerate(el):
-                    el[i] = flattenElement(v, fragment)
+                    el[i] = flattenObject(v, fragment)
 
             return el
-        return flattenElement(doc, '/')
+        return flattenObject(doc, '/')
     return flattenDocument(j, uri)
 
 
@@ -109,7 +109,7 @@ def convertType(body, typename=None):
         assert v['yoda:structure'] in ('compound', 'subproperties')
         assert('properties' in v)
 
-        # Convert child elements.
+        # Convert child properties.
         subs = reduce(add, [convertProperty(k, v) for k, v in v['properties'].items()], [])
 
         # Annotate requiredness.
@@ -117,6 +117,7 @@ def convertType(body, typename=None):
             markRequiredElements(subs, v['required'])
 
         if v['yoda:structure'] == 'subproperties':
+            # Splice off the main property.
             main, subs = subs[0], subs[1:]
 
         typ = El('xs:complexType',
