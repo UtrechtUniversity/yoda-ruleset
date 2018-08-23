@@ -16,6 +16,8 @@ from argparse     import ArgumentParser
 import traceback
 import functools
 
+# Generic utility functions {{{
+
 def gentleAssert(predicate,
                  message,
                  fragment=None,
@@ -61,6 +63,18 @@ def gentleAssert(predicate,
         print(*traceback.format_stack(None), file=sys.stderr)
 
     sys.exit(1)
+
+
+def El(tag, attrs=None, *children):
+    """
+    Construct an XML element with the given optional attributes and optional children.
+    """
+    el = ET.Element(tag, attrs if attrs is not None else {})
+    el.extend(children)
+    return el
+
+# }}}
+# JSON Schema preprocessing and type extraction {{{
 
 def flattenSchema(jsonDocument, uri):
     """
@@ -118,13 +132,6 @@ def getTypes(obj):
     """
     return obj['definitions'] if 'definitions' in obj else {}
 
-def El(tag, attrs=None, *children):
-    """
-    Construct an XML element with the given optional attributes and optional children.
-    """
-    el = ET.Element(tag, attrs if attrs is not None else {})
-    el.extend(children)
-    return el
 
 def annotateTypes(jsonDocument):
     """
@@ -138,6 +145,9 @@ def annotateTypes(jsonDocument):
                      typeName=k)
         v.jsosd_typename = k
     return jsonDocument
+
+# }}}
+# Handling of requiredness of properties and array multiplicity. {{{
 
 def markRequiredElements(elements, required):
     """
@@ -158,6 +168,7 @@ def markRequiredElements(elements, required):
         if val is None or int(val) < 1:
             child.set('minOccurs', '1')
 
+
 def setArrayOccurs(element, min, max):
     """
     Set the min/max occurences on an array item.
@@ -168,6 +179,7 @@ def setArrayOccurs(element, min, max):
     element.set('minOccurs', min)
     element.set('maxOccurs', max)
 
+
 def setDefaultOccurs(element):
     # Set min/max occurrences, if unset.
     if  element.get('minOccurs') is not None and element.get('maxOccurs') is None:
@@ -176,6 +188,32 @@ def setDefaultOccurs(element):
         element.set('minOccurs', '0')
     if  element.get('maxOccurs') is None:
         element.set('maxOccurs', '1')
+
+# }}}
+# Type and element conversion {{{
+
+def builtinTypes():
+    """
+    Mapping of built-in JSON Schema type names to XML type names.
+    """
+    return {'string':  'xs:string',
+            'integer': 'xs:integer',
+            'number':  'xs:decimal',
+            'uri':     'xs:anyURI'}
+
+
+def convertBuiltinType(name, fmt):
+    """
+    Mapping of built-in JSON Schema type names to XML type names.
+    """
+    gentleAssert(name in builtinTypes(),
+                 'Type "%s" is not a built-in type' % name)
+    # Special cases for string types with certain 'format' values.
+    if name == 'string' and fmt == 'date':
+        return 'xs:date'
+    else:
+        return builtinTypes()[name]
+
 
 def convertType(body, typename=None):
     """
@@ -186,35 +224,35 @@ def convertType(body, typename=None):
     if 'jsosd_typename' in dir(body) and typename is None:
         # Return an element of this type.
         return [El('xs:element',
-                   {'name': fieldname, 'type': v.jsosd_typename})]
+                   {'name': fieldname, 'type': body.jsosd_typename})]
 
-    gentleAssert('type' in v,
+    gentleAssert('type' in body,
                  'All elements and types must contain a \'type\' attribute.',
                  typeName=typename)
 
     typ = None # The generated type, either a string (name), or an element describing the type.
 
-    if 'yoda:structure' in v:
+    if 'yoda:structure' in body:
         # Handle compounds and subproperties.
 
-        gentleAssert(v['type'] == 'object',
+        gentleAssert(body['type'] == 'object',
                      'Compounds and subproperties types must have \'type\' attribute \'object\'',
                      typeName=typename)
-        gentleAssert(v['yoda:structure'] in ('compound', 'subproperties'),
-                     'Invalid \'yoda:structure\' value "%s"' % v['yoda:structure'],
+        gentleAssert(body['yoda:structure'] in ('compound', 'subproperties'),
+                     'Invalid \'yoda:structure\' value "%s"' % body['yoda:structure'],
                      typeName=typename)
-        gentleAssert('properties' in v and isinstance(v['properties'], dict),
+        gentleAssert('properties' in body and isinstance(body['properties'], dict),
                      'Compounds and subproperties types must have \'properties\' object',
                      typeName=typename)
 
         # Convert child properties.
-        subs = reduce(add, [convertProperty(k, v) for k, v in v['properties'].items()], [])
+        subs = reduce(add, [convertProperty(k, v) for k, v in body['properties'].items()], [])
 
         # Annotate requiredness.
-        if 'required' in v:
-            markRequiredElements(subs, v['required'])
+        if 'required' in body:
+            markRequiredElements(subs, body['required'])
 
-        if v['yoda:structure'] == 'subproperties':
+        if body['yoda:structure'] == 'subproperties':
             # Splice off the main property.
             main, subs = subs[0], subs[1:]
 
@@ -228,40 +266,40 @@ def convertType(body, typename=None):
                                        'maxOccurs': '1'},
                         El('xs:complexType', {},
                            El('xs:sequence', {}, *subs))))
-                  if v['yoda:structure'] == 'subproperties' else
+                  if body['yoda:structure'] == 'subproperties' else
                   # Compound case:
                   El('xs:sequence', {}, *subs)))
 
-    elif 'enum' in v:
-        gentleAssert(isinstance(v['enum'], list),
+    elif 'enum' in body:
+        gentleAssert(isinstance(body['enum'], list),
                      'Enum types must have a list attribute named \'enum\'',
                      typeName=typename)
 
         # Type should be string, or the like.
-        gentleAssert(v['type'] in builtinTypes(),
-                     'The \'type\' of enums must be a builtin type (got "%s" instead)' % v['type'],
+        gentleAssert(body['type'] in builtinTypes(),
+                     'The \'type\' of enums must be a builtin type (got "%s" instead)' % body['type'],
                      typeName=typename)
-        enumType = (convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
-                    if v['type'] in builtinTypes() else v['type'])
+        enumType = (convertBuiltinType(body['type'], body['format'] if 'format' in body else None)
+                    if body['type'] in builtinTypes() else body['type'])
 
         typ = El('xs:simpleType',
                  {} if typename is None else {'name': typename},
                  El('xs:restriction', {'base': enumType},
                     # Turn the possible enum values into xs:enumeration tags.
                     *map(lambda val: El('xs:enumeration', {'value': val}),
-                         v['enum'])))
+                         body['enum'])))
 
-    elif v['type'] in builtinTypes():
+    elif body['type'] in builtinTypes():
         # Simple builtin type.
-        typ = convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
+        typ = convertBuiltinType(body['type'], body['format'] if 'format' in body else None)
 
     else:
         gentleAssert(False,
-                     'Unknown type name "%s". (if you are trying to reference a user-defined type in \'definitions\', use a $ref attribute instead)' % v['type'],
+                     'Unknown type name "%s". (if you are trying to reference a user-defined type in \'definitions\', use a $ref attribute instead)' % body['type'],
                      typeName=typename)
 
     # Handle extra inline restrictions.
-    if len(set(['maxLength']) & set(v.keys())):
+    if len(set(['maxLength']) & set(body.keys())):
         # Only allow extra restrictions if the base type can be specified by name.
         gentleAssert(isinstance(typ, str),
                      'Restrictions (such as \'maxLength\') can only be added when the base type can be specified by name',
@@ -269,9 +307,9 @@ def convertType(body, typename=None):
 
         restriction = El('xs:restriction',
                          {'base': typ})
-        if 'maxLength' in v:
+        if 'maxLength' in body:
             restriction.append(El('xs:maxLength',
-                                  {'value': str(v['maxLength'])}))
+                                  {'value': str(body['maxLength'])}))
         typ = El('xs:simpleType',
                  {} if typename is None else {'name': typename},
                  restriction)
@@ -355,21 +393,8 @@ def convertProperty(name, body, topLevel = False):
 
     return [el]
 
-
-def builtinTypes():
-    return {'string':  'xs:string',
-            'integer': 'xs:integer',
-            'number':  'xs:decimal',
-            'uri':     'xs:anyURI'}
-
-def convertBuiltinType(name, fmt):
-    gentleAssert(name in builtinTypes(),
-                 'Type "%s" is not a built-in type' % name)
-    # Special cases for string types with certain 'format' values.
-    if name == 'string' and fmt == 'date':
-        return 'xs:date'
-    else:
-        return builtinTypes()[name]
+# }}}
+# Hardcoded System group {{{
 
 def generateSystemGroup():
     system = ET.XML("""<?xml version="1.0" encoding="utf-8"?>
@@ -397,6 +422,7 @@ def generateSystemGroup():
 
     return system.findall('*')[0]
 
+# }}}
 
 if __name__ == '__main__':
     # Process arguments {{{
