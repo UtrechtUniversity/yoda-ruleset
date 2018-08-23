@@ -4,12 +4,41 @@ import json
 import sys
 import xml.etree.cElementTree as ET
 
-from urllib.parse import urlparse, urljoin
+from urllib.parse import urlparse, urljoin # Not yet used, but will be needed
+                                           # when resolving cross-document JSON
+                                           # schema references.
 from collections  import OrderedDict
 from copy         import deepcopy
 from functools    import reduce
 from operator     import add
 from argparse     import ArgumentParser
+import traceback
+
+def gentleAssert(predicate,
+                 message,
+                 fragment=None,
+                 propertyName=None,
+                 typeName=None):
+    if not predicate:
+        stack = traceback.extract_stack(None)[:-1]
+        assertFrame = stack[-1]
+
+        print("Assertion failed at %s line %s:\n> %s\n"
+              % (stack[-1].filename,
+                 stack[-1].lineno,
+                 message),
+              file=sys.stderr)
+
+        if fragment is not None:
+            print('The error occurred while processing JSON fragment %s' % fragment, file=sys.stderr)
+        elif propertyName is not None:
+            print('The error occurred while processing JSON property %s' % propertyName, file=sys.stderr)
+        elif typeName is not None:
+            print('The error occurred while generating a type named %s' % typeName, file=sys.stderr)
+        else:
+            print('No further context is available.\nPlease consult the Python code at the line number printed above if you require more information.', file=sys.stderr)
+
+        sys.exit(1)
 
 def flattenSchema(j, uri):
     """
@@ -69,8 +98,7 @@ def El(tag, attrs=None, *children):
     Construct an XML element with the given optional attributes and optional children.
     """
     el = ET.Element(tag, attrs if attrs is not None else {})
-    for c in children:
-        el.append(c)
+    el.extend(children)
     return el
 
 def annotateTypes(j):
@@ -85,12 +113,35 @@ def annotateTypes(j):
     return j
 
 def markRequiredElements(elements, required):
+    """
+    Annotate requiredness on elements based on the 'required' array of the parent element.
+    """
+    # Verify that the set of required elements is the same as or a
+    # subset of the actual child elements (i.e. no non-existent
+    # required elements).
+    assert(set(required) <= set(map(lambda x: x.get('name'), elements)))
+
     for child in filter(lambda x: x.get('name') in required, elements):
-        child.set('minOccurs', '1')
+        val = child.get('minOccurs')
+        if val is None or int(val) < 1:
+            child.set('minOccurs', '1')
+
+def setArrayOccurs(element, min, max):
+    element.set('minOccurs', min)
+    element.set('maxOccurs', max)
+
+def setDefaultOccurs(element):
+    # Set min/max occurrences, if unset.
+    if  element.get('minOccurs') is not None and element.get('maxOccurs') is None:
+        element.set('maxOccurs', 'unbounded')
+    if  element.get('minOccurs') is None:
+        element.set('minOccurs', '0')
+    if  element.get('maxOccurs') is None:
+        element.set('maxOccurs', '1')
 
 def convertType(body, typename=None):
     """
-    Generate a type or an element.
+    Generate a type.
     """
     v = body # XXX
 
@@ -106,6 +157,7 @@ def convertType(body, typename=None):
     if 'yoda:structure' in v:
         # Handle compounds and subproperties.
 
+        assert(v['type'] == 'object')
         assert v['yoda:structure'] in ('compound', 'subproperties')
         assert('properties' in v)
 
@@ -195,10 +247,6 @@ def convertProperty(name, body, topLevel = False):
 
         if 'required' in body:
             markRequiredElements(subs, body['required'])
-            # Verify that the set of required elements is the same as or a
-            # subset of the actual child elements (i.e. no non-existent
-            # required elements).
-            assert(set(body['required']) <= set(map(lambda x: x.get('name'), subs)))
 
         # Return the child properties directly.
         return subs
@@ -226,8 +274,9 @@ def convertProperty(name, body, topLevel = False):
             el = el[0]
 
             # Check min/max occurrences and annotate.
-            el.set('minOccurs', str(body['minItems']) if 'minItems' in body else '0')
-            el.set('maxOccurs', str(body['maxItems']) if 'maxItems' in body else 'unbounded')
+            setArrayOccurs(el,
+                           str(body['minItems']) if 'minItems' in body else '0',
+                           str(body['maxItems']) if 'maxItems' in body else 'unbounded')
 
         else:
             typ = convertType(body)
@@ -239,13 +288,7 @@ def convertProperty(name, body, topLevel = False):
                         {'name': name},
                         typ)
 
-    # Set min/max occurrences, if unset.
-    if el.get('minOccurs') is not None and el.get('maxOccurs') is None:
-        el.set('maxOccurs', 'unbounded')
-    if el.get('minOccurs') is None:
-        el.set('minOccurs', '0')
-    if el.get('maxOccurs') is None:
-        el.set('maxOccurs', '1')
+    setDefaultOccurs(el)
 
     return [el]
 
@@ -264,6 +307,32 @@ def convertBuiltinType(name, fmt):
     else:
         return builtinTypes()[name]
 
+def generateSystemGroup():
+    system = ET.XML("""<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xs:element name="System" minOccurs="0" maxOccurs="1">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="Last_Modified_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="Persistent_Identifier_Datapackage" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Identifier_Scheme" type="optionsPersistentIdentifierScheme" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="Identifier" type="stringNormal" minOccurs="0" maxOccurs="1"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="Publication_Date" type="xs:date" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="Open_Access_Link" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="License_URI" type="xs:anyURI" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+</xs:schema>
+""")
+
+    return system.findall('*')[0]
+
 
 if __name__ == '__main__':
     # Parse arguments, choose input / output handles {{{
@@ -273,14 +342,22 @@ if __name__ == '__main__':
 
                Unless specified otherwise with arguments, this will accept JSON on stdin
                and output XSD on stdout.
-            """
-            )
-    argparse.add_argument('-o', '--output')
-    argparse.add_argument('input', nargs='?')
+            """)
+    argparse.add_argument('-o', '--output',   help="An output file (by default, prints to stdout)")
+    argparse.add_argument('input', nargs='?', help="An input file (by default, reads from stdin)")
+    argparse.add_argument('--required',    action='store_true',  dest='required', default=True)
+    argparse.add_argument('--no-required', action='store_false', dest='required',
+                          help="Enables or disables the processing of the 'required' attribute."
+                              +" '--require' is ON by default.")
     args = argparse.parse_args()
 
     file_in  = sys.stdin  if args.input  is None else open(args.input)
     file_out = sys.stdout if args.output is None else open(args.output, 'w')
+
+    if not args.required:
+        markRequiredElements = lambda *_: None
+        f = setArrayOccurs
+        setArrayOccurs = lambda el, min, max: f(el, '0' if int(min) > 0 else min, max)
 
     # }}}
 
@@ -300,11 +377,6 @@ if __name__ == '__main__':
     root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
                          + ' elementFormDefault="qualified"></xs:schema>')
 
-    # Generate toplevel type declaration elements.
-
-    #for t in (convertType(k, v) for k, v in getTypes(j).items()):
-    #    root.append(t)
-
     # Convert and insert all fields into the XSD.
 
     root.append(El('xs:element',
@@ -312,11 +384,17 @@ if __name__ == '__main__':
                    El('xs:complexType', {},
                       El('xs:sequence', {},
                          *reduce(add, (convertProperty(k, v, topLevel=True)
-                                       for k, v in j['properties'].items()),
-                                 [])))))
+                                       for k, v in j['properties'].items())),
+                         generateSystemGroup()))))
 
-    for t in (convertType(v, k) for k, v in getTypes(j).items()):
+    # Generate toplevel type declaration elements.
+
+    for t in (convertType(v, typename=k) for k, v in getTypes(j).items()):
         root.append(t)
+
+    # The System group depends on this type, so it must be defined.
+    gentleAssert('optionsPersistentIdentifierScheme' in getTypes(j),
+                 'aaaa')
 
     # Print the generated XML document.
 
