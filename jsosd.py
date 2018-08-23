@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 
+# \brief     JSON Schema to XSD converter for Yoda metadata schemas.
+# \author    Chris Smeele
+# \copyright Copyright (c) 2018 Utrecht University.
+# \license   GPLv3, see LICENSE
+
 import json
 import sys
 import xml.etree.cElementTree as ET
 
-from urllib.parse import urlparse, urljoin # Not yet used, but will be needed
-                                           # when resolving cross-document JSON
-                                           # schema references.
+#from urllib.parse import urlparse, urljoin # Not yet used, but will be needed
+#                                           # when resolving cross-document JSON
+#                                           # schema references.
+
 from collections  import OrderedDict
 from copy         import deepcopy
 from functools    import reduce
