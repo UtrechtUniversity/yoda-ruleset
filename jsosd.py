@@ -12,48 +12,72 @@ from copy         import deepcopy
 from functools    import reduce
 from operator     import add
 from argparse     import ArgumentParser
+
 import traceback
+import functools
 
 def gentleAssert(predicate,
                  message,
                  fragment=None,
+                 refName=None,
                  propertyName=None,
-                 typeName=None):
-    if not predicate:
-        stack = traceback.extract_stack(None)[:-1]
-        assertFrame = stack[-1]
+                 typeName=None,
+                 trace=False):
+    """
+    Check a predicate and exit if it is false.
+    The given message will be printed on failure, including a bit of context
+    when one the relevant optional arguments are given (e.g. refName).
 
-        print("Assertion failed at %s line %s:\n> %s\n"
-              % (stack[-1].filename,
-                 stack[-1].lineno,
-                 message),
-              file=sys.stderr)
+    When 'trace' is true, a full stack trace will be printed as well
+    (this argument is forced to True by the '--trace' commandline flag).
+    """
+    if predicate:
+        return # yay!
 
-        if fragment is not None:
-            print('The error occurred while processing JSON fragment %s' % fragment, file=sys.stderr)
-        elif propertyName is not None:
-            print('The error occurred while processing JSON property %s' % propertyName, file=sys.stderr)
-        elif typeName is not None:
-            print('The error occurred while generating a type named %s' % typeName, file=sys.stderr)
-        else:
-            print('No further context is available.\nPlease consult the Python code at the line number printed above if you require more information.', file=sys.stderr)
+    stack = traceback.extract_stack(None)[:-1]
 
-        sys.exit(1)
+    print("Assertion failed at %s line %d:\n> %s\n"
+          % (stack[-1].filename,
+             stack[-1].lineno,
+             message),
+          file=sys.stderr)
 
-def flattenSchema(j, uri):
+    if fragment is not None:
+        print('The error occurred while processing JSON fragment "%s"' % fragment, file=sys.stderr)
+    elif refName is not None:
+        print('The error occurred while resolving a JSON schema $ref.\nThe (partial or complete) URI was "%s"' % refName, file=sys.stderr)
+    elif propertyName is not None:
+        print('The error occurred while processing JSON property "%s"' % propertyName, file=sys.stderr)
+    elif typeName is not None:
+        print('The error occurred while processing or generating a type named "%s"' % typeName, file=sys.stderr)
+    else:
+        print('No further context is available.\nPlease consult the Python code at the line number printed above if you require more information.', file=sys.stderr)
+
+    if not trace:
+        print('\nYou may pass \'-t\' to this script to print a stack trace at the failing assertion.', file=sys.stderr)
+
+    if trace:
+        print('\nA complete stack trace follows:\n', file=sys.stderr)
+        print(*traceback.format_stack(None), file=sys.stderr)
+
+    sys.exit(1)
+
+def flattenSchema(jsonDocument, uri):
     """
     Given a dict representing a JSON schema object, resolve all contained $ref
     objects into references to actual Python objects.
 
     Only references within the same document are supported for now.
     """
-    j = deepcopy(j) # Return a flattened schema, do not modify the input.
+    jsonDocument = deepcopy(jsonDocument) # Return a flattened schema, do not modify the input.
     documents = dict() # URL(?) => JSON document object
     #documents.add(uri)
 
     def resolvePath(doc, *path):
         if len(path) != 0:
-            assert(path[0] in doc)
+            gentleAssert(path[0] in doc,
+                         'Could not resolve a $ref fragment. Please verify that the referenced type exists and is referenced with the correct name.',
+                         refName='/'.join(path))
         return doc if len(path) == 0 else resolvePath(doc[path[0]], *path[1:])
 
     def flattenDocument(doc, uri):
@@ -65,9 +89,10 @@ def flattenSchema(j, uri):
             def resolve(uri):
                 """Resolve an URI (based on the current fragment)"""
 
-                if not uri.startswith('#/'):
-                    print('Only absolute references within the current document allowed for now')
-                    assert(False)
+                gentleAssert(uri.startswith('#/'),
+                             'Only absolute references within the current document allowed for now',
+                             refName=uri)
+
                 return resolvePath(doc, *uri[2:].split('/'))
 
             if isinstance(el, dict):
@@ -84,7 +109,7 @@ def flattenSchema(j, uri):
 
             return el
         return flattenObject(doc, '/')
-    return flattenDocument(j, uri)
+    return flattenDocument(jsonDocument, uri)
 
 
 def getTypes(obj):
@@ -101,25 +126,32 @@ def El(tag, attrs=None, *children):
     el.extend(children)
     return el
 
-def annotateTypes(j):
+def annotateTypes(jsonDocument):
     """
     Annotate type declaration structures with the key (typename) pointing to them.
     This ensures that elements that reference a type through $ref also know the type's name.
     """
-    j = deepcopy(j)
-    for k, v in getTypes(j).items():
-        assert(isinstance(v, dict))
+    jsonDocument = deepcopy(jsonDocument)
+    for k, v in getTypes(jsonDocument).items():
+        gentleAssert(isinstance(v, dict),
+                     'JSON Schema \'definitions\' type declaration must be an object',
+                     typeName=k)
         v.jsosd_typename = k
-    return j
+    return jsonDocument
 
 def markRequiredElements(elements, required):
     """
     Annotate requiredness on elements based on the 'required' array of the parent element.
+
+    NB: This function is removed when --no-required is passed to the script.
     """
     # Verify that the set of required elements is the same as or a
     # subset of the actual child elements (i.e. no non-existent
     # required elements).
-    assert(set(required) <= set(map(lambda x: x.get('name'), elements)))
+    names = [*map(lambda x: x.get('name'), elements)]
+    gentleAssert(set(required) <= set(names),
+                 'One or more properties of a structure are marked required, but do not exist. The missing properties are: %s.'
+                 % ', '.join(set(required) - set(names)))
 
     for child in filter(lambda x: x.get('name') in required, elements):
         val = child.get('minOccurs')
@@ -127,6 +159,12 @@ def markRequiredElements(elements, required):
             child.set('minOccurs', '1')
 
 def setArrayOccurs(element, min, max):
+    """
+    Set the min/max occurences on an array item.
+
+    NB: This function is wrapped to force 'min' to '0' when --no-required is
+    passed to the script.
+    """
     element.set('minOccurs', min)
     element.set('maxOccurs', max)
 
@@ -150,16 +188,24 @@ def convertType(body, typename=None):
         return [El('xs:element',
                    {'name': fieldname, 'type': v.jsosd_typename})]
 
-    assert('type' in v)
+    gentleAssert('type' in v,
+                 'All elements and types must contain a \'type\' attribute.',
+                 typeName=typename)
 
     typ = None # The generated type, either a string (name), or an element describing the type.
 
     if 'yoda:structure' in v:
         # Handle compounds and subproperties.
 
-        assert(v['type'] == 'object')
-        assert v['yoda:structure'] in ('compound', 'subproperties')
-        assert('properties' in v)
+        gentleAssert(v['type'] == 'object',
+                     'Compounds and subproperties types must have \'type\' attribute \'object\'',
+                     typeName=typename)
+        gentleAssert(v['yoda:structure'] in ('compound', 'subproperties'),
+                     'Invalid \'yoda:structure\' value "%s"' % v['yoda:structure'],
+                     typeName=typename)
+        gentleAssert('properties' in v and isinstance(v['properties'], dict),
+                     'Compounds and subproperties types must have \'properties\' object',
+                     typeName=typename)
 
         # Convert child properties.
         subs = reduce(add, [convertProperty(k, v) for k, v in v['properties'].items()], [])
@@ -187,8 +233,14 @@ def convertType(body, typename=None):
                   El('xs:sequence', {}, *subs)))
 
     elif 'enum' in v:
+        gentleAssert(isinstance(v['enum'], list),
+                     'Enum types must have a list attribute named \'enum\'',
+                     typeName=typename)
+
         # Type should be string, or the like.
-        assert(v['type'] in builtinTypes())
+        gentleAssert(v['type'] in builtinTypes(),
+                     'The \'type\' of enums must be a builtin type (got "%s" instead)' % v['type'],
+                     typeName=typename)
         enumType = (convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
                     if v['type'] in builtinTypes() else v['type'])
 
@@ -204,13 +256,16 @@ def convertType(body, typename=None):
         typ = convertBuiltinType(v['type'], v['format'] if 'format' in v else None)
 
     else:
-        # Unknown type.
-        print('paniek: ' + str(typename), file=sys.stderr)
-        sys.exit(1)
+        gentleAssert(False,
+                     'Unknown type name "%s". (if you are trying to reference a user-defined type in \'definitions\', use a $ref attribute instead)' % v['type'],
+                     typeName=typename)
 
+    # Handle extra inline restrictions.
     if len(set(['maxLength']) & set(v.keys())):
         # Only allow extra restrictions if the base type can be specified by name.
-        assert(isinstance(typ, str))
+        gentleAssert(isinstance(typ, str),
+                     'Restrictions (such as \'maxLength\') can only be added when the base type can be specified by name',
+                     typeName=typename)
 
         restriction = El('xs:restriction',
                          {'base': typ})
@@ -235,13 +290,17 @@ def convertType(body, typename=None):
 
 def convertProperty(name, body, topLevel = False):
 
-    assert('type' in body)
+    gentleAssert('type' in body,
+                 'All properties must contain a \'type\' attribute.',
+                 propertyName=name)
 
     if topLevel:
         # Toplevel properties always indicate grouping.
         # This level is not emitted in the XSD, so as a special case here we
         # immediately generate the child elements and return them.
-        assert(body['type'] == 'object')
+        gentleAssert(body['type'] == 'object',
+                     'Toplevel properties must have type \'object\'',
+                     propertyName=name)
 
         subs = reduce(add, [convertProperty(k, v) for k, v in body['properties'].items()], [])
 
@@ -266,11 +325,15 @@ def convertProperty(name, body, topLevel = False):
         if body['type'] == 'array':
             # Repeated element.
 
-            assert(isinstance(body['items'], dict)) # No tuple support.
+            gentleAssert(isinstance(body['items'], dict),
+                         'Attribute \'items\' of an \'array\'-type property must be an object (JSON Schema "tuple" type is not supported)',
+                         propertyName=name)
 
             # Delegate to convertProperty of the single child element.
             el = convertProperty(name, body['items'])
-            assert(len(el) == 1) # There should be just one item.
+            gentleAssert(len(el) == 1, # There should be just one item.
+                         'Internal logic error, this should not happen.',
+                         propertyName=name)
             el = el[0]
 
             # Check min/max occurrences and annotate.
@@ -300,7 +363,8 @@ def builtinTypes():
             'uri':     'xs:anyURI'}
 
 def convertBuiltinType(name, fmt):
-    assert(name in builtinTypes())
+    gentleAssert(name in builtinTypes(),
+                 'Type "%s" is not a built-in type' % name)
     # Special cases for string types with certain 'format' values.
     if name == 'string' and fmt == 'date':
         return 'xs:date'
@@ -335,7 +399,7 @@ def generateSystemGroup():
 
 
 if __name__ == '__main__':
-    # Parse arguments, choose input / output handles {{{
+    # Process arguments {{{
 
     argparse = ArgumentParser(description=
             """Converts JSON schema into a Yoda metadata XSD and XML form elements.
@@ -343,34 +407,50 @@ if __name__ == '__main__':
                Unless specified otherwise with arguments, this will accept JSON on stdin
                and output XSD on stdout.
             """)
-    argparse.add_argument('-o', '--output',   help="An output file (by default, prints to stdout)")
-    argparse.add_argument('input', nargs='?', help="An input file (by default, reads from stdin)")
+    argparse.add_argument('-o', '--output',   help='An output file (by default, prints to stdout)')
+    argparse.add_argument('input', nargs='?', help='An input file (by default, reads from stdin)')
     argparse.add_argument('--required',    action='store_true',  dest='required', default=True)
     argparse.add_argument('--no-required', action='store_false', dest='required',
-                          help="Enables or disables the processing of the 'required' attribute."
-                              +" '--require' is ON by default.")
+                          help='Enables or disables the processing of the \'required\' attribute.'
+                              +' \'--required\' is ON by default.')
+    argparse.add_argument('-t', '--trace', action='store_true', default=False,
+                          help='Enables full stack traces on assertion failures. This may aid in debugging schemas or the script itself when the printed error information is not sufficient.')
     args = argparse.parse_args()
+
+    # Open input / output files.
 
     file_in  = sys.stdin  if args.input  is None else open(args.input)
     file_out = sys.stdout if args.output is None else open(args.output, 'w')
 
     if not args.required:
+        # Disable 'required' handling.
         markRequiredElements = lambda *_: None
+
+        # Force the minimum occurrences for array items to always be '0'.
         f = setArrayOccurs
-        setArrayOccurs = lambda el, min, max: f(el, '0' if int(min) > 0 else min, max)
+        setArrayOccurs = lambda array, min, max: f(array, '0', max)
+
+    if args.trace:
+        # Change gentleAssert to print a trace by default.
+        gentleAssert = functools.partial(gentleAssert, trace=True)
 
     # }}}
 
     # Parse and preprocess the JSON schema document, resolving all references.
+    # This also embeds 'definitions' type names into their own type objects, such
+    # that all type $refs can be easily converted to type names.
 
-    j = flattenSchema(annotateTypes(json.load(file_in, object_pairs_hook=OrderedDict)),
-                      'default.json')
-    #print(json.dumps(j, indent=2))
+    jsonDocument = flattenSchema(annotateTypes(json.load(file_in, object_pairs_hook=OrderedDict)),
+                      'XXX.json')
+
+    #print(json.dumps(jsonDocument, indent=2))
     #sys.exit(0)
 
     # Sanity check.
-    assert('type'       in j and j['type'] == 'object')
-    assert('properties' in j and isinstance(j['properties'], dict))
+    gentleAssert('type'       in jsonDocument and jsonDocument['type'] == 'object',
+                 'The \'type\' of the toplevel JSON schema object must be \'object\'')
+    gentleAssert('properties' in jsonDocument and isinstance(jsonDocument['properties'], dict),
+                 'The toplevel JSON schema object must contain a \'properties\' object')
 
     # Generate the toplevel XML schema element.
 
@@ -384,17 +464,17 @@ if __name__ == '__main__':
                    El('xs:complexType', {},
                       El('xs:sequence', {},
                          *reduce(add, (convertProperty(k, v, topLevel=True)
-                                       for k, v in j['properties'].items())),
+                                       for k, v in jsonDocument['properties'].items())),
                          generateSystemGroup()))))
 
     # Generate toplevel type declaration elements.
 
-    for t in (convertType(v, typename=k) for k, v in getTypes(j).items()):
+    for t in (convertType(v, typename=k) for k, v in getTypes(jsonDocument).items()):
         root.append(t)
 
     # The System group depends on this type, so it must be defined.
-    gentleAssert('optionsPersistentIdentifierScheme' in getTypes(j),
-                 'aaaa')
+    gentleAssert('optionsPersistentIdentifierScheme' in getTypes(jsonDocument),
+                 'The System group requires a \'optionsPersistentIdentifierScheme\' type to be defined in the \'definitions\' section of the JSON schema.')
 
     # Print the generated XML document.
 
