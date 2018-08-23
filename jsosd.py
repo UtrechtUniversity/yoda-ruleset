@@ -81,6 +81,9 @@ def flattenSchema(jsonDocument, uri):
     Given a dict representing a JSON schema object, resolve all contained $ref
     objects into references to actual Python objects.
 
+    'uri' is currently unused, but may contain the current document URI in the
+    future, for the purpose of handling cross-document references.
+
     Only references within the same document are supported for now.
     """
     jsonDocument = deepcopy(jsonDocument) # Return a flattened schema, do not modify the input.
@@ -181,7 +184,9 @@ def setArrayOccurs(element, min, max):
 
 
 def setDefaultOccurs(element):
-    # Set min/max occurrences, if unset.
+    """
+    Set min/max occurrences to 0/1, respectively, if unset.
+    """
     if  element.get('minOccurs') is not None and element.get('maxOccurs') is None:
         element.set('maxOccurs', 'unbounded')
     if  element.get('minOccurs') is None:
@@ -217,23 +222,37 @@ def convertBuiltinType(name, fmt):
 
 def convertType(body, typename=None):
     """
-    Generate a type.
+    Generate a type based on a JSON type object.
+
+    This function is called to generate type declarations and to generate the
+    type info for elements.
+
+    1) 'body' is either a type declaration in the 'definitions' object...
+    e.g.: 'definitions': { 'stringLong': { <THE_BODY_OBJECT> } }
+
+    2) ... or the object pointed to by a property.
+    e.g.: 'properties': { 'Field_Name': { <THE_BODY_OBJECT> } }
+
+
+    If this is a (1) type declaration, 'typename' will be set to the name of the
+    generated type ("stringLong").
+    In this case, we will emit a xs:simpleType or xs:complexType XML element
+    with the given 'name' attribute.
+
+    In the other case (2), we generate either a type element such as with (1),
+    without the name attribute, to be embedded in an xs:element element,
+    OR we generate a string representing an existing type name, to be inserted
+    in a "type" attribute of the xs:element.
     """
-    v = body # XXX
-
-    if 'jsosd_typename' in dir(body) and typename is None:
-        # Return an element of this type.
-        return [El('xs:element',
-                   {'name': fieldname, 'type': body.jsosd_typename})]
-
     gentleAssert('type' in body,
-                 'All elements and types must contain a \'type\' attribute.',
+                 'All elements and type declarations must contain a \'type\' attribute.',
                  typeName=typename)
 
     typ = None # The generated type, either a string (name), or an element describing the type.
 
     if 'yoda:structure' in body:
         # Handle compounds and subproperties.
+        # This will result in typ = complexType
 
         gentleAssert(body['type'] == 'object',
                      'Compounds and subproperties types must have \'type\' attribute \'object\'',
@@ -271,6 +290,9 @@ def convertType(body, typename=None):
                   El('xs:sequence', {}, *subs)))
 
     elif 'enum' in body:
+        # Handle enums.
+        # This will result in typ = simpleType
+
         gentleAssert(isinstance(body['enum'], list),
                      'Enum types must have a list attribute named \'enum\'',
                      typeName=typename)
@@ -279,6 +301,7 @@ def convertType(body, typename=None):
         gentleAssert(body['type'] in builtinTypes(),
                      'The \'type\' of enums must be a builtin type (got "%s" instead)' % body['type'],
                      typeName=typename)
+
         enumType = (convertBuiltinType(body['type'], body['format'] if 'format' in body else None)
                     if body['type'] in builtinTypes() else body['type'])
 
@@ -291,6 +314,7 @@ def convertType(body, typename=None):
 
     elif body['type'] in builtinTypes():
         # Simple builtin type.
+        # This will result in a typ = string.
         typ = convertBuiltinType(body['type'], body['format'] if 'format' in body else None)
 
     else:
@@ -305,6 +329,8 @@ def convertType(body, typename=None):
                      'Restrictions (such as \'maxLength\') can only be added when the base type can be specified by name',
                      typeName=typename)
 
+        # Convert the string 'typ' into a simpleType, in order to be able to add restrictions.
+
         restriction = El('xs:restriction',
                          {'base': typ})
         if 'maxLength' in body:
@@ -315,10 +341,11 @@ def convertType(body, typename=None):
                  restriction)
 
     if typename is None:
+        # Return typ as-is by default.
         return typ
     else:
+        # In type declarations, we are forced to create a type element.
         if isinstance(typ, str):
-            # We are declaring a type, so we are forced to create a type element.
             return El('xs:simpleType',
                       {'name': typename},
                       El('xs:restriction',
@@ -327,6 +354,14 @@ def convertType(body, typename=None):
             return typ
 
 def convertProperty(name, body, topLevel = False):
+    """
+    Convert a JSON Schema property into an array of one or more XML xs:elements.
+
+    - On the top (group) level, the array contains all converted properties
+      within the group.
+    - On all other levels, there will be just one converted property in the
+      returned array.
+    """
 
     gentleAssert('type' in body,
                  'All properties must contain a \'type\' attribute.',
@@ -361,13 +396,13 @@ def convertProperty(name, body, topLevel = False):
         # possible extra restrictions (e.g. maxLength) may be applied.
 
         if body['type'] == 'array':
-            # Repeated element.
+            # Special case for repeated properties.
 
             gentleAssert(isinstance(body['items'], dict),
                          'Attribute \'items\' of an \'array\'-type property must be an object (JSON Schema "tuple" type is not supported)',
                          propertyName=name)
 
-            # Delegate to convertProperty of the single child element.
+            # -> Delegate to convertProperty of the single child element.
             el = convertProperty(name, body['items'])
             gentleAssert(len(el) == 1, # There should be just one item.
                          'Internal logic error, this should not happen.',
@@ -380,11 +415,16 @@ def convertProperty(name, body, topLevel = False):
                            str(body['maxItems']) if 'maxItems' in body else 'unbounded')
 
         else:
+            # Determine how we specify the type in XML.
             typ = convertType(body)
+
             if isinstance(typ, str):
+                # The resulting type can be named with a string, set it as a 'type' attribute.
                 el = El('xs:element',
                         {'name': name, 'type': typ})
             else:
+                # The resulting type is defined inline as a simpleType or complexType element.
+                # Include it in the body of the xs:element element.
                 el = El('xs:element',
                         {'name': name},
                         typ)
@@ -397,6 +437,7 @@ def convertProperty(name, body, topLevel = False):
 # Hardcoded System group {{{
 
 def generateSystemGroup():
+    """ Ew. """
     system = ET.XML("""<?xml version="1.0" encoding="utf-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 <xs:element name="System" minOccurs="0" maxOccurs="1">
