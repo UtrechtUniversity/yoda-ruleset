@@ -71,7 +71,7 @@ createXmlXsdCollections {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultResearchSchema.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultResearchSchema", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
@@ -86,7 +86,7 @@ createXmlXsdCollections {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultVaultSchema.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultVaultSchema", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
