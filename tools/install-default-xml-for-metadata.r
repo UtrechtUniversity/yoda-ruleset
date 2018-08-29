@@ -64,7 +64,8 @@ createXmlXsdCollections {
 	*xsddefault = *xsdcoll ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_research.xsd++++forceFlag=", *status);
+                        *defaultResearchSchema = *default ++ "_research.xsd"
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultResearchSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
@@ -78,7 +79,8 @@ createXmlXsdCollections {
 	*xsddefault = *xsdcoll ++ "/" ++ IIVAULTXSDDEFAULTNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_vault.xsd++++forceFlag=", *status);
+                        *defaultVaultSchema = *default ++ "_vault.xsd"
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultVaultSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
