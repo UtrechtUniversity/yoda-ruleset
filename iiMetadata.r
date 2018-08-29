@@ -1,7 +1,8 @@
 # \file      iiMetadata.r
 # \brief     This file contains rules related to metadata to a dataset.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable.
@@ -25,7 +26,7 @@ iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath) {
 	}
 
 	if (*xsdPath == "") {
-		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
 	}
 
 	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
@@ -129,22 +130,13 @@ iiPrepareMetadataForm(*path, *result) {
 		}
 
 		if (*xsdpath == "") {
-			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
 		}
 		*kvp.xsdPath = *xsdpath;
 
-		*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
-		*formelementsname = "*category.xml";
+		# TODO: cleanup
 		*formelementspath = "";
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
-			*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
-
-		if (*formelementspath == "") {
-			*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
-		} else {
-			*kvp.formelementsPath = *formelementspath;
-		}
+		*kvp.formelementsPath = *formelementspath;
 
 		uuChopPath(*path, *parent, *child);
 		*kvp.parentHasMetadataXml = "false";
@@ -250,22 +242,13 @@ iiPrepareMetadataForm(*path, *result) {
 		}
 
 		if (*xsdpath == "") {
-			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
 		}
 		*kvp.xsdPath = *xsdpath;
 
-		*formelementscoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
-		*formelementsname = "*category.xml";
+		# TODO: cleanup
 		*formelementspath = "";
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *formelementscoll AND DATA_NAME = *formelementsname) {
-			*formelementspath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
-
-		if (*formelementspath == "") {
-			*kvp.formelementsPath = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;
-		} else {
-			*kvp.formelementsPath = *formelementspath;
-		}
+		*kvp.formelementsPath = *formelementspath;
 
 		uuKvp2JSON(*kvp, *result);
 	} else {
@@ -564,7 +547,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 
 	if (*xsdPath == "") {
-		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIXSDDEFAULTNAME;
+		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
 	}
 
 	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);

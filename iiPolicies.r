@@ -4,6 +4,7 @@
 #            The arguments and session variables passed to the PEP's are defined in iRODS itself.
 # \author    Paul Frederiks
 # \author    Felix Croes
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
@@ -26,16 +27,9 @@ acPostProcForPut {
 			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);
 		}
 	}
-
 	else if ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
 		# Check new XSD against a schema for xsd validity. Rename the file when invalid.
 		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
-		iiRenameInvalidXML($objPath, *xsdpath);
-	}
-
-	else if ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
-		# Check  for invalid formelements XML files and rename them.
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 }

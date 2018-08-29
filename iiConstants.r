@@ -3,7 +3,8 @@
 # 			this file needs be adapted
 #
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
@@ -27,20 +28,17 @@ IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
 # \constant IIXSLCOLLECTION
 IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
 
-# \constant IIFORMELEMENTSCOLLECTION
-IIFORMELEMENTSCOLLECTION = UUSYSTEMCOLLECTION ++ "/formelements"
-
 # \constant IILICENSECOLLECTION
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"
 
 # \constant IITERMSCOLLECTION
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION ++ "/terms"
 
-# \constant IIXSDDEFAULTNAME Name of the fallback default xsd for ilab
-IIXSDDEFAULTNAME = "default.xsd"
+# \constant IIRESEARCHXSDDEFAULTNAME Name of the fallback default research XSD
+IIRESEARCHXSDDEFAULTNAME = "default_research.xsd"
 
-# \constant IIFORMELEMENTSDEFAULTNAME
-IIFORMELEMENTSDEFAULTNAME = "default.xml"
+# \constant IIVAULTXSDDEFAULTNAME Name of the fallback default vault XSD
+IIVAULTXSDDEFAULTNAME = "default_vault.xsd"
 
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"

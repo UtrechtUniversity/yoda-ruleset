@@ -3,15 +3,9 @@ createXmlXsdCollections {
 	writeLine("stdout", "Usertype: *usertype");
 
 	if (*usertype != "rodsadmin") {
-		failmsg(-1, "This script needs to be run by a rodsadmin");
+		failmsg(-1, "This script needs to be run by a rodsadmin.");
 	}
 
-	*isfound = false;
-	*systemcoll = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
-	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *systemcoll) {
-		*isfound = true;	
-	}
-	
 	*isfound = false;
 	foreach(*row in SELECT RESC_NAME WHERE RESC_NAME = *resc) {
 		*isfound = true;
@@ -19,14 +13,15 @@ createXmlXsdCollections {
 
 	if (!*isfound) {
 		writeLine("stdout", "Resource *resc is not found. Please provide a valid resource example:");
-		writeLine("stdout", "irule -F ./install-default-xml-for-metadata.r '\*resc=\"demoResc\"'");
+		writeLine("stdout", "irule -F ./install-default-xml-for-metadata.r '\*resc=\"irodsResc\"'");
 		failmsg(-1, "Aborting. Resource not found");
 	}
 
-	if (*usertype != "rodsadmin") {
-		failmsg(-1, "This script needs to be run by a rodsadmin");
+	*isfound = false;
+	*systemcoll = "/" ++ $rodsZoneClient ++ UUSYSTEMCOLLECTION;
+	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *systemcoll) {
+		*isfound = true;
 	}
-
 
 	if (*isfound) {
 		writeLine("stdout", "System Collection found at *systemcoll");
@@ -51,6 +46,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsdcoll");
 	}
 
+        # Install schema for XSD
 	*xsdforxsd = *xsdcoll ++ "/" ++ "schema-for-xsd.xsd";
 	if (uuFileExists(*xsdforxsd)) {
 		if (*update == 1) {
@@ -64,49 +60,33 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsdforxsd");
 	}
 
-	*xsdforformelements = *xsdcoll ++ "/" ++ "schema-for-formelements.xsd";
-	msiDataObjPut(*xsdforformelements, *resc, "localPath=*src/xsd/schema-for-formelements.xsd++++forceFlag=", *status);
-	writeLine("stdout", "Installed: *xsdforformelements");
-	
-	*xsddefault = *xsdcoll ++ "/" ++ IIXSDDEFAULTNAME;	
+	# Install default research XSD
+	*xsddefault = *xsdcoll ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default.xsd++++forceFlag=", *status);
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_research.xsd++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_research.xsd", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
-	*isfound = false;
-	*xmlcoll = "/" ++ $rodsZoneClient ++ IIFORMELEMENTSCOLLECTION;
-	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *xmlcoll) {
-		*isfound = true;
-	}
-	if(*isfound) {
-		writeLine("stdout", "System collection already exists at: *xmlcoll");
-	} else {
-		msiCollCreate(*xmlcoll, 1, *status);
-		msiSetACL("default", "read", "public", *xmlcoll);
-		msiSetACL("default", "admin:inherit", "public", *xmlcoll);
-		writeLine("stdout", "Installed: *xmlcoll");
-	}
-
-	*xmldefault = *xmlcoll ++ "/" ++ IIFORMELEMENTSDEFAULTNAME;	
-        if (uuFileExists(*xmldefault)) {
+	# Install default vault XSD
+	*xsddefault = *xsdcoll ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+        if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements/*default.xml++++forceFlag=", *status);
-			writeLine("stdout", "Updated: *xmldefault");
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_vault.xsd++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xsddefault");
 		} else {
-			writeLine("stdout", "Present: *xmldefault");
+			writeLine("stdout", "Present: *xsddefault");
 		}
-        } else {
-		msiDataObjPut(*xmldefault, *resc, "localPath=*src/formelements/*default.xml", *status);
-		writeLine("stdout", "Installed: *xmldefault");
-	}	
+	} else {
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_vault.xsd", *status);
+		writeLine("stdout", "Installed: *xsddefault");
+	}
 
         *isfound = false;
 	*xslcoll = "/" ++ $rodsZoneClient ++ IIXSLCOLLECTION;
@@ -123,6 +103,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xslcoll");
 	}
 
+	# Install default XSL (Yoda metadata XML to AVU XML)
 	*xsldefault = *xslcoll ++ "/" ++ IIXSLDEFAULTNAME;
         if (uuFileExists(*xsldefault)) {
 		if (*update == 1) {
@@ -136,9 +117,10 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsldefault");
 	}
 
+	# Install DataCite XSL (Yoda metadata XML to DataCite XML)
         *xsldatacite = *xslcoll ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
         if (uuFileExists(*xsldatacite)) {
-		if (*update == 1) {	
+		if (*update == 1) {
 			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/xsl/*default"++"2datacite.xsl++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsldatacite");
 		} else {
@@ -149,6 +131,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsldatacite");
         }
 
+        # Install landingpage XSL (Yoda metadata XML to landingpage HTML)
         *xsllandingpage = *xslcoll ++ "/" ++ IILANDINGPAGEXSLDEFAULTNAME;
         if (uuFileExists(*xsllandingpage)) {
 		if (*update == 1) {
@@ -162,6 +145,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsllandingpage");
         }
 
+        # Install emtpy landingpage XSL (Yoda metadata XML to landingpage HTML)
         *xslemptylandingpage = *xslcoll ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
         if (uuFileExists(*xslemptylandingpage)) {
 		if (*update == 1) {
@@ -174,7 +158,6 @@ createXmlXsdCollections {
 		msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/xsl/emptylandingpage.xsl", *status);
 		writeLine("stdout", "Installed: *xslemptylandingpage");
         }
-
 }
 
 input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/xml", *default="default", *update=0
