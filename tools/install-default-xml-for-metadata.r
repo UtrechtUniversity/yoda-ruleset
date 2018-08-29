@@ -62,31 +62,31 @@ createXmlXsdCollections {
 
 	# Install default research XSD
 	*xsddefault = *xsdcoll ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
+        *defaultResearchSchema = *default ++ "_research.xsd"
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-                        *defaultResearchSchema = *default ++ "_research.xsd"
 			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultResearchSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_research.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultResearchSchema.xsd", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
 	# Install default vault XSD
 	*xsddefault = *xsdcoll ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+        *defaultVaultSchema = *default ++ "_vault.xsd"
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-                        *defaultVaultSchema = *default ++ "_vault.xsd"
 			msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultVaultSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*default_vault.xsd", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/xsd/*defaultVaultSchema.xsd", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
