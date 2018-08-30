@@ -5,30 +5,68 @@
 # \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \brief Locate the XSD to use for a metadata path. Use this rule when $rodsZoneClient is unavailable.
+
+# \brief Locate the research XSD to use for a metadata path.
 #
-# \param[in] metadataXmlPath		path of the metadata XML file that needs to be validated
-# \param[out] xsdPath			path of the XSD to use for validation
-# \param[out] xslPath			path of the XSL to use for conversion to an AVU xml
+# \param[in] metadataXmlPath path of the metadata XML file that needs to be validated
+# \param[out] xsdPath        path of the research XSD to use for validation
 #
-iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath) {
-	*xsdPath = "";
+iiGetResearchXsdPath(*metadataXmlPath, *xsdPath) {
+        *xsdPath = "";
+        *pathElems = split(*metadataXmlPath, '/');
+        *rodsZone = elem(*pathElems, 0);
+        *groupName = elem(*pathElems, 2);
+
+        uuGroupGetCategory(*groupName, *category, *subcategory);
+        *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+
+        *xsdName = *category ++ "_research.xsd";
+        foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+               *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+        }
+
+        if (*xsdPath == "") {
+                *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
+        }
+}
+
+# \brief Locate the vault XSD to use for a metadata path.
+#
+# \param[in] metadataXmlPath path of the metadata XML file that needs to be validated
+# \param[out] xsdPath        path of the vault XSD to use for validation
+#
+iiGetVaultXsdPath(*metadataXmlPath, *xsdPath) {
+        *xsdPath = "";
+        *pathElems = split(*metadataXmlPath, '/');
+        *rodsZone = elem(*pathElems, 0);
+        *groupName = elem(*pathElems, 2);
+
+        uuGroupGetCategory(*groupName, *category, *subcategory);
+        *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+
+        *xsdName = *category ++ "_vault.xsd";
+        foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+                *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+        }
+
+        if (*xsdPath == "") {
+                *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+        }
+}
+
+
+# \brief Locate the XSL to use for a metadata path.
+#
+# \param[in] metadataXmlPath path of the metadata XML file that needs to be converted
+# \param[out] xslPath        path of the XSL to use for conversion to an AVU XML
+#
+iiGetXslPath(*metadataXmlPath, *xslPath) {
 	*xslPath = "";
 	*pathElems = split(*metadataXmlPath, '/');
 	*rodsZone = elem(*pathElems, 0);
 	*groupName = elem(*pathElems, 2);
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdName = *category ++ "_research.xsd";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
-		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*xsdPath == "") {
-		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
-	}
-
 	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
 	*xslName = "*category.xsl";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
@@ -39,6 +77,7 @@ iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath) {
 		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
 	}
 }
+
 
 # \brief Return info needed for the metadata form.
 #
@@ -122,17 +161,9 @@ iiPrepareMetadataForm(*path, *result) {
 		uuGroupGetCategory(*groupName, *category, *subcategory);
 		*kvp.category = *category;
 		*kvp.subcategory = *subcategory;
-		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
-		*xsdName = *category ++ "_research.xsd";
-		*xsdpath = "";
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
-			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
 
-		if (*xsdpath == "") {
-			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
-		}
-		*kvp.xsdPath = *xsdpath;
+		iiGetResearchXsdPath(*xmlpath, *xsdPath);
+		*kvp.xsdPath = *xsdPath;
 
 		# TODO: cleanup
 		*formelementspath = "";
@@ -234,17 +265,8 @@ iiPrepareMetadataForm(*path, *result) {
 			}
 		}
 
-		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
-		*xsdName = *category ++ "_vault.xsd";
-		*xsdpath = "";
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
-			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
-
-		if (*xsdpath == "") {
-			*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
-		}
-		*kvp.xsdPath = *xsdpath;
+		iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
+		*kvp.xsdPath = *xsdPath;
 
 		# TODO: cleanup
 		*formelementspath = "";
@@ -319,7 +341,7 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 	#DEBUG writeBytesBuf("serverLog", *buf);
 
 	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
-	#DEBUG writeLine("serverLog", "iiImportMetadataFromXML: Calling msiLoadMetadataFromXml");
+	#DEBUG writeLine("serverLog", "iiImportMetdataFromXML: Calling msiLoadMetadataFromXml");
 	*err = errormsg(msiLoadMetadataFromXml(*metadataxml_coll, *buf), *msg);
 	if (*err < 0) {
 		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
@@ -355,13 +377,14 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 	} else {
 		uuChopPath(*xmlPath, *parent, *basename);
 		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
-		iiPrepareMetadataImport(*xmlPath, *xsdPath, *xslPath);
+		iiGetResearchXsdPath(*xmlPath, *xsdPath);
 		*err = errormsg(msiXmlDocSchemaValidate(*xmlPath, *xsdPath, *statusBuf), *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
 		} else if (*err == 0) {
 			#DEBUG writeLine("serverLog", "XSD validation successful. Start indexing");
 			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
+			iiGetXslPath(*xmlPath, *xslPath);
 			iiImportMetadataFromXML(*xmlPath, *xslPath);
 		} else {
 			writeLine("serverLog", "iiMetadataXmlModifiedPost: Validation report of *xmlPath below.");
@@ -539,17 +562,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 
 	}
 
-	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdName = *category ++ "_vault.xsd";
-	*xsdPath = "";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
-		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*xsdPath == "") {
-		*xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
-	}
-
+	iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
 	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 	if (*err < 0) {
 		*status = "FailedToValidateXML";
@@ -561,24 +574,12 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
-	*xslColl = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xslName = "*category.xsl";
-	*xslPath = "";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
-		*xslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*xslPath == "") {
-		*xslPath = "/*rodsZone" ++ IIXSLCOLLECTION ++ "/" ++ IIXSLDEFAULTNAME;
-	}
-
 	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "", *statusBuf));
 	if (*err < 0) {
 		*status = "FailedToCopyXML";
 		*statusInfo = "Copy to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
 		succeed;
 	}
-
 
 	*err = errorcode(iiCopyACLsFromParent(*vaultMetadataTarget, "default"));
 	if (*err < 0) {
@@ -594,6 +595,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
+        iiGetXslPath(*vaultMetadataTarget, *xslPath);
 	*err = errorcode(iiImportMetadataFromXML(*vaultMetadataTarget, *xslPath));
 	if (*err < 0) {
 		*status = "FailedToImportMetadata";

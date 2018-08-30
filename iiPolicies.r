@@ -9,9 +9,8 @@
 # \license   GPLv3, see LICENSE
 
 # \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
-#         for locks. To prevent breaking the metadata form, whenever a formelements XML or XSD is
-#         uploaded they are validated against a XSD. We can't prevent breakage caused by inconsistencies
-#         between the XSD and formelements
+#         for locks. To prevent breaking the metadata form, whenever an XSD is
+#         uploaded it is validated against a schema for XSD validity.
 #
 acPostProcForPut {
 	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
