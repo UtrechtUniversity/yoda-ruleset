@@ -20,7 +20,7 @@ iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath) {
 
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdName = "*category.xsd";
+	*xsdName = *category ++ "_research.xsd";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
 		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
@@ -123,7 +123,7 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.category = *category;
 		*kvp.subcategory = *subcategory;
 		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
-		*xsdname = "*category.xsd";
+		*xsdName = *category ++ "_research.xsd";
 		*xsdpath = "";
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
 			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
@@ -235,7 +235,7 @@ iiPrepareMetadataForm(*path, *result) {
 		}
 
 		*xsdcoll = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION;
-		*xsdname = "*category.xsd";
+		*xsdName = *category ++ "_vault.xsd";
 		*xsdpath = "";
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdcoll AND DATA_NAME = *xsdname) {
 			*xsdpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
@@ -540,7 +540,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 
 	*xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
-	*xsdName = "*category.xsd";
+	*xsdName = *category ++ "_vault.xsd";
 	*xsdPath = "";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
 		*xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
