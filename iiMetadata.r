@@ -82,7 +82,7 @@ iiGetXslPath(*metadataXmlPath, *xslPath) {
 # \brief Return info needed for the metadata form.
 #
 # \param[in] path	path of the collection where metadata needs to be viewed or added
-# \param[out] result	json object with the location of the metadata file, formelements.xml,
+# \param[out] result	json object with the location of the metadata file,
 #                       the XSD and the role of the current user in the group
 #
 iiPrepareMetadataForm(*path, *result) {
@@ -164,10 +164,6 @@ iiPrepareMetadataForm(*path, *result) {
 
 		iiGetResearchXsdPath(*xmlpath, *xsdPath);
 		*kvp.xsdPath = *xsdPath;
-
-		# TODO: cleanup
-		*formelementspath = "";
-		*kvp.formelementsPath = *formelementspath;
 
 		uuChopPath(*path, *parent, *child);
 		*kvp.parentHasMetadataXml = "false";
@@ -267,10 +263,6 @@ iiPrepareMetadataForm(*path, *result) {
 
 		iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
 		*kvp.xsdPath = *xsdPath;
-
-		# TODO: cleanup
-		*formelementspath = "";
-		*kvp.formelementsPath = *formelementspath;
 
 		uuKvp2JSON(*kvp, *result);
 	} else {
