@@ -13,7 +13,7 @@
 #
 iiGetResearchXsdPath(*metadataXmlPath, *xsdPath) {
 	if (*metadataXmlPath == "") {
-		*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
+		*xsdPath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
 	} else {
                 *xsdPath = "";
                 *pathElems = split(*metadataXmlPath, '/');
@@ -41,7 +41,7 @@ iiGetResearchXsdPath(*metadataXmlPath, *xsdPath) {
 #
 iiGetVaultXsdPath(*metadataXmlPath, *xsdPath) {
         if (*metadataXmlPath == "") {
-                *xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+                *xsdPath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
         } else {
                 *xsdPath = "";
                *pathElems = split(*metadataXmlPath, '/');
