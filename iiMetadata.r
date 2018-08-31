@@ -12,22 +12,26 @@
 # \param[out] xsdPath        path of the research XSD to use for validation
 #
 iiGetResearchXsdPath(*metadataXmlPath, *xsdPath) {
-        *xsdPath = "";
-        *pathElems = split(*metadataXmlPath, '/');
-        *rodsZone = elem(*pathElems, 0);
-        *groupName = elem(*pathElems, 2);
+	if (*metadataXmlPath == "") {
+		*xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
+	} else {
+                *xsdPath = "";
+                *pathElems = split(*metadataXmlPath, '/');
+                *rodsZone = elem(*pathElems, 0);
+                *groupName = elem(*pathElems, 2);
 
-        uuGroupGetCategory(*groupName, *category, *subcategory);
-        *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+                uuGroupGetCategory(*groupName, *category, *subcategory);
+                *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
 
-        *xsdName = *category ++ "_research.xsd";
-        foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
-               *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-        }
+                *xsdName = *category ++ "_research.xsd";
+                foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+                       *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+                }
 
-        if (*xsdPath == "") {
-                *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
-        }
+                if (*xsdPath == "") {
+                        *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
+                }
+	}
 }
 
 # \brief Locate the vault XSD to use for a metadata path.
@@ -36,21 +40,25 @@ iiGetResearchXsdPath(*metadataXmlPath, *xsdPath) {
 # \param[out] xsdPath        path of the vault XSD to use for validation
 #
 iiGetVaultXsdPath(*metadataXmlPath, *xsdPath) {
-        *xsdPath = "";
-        *pathElems = split(*metadataXmlPath, '/');
-        *rodsZone = elem(*pathElems, 0);
-        *groupName = elem(*pathElems, 2);
+        if (*metadataXmlPath == "") {
+                *xsdpath = "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+        } else {
+                *xsdPath = "";
+               *pathElems = split(*metadataXmlPath, '/');
+                *rodsZone = elem(*pathElems, 0);
+                *groupName = elem(*pathElems, 2);
 
-        uuGroupGetCategory(*groupName, *category, *subcategory);
-        *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
+               uuGroupGetCategory(*groupName, *category, *subcategory);
+               *xsdColl = "/*rodsZone" ++ IIXSDCOLLECTION;
 
-        *xsdName = *category ++ "_vault.xsd";
-        foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
-                *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-        }
+               *xsdName = *category ++ "_vault.xsd";
+               foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xsdColl AND DATA_NAME = *xsdName) {
+                      *xsdPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+               }
 
-        if (*xsdPath == "") {
-                *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+               if (*xsdPath == "") {
+                        *xsdPath = "/*rodsZone" ++ IIXSDCOLLECTION ++ "/" ++ IIVAULTXSDDEFAULTNAME;
+               }
         }
 }
 
@@ -181,7 +189,7 @@ iiPrepareMetadataForm(*path, *result) {
 			}
 		}
 		uuKvp2JSON(*kvp, *result);
-	} else if  (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
 		*pathElems = split(*path, "/");
 		*rodsZone = elem(*pathElems, 0);
 		*vaultGroup = elem(*pathElems, 2);
