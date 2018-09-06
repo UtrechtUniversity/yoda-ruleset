@@ -98,7 +98,7 @@ iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg) {
 	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
 
 	# Output in status buffer means XML is not valid.
-	msiBytesBufToStr(statusBuf, *statusStr);
+	msiBytesBufToStr(*statusBuf, *statusStr);
 	*len = strlen(*statusStr);
 	if (*len > 0) {
 	        *err = 1;
