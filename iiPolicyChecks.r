@@ -15,21 +15,9 @@
 #
 iiRenameInvalidXML(*xmlpath, *xsdpath) {
 		*invalid = false;
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-			*invalid = true;
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
-				#DEBUG writeLine("serverLog", "*xmlpath validates");
-			} else {
-				writeBytesBuf("serverLog", *status_buf);
-				*invalid = true;
-			}
-		}
-		if (*invalid) {
+		iiValidateXml(*xmlpath, *xsdpath, *err, *msg);
+		if (*err != 0) {
+			writeLine("serverLog", "iiRenameInvalidXML: *msg");
 			writeLine("serverLog", "Renaming corrupt or invalid $objPath");
 			msiGetIcatTime(*timestamp, "unix");
 			*iso8601 = uuiso8601(*timestamp);
@@ -520,14 +508,13 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 			succeed;
 		} else {
 			iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
-			*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
-			if (*err < 0) {
+			iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg);
+			if (*err != 0) {
 				*allowed = false;
 				*reason = "Metadata does not conform to schema.";
 				succeed;
 			}
 		}
-
 	}
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {

@@ -87,6 +87,26 @@ iiGetXslPath(*metadataXmlPath, *xslPath) {
 }
 
 
+# \brief Validate XML against XSD schema.
+#
+# \param[in] metadataXmlPath path of the metadata XML file that needs to be converted
+# \param[out] xsdPath        path of the vault XSD to use for validation
+# \param[out] err            Zero is valid XML, negative is microservice error, positive is invalid XML
+#
+iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg) {
+	*err = 0;
+	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
+
+	# Output in status buffer means XML is not valid.
+	msiBytesBufToStr(statusBuf, *statusStr);
+	*len = strlen(*statusStr);
+	if (*len > 0) {
+	        *err = 1;
+	        *msg = *statusStr;
+	}
+}
+
+
 # \brief Return info needed for the metadata form.
 #
 # \param[in] path	path of the collection where metadata needs to be viewed or added
@@ -94,10 +114,8 @@ iiGetXslPath(*metadataXmlPath, *xslPath) {
 #                       the XSD and the role of the current user in the group
 #
 iiPrepareMetadataForm(*path, *result) {
-
 	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 		msiString2KeyValPair("", *kvp);
-
 
 		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
 		*kvp.groupName = *groupName;
@@ -177,15 +195,14 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.parentHasMetadataXml = "false";
 		foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
 			*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-			*err = errormsg(msiXmlDocSchemaValidate(*parentxmlpath, *xsdpath, *status_buf), *msg);
+			iiValidateXml(*parentxmlpath, *xsdpath, *err, *msg);
 			if (*err < 0) {
 				writeLine("serverLog", *msg);
 			} else if (*err == 0) {
-					*kvp.parentHasMetadataXml = "true";
-					*kvp.parentMetadataXmlPath = *parentxmlpath;
+				*kvp.parentHasMetadataXml = "true";
+				*kvp.parentMetadataXmlPath = *parentxmlpath;
 			} else {
-				writeLine("serverLog", "iiPrepareMetadataForm: *err");
-				writeBytesBuf("serverLog", *status_buf);
+				writeLine("serverLog", "iiPrepareMetadataForm: *msg");
 			}
 		}
 		uuKvp2JSON(*kvp, *result);
@@ -378,7 +395,7 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 		uuChopPath(*xmlPath, *parent, *basename);
 		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
 		iiGetResearchXsdPath(*xmlPath, *xsdPath);
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlPath, *xsdPath, *statusBuf), *msg);
+		iiValidateXml(*xmlPath, *xsdPath, *err, *msg);
 		if (*err < 0) {
 			writeLine("serverLog", *msg);
 		} else if (*err == 0) {
@@ -388,7 +405,7 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 			iiImportMetadataFromXML(*xmlPath, *xslPath);
 		} else {
 			writeLine("serverLog", "iiMetadataXmlModifiedPost: Validation report of *xmlPath below.");
-			writeBytesBuf("serverLog", *statusBuf);
+			writeBytesBuf("serverLog", *msg);
 		}
 	}
 }
@@ -563,14 +580,14 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 
 	iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
-	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
+	iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg);
 	if (*err < 0) {
 		*status = "FailedToValidateXML";
 		*statusInfo = "*err - *msg";
 		succeed;
 	} else if (*err > 0) {
 		*status = "InvalidXML";
-		*statusInfo = "*statusBuf";
+		*statusInfo = "*msg";
 		succeed;
 	}
 
