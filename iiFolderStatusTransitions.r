@@ -1,5 +1,5 @@
 # \file      iiFolderStatusTransitions.r
-# \brief     Status transitions for Folders in the Research & Vault area.
+# \brief     Status transitions for folders in the research space.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
 # \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
@@ -136,7 +136,7 @@ iiScheduleCopyToVault() {
 	}
 }
 
-# \brief Lock a folder in the research area.
+# \brief Lock a folder in the research space.
 #
 # \param[in]  folder        path of folder to lock
 # \param[out] status        status of the action
@@ -177,7 +177,7 @@ iiFolderLock(*folder, *status, *statusInfo) {
 	}
 }
 
-# \brief Unlock a folder in the research area.
+# \brief Unlock a folder in the research space.
 #
 # \param[in]  folder        path of folder to unlock
 # \param[out] status        status of the action
