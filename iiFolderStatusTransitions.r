@@ -188,7 +188,7 @@ iiFolderUnlock(*folder, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SUBMITTED || *currentFolderStatus == SECURED) {
+	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SUBMITTED || *currentFolderStatus == REJECTED || *currentFolderStatus == SECURED) {
 		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
 		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
