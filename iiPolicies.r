@@ -26,9 +26,9 @@ acPostProcForPut {
 			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);
 		}
 	}
-	else if ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+	else if ($objPath like regex "/[^/]+/" ++ IISCHEMACOLLECTION ++ "/.*\.xsd") {
 		# Check new XSD against a schema for xsd validity. Rename the file when invalid.
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/schema-for-xsd.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 }
