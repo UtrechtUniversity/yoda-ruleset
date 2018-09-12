@@ -87,9 +87,11 @@ IIFOLDERTRANSITIONS = list((FOLDER, LOCKED),
 			   (SUBMITTED, ACCEPTED),
 			   (SUBMITTED, REJECTED),
 			   (REJECTED, LOCKED),
+			   (REJECTED, FOLDER),
 			   (REJECTED, SUBMITTED),
 			   (ACCEPTED, SECURED),
 			   (SECURED, LOCKED),
+			   (SECURED, FOLDER),
 			   (SECURED, SUBMITTED))
 
 # \brief All vault package states.
