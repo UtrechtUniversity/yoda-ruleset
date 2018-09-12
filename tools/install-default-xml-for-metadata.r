@@ -47,6 +47,36 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *schemasColl");
 	}
 
+        # Install schema for XSD
+	*xsdforxsd = *schemasColl ++ "/" ++ "schema-for-xsd.xsd";
+	if (uuFileExists(*xsdforxsd)) {
+		if (*update == 1) {
+			msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
+			writeLine("stdout", "Update: *xsdforxsd");
+		} else {
+			writeLine("stdout", "Present: *xsdforxsd");
+		}
+	} else {
+		msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd", *status);
+		writeLine("stdout", "Installed: *xsdforxsd");
+	}
+
+
+        # Install emtpy landingpage XSL (Yoda metadata XML to landingpage HTML)
+        *xslemptylandingpage = *schemasColl ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
+	*xsl = IIEMPTYLANDINGPAGEXSLNAME;
+        if (uuFileExists(*xslemptylandingpage)) {
+		if (*update == 1) {
+			msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/*xsl++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *xslemptylandingpage");
+		} else {
+			writeLine("stdout", "Present: *xslemptylandingpage");
+		}
+	} else {
+		msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/*xsl", *status);
+		writeLine("stdout", "Installed: *xslemptylandingpage");
+        }
+
 	# Install schema collection
 	*isfound = false;
 	*schemaColl = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ *default;
@@ -63,21 +93,22 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *schemaColl");
 	}
 
-        # Install schema for XSD
-	*xsdforxsd = *schemasColl ++ "/" ++ "schema-for-xsd.xsd";
-	if (uuFileExists(*xsdforxsd)) {
+	# Install metadata JSON
+	*jsondefault = *schemaColl ++ "/" ++ IIJSONNAME;
+        *defaultJsonSchema = IIJSONNAME;
+        if (uuFileExists(*jsondefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd++++forceFlag=", *status);
-			writeLine("stdout", "Update: *xsdforxsd");
+			msiDataObjPut(*jsondefault, *resc, "localPath=*src/*default/*defaultJsonSchema++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *jsondefault");
 		} else {
-			writeLine("stdout", "Present: *xsdforxsd");
+			writeLine("stdout", "Present: *jsondefault");
 		}
 	} else {
-		msiDataObjPut(*xsdforxsd, *resc, "localPath=*src/schema-for-xsd.xsd", *status);
-		writeLine("stdout", "Installed: *xsdforxsd");
+		msiDataObjPut(*jsondefault, *resc, "localPath=*src/*default/*defaultJsonSchema", *status);
+		writeLine("stdout", "Installed: *jsondefault");
 	}
 
-	# Install default research XSD
+	# Install research XSD
 	*xsddefault = *schemaColl ++ "/" ++ IIRESEARCHXSDNAME;
         *defaultResearchSchema = IIRESEARCHXSDNAME;
         if (uuFileExists(*xsddefault)) {
@@ -92,7 +123,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
-	# Install default vault XSD
+	# Install vault XSD
 	*xsddefault = *schemaColl ++ "/" ++ IIVAULTXSDNAME;
         *defaultVaultSchema = IIVAULTXSDNAME;
         if (uuFileExists(*xsddefault)) {
@@ -107,7 +138,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
-	# Install default XSL (Yoda metadata XML to AVU XML)
+	# Install AVU XSL (Yoda metadata XML to AVU XML)
 	*xsldefault = *schemaColl ++ "/" ++ IIAVUXSLNAME;
 	*xsl = IIAVUXSLNAME;
         if (uuFileExists(*xsldefault)) {
@@ -150,21 +181,6 @@ createXmlXsdCollections {
  	} else {
 		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default/*xsl", *status);
 		writeLine("stdout", "Installed: *xsllandingpage");
-        }
-
-        # Install emtpy landingpage XSL (Yoda metadata XML to landingpage HTML)
-        *xslemptylandingpage = *schemasColl ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
-	*xsl = IIEMPTYLANDINGPAGEXSLNAME;
-        if (uuFileExists(*xslemptylandingpage)) {
-		if (*update == 1) {
-			msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/*xsl++++forceFlag=", *status);
-			writeLine("stdout", "Updated: *xslemptylandingpage");
-		} else {
-			writeLine("stdout", "Present: *xslemptylandingpage");
-		}
-	} else {
-		msiDataObjPut(*xslemptylandingpage, *resc, "localPath=*src/*xsl", *status);
-		writeLine("stdout", "Installed: *xslemptylandingpage");
         }
 }
 
