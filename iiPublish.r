@@ -2,7 +2,8 @@
 # \brief     This file contains rules related to publishing a datapackage
 # 	     for a research group.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Generate a dataCite compliant XML using XSLT.
@@ -24,14 +25,14 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
 	*dataCiteXslPath = "";
-	*xslColl = "/"++*rodsZone++IIXSLCOLLECTION;
-	*xslName = *category++"2datacite.xml";
+	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
+	*xslName = IIDATACITEXSLNAME";
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
 		*dataCiteXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
 
 	if (*dataCiteXslPath == "") {
-		*dataCiteXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ IIDATACITEXSLDEFAULTNAME;
+		*dataCiteXslPath = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IIDATACITEXSLNAME;
 	}
 
 	*err = errorcode(msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf));
@@ -275,7 +276,7 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
-iiGenerateLandingPage(*publicationConfig, *publicationState, *xsltScript)
+iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 {
 	*combiXmlPath = *publicationState.combiXmlPath;
 	uuChopPath(*combiXmlPath, *tempColl, *_);
@@ -286,16 +287,20 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *xsltScript)
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
-	*landingPageXslPath = "";
-	*xslColl = "/"++*rodsZone++IIXSLCOLLECTION;
-	*xslName = *category++"2landingpage.xml";
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
-		*landingPageXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
+	if (*publish = "publish") {
+		*landingPageXslPath = "";
+		*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
+		*xslName = IILANDINGPAGEXSLNAME;
+		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
+		        *landingPageXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+		}
 
-	if (*landingPageXslPath == "") {
-		*landingPageXslPath = "/" ++ *rodsZone ++ IIXSLCOLLECTION ++ "/" ++ *xsltScript;
-	}
+		if (*landingPageXslPath == "") {
+		        *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" IIDEFAULTSCHEMANAME "/" ++ IILANDINGPAGEXSLNAME;
+	        }
+        } else {
+                *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" IIEMPTYLANDINGPAGEXSLNAME;
+        }
 	*err = errorcode(msiXsltApply(*landingPageXslPath, *combiXmlPath, *buf));
 	if (*err < 0) {
 		writeLine("serverLog", "iiGenerateLandingPage: failed to apply Xslt *landingPageXslPath to *combiXmlPath. errorcode *err");
@@ -681,7 +686,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
-		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IILANDINGPAGEXSLDEFAULTNAME));
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"));
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPage");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
@@ -887,7 +892,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
-		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IIEMPTYLANDINGPAGEXSLNAME));
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, "depublish"));
 		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiGenerateLandingPage");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
@@ -1043,7 +1048,7 @@ iiProcessRepublication(*vaultPackage, *status) {
 
 	# Create landing page
 	if (!iiHasKey(*publicationState, "landingPagePath")) {
-		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, IILANDINGPAGEXSLDEFAULTNAME));
+		*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"));
 		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateLandingPage");
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";

@@ -1,6 +1,6 @@
 # \file
 # \brief Constants for the ii rules. If architecture changes, only
-# 			this file needs be adapted
+#        this file needs be adapted
 #
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
@@ -22,35 +22,38 @@ IIGROUPPREFIX = "research-"
 # \constant IIVAULTPREFIX
 IIVAULTPREFIX = "vault-"
 
-# \constant IIXSDCOLLECTION
-IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
-
-# \constant IIXSLCOLLECTION
-IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
-
 # \constant IILICENSECOLLECTION
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"
 
 # \constant IITERMSCOLLECTION
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION ++ "/terms"
 
-# \constant IIRESEARCHXSDDEFAULTNAME Name of the fallback default research XSD
-IIRESEARCHXSDDEFAULTNAME = "default_research.xsd"
+# \constant IIJSONCOLLECTION
+IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
 
-# \constant IIVAULTXSDDEFAULTNAME Name of the fallback default vault XSD
-IIVAULTXSDDEFAULTNAME = "default_vault.xsd"
+# \constant IIDEFAULTSCHEMANAME
+IIDEFAULTSCHEMANAME = "default"
 
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 
-# \constant IIXSLDEFAULTNAME
-IIXSLDEFAULTNAME = "default.xsl"
+# \constant IIJSONDEFAULTNAME Name of the fallback default metadata JSON
+IIJSONNAME = "metadata.json"
 
-# \constant IIDATACITEDEFAULTNAME
-IIDATACITEXSLDEFAULTNAME = "default2datacite.xsl"
+# \constant IIRESEARCHXSDNAME Name of the research XSD
+IIRESEARCHXSDNAME = "research.xsd"
 
-# \constant IILANDINGPAGEXSLDEFAULTNAME
-IILANDINGPAGEXSLDEFAULTNAME = "default2landingpage.xsl"
+# \constant IIVAULTXSDNAME Name of the vault XSD
+IIVAULTXSDNAME = "vault.xsd"
+
+# \constant IIAVUXSLNAME Name of the AVU XSL
+IIAVUXSLNAME = "avu.xsl"
+
+# \constant IIDATACITEXSLNAME
+IIDATACITEXSLNAME = "datacite.xsl"
+
+# \constant IILANDINGPAGEXSLNAME
+IILANDINGPAGEXSLNAME = "landingpage.xsl"
 
 # \constant IIEMPTYLANDINGPAGEXSLNAME
 IIEMPTYLANDINGPAGEXSLNAME = "emptylandingpage.xsl"
