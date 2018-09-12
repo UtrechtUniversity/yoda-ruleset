@@ -170,7 +170,7 @@ createXmlXsdCollections {
 
         # Install landingpage XSL (Yoda metadata XML to landingpage HTML)
         *xsllandingpage = *schemaColl ++ "/" ++ IILANDINGPAGEXSLNAME;
-	*xsl = IIDATACITEXSLNAME;
+	*xsl = IILANDINGPAGEXSLNAME;
         if (uuFileExists(*xsllandingpage)) {
 		if (*update == 1) {
 			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default/*xsl++++forceFlag=", *status);
