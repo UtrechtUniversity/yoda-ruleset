@@ -25,7 +25,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
 	*dataCiteXslPath = "";
-	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
+	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
 	*xslName = IIDATACITEXSLNAME;
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
 		*dataCiteXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
@@ -289,17 +289,17 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 
 	if (*publish == "publish") {
 		*landingPageXslPath = "";
-		*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
+		*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
 		*xslName = IILANDINGPAGEXSLNAME;
 		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
 		        *landingPageXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 		}
 
 		if (*landingPageXslPath == "") {
-		        *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" IIDEFAULTSCHEMANAME "/" ++ IILANDINGPAGEXSLNAME;
+		        *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IILANDINGPAGEXSLNAME;
 	        }
         } else {
-                *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" IIEMPTYLANDINGPAGEXSLNAME;
+                *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
         }
 	*err = errorcode(msiXsltApply(*landingPageXslPath, *combiXmlPath, *buf));
 	if (*err < 0) {
