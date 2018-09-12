@@ -79,7 +79,7 @@ createXmlXsdCollections {
 
 	# Install schema collection
 	*isfound = false;
-	*schemaColl = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ *default;
+	*schemaColl = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ *category;
 	foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schemaColl) {
 		*isfound = true;
 	}
@@ -98,13 +98,13 @@ createXmlXsdCollections {
         *defaultJsonSchema = IIJSONNAME;
         if (uuFileExists(*jsondefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*jsondefault, *resc, "localPath=*src/*default/*defaultJsonSchema++++forceFlag=", *status);
+			msiDataObjPut(*jsondefault, *resc, "localPath=*src/*schema/*defaultJsonSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *jsondefault");
 		} else {
 			writeLine("stdout", "Present: *jsondefault");
 		}
 	} else {
-		msiDataObjPut(*jsondefault, *resc, "localPath=*src/*default/*defaultJsonSchema", *status);
+		msiDataObjPut(*jsondefault, *resc, "localPath=*src/*schema/*defaultJsonSchema", *status);
 		writeLine("stdout", "Installed: *jsondefault");
 	}
 
@@ -113,13 +113,13 @@ createXmlXsdCollections {
         *defaultResearchSchema = IIRESEARCHXSDNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultResearchSchema++++forceFlag=", *status);
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultResearchSchema", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
@@ -128,13 +128,13 @@ createXmlXsdCollections {
         *defaultVaultSchema = IIVAULTXSDNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultVaultSchema++++forceFlag=", *status);
+			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsddefault");
 		} else {
 			writeLine("stdout", "Present: *xsddefault");
 		}
 	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultVaultSchema", *status);
+		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema", *status);
 		writeLine("stdout", "Installed: *xsddefault");
 	}
 
@@ -143,13 +143,13 @@ createXmlXsdCollections {
 	*xsl = IIAVUXSLNAME;
         if (uuFileExists(*xsldefault)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default/*xsl++++forceFlag=", *status)
+			msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status)
 			writeLine("stdout", "Updated: *xsldefault");
 		} else {
 			writeLine("stdout", "Present: *xsldefault");
 		}
 	} else {
-		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*default/*xsl", *status);
+		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl", *status);
 		writeLine("stdout", "Installed: *xsldefault");
 	}
 
@@ -158,13 +158,13 @@ createXmlXsdCollections {
 	*xsl = IIDATACITEXSLNAME;
         if (uuFileExists(*xsldatacite)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default/*xsl++++forceFlag=", *status);
+			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *xsldatacite");
 		} else {
 			writeLine("stdout", "Present: *xsldatacite");
 		}
  	} else {
-		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*default/*xsl", *status);
+		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl", *status);
 		writeLine("stdout", "Installed: *xsldatacite");
         }
 
@@ -173,16 +173,16 @@ createXmlXsdCollections {
 	*xsl = IILANDINGPAGEXSLNAME;
         if (uuFileExists(*xsllandingpage)) {
 		if (*update == 1) {
-			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default/*xsl++++forceFlag=", *status);
+			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
  			writeLine("stdout", "Updated: *xsllandingpage");
 		} else {
 			writeLine("stdout", "Present: *xsllandingpage");
 		}
  	} else {
-		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*default/*xsl", *status);
+		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl", *status);
 		writeLine("stdout", "Installed: *xsllandingpage");
         }
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/schemas", *default="default", *update=0
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/schemas", *schema="default", *category="default", *update=0
 output ruleExecOut
