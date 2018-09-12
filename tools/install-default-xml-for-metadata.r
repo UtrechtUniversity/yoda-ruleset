@@ -41,7 +41,7 @@ createXmlXsdCollections {
 	if(*isfound) {
 		writeLine("stdout", "Schemas collection already exists at: *schemasColl");
 	} else {
-		msiCollCreate(*xsdcoll, 1, *status);
+		msiCollCreate(*schemasColl, 1, *status);
 		msiSetACL("default", "admin:read", "public", *schemasColl);
 		msiSetACL("default", "admin:inherit", "public", *schemasColl);
 		writeLine("stdout", "Installed: *schemasColl");
@@ -57,7 +57,7 @@ createXmlXsdCollections {
 	if(*isfound) {
 		writeLine("stdout", "Schema collection already exists at: *schemaColl");
 	} else {
-		msiCollCreate(*xsdcoll, 1, *status);
+		msiCollCreate(*schemaColl, 1, *status);
 		msiSetACL("default", "admin:read", "public", *schemaColl);
 		msiSetACL("default", "admin:inherit", "public", *schemaColl);
 		writeLine("stdout", "Installed: *schemaColl");

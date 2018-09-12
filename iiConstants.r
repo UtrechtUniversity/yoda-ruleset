@@ -28,7 +28,7 @@ IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"
 # \constant IITERMSCOLLECTION
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION ++ "/terms"
 
-# \constant IIJSONCOLLECTION
+# \constant IISCHEMACOLLECTION
 IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
 
 # \constant IIDEFAULTSCHEMANAME
@@ -37,7 +37,7 @@ IIDEFAULTSCHEMANAME = "default"
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 
-# \constant IIJSONDEFAULTNAME Name of the fallback default metadata JSON
+# \constant IIJSONNAME Name of the metadata JSON
 IIJSONNAME = "metadata.json"
 
 # \constant IIRESEARCHXSDNAME Name of the research XSD
@@ -46,16 +46,16 @@ IIRESEARCHXSDNAME = "research.xsd"
 # \constant IIVAULTXSDNAME Name of the vault XSD
 IIVAULTXSDNAME = "vault.xsd"
 
-# \constant IIAVUXSLNAME Name of the AVU XSL
+# \constant IIAVUXSLNAME Name of the AVU XSLT
 IIAVUXSLNAME = "avu.xsl"
 
-# \constant IIDATACITEXSLNAME
+# \constant IIDATACITEXSLNAME Name of the datacite XSLT
 IIDATACITEXSLNAME = "datacite.xsl"
 
-# \constant IILANDINGPAGEXSLNAME
+# \constant IILANDINGPAGEXSLNAME Name of the landingpage XSLT
 IILANDINGPAGEXSLNAME = "landingpage.xsl"
 
-# \constant IIEMPTYLANDINGPAGEXSLNAME
+# \constant IIEMPTYLANDINGPAGEXSLNAME Name of the empty landingpage XSLT
 IIEMPTYLANDINGPAGEXSLNAME = "emptylandingpage.xsl"
 
 # \constant IIPUBLICATIONCOLLECTION

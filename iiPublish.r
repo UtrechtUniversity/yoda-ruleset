@@ -26,7 +26,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 
 	*dataCiteXslPath = "";
 	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
-	*xslName = IIDATACITEXSLNAME";
+	*xslName = IIDATACITEXSLNAME;
 	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
 		*dataCiteXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
 	}
@@ -287,7 +287,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
-	if (*publish = "publish") {
+	if (*publish == "publish") {
 		*landingPageXslPath = "";
 		*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ *category;
 		*xslName = IILANDINGPAGEXSLNAME;
