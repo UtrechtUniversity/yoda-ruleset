@@ -78,8 +78,8 @@ createXmlXsdCollections {
 	}
 
 	# Install default research XSD
-	*xsddefault = *schemaColl ++ "/" ++ IIRESEARCHXSDDEFAULTNAME;
-        *defaultResearchSchema = IIRESEARCHXSDDEFAULTNAME;
+	*xsddefault = *schemaColl ++ "/" ++ IIRESEARCHXSDNAME;
+        *defaultResearchSchema = IIRESEARCHXSDNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
 			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultResearchSchema++++forceFlag=", *status);
@@ -93,8 +93,8 @@ createXmlXsdCollections {
 	}
 
 	# Install default vault XSD
-	*xsddefault = *schemaColl ++ "/" ++ IIVAULTXSDDEFAULTNAME;
-        *defaultVaultSchema = IIVAULTXSDDEFAULTNAME;
+	*xsddefault = *schemaColl ++ "/" ++ IIVAULTXSDNAME;
+        *defaultVaultSchema = IIVAULTXSDNAME;
         if (uuFileExists(*xsddefault)) {
 		if (*update == 1) {
 			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*default/*defaultVaultSchema++++forceFlag=", *status);
