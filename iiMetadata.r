@@ -15,27 +15,32 @@
 #
 iiFrontGetJsonSchema(*folder, *result, *status, *statusInfo)
 {
-	*status = "Unknown";
-	*statusInfo = "";
+        *status = "Unknown";
+        *statusInfo = "";
 
-        *xsdPath = "";
+        *jsonPath = "";
         *pathElems = split(*folder, '/');
         *rodsZone = elem(*pathElems, 0);
         *groupName = elem(*pathElems, 2);
 
-	# Get category name.
+        # Get category name.
         uuGroupGetCategory(*groupName, *category, *subcategory);
         *jsonColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
         *jsonName = IIJSONNAME;
 
-	# Check if category schema is used.
+        # Check if category schema is used.
+        *categorySchema = false;
         foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *jsonColl AND DATA_NAME = *jsonName) {
-               *jsonPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+               *categorySchema = true;
+        }
+        if (!*categorySchema) {
+                *jsonColl = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME
         }
 
-	# Fallback on default schema.
-        if (*jsonPath == "") {
-                *jsonPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IIJSONNAME;
+	# Retrieve schema path and data size.
+        foreach(*row in SELECT COLL_NAME, DATA_NAME, DATA_SIZE WHERE COLL_NAME = *jsonColl AND DATA_NAME = *jsonName) {
+               *jsonPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	       *dataSize = *row.DATA_SIZE;
         }
 
 	# Open JSON schema.
