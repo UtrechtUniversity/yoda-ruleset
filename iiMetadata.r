@@ -167,190 +167,205 @@ iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg) {
 
 # \brief Return info needed for the metadata form.
 #
-# \param[in] path	path of the collection where metadata needs to be viewed or added
-# \param[out] result	json object with the location of the metadata file,
+# \param[in] path       path of the collection where metadata needs to be viewed or added
+# \param[out] result    json object with the location of the metadata file,
 #                       the XSD and the role of the current user in the group
 #
 iiPrepareMetadataForm(*path, *result) {
-	if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-		msiString2KeyValPair("", *kvp);
+        # Research space
+        if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
+                msiString2KeyValPair("", *kvp);
+                *kvp.isVaultPackage = "no";
 
-		iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
-		*kvp.groupName = *groupName;
-		*kvp.userType = *userType;
-		if (*isDatamanager) {
-			*kvp.isDatamanager = "yes";
-		} else {
-			*kvp.isDatamanager = "no";
-		}
+                # Retrieve user group name and user type.
+                iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
+                *kvp.groupName = *groupName;
+                *kvp.userType = *userType;
+                if (*isDatamanager) {
+                        *kvp.isDatamanager = "yes";
+                } else {
+                        *kvp.isDatamanager = "no";
+                }
 
-		iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
+                # Retrieve metadata on collection.
+                iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *kvpList);
 
-		*orgStatus = FOLDER;
-		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName == IISTATUSATTRNAME) {
-				*orgStatus = *metadataKvp.attrValue;
-				break;
-			}
-		}
-		*kvp.folderStatus = *orgStatus;
+                # Get folder status.
+                *orgStatus = FOLDER;
+                foreach(*metadataKvp in *kvpList) {
+                        if (*metadataKvp.attrName == IISTATUSATTRNAME) {
+                                *orgStatus = *metadataKvp.attrValue;
+                                break;
+                        }
+                }
+                *kvp.folderStatus = *orgStatus;
 
-		*lockFound = "no";
-		foreach(*metadataKvp in *kvpList) {
-			if (*metadataKvp.attrName == IILOCKATTRNAME) {
-				*rootCollection = *metadataKvp.attrValue;
-				if (*rootCollection == *path) {
-					*lockFound = "here";
-					break;
-				} else {
-					*descendants = triml(*rootCollection, *path);
-					if (*descendants == *rootCollection) {
-						*ancestors = triml(*path, *rootCollection);
-						if (*ancestors == *path) {
-							*lockFound = "outoftree";
-						} else {
-							*lockFound = "ancestor";
-							break;
-						}
-					} else {
-						*lockFound = "descendant";
-						break;
-					}
-				}
-			}
-		}
-		*kvp.lockFound = *lockFound;
-		if (*lockFound != "no") {
-			*kvp.lockRootCollection = *rootCollection;
-		}
+                # Check for locks on the collection and ancestor / descendant collections.
+                *lockFound = "no";
+                foreach(*metadataKvp in *kvpList) {
+                        if (*metadataKvp.attrName == IILOCKATTRNAME) {
+                                *rootCollection = *metadataKvp.attrValue;
+                                if (*rootCollection == *path) {
+                                        *lockFound = "here";
+                                        break;
+                                } else {
+                                        *descendants = triml(*rootCollection, *path);
+                                        if (*descendants == *rootCollection) {
+                                                *ancestors = triml(*path, *rootCollection);
+                                                if (*ancestors == *path) {
+                                                        *lockFound = "outoftree";
+                                                } else {
+                                                        *lockFound = "ancestor";
+                                                        break;
+                                                }
+                                        } else {
+                                                *lockFound = "descendant";
+                                                break;
+                                        }
+                                }
+                        }
+                }
+                *kvp.lockFound = *lockFound;
+                if (*lockFound != "no") {
+                        *kvp.lockRootCollection = *rootCollection;
+                }
 
-		*xmlname = IIMETADATAXMLNAME;
-		*xmlpath = "";
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *path AND DATA_NAME = *xmlname) {
-			*xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
+`               # Retrieve yoda-metadata.xml path.
+                *xmlname = IIMETADATAXMLNAME;
+                *xmlpath = "";
+                foreach(*row in SELECT COLL_NAME, DATA_NAME
+                                WHERE COLL_NAME = *path
+                                  AND DATA_NAME = *xmlname) {
+                        *xmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+                }
 
-		if (*xmlpath == "") {
-			*kvp.hasMetadataXml = "false";
-			*kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
-		} else {
-			*kvp.hasMetadataXml = "true";
-			*kvp.metadataXmlPath = *xmlpath;
-			# check for locks on metadataXml
-			iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
-			uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
-			*kvp.metadataXmlLocks = *json_str;
-		}
+                if (*xmlpath == "") {
+                        *kvp.hasMetadataXml = "false";
+                        *kvp.metadataXmlPath = *path ++ "/" ++ IIMETADATAXMLNAME;
+                } else {
+                        *kvp.hasMetadataXml = "true";
+                        *kvp.metadataXmlPath = *xmlpath;
+                        # Check for locks on metadata XML.
+                        iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataXmlLocks);
+                        uuKvpList2JSON(*metadataXmlLocks, *json_str, *size);
+                        *kvp.metadataXmlLocks = *json_str;
+                }
 
-		uuGroupGetCategory(*groupName, *category, *subcategory);
-		*kvp.category = *category;
-		*kvp.subcategory = *subcategory;
+                # Retrieve category information.
+                uuGroupGetCategory(*groupName, *category, *subcategory);
+                *kvp.category = *category;
+                *kvp.subcategory = *subcategory;
 
-		iiGetResearchXsdPath(*xmlpath, *xsdPath);
-		*kvp.xsdPath = *xsdPath;
+                # Check if parent metadata XML exists and is valid.
+                iiGetResearchXsdPath(*xmlpath, *xsdPath);
+                uuChopPath(*path, *parent, *child);
+                *kvp.parentHasMetadataXml = "false";
+                foreach(*row in SELECT DATA_NAME, COLL_NAME
+                                WHERE COLL_NAME = *parent
+                                  AND DATA_NAME = *xmlname) {
+                        *parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+                        iiValidateXml(*parentxmlpath, *xsdpath, *err, *msg);
+                        if (*err < 0) {
+                                writeLine("serverLog", *msg);
+                        } else if (*err == 0) {
+                                *kvp.parentHasMetadataXml = "true";
+                                *kvp.parentMetadataXmlPath = *parentxmlpath;
+                        } else {
+                                writeLine("serverLog", "iiPrepareMetadataForm: *msg");
+                        }
+                }
+                uuKvp2JSON(*kvp, *result);
+        # Vault space.
+        } else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+                *pathElems = split(*path, "/");
+                *rodsZone = elem(*pathElems, 0);
+                *vaultGroup = elem(*pathElems, 2);
+                uuJoin("/", tl(tl(tl(*pathElems))), *vaultPackageSubPath);
 
-		uuChopPath(*path, *parent, *child);
-		*kvp.parentHasMetadataXml = "false";
-		foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME = *parent AND DATA_NAME = *xmlname) {
-			*parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-			iiValidateXml(*parentxmlpath, *xsdpath, *err, *msg);
-			if (*err < 0) {
-				writeLine("serverLog", *msg);
-			} else if (*err == 0) {
-				*kvp.parentHasMetadataXml = "true";
-				*kvp.parentMetadataXmlPath = *parentxmlpath;
-			} else {
-				writeLine("serverLog", "iiPrepareMetadataForm: *msg");
-			}
-		}
-		uuKvp2JSON(*kvp, *result);
-	} else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-		*pathElems = split(*path, "/");
-		*rodsZone = elem(*pathElems, 0);
-		*vaultGroup = elem(*pathElems, 2);
-		uuJoin("/", tl(tl(tl(*pathElems))), *vaultPackageSubPath);
+                msiString2KeyValPair("", *kvp);
+                *kvp.groupName = *vaultGroup;
+                uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
+                *kvp.userType = *memberType;
 
-		msiString2KeyValPair("", *kvp);
-		*kvp.groupName = *vaultGroup;
-		uuGroupGetMemberType(uuClientFullName, *vaultGroup, *memberType);
-		*kvp.userType = *memberType;
+                # Retrieve vault package status.
+                *vaultStatusAttrName = IIVAULTSTATUSATTRNAME;
+                *vaultStatus = "";
+                foreach(*row in SELECT META_COLL_ATTR_VALUE
+                                WHERE COLL_NAME = *path
+                                  AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
+                        *vaultStatus = *row.META_COLL_ATTR_VALUE;
+                }
 
-		*vaultStatusAttrName = IIVAULTSTATUSATTRNAME;
-		*vaultStatus = "";
-		foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = *vaultStatusAttrName) {
-			*vaultStatus = *row.META_COLL_ATTR_VALUE;
-		}
+                if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
+                    *vaultStatus == APPROVED_FOR_PUBLICATION ||
+                    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
+                    *vaultStatus == PENDING_DEPUBLICATION ||
+                    *vaultStatus == DEPUBLISHED ||
+                    *vaultStatus == PENDING_REPUBLICATION ||
+                    *vaultStatus == COMPLETE) {
+                        *kvp.isVaultPackage = "yes";
+                } else {
+                        *kvp.isVaultPackage = "no";
+                }
 
-		if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
-		    *vaultStatus == APPROVED_FOR_PUBLICATION ||
-		    *vaultStatus == UNPUBLISHED || *vaultStatus == PUBLISHED ||
-		    *vaultStatus == PENDING_DEPUBLICATION ||
-		    *vaultStatus == DEPUBLISHED ||
-		    *vaultStatus == PENDING_REPUBLICATION ||
-		    *vaultStatus == COMPLETE) {
-			*kvp.isVaultPackage = "yes";
-		} else {
-			*kvp.isVaultPackage = "no";
-		}
+                # Retrieve category information.
+                uuGetBaseGroup(*vaultGroup, *baseGroup);
+                uuGroupGetCategory(*baseGroup, *category, *subcategory);
+                *kvp.category = *category;
+                *kvp.subcategory = *subcategory;
 
-		uuGetBaseGroup(*vaultGroup, *baseGroup);
-		uuGroupGetCategory(*baseGroup, *category, *subcategory);
-		*kvp.category = *category;
-		*kvp.subcategory = *subcategory;
-		uuGroupExists("datamanager-*category", *datamanagerExists);
-		if (!*datamanagerExists) {
-			*isDatamanager = false;
-		} else {
-			uuGroupGetMemberType("datamanager-*category", uuClientFullName, *userTypeIfDatamanager);
-			if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-				*isDatamanager = true;
-			} else {
-				*isDatamanager = false;
-			}
-		}
+                # Check is user is datamanager.
+                uuGroupExists("datamanager-*category", *datamanagerExists);
+                if (!*datamanagerExists) {
+                        *isDatamanager = false;
+                } else {
+                        uuGroupGetMemberType("datamanager-*category", uuClientFullName, *userTypeIfDatamanager);
+                        if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+                                *isDatamanager = true;
+                        } else {
+                                *isDatamanager = false;
+                        }
+                }
+                if (*isDatamanager) {
+                        *kvp.isDatamanager = "yes";
+                } else {
+                        *kvp.isDatamanager = "no";
+                }
 
-		if (*isDatamanager) {
-			*kvp.isDatamanager = "yes";
-		} else {
-			*kvp.isDatamanager = "no";
-		}
+                # Retrieve latest version of the metadata XML.
+                iiGetLatestVaultMetadataXml(*path, *metadataXmlPath, *metadataXmlSize);
+                if (*metadataXmlPath == "") {
+                        *hasMetadataXml = false;
+                        *kvp.hasMetadataXml = "no";
+                } else {
+                        *hasMetadataXml = true;
+                        *kvp.hasMetadataXml = "yes";
+                        *kvp.metadataXmlPath = *metadataXmlPath;
+                }
 
-		iiGetLatestVaultMetadataXml(*path, *metadataXmlPath, *metadataXmlSize);
-		if (*metadataXmlPath == "") {
-			*hasMetadataXml = false;
-			*kvp.hasMetadataXml = "no";
-		} else {
-			*hasMetadataXml = true;
-			*kvp.hasMetadataXml = "yes";
-			*kvp.metadataXmlPath = *metadataXmlPath;
-		}
+                # Check if a shadow metadata XML exists
+                if (*isDatamanager && *hasMetadataXml) {
+                        *shadowMetadataXml = "/*rodsZone/home/datamanager-*category/*vaultGroup/*vaultPackageSubPath/" ++ IIMETADATAXMLNAME;
+                        *kvp.hasShadowMetadataXml = "no";
+                        if (uuFileExists(*shadowMetadataXml)) {
+                                *kvp.hasShadowMetadataXml = "yes";
+                                iiDataObjectMetadataKvpList(*shadowMetadataXml, UUORGMETADATAPREFIX, true, *kvpList);
+                                foreach(*item in *kvpList) {
+                                        if (*item.attrName == "cronjob_vault_ingest") {
+                                                *kvp.vaultIngestStatus = *item.attrValue;
+                                        }
+                                        if (*item.attrName == "cronjob_vault_ingest_info") {
+                                                *kvp.vaultIngestStatusInfo = *item.attrValue;
+                                        }
+                                }
 
-		# Check if a shadow metadata XML exists
-		if (*isDatamanager && *hasMetadataXml) {
-			*shadowMetadataXml = "/*rodsZone/home/datamanager-*category/*vaultGroup/*vaultPackageSubPath/" ++ IIMETADATAXMLNAME;
-			*kvp.hasShadowMetadataXml = "no";
-			if (uuFileExists(*shadowMetadataXml)) {
-				*kvp.hasShadowMetadataXml = "yes";
-				iiDataObjectMetadataKvpList(*shadowMetadataXml, UUORGMETADATAPREFIX, true, *kvpList);
-				foreach(*item in *kvpList) {
-					if (*item.attrName == "cronjob_vault_ingest") {
-						*kvp.vaultIngestStatus = *item.attrValue;
-					}
-					if (*item.attrName == "cronjob_vault_ingest_info") {
-						*kvp.vaultIngestStatusInfo = *item.attrValue;
-					}
-				}
+                        }
+                }
 
-			}
-		}
-
-		iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
-		*kvp.xsdPath = *xsdPath;
-
-		uuKvp2JSON(*kvp, *result);
-	} else {
-		*result = "";
-	}
+                uuKvp2JSON(*kvp, *result);
+        } else {
+                *result = "";
+        }
 }
 
 # \brief Remove the yoda-metadata.xml file and remove all user metadata from irods.
