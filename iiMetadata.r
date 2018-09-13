@@ -230,7 +230,7 @@ iiPrepareMetadataForm(*path, *result) {
                         *kvp.lockRootCollection = *rootCollection;
                 }
 
-`               # Retrieve yoda-metadata.xml path.
+                # Retrieve yoda-metadata.xml path.
                 *xmlname = IIMETADATAXMLNAME;
                 *xmlpath = "";
                 foreach(*row in SELECT COLL_NAME, DATA_NAME
