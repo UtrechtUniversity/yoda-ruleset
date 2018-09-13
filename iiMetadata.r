@@ -9,7 +9,7 @@
 # \brief Get the JSON metadata schema for the metadata form.
 #
 # \param[in]  folder        Path of the folder
-# \param[out] result        Terms and agreements text
+# \param[out] result        JSON metadata schema
 # \param[out] status        Status of the action
 # \param[out] statusInfo    Information message when action was not successful
 #
