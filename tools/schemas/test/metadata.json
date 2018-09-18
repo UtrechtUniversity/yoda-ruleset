@@ -14,7 +14,11 @@
     },
     "optionsYesNo": {
       "type": "string",
-      "enum": ["Yes", "No", "N.A."]
+      "enum": [
+        "Yes",
+        "No",
+        "N.A."
+      ]
     },
     "optionsDataAccessRestriction": {
       "type": "string",
@@ -385,7 +389,6 @@
       ]
     }
   },
-
   "title": "",
   "type": "object",
   "properties": {
@@ -393,9 +396,9 @@
       "type": "object",
       "title": "Descriptive",
       "required": [
-          "Title",
-          "Description",
-          "Version"
+        "Title",
+        "Description",
+        "Version"
       ],
       "properties": {
         "Title": {
@@ -476,7 +479,7 @@
             "type": "object",
             "yoda:structure": "subproperties",
             "required": [
-                "Title"
+              "Title"
             ],
             "properties": {
               "Relation_Type": {
@@ -507,13 +510,12 @@
         }
       }
     },
-
     "Administrative-group": {
       "type": "object",
       "title": "Administrative",
       "required": [
-          "Retention_Period",
-          "Data_Classification"
+        "Retention_Period",
+        "Data_Classification"
       ],
       "properties": {
         "Retention_Period": {
@@ -524,7 +526,7 @@
           "$ref": "#/definitions/stringNormal",
           "title": "Retention information"
         },
-        "Embargo_End_Date":{
+        "Embargo_End_Date": {
           "type": "string",
           "format": "date",
           "title": "Embargo end date"
@@ -557,13 +559,13 @@
         }
       }
     },
-
     "Rights-group": {
       "type": "object",
       "title": "Rights",
       "required": [
-          "License",
-          "Data_Access_Restriction"
+        "Creator",
+        "License",
+        "Data_Access_Restriction"
       ],
       "properties": {
         "Creator": {
