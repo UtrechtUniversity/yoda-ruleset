@@ -1,9 +1,5 @@
 {
   "definitions": {
-    "stringURI": {
-      "type": "uri",
-      "maxLength": 1024
-    },
     "stringNormal": {
       "type": "string",
       "maxLength": 255
