@@ -264,7 +264,7 @@ iiPrepareMetadataForm(*path, *result) {
                                 WHERE COLL_NAME = *parent
                                   AND DATA_NAME = *xmlname) {
                         *parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-                        iiValidateXml(*parentxmlpath, *xsdpath, *err, *msg);
+                        iiValidateXml(*parentxmlpath, *xsdPath, *err, *msg);
                         if (*err < 0) {
                                 writeLine("serverLog", *msg);
                         } else if (*err == 0) {
