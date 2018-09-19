@@ -407,7 +407,6 @@
         },
         "Discipline": {
           "type": "array",
-          "minItems": 0,
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Discipline"
