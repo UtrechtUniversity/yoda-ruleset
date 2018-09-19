@@ -407,7 +407,7 @@
         },
         "Discipline": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Discipline"
@@ -440,7 +440,6 @@
         },
         "Covered_Geolocation_Place": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/definitions/stringNormal",
             "title": "Location(s) covered"
@@ -465,7 +464,6 @@
         },
         "Tag": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/definitions/stringNormal",
             "title": "Tag"
@@ -473,7 +471,7 @@
         },
         "Related_Datapackage": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
@@ -540,7 +538,6 @@
         },
         "Funding_Reference": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "type": "object",
             "title": "Funder",
@@ -570,7 +567,7 @@
       "properties": {
         "Creator": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
@@ -585,7 +582,6 @@
               },
               "Affiliation": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation"
@@ -593,7 +589,6 @@
               },
               "Person_Identifier": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "type": "object",
                   "title": "Person Identifier",
@@ -615,7 +610,6 @@
         },
         "Contributor": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
@@ -634,7 +628,6 @@
               },
               "Affiliation": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation"
@@ -642,7 +635,6 @@
               },
               "Person_Identifier": {
                 "type": "array",
-                "minItems": 1,
                 "items": {
                   "type": "object",
                   "title": "Person Identifier",
