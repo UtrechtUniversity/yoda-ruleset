@@ -418,7 +418,8 @@
         },
         "Language": {
           "$ref": "#/definitions/optionsISO639-1",
-          "title": "Language of the data"
+          "title": "Language of the data",
+          "default": "en - English"
         },
         "Collected": {
           "type": "object",
@@ -661,7 +662,7 @@
         "Data_Access_Restriction": {
           "$ref": "#/definitions/optionsDataAccessRestriction",
           "title": "Data package access",
-          "default": "Open - freely retrievable"
+          "default": "Restricted - available upon request"
         }
       }
     }
