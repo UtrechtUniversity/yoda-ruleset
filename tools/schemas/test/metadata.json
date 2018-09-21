@@ -516,7 +516,8 @@
       "properties": {
         "Retention_Period": {
           "type": "integer",
-          "title": "Retention period (years)"
+          "title": "Retention period (years)",
+          "default": 10
         },
         "Retention_Information": {
           "$ref": "#/definitions/stringNormal",
@@ -659,7 +660,8 @@
         },
         "Data_Access_Restriction": {
           "$ref": "#/definitions/optionsDataAccessRestriction",
-          "title": "Data package access"
+          "title": "Data package access",
+          "default": "Open - freely retrievable"
         }
       }
     }
