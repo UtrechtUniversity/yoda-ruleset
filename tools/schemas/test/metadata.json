@@ -481,7 +481,7 @@
             "properties": {
               "Relation_Type": {
                 "$ref": "#/definitions/optionsRelationType",
-                "title": "Related Datapackage"
+                "title": "Related datapackage"
               },
               "Title": {
                 "$ref": "#/definitions/stringNormal",
@@ -489,7 +489,7 @@
               },
               "Persistent_Identifier": {
                 "type": "object",
-                "title": "Persistent Identifier",
+                "title": "Persistent identifier",
                 "yoda:structure": "compound",
                 "properties": {
                   "Identifier_Scheme": {
@@ -592,7 +592,7 @@
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "title": "Person Identifier",
+                  "title": "Person identifier",
                   "yoda:structure": "compound",
                   "properties": {
                     "Name_Identifier_Scheme": {
@@ -621,7 +621,7 @@
             "properties": {
               "Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Contributor of datapackage"
+                "title": "Contributor to datapackage"
               },
               "Contributor_Type": {
                 "$ref": "#/definitions/optionsContributorType",
@@ -638,7 +638,7 @@
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "title": "Person Identifier",
+                  "title": "Person identifier",
                   "yoda:structure": "compound",
                   "properties": {
                     "Name_Identifier_Scheme": {
