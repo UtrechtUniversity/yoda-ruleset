@@ -88,5 +88,8 @@ acPreProcForObjRename(*src, *dst) {
 
 # Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
 pep_api_auth_request_pre(*instanceName, *comm, *request) {
-    writeLine("serverLog", "Agent process started for puser=*comm.proxy_user_name and cuser=*comm.user_user_name from *comm.client_addr");
+    *proxy_user_name = *comm.proxy_user_name;
+    *user_user_name = *comm.user_user_name;
+    *client_addr = *comm.client_addr
+    writeLine("serverLog", "Agent process started for puser=*proxy_user_name and cuser=*user_user_name from *client_addr");
 }
