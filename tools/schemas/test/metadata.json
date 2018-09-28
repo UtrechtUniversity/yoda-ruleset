@@ -717,6 +717,10 @@
                     "$ref": "#/definitions/stringNormal",
                     "title": "Identifier"
                   }
+                },
+                "dependencies": {
+                  "Identifier_Scheme": ["Identifier"],
+                  "Identifier": ["Identifier_Scheme"]
                 }
               }
             }
@@ -822,6 +826,10 @@
                       "$ref": "#/definitions/stringNormal",
                       "title": "Identifier"
                     }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
                   }
                 }
               }
@@ -870,6 +878,10 @@
                       "$ref": "#/definitions/stringNormal",
                       "title": "Identifier"
                     }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
                   }
                 }
               }
