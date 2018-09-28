@@ -478,7 +478,7 @@ iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
 			iiImportMetadataFromXML(*xmlPath, *xslPath);
 		} else {
 			writeLine("serverLog", "iiMetadataXmlModifiedPost: Validation report of *xmlPath below.");
-			writeBytesBuf("serverLog", *msg);
+			writeLine("serverLog", *msg);
 		}
 	}
 }
