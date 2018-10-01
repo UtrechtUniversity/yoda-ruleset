@@ -653,6 +653,10 @@
               "format": "date",
               "title": "End date"
             }
+          },
+          "dependencies": {
+            "Start_Date": ["End_Date"],
+            "End_Date": ["Start_Date"]
           }
         },
         "Covered_Geolocation_Place": {
@@ -677,6 +681,10 @@
               "format": "date",
               "title": "End date"
             }
+          },
+          "dependencies": {
+            "Start_Date": ["End_Date"],
+            "End_Date": ["Start_Date"]
           }
         },
         "Tag": {
