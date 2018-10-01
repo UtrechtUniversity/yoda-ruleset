@@ -624,6 +624,7 @@
         },
         "Discipline": {
           "type": "array",
+          "default": [""],
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Discipline"
@@ -661,6 +662,7 @@
         },
         "Covered_Geolocation_Place": {
           "type": "array",
+          "default": [""],
           "items": {
             "$ref": "#/definitions/stringNormal",
             "title": "Location(s) covered"
@@ -689,6 +691,7 @@
         },
         "Tag": {
           "type": "array",
+          "default": [""],
           "items": {
             "$ref": "#/definitions/stringNormal",
             "title": "Tag"
@@ -696,7 +699,7 @@
         },
         "Related_Datapackage": {
           "type": "array",
-          "minItems": 0,
+          "default": [{"Title": ""}],
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
@@ -768,6 +771,7 @@
         },
         "Funding_Reference": {
           "type": "array",
+          "default": [{"Funder_Name" : "", "Award_Number": ""}],
           "items": {
             "type": "object",
             "title": "Funder",
@@ -797,7 +801,7 @@
       "properties": {
         "Creator": {
           "type": "array",
-          "minItems": 0,
+          "default": [{"Name": "", "Affiliation": ["Utrecht University"], "Person_Identifier": [{"Name_Identifier_Scheme": "", "Name_Identifier": ""}]}],
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
@@ -846,6 +850,7 @@
         },
         "Contributor": {
           "type": "array",
+          "default": [{"Name": "", "Affiliation": ["Utrecht University"], "Person_Identifier": [{"Name_Identifier_Scheme": "", "Name_Identifier": ""}]}],
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
