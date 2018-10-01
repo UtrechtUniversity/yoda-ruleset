@@ -819,7 +819,8 @@
                 "default": ["Utrecht University"],
                 "items": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation"
+                  "title": "Affiliation",
+                  "yoda:required": true
                 }
               },
               "Person_Identifier": {
@@ -872,7 +873,8 @@
                 "default": ["Utrecht University"],
                 "items": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation"
+                  "title": "Affiliation",
+                  "yoda:required": true
                 }
               },
               "Person_Identifier": {
