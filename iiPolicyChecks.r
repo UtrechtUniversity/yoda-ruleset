@@ -511,7 +511,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 			iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg);
 			if (*err != 0) {
 				*allowed = false;
-				*reason = "Metadata does not conform to schema.";
+				*reason = "Metadata is invalid, please check metadata form.";
 				succeed;
 			}
 		}
