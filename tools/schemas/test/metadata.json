@@ -694,7 +694,8 @@
           "default": [""],
           "items": {
             "$ref": "#/definitions/stringNormal",
-            "title": "Tag"
+            "title": "Tag",
+            "default": ""
           }
         },
         "Related_Datapackage": {
