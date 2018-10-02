@@ -36,6 +36,7 @@
     "optionsNameIdentifierScheme": {
       "type": "string",
       "enum": [
+        "",
         "ORCID",
         "DAI",
         "Author identifier (Scopus)",
@@ -68,6 +69,7 @@
     "optionsDiscipline": {
       "type": "string",
       "enum": [
+        "",
         "Natural Sciences - Mathematics (1.1)",
         "Natural Sciences - Computer and information sciences (1.2)",
         "Natural Sciences - Physical sciences (1.3)",
@@ -627,7 +629,8 @@
           "default": [""],
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
-            "title": "Discipline"
+            "title": "Discipline",
+            "default": ""
           }
         },
         "Version": {
@@ -836,7 +839,8 @@
                   "properties": {
                     "Name_Identifier_Scheme": {
                       "$ref": "#/definitions/optionsNameIdentifierScheme",
-                      "title": "Type"
+                      "title": "Type",
+                      "default": ""
                     },
                     "Name_Identifier": {
                       "$ref": "#/definitions/stringNormal",
@@ -891,7 +895,8 @@
                   "properties": {
                     "Name_Identifier_Scheme": {
                       "$ref": "#/definitions/optionsNameIdentifierScheme",
-                      "title": "Type"
+                      "title": "Type",
+                      "default": ""
                     },
                     "Name_Identifier": {
                       "$ref": "#/definitions/stringNormal",
