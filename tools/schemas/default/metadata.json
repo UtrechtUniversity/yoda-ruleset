@@ -665,7 +665,8 @@
           "default": [""],
           "items": {
             "$ref": "#/definitions/stringNormal",
-            "title": "Location(s) covered"
+            "title": "Location(s) covered",
+	    "default": ""
           }
         },
         "Covered_Period": {
