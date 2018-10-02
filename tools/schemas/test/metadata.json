@@ -822,6 +822,7 @@
                 "items": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
+                  "default": "",
                   "yoda:required": true
                 }
               },
@@ -876,6 +877,7 @@
                 "items": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
+                  "default": "",
                   "yoda:required": true
                 }
               },
