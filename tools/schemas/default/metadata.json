@@ -806,7 +806,7 @@
       "properties": {
         "Creator": {
           "type": "array",
-          "default": [{"Name": "", "Affiliation": ["Utrecht University"], "Person_Identifier": [{"Name_Identifier_Scheme": "", "Name_Identifier": ""}]}],
+          "default": [{"Name": "", "Affiliation": ["Utrecht University"]}],
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
