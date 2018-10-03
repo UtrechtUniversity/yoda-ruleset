@@ -708,9 +708,6 @@
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
-            "required": [
-              "Title"
-            ],
             "properties": {
               "Relation_Type": {
                 "$ref": "#/definitions/optionsRelationType",
@@ -739,6 +736,9 @@
                   "Identifier": ["Identifier_Scheme"]
                 }
               }
+            },
+            "dependencies": {
+              "Relation_Type": ["Title"]
             }
           }
         }
@@ -862,10 +862,6 @@
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
-            "required": [
-              "Contributor_Type",
-              "Affiliation"
-            ],
             "properties": {
               "Name": {
                 "$ref": "#/definitions/stringNormal",
@@ -881,8 +877,8 @@
                 "items": {
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
-                  "default": "",
-                  "yoda:required": true
+                  "yoda:required": true,
+                  "default": ""
                 }
               },
               "Person_Identifier": {
@@ -909,6 +905,9 @@
                   }
                 }
               }
+            },
+            "dependencies": {
+              "Name": ["Contributor_Type", "Affiliation"]
             }
           }
         },

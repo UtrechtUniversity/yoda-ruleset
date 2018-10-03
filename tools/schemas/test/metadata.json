@@ -708,9 +708,6 @@
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
-            "required": [
-              "Title"
-            ],
             "properties": {
               "Relation_Type": {
                 "$ref": "#/definitions/optionsRelationType",
@@ -740,6 +737,9 @@
                 }
               }
             }
+          },
+          "dependencies": {
+            "Relation_Type": ["Title"]
           }
         }
       }
@@ -862,10 +862,6 @@
           "items": {
             "type": "object",
             "yoda:structure": "subproperties",
-            "required": [
-              "Contributor_Type",
-              "Affiliation"
-            ],
             "properties": {
               "Name": {
                 "$ref": "#/definitions/stringNormal",
@@ -909,6 +905,9 @@
                   }
                 }
               }
+            },
+            "dependencies": {
+              "Name": [""Contributor_Type", "Affiliation"]
             }
           }
         },
