@@ -40,8 +40,7 @@
         "DAI",
         "Author identifier (Scopus)",
         "ResearcherID (Web of Science)",
-        "ISNI",
-        ""
+        "ISNI"
       ]
     },
     "optionsPersistentIdentifierScheme": {
@@ -110,8 +109,7 @@
         "Humanities - Languages and literature (6.2)",
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
-        "Humanities - Other humanities (6.5)",
-        ""
+        "Humanities - Other humanities (6.5)"
       ]
     },
     "optionsContributorType": {
