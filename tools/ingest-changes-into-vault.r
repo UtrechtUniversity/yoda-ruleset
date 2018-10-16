@@ -86,7 +86,7 @@ ingestChangesIntoVault {
 			msiGetMoreRows(*GenQ2Inp, *GenQ2Out, *ContInxNew);
 		}
 	}
-	msiCloseGenQuery(*GenQInp, *GenQOut);
+	msiCloseGenQuery(*GenQ2Inp, *GenQ2Out);
 }
 input null
 output ruleExecOut
