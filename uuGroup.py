@@ -49,6 +49,7 @@ def getGroupData(callback):
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
 
     # Second query: obtain list of groups with memberships.
     ret_val = callback.msiMakeGenQuery(
@@ -90,6 +91,7 @@ def getGroupData(callback):
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
 
     return groups.values()
 
@@ -114,6 +116,7 @@ def getCategories(callback):
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
 
     return categories
 
@@ -161,6 +164,7 @@ def getSubcategories(callback, category):
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
 
     return list(categories)
 

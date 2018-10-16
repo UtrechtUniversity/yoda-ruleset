@@ -61,6 +61,7 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 
 # \brief Return a key-value-pair of metadata associated with a collection.
@@ -89,6 +90,7 @@ uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 
 # \brief uuPaginatedQuery	This is a rule to do arbitrary paginated queries
