@@ -8,14 +8,6 @@
       "type": "string",
       "maxLength": 2700
     },
-    "optionsYesNo": {
-      "type": "string",
-      "enum": [
-        "Yes",
-        "No",
-        "N.A."
-      ]
-    },
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
