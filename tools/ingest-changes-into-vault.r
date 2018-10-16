@@ -42,6 +42,7 @@ ingestChangesIntoVault {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 
 
 	# Scan for vault packages with a pending publication update.
@@ -85,6 +86,7 @@ ingestChangesIntoVault {
 			msiGetMoreRows(*GenQ2Inp, *GenQ2Out, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 input null
 output ruleExecOut
