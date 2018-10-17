@@ -201,6 +201,13 @@ def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))
 
 
+# \brief Retrieve config value from credentials store.
+#
+def credentialsStoreGet(key):
+    config = json.loads(open('/var/lib/irods/.credentials_store/store_config.json').read())
+    return config[key]
+
+
 import requests
 
 # \brief Call External User Service API to add new user
@@ -210,7 +217,10 @@ import requests
 # \param[in] creatorZone
 #
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
-    url = 'https://eus.yoda.test/api/user/add'
+    eus_fqdn = credentialsStoreGet("yoda_eus_fqdn")
+    eus_api_secret = credentialsStoreGet("eus_api_secret")
+
+    url = 'https://' + eus_fqdn + '/api/user/add'
 
     data = {}
     data['username'] = username
@@ -219,7 +229,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
 
     response = requests.post(url, data=data,
                              headers={'X-Yoda-External-User-Secret':
-                                      'PLACEHOLDER'},
+                                      eus_api_secret},
                              verify=False)
 
     return str(response.status_code)
