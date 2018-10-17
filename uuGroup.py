@@ -227,7 +227,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     data['creator_user'] = creatorUser
     data['creator_zone'] = creatorZone
 
-    response = requests.post(url, data=data,
+    response = requests.post(url, data=json.dumps(data),
                              headers={'X-Yoda-External-User-Secret':
                                       eus_api_secret},
                              verify=False)
