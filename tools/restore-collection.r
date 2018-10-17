@@ -36,7 +36,7 @@ restoreCollection {
 	
 	iiRevisionListOfCollectionBeforeTimestamp(*path, *timestamp, *revisions); 
 	foreach(*revision in *revisions) {
-		uurevisionwithpath(*revisionId, *originalPath) = *revision;
+		iirevisionwithpath(*revisionId, *originalPath) = *revision;
 		if (*revisionId != "") {
 			foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE DATA_ID = *revisionId) {
 				*revPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;

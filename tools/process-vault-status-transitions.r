@@ -101,6 +101,7 @@ processVaultActions() {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 input null
 output ruleExecOut

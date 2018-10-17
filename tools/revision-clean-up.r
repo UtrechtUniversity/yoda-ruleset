@@ -40,6 +40,7 @@ cleanup {
 			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 
 input *endOfCalendarDay=0, *bucketcase="B"

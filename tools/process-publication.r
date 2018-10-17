@@ -29,6 +29,7 @@ processPublication() {
 			msiGetMoreRows(*GenQ2Inp, *GenQ2Out, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQ2Inp, *GenQ2Out);
 
 	# Scan for vault packages for which depublication is requested.
 	*ContInxOld = 1;
@@ -60,6 +61,7 @@ processPublication() {
 			msiGetMoreRows(*GenQ3Inp, *GenQ3Out, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQ3Inp, *GenQ3Out);
 
 	# Scan for vault packages for which republication is requested.
 	*ContInxOld = 1;
@@ -91,6 +93,7 @@ processPublication() {
 			msiGetMoreRows(*GenQ4Inp, *GenQ4Out, *ContInxNew);
 		}
 	}
+	msiCloseGenQuery(*GenQ4Inp, *GenQ4Out);
 }
 input null
 output ruleExecOut
