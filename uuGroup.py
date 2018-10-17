@@ -195,3 +195,32 @@ def uuGroupGetCategoriesJson(rule_args, callback, rei):
 #
 def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))
+
+
+import requests
+
+# \brief Call External User Service API to add new user
+#
+# \param[in] username
+# \param[in] creatorUser
+# \param[in] creatorZone
+#
+def provisionExternalUser(callback, username, creatorUser, creatorZone):
+    url = 'https://eus.yoda.test/api/user/add'
+
+    data = {}
+    data['username'] = username
+    data['creator_user'] = creatorUser
+    data['creator_zone'] = creatorZone
+
+    response = requests.post(url, data=data,
+                             headers={'X-Yoda-External-User-Secret':
+                                      'PLACEHOLDER'},
+                             verify=False)
+
+    return str(response.status_code)
+
+# \brief Provision external user
+#
+def uuProvisionExternalUser(rule_args, callback, rei):
+    callback.writeString("serverLog", provisionExternalUser(callback, rule_args[0], rule_args[1], rule_args[2]))
