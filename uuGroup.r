@@ -843,6 +843,15 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 			succeed; # Return here (don't fail as that would ruin the status and error message).
 		}
 
+		# Provision external user
+		*nameAndDomain = split(*userName, "@");
+		if (size(*nameAndDomain) == 2) {
+			*domain = elem(*nameAndDomain, 1);
+			if (*domain != "uu.nl" && *domain not like "*.uu.nl") {
+				uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient);
+			}
+		}
+
 		# Send user invitation mail.
 		#uuNewInternalUserMail(*userName, uuClientFullName, *status, *message);
 		#if (*status != 0) {
