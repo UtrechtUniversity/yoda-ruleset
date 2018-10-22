@@ -692,10 +692,13 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize) {
 	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
 	*dataNameQuery = "%*baseName[%].*extension";
+	*dataName = "";
 	*metadataXmlPath = "";
-	foreach (*row in SELECT DATA_NAME, DATA_SIZE, order_desc(DATA_MODIFY_TIME) WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
-		*metadataXmlPath = *vaultPackage ++ "/" ++ *row.DATA_NAME;
-		*metadataXmlSize = int(*row."DATA_SIZE");
-		break;
+	foreach (*row in SELECT DATA_NAME, DATA_SIZE WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
+		if (*dataName == "" || (*dataName < *rows.DATA_NAME && strlen(*dataName) < strlen(*rows.DATA_NAME))) {
+			*dataName = *rows.DATA_NAME;
+			*metadataXmlPath = *vaultPackage ++ "/" ++ *dataName;
+			*metadataXmlSize = int(*row.DATA_SIZE);
+		}
 	}
 }
