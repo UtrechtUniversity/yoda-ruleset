@@ -815,6 +815,25 @@ uuGroupRemove(*groupName, *status, *message) {
 	}
 }
 
+# \brief Check that a user is external.
+#
+# \param[in] userName   the user to check
+#
+uuExternalUser(*userName) {
+	*nameAndDomain = split(*userName, "@");
+	if (size(*nameAndDomain) == 2) {
+		*domain = elem(*nameAndDomain, 1);
+		if (*domain != "uu.nl" && *domain not like "*.uu.nl") {
+			# is external
+			true;
+		} else {
+			false;
+		}
+	} else {
+		false;
+	}
+}
+
 # \brief Add a user to a group.
 #
 # \param[in]  groupName
@@ -844,12 +863,8 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 		}
 
 		# Provision external user
-		*nameAndDomain = split(*userName, "@");
-		if (size(*nameAndDomain) == 2) {
-			*domain = elem(*nameAndDomain, 1);
-			if (*domain != "uu.nl" && *domain not like "*.uu.nl") {
-				uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient);
-			}
+		if (uuExternalUser(*userName)) {
+			uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient);
 		}
 
 		# Send user invitation mail.
@@ -901,6 +916,12 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 		if (*allowed == 0) {
 			*message = *reason;
 		}
+		succeed;
+	}
+
+	# Remove external user
+	if (uuExternalUser(*userName)) {
+		uuRemoveExternalUser(*userName, *userZone);
 	}
 }
 
