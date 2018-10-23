@@ -916,7 +916,6 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 		if (*allowed == 0) {
 			*message = *reason;
 		}
-		succeed;
 	}
 }
 
