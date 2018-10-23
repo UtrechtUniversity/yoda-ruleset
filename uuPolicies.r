@@ -74,6 +74,23 @@ acCreateUserZoneCollections {
 	}
 }
 
+# acPostProcForDeleteUser is called after a user is removed.
+acPostProcForDeleteUser {
+	*userAndZone = split($otherUserName, "#");
+	if (size(*userAndZone) > 1) {
+		*userName = elem(*userAndZone, 0);
+		*userZone = elem(*userAndZone, 1);
+	} else {
+		*userName = $otherUserName;
+		*userZone = $otherUserZone;
+	}
+
+	# Remove external user
+	if (uuExternalUser(*userName)) {
+		uuRemoveExternalUser(*userName, *userZone);
+	}
+}
+
 # acPreProcForObjRename is fired before a data object is renamed or moved.
 # Disallows renaming or moving the data object if it is directly under home.
 acPreProcForObjRename(*src, *dst) {

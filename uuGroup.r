@@ -918,11 +918,6 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 		}
 		succeed;
 	}
-
-	# Remove external user
-	if (uuExternalUser(*userName)) {
-		uuRemoveExternalUser(*userName, *userZone);
-	}
 }
 
 # \brief Promote or demote a group member.
