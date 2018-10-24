@@ -83,10 +83,13 @@ acPostProcForDeleteUser {
 	} else {
 		*userName = $otherUserName;
 		*userZone = $otherUserZone;
+		if (*userZone == "") {
+			*userZone = $rodsZoneClient;
+		}
 	}
 
 	# Remove external user
-	if (uuExternalUser(*userName)) {
+	if (*userZone == $rodsZoneClient && uuExternalUser(*userName)) {
 		uuRemoveExternalUser(*userName, *userZone);
 	}
 }
