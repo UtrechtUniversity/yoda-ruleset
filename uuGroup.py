@@ -218,9 +218,10 @@ import requests
 #
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
     eus_fqdn = credentialsStoreGet("yoda_eus_fqdn")
+    eus_port = credentialsStoreGet("yoda_eus_port")
     eus_api_secret = credentialsStoreGet("eus_api_secret")
 
-    url = 'https://' + eus_fqdn + '/api/user/add'
+    url = 'https://' + eus_fqdn + ':' + eus_port + '/api/user/add'
 
     data = {}
     data['username'] = username
@@ -246,9 +247,10 @@ def uuProvisionExternalUser(rule_args, callback, rei):
 #
 def removeExternalUser(callback, username, userzone):
     eus_fqdn = credentialsStoreGet("yoda_eus_fqdn")
+    eus_port = credentialsStoreGet("yoda_eus_port")
     eus_api_secret = credentialsStoreGet("eus_api_secret")
 
-    url = 'https://' + eus_fqdn + '/api/user/delete'
+    url = 'https://' + eus_fqdn + ':' + eus_port + '/api/user/delete'
 
     data = {}
     data['username'] = username
