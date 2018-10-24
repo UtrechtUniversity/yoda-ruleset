@@ -696,7 +696,7 @@ iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize) {
 	*metadataXmlPath = "";
 	foreach (*row in SELECT DATA_NAME, DATA_SIZE WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
 		if (*dataName == "" || (*dataName < *row.DATA_NAME && strlen(*dataName) < strlen(*row.DATA_NAME))) {
-			*dataName = *rows.DATA_NAME;
+			*dataName = *row.DATA_NAME;
 			*metadataXmlPath = *vaultPackage ++ "/" ++ *dataName;
 			*metadataXmlSize = int(*row.DATA_SIZE);
 		}
