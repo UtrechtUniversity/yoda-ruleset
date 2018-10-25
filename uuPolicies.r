@@ -74,6 +74,17 @@ acCreateUserZoneCollections {
 	}
 }
 
+# acDeleteUserZoneCollections extended to remove the zone from the username
+acDeleteUserZoneCollections {
+	*userName = $otherUserName;
+	*userAndZone = split(*userName, "#");
+	if (size(*userAndZone) > 1 && elem(*userAndZone, 1) == $rodsZoneProxy) {
+		*userName = elem(*userAndZone, 0);
+	}
+	acDeleteCollByAdminIfPresent("/"++$rodsZoneProxy++"/home", *userName);
+	acDeleteCollByAdminIfPresent("/"++$rodsZoneProxy++"/trash/home", *userName);
+}
+
 # acPostProcForDeleteUser is called after a user is removed.
 acPostProcForDeleteUser {
 	*userAndZone = split($otherUserName, "#");
@@ -84,12 +95,12 @@ acPostProcForDeleteUser {
 		*userName = $otherUserName;
 		*userZone = $otherUserZone;
 		if (*userZone == "") {
-			*userZone = $rodsZoneClient;
+			*userZone = $rodsZoneProxy;
 		}
 	}
 
 	# Remove external user
-	if (*userZone == $rodsZoneClient && uuExternalUser(*userName)) {
+	if (*userZone == $rodsZoneProxy && uuExternalUser(*userName)) {
 		uuRemoveExternalUser(*userName, *userZone);
 	}
 }
