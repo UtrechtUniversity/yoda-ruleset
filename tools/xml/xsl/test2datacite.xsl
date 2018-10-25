@@ -61,7 +61,6 @@
             </dates>
 
             <xsl:apply-templates select="Version"/>
-            <xsl:apply-templates select="License"/>
             <rightsList>
                 <xsl:apply-templates select="License"/>
                 <xsl:apply-templates select="Data_Access_Restriction"/>
