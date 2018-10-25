@@ -98,6 +98,7 @@ def checkDataObjectIntegrity(callback, data_id):
                     else:
                         break
 
+                # iRODS stores md5 hashes plain and the sha256 hash base64 encoded.
                 if hsh.name == 'md5':
                     computed_checksum = hsh.digest()
                 else:
