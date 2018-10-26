@@ -57,12 +57,26 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 	on (*currentFolderStatus != LOCKED &&
 	    (*newFolderStatus == LOCKED || *newFolderStatus == SUBMITTED)) {
+	        # Clear action log coming from SECURED state.
+	        # SECURED -> LOCKED and SECURED -> SUBMITTED
+	        if (*currentFolderStatus == SECURED) {
+                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+                        iiRemoveAVUs(*folder, *actionLog);
+	        }
+
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
 	on (*newFolderStatus == FOLDER || *newFolderStatus == REJECTED ||
 	    *newFolderStatus == SECURED) {
+	        # Clear action log coming from SECURED state.
+	        # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
+	        if (*currentFolderStatus == SECURED) {
+                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+                        iiRemoveAVUs(*folder, *actionLog);
+	        }
+
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
 		if (*status != 0) { fail; }
