@@ -81,13 +81,7 @@ acPreProcForDeleteUser {
 
 # acDeleteUserZonelessCollections: strip zone from name and delete collections
 acDeleteUserZonelessCollections {
-	*userName = $otherUserName;
-	*userAndZone = split(*userName, "#");
-	if (size(*userAndZone) > 1) {
-		if (elem(*userAndZone, 1) == $rodsZoneProxy) {
-			*userName = elem(*userAndZone, 0);
-		}
-	}
+	*userName = elem(split($otherUserName, "#"), 0);
 	acDeleteCollByAdminIfPresent("/"++$rodsZoneProxy++"/home", *userName);
 	acDeleteCollByAdminIfPresent("/"++$rodsZoneProxy++"/trash/home", *userName);
 }
@@ -95,11 +89,10 @@ acDeleteUserZonelessCollections {
 # acPostProcForDeleteUser is called after a user is removed.
 acPostProcForDeleteUser {
 	*userAndZone = split($otherUserName, "#");
+	*userName = elem(*userAndZone, 0);
 	if (size(*userAndZone) > 1) {
-		*userName = elem(*userAndZone, 0);
 		*userZone = elem(*userAndZone, 1);
 	} else {
-		*userName = $otherUserName;
 		*userZone = $otherUserZone;
 	}
 	if (*userZone == "") {
