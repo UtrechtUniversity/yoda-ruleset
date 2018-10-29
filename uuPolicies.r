@@ -77,6 +77,7 @@ acCreateUserZoneCollections {
 # delete collections for zoneless username
 acPreProcForDeleteUser {
 	acDeleteUserZonelessCollections ::: msiRollback;
+	msiCommit;
 }
 
 # acDeleteUserZonelessCollections: strip zone from name and delete collections
