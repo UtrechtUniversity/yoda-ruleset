@@ -101,9 +101,9 @@ acPostProcForDeleteUser {
 	} else {
 		*userName = $otherUserName;
 		*userZone = $otherUserZone;
-		if (*userZone == "") {
-			*userZone = $rodsZoneProxy;
-		}
+	}
+	if (*userZone == "") {
+		*userZone = $rodsZoneProxy;
 	}
 
 	# Remove external user
