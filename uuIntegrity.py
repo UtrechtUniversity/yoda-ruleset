@@ -133,10 +133,11 @@ def uuCheckDataObjectIntegrity(rule_args, callback, rei):
     checkDataObjectIntegrity(callback, rule_args[0])
 
 
-# check integrity of all data objects in the vault
-def checkVaultIntegrity(callback, rods_zone, data_id):
+# check integrity of one batch of data objects in the vault
+def checkVaultIntegrityBatch(callback, rods_zone, data_id):
     import time
 
+    # go through data in the vault, ordered by DATA_ID
     ret_val = callback.msiMakeGenQuery(
         "ORDER(DATA_ID)",
         "COLL_NAME like '/%s/home/vault-%%' AND DATA_ID >= '%d'" % (rods_zone, data_id),
@@ -145,28 +146,37 @@ def checkVaultIntegrity(callback, rods_zone, data_id):
 
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
     result = ret_val["arguments"][1]
-    if result.rowCnt == 0:
-        callback.msiCloseGenQuery(query, result)
-        return 0
+    if result.rowCnt != 0:
+        # check each data object in batch
+        for row in range(result.rowCnt):
+            data_id = int(result.sqlResult[0].row(row))
+            checkDataObjectIntegrity(callback, data_id)
 
-    for row in range(result.rowCnt):
-        data_id = int(result.sqlResult[0].row(row))
-        checkDataObjectIntegrity(callback, data_id)
-        time.sleep(0.5)
+            # sleep briefly between checks
+            time.sleep(0.5)
+
+        # the next data object to check must have a higher DATA_ID
+        data_id = data_id + 1
+    else:
+        # all done
+        data_id = 0
     callback.msiCloseGenQuery(query, result)
 
-    return data_id + 1
+    return data_id
 
 
+# check integirty of all data objects in the vault
 def uuCheckVaultIntegrity(rule_args, callback, rei):
     import session_vars
 
     data_id = int(rule_args[0])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
-    data_id = checkVaultIntegrity(callback, rods_zone, data_id)
+    # check one batch of vault data
+    data_id = checkVaultIntegrityBatch(callback, rods_zone, data_id)
 
     if data_id != 0:
+        # wait a minute before checking the next batch
         callback.delayExec(
             "<PLUSET>1m</PLUSET>",
             "uuCheckVaultIntegrity('%d')" % data_id,
