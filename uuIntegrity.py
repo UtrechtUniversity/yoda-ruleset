@@ -1,6 +1,7 @@
 # \file      uuIntegrity.py
 # \brief     Functions for data integrity.
 # \author    Lazlo Westerhof
+# \author    Felix Croes
 # \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
@@ -130,3 +131,43 @@ def checkDataObjectIntegrity(callback, data_id):
 
 def uuCheckDataObjectIntegrity(rule_args, callback, rei):
     checkDataObjectIntegrity(callback, rule_args[0])
+
+
+# check integrity of all data objects in the vault
+def checkVaultIntegrity(callback, rods_zone, data_id):
+    import time
+
+    ret_val = callback.msiMakeGenQuery(
+        "ORDER(DATA_ID)",
+        "COLL_NAME like '/%s/home/vault-%%' AND DATA_ID >= '%d'" % (rods_zone, data_id),
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+    if result.rowCnt == 0:
+        callback.msiCloseGenQuery(query, result)
+        return 0
+
+    for row in range(result.rowCnt):
+        data_id = int(result.sqlResult[0].row(row))
+        checkDataObjectIntegrity(callback, data_id)
+        time.sleep(0.5)
+    callback.msiCloseGenQuery(query, result)
+
+    return data_id + 1
+
+
+def uuCheckVaultIntegrity(rule_args, callback, rei):
+    import session_vars
+
+    data_id = int(rule_args[0])
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+
+    data_id = checkVaultIntegrity(callback, rods_zone, data_id)
+
+    if data_id != 0:
+        callback.delayExec(
+            "<PLUSET>1m</PLUSET>",
+            "uuCheckVaultIntegrity('%d')" % data_id,
+            "")
