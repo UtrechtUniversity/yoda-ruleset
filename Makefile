@@ -46,7 +46,6 @@ $(PYRULESET_FILE): $(PYRULE_FILES)
 
 install: $(RULESET_FILE) $(PYRULESET_FILE)
 	cp --backup $(RULESET_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
-	cp --backup $(PYRULESET_FILE) $(INSTALL_DIR)/$(PYRULESET_NAME)
 	cat $(INSTALL_DIR)/core.py.template $(PYRULESET_FILE) > $(INSTALL_DIR)/core.py
 
 clean:
