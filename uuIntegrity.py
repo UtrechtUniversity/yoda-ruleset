@@ -126,7 +126,8 @@ def checkDataObjectIntegrity(callback, data_id):
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
-    callback.writeString("serverLog", str(status))
+    if status != Status.OK:
+        callback.writeString("serverLog", "%s: %s" % (file_path, str(status)))
 
 
 def uuCheckDataObjectIntegrity(rule_args, callback, rei):
