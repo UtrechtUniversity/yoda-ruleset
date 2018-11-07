@@ -134,7 +134,7 @@ def uuCheckDataObjectIntegrity(rule_args, callback, rei):
 
 
 # check integrity of one batch of data objects in the vault
-def checkVaultIntegrityBatch(callback, rods_zone, data_id):
+def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     import time
 
     # go through data in the vault, ordered by DATA_ID
@@ -148,12 +148,12 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id):
     result = ret_val["arguments"][1]
     if result.rowCnt != 0:
         # check each data object in batch
-        for row in range(result.rowCnt):
+        for row in range(min(batch, result.rowCnt)):
             data_id = int(result.sqlResult[0].row(row))
             checkDataObjectIntegrity(callback, data_id)
 
             # sleep briefly between checks
-            time.sleep(0.5)
+            time.sleep(pause)
 
         # the next data object to check must have a higher DATA_ID
         data_id = data_id + 1
@@ -165,19 +165,27 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id):
     return data_id
 
 
-# check integirty of all data objects in the vault
+# \brief check integrity of all data objects in the vault
+# \param[in] data_id  first DATA_ID to check
+# \param[in] batch    batch size, <= 256
+# \param[in] pause    pause between checks (float)
+# \param[in] delay    delay between batches in seconds
+#
 def uuCheckVaultIntegrity(rule_args, callback, rei):
     import session_vars
 
     data_id = int(rule_args[0])
+    batch = int(rule_args[1])
+    pause = float(rule_args[2])
+    delay = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # check one batch of vault data
-    data_id = checkVaultIntegrityBatch(callback, rods_zone, data_id)
+    data_id = checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause)
 
     if data_id != 0:
-        # wait a minute before checking the next batch
+        # check the next batch after a delay
         callback.delayExec(
-            "<PLUSET>1m</PLUSET>",
-            "uuCheckVaultIntegrity('%d')" % data_id,
+            "<PLUSET>%ds</PLUSET>" % delay,
+            "uuCheckVaultIntegrity('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay),
             "")
