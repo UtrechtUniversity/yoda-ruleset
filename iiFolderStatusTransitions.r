@@ -474,17 +474,9 @@ iiFolderSecure(*folder) {
 	if (!*found) {
 		*target = iiDetermineVaultTarget(*folder);
 	}
-	iiGetPublicationConfig(*config);
-	*host = *config.davrodsVHost;
-	*subpath = triml(*target, "/home/");
-	*url = "https://*host/*subpath";
-
-	# Generate new EPIC PID
-	msiGenerateUUID(*pid);
 
 	# Try to register EPIC PID
-	*httpCode = "-1";
-	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
+	iiRegisterEpicPID(*target, *url, *pid, *httpCode);
 	if (*httpCode != "0" && *httpCode != "200" && *httpCode != "201") {
 		# Always retry
 		writeLine("serverLog", "iiFolderSecure: msiRegisterEpicPID returned *httpCode");
@@ -510,10 +502,7 @@ iiFolderSecure(*folder) {
 
 	if (*httpCode != "0") {
 		# save EPIC Persistent ID in metadata
-		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
-		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
-		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
-		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+		iiSaveEpicPID(*target, *url, *pid);
 	}
 
 	# Set research folder status.
@@ -551,6 +540,41 @@ iiFolderSecure(*folder) {
 	if (*modifyAccess != 1) {
 		msiSetACL("default", "admin:null", uuClientFullName, *folder);
 	}
+}
+
+# \brief iiRegisterEpicPID create and try to register an EPIC PID
+#
+# \param[in]  target
+# \param[out] url
+# \param[out] pid
+# \param[out] httpCode
+#
+iiRegisterEpicPID(*target, *url, *pid, *httpCode) {
+	# Get URL
+	iiGetPublicationConfig(*config);
+	*host = *config.davrodsVHost;
+	*subpath = triml(*target, "/home/");
+	*url = "https://*host/*subpath";
+
+	# Generate new EPIC PID
+	msiGenerateUUID(*pid);
+
+	# Try to register EPIC PID
+	*httpCode = "-1";
+	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
+}
+
+# \brief iiSaveEpicPID save persistent EPIC ID
+#
+# \param[in]  target
+# \param[out] url
+# \param[out] pid
+#
+iiSaveEpicPID(*target, *url, *pid) {
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 }
 
 # \brief iiAddActionLogRecord
