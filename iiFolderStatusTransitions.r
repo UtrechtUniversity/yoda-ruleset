@@ -457,18 +457,14 @@ iiFolderSecure(*folder) {
 			 WHERE COLL_NAME = '*folder'
 			 AND META_COLL_ATTR_NAME = IICOPYPARAMSNAME) {
 		# retry with previous parameters
-		*value = *row.META_COLL_ATTR_VALUE;
-		*list = split(*value, "%");
-		*target = elem(*list, 0);
-		*pid = elem(*list, 1);
-
+		*target = *row.META_COLL_ATTR_VALUE;
 		*found = true;
 	}
 	if (*found) {
 		# Remove parameters from metadata
 		msiString2KeyValPair("", *kvp);
 		*key = IICOPYPARAMSNAME;
-		*kvp."*key" = "*target%*pid";
+		*kvp."*key" = *target;
 		msiRemoveKeyValuePairsFromObj(*kvp, *folder, "-C");
 	}
 	if (*modifyAccess != 1) {
@@ -476,23 +472,25 @@ iiFolderSecure(*folder) {
 	}
 
 	if (!*found) {
-		# Generate new EPIC PID
 		*target = iiDetermineVaultTarget(*folder);
-		msiGenerateUUID(*pid);
 	}
 	iiGetPublicationConfig(*config);
 	*host = *config.davrodsVHost;
 	*subpath = triml(*target, "/home/");
 	*url = "https://*host/*subpath";
 
+	# Generate new EPIC PID
+	msiGenerateUUID(*pid);
+
+	# Try to register EPIC PID
 	*httpCode = "-1";
 	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
-	if (*httpCode != "200" && *httpCode != "201") {
+	if (*httpCode != "0" && *httpCode != "200" && *httpCode != "201") {
 		# Always retry
 		writeLine("serverLog", "iiFolderSecure: msiRegisterEpicPID returned *httpCode");
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_RETRY, *kvp);
 		*key = IICOPYPARAMSNAME;
-		*kvp."*key" = "*target%*pid";
+		*kvp."*key" = *target;
 		if (*modifyAccess != 1) {
 			msiSetACL("default", "admin:write", uuClientFullName, *folder);
 		}
@@ -510,11 +508,13 @@ iiFolderSecure(*folder) {
 	iiCopyLicenseToVaultPackage(*folder, *target);
 	iiSetVaultPermissions(*folder, *target);
 
-	# save EPIC Persistent ID in metadata
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
-	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
-	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+	if (*httpCode != "0") {
+		# save EPIC Persistent ID in metadata
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
+		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
+		msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+	}
 
 	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
