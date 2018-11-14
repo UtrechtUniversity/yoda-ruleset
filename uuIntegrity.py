@@ -12,7 +12,7 @@ import hashlib
 import base64
 
 
-DataObject = namedtuple('DataObject', ['id', 'name', 'size', 'checksum', 'coll_name', 'resc_path'])
+DataObject = namedtuple('DataObject', ['id', 'name', 'size', 'checksum', 'coll_name', 'resc_path', 'resc_loc'])
 CHUNK_SIZE = 8192
 
 
@@ -28,10 +28,71 @@ class Status(Enum):
         return self.name
 
 
+def checkDataObjectRemote(rule_args, callback, rei):
+    file_path = str(rule_args[0])
+    file_size = int(rule_args[1])
+    file_checksum = str(rule_args[2])
+
+    # Check if file exists in vault.
+    if not os.path.isfile(file_path):
+        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.NOT_EXISTING)))
+        return
+
+    # Check if file size matches.
+    if int(file_size) != os.path.getsize(file_path):
+        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.FILE_SIZE_MISMATCH)))
+        return
+
+    # Check if checksum exists.
+    if not file_checksum:
+        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.NO_CHECKSUM)))
+        return
+
+    # Open file and compute checksum.
+    try:
+        f = open(file_path, 'rb')
+    except OSError as e:
+        if e.errno == errno.EACCES:
+            callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.ACCESS_DENIED)))
+            return
+        else:
+            raise
+    else:
+        # Determine if checksum is md5 or sha256.
+        if file_checksum.startswith("sha2:"):
+            checksum = file_checksum[5:]
+            hsh = hashlib.sha256()
+        else:
+            checksum = file_checksum
+            hsh = hashlib.md5()
+
+        # Compute checksum.
+        while True:
+            chunk = f.read(CHUNK_SIZE)
+            if chunk:
+                hsh.update(chunk)
+            else:
+                break
+
+        # iRODS stores md5 hashes plain and the sha256 hash base64 encoded.
+        if hsh.name == 'md5':
+            computed_checksum = hsh.digest()
+        else:
+            computed_checksum = base64.b64encode(hsh.digest())
+        f.close()
+
+    # Check if checksum matches.
+    if checksum != computed_checksum:
+        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.CHECKSUM_MISMATCH)))
+        return
+
+    callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.OK)))
+
+
 def checkDataObjectIntegrity(callback, data_id):
     # Obtain all replicas of a data object.
     ret_val = callback.msiMakeGenQuery(
-        "DATA_ID, DATA_NAME, DATA_SIZE, DATA_CHECKSUM, COLL_NAME, RESC_VAULT_PATH",
+        "DATA_ID, DATA_NAME, DATA_SIZE, DATA_CHECKSUM, COLL_NAME, RESC_VAULT_PATH, RESC_LOC",
         "DATA_ID = '%s'" % data_id,
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
@@ -39,106 +100,45 @@ def checkDataObjectIntegrity(callback, data_id):
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
 
     # Loop through all replicas.
-    status = Status.OK
-    prev_data_object = None
     while True:
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
-            # Integrity check failed.
-            if status != Status.OK:
-                break
-
             data_object = DataObject._make([result.sqlResult[0].row(row),
-                                           result.sqlResult[1].row(row),
-                                           result.sqlResult[2].row(row),
-                                           result.sqlResult[3].row(row),
-                                           result.sqlResult[4].row(row),
-                                           result.sqlResult[5].row(row)])
+                                            result.sqlResult[1].row(row),
+                                            result.sqlResult[2].row(row),
+                                            result.sqlResult[3].row(row),
+                                            result.sqlResult[4].row(row),
+                                            result.sqlResult[5].row(row),
+                                            result.sqlResult[6].row(row)])
 
             # Build file path to data object.
             coll_name = os.path.join(*(data_object.coll_name.split(os.path.sep)[2:]))
             file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
 
-            # Check if file exists in vault.
-            if not os.path.isfile(file_path):
-                status = Status.NOT_EXISTING
-                break
-
-            # Check if file size matches.
-            if int(data_object.size) != os.path.getsize(file_path):
-                status = Status.FILE_SIZE_MISMATCH
-                break
-
-            # Check if checksum exists.
-            if not data_object.checksum:
-                status = Status.NO_CHECKSUM
-                break
-
-            # Open file and compute checksum.
-            try:
-                f = open(file_path, 'rb')
-            except OSError as e:
-                if e.errno == errno.EACCES:
-                    status = Status.ACCESS_DENIED
-                    break
-                else:
-                    raise
-            else:
-                # Determine if checksum is md5 or sha256.
-                if data_object.checksum.startswith("sha2:"):
-                    checksum = data_object.checksum[5:]
-                    hsh = hashlib.sha256()
-                else:
-                    hsh = hashlib.md5()
-
-                # Compute checksum.
-                while True:
-                    chunk = f.read(CHUNK_SIZE)
-                    if chunk:
-                        hsh.update(chunk)
-                    else:
-                        break
-
-                # iRODS stores md5 hashes plain and the sha256 hash base64 encoded.
-                if hsh.name == 'md5':
-                    computed_checksum = hsh.digest()
-                else:
-                    computed_checksum = base64.b64encode(hsh.digest())
-                f.close()
-
-            # Check if checksum matches.
-            if checksum != computed_checksum:
-                status = Status.CHECKSUM_MISMATCH
-                break
-
-            # Store data object to compare with next replica.
-            prev_data_object = data_object
-
-            # Compare with previous replica.
-            if prev_data_object:
-                # Check if checksum matches.
-                if data_object.checksum != prev_data_object.checksum:
-                    status = Status.CHECKSUM_MISMATCH
-                    break
+            # Check integrity on the resource.
+            callback.remoteExec(
+                "%s" % data_object.resc_loc,
+                "",
+                "checkDataObjectRemote('%s', '%s', '%s')" % (file_path, data_object.size, data_object.checksum),
+                ""
+            )
 
         # Continue with this query.
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
-    if status != Status.OK:
-        callback.writeString("serverLog", "%s: %s" % (file_path, str(status)))
 
 
 def uuCheckDataObjectIntegrity(rule_args, callback, rei):
     checkDataObjectIntegrity(callback, rule_args[0])
 
 
-# check integrity of one batch of data objects in the vault
+# Check integrity of one batch of data objects in the vault.
 def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     import time
 
-    # go through data in the vault, ordered by DATA_ID
+    # Go through data in the vault, ordered by DATA_ID.
     ret_val = callback.msiMakeGenQuery(
         "ORDER(DATA_ID)",
         "COLL_NAME like '/%s/home/vault-%%' AND DATA_ID >= '%d'" % (rods_zone, data_id),
@@ -147,26 +147,27 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
 
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
     result = ret_val["arguments"][1]
+
     if result.rowCnt != 0:
-        # check each data object in batch
+        # Check each data object in batch.
         for row in range(min(batch, result.rowCnt)):
             data_id = int(result.sqlResult[0].row(row))
             checkDataObjectIntegrity(callback, data_id)
 
-            # sleep briefly between checks
+            # Sleep briefly between checks.
             time.sleep(pause)
 
-        # the next data object to check must have a higher DATA_ID
+        # The next data object to check must have a higher DATA_ID.
         data_id = data_id + 1
     else:
-        # all done
+        # All done.
         data_id = 0
     callback.msiCloseGenQuery(query, result)
 
     return data_id
 
 
-# \brief check integrity of all data objects in the vault
+# \brief Check integrity of all data objects in the vault.
 # \param[in] data_id  first DATA_ID to check
 # \param[in] batch    batch size, <= 256
 # \param[in] pause    pause between checks (float)
@@ -181,11 +182,11 @@ def uuCheckVaultIntegrity(rule_args, callback, rei):
     delay = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
-    # check one batch of vault data
+    # Check one batch of vault data.
     data_id = checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause)
 
     if data_id != 0:
-        # check the next batch after a delay
+        # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
             "uuCheckVaultIntegrity('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay),
