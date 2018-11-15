@@ -28,31 +28,25 @@ class Status(Enum):
         return self.name
 
 
-def checkDataObjectRemote(rule_args, callback, rei):
-    file_path = str(rule_args[0])
-    file_size = int(rule_args[1])
-    file_checksum = str(rule_args[2])
-
+def checkDataObject(file_path, file_size, file_checksum):
     # Check if file exists in vault.
     if not os.path.isfile(file_path):
-        callback.writeString("serverLog", "%s: %s"
-                             % (file_path, str(Status.NOT_EXISTING)))
-        return
+        return Status.NOT_EXISTING
 
     # Check if file size matches.
     if int(file_size) != os.path.getsize(file_path):
-        callback.writeString("serverLog", "%s: %s"
-                             % (file_path, str(Status.FILE_SIZE_MISMATCH)))
-        return
+        return Status.FILE_SIZE_MISMATCH
+
+    # Check if checksum exists.
+    if not data_object.checksum:
+        return Status.NO_CHECKSUM
 
     # Open file and compute checksum.
     try:
         f = open(file_path, 'rb')
     except OSError as e:
         if e.errno == errno.EACCES:
-            callback.writeString("serverLog", "%s: %s"
-                                 % (file_path, str(Status.ACCESS_DENIED)))
-            return
+            return Status.ACCESS_DENIED
         else:
             raise
     else:
@@ -81,12 +75,20 @@ def checkDataObjectRemote(rule_args, callback, rei):
 
     # Check if checksum matches.
     if checksum != computed_checksum:
-        callback.writeString("serverLog", "%s: %s"
-                             % (file_path, str(Status.CHECKSUM_MISMATCH)))
-        return
+        return Status.CHECKSUM_MISMATCH
+
+    return Status.OK
+
+
+def checkDataObjectRemote(rule_args, callback, rei):
+    file_path = str(rule_args[0])
+    file_size = int(rule_args[1])
+    file_checksum = str(rule_args[2])
+
+    status = checkDataObject(file_path, file_size, file_checksum)
 
     callback.writeString("serverLog", "%s: %s"
-                         % (file_path, str(Status.OK)))
+                         % (file_path, str(status)))
 
 
 def checkDataObjectIntegrity(callback, data_id):
@@ -115,12 +117,6 @@ def checkDataObjectIntegrity(callback, data_id):
             coll_name = os.path.join(*(data_object.coll_name.split(os.path.sep)[2:]))
             file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
 
-            # Check if checksum exists.
-            if not data_object.checksum:
-                callback.writeString("serverLog", "%s: %s"
-                                     % (file_path, str(Status.NO_CHECKSUM)))
-                break
-
             # Check integrity on the resource.
             callback.remoteExec(
                 "%s" % data_object.resc_loc,
@@ -134,10 +130,6 @@ def checkDataObjectIntegrity(callback, data_id):
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
-
-
-def uuCheckDataObjectIntegrity(rule_args, callback, rei):
-    checkDataObjectIntegrity(callback, rule_args[0])
 
 
 # Check integrity of one batch of data objects in the vault.
