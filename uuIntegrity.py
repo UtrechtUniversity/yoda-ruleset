@@ -35,17 +35,20 @@ def checkDataObjectRemote(rule_args, callback, rei):
 
     # Check if file exists in vault.
     if not os.path.isfile(file_path):
-        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.NOT_EXISTING)))
+        callback.writeString("serverLog", "%s: %s"
+                             % (file_path, str(Status.NOT_EXISTING)))
         return
 
     # Check if file size matches.
     if int(file_size) != os.path.getsize(file_path):
-        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.FILE_SIZE_MISMATCH)))
+        callback.writeString("serverLog", "%s: %s"
+                             % (file_path, str(Status.FILE_SIZE_MISMATCH)))
         return
 
     # Check if checksum exists.
     if not file_checksum:
-        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.NO_CHECKSUM)))
+        callback.writeString("serverLog", "%s: %s"
+                             % (file_path, str(Status.NO_CHECKSUM)))
         return
 
     # Open file and compute checksum.
@@ -53,7 +56,8 @@ def checkDataObjectRemote(rule_args, callback, rei):
         f = open(file_path, 'rb')
     except OSError as e:
         if e.errno == errno.EACCES:
-            callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.ACCESS_DENIED)))
+            callback.writeString("serverLog", "%s: %s"
+                                 % (file_path, str(Status.ACCESS_DENIED)))
             return
         else:
             raise
@@ -83,10 +87,12 @@ def checkDataObjectRemote(rule_args, callback, rei):
 
     # Check if checksum matches.
     if checksum != computed_checksum:
-        callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.CHECKSUM_MISMATCH)))
+        callback.writeString("serverLog", "%s: %s"
+                             % (file_path, str(Status.CHECKSUM_MISMATCH)))
         return
 
-    callback.writeString("serverLog", "%s: %s" % (file_path, str(Status.OK)))
+    callback.writeString("serverLog", "%s: %s"
+                         % (file_path, str(Status.OK)))
 
 
 def checkDataObjectIntegrity(callback, data_id):
