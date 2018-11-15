@@ -77,6 +77,7 @@ def checkDataObject(file_path, file_size, file_checksum):
     if checksum != computed_checksum:
         return Status.CHECKSUM_MISMATCH
 
+    return Status.OK
 
 def checkDataObjectRemote(rule_args, callback, rei):
     file_path = str(rule_args[0])
@@ -85,8 +86,9 @@ def checkDataObjectRemote(rule_args, callback, rei):
 
     status = checkDataObject(file_path, file_size, file_checksum)
 
-    callback.writeString("serverLog", "[INTEGRITY] %s: %s"
-                         % (file_path, str(status)))
+    if status != Status.OK:
+        callback.writeString("serverLog", "[INTEGRITY] %s: %s"
+                             % (file_path, str(status)))
 
 
 def checkDataObjectIntegrity(callback, data_id):
