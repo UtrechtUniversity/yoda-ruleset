@@ -45,10 +45,7 @@ def checkDataObject(file_path, file_size, file_checksum):
     try:
         f = open(file_path, 'rb')
     except OSError as e:
-        if e.errno == errno.EACCES:
-            return Status.ACCESS_DENIED
-        else:
-            raise
+        return Status.ACCESS_DENIED
     else:
         # Determine if checksum is md5 or sha256.
         if file_checksum.startswith("sha2:"):
@@ -160,7 +157,6 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     else:
         # All done.
         data_id = 0
-    callback.msiCloseGenQuery(query, result)
 
     return data_id
 
