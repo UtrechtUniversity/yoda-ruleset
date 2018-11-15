@@ -136,7 +136,7 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     # Go through data in the vault, ordered by DATA_ID.
     ret_val = callback.msiMakeGenQuery(
         "ORDER(DATA_ID)",
-        "COLL_NAME like '/%s/home/vault-%%' AND DATA_ID >= '%d'" % (rods_zone, data_id),
+        "DATA_ID >= '%d'" % (data_id),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
