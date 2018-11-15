@@ -45,12 +45,6 @@ def checkDataObjectRemote(rule_args, callback, rei):
                              % (file_path, str(Status.FILE_SIZE_MISMATCH)))
         return
 
-    # Check if checksum exists.
-    if not file_checksum:
-        callback.writeString("serverLog", "%s: %s"
-                             % (file_path, str(Status.NO_CHECKSUM)))
-        return
-
     # Open file and compute checksum.
     try:
         f = open(file_path, 'rb')
@@ -120,6 +114,12 @@ def checkDataObjectIntegrity(callback, data_id):
             # Build file path to data object.
             coll_name = os.path.join(*(data_object.coll_name.split(os.path.sep)[2:]))
             file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
+
+            # Check if checksum exists.
+            if not data_object.checksum:
+                callback.writeString("serverLog", "%s: %s"
+                                     % (file_path, str(Status.NO_CHECKSUM)))
+                break
 
             # Check integrity on the resource.
             callback.remoteExec(
