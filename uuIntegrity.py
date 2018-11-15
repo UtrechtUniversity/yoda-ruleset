@@ -38,7 +38,7 @@ def checkDataObject(file_path, file_size, file_checksum):
         return Status.FILE_SIZE_MISMATCH
 
     # Check if checksum exists.
-    if not data_object.checksum:
+    if not file_checksum:
         return Status.NO_CHECKSUM
 
     # Open file and compute checksum.
