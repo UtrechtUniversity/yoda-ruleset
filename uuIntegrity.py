@@ -76,6 +76,7 @@ def checkDataObject(file_path, file_size, file_checksum):
 
     return Status.OK
 
+
 def checkDataObjectRemote(rule_args, callback, rei):
     file_path = str(rule_args[0])
     file_size = int(rule_args[1])
@@ -115,10 +116,12 @@ def checkDataObjectIntegrity(callback, data_id):
             file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
 
             # Check integrity on the resource.
+            remote_rule = "checkDataObjectRemote('%s', '%s', '%s')" % \
+                          (file_path, data_object.size, data_object.checksum)
             callback.remoteExec(
                 "%s" % data_object.resc_loc,
                 "",
-                "checkDataObjectRemote('%s', '%s', '%s')" % (file_path, data_object.size, data_object.checksum),
+                remote_rule,
                 ""
             )
 
