@@ -117,7 +117,7 @@ def checkDataObjectIntegrity(callback, data_id):
 
             # Check integrity on the resource.
             remote_rule = "checkDataObjectRemote('%s', '%s', '%s')" % \
-                          (file_path, data_object.size, data_object.checksum)
+                          (file_path.replace("'", "\\'"), data_object.size, data_object.checksum)
             callback.remoteExec(
                 "%s" % data_object.resc_loc,
                 "",
