@@ -1,8 +1,9 @@
 # \file      iiPublish.r
 # \brief     This file contains rules related to publishing a datapackage
-# 	     for a research group.
+#            for a research group.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Generate a dataCite compliant XML using XSLT.
@@ -194,15 +195,14 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
-	} else if (*httpCode == "400") {
-		# invalid XML
-		*publicationState.status = "Unrecoverable";
-		writeLine("serverLog", "iiPostMetadataToDataCite: 400 Bad Request - Invalid XML, wrong prefix");
 	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
+	        # Unauthorized, Forbidden, Internal Server Error
 		*publicationState.status = "Retry";
-		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Could be retried later");
+		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Will be retried later.");
+	} else {
+		*publicationState.status = "Unrecoverable";
+		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Unrecoverable error.");
 	}
-
 }
 
 # \brief Remove metadata XML from DataCite.
@@ -216,13 +216,17 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
+	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
+	        # Unauthorized, Forbidden, Internal Server Error
+		*publicationState.status = "Retry";
+		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Will be retried later");
 	} else if (*httpCode == "404") {
-		# invalid DOI
+		# Invalid DOI
 		*publicationState.status = "Unrecoverable";
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: 404 Not Found - Invalid DOI");
-	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
-		*publicationState.status = "Retry";
-		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Could be retried later");
+	} else {
+		*publicationState.status = "Unrecoverable";
+		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Unrecoverable error.");
 	}
 }
 
@@ -241,14 +245,19 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	if (*httpCode == "201") {
 		*publicationState.DOIMinted = "yes";
 		succeed;
-	} else if (*httpCode == "400") {
-		*publicationState.status = "Unrecoverable";
-		writeLine("serverLog", "iiMintDOI: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix");
-		succeed;
 	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "412" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
+                # Unauthorized, Forbidden, Precondition failed, Internal Server Error
 		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiMintDOI: *httpCode received. Could be retried later");
 		succeed;
+	} else if (*httpCode == "400") {
+                # Bad Request
+		*publicationState.status = "Unrecoverable";
+		writeLine("serverLog", "iiMintDOI: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix");
+		succeed;
+	} else {
+		*publicationState.status = "Unrecoverable";
+		writeLine("serverLog", "iiMintDOI: *httpCode received. Unrecoverable error.");
 	}
 }
 
