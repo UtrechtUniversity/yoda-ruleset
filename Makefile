@@ -29,7 +29,7 @@ PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune 
 RULESET_NAME ?= rules-uu.re
 RULESET_FILE := $(RULESET_NAME)
 DEBUG_FILE := $(RULESET_NAME).debug
-PYRULESET_NAME ?= pyrules_uu
+PYRULESET_NAME ?= rules_uu.py
 PYRULESET_FILE := $(PYRULESET_NAME)
 
 INSTALL_DIR  ?= ..
@@ -46,7 +46,8 @@ $(PYRULESET_FILE): $(PYRULE_FILES)
 
 install: $(RULESET_FILE) $(PYRULESET_FILE)
 	cp --backup $(RULESET_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
-	cat $(INSTALL_DIR)/core.py.template $(PYRULESET_FILE) > $(INSTALL_DIR)/core.py
+	cp --backup $(PYRULESET_FILE) $(INSTALL_DIR)/$(PYRULESET_NAME)
+	cp --backup core.py.template $(INSTALL_DIR)/core.py
 
 clean:
 	rm -f $(RULESET_FILE) $(PYRULESET_FILE)

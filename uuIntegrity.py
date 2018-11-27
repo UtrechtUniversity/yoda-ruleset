@@ -10,6 +10,7 @@ from collections import namedtuple
 from enum import Enum
 import hashlib
 import base64
+import irods_types
 
 
 DataObject = namedtuple('DataObject', ['id', 'name', 'size', 'checksum', 'coll_name', 'resc_path', 'resc_loc'])

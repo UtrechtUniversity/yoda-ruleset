@@ -5,6 +5,8 @@
 # \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+import json
+
 # \brief Return groups and related data.
 #
 def getGroupData(callback):
