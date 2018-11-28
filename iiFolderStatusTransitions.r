@@ -57,12 +57,26 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
 	on (*currentFolderStatus != LOCKED &&
 	    (*newFolderStatus == LOCKED || *newFolderStatus == SUBMITTED)) {
+	        # Clear action log coming from SECURED state.
+	        # SECURED -> LOCKED and SECURED -> SUBMITTED
+	        if (*currentFolderStatus == SECURED) {
+                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+                        iiRemoveAVUs(*folder, *actionLog);
+	        }
+
 		# Add locks to folder, descendants and ancestors
 		iiFolderLockChange(*folder, true, *status);
 		if (*status != 0) { fail; }
 	}
 	on (*newFolderStatus == FOLDER || *newFolderStatus == REJECTED ||
 	    *newFolderStatus == SECURED) {
+	        # Clear action log coming from SECURED state.
+	        # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
+	        if (*currentFolderStatus == SECURED) {
+                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+                        iiRemoveAVUs(*folder, *actionLog);
+	        }
+
 		# Remove locks from folder, descendants and ancestors
 		iiFolderLockChange(*folder, false, *status);
 		if (*status != 0) { fail; }
@@ -443,18 +457,14 @@ iiFolderSecure(*folder) {
 			 WHERE COLL_NAME = '*folder'
 			 AND META_COLL_ATTR_NAME = IICOPYPARAMSNAME) {
 		# retry with previous parameters
-		*value = *row.META_COLL_ATTR_VALUE;
-		*list = split(*value, "%");
-		*target = elem(*list, 0);
-		*pid = elem(*list, 1);
-
+		*target = *row.META_COLL_ATTR_VALUE;
 		*found = true;
 	}
 	if (*found) {
 		# Remove parameters from metadata
 		msiString2KeyValPair("", *kvp);
 		*key = IICOPYPARAMSNAME;
-		*kvp."*key" = "*target%*pid";
+		*kvp."*key" = *target;
 		msiRemoveKeyValuePairsFromObj(*kvp, *folder, "-C");
 	}
 	if (*modifyAccess != 1) {
@@ -462,23 +472,17 @@ iiFolderSecure(*folder) {
 	}
 
 	if (!*found) {
-		# Generate new EPIC PID
 		*target = iiDetermineVaultTarget(*folder);
-		msiGenerateUUID(*pid);
 	}
-	iiGetPublicationConfig(*config);
-	*host = *config.davrodsVHost;
-	*subpath = triml(*target, "/home/");
-	*url = "https://*host/*subpath";
 
-	*httpCode = "-1";
-	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
-	if (*httpCode != "200" && *httpCode != "201") {
+	# Try to register EPIC PID
+	iiRegisterEpicPID(*target, *url, *pid, *httpCode);
+	if (*httpCode != "0" && *httpCode != "200" && *httpCode != "201") {
 		# Always retry
 		writeLine("serverLog", "iiFolderSecure: msiRegisterEpicPID returned *httpCode");
 		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_RETRY, *kvp);
 		*key = IICOPYPARAMSNAME;
-		*kvp."*key" = "*target%*pid";
+		*kvp."*key" = *target;
 		if (*modifyAccess != 1) {
 			msiSetACL("default", "admin:write", uuClientFullName, *folder);
 		}
@@ -496,11 +500,10 @@ iiFolderSecure(*folder) {
 	iiCopyLicenseToVaultPackage(*folder, *target);
 	iiSetVaultPermissions(*folder, *target);
 
-	# save EPIC Persistent ID in metadata
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *epicKvp);
-	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *epicKvp);
-	msiSetKeyValuePairsToObj(*epicKvp, *target, "-C");
+	if (*httpCode != "0") {
+		# save EPIC Persistent ID in metadata
+		iiSaveEpicPID(*target, *url, *pid);
+	}
 
 	# Set research folder status.
 	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SECURED;
@@ -537,6 +540,41 @@ iiFolderSecure(*folder) {
 	if (*modifyAccess != 1) {
 		msiSetACL("default", "admin:null", uuClientFullName, *folder);
 	}
+}
+
+# \brief iiRegisterEpicPID create and try to register an EPIC PID
+#
+# \param[in]  target
+# \param[out] url
+# \param[out] pid
+# \param[out] httpCode
+#
+iiRegisterEpicPID(*target, *url, *pid, *httpCode) {
+	# Get URL
+	iiGetPublicationConfig(*config);
+	*host = *config.davrodsVHost;
+	*subpath = triml(*target, "/home/");
+	*url = "https://*host/*subpath";
+
+	# Generate new EPIC PID
+	msiGenerateUUID(*pid);
+
+	# Try to register EPIC PID
+	*httpCode = "-1";
+	errorcode(msiRegisterEpicPID(*url, *pid, *httpCode));
+}
+
+# \brief iiSaveEpicPID save persistent EPIC ID
+#
+# \param[in]  target
+# \param[out] url
+# \param[out] pid
+#
+iiSaveEpicPID(*target, *url, *pid) {
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_pid=" ++ *pid, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "epic_url=" ++ *url, *kvp);
+	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 }
 
 # \brief iiAddActionLogRecord

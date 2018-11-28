@@ -60,7 +60,10 @@
           </xsl:if>
         </dates>
         <xsl:apply-templates select="Version"/>
-        <xsl:apply-templates select="License"/>
+        <rightsList>
+          <xsl:apply-templates select="License"/>
+          <xsl:apply-templates select="Data_Access_Restriction"/>
+        </rightsList>
 	
         <resourceType resourceTypeGeneral="Dataset">
             <xsl:text>Dataset</xsl:text>
@@ -142,14 +145,22 @@
   </xsl:template>
  
 <xsl:template match="License">
-<rightsList>
-    <rights>
-       <xsl:if test="/metadata/System/License_URI">
-         <xsl:attribute name="rightsURI"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
-       </xsl:if>
-       <xsl:value-of select="." />
-    </rights>
-</rightsList>
+  <rights>
+     <xsl:if test="/metadata/System/License_URI">
+       <xsl:attribute name="rightsURI"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
+     </xsl:if>
+     <xsl:value-of select="." />
+  </rights>
+</xsl:template>
+
+<xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
+  <rights><xsl:attribute name="rightsURI">info:eu-repo/semantics/openAccess</xsl:attribute>Open Access</rights>
+</xsl:template>
+<xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
+  <rights><xsl:attribute name="rightsURI">info:eu-repo/semantics/restrictedAccess</xsl:attribute>Restricted Access</rights>
+</xsl:template>
+<xsl:template match="Data_Access_Restriction[.='Closed']">
+  <rights><xsl:attribute name="rightsURI">info:eu-repo/semantics/closedAccess</xsl:attribute>Closed Access</rights>
 </xsl:template>
 
 <xsl:template match="Language">
