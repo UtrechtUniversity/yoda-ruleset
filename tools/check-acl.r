@@ -1,42 +1,55 @@
 #!/usr/bin/irule -F
 #
-# Report, and optionally fix, bad ACLs for research collections
+# Report, and optionally fix, bad ACLs for research and intake collections
 #
-# usage: check-research-acl
-#        check-research-acl "*update=1"
+# usage: check-acl
+#        check-acl "*update=1"
 #
-checkResearchACL() {
+checkACL() {
+    # research collections
     foreach (*row in SELECT COLL_NAME WHERE COLL_NAME like '/$rodsZoneClient/home/research-%') {
-	*topColl = *row.COLL_NAME;
-	if (*topColl not like "/$rodsZoneClient/home/research\*/\*") {
-	    # get access rights of research collection
-	    *access = getCollAccess(*topColl);
+	*coll = *row.COLL_NAME;
+	if (*coll not like "/$rodsZoneClient/home/research\*/\*") {
+	    checkCollACL(*coll, *update);
+	}
+    }
 
-	    # check data objects in research collection
-	    foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *topColl) {
-		*dataName = *data.DATA_NAME;
-		checkAccess("*topColl/*dataName",
-			    getDataAccess(*topColl, *dataName), *access,
-			    *update);
-	    }
+    # intake collections
+    foreach (*row in SELECT COLL_NAME WHERE COLL_NAME like '/$rodsZoneClient/home/grp-intake-%') {
+	*coll = *row.COLL_NAME;
+	if (*coll not like "/$rodsZoneClient/home/grp-intake\*/\*") {
+	    checkCollACL(*coll, *update);
+	}
+    }
+}
 
-	    # check subcollections
-	    *topColl = *topColl ++ "/%";
-	    foreach (*entry in SELECT COLL_NAME WHERE COLL_NAME like *topColl) {
-		*coll = *entry.COLL_NAME;
-		checkAccess(*coll, getCollAccess(*coll), *access, *update);
-		if (*update != 0) {
-		    msiSetACL("default", "admin:inherit", "", *coll);
-		}
+checkCollACL(*topColl, *update) {
+    # get access rights of collection
+    *access = getCollAccess(*topColl);
 
-		# check data objects in subcollection
-		foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *coll) {
-		    *dataName = *data.DATA_NAME;
-		    checkAccess("*coll/*dataName",
-				getDataAccess(*coll, *dataName), *access,
-				*update);
-		}
-	    }
+    # check data objects in collection
+    foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *topColl) {
+	*dataName = *data.DATA_NAME;
+	checkAccess("*topColl/*dataName",
+		    getDataAccess(*topColl, *dataName), *access,
+		    *update);
+    }
+
+    # check subcollections
+    *topColl = *topColl ++ "/%";
+    foreach (*entry in SELECT COLL_NAME WHERE COLL_NAME like *topColl) {
+	*coll = *entry.COLL_NAME;
+	checkAccess(*coll, getCollAccess(*coll), *access, *update);
+	if (*update != 0) {
+	    msiSetACL("default", "admin:inherit", "", *coll);
+	}
+
+	# check data objects in subcollection
+	foreach (*data in SELECT DATA_NAME WHERE COLL_NAME = *coll) {
+	    *dataName = *data.DATA_NAME;
+	    checkAccess("*coll/*dataName",
+			getDataAccess(*coll, *dataName), *access,
+			*update);
 	}
     }
 }
