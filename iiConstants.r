@@ -1,9 +1,10 @@
 # \file
-# \brief Constants for the ii rules. If architecture changes, only
-# 			this file needs be adapted
+# \brief Constants for the research rules. If architecture changes, only
+# 	 this file needs be adapted.
 #
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
@@ -20,6 +21,9 @@ IIGROUPPREFIX = "research-"
 
 # \constant IIVAULTPREFIX
 IIVAULTPREFIX = "vault-"
+
+# \constant IIGRPPREFIX
+IIGRPPREFIX = "grp-"
 
 # \constant IIXSDCOLLECTION
 IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
