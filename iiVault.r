@@ -712,8 +712,8 @@ iiFrontRequestDatasetUnpreservableExtensions(*folder, *result, *status, *statusI
    *status = 'Success';
    *statusInfo = '';
 
-   # White list of file extensions that allow for long term preservation
-   *allowedExtensionPreservationList = list('JPG', 'RAW', 'JPEG');
+   # White list of file extensions that allow for long term preservation - ALL uppercase
+   *allowedExtensionPreservationList = list('XML', 'JPG', 'RAW', 'JPEG');
    
    *oddFormats = list();
 
@@ -724,8 +724,8 @@ iiFrontRequestDatasetUnpreservableExtensions(*folder, *result, *status, *statusI
        uuChopFileExtension(*dataName, *baseName, *extension);
 
        *extensionIsAllowed = false;
-       foreach (*allowedExtension in *allowedExtensionPreservationList) {  # prevent occurrence of multiple entries of same extension
-           uuStrToUpper(*extension, *extensionUpper);
+       uuStrToUpper(*extension, *extensionUpper);       
+       foreach (*allowedExtension in *allowedExtensionPreservationList) { 
            if (*extensionUpper==*allowedExtension) {
                *extensionIsAllowed = true;
                break;
