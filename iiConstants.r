@@ -1,6 +1,6 @@
 # \file
-# \brief Constants for the ii rules. If architecture changes, only
-#        this file needs be adapted
+# \brief Constants for the research rules. If architecture changes, only
+# 	 this file needs be adapted.
 #
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
@@ -21,6 +21,9 @@ IIGROUPPREFIX = "research-"
 
 # \constant IIVAULTPREFIX
 IIVAULTPREFIX = "vault-"
+
+# \constant IIGRPPREFIX
+IIGRPPREFIX = "grp-"
 
 # \constant IILICENSECOLLECTION
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"

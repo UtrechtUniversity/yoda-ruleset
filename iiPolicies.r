@@ -171,7 +171,7 @@ acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceIte
 
 # \brief  This policy is fired when AVU metadata is added or set. Status transitions for folders and vault packages are
 #         implemented as AVU metadata changes on attributes defined in iiConstants.r
-#         When the status metadata is changed Pre condition transition rules are called in iiFolderStatusTransitsions.r and 
+#         When the status metadata is changed Pre condition transition rules are called in iiFolderStatusTransitsions.r and
 #         iiVaultTransitions.r
 #         Organisational metadata is needed for these status transitions and actions belonging to them. So we can't lock
 #         the organisational metadata when a folder is locked.
@@ -363,13 +363,22 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	}
 }
 
-# \brief This PEP is called whenever a data object or collection is renamed or moved. Will enforce the ACL's of a research group
-#        when data is moved from outside of the research group.
+# \brief This PEP is called whenever a data object or collection is renamed or moved.
+#        Will enforce the ACL's of a research or grp group when data is moved from outside the group.
 acPostProcForObjRename(*src, *dst) {
 	if (*dst like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 		# enforce research group ACL's on folder moved from outside of research group
 		*srcPathElems = split(*src, "/");
-		*dstPathElems = split(*dst, "/");		
+		*dstPathElems = split(*dst, "/");
+		#DEBUG writeLine("serverLog", "acPostProcForObjRename: *src -> *dst");
+		if (elem(*srcPathElems, 2) != elem(*dstPathElems, 2)) {
+			uuEnforceGroupAcl(*dst);
+		}
+	}
+	else if (*dst like regex "/[^/]+/home/" ++ IIGRPPREFIX ++ ".[^/]*/.*") {
+		# enforce grp group ACL's on folder moved from outside of grp group
+		*srcPathElems = split(*src, "/");
+		*dstPathElems = split(*dst, "/");
 		#DEBUG writeLine("serverLog", "acPostProcForObjRename: *src -> *dst");
 		if (elem(*srcPathElems, 2) != elem(*dstPathElems, 2)) {
 			uuEnforceGroupAcl(*dst);
