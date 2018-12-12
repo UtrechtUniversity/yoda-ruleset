@@ -700,4 +700,49 @@ iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         }
 }
 
+
+# \brief Request list of unpreservable extensions that are present within the dataset (*folder)
+# Check all files within dataset for non preservable files.
+# This, based on their file extensions and a whitelist of preservable file extensions
+#
+# \param[in]  folder               folder to copy from the vault
+# \param[out] result               Possibly contains list of extensions that are odd formatted. 
+iiFrontRequestDatasetUnpreservableExtensions(*folder, *result, *status, *statusInfo) {
+
+   *status = 'Success';
+   *statusInfo = '';
+
+   # White list of file extensions that allow for long term preservation - ALL uppercase
+   *allowedExtensionPreservationList = list('XML', 'JPG', 'RAW', 'JPEG');
+   
+   *oddFormats = list();
+
+   foreach(*row in SELECT DATA_NAME, COLL_NAME WHERE COLL_NAME like '*folder%%') {
+       msiGetValByKey(*row, "DATA_NAME", *dataName);
+       msiGetValByKey(*row, "COLL_NAME", *collName);
+
+       uuChopFileExtension(*dataName, *baseName, *extension);
+
+       *extensionIsAllowed = false;
+       uuStrToUpper(*extension, *extensionUpper);       
+       foreach (*allowedExtension in *allowedExtensionPreservationList) { 
+           if (*extensionUpper==*allowedExtension) {
+               *extensionIsAllowed = true;
+               break;
+           }
+       }
+
+       # Add to 'list of odd formats' - the list to return to user in order to give user an idea of non preservable files that are being used in dataset.
+       if (!*extensionIsAllowed) {
+          # Check if already present in oddFormats list
+          uuListContains(*oddFormats, *extension, *inList)
+          if (!*inList) {
+             *oddFormats = cons(*extension, *oddFormats);
+          }
+       }
+   }
+
+   uuList2JSON(*oddFormats, *result);
+}
+
 #---------------- End of Yoda Front Office API ----------------
