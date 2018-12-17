@@ -1,3 +1,7 @@
 rules-research.re
 rules-research.re.debug
-*~
+*~*
+*.swp
+*.re
+/rules_research.py
+

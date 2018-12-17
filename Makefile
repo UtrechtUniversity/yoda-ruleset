@@ -27,27 +27,35 @@
 # Input files. Exclude all test rules in ./tests and tools
 
 RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print)
+PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'ii*.py' -print)
+
 
 # Output files.
 
 RULESET_NAME ?= rules-research.re
 RULESET_FILE := $(RULESET_NAME)
 DEBUG_FILE := $(RULESET_NAME).debug
+PYRULESET_NAME ?= rules_research.py
+PYRULESET_FILE := $(PYRULESET_NAME)
 
 INSTALL_DIR  ?= ..
 
 # Make targets.
 
-all: $(RULESET_FILE)
+all: $(RULESET_FILE) $(PYRULESET_FILE)
 
 $(RULESET_FILE): $(RULE_FILES)
 	cat $(RULE_FILES) | sed '/^\s*\(#.*\)\?$$/d' > $(RULESET_FILE)
 
-install: $(RULESET_FILE)
+$(PYRULESET_FILE): $(PYRULE_FILES)
+	cat $(PYRULE_FILES) > $(PYRULESET_FILE)
+
+install: $(RULESET_FILE) $(PYRULESET_FILE)
 	cp --backup $(RULESET_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
+	cp --backup $(PYRULESET_FILE) $(INSTALL_DIR)/$(PYRULESET_NAME)
 
 clean:
-	rm -f $(RULESET_FILE)
+	rm -f $(RULESET_FILE) $(PYRULESET_FILE)
 
 update:
 	git pull
