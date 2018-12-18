@@ -2,33 +2,22 @@
 # \brief     Helper function to check for policy pre and post conditions
 #            used by the locking mechanism and the folder status transition mechanism.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
-# \brief Rename invalid formelements xml or xsd when added to a systemcollection
+# \brief Rename invalid XSD when added to a systemcollection
 #        to prevent breakage of the metadata form editor.
 #
-# \param[in] xmlpath         Path of xml file added to a systemcollection
+# \param[in] xmlpath         Path of XSD file added to a systemcollection
 # \param[in] xsdpath         Path to XSD to check against
 #
 iiRenameInvalidXML(*xmlpath, *xsdpath) {
 		*invalid = false;
-		*err = errormsg(msiXmlDocSchemaValidate(*xmlpath, *xsdpath, *status_buf), *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-			*invalid = true;
-		} else {
-			msiBytesBufToStr(*status_buf, *status_str);
-			*len = strlen(*status_str);
-			if (*len == 0) {
-				#DEBUG writeLine("serverLog", "*xmlpath validates");
-			} else {
-				writeBytesBuf("serverLog", *status_buf);
-				*invalid = true;
-			}
-		}
-		if (*invalid) {
+		iiValidateXml(*xmlpath, *xsdpath, *err, *msg);
+		if (*err != 0) {
+			writeLine("serverLog", "iiRenameInvalidXML: *msg");
 			writeLine("serverLog", "Renaming corrupt or invalid $objPath");
 			msiGetIcatTime(*timestamp, "unix");
 			*iso8601 = uuiso8601(*timestamp);
@@ -518,15 +507,14 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 			*reason = "Metadata missing, unable to submit this folder.";
 			succeed;
 		} else {
-			iiPrepareMetadataImport(*metadataXmlPath, *xsdPath, *xslPath);
-			*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
-			if (*err < 0) {
+			iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
+			iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg);
+			if (*err != 0) {
 				*allowed = false;
-				*reason = "Metadata does not conform to schema.";
+				*reason = "Metadata is invalid, please check metadata form.";
 				succeed;
 			}
 		}
-
 	}
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {

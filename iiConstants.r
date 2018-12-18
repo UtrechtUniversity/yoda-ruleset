@@ -25,40 +25,40 @@ IIVAULTPREFIX = "vault-"
 # \constant IIGRPPREFIX
 IIGRPPREFIX = "grp-"
 
-# \constant IIXSDCOLLECTION
-IIXSDCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsd"
-
-# \constant IIXSLCOLLECTION
-IIXSLCOLLECTION = UUSYSTEMCOLLECTION ++ "/xsl"
-
-# \constant IIFORMELEMENTSCOLLECTION
-IIFORMELEMENTSCOLLECTION = UUSYSTEMCOLLECTION ++ "/formelements"
-
 # \constant IILICENSECOLLECTION
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"
 
 # \constant IITERMSCOLLECTION
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION ++ "/terms"
 
-# \constant IIXSDDEFAULTNAME Name of the fallback default xsd for ilab
-IIXSDDEFAULTNAME = "default.xsd"
+# \constant IISCHEMACOLLECTION
+IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
 
-# \constant IIFORMELEMENTSDEFAULTNAME
-IIFORMELEMENTSDEFAULTNAME = "default.xml"
+# \constant IIDEFAULTSCHEMANAME
+IIDEFAULTSCHEMANAME = "default"
 
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 
-# \constant IIXSLDEFAULTNAME
-IIXSLDEFAULTNAME = "default.xsl"
+# \constant IIJSONNAME Name of the metadata JSON
+IIJSONNAME = "metadata.json"
 
-# \constant IIDATACITEDEFAULTNAME
-IIDATACITEXSLDEFAULTNAME = "default2datacite.xsl"
+# \constant IIRESEARCHXSDNAME Name of the research XSD
+IIRESEARCHXSDNAME = "research.xsd"
 
-# \constant IILANDINGPAGEXSLDEFAULTNAME
-IILANDINGPAGEXSLDEFAULTNAME = "default2landingpage.xsl"
+# \constant IIVAULTXSDNAME Name of the vault XSD
+IIVAULTXSDNAME = "vault.xsd"
 
-# \constant IIEMPTYLANDINGPAGEXSLNAME
+# \constant IIAVUXSLNAME Name of the AVU XSLT
+IIAVUXSLNAME = "avu.xsl"
+
+# \constant IIDATACITEXSLNAME Name of the datacite XSLT
+IIDATACITEXSLNAME = "datacite.xsl"
+
+# \constant IILANDINGPAGEXSLNAME Name of the landingpage XSLT
+IILANDINGPAGEXSLNAME = "landingpage.xsl"
+
+# \constant IIEMPTYLANDINGPAGEXSLNAME Name of the empty landingpage XSLT
 IIEMPTYLANDINGPAGEXSLNAME = "emptylandingpage.xsl"
 
 # \constant IIPUBLICATIONCOLLECTION

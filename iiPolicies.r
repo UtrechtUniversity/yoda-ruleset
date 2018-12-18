@@ -9,9 +9,8 @@
 # \license   GPLv3, see LICENSE
 
 # \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
-#         for locks. To prevent breaking the metadata form, whenever a formelements XML or XSD is
-#         uploaded they are validated against a XSD. We can't prevent breakage caused by inconsistencies
-#         between the XSD and formelements
+#         for locks. To prevent breaking the metadata form, whenever an XSD is
+#         uploaded it is validated against a schema for XSD validity.
 #
 acPostProcForPut {
 	if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
@@ -27,16 +26,9 @@ acPostProcForPut {
 			msiDataObjUnlink("objPath=$objPath++++forceFlag=", *status);
 		}
 	}
-
-	else if ($objPath like regex "/[^/]+/" ++ IIXSDCOLLECTION ++ "/.*\.xsd") {
+	else if ($objPath like regex "/[^/]+/" ++ IISCHEMACOLLECTION ++ "/.*\.xsd") {
 		# Check new XSD against a schema for xsd validity. Rename the file when invalid.
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-xsd.xsd";
-		iiRenameInvalidXML($objPath, *xsdpath);
-	}
-
-	else if ($objPath like regex "/[^/]+/" ++ IIFORMELEMENTSCOLLECTION ++ "/.*\.xml") {
-		# Check  for invalid formelements XML files and rename them.
-		*xsdpath =  "/" ++ $rodsZoneClient ++ IIXSDCOLLECTION ++ "/schema-for-formelements.xsd";
+		*xsdpath =  "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/schema-for-xsd.xsd";
 		iiRenameInvalidXML($objPath, *xsdpath);
 	}
 }

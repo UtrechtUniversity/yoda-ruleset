@@ -1,5 +1,5 @@
 # \file      iiVaultTransitions.r
-# \brief     Copy folders to the vault
+# \brief     Status transitions for folders in the vault space.
 # \author    Lazlo Westerhof
 # \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
