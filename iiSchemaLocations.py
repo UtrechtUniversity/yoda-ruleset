@@ -72,8 +72,6 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
 
     return 'https://schemas.yoda.uu.nl/' + schemaCategory + '/' + area + '.xsd'
 
-
-
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Vault
 # If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
