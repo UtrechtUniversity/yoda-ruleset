@@ -1,8 +1,9 @@
-# \file iiSchemaLocations.py
-# \brief     Functions for handling schemaLocations within any yoda-metadata.xml (both in vault as in research area)
+# \file      iiSchemaLocations.py
+# \brief     Functions for handling schemaLocations within any yoda-metadata.xml.
+# \author    Lazlo Westerhof
 # \author    Felix Croes
 # \author    Harm de Raaff
-# \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 import os.path
@@ -11,6 +12,7 @@ from enum import Enum
 import hashlib
 import base64
 import irods_types
+import xml.etree.ElementTree as ET
 
 
 # Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
@@ -124,45 +126,34 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
 
-def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName):
+def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName)
     # Get text of yoda-metadata.xml
-
     pathYodaMetadataXML = collection + '/yoda-metadata.xml'
     ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
-
     fileHandle = ret_val['arguments'][1]
-
     length = 10000
     ret_val = callback.msiDataObjRead(fileHandle, length, irods_types.BytesBuf())
-
     callback.msiDataObjClose(fileHandle, 0)
-
     read_buf = ret_val['arguments'][2]
-
     xmlText = ''.join(read_buf.buf)
 
-    # Within xml content check wheter schemaLocation is present
-    # split XML into two parts to get to header line and actual metadata
-    # header line ends with '?>'
-    xmlParts = xmlText.split('?>')
+    # Parse XML
+    root = ET.fromstring(xmlText)
 
-    # Check for schemaLocation attribute as well as there being 2 XML parts (header + metadata body)
-    # If not present yet, add schema location
-    if len(xmlParts)==2 and ' schemaLocation="' not in xmlParts[0]:
-         # Schema location has to be added.
+    # Check if schemaLocation attribute is present.
+    # If not, add schemaLocation attribute.
+    if 'schemaLocation' not in root.attrib:
+         # Retrieve Schema location to be added.
          schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
          if (schemaLocationURL != '-1'):
-             #callback.writeLine('stdout', 'ADD schemalocation');
-             newXmlHeaderLine = xmlParts[0] + ' schemaLocation="' + schemaLocationURL + '" ?>'
-             newXml = newXmlHeaderLine + xmlParts[1]
-
+             root.set('xsi:schemaLocation', schemaLocationURL)
+             newXmlString = ET.tostring(root, encoding='UTF-8')
              ofFlags = 'forceFlag=' # File already exists, so must be overwritten
-             ret_val = callback.msiDataObjCreate(pathYodaMetadataXML + '-added-schema', ofFlags, 0)
+             ret_val = callback.msiDataObjCreate(pathYodaMetadataXML + '-added-schema', ofFla
              fileHandle = ret_val['arguments'][2]
-
-             callback.msiDataObjWrite(fileHandle, newXml, 0)
-
+             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
              callback.msiDataObjClose(fileHandle, 0)
+
 
 
 # Determine list of yoda-metadata.xml files and order them by data id.
