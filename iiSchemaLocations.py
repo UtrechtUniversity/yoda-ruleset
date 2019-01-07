@@ -13,10 +13,9 @@ import base64
 import irods_types
 
 
-# Based upon category of current yoda-metadata.xml file, return the xsd schema involved
-# Schema location is dependent on category the yoda-metadata.xml belongs to.
-# If the specific category xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-
+# Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
+# Schema location depends on the category the yoda-metadata.xml belongs to.
+# If the specific category XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
 def getSchemaLocationUrl(callback, rods_zone, groupName):
     category = '-1'
     schemaCategory = 'default'
@@ -25,10 +24,10 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
         area = 'research'
     elif 'vault-' in groupName:
         area = 'vault'
-    else:        
+    else:
         return '-1'
 
-    # find out category based on current groupName
+    # Find out category based on current groupName.
     ret_val = callback.msiMakeGenQuery(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME like 'category'",
@@ -42,21 +41,17 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
        callback.writeLine('stdout', 'ROWS FOUND: ' + str(result.rowCnt))
        # Check each data object in batch.
        for row in range(0,result.rowCnt):
-           # attrName = result.sqlResult[0].row(row)
            attrValue = result.sqlResult[1].row(row)
-
-           #callback.writeString('stdout', attrName + '=>' + attrValue)
            category = attrValue;
 
     callback.writeLine('stdout', 'CATEGORY: ' + category)
     if category != '-1':
-        # Test whether found category actually has a collection with xsd's.
+        # Test whether found category actually has a collection with XSD's.
 	# If not, fall back to default schema collection. Otherwise use category schema collection
-
         # /tempZone/yoda/schemas/default
         # - metadata.xsd
         # - vault.xsd
-        xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category 
+        xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
         ret_val = callback.msiMakeGenQuery(
             "COLL_NAME",
             "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
@@ -83,7 +78,7 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
     pathYodaMetadataXML = collection + '/' + dataName
 
     callback.writeLine('stdout', 'Vault path: ' + pathYodaMetadataXML)
-    
+
     ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
 
     fileHandle = ret_val['arguments'][1]
@@ -121,11 +116,11 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
 
              callback.msiDataObjClose(fileHandle, 0)
 
- 
+
 
 
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Research area
-# If schemaLocation not present then add it. 
+# If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
 
@@ -171,8 +166,8 @@ def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collectio
 
 
 # Determine list of yoda-metadata.xml files and order them by data id.
-# The length of the list is limited by the length as stated in batch 
-def CheckMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause):
+# The length of the list is limited by the length as stated in batch.
+def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause):
     import time
 
     # Go through data in the vault, ordered by DATA_ID.
@@ -200,15 +195,15 @@ def CheckMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
                 if 'research-' in groupName:
                     checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName)
                 elif 'vault-' in groupName:
-                    #  DOET NU NOG FF NIKS 
+                    #  DOET NU NOG FF NIKS
                     # Parent collections should not be 'original'. Those files must remain untouched
-                    if pathParts[-1] != 'original':                    
+                    if pathParts[-1] != 'original':
                         checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, dataName)
             except:
-                pass                
+                pass
 
             callback.writeString("serverLog", "[SCHEMALOCATION] %s" % (collection))
-            
+
             # Sleep briefly between checks.
             time.sleep(pause)
 
@@ -229,7 +224,7 @@ def CheckMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
 def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
     import session_vars
 
-    data_id = int(rule_args[0]) # 
+    data_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
@@ -237,7 +232,7 @@ def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
     callback.writeLine('stdout', rods_zone)
 
     # Check one batch of vault data.
-    data_id = CheckMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause)
+    data_id = checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause)
 
     if data_id != 0:
         # Check the next batch after a delay.
