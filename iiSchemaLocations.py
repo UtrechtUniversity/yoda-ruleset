@@ -142,7 +142,7 @@ def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collectio
 
     # Check if schemaLocation attribute is present.
     # If not, add schemaLocation attribute.
-    if 'schemaLocation' not in root.attrib:
+    if 'xsi:schemaLocation' not in root.attrib:
          # Retrieve Schema location to be added.
          schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
          if (schemaLocationURL != '-1'):
