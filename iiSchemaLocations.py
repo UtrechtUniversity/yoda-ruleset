@@ -79,7 +79,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     dataNameQuery = "%yoda-metadata[%].xml"
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, DATA_SIZE",
-        "COLL_NAME = %s AND DATA_NAME like %s" % (vaultPackage, dataNameQuery),
+        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like " + dataNameQuery,
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -109,13 +109,12 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 # If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, dataName):
+def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size, dataName):
     # Get text of yoda-metadata.xml
     pathYodaMetadataXML = getLatestVaultMetadataXml(callback, collection)
     ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
     fileHandle = ret_val['arguments'][1]
-    length = 10000
-    ret_val = callback.msiDataObjRead(fileHandle, length, irods_types.BytesBuf())
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
     callback.msiDataObjClose(fileHandle, 0)
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
@@ -142,13 +141,12 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
 # If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName):
+def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size):
     # Get text of yoda-metadata.xml
     pathYodaMetadataXML = collection + '/yoda-metadata.xml'
     ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
     fileHandle = ret_val['arguments'][1]
-    length = 10000
-    ret_val = callback.msiDataObjRead(fileHandle, length, irods_types.BytesBuf())
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
     callback.msiDataObjClose(fileHandle, 0)
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
@@ -177,7 +175,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
 
     # Go through data in the vault, ordered by DATA_ID.
     ret_val = callback.msiMakeGenQuery(
-        "ORDER(DATA_ID), COLL_NAME, DATA_NAME",
+        "ORDER(DATA_ID), COLL_NAME, DATA_NAME, DATA_SIZE",
         "DATA_NAME like 'yoda-metadata%%xml' AND DATA_ID >= '%d'" % (data_id),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
@@ -191,6 +189,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
             data_id = int(result.sqlResult[0].row(row))
             collection = result.sqlResult[1].row(row)
             dataName = result.sqlResult[2].row(row)
+            data_size = int(result.sqlResult[3].row(row))
 
             # Determine Vault or Research handling
             pathParts = collection.split('/')
@@ -198,12 +197,12 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
             try:
                 groupName = pathParts[3]
                 if 'research-' in groupName:
-                    checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName)
+                    checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size)
                 elif 'vault-' in groupName:
                     #  DOET NU NOG FF NIKS
                     # Parent collections should not be 'original'. Those files must remain untouched
                     if pathParts[-1] != 'original':
-                        checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, dataName)
+                        checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size, dataName)
             except:
                 pass
 
