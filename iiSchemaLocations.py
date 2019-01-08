@@ -19,21 +19,21 @@ import time
 # Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
 # Schema location depends on the category the yoda-metadata.xml belongs to.
 # If the specific category XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
-def getSchemaLocationUrl(callback, rods_zone, groupName):
+def getSchemaLocation(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
 
-    if 'research-' in groupName:
+    if 'research-' in group_name:
         area = 'research'
-    elif 'vault-' in groupName:
+    elif 'vault-' in group_name:
         area = 'vault'
     else:
         return '-1'
 
-    # Find out category based on current groupName.
+    # Find out category based on current group_name.
     ret_val = callback.msiMakeGenQuery(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME like 'category'",
+        "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -151,14 +151,12 @@ def copyACLsFromParent(callback, path, recursive_flag):
                 callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
                 callback.msiSetACL(recursive_flag, "write", user_name, path);
 
-# Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Vault
-# If schemaLocation not present then add it.
+# Actual check for presence of schemaLocation within the passed yoda-metadata.xml.
+# If schemaLocation is not present it is added.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
-# If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size):
-    # Get text of yoda-metadata.xml
-    pathYodaMetadataXML = getLatestVaultMetadataXml(callback, collection)
-    ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
+# If the specific XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
+def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, data_size, data_name, space):
+    ret_val = callback.msiDataObjOpen('objPath=' + collection + "/" + data_name, 0)
     fileHandle = ret_val['arguments'][1]
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
     callback.msiDataObjClose(fileHandle, 0)
@@ -172,60 +170,33 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
     # If not, add schemaLocation attribute.
     if 'xsi:schemaLocation' not in root.attrib:
         # Retrieve Schema location to be added.
-        schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
-        if schemaLocationURL != '-1':
+        schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
+        if schemaLocation != '-1':
             root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-            root.set('xsi:schemaLocation', schemaLocationURL)
+            root.set('xsi:schemaLocation', schemaLocation)
             newXmlString = ET.tostring(root, encoding='UTF-8')
-            ofFlags = ''
-            newXmlFile = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-            ret_val = callback.msiDataObjCreate(newXmlFile, ofFlags, 0)
-            fileHandle = ret_val['arguments'][2]
-            callback.msiDataObjWrite(fileHandle, newXmlString, 0)
-            callback.msiDataObjClose(fileHandle, 0)
-            copyACLsFromParent(callback, newXmlString ,"default")
 
-# Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Research area
-# If schemaLocation not present then add it.
-# Schema location is dependent on category the yoda-metadata.xml belongs to.
-# If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size):
-    # Get text of yoda-metadata.xml
-    pathYodaMetadataXML = collection + '/yoda-metadata.xml'
-    ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
-    fileHandle = ret_val['arguments'][1]
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-    callback.msiDataObjClose(fileHandle, 0)
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
+            if "research" in group_name:
+                ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
+                ret_val = callback.msiDataObjCreate(collection + "/" + data_name, ofFlags, 0)
+            elif "vault" in group_name:
+                ofFlags = ''
+                newXmlFile = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
+                ret_val = callback.msiDataObjCreate(newXmlFile, ofFlags, 0)
+                copyACLsFromParent(callback, newXmlFile ,"default")
 
-    # Parse XML
-    root = ET.fromstring(xmlText)
-
-    # Check if schemaLocation attribute is present.
-    # If not, add schemaLocation attribute.
-    if 'xsi:schemaLocation' not in root.attrib:
-        # Retrieve Schema location to be added.
-        schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
-        if schemaLocationURL != '-1':
-            root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-            root.set('xsi:schemaLocation', schemaLocationURL)
-            newXmlString = ET.tostring(root, encoding='UTF-8')
-            ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-            ret_val = callback.msiDataObjCreate(pathYodaMetadataXML, ofFlags, 0)
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
 
-# Determine list of yoda-metadata.xml files and order them by data id.
-# The length of the list is limited by the length as stated in batch.
+# Loop through all collections with yoda-metadata.xml data objects.
 def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause):
     import time
 
-    # Go through data in the vault, ordered by DATA_ID.
+    # Find all research and vault collections, ordered by COLL_ID.
     ret_val = callback.msiMakeGenQuery(
-        "ORDER(DATA_ID), COLL_NAME, DATA_NAME, DATA_SIZE",
-        "DATA_NAME like 'yoda-metadata%%xml' AND DATA_ID >= '%d'" % (data_id),
+        "ORDER(COLL_ID), COLL_NAME",
+        "COLL_NAME like '/%s/home/%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -233,42 +204,43 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
     result = ret_val["arguments"][1]
 
     if result.rowCnt != 0:
-        # Check each data object in batch.
+        # Check each collection in batch.
         for row in range(min(batch, result.rowCnt)):
-            data_id = int(result.sqlResult[0].row(row))
-            collection = result.sqlResult[1].row(row)
-            dataName = result.sqlResult[2].row(row)
-            data_size = int(result.sqlResult[3].row(row))
+            coll_id = int(result.sqlResult[0].row(row))
+            coll_name = result.sqlResult[1].row(row)
 
             # Determine Vault or Research handling
             pathParts = collection.split('/')
 
             try:
                 group_name = pathParts[3]
+                data_size = 100000
                 if 'research-' in group_name:
-                    checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, group_name, data_size)
+                    addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
                     # Parent collections should not be 'original'. Those files must remain untouched
                     if pathParts[-1] != 'original':
-                        checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, group_name, data_size)
+                        # Get text of yoda-metadata.xml
+                        xml_path = getLatestVaultMetadataXml(callback, collection)
+                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_path)
             except:
                 pass
-
-            callback.writeString("serverLog", "[SCHEMALOCATION] %s" % (collection))
+`
+            callback.writeString("serverLog", "[SCHEMALOCATION] %s" % (coll_name))
 
             # Sleep briefly between checks.
             time.sleep(pause)
 
-        # The next data object to check must have a higher DATA_ID.
-        data_id = data_id + 1
+        # The next collection to check must have a higher COLL_ID.
+        coll_id = coll_id + 1
     else:
         # All done.
-        data_id = 0
+        coll_id = 0
 
-    return data_id
+    return coll_id
 
-# \brief Check integrity of all data objects in the vault.
-# \param[in] data_id  first DATA_ID to check
+# \brief Check metadata XML for schema location.
+# \param[in] coll_id  first COLL_ID to check
 # \param[in] batch    batch size, <= 256
 # \param[in] pause    pause between checks (float)
 # \param[in] delay    delay between batches in seconds
