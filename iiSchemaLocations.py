@@ -41,13 +41,11 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
     result = ret_val["arguments"][1]
 
     if result.rowCnt != 0:
-        callback.writeLine('stdout', 'ROWS FOUND: ' + str(result.rowCnt))
         # Check each data object in batch.
         for row in range(0, result.rowCnt):
             attrValue = result.sqlResult[1].row(row)
             category = attrValue
 
-    callback.writeLine('stdout', 'CATEGORY: ' + category)
     if category != '-1':
         # Test whether found category actually has a collection with XSD's.
         # If not, fall back to default schema collection. Otherwise use category schema collection
@@ -64,11 +62,10 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
         ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
         result = ret_val["arguments"][1]
 
-        callback.writeLine('stdout', str(result.rowCnt))
         if result.rowCnt != 0:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
-    return 'https://schemas.yoda.uu.nl/' + schemaCategory + '/' + area + '.xsd'
+    return 'https://schemas.yoda.uu.nl/' + schemaCategory + ' ' + area + '.xsd'
 
 # \brief getLatestVaultMetadataXml
 #
@@ -76,10 +73,10 @@ def getSchemaLocationUrl(callback, rods_zone, groupName):
 #
 # \return metadataXmlPath
 def getLatestVaultMetadataXml(callback, vaultPackage):
-    dataNameQuery = "%yoda-metadata[%].xml"
+    dataNameQuery = "yoda-metadata[%].xml"
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, DATA_SIZE",
-        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like " + dataNameQuery,
+        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like '" + dataNameQuery + "'",
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -89,21 +86,14 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     if result.rowCnt != 0:
         # Check each data object in batch.
         dataName = ""
-        for row in range(min(batch, result.rowCnt)):
+        for row in range(0, result.rowCnt):
             data_name = result.sqlResult[0].row(row)
             data_size = int(result.sqlResult[1].row(row))
 
-            if dataname == "" or (dataName < data_name and len(dataName) <= len(data_name)):
+            if dataName == "" or (dataName < data_name and len(dataName) <= len(data_name)):
                 dataName = data_name
-                metadataXmlPath = vaultPackage + dataName
 
-        # The next data object to check must have a higher DATA_ID.
-        data_id = data_id + 1
-    else:
-        # All done.
-        data_id = 0
-
-    return metadataXmlPath
+    return vaultPackage + "/" + dataName
 
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Vault
 # If schemaLocation not present then add it.
@@ -128,12 +118,14 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
         # Retrieve Schema location to be added.
         schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
         if schemaLocationURL != '-1':
+            root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
             root.set('xsi:schemaLocation', schemaLocationURL)
             newXmlString = ET.tostring(root, encoding='UTF-8')
             ofFlags = ''
             newXmlFile = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-            ret_val = callback.msiDataObjCreate(newXmlFile, ofFlags, 0)
-            fileHandle = ret_val['arguments'][2]
+            ret_val = callback.msiDataObjCopy(pathYodaMetadataXML, newXmlFile, ofFlags, 0)
+            ret_val = callback.msiDataObjOpen('objPath=' + newXmlFile, 0)
+            fileHandle = ret_val['arguments'][1]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
 
@@ -160,6 +152,7 @@ def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collectio
         # Retrieve Schema location to be added.
         schemaLocationURL = getSchemaLocationUrl(callback, rods_zone, groupName)
         if schemaLocationURL != '-1':
+            root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
             root.set('xsi:schemaLocation', schemaLocationURL)
             newXmlString = ET.tostring(root, encoding='UTF-8')
             ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
@@ -233,7 +226,6 @@ def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
     pause = float(rule_args[2])
     delay = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
-    callback.writeLine('stdout', rods_zone)
 
     # Check one batch of vault data.
     data_id = checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause)
