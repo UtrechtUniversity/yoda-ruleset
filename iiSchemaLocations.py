@@ -198,7 +198,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
     # Find all research and vault collections, ordered by COLL_ID.
     ret_val = callback.msiMakeGenQuery(
         "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
+        "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
