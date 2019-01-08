@@ -67,6 +67,7 @@ def getSchemaLocation(callback, rods_zone, group_name):
 
     return 'https://schemas.yoda.uu.nl/' + schemaCategory + ' ' + area + '.xsd'
 
+
 # \brief getLatestVaultMetadataXml
 #
 # \param[in] vaultPackage
@@ -102,6 +103,13 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 
     return dataName
 
+
+# \brief getDataObjSize
+#
+# \param[in] coll_name Data object collection name
+# \param[in] data_name Data object name
+#
+# \return Data object size
 def getDataObjSize(callback, coll_name, data_name):
     ret_val = callback.msiMakeGenQuery(
         "DATA_SIZE",
@@ -119,6 +127,12 @@ def getDataObjSize(callback, coll_name, data_name):
 
     return data_size
 
+
+# \brief getUserNameFromUserId
+#
+# \param[in] user_id User id
+#
+# \return User name
 def getUserNameFromUserId(callback, user_id):
     ret_val = callback.msiMakeGenQuery(
         "USER_NAME",
@@ -136,9 +150,10 @@ def getUserNameFromUserId(callback, user_id):
 
     return user_name
 
+
 # \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
 #
-# \param[in] path               path of object that needs the permissions of parent
+# \param[in] path               Path of object that needs the permissions of parent
 # \param[in] recursive_flag     either "default" for no recursion or "recursive"
 #
 def copyACLsFromParent(callback, path, recursive_flag):
@@ -160,14 +175,15 @@ def copyACLsFromParent(callback, path, recursive_flag):
             user_name = getUserNameFromUserId(callback, user_id)
 
             if access_name == "own":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
-                callback.msiSetACL(recursive_flag, "own", user_name, path);
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+                callback.msiSetACL(recursive_flag, "own", user_name, path)
             elif access_name == "read object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
-                callback.msiSetACL(recursive_flag, "read", user_name, path);
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+                callback.msiSetACL(recursive_flag, "read", user_name, path)
             elif access_name == "modify object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
-                callback.msiSetACL(recursive_flag, "write", user_name, path);
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+                callback.msiSetACL(recursive_flag, "write", user_name, path)
+
 
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml.
 # If schemaLocation is not present it is added.
@@ -202,12 +218,13 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, d
                 ofFlags = ''
                 xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
                 ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-                copyACLsFromParent(callback, xml_file ,"default")
+                copyACLsFromParent(callback, xml_file, "default")
 
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
             callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
+
 
 # Loop through all collections with yoda-metadata.xml data objects.
 def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause):
@@ -256,6 +273,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
         coll_id = 0
 
     return coll_id
+
 
 # \brief Check metadata XML for schema location.
 # \param[in] coll_id  first COLL_ID to check
