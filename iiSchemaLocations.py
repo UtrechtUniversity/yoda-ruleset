@@ -225,7 +225,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
                         addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_path)
             except:
                 pass
-`
+
             callback.writeString("serverLog", "[SCHEMALOCATION] %s" % (coll_name))
 
             # Sleep briefly between checks.
