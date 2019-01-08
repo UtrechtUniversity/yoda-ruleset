@@ -149,7 +149,7 @@ def copyACLsFromParent(callback, path, recursive_flag):
 # If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific xsd does not exist, fall back to /default/metadata.xsd or /default/vault.xsd
-def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size, dataName):
+def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size):
     # Get text of yoda-metadata.xml
     pathYodaMetadataXML = getLatestVaultMetadataXml(callback, collection)
     ret_val = callback.msiDataObjOpen('objPath=' + pathYodaMetadataXML, 0)
@@ -238,14 +238,13 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
             pathParts = collection.split('/')
 
             try:
-                groupName = pathParts[3]
-                if 'research-' in groupName:
-                    checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size)
-                elif 'vault-' in groupName:
-                    #  DOET NU NOG FF NIKS
+                group_name = pathParts[3]
+                if 'research-' in group_name:
+                    checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, group_name, data_size)
+                elif 'vault-' in group_name:
                     # Parent collections should not be 'original'. Those files must remain untouched
                     if pathParts[-1] != 'original':
-                        checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, groupName, data_size, dataName)
+                        checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, group_name, data_size)
             except:
                 pass
 
