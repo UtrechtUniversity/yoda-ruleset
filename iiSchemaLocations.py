@@ -178,16 +178,18 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, 
 
             if "research" in group_name:
                 ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-                ret_val = callback.msiDataObjCreate(collection + "/" + data_name, ofFlags, 0)
+                xml_file = collection + "/" + data_name
+                ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
             elif "vault" in group_name:
                 ofFlags = ''
-                newXmlFile = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-                ret_val = callback.msiDataObjCreate(newXmlFile, ofFlags, 0)
+                xml_file = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
+                ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
                 copyACLsFromParent(callback, newXmlFile ,"default")
 
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
+            callback.writeString("serverLog", "[UPDATE METADATA] %s" % (xml_file))
 
 # Loop through all collections with yoda-metadata.xml data objects.
 def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause):
@@ -196,7 +198,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
     # Find all research and vault collections, ordered by COLL_ID.
     ret_val = callback.msiMakeGenQuery(
         "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
+        "COLL_NAME like '/%/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -210,7 +212,7 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
             coll_name = result.sqlResult[1].row(row)
 
             # Determine Vault or Research handling
-            pathParts = collection.split('/')
+            pathParts = coll_name.split('/')
 
             try:
                 group_name = pathParts[3]
@@ -225,8 +227,6 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
                         addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_path)
             except:
                 pass
-
-            callback.writeString("serverLog", "[SCHEMALOCATION] %s" % (coll_name))
 
             # Sleep briefly between checks.
             time.sleep(pause)
