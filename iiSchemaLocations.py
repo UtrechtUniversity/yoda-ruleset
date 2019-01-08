@@ -100,7 +100,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
 
-    return vaultPackage + "/" + dataName
+    return dataName
 
 def getDataObjSize(callback, coll_name, data_name):
     ret_val = callback.msiMakeGenQuery(
@@ -173,8 +173,8 @@ def copyACLsFromParent(callback, path, recursive_flag):
 # If schemaLocation is not present it is added.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
-def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, data_size, data_name):
-    ret_val = callback.msiDataObjOpen('objPath=' + collection + "/" + data_name, 0)
+def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, data_name):
+    ret_val = callback.msiDataObjOpen('objPath=' + coll_name + "/" + data_name, 0)
     fileHandle = ret_val['arguments'][1]
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
     callback.msiDataObjClose(fileHandle, 0)
@@ -196,11 +196,11 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, 
 
             if "research" in group_name:
                 ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-                xml_file = collection + "/" + data_name
+                xml_file = coll_name + "/" + data_name
                 ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
             elif "vault" in group_name:
                 ofFlags = ''
-                xml_file = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
+                xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
                 ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
                 copyACLsFromParent(callback, newXmlFile ,"default")
 
@@ -235,16 +235,14 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
             try:
                 group_name = pathParts[3]
                 if 'research-' in group_name:
-                    xml_path = getLatestVaultMetadataXml(callback, coll_name)
                     data_size = getDataObjSize(coll_name, "/yoda-metadata.xml")
                     addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
                     # Parent collections should not be 'original'. Those files must remain untouched.
                     if pathParts[-1] != 'original':
-                        # Get text of yoda-metadata.xml
-                        xml_name = getLatestVaultMetadataXml(callback, coll_name)
+                        data_name = getLatestVaultMetadataXml(callback, coll_name)
                         data_size = getDataObjSize(coll_name, xml_name)
-                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_name)
+                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, data_name)
             except:
                 pass
 
