@@ -83,6 +83,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
 
     # Loop through all XMLs.
+    dataName = ""
     while True:
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
@@ -100,6 +101,23 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     callback.msiCloseGenQuery(query, result)
 
     return vaultPackage + "/" + dataName
+
+def getDataObjSize(callback, coll_name, data_name):
+    ret_val = callback.msiMakeGenQuery(
+        "DATA_SIZE",
+        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    data_size = 0
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+            data_size = result.sqlResult[0].row(row)
+
+    return data_size
 
 def getUserNameFromUserId(callback, user_id):
     ret_val = callback.msiMakeGenQuery(
@@ -155,7 +173,7 @@ def copyACLsFromParent(callback, path, recursive_flag):
 # If schemaLocation is not present it is added.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
 # If the specific XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
-def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, data_size, data_name, space):
+def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, data_size, data_name):
     ret_val = callback.msiDataObjOpen('objPath=' + collection + "/" + data_name, 0)
     fileHandle = ret_val['arguments'][1]
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
@@ -216,15 +234,17 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
 
             try:
                 group_name = pathParts[3]
-                data_size = 100000
                 if 'research-' in group_name:
+                    xml_path = getLatestVaultMetadataXml(callback, coll_name)
+                    data_size = getDataObjSize(coll_name, "/yoda-metadata.xml")
                     addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
-                    # Parent collections should not be 'original'. Those files must remain untouched
+                    # Parent collections should not be 'original'. Those files must remain untouched.
                     if pathParts[-1] != 'original':
                         # Get text of yoda-metadata.xml
-                        xml_path = getLatestVaultMetadataXml(callback, collection)
-                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_path)
+                        xml_name = getLatestVaultMetadataXml(callback, coll_name)
+                        data_size = getDataObjSize(coll_name, xml_name)
+                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, xml_name)
             except:
                 pass
 
