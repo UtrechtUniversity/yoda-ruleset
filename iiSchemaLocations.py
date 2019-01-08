@@ -190,7 +190,7 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, collection, group_name, 
             callback.msiDataObjClose(fileHandle, 0)
 
 # Loop through all collections with yoda-metadata.xml data objects.
-def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause):
+def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause):
     import time
 
     # Find all research and vault collections, ordered by COLL_ID.
@@ -248,18 +248,18 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pau
 def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
     import session_vars
 
-    data_id = int(rule_args[0])
+    coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Check one batch of vault data.
-    data_id = checkMetadataForSchemaLocationBatch(callback, rods_zone, data_id, batch, pause)
+    coll_id = checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause)
 
-    if data_id != 0:
+    if coll_id != 0:
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiCheckMetadataForSchemaLocation('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay),
+            "iiCheckMetadataForSchemaLocation('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
