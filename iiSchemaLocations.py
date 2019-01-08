@@ -95,6 +95,56 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 
     return vaultPackage + "/" + dataName
 
+def getUserNameFromUserId(callback, user_id):
+    ret_val = callback.msiMakeGenQuery(
+        "USER_NAME",
+        "USER_ID = '" + user_id + "'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    user_name = ''
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+            user_name = result.sqlResult[0].row(row)
+
+    return user_name
+
+# \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
+#
+# \param[in] path               path of object that needs the permissions of parent
+# \param[in] recursive_flag     either "default" for no recursion or "recursive"
+#
+def copyACLsFromParent(callback, path, recursive_flag):
+    parent = dirname(path)
+
+    ret_val = callback.msiMakeGenQuery(
+        "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
+        "COLL_NAME = '" + parent + "'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+            access_name = result.sqlResult[0].row(row)
+            user_id = int(result.sqlResult[1].row(row))
+            user_name = getUserNameFromUserId(callback, user_id)
+
+            if access_name == "own":
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
+                callback.msiSetACL(recursive_flag, "own", user_name, path);
+            elif access_name == "read object":
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
+                callback.msiSetACL(recursive_flag, "read", user_name, path);
+            elif access_name == "modify object":
+                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">");
+                callback.msiSetACL(recursive_flag, "write", user_name, path);
+
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Vault
 # If schemaLocation not present then add it.
 # Schema location is dependent on category the yoda-metadata.xml belongs to.
@@ -123,11 +173,11 @@ def checkVaultYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collection, 
             newXmlString = ET.tostring(root, encoding='UTF-8')
             ofFlags = ''
             newXmlFile = collection + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-            ret_val = callback.msiDataObjCopy(pathYodaMetadataXML, newXmlFile, ofFlags, 0)
-            ret_val = callback.msiDataObjOpen('objPath=' + newXmlFile, 0)
-            fileHandle = ret_val['arguments'][1]
+            ret_val = callback.msiDataObjCreate(newXmlFile, ofFlags, 0)
+            fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
+            copyACLsFromParent(callback, newXmlString ,"default")
 
 # Actual check for presence of schemaLocation within the passed yoda-metadata.xml as data_id in Research area
 # If schemaLocation not present then add it.
@@ -156,7 +206,7 @@ def checkResearchYodaMetaDataXmlForSchemaLocation(callback, rods_zone, collectio
             root.set('xsi:schemaLocation', schemaLocationURL)
             newXmlString = ET.tostring(root, encoding='UTF-8')
             ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-            ret_val = callback.msiDataObjCreate(pathYodaMetadataXML + '-added-schema', ofFlags, 0)
+            ret_val = callback.msiDataObjCreate(pathYodaMetadataXML, ofFlags, 0)
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
