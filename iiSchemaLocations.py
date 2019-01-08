@@ -6,7 +6,7 @@
 # \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-import os.path
+import os
 from collections import namedtuple
 from enum import Enum
 import hashlib
@@ -122,7 +122,7 @@ def getDataObjSize(callback, coll_name, data_name):
 def getUserNameFromUserId(callback, user_id):
     ret_val = callback.msiMakeGenQuery(
         "USER_NAME",
-        "USER_ID = '" + user_id + "'",
+        "USER_ID = '%s'" % (str(user_id)),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -142,7 +142,7 @@ def getUserNameFromUserId(callback, user_id):
 # \param[in] recursive_flag     either "default" for no recursion or "recursive"
 #
 def copyACLsFromParent(callback, path, recursive_flag):
-    parent = dirname(path)
+    parent = os.path.dirname(path)
 
     ret_val = callback.msiMakeGenQuery(
         "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
@@ -186,7 +186,7 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, d
 
     # Check if schemaLocation attribute is present.
     # If not, add schemaLocation attribute.
-    if 'xsi:schemaLocation' not in root.attrib:
+    if not root.attrib:
         # Retrieve Schema location to be added.
         schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
         if schemaLocation != '-1':
@@ -202,12 +202,12 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, d
                 ofFlags = ''
                 xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
                 ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-                copyACLsFromParent(callback, newXmlFile ,"default")
+                copyACLsFromParent(callback, xml_file ,"default")
 
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
-            callback.writeString("serverLog", "[UPDATE METADATA] %s" % (xml_file))
+            callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
 
 # Loop through all collections with yoda-metadata.xml data objects.
 def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause):
@@ -235,13 +235,13 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
             try:
                 group_name = pathParts[3]
                 if 'research-' in group_name:
-                    data_size = getDataObjSize(coll_name, "/yoda-metadata.xml")
+                    data_size = getDataObjSize(callback, coll_name, "yoda-metadata.xml")
                     addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
                     # Parent collections should not be 'original'. Those files must remain untouched.
                     if pathParts[-1] != 'original':
                         data_name = getLatestVaultMetadataXml(callback, coll_name)
-                        data_size = getDataObjSize(coll_name, xml_name)
+                        data_size = getDataObjSize(callback, coll_name, data_name)
                         addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, data_name)
             except:
                 pass
