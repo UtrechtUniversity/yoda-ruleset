@@ -1,5 +1,5 @@
-# \file      iiSchemaLocations.py
-# \brief     Functions for handling schemaLocations within any yoda-metadata.xml.
+# \file      iiSchemaUpdates.py
+# \brief     Functions for handling schema updates within any yoda-metadata.xml.
 # \author    Lazlo Westerhof
 # \author    Felix Croes
 # \author    Harm de Raaff
@@ -73,6 +73,7 @@ def getSchemaLocation(callback, rods_zone, group_name):
 # \param[in] vaultPackage
 #
 # \return metadataXmlPath
+#
 def getLatestVaultMetadataXml(callback, vaultPackage):
     dataNameQuery = "yoda-metadata[%].xml"
     ret_val = callback.msiMakeGenQuery(
@@ -110,6 +111,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 # \param[in] data_name Data object name
 #
 # \return Data object size
+#
 def getDataObjSize(callback, coll_name, data_name):
     ret_val = callback.msiMakeGenQuery(
         "DATA_SIZE",
@@ -133,6 +135,7 @@ def getDataObjSize(callback, coll_name, data_name):
 # \param[in] user_id User id
 #
 # \return User name
+#
 def getUserNameFromUserId(callback, user_id):
     ret_val = callback.msiMakeGenQuery(
         "USER_NAME",
@@ -185,26 +188,49 @@ def copyACLsFromParent(callback, path, recursive_flag):
                 callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
-# Actual check for presence of schemaLocation within the passed yoda-metadata.xml.
-# If schemaLocation is not present it is added.
-# Schema location is dependent on category the yoda-metadata.xml belongs to.
-# If the specific XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
-def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, data_name):
-    ret_val = callback.msiDataObjOpen('objPath=' + coll_name + "/" + data_name, 0)
+# \brief Check metadata XML for possible schema updates.
+#
+# \param[in] path Path of metadata XML to parse
+#
+# \return Parsed XML as ElementTree.
+#
+def parseMetadataXml(callback, path):
+    # Retrieve XML size.
+    coll_name, data_name = os.path.split(path)
+    data_size = getDataObjSize(callback, coll_name, data_name)
+
+    # Open metadata XML.
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
     fileHandle = ret_val['arguments'][1]
+
+    # Read metadata XML.
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
+
+    # Close metadata XML.
     callback.msiDataObjClose(fileHandle, 0)
+
+    # Parse XML.
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
+    return ET.fromstring(xmlText)
 
-    # Parse XML
-    root = ET.fromstring(xmlText)
 
-    # Check if schemaLocation attribute is present.
-    # If not, add schemaLocation attribute.
+# \brief Check metadata XML for possible schema updates.
+#
+# \param[in] rods_zone  Zone name
+# \param[in] coll_name  Collection name of metadata XML
+# \param[in] group_name Group name of metadata XML
+# \param[in] data_name  Data name of metadata XML
+##
+def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
+    root = parseMetadataXml(callback, coll_name + "/" + data_name)
+
+    # Check if no attributes are present.
+    # If not, add xmlns:xsi and xsi:schemaLocation attributes.
     if not root.attrib:
         # Retrieve Schema location to be added.
         schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
+
         if schemaLocation != '-1':
             root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
             root.set('xsi:schemaLocation', schemaLocation)
@@ -226,8 +252,17 @@ def addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, d
             callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
 
 
-# Loop through all collections with yoda-metadata.xml data objects.
-def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause):
+# \brief Loop through all collections with yoda-metadata.xml data objects.
+#        Check metadata XML for schema updates.
+#
+# \param[in] rods_zone Zone name
+# \param[in] coll_id   First collection id of batch
+# \param[in] batch     Batch size, <= 256
+# \param[in] pause     Pause between checks (float)
+#
+# \return Collection id to continue with in next batch.
+#
+def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause):
     import time
 
     # Find all research and vault collections, ordered by COLL_ID.
@@ -245,21 +280,17 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
         for row in range(min(batch, result.rowCnt)):
             coll_id = int(result.sqlResult[0].row(row))
             coll_name = result.sqlResult[1].row(row)
-
-            # Determine Vault or Research handling
             pathParts = coll_name.split('/')
 
             try:
                 group_name = pathParts[3]
                 if 'research-' in group_name:
-                    data_size = getDataObjSize(callback, coll_name, "yoda-metadata.xml")
-                    addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, "yoda-metadata.xml")
+                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
                     # Parent collections should not be 'original'. Those files must remain untouched.
                     if pathParts[-1] != 'original':
                         data_name = getLatestVaultMetadataXml(callback, coll_name)
-                        data_size = getDataObjSize(callback, coll_name, data_name)
-                        addSchemaLocationToMetadataXml(callback, rods_zone, coll_name, group_name, data_size, data_name)
+                        checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name)
             except:
                 pass
 
@@ -275,13 +306,14 @@ def checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pau
     return coll_id
 
 
-# \brief Check metadata XML for schema location.
+# \brief Check metadata XML for schema updates.
+#
 # \param[in] coll_id  first COLL_ID to check
 # \param[in] batch    batch size, <= 256
 # \param[in] pause    pause between checks (float)
 # \param[in] delay    delay between batches in seconds
 #
-def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
+def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
     import session_vars
 
     coll_id = int(rule_args[0])
@@ -290,12 +322,12 @@ def iiCheckMetadataForSchemaLocation(rule_args, callback, rei):
     delay = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
-    # Check one batch of vault data.
-    coll_id = checkMetadataForSchemaLocationBatch(callback, rods_zone, coll_id, batch, pause)
+    # Check one batch of metadata schemas.
+    coll_id = checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause)
 
     if coll_id != 0:
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiCheckMetadataForSchemaLocation('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "checkMetadataXmlForSchemaUpdatesBatch('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
