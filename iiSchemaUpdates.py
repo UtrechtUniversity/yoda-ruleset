@@ -65,7 +65,7 @@ def getSchemaLocation(callback, rods_zone, group_name):
         if result.rowCnt != 0:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
-    return 'https://schemas.yoda.uu.nl/' + schemaCategory + ' ' + area + '.xsd'
+    return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory + ' ' + area + '.xsd'
 
 
 # \brief getLatestVaultMetadataXml
