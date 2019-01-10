@@ -2,9 +2,11 @@
 
 # \brief     JSON Schema to XSD converter for Yoda metadata schemas.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2018 Utrecht University.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2018-2019 Utrecht University.
 # \license   GPLv3, see LICENSE
 
+import os
 import json
 import sys
 import xml.etree.cElementTree as ET
@@ -520,18 +522,20 @@ if __name__ == '__main__':
     #sys.exit(0)
 
     # Sanity check.
+    gentleAssert('$id'        in jsonDocument,
+                 'The JSON schema must cotain an identifier for the schema')
     gentleAssert('type'       in jsonDocument and jsonDocument['type'] == 'object',
                  'The \'type\' of the toplevel JSON schema object must be \'object\'')
     gentleAssert('properties' in jsonDocument and isinstance(jsonDocument['properties'], dict),
                  'The toplevel JSON schema object must contain a \'properties\' object')
 
-    # Generate the toplevel XML schema element.
-
+    # Generate the toplevel XML schema element with target namespace.
+    targetNamespace = os.path.dirname(jsonDocument["$id"])
     root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
+                         + ' targetNamespace="' + targetNamespace + '"'
                          + ' elementFormDefault="qualified"></xs:schema>')
 
     # Convert and insert all fields into the XSD.
-
     root.append(El('xs:element',
                    {'name': 'metadata'},
                    El('xs:complexType', {},
@@ -541,7 +545,6 @@ if __name__ == '__main__':
                          generateSystemGroup()))))
 
     # Generate toplevel type declaration elements.
-
     for t in (convertType(v, typename=k) for k, v in getTypes(jsonDocument).items()):
         root.append(t)
 
@@ -550,6 +553,5 @@ if __name__ == '__main__':
                  'The System group requires a \'optionsPersistentIdentifierScheme\' type to be defined in the \'definitions\' section of the JSON schema.')
 
     # Print the generated XML document.
-
-    print('<?xml version="1.0" encoding="utf-8"?>', file=file_out)
+    print('<?xml version="1.0" encoding="UTF-8"?>', file=file_out)
     print(ET.tostring(root, encoding='unicode'),    file=file_out)
