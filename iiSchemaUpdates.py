@@ -42,7 +42,7 @@ def iiRuleGetSpace(rule_args, callback, rei):
     pathParts = rule_args[0].split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
-    rule_args[1] = getSchemaSpace(callback, rods_zone, group_name)
+    rule_args[1] = getSchemaSpace(callback, group_name)
 
 #------------------------------------- end of interface part
 
