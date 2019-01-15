@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="https://utrechtuniversity.github.io/yoda-schemas/default">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="https://utrechtuniversity.github.io/yoda-schemas/default" xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
   <xs:element name="metadata">
     <xs:complexType>
       <xs:sequence>
