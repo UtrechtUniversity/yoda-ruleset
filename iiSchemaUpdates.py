@@ -23,13 +23,6 @@ def getSchemaLocation(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
 
-    if 'research-' in group_name:
-        area = 'research'
-    elif 'vault-' in group_name:
-        area = 'vault'
-    else:
-        return '-1'
-
     # Find out category based on current group_name.
     ret_val = callback.msiMakeGenQuery(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
@@ -65,7 +58,21 @@ def getSchemaLocation(callback, rods_zone, group_name):
         if result.rowCnt != 0:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
-    return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory + ' ' + area + '.xsd'
+    return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory
+
+
+# Based upon the group name of the current yoda-metadata.xml file, return the (research or vault) XSD schema involved.
+def getSchemaSpace(callback, group_name):
+    space = '-1'
+
+    if 'research-' in group_name:
+        space = 'research'
+    elif 'vault-' in group_name:
+        space = 'vault'
+    else:
+        return '-1'
+
+    return space + '.xsd'
 
 
 # \brief getLatestVaultMetadataXml
@@ -230,10 +237,12 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     if not root.attrib:
         # Retrieve Schema location to be added.
         schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
+        schemaSpace = getSchemaSpace(callback, group_name)
 
-        if schemaLocation != '-1':
+        if schemaLocation != '-1' or schemaSpace != '-1':
             root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-            root.set('xsi:schemaLocation', schemaLocation)
+            root.set('xmlns', schemaLocation)
+            root.set('xsi:schemaLocation', schemaLocation + ' ' + schemaSpace)
             newXmlString = ET.tostring(root, encoding='UTF-8')
 
             if "research" in group_name:
