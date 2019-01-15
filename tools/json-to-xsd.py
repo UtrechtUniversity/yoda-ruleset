@@ -530,9 +530,10 @@ if __name__ == '__main__':
                  'The toplevel JSON schema object must contain a \'properties\' object')
 
     # Generate the toplevel XML schema element with target namespace.
-    targetNamespace = os.path.dirname(jsonDocument["$id"])
+    namespace = os.path.dirname(jsonDocument["$id"])
     root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
-                         + ' targetNamespace="' + targetNamespace + '"'
+                         + ' targetNamespace="' + namespace + '"'
+                         + ' xmlns="' + namespace + '"'
                          + ' elementFormDefault="qualified"></xs:schema>')
 
     # Convert and insert all fields into the XSD.
