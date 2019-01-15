@@ -15,6 +15,22 @@ import irods_types
 import xml.etree.ElementTree as ET
 import time
 
+# ----------------------------------- interface functions when calling from irods rules have prefix iiRule
+# Return the location of schema location based upon the category within the path
+# /in rule_args[0] path
+# /out rule_args[1] public xsd location
+
+# Example:
+# in:  /tempZone/home/research-initial/yoda-metadata.xml
+# out: 'https://utrechtuniversity.github.io/yoda-schemas/default research.xsd' 
+
+def iiRuleGetLocation(rule_args, callback, rei):    
+    pathParts = rule_args[0].split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+    rule_args[1] = getSchemaLocation(callback, rods_zone, group_name)
+
+#------------------------------------- end of interface part 
 
 # Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
 # Schema location depends on the category the yoda-metadata.xml belongs to.
