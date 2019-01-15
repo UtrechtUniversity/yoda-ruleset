@@ -8,7 +8,7 @@
 
 # \brief Get the XSD location to be included the metadata form.
 #
-# \param[in]  folder        Path of the folder 
+# \param[in]  folder        Path of the folder
 # \param[out] schemaLocation Metadata schema location based upon location of yoda-metadata.xml
 # \param[out] status        Status of the action
 # \param[out] statusInfo    Information message when action was not successful
@@ -24,6 +24,27 @@ iiFrontGetSchemaLocation(*folder, *schemaLocation, *status, *statusInfo)
         iiRuleGetLocation(*folder, *schema); # it is not possible to directly use *schemaLocation here
 
         *schemaLocation =  *schema; # again, does not work when passing schemaLocation direcly in iiRuleGetLocation
+}
+
+
+# \brief Get the XSD location to be included the metadata form.
+#
+# \param[in]  folder        Path of the folder
+# \param[out] schemaSpace   Metadata schema space based upon location of yoda-metadata.xml
+# \param[out] status        Status of the action
+# \param[out] statusInfo    Information message when action was not successful
+#
+
+iiFrontGetSchemaSpace(*folder, *schemaSpace, *status, *statusInfo)
+{
+        *status = "Success";
+        *statusInfo = "";
+
+        *schema = '';
+
+        iiRuleGetSpace(*folder, *schema); # it is not possible to directly use *schemaLocation here
+
+        *schemaSpace =  *schema; # again, does not work when passing schemaLocation direcly in iiRuleGetSpace
 }
 
 
