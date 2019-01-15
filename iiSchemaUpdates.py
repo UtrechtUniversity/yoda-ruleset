@@ -38,7 +38,7 @@ def iiRuleGetLocation(rule_args, callback, rei):
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
 # out: 'research.xsd'
 
-def iiRuleGetLocation(rule_args, callback, rei):
+def iiRuleGetSpace(rule_args, callback, rei):
     pathParts = rule_args[0].split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
