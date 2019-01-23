@@ -12,10 +12,139 @@ from enum import Enum
 import hashlib
 import base64
 import irods_types
+import lxml.etree as etree
 import xml.etree.ElementTree as ET
+
 import time
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
+
+# Transform yoda-metadata.xml from schemaId x to schemaId y
+# Depending on research/vault - different handling
+# 
+#  iiRuleTransformXml
+# Rule_args:
+# [0] -in-  path 
+# [1] -in-  versionFrom
+# [2] -in-  versionTo
+# [3] -out- statusPy
+# [4] -out- statusInfoPy
+
+def iiRuleTransformXml(rule_args, callback, rei): 
+   xmlPath = rule_args[0]
+   versionFrom = rule_args[1]
+   versionTo   = rule_args[2]
+
+   status = 'Unknown'
+   statusInfo = ''
+
+
+   # Declaration of transformation matrix version1 to version2
+   # transformationMatrix[schemaid1][schemaid2] => delivers transformation function that handles transformation of data from version 1 to version 2
+
+   transformationMatrix = {}
+   transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default':'ExecTransformation1'}
+
+   try:
+      transformationMethod = transformationMatrix[versionFrom][versionTo]
+
+      status = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+ 
+   except KeyError: 
+      # No transformation present to convert yoda-metadata.xml
+      status = 'ERROR'
+      statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
+
+   rule_args[3]  = status
+   rule_args[4]  = statusInfo
+
+# General steps within each transformation function
+# In reseach:
+#   - make copy of yoda-metadata.xml and rename to yoda-metadata[timestamp].xml
+#   - write new yoda-metadata.xml 
+#              including new targetNameSpace etc - so trapping transformation does not occur again
+#              This is taken care of within transformation stylesheet
+# NOT in scope at this moment 
+# - In vault 
+#   - No backup required for yoda-metadata.xml
+#   - Do data transformation
+#   - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
+
+def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
+    # Get the transformation xsl
+    coll_name, data_name = os.path.split(xmlPath)
+    callback.writeString("serverLog", coll_name + '/transformation.xsl')
+
+    xslroot = parseXml(callback, coll_name + '/transformation.xsl')
+
+    # get yodaMeta XML
+    xmlYodaMeta = parseXml(callback, xmlPath)
+
+    transform = etree.XSLT(xslroot)
+
+    transformationResult = transform(xmlYodaMeta, encoding='utf8')
+
+    transformedXml = etree.tostring(transformationResult, pretty_print=True)   
+
+    pathParts = xmlPath.split('/')
+    groupName = pathParts[3]
+
+    # Write transformed xml to yoda-metadata.xml
+
+    if "research" in groupName:
+        # First save original yoda-metadata.xml
+        copiedYodaXml = coll_name + '/yoda-metadata' + '[' + str(int(time.time())) + '].xml'
+        callback.writeString("serverLog", copiedYodaXml)
+        callback.msiDataObjCopy(xmlPath, copiedYodaXml, '', 0)
+        
+        # Prepare writing dataobject
+        ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
+        xml_file = coll_name + "/" + 'yoda-metadata.xml'
+        ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
+
+        # Now write actual new contents
+        fileHandle = ret_val['arguments'][2]
+        callback.msiDataObjWrite(fileHandle, transformedXml, 0)
+        callback.msiDataObjClose(fileHandle, 0)
+        callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
+
+    #elif "vault" in groupName:  ## will be addressed later
+    #    ofFlags = ''
+    #    xml_file = coll_name + '/yoda-metadata-hdr[' + str(int(time.time())) + '].xml'
+    #    ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
+    #    copyACLsFromParent(callback, xml_file, "default")
+
+    return 'Success'
+
+
+def parseXml(callback, path):
+    # Retrieve XML size.
+    coll_name, data_name = os.path.split(path)
+    data_size = getDataObjSize(callback, coll_name, data_name)
+
+    # Open metadata XML.
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
+    fileHandle = ret_val['arguments'][1]
+
+    # Read metadata XML.
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
+
+    # Close metadata XML.
+    callback.msiDataObjClose(fileHandle, 0)
+
+    # Parse XML.
+    read_buf = ret_val['arguments'][2]
+    xmlText = ''.join(read_buf.buf)
+    return etree.fromstring(xmlText)
+
+
+# Write resulting transformed xml to yoda-metadata.xml.
+# Save original yoda-metadata.xml to 'yoda-metadata.xml-timestamp()'
+def writeXml(callback, path, content):
+    # '[' + str(int(time.time())) + ']'
+    content = path
+
+
 # Return the location of schema location based upon the category within the path
 # /in rule_args[0] path
 # /out rule_args[1] public xsd location
@@ -44,7 +173,17 @@ def iiRuleGetSpace(rule_args, callback, rei):
     group_name = pathParts[3]
     rule_args[1] = getSchemaSpace(callback, group_name)
 
+
 #------------------------------------- end of interface part
+#---- yoda-metadata.xml transformation functions
+def transform_1_2(metadataPath, ):
+    metadataPathCopy = metadataPath + 'copy' 
+
+
+#------------ end of yoda-metadata.xml transformation functions
+
+# Functions for setting initial schema versions for 
+# 
 
 # Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
 # Schema location depends on the category the yoda-metadata.xml belongs to.

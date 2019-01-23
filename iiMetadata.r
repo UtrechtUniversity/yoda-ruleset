@@ -6,6 +6,28 @@
 # \license   GPLv3, see LICENSE.
 
 
+# \brief Transform yoda-metadata.xml from versionFrom into versionTo. If at all possible
+#
+# \param[in]  path        Path of the yoda-metadata.xml
+# \param[in]  versionFrom Version within yoda-metadata.xml
+# \param[in]  versionTo	  Version yoda-metadata.xml must be converted into
+# \param[out] status      Status of the action
+# \param[out] statusInfo  Information message when action was not successful
+#
+
+iiFrontTransformXml(*path, *versionFrom, *versionTo, *status, *statusInfo)
+{
+        *status = "Success";
+	*statusInfo = "";
+        *statusPy = '';
+        *statusInfoPy = '';
+        iiRuleTransformXml(*path, *versionFrom, *versionTo, *statusPy, *statusInfoPy);
+
+	*status = *statusPy;
+        *statusInfo = "*status -> Schema ID error: No conversion known for your yoda-metadatai.xml from version id '*versionFrom' into '*versionTo'";
+}
+
+
 # \brief Get the XSD location to be included the metadata form.
 #
 # \param[in]  folder        Path of the folder
