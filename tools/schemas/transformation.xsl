@@ -98,7 +98,7 @@
             </Data_Access_Restriction>
         </xsl:if>
 
-        <General_Type>Dataset</General_Type>
+        <Data_Type>Dataset</Data_Type>
 
         <xsl:if test="yoda:System">
             <System>
