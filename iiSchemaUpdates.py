@@ -271,8 +271,7 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
 
         if schemaLocation != '-1' or schemaSpace != '-1':
             root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-            root.set('xmlns', schemaLocation)
-            root.set('xsi:schemaLocation', schemaLocation + ' ' + schemaSpace)
+            root.set('xsi:noNamespaceSchemaLocation', schemaLocation + ' ' + schemaSpace)
             newXmlString = ET.tostring(root, encoding='UTF-8')
 
             if "research" in group_name:
