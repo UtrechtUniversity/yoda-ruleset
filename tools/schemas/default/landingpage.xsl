@@ -2,7 +2,6 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
  xmlns:str="http://exslt.org/strings"
  xmlns:date="http://exslt.org/dates-and-times"
- xmlns:yoda=""
  extension-element-prefixes="str date"
  xmlns="http://www.w3.org/1999/xhtml"
  version="1.0">
@@ -11,10 +10,10 @@
   <xsl:template match="/">
     <xsl:text disable-output-escaping="yes">&lt;!DOCTYPE html&gt;
     </xsl:text>
-    <xsl:apply-templates select="/yoda:metadata"/>
+    <xsl:apply-templates select="/metadata"/>
   </xsl:template>
   <xsl:template select="text()"/>
-  <xsl:template match="/yoda:metadata">
+  <xsl:template match="/metadata">
     <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -43,32 +42,32 @@
         <div class="container">
           <div class="row">
             <div class="col-md-10">
-	      <xsl:apply-templates select="yoda:Title"/>
-	      <xsl:apply-templates select="yoda:Description"/>
+	      <xsl:apply-templates select="Title"/>
+	      <xsl:apply-templates select="Description"/>
 	      <hr />
               <h3>Descriptive</h3>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="yoda:Discipline | yoda:Version | yoda:Related_Datapackage | yoda:Language"/>
-		<xsl:if test="yoda:Tag">
+                <xsl:apply-templates select="Discipline | Version | Related_Datapackage | Language"/>
+		<xsl:if test="Tag">
                   <dt>Tag(s)</dt>
                   <dd>
-                    <xsl:apply-templates select="yoda:Tag"/>
+                    <xsl:apply-templates select="Tag"/>
                   </dd>
 		</xsl:if>
               </dl>
               <h3>Administrative</h3>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="yoda:Collection_Name | yoda:Data_Classification | yoda:Funding_Reference"/>
+                <xsl:apply-templates select="Collection_Name | Data_Classification | Funding_Reference"/>
               </dl>
               <h3>System</h3>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="yoda:System"/>
+                <xsl:apply-templates select="System"/>
               </dl>
               <h3>Rights</h3>
               <dl class="dl-horizontal">
-                <xsl:apply-templates select="yoda:Creator | yoda:Contributor | yoda:License"/>
+                <xsl:apply-templates select="Creator | Contributor | License"/>
               </dl>
-              <xsl:apply-templates select="yoda:Data_Access_Restriction"/>
+              <xsl:apply-templates select="Data_Access_Restriction"/>
             </div>
           </div>
         </div>
@@ -80,7 +79,7 @@
       </body>
     </html>
   </xsl:template>
-  <xsl:template match="yoda:Tag">
+  <xsl:template match="Tag">
     <u>
       <xsl:value-of select="."/>
     </u>
@@ -88,21 +87,21 @@
   </xsl:template>
   <xsl:template match="System">
     <dt>Persistent Identifier</dt>
-    <dd><xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier_Scheme"/>: <xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier"/></dd>
-    <xsl:apply-templates select="./yoda:Publication_Date"/>
-    <xsl:apply-templates select="./yoda:Last_Modified_Date"/>
+    <dd><xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier_Scheme"/>: <xsl:value-of select="./Persistent_Identifier_Datapackage/Identifier"/></dd>
+    <xsl:apply-templates select="./Publication_Date"/>
+    <xsl:apply-templates select="./Last_Modified_Date"/>
   </xsl:template>
-  <xsl:template match="yoda:Title">
+  <xsl:template match="Title">
     <h1>
       <xsl:value-of select="."/>
     </h1>
   </xsl:template>
-  <xsl:template match="yoda:Description">
+  <xsl:template match="Description">
     <p>
       <xsl:value-of select="."/>
     </p>
   </xsl:template>
-  <xsl:template match="yoda:Discipline | yoda:Version | yoda:Language">
+  <xsl:template match="Discipline | Version | Language">
     <dt>
       <xsl:value-of select="local-name()"/>
     </dt>
@@ -110,7 +109,7 @@
       <xsl:value-of select="."/>
     </dd>
   </xsl:template>
-  <xsl:template match="yoda:Collection_Name | yoda:Data_Classification">
+  <xsl:template match="Collection_Name | Data_Classification">
     <dt>
       <xsl:value-of select="translate(local-name(),'_',' ')"/>
     </dt>
@@ -118,45 +117,45 @@
       <xsl:value-of select="."/>
     </dd>
   </xsl:template>
-  <xsl:template match="yoda:Related_Datapackage">
+  <xsl:template match="Related_Datapackage">
     <dt>Related Datapackage</dt>
     <dd>
-      <xsl:value-of select="./yoda:Properties/Title"/>
+      <xsl:value-of select="./Properties/Title"/>
     </dd>
     <dl class="dl-horizontal subproperties">
-      <xsl:apply-templates select="yoda:Relation_Type"/>
-      <xsl:apply-templates select="./yoda:Properties/yoda:Persistent_Identifier"/>
+      <xsl:apply-templates select="Relation_Type"/>
+      <xsl:apply-templates select="./Properties/Persistent_Identifier"/>
     </dl>
   </xsl:template>
-  <xsl:template match="yoda:Creator | yoda:Contributor">
+  <xsl:template match="Creator | Contributor">
     <dt>
       <xsl:value-of select="local-name()"/>
     </dt>
     <dd>
-      <xsl:value-of select="./yoda:Name"/>
+      <xsl:value-of select="./Name"/>
     </dd>
     <dl class="dl-horizontal subproperties">
-      <xsl:apply-templates select="./yoda:Properties/yoda:Person_Identifier"/>
-      <xsl:apply-templates select="./yoda:Properties/yoda:Affiliation"/>
+      <xsl:apply-templates select="./Properties/Person_Identifier"/>
+      <xsl:apply-templates select="./Properties/Affiliation"/>
     </dl>
   </xsl:template>
-  <xsl:template match="yoda:Funding_Reference">
+  <xsl:template match="Funding_Reference">
     <dt>Funder</dt>
     <dd>
-      <xsl:value-of select="./yoda:Funder_Name"/>
+      <xsl:value-of select="./Funder_Name"/>
     </dd>
     <dt>Award Number</dt>
     <dd>
-      <xsl:value-of select="./yoda:Properties/yoda:Award_Number"/>
+      <xsl:value-of select="./Properties/Award_Number"/>
     </dd>
   </xsl:template>
-  <xsl:template match="yoda:License">
+  <xsl:template match="License">
     <dt>License</dt>
     <dd>
       <xsl:choose>
-	<xsl:when test="/yoda:metadata/yoda:System/yoda:License_URI">
+	<xsl:when test="/metadata/System/License_URI">
 	  <a>
-            <xsl:attribute name="href"><xsl:value-of select="/yoda:metadata/yoda:System/yoda:License_URI"/></xsl:attribute>
+            <xsl:attribute name="href"><xsl:value-of select="/metadata/System/License_URI"/></xsl:attribute>
             <xsl:attribute name="target">blank</xsl:attribute>
             <xsl:value-of select="."/>
 	  </a>
@@ -167,7 +166,7 @@
       </xsl:choose>
     </dd>
   </xsl:template>
-  <xsl:template match="yoda:Last_Modified_Date">
+  <xsl:template match="Last_Modified_Date">
     <xsl:variable name="localtime" as="xs:dateTime" select="substring(.,0,20)"/>
     <xsl:variable name="utcoffset" as="xs:string" select="substring(.,20)"/>
     <dt>Last Modification</dt>
@@ -185,7 +184,7 @@
       <xsl:value-of select="$utcoffset"/>
     </dd>
   </xsl:template>
-  <xsl:template match="yoda:Publication_Date">
+  <xsl:template match="Publication_Date">
     <dt>Publication Date</dt>
     <dd>
       <xsl:value-of select="date:month-name(.)"/>
@@ -196,31 +195,31 @@
     </dd>
   </xsl:template>
 
-  <xsl:template match="yoda:Data_Access_Restriction[starts-with(.,'Open')]">
+  <xsl:template match="Data_Access_Restriction[starts-with(.,'Open')]">
     <h3>Data Access</h3>
-    <p>The data is open access. Use this link <a><xsl:attribute name="href"><xsl:value-of select="str:encode-uri(/yoda:metadata/yoda:System/yoda:Open_Access_Link,false())"/></xsl:attribute><xsl:value-of select="/yoda:metadata/yoda:System/yoda:Open_Access_Link"/></a> to access this data package.</p>
+    <p>The data is open access. Use this link <a><xsl:attribute name="href"><xsl:value-of select="str:encode-uri(/metadata/System/Open_Access_Link,false())"/></xsl:attribute><xsl:value-of select="/metadata/System/Open_Access_Link"/></a> to access this data package.</p>
   </xsl:template>
-  <xsl:template match="yoda:Data_Access_Restriction[starts-with(.,'Restricted')]">
+  <xsl:template match="Data_Access_Restriction[starts-with(.,'Restricted')]">
     <h3>Data Access</h3>
     <p>The data is restricted. Contact datamanager.</p>
   </xsl:template>
-  <xsl:template match="yoda:Data_Access_Restriction[.='Closed']">
+  <xsl:template match="Data_Access_Restriction[.='Closed']">
     <h3>Data Access</h3>
     <p>The data is closed for access.</p>
   </xsl:template>
-  <xsl:template match="yoda:Persistent_Identifier">
+  <xsl:template match="Persistent_Identifier">
     <dt>Persistent Identifier</dt>
-    <dd><xsl:value-of select="yoda:Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="yoda:Identifier"/></dd>
+    <dd><xsl:value-of select="Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Identifier"/></dd>
   </xsl:template>
-  <xsl:template match="yoda:Person_Identifier">
+  <xsl:template match="Person_Identifier">
     <dt>Person Identifier</dt>
-    <dd><xsl:value-of select="yoda:Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="yoda:Name_Identifier"/></dd>
+    <dd><xsl:value-of select="Name_Identifier_Scheme"/><xsl:text>: </xsl:text><xsl:value-of select="Name_Identifier"/></dd>
   </xsl:template>
-  <xsl:template match="yoda:Relation_Type">
+  <xsl:template match="Relation_Type">
     <dt>Type of relation</dt>
     <dd><xsl:value-of select="."/></dd>
   </xsl:template>
-  <xsl:template match="yoda:Affiliation">
+  <xsl:template match="Affiliation">
     <dt>Affiliation</dt>
     <dd>
       <xsl:value-of select="."/>

@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" 
-  xmlns:yoda=""
-  xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
 
   <!-- Apply templates on all nodes under metadata. -->
-  <xsl:template match="/yoda:metadata">
+  <xsl:template match="/metadata">
     <metadata>
       <xsl:apply-templates/>
     </metadata>
