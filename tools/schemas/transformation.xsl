@@ -2,6 +2,7 @@
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default-test"
+    xmlns="https://utrechtuniversity.github.io/yoda-schemas/default" 
     exclude-result-prefixes="yoda">
    
   <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="no" indent="yes"/>
@@ -11,7 +12,8 @@
   </xsl:template>
 
   <xsl:template match="/yoda:metadata">
-    <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://utrechtuniversity.github.io/yoda-schemas/default" xsi:schemaLocation="https://utrechtuniversity.github.io/yoda-schemas/default research.xsd">
+    <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://utrechtuniversity.github.io/yoda-schemas/default"  
+            xsi:schemaLocation="https://utrechtuniversity.github.io/yoda-schemas/default research.xsd">
         <xsl:if test="yoda:Title">
             <Title><xsl:value-of select="yoda:Title"/></Title>
         </xsl:if>
@@ -124,7 +126,7 @@
   </xsl:template>
 
   <xsl:template match="yoda:Contributor">
-      <Contributor xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Contributor>
           <Name><xsl:value-of select="yoda:Name" /></Name>
           <Properties>
               <Contributor_Type><xsl:value-of select="yoda:Properties/yoda:Contributor_Type" /></Contributor_Type>
@@ -135,7 +137,7 @@
   </xsl:template>   
 
   <xsl:template match="yoda:Creator">
-      <Creator  xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Creator>
           <Name><xsl:value-of select="yoda:Name" /></Name>
           <Properties>
              <xsl:apply-templates select="yoda:Properties/yoda:Affiliation" />
@@ -145,20 +147,20 @@
   </xsl:template>   
 
   <xsl:template match="yoda:Properties/yoda:Affiliation">
-      <Affiliation xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Affiliation>
           <xsl:value-of select="." />
       </Affiliation>
   </xsl:template>
 
   <xsl:template match="yoda:Properties/yoda:Person_Identifier">
-      <Person_Identifier xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Person_Identifier>
           <Name_Identifier_Scheme><xsl:value-of select="yoda:Name_Identifier_Scheme" /></Name_Identifier_Scheme>
           <Name_Identifier><xsl:value-of select="yoda:Name_Identifier" /></Name_Identifier>
       </Person_Identifier>
   </xsl:template>
 
   <xsl:template match="yoda:Related_Datapackage">
-      <Related_Datapackage xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Related_Datapackage>
           <Relation_Type><xsl:value-of select="yoda:Relation_Type" /></Relation_Type>
           <Properties>
               <Title><xsl:value-of select="yoda:Properties/yoda:Title" /></Title>
@@ -171,7 +173,7 @@
   </xsl:template> 
 
   <xsl:template match="yoda:Funding_Reference">
-      <Funding_Reference  xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Funding_Reference>
           <Funder_Name><xsl:value-of select="yoda:Funder_Name" /></Funder_Name>
           <Properties>
               <Award_Number><xsl:value-of select="yoda:Properties/yoda:Award_Number" /></Award_Number>
@@ -180,19 +182,19 @@
   </xsl:template> 
 
   <xsl:template match="yoda:Tag">
-      <Tag xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Tag>
           <xsl:value-of select="." />
       </Tag>
   </xsl:template>
 
   <xsl:template match="yoda:Discipline">
-      <Discipline xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+      <Discipline>
           <xsl:value-of select="." />
       </Discipline>
   </xsl:template>
 
   <xsl:template match="yoda:Covered_Geolocation_Place">
-       <Covered_Geolocation_Place xmlns="https://utrechtuniversity.github.io/yoda-schemas/default">
+       <Covered_Geolocation_Place>
            <xsl:value-of select="." />
        </Covered_Geolocation_Place>
   </xsl:template>
