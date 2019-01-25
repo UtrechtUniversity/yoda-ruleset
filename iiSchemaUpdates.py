@@ -84,7 +84,7 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
 
     transformationResult = transform(xmlYodaMeta, encoding='utf8')
 
-    transformedXml = etree.tostring(transformationResult, pretty_print=True)   
+    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration = True, encoding='UTF-8')   
 
     pathParts = xmlPath.split('/')
     groupName = pathParts[3]
