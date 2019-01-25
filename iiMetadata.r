@@ -426,6 +426,14 @@ iiPrepareMetadataForm(*path, *result) {
                         }
                 }
 
+                # Read only metadata form when publication is pending.
+                if (*vaultStatus == APPROVED_FOR_PUBLICATION ||
+                    *vaultStatus == PENDING_DEPUBLICATION ||
+                    *vaultStatus == PENDING_REPUBLICATION) {
+                        *kvp.userType = "reader";
+                        *kvp.isDatamanager = "no";
+                }
+
                 uuKvp2JSON(*kvp, *result);
         } else {
                 *result = "";

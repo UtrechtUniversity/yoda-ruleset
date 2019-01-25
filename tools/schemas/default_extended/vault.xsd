@@ -3,10 +3,10 @@
   <xs:element name="metadata">
     <xs:complexType>
       <xs:sequence>
-        <xs:element maxOccurs="1" minOccurs="0" name="Title" type="stringNormal" />
-        <xs:element maxOccurs="1" minOccurs="0" name="Description" type="stringLong" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Title" type="stringNormal" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Description" type="stringLong" />
         <xs:element maxOccurs="unbounded" minOccurs="0" name="Discipline" type="optionsDiscipline" />
-        <xs:element maxOccurs="1" minOccurs="0" name="Version" type="stringNormal" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Version" type="stringNormal" />
         <xs:element maxOccurs="1" minOccurs="0" name="Language" type="optionsISO639-1" />
         <xs:element maxOccurs="1" minOccurs="0" name="Collected">
           <xs:complexType>
@@ -48,10 +48,11 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="1" minOccurs="0" name="Retention_Period" type="xs:integer" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Retention_Period" type="xs:integer" />
         <xs:element maxOccurs="1" minOccurs="0" name="Retention_Information" type="stringNormal" />
         <xs:element maxOccurs="1" minOccurs="0" name="Embargo_End_Date" type="xs:date" />
-        <xs:element maxOccurs="1" minOccurs="0" name="Data_Classification" type="optionsDataClassification" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Data_Classification" type="optionsDataClassification" />
+        <xs:element maxOccurs="1" minOccurs="0" name="Data_Type" type="optionsDataType" />
         <xs:element maxOccurs="1" minOccurs="0" name="Collection_Name" type="stringNormal" />
         <xs:element maxOccurs="unbounded" minOccurs="0" name="Funding_Reference">
           <xs:complexType>
@@ -67,14 +68,15 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="unbounded" minOccurs="0" name="Creator">
+        <xs:element maxOccurs="1" minOccurs="0" name="Remarks" type="stringLong" />
+        <xs:element maxOccurs="unbounded" minOccurs="1" name="Creator">
           <xs:complexType>
             <xs:sequence>
-              <xs:element maxOccurs="1" minOccurs="0" name="Name" type="stringNormal" />
+              <xs:element maxOccurs="1" minOccurs="1" name="Name" type="stringNormal" />
               <xs:element maxOccurs="1" minOccurs="0" name="Properties">
                 <xs:complexType>
                   <xs:sequence>
-                    <xs:element maxOccurs="unbounded" minOccurs="0" name="Affiliation" type="stringNormal" />
+                    <xs:element maxOccurs="unbounded" minOccurs="1" name="Affiliation" type="stringNormal" />
                     <xs:element maxOccurs="unbounded" minOccurs="0" name="Person_Identifier">
                       <xs:complexType>
                         <xs:sequence>
@@ -112,8 +114,8 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="1" minOccurs="0" name="License" type="optionsLicense" />
-        <xs:element maxOccurs="1" minOccurs="0" name="Data_Access_Restriction" type="optionsDataAccessRestriction" />
+        <xs:element maxOccurs="1" minOccurs="1" name="License" type="optionsLicense" />
+        <xs:element maxOccurs="1" minOccurs="1" name="Data_Access_Restriction" type="optionsDataAccessRestriction" />
         <xs:element maxOccurs="1" minOccurs="0" name="System">
           <xs:complexType>
             <xs:sequence>
@@ -158,6 +160,24 @@
       <xs:enumeration value="Basic" />
       <xs:enumeration value="Sensitive" />
       <xs:enumeration value="Critical" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="optionsDataType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Audiovisual" />
+      <xs:enumeration value="Collection" />
+      <xs:enumeration value="Dataset" />
+      <xs:enumeration value="Event" />
+      <xs:enumeration value="Image" />
+      <xs:enumeration value="InteractiveResource" />
+      <xs:enumeration value="Model" />
+      <xs:enumeration value="PhysicalObject" />
+      <xs:enumeration value="Service" />
+      <xs:enumeration value="Software" />
+      <xs:enumeration value="Sound" />
+      <xs:enumeration value="Text" />
+      <xs:enumeration value="Workflow" />
+      <xs:enumeration value="Other" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsNameIdentifierScheme">
@@ -234,6 +254,7 @@
       <xs:enumeration value="Humanities - Philosophy, ethics and religion (6.3)" />
       <xs:enumeration value="Humanities - Art (arts, history of arts, performing arts, music) (6.4)" />
       <xs:enumeration value="Humanities - Other humanities (6.5)" />
+      <xs:enumeration value="" />
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsContributorType">
