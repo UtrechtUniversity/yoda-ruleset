@@ -9,7 +9,9 @@
 import os
 import json
 import sys
+import re
 import xml.etree.cElementTree as ET
+import xml.dom.minidom
 
 #from urllib.parse import urlparse, urljoin # Not yet used, but will be needed
 #                                           # when resolving cross-document JSON
@@ -532,6 +534,8 @@ if __name__ == '__main__':
     # Generate the toplevel XML schema element with target namespace.
     namespace = os.path.dirname(jsonDocument["$id"])
     root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
+                         + ' targetNamespace="' + namespace + '"'
+                         + ' xmlns="' + namespace + '"'
                          + ' elementFormDefault="qualified"></xs:schema>')
 
     # Convert and insert all fields into the XSD.
@@ -552,5 +556,8 @@ if __name__ == '__main__':
                  'The System group requires a \'optionsPersistentIdentifierScheme\' type to be defined in the \'definitions\' section of the JSON schema.')
 
     # Print the generated XML document.
-    print('<?xml version="1.0" encoding="UTF-8"?>', file=file_out)
-    print(ET.tostring(root, encoding='unicode'),    file=file_out)
+    xml = xml.dom.minidom.parseString(ET.tostring(root, encoding='unicode'))
+    xml_pretty_bytes = xml.toprettyxml(indent="  ", encoding="UTF-8")
+    xml_pretty_str = xml_pretty_bytes.decode("UTF-8")
+    xml_pretty_str = re.sub(r'\s+$', '', xml_pretty_str, 0, re.M)
+    print(xml_pretty_str,    file=file_out)
