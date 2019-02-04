@@ -11,18 +11,22 @@
 # \param[in]  path        Path of the yoda-metadata.xml
 # \param[in]  versionFrom Version within yoda-metadata.xml
 # \param[in]  versionTo	  Version yoda-metadata.xml must be converted into
+# \param[in]  transformationChanges holds textual explanation of changes that took place for informing enduser
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Information message when action was not successful
 #
 
-iiFrontTransformXml(*path, *versionFrom, *versionTo, *status, *statusInfo)
+iiFrontTransformXml(*path, *versionFrom, *versionTo, *transformationChanges, *status, *statusInfo)
 {
         *status = "Success";
 	*statusInfo = "";
-        *statusPy = '';
-        *statusInfoPy = '';
-        iiRuleTransformXml(*path, *versionFrom, *versionTo, *statusPy, *statusInfoPy);
+        *transformationChanges = "Changes from within the system";
+        *statusPy = "";
+        *statusInfoPy = "";
+        *transformationChangesPy = "";
+        iiRuleTransformXml(*path, *versionFrom, *versionTo, *transformationChangesPy, *statusPy, *statusInfoPy);
 
+        *transformationChanges = *transformationChangesPy;
 	*status = *statusPy;
         *statusInfo = "*status -> Schema ID error: No conversion known for your yoda-metadatai.xml from version id '*versionFrom' into '*versionTo'";
 }
