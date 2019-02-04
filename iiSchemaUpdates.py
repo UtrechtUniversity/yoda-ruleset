@@ -92,8 +92,8 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
     group_name = pathParts[3]
     category = getCatory(callback, rods_zone, group_name)
 
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
-#    transformationBasePath = '/tempZone/home/research-initial'
+#    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
+    transformationBasePath = '/tempZone/home/research-initial'
 
     callback.writeString("serverLog", transformationBasePath)
     callback.writeString("serverLog", xslFilename)
@@ -221,10 +221,6 @@ def iiRuleGetSpace(rule_args, callback, rei):
     rule_args[1] = getSchemaSpace(callback, group_name)
 
 
-#------------------------------------- end of interface part
-
-
-#------------ end of yoda-metadata.xml transformation functions
 
 # Functions for setting initial schema versions for 
 # 
@@ -276,43 +272,7 @@ def getCatory(callback, rods_zone, group_name):
 # Schema location depends on the category the yoda-metadata.xml belongs to.
 # If the specific category XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
 def getSchemaLocation(callback, rods_zone, group_name):
-    category = '-1'
-    schemaCategory = 'default'
-
-    # Find out category based on current group_name.
-    ret_val = callback.msiMakeGenQuery(
-        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    if result.rowCnt != 0:
-        # Check each data object in batch.
-        for row in range(0, result.rowCnt):
-            attrValue = result.sqlResult[1].row(row)
-            category = attrValue
-
-    if category != '-1':
-        # Test whether found category actually has a collection with XSD's.
-        # If not, fall back to default schema collection. Otherwise use category schema collection
-        # /tempZone/yoda/schemas/default
-        # - metadata.xsd
-        # - vault.xsd
-        xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
-        ret_val = callback.msiMakeGenQuery(
-            "COLL_NAME",
-            "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
-
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
-
-        if result.rowCnt != 0:
-            schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
+    schemaCategory = getCatory(callback, rods_zone, group_name)
 
     return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory
 

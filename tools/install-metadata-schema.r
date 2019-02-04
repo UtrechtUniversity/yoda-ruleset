@@ -182,6 +182,72 @@ createXmlXsdCollections {
 		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl", *status);
 		writeLine("stdout", "Installed: *xsllandingpage");
         }
+
+
+        # TRANSFORMATION
+        # 1. Install transformations collection
+        *isfound = false;
+        *transformationsColl = "/" ++ $rodsZoneClient ++ IITRANSFORMATIONCOLLECTION;
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *transformationsColl) {
+                *isfound = true;
+        }
+
+        if(*isfound) {
+                writeLine("stdout", "Transformations collection already exists at: *transformationsColl");
+        } else {
+                msiCollCreate(*transformationsColl, 1, *status);
+                msiSetACL("default", "admin:read", "public", *transformationsColl);
+                msiSetACL("default", "admin:inherit", "public", *transformationsColl);
+                writeLine("stdout", "Installed: *transformationsColl");
+        }
+
+        # 2. Install transformation collection
+        *isfound = false;
+        *transformationColl = "/" ++ $rodsZoneClient ++ IITRANSFORMATIONCOLLECTION ++ "/" ++ *category;
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *transformationColl) {
+                *isfound = true;
+        }
+
+        if(*isfound) {
+                writeLine("stdout", "Transformation collection already exists at: *transformationColl");
+        } else {
+                msiCollCreate(*transformationColl, 1, *status);
+                msiSetACL("default", "admin:read", "public", *transformationColl);
+                msiSetACL("default", "admin:inherit", "public", *transformationColl);
+                writeLine("stdout", "Installed: *transformationColl");
+        }
+
+        # 3. Install xsl - in this test case use v1.xsl
+        *transXsl = *transformationColl ++ "/" ++ 'v1.xsl';
+        *localPath = *src ++ '../transformations/default/v1.xsl';
+
+        if (uuFileExists(*transXsl)) {
+                if (*update == 1) {
+                        msiDataObjPut(*transXsl, *resc, "localPath=*localPath++++forceFlag=", *status);
+                        writeLine("stdout", "Updated: *transXsl");
+                } else {
+                        writeLine("stdout", "Present: *transXsl");
+                }
+        } else {
+                msiDataObjPut(*transXsl, *resc, "localPath=*localPath", *status);
+                writeLine("stdout", "Installed: *transXsl");
+        }
+
+        # 4. Install corresponding text file (explanation to end user) - in this test case use v1.txt
+        *transTxt = *transformationColl ++ "/" ++ 'v1.txt';
+        *localPath = *src ++ '../transformations/default/v1.txt';
+
+        if (uuFileExists(*transTxt)) {
+                if (*update == 1) {
+                        msiDataObjPut(*transTxt, *resc, "localPath=*localPath++++forceFlag=", *status);
+                        writeLine("stdout", "Updated: *transTxt");
+                } else {
+                        writeLine("stdout", "Present: *transTxt");
+                }
+        } else {
+                msiDataObjPut(*transTxt, *resc, "localPath=*localPath", *status);
+                writeLine("stdout", "Installed: *transTxt");
+        }
 }
 
 input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/schemas", *schema="default", *category="default", *update=0
