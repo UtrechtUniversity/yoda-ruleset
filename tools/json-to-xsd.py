@@ -534,6 +534,8 @@ if __name__ == '__main__':
     # Generate the toplevel XML schema element with target namespace.
     namespace = os.path.dirname(jsonDocument["$id"])
     root = ET.fromstring('<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"'
+                         + ' targetNamespace="' + namespace + '"'
+                         + ' xmlns="' + namespace + '"'
                          + ' elementFormDefault="qualified"></xs:schema>')
 
     # Convert and insert all fields into the XSD.
