@@ -1,0 +1,6 @@
+<br>Data type is added to be used for publication purposes to datacite.
+<br>This brings possibilities to add the type of dataset that is being published. 
+<br>
+<br>Furthermore, the form is extended as such that remarks can be added.
+<br>These remarks are intended for 'communication' between researcher and datamanager.
+<br>These will never be part of a metadata when being published to datacite.

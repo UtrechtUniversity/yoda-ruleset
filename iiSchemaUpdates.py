@@ -27,8 +27,9 @@ import time
 # [0] -in-  path 
 # [1] -in-  versionFrom
 # [2] -in-  versionTo
-# [3] -out- statusPy
-# [4] -out- statusInfoPy
+# [3] -out- transformationChanges: html representation of changes taking place in the transformation for the enduser
+# [4] -out- statusPy
+# [5] -out- statusInfoPy
 
 def iiRuleTransformXml(rule_args, callback, rei): 
    xmlPath = rule_args[0]
@@ -37,7 +38,7 @@ def iiRuleTransformXml(rule_args, callback, rei):
 
    status = 'Unknown'
    statusInfo = ''
-
+   transformationText = ''
 
    # Declaration of transformation matrix version1 to version2
    # transformationMatrix[schemaid1][schemaid2] => delivers transformation function that handles transformation of data from version 1 to version 2
@@ -48,15 +49,18 @@ def iiRuleTransformXml(rule_args, callback, rei):
    try:
       transformationMethod = transformationMatrix[versionFrom][versionTo]
 
-      status = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+      result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+      status = result['status']
+      transformationText= result['transformationText']
  
    except KeyError: 
       # No transformation present to convert yoda-metadata.xml
       status = 'ERROR'
       statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
 
-   rule_args[3]  = status
-   rule_args[4]  = statusInfo
+   rule_args[3]  = transformationText
+   rule_args[4]  = status
+   rule_args[5]  = statusInfo
 
 # General steps within each transformation function
 # In reseach:
@@ -70,12 +74,31 @@ def iiRuleTransformXml(rule_args, callback, rei):
 #   - Do data transformation
 #   - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
 
+# returns dictionary:
+# status 
+# transformationText - for frontend
+
 def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
     # Get the transformation xsl
-    coll_name, data_name = os.path.split(xmlPath)
-    callback.writeString("serverLog", coll_name + '/transformation.xsl')
+    
+    xslFilename = 'v1.xsl'
+    txtFilename = 'v1.txt'
 
-    xslroot = parseXml(callback, coll_name + '/transformation.xsl')
+    coll_name, data_name = os.path.split(xmlPath)
+    callback.writeString("serverLog", coll_name)
+
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+    category = getCatory(callback, rods_zone, group_name)
+
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
+#    transformationBasePath = '/tempZone/home/research-initial'
+
+    callback.writeString("serverLog", transformationBasePath)
+    callback.writeString("serverLog", xslFilename)
+
+    xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
     # get yodaMeta XML
     xmlYodaMeta = parseXml(callback, xmlPath)
@@ -114,13 +137,37 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
     #    ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
     #    copyACLsFromParent(callback, xml_file, "default")
 
-    return 'Success'
+    # Now collect the transformation explanation text for the enduser
+    data_size = getDataObjSize(callback, transformationBasePath, txtFilename)
+    path =  transformationBasePath + '/' + txtFilename
+
+    # Open transformation information file
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
+    fileHandle = ret_val['arguments'][1]
+
+    # Read data.
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
+
+    # Close textfile.
+    callback.msiDataObjClose(fileHandle, 0)
+
+    read_buf = ret_val['arguments'][2]
+    transformationText = ''.join(read_buf.buf)
+    
+    result = {}
+    result['status'] = 'Success'
+    result['transformationText'] = transformationText
+    return result
 
 
 def parseXml(callback, path):
     # Retrieve XML size.
+    callback.writeString("serverLog", path)
+
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
+
+    callback.writeString("serverLog", 'size: ' + str(data_size))
 
     # Open metadata XML.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
@@ -175,15 +222,55 @@ def iiRuleGetSpace(rule_args, callback, rei):
 
 
 #------------------------------------- end of interface part
-#---- yoda-metadata.xml transformation functions
-def transform_1_2(metadataPath, ):
-    metadataPathCopy = metadataPath + 'copy' 
 
 
 #------------ end of yoda-metadata.xml transformation functions
 
 # Functions for setting initial schema versions for 
 # 
+
+# Determine category based upon rods zone and name of the group 
+def getCatory(callback, rods_zone, group_name):
+    category = '-1'
+    schemaCategory = 'default'
+
+    # Find out category based on current group_name.
+    ret_val = callback.msiMakeGenQuery(
+        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    if result.rowCnt != 0:
+        # Check each data object in batch.
+        for row in range(0, result.rowCnt):
+            attrValue = result.sqlResult[1].row(row)
+            category = attrValue
+
+    if category != '-1':
+        # Test whether found category actually has a collection with XSD's.
+        # If not, fall back to default schema collection. Otherwise use category schema collection
+        # /tempZone/yoda/schemas/default
+        # - metadata.xsd
+        # - vault.xsd
+        xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
+        ret_val = callback.msiMakeGenQuery(
+            "COLL_NAME",
+            "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
+            irods_types.GenQueryInp())
+        query = ret_val["arguments"][2]
+
+        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        result = ret_val["arguments"][1]
+
+        if result.rowCnt != 0:
+            schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
+
+    return schemaCategory
+
 
 # Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
 # Schema location depends on the category the yoda-metadata.xml belongs to.
