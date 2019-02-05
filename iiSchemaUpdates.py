@@ -17,6 +17,17 @@ import xml.etree.ElementTree as ET
 
 import time
 
+# ------- Global declaration of transformation matrix---------------
+# results in a string that is a postfix of two methods:
+# 1. execTransformation_
+#        executes transformation
+# 2. getTransformationText_ 
+#        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
+
+# transformationMatrix[schemaid1][schemaid2] 
+transformationMatrix = {}
+transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default':'v1'}
+
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
 # Transform yoda-metadata.xml from schemaId x to schemaId y
@@ -27,10 +38,8 @@ import time
 # [0] -in-  path 
 # [1] -in-  versionFrom
 # [2] -in-  versionTo
-# [3] -out- transformationChanges: html representation of changes taking place in the transformation for the enduser
-# [4] -out- statusPy
-# [5] -out- statusInfoPy
-
+# [3] -out- statusPy
+# [4] -out- statusInfoPy
 def iiRuleTransformXml(rule_args, callback, rei): 
    xmlPath = rule_args[0]
    versionFrom = rule_args[1]
@@ -40,27 +49,55 @@ def iiRuleTransformXml(rule_args, callback, rei):
    statusInfo = ''
    transformationText = ''
 
-   # Declaration of transformation matrix version1 to version2
-   # transformationMatrix[schemaid1][schemaid2] => delivers transformation function that handles transformation of data from version 1 to version 2
-
-   transformationMatrix = {}
-   transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default':'ExecTransformation1'}
-
    try:
-      transformationMethod = transformationMatrix[versionFrom][versionTo]
+      transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
 
       result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
       status = result['status']
-      transformationText= result['transformationText']
  
    except KeyError: 
       # No transformation present to convert yoda-metadata.xml
       status = 'ERROR'
       statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
 
+   rule_args[3]  = status
+   rule_args[4]  = statusInfo
+
+# Retrieve changes  form transforming yoda-metadata.xml from schemaId x to schemaId y
+# Depending on research/vault - different handling
+#
+#  iiRuleTransformationChanges
+# Rule_args:
+# [0] -in-  path
+# [1] -in-  versionFrom
+# [2] -in-  versionTo
+# [3] -out- transformationChanges: html representation of changes taking place in the transformation for the enduser
+# [4] -out- statusPy
+# [5] -out- statusInfoPy
+def iiRuleTransformationChanges(rule_args, callback, rei):
+   xmlPath = rule_args[0]
+   versionFrom = rule_args[1]
+   versionTo   = rule_args[2]
+
+   status = 'Unknown'
+   statusInfo = ''
+   transformationText = ''
+
+   try:
+      transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
+      result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+      status = result['status']
+      transformationText= result['transformationText']
+   except KeyError:
+      # No transformation present to convert yoda-metadata.xml
+      status = 'ERROR'
+      statusInfo = 'No transformation explanation known between these versions'
+
    rule_args[3]  = transformationText
    rule_args[4]  = status
    rule_args[5]  = statusInfo
+
+# ------------------ end of interface functions -----------------------------
 
 # General steps within each transformation function
 # In reseach:
@@ -78,11 +115,8 @@ def iiRuleTransformXml(rule_args, callback, rei):
 # status 
 # transformationText - for frontend
 
-def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
-    # Get the transformation xsl
-    
+def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     xslFilename = 'v1.xsl'
-    txtFilename = 'v1.txt'
 
     coll_name, data_name = os.path.split(xmlPath)
     callback.writeString("serverLog", coll_name)
@@ -92,8 +126,7 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
     group_name = pathParts[3]
     category = getCatory(callback, rods_zone, group_name)
 
-#    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
-    transformationBasePath = '/tempZone/home/research-initial'
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
 
     callback.writeString("serverLog", transformationBasePath)
     callback.writeString("serverLog", xslFilename)
@@ -137,6 +170,23 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
     #    ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
     #    copyACLsFromParent(callback, xml_file, "default")
 
+    result = {}
+    result['status'] = 'Success'
+    return result
+
+def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
+    txtFilename = 'v1.txt'
+
+    coll_name, data_name = os.path.split(xmlPath)
+    callback.writeString("serverLog", coll_name)
+
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+    category = getCatory(callback, rods_zone, group_name)
+
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
+
     # Now collect the transformation explanation text for the enduser
     data_size = getDataObjSize(callback, transformationBasePath, txtFilename)
     path =  transformationBasePath + '/' + txtFilename
@@ -153,7 +203,7 @@ def ExecTransformation1(callback, xmlPath, versionFrom, versionTo):
 
     read_buf = ret_val['arguments'][2]
     transformationText = ''.join(read_buf.buf)
-    
+
     result = {}
     result['status'] = 'Success'
     result['transformationText'] = transformationText
