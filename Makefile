@@ -32,10 +32,10 @@ PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune 
 
 # Output files.
 
-RULESET_NAME ?= rules-datarequest.re
+RULESET_NAME ?= rules-dc.re
 RULESET_FILE := $(RULESET_NAME)
 DEBUG_FILE := $(RULESET_NAME).debug
-PYRULESET_NAME ?= rules_datarequest.py
+PYRULESET_NAME ?= rules_dc.py
 PYRULESET_FILE := $(PYRULESET_NAME)
 
 INSTALL_DIR  ?= ..
