@@ -124,7 +124,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
-    category = getCatory(callback, rods_zone, group_name)
+    category = getCategory(callback, rods_zone, group_name)
 
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
 
@@ -183,7 +183,7 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
-    category = getCatory(callback, rods_zone, group_name)
+    category = getCategory(callback, rods_zone, group_name)
 
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
 
@@ -242,28 +242,31 @@ def writeXml(callback, path, content):
     content = path
 
 
-# Return the location of schema location based upon the category within the path
-# /in rule_args[0] path
-# /out rule_args[1] public xsd location
-
+# \brief Return the metadata schema location based upon the category of a metadata XML
+#
 # Example:
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
 # out: 'https://utrechtuniversity.github.io/yoda-schemas/default'
-
+#
+# \param[in] rule_args[0] XML path
+# \param[out] rule_args[1] Metadata schema location
+#
 def iiRuleGetLocation(rule_args, callback, rei):
     pathParts = rule_args[0].split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
     rule_args[1] = getSchemaLocation(callback, rods_zone, group_name)
 
-# Return the location of schema space based upon the category within the path
-# /in rule_args[0] path
-# /out rule_args[1] public xsd location
 
+# \brief Return the metadata schema space based upon the category of a metadata XML
+#
 # Example:
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
 # out: 'research.xsd'
-
+#
+# \param[in] rule_args[0] XML path
+# \param[out] rule_args[1] Metadata schema space
+#
 def iiRuleGetSpace(rule_args, callback, rei):
     pathParts = rule_args[0].split('/')
     rods_zone = pathParts[1]
@@ -271,23 +274,27 @@ def iiRuleGetSpace(rule_args, callback, rei):
     rule_args[1] = getSchemaSpace(callback, group_name)
 
 
-# Return the location of schema of a metadata XML
-# /in rule_args[0] XML path
-# /out rule_args[1] Metadata schema location
-
+# \brief Return the location of schema of a metadata XML
+#
 # Example:
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
 # out: 'https://utrechtuniversity.github.io/yoda-schemas/default'
-
+#
+# \param[in] rule_args[0] XML path
+# \param[out] rule_args[1] Metadata schema location
+#
 def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
     rule_args[1] = getSchemaLocation(callback, rule_args[0])
 
 
-# Functions for setting initial schema versions for
+# \brief Determine category based upon rods zone and name of the group
 #
-
-# Determine category based upon rods zone and name of the group
-def getCatory(callback, rods_zone, group_name):
+# \param[in] rods_zone
+# \param[in] group_name
+#
+# \return schema space
+#
+def getCategory(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
 
@@ -329,16 +336,27 @@ def getCatory(callback, rods_zone, group_name):
     return schemaCategory
 
 
-# Based upon the category of the current yoda-metadata.xml file, return the XSD schema involved.
-# Schema location depends on the category the yoda-metadata.xml belongs to.
-# If the specific category XSD does not exist, fall back to /default/research.xsd or /default/vault.xsd.
+# \brief Based upon the category of the current yoda-metadata.xml file,
+#        return the metadata schema involved.
+#
+# \param[in] rods_zone
+# \param[in] group_name
+#
+# \return schema location
+#
 def getSchemaLocation(callback, rods_zone, group_name):
-    schemaCategory = getCatory(callback, rods_zone, group_name)
+    schemaCategory = getCategory(callback, rods_zone, group_name)
 
     return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory
 
 
-# Based upon the group name of the current yoda-metadata.xml file, return the (research or vault) XSD schema involved.
+# \brief Based upon the group name of the current yoda-metadata.xml file,
+#     return the (research or vault) XSD schema involved.
+#
+# \param[in] group_name
+#
+# \return schema space
+#
 def getSchemaSpace(callback, group_name):
     space = '-1'
 
