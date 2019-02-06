@@ -389,7 +389,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     return dataName
 
 
- def getMetadataXMLSchema(callback, xmlPath):
+def getMetadataXMLSchema(callback, xmlPath):
     root = parseMetadataXml(callback, xmlPath)
 
     # Check if root attributes are present.
