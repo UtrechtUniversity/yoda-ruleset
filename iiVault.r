@@ -713,7 +713,7 @@ iiFrontRequestDatasetUnpreservableExtensions(*folder, *result, *status, *statusI
    *statusInfo = '';
 
    # White list of file extensions that allow for long term preservation - ALL uppercase
-   *allowedExtensionPreservationList = list('XML', 'JPG', 'RAW', 'JPEG');
+   *allowedExtensionPreservationList = list('XML', 'JPG', 'RAW', 'JPEG', 'TXT', 'TIFF');
    
    *oddFormats = list();
 
