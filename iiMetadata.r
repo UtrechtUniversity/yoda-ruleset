@@ -362,12 +362,14 @@ iiPrepareMetadataForm(*path, *result) {
 
                 # Check for transformations.
                 *kvp.transformation = "false";
+		*kvp.transformationText = "";
                 if (*xmlpath != "") {
                         # Retrieve current metadata schema.
                         iiRuleGetLocation(*xmlpath, *schemaLocation);
                         iiRuleGetMetadataXMLSchema(*xmlpath, *xmlSchemaLocation);
                         if (*schemaLocation != *xmlSchemaLocation) {
 			        *kvp.transformation = "true";
+				*kvp.transformationText = "Placeholder text.";
                         }
                 }
 
