@@ -235,13 +235,6 @@ def parseXml(callback, path):
     return etree.fromstring(xmlText)
 
 
-# Write resulting transformed xml to yoda-metadata.xml.
-# Save original yoda-metadata.xml to 'yoda-metadata.xml-timestamp()'
-def writeXml(callback, path, content):
-    # '[' + str(int(time.time())) + ']'
-    content = path
-
-
 # \brief Return the metadata schema location based upon the category of a metadata XML
 #
 # Example:
