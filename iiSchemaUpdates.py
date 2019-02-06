@@ -26,7 +26,8 @@ import time
 
 # transformationMatrix[schemaid1][schemaid2]
 transformationMatrix = {}
-transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default':'v1'}
+transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default': 'v1'}
+
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
@@ -41,27 +42,28 @@ transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-t
 # [3] -out- statusPy
 # [4] -out- statusInfoPy
 def iiRuleTransformXml(rule_args, callback, rei):
-   xmlPath = rule_args[0]
-   versionFrom = rule_args[1]
-   versionTo   = rule_args[2]
+    xmlPath = rule_args[0]
+    versionFrom = rule_args[1]
+    versionTo = rule_args[2]
 
-   status = 'Unknown'
-   statusInfo = ''
-   transformationText = ''
+    status = 'Unknown'
+    statusInfo = ''
+    transformationText = ''
 
-   try:
-      transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
+    try:
+        transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
 
-      result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
-      status = result['status']
+        result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+        status = result['status']
 
-   except KeyError:
-      # No transformation present to convert yoda-metadata.xml
-      status = 'ERROR'
-      statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
+    except KeyError:
+        # No transformation present to convert yoda-metadata.xml
+        status = 'ERROR'
+        statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
 
-   rule_args[3]  = status
-   rule_args[4]  = statusInfo
+    rule_args[3] = status
+    rule_args[4] = statusInfo
+
 
 # Retrieve changes  form transforming yoda-metadata.xml from schemaId x to schemaId y
 # Depending on research/vault - different handling
@@ -75,27 +77,28 @@ def iiRuleTransformXml(rule_args, callback, rei):
 # [4] -out- statusPy
 # [5] -out- statusInfoPy
 def iiRuleTransformationChanges(rule_args, callback, rei):
-   xmlPath = rule_args[0]
-   versionFrom = rule_args[1]
-   versionTo   = rule_args[2]
+    xmlPath = rule_args[0]
+    versionFrom = rule_args[1]
+    versionTo = rule_args[2]
 
-   status = 'Unknown'
-   statusInfo = ''
-   transformationText = ''
+    status = 'Unknown'
+    statusInfo = ''
+    transformationText = ''
 
-   try:
-      transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-      result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
-      status = result['status']
-      transformationText= result['transformationText']
-   except KeyError:
-      # No transformation present to convert yoda-metadata.xml
-      status = 'ERROR'
-      statusInfo = 'No transformation explanation known between these versions'
+    try:
+        transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
+        result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+        status = result['status']
+        transformationText = result['transformationText']
+    except KeyError:
+        # No transformation present to convert yoda-metadata.xml
+        status = 'ERROR'
+        statusInfo = 'No transformation explanation known between these versions'
 
-   rule_args[3]  = transformationText
-   rule_args[4]  = status
-   rule_args[5]  = statusInfo
+    rule_args[3] = transformationText
+    rule_args[4] = status
+    rule_args[5] = statusInfo
+
 
 # ------------------ end of interface functions -----------------------------
 
@@ -140,7 +143,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
 
     transformationResult = transform(xmlYodaMeta, encoding='utf8')
 
-    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration = True, encoding='UTF-8')
+    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration=True, encoding='UTF-8')
 
     pathParts = xmlPath.split('/')
     groupName = pathParts[3]
@@ -174,6 +177,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     result['status'] = 'Success'
     return result
 
+
 def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     txtFilename = 'v1.txt'
 
@@ -189,7 +193,7 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
 
     # Now collect the transformation explanation text for the enduser
     data_size = getDataObjSize(callback, transformationBasePath, txtFilename)
-    path =  transformationBasePath + '/' + txtFilename
+    path = transformationBasePath + '/' + txtFilename
 
     # Open transformation information file
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
@@ -210,6 +214,12 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     return result
 
 
+# \brief Parse a metadata XML given its path into an ElementTree
+#
+# \param[in] path Metadata XML path
+#
+# \return XML parsed as ElementTree
+#
 def parseXml(callback, path):
     # Retrieve XML size.
     callback.writeString("serverLog", path)
@@ -406,7 +416,7 @@ def getMetadataXMLSchema(callback, xmlPath):
     # Check if root attributes are present.
     schema = ""
     if root.attrib:
-       schema = "https://utrechtuniversity.github.io/yoda-schemas/default"
+        schema = "https://utrechtuniversity.github.io/yoda-schemas/default"
 
     return schema
 
