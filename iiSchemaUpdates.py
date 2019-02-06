@@ -21,10 +21,10 @@ import time
 # results in a string that is a postfix of two methods:
 # 1. execTransformation_
 #        executes transformation
-# 2. getTransformationText_ 
+# 2. getTransformationText_
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
 
-# transformationMatrix[schemaid1][schemaid2] 
+# transformationMatrix[schemaid1][schemaid2]
 transformationMatrix = {}
 transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default':'v1'}
 
@@ -32,15 +32,15 @@ transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-t
 
 # Transform yoda-metadata.xml from schemaId x to schemaId y
 # Depending on research/vault - different handling
-# 
+#
 #  iiRuleTransformXml
 # Rule_args:
-# [0] -in-  path 
+# [0] -in-  path
 # [1] -in-  versionFrom
 # [2] -in-  versionTo
 # [3] -out- statusPy
 # [4] -out- statusInfoPy
-def iiRuleTransformXml(rule_args, callback, rei): 
+def iiRuleTransformXml(rule_args, callback, rei):
    xmlPath = rule_args[0]
    versionFrom = rule_args[1]
    versionTo   = rule_args[2]
@@ -54,8 +54,8 @@ def iiRuleTransformXml(rule_args, callback, rei):
 
       result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
       status = result['status']
- 
-   except KeyError: 
+
+   except KeyError:
       # No transformation present to convert yoda-metadata.xml
       status = 'ERROR'
       statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
@@ -102,17 +102,17 @@ def iiRuleTransformationChanges(rule_args, callback, rei):
 # General steps within each transformation function
 # In reseach:
 #   - make copy of yoda-metadata.xml and rename to yoda-metadata[timestamp].xml
-#   - write new yoda-metadata.xml 
+#   - write new yoda-metadata.xml
 #              including new targetNameSpace etc - so trapping transformation does not occur again
 #              This is taken care of within transformation stylesheet
-# NOT in scope at this moment 
-# - In vault 
+# NOT in scope at this moment
+# - In vault
 #   - No backup required for yoda-metadata.xml
 #   - Do data transformation
 #   - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
 
 # returns dictionary:
-# status 
+# status
 # transformationText - for frontend
 
 def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
@@ -126,7 +126,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     group_name = pathParts[3]
     category = getCatory(callback, rods_zone, group_name)
 
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category  
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
 
     callback.writeString("serverLog", transformationBasePath)
     callback.writeString("serverLog", xslFilename)
@@ -140,7 +140,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
 
     transformationResult = transform(xmlYodaMeta, encoding='utf8')
 
-    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration = True, encoding='UTF-8')   
+    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration = True, encoding='UTF-8')
 
     pathParts = xmlPath.split('/')
     groupName = pathParts[3]
@@ -152,7 +152,7 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
         copiedYodaXml = coll_name + '/yoda-metadata' + '[' + str(int(time.time())) + '].xml'
         callback.writeString("serverLog", copiedYodaXml)
         callback.msiDataObjCopy(xmlPath, copiedYodaXml, '', 0)
-        
+
         # Prepare writing dataobject
         ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
         xml_file = coll_name + "/" + 'yoda-metadata.xml'
@@ -271,11 +271,22 @@ def iiRuleGetSpace(rule_args, callback, rei):
     rule_args[1] = getSchemaSpace(callback, group_name)
 
 
+# Return the location of schema of a metadata XML
+# /in rule_args[0] XML path
+# /out rule_args[1] Metadata schema location
 
-# Functions for setting initial schema versions for 
-# 
+# Example:
+# in:  /tempZone/home/research-initial/yoda-metadata.xml
+# out: 'https://utrechtuniversity.github.io/yoda-schemas/default'
 
-# Determine category based upon rods zone and name of the group 
+def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
+    rule_args[1] = getSchemaLocation(callback, rule_args[0])
+
+
+# Functions for setting initial schema versions for
+#
+
+# Determine category based upon rods zone and name of the group
 def getCatory(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
@@ -376,6 +387,17 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
     callback.msiCloseGenQuery(query, result)
 
     return dataName
+
+
+ def getMetadataXMLSchema(callback, xmlPath):
+    root = parseMetadataXml(callback, xmlPath)
+
+    # Check if root attributes are present.
+    schema = ""
+    if root.attrib:
+       schema = "https://utrechtuniversity.github.io/yoda-schemas/default"
+
+    return schema
 
 
 # \brief getDataObjSize

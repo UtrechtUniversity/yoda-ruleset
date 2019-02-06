@@ -359,6 +359,18 @@ iiPrepareMetadataForm(*path, *result) {
                                 writeLine("serverLog", "iiPrepareMetadataForm: *msg");
                         }
                 }
+
+                # Check for transformations.
+                *kvp.transformation = "false";
+                if (*xmlpath != "") {
+                        # Retrieve current metadata schema.
+                        iiRuleGetLocation(*xmlpath, *schemaLocation);
+                        iiRuleGetMetadataXMLSchema(*xmlpath, *xmlSchemaLocation);
+                        if (*schemaLocation != *xmlSchemaLocation) {
+			        *kvp.transformation = "true";
+                        }
+                }
+
                 uuKvp2JSON(*kvp, *result);
         # Vault space.
         } else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
