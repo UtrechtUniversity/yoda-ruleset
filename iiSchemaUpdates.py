@@ -67,39 +67,32 @@ def iiRuleTransformXml(rule_args, callback, rei):
     rule_args[2] = statusInfo
 
 
-# Retrieve changes  form transforming yoda-metadata.xml from schemaId x to schemaId y
-# Depending on research/vault - different handling
+# \brief Retrieve changes transforming yoda-metadata.xml from schema x to schema y.
+#        Depending on research/vault - different handling.
 #
-#  iiRuleTransformationChanges
-# Rule_args:
-# [0] -in-  path
-# [1] -in-  versionFrom
-# [2] -in-  versionTo
-# [3] -out- transformationChanges: html representation of changes taking place in the transformation for the enduser
-# [4] -out- statusPy
-# [5] -out- statusInfoPy
+# \param[in] rule_args[0] XML path
+# \param[out] rule_args[1] transformationText
+#
 def iiRuleTransformationChanges(rule_args, callback, rei):
     xmlPath = rule_args[0]
-    versionFrom = rule_args[1]
-    versionTo = rule_args[2]
 
-    status = 'Unknown'
-    statusInfo = ''
+    # Retrieve current metadata schemas.
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+
+    versionTo = getSchemaLocation(callback, rods_zone, group_name)
+    versionFrom = getMetadataXMLSchema(callback, xmlPath)
+
     transformationText = ''
 
     try:
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-        result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
-        status = result['status']
-        transformationText = result['transformationText']
+        transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
     except KeyError:
-        # No transformation present to convert yoda-metadata.xml
-        status = 'ERROR'
-        statusInfo = 'No transformation explanation known between these versions'
+        pass
 
-    rule_args[3] = transformationText
-    rule_args[4] = status
-    rule_args[5] = statusInfo
+    rule_args[1] = transformationText
 
 
 # ------------------ end of interface functions -----------------------------
@@ -210,10 +203,7 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     read_buf = ret_val['arguments'][2]
     transformationText = ''.join(read_buf.buf)
 
-    result = {}
-    result['status'] = 'Success'
-    result['transformationText'] = transformationText
-    return result
+    return transformationText
 
 
 # \brief Parse a metadata XML given its path into an ElementTree
