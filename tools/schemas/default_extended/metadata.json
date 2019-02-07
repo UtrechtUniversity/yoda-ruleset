@@ -1,5 +1,5 @@
 {
-  "$id": "https://utrechtuniversity.github.io/yoda-schemas/default/metadata.json",
+  "$id": "https://utrechtuniversity.github.io/yoda-schemas/default_extended/metadata.json",
   "definitions": {
     "stringNormal": {
       "type": "string",
