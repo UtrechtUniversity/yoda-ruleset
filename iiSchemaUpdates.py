@@ -313,8 +313,10 @@ def getSchemaLocation(callback, rods_zone, group_name):
 
     jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
     jsonSchema = parseMetadataJson(callback, jsonSchemaPath)
+    schema, jsonFile = os.path.split(jsonSchema["$id"])
 
-    return 'https://utrechtuniversity.github.io/yoda-schemas/' + jsonSchema["$id"]
+    return schema
+
 
 
 # \brief Based upon the group name of the current yoda-metadata.xml file,
