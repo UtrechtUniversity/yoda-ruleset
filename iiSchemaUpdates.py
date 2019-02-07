@@ -39,7 +39,7 @@ transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default']
 # \param[out] rule_args[2] statusInfoPy
 #
 def iiRuleTransformXml(rule_args, callback, rei):
-    xmlPath = rule_args[0] + "yoda-metadata.xml"
+    xmlPath = rule_args[0] + "/yoda-metadata.xml"
 
     # Retrieve current metadata schemas.
     pathParts = xmlPath.split('/')
