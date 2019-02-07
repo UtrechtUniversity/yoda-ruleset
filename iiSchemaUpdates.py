@@ -341,7 +341,10 @@ def getCategory(callback, rods_zone, group_name):
 def getSchemaLocation(callback, rods_zone, group_name):
     schemaCategory = getCategory(callback, rods_zone, group_name)
 
-    return 'https://utrechtuniversity.github.io/yoda-schemas/' + schemaCategory
+    jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
+    jsonSchema = parseMetadataJson(callback, jsonSchemaPath)
+
+    return 'https://utrechtuniversity.github.io/yoda-schemas/' + jsonSchema["$id"]
 
 
 # \brief Based upon the group name of the current yoda-metadata.xml file,
@@ -520,6 +523,33 @@ def parseMetadataXml(callback, path):
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
     return ET.fromstring(xmlText)
+
+
+# \brief Parse metadata JSON schema into JSON dict.
+#
+# \param[in] path Path of metadata JSON schema to parse
+#
+# \return Parsed JSON as dict.
+#
+def parseMetadataJson(callback, path):
+    # Retrieve JSON size.
+    coll_name, data_name = os.path.split(path)
+    data_size = getDataObjSize(callback, coll_name, data_name)
+
+    # Open metadata JSON.
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
+    fileHandle = ret_val['arguments'][1]
+
+    # Read metadata JSON.
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
+
+    # Close metadata JSON.
+    callback.msiDataObjClose(fileHandle, 0)
+
+    # Parse JSON.
+    read_buf = ret_val['arguments'][2]
+    jsonText = ''.join(read_buf.buf)
+    return json.loads(jsonText)
 
 
 # \brief Check metadata XML for possible schema updates.
