@@ -14,7 +14,7 @@
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Information message when action was not successful
 #
-iiFrontTransformXml(*path, *versionFrom, *versionTo, *status, *statusInfo)
+iiFrontTransformXml(*path, *status, *statusInfo)
 {
         *status = "Success";
         *statusInfo = "";
