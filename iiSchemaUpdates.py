@@ -381,7 +381,10 @@ def getMetadataXMLSchema(callback, xmlPath):
     # Check if root attributes are present.
     schema = ""
     if root.attrib:
-        schema = "https://utrechtuniversity.github.io/yoda-schemas/default"
+        key = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+        schemaLocation = root.attrib[key]
+
+        schema = schemaLocation.split()[0]
 
     return schema
 
