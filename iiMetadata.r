@@ -365,7 +365,9 @@ iiPrepareMetadataForm(*path, *result) {
 		*kvp.transformationText = "";
                 if (*xmlpath != "") {
                         # Retrieve current metadata schema.
+                        *schemaLocation = '';
                         iiRuleGetLocation(*xmlpath, *schemaLocation);
+                        *xmlSchemaLocation = '';
                         iiRuleGetMetadataXMLSchema(*xmlpath, *xmlSchemaLocation);
                         if (*schemaLocation != *xmlSchemaLocation) {
 			        *kvp.transformation = "true";
