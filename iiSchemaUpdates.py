@@ -96,7 +96,7 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
         pass
 
     rule_args[1] = transformation
-    rule_args[2] = statusInfo
+    rule_args[2] = transformationText
 
 # ------------------ end of interface functions -----------------------------
 
