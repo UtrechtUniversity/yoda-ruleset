@@ -11,6 +11,7 @@ from collections import namedtuple
 from enum import Enum
 import hashlib
 import base64
+import json
 import irods_types
 import lxml.etree as etree
 import xml.etree.ElementTree as ET
