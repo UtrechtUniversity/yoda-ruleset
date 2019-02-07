@@ -2,7 +2,7 @@
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default"
-    xmlns="https://utrechtuniversity.github.io/yoda-schemas/default-extended" 
+    xmlns="https://utrechtuniversity.github.io/yoda-schemas/default_extended" 
     exclude-result-prefixes="yoda">
    
   <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="no" indent="yes"/>
@@ -12,8 +12,8 @@
   </xsl:template>
 
   <xsl:template match="/yoda:metadata">
-    <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://utrechtuniversity.github.io/yoda-schemas/default"  
-            xsi:schemaLocation="https://utrechtuniversity.github.io/yoda-schemas/default research.xsd">
+    <metadata xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://utrechtuniversity.github.io/yoda-schemas/default_extended"  
+            xsi:schemaLocation="https://utrechtuniversity.github.io/yoda-schemas/default_extended research.xsd">
         <xsl:if test="yoda:Title">
             <Title><xsl:value-of select="yoda:Title"/></Title>
         </xsl:if>
