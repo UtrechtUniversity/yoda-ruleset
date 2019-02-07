@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default-test"
-    xmlns="https://utrechtuniversity.github.io/yoda-schemas/default" 
+    xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default"
+    xmlns="https://utrechtuniversity.github.io/yoda-schemas/default-extended" 
     exclude-result-prefixes="yoda">
    
   <xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="no" indent="yes"/>
