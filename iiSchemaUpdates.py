@@ -120,7 +120,6 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     xslFilename = 'v1.xsl'
 
     coll_name, data_name = os.path.split(xmlPath)
-    callback.writeString("serverLog", coll_name)
 
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
@@ -128,9 +127,6 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     category = getCategory(callback, rods_zone, group_name)
 
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
-
-    callback.writeString("serverLog", transformationBasePath)
-    callback.writeString("serverLog", xslFilename)
 
     xslroot = parseXML(callback, transformationBasePath + '/' + xslFilename)
 
@@ -177,10 +173,9 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
 
 
 def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
-    txtFilename = 'v1.txt'
+    htmlFilename = 'v1.html'
 
     coll_name, data_name = os.path.split(xmlPath)
-    callback.writeString("serverLog", coll_name)
 
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
@@ -189,18 +184,18 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
 
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
 
-    # Now collect the transformation explanation text for the enduser
-    data_size = getDataObjSize(callback, transformationBasePath, txtFilename)
-    path = transformationBasePath + '/' + txtFilename
+    # Collect the transformation explanation text for the enduser.
+    data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)
+    path = transformationBasePath + '/' + htmlFilename
 
-    # Open transformation information file
+    # Open transformation information file.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
     fileHandle = ret_val['arguments'][1]
 
     # Read data.
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
 
-    # Close textfile.
+    # Close transformation information file.
     callback.msiDataObjClose(fileHandle, 0)
 
     read_buf = ret_val['arguments'][2]
