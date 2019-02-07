@@ -31,24 +31,26 @@ transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-t
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
-# Transform yoda-metadata.xml from schemaId x to schemaId y
-# Depending on research/vault - different handling
+# \brief Transform yoda-metadata.xml from schema x to schema y.
+#        Depending on research/vault - different handling.
 #
-#  iiRuleTransformXml
-# Rule_args:
-# [0] -in-  path
-# [1] -in-  versionFrom
-# [2] -in-  versionTo
-# [3] -out- statusPy
-# [4] -out- statusInfoPy
+# \param[in] rule_args[0] XML path
+# \param[out] rule_args[1] statusPy
+# \param[out] rule_args[2] statusInfoPy
+#
 def iiRuleTransformXml(rule_args, callback, rei):
     xmlPath = rule_args[0]
-    versionFrom = rule_args[1]
-    versionTo = rule_args[2]
+
+    # Retrieve current metadata schemas.
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+
+    versionTo = getSchemaLocation(callback, rods_zone, group_name)
+    versionFrom = getMetadataXMLSchema(callback, xmlPath)
 
     status = 'Unknown'
     statusInfo = ''
-    transformationText = ''
 
     try:
         transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
@@ -61,8 +63,8 @@ def iiRuleTransformXml(rule_args, callback, rei):
         status = 'ERROR'
         statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
 
-    rule_args[3] = status
-    rule_args[4] = statusInfo
+    rule_args[1] = status
+    rule_args[2] = statusInfo
 
 
 # Retrieve changes  form transforming yoda-metadata.xml from schemaId x to schemaId y
@@ -287,7 +289,7 @@ def iiRuleGetSpace(rule_args, callback, rei):
 # \param[out] rule_args[1] Metadata schema location
 #
 def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
-    rule_args[1] = getSchemaLocation(callback, rule_args[0])
+    rule_args[1] = getMetadataXMLSchema(callback, rule_args[0])
 
 
 # \brief Determine category based upon rods zone and name of the group
