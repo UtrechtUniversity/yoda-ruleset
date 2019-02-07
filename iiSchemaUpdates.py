@@ -14,7 +14,6 @@ import base64
 import json
 import irods_types
 import lxml.etree as etree
-import xml.etree.ElementTree as ET
 
 import time
 
@@ -26,7 +25,7 @@ import time
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
 
 transformationMatrix = {}
-transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default'] = {'https://utrechtuniversity.github.io/yoda-schemas/default-extended': 'v1'}
+transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default'] = {'https://utrechtuniversity.github.io/yoda-schemas/default_extended': 'v1'}
 
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
@@ -498,7 +497,7 @@ def parseXML(callback, path):
     # Parse XML.
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
-    return ET.fromstring(xmlText)
+    return etree.fromstring(xmlText)
 
 
 # \brief Parse metadata JSON schema into JSON dict.
