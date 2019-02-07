@@ -341,17 +341,11 @@ iiPrepareMetadataForm(*path, *result) {
                 *kvp.transformation = "false";
                 *kvp.transformationText = "";
                 if (*xmlpath != "") {
-                        # Retrieve current metadata schema.
-                        *schemaLocation = '';
-                        iiRuleGetLocation(*xmlpath, *schemaLocation);
-                        *xmlSchemaLocation = '';
-                        iiRuleGetMetadataXMLSchema(*xmlpath, *xmlSchemaLocation);
-                        if (*schemaLocation != *xmlSchemaLocation) {
-                                *transformationText = '';
-                                iiRuleTransformationChanges(*xmlpath, *transformationText)
-                                *kvp.transformation = "true";
-                                *kvp.transformationText = *transformationText;
-                        }
+                        *transformation = '';
+                        *transformationText = '';
+                        iiRulePossibleTransformation(*xmlpath, *transformation, *transformationText)
+                        *kvp.transformation = *transformation;
+                        *kvp.transformationText = *transformationText;
                 }
 
                 uuKvp2JSON(*kvp, *result);

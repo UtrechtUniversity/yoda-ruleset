@@ -66,13 +66,15 @@ def iiRuleTransformXml(rule_args, callback, rei):
     rule_args[2] = statusInfo
 
 
-# \brief Retrieve changes transforming yoda-metadata.xml from schema x to schema y.
+# \brief Check if yoda-metadata.xml transformation from schema x to schema y
+#        is possible and retrieve transformation description.
 #        Depending on research/vault - different handling.
 #
 # \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] transformationText
+# \param[out] rule_args[1] transformation
+# \param[out] rule_args[2] transformationText
 #
-def iiRuleTransformationChanges(rule_args, callback, rei):
+def iiRulePossibleTransformation(rule_args, callback, rei):
     xmlPath = rule_args[0]
 
     # Retrieve current metadata schemas.
@@ -83,18 +85,21 @@ def iiRuleTransformationChanges(rule_args, callback, rei):
     versionTo = getSchemaLocation(callback, rods_zone, group_name)
     versionFrom = getMetadataXMLSchema(callback, xmlPath)
 
+    transformation = 'false'
     transformationText = ''
 
     try:
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
         transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+        transformation = 'true'
     except KeyError:
         pass
 
-    rule_args[1] = transformationText
-
+    rule_args[1] = transformation
+    rule_args[2] = statusInfo
 
 # ------------------ end of interface functions -----------------------------
+
 
 # General steps within each transformation function
 # In reseach:
@@ -315,7 +320,6 @@ def getSchemaLocation(callback, rods_zone, group_name):
     schema, jsonFile = os.path.split(jsonSchema["$id"])
 
     return schema
-
 
 
 # \brief Based upon the group name of the current yoda-metadata.xml file,
