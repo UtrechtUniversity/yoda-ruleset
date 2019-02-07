@@ -82,13 +82,12 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
     rods_zone = pathParts[1]
     group_name = pathParts[3]
 
-    versionTo = getSchemaLocation(callback, rods_zone, group_name)
-    versionFrom = getMetadataXMLSchema(callback, xmlPath)
-
     transformation = 'false'
     transformationText = ''
 
     try:
+        versionTo = getSchemaLocation(callback, rods_zone, group_name)
+        versionFrom = getMetadataXMLSchema(callback, xmlPath)
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
         transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
         transformation = 'true'
