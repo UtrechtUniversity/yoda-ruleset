@@ -234,8 +234,8 @@ createXmlXsdCollections {
         }
 
         # 4. Install corresponding text file (explanation to end user) - in this test case use v1.txt
-        *transTxt = *transformationColl ++ "/" ++ 'v1.txt';
-        *localPath = *src ++ '../transformations/default/v1.txt';
+        *transTxt = *transformationColl ++ "/" ++ 'v1.html';
+        *localPath = *src ++ '../transformations/default/v1.html';
 
         if (uuFileExists(*transTxt)) {
                 if (*update == 1) {
