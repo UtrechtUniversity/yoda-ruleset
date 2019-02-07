@@ -24,9 +24,8 @@ import time
 # 2. getTransformationText_
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
 
-# transformationMatrix[schemaid1][schemaid2]
 transformationMatrix = {}
-transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default-test'] = {'https://utrechtuniversity.github.io/yoda-schemas/default': 'v1'}
+transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default'] = {'https://utrechtuniversity.github.io/yoda-schemas/default-extended': 'v1'}
 
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
