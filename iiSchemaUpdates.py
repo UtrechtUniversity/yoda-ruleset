@@ -39,7 +39,7 @@ transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default']
 # \param[out] rule_args[2] statusInfoPy
 #
 def iiRuleTransformXml(rule_args, callback, rei):
-    xmlPath = rule_args[0]
+    xmlPath = rule_args[0] + "yoda-metadata.xml"
 
     # Retrieve current metadata schemas.
     pathParts = xmlPath.split('/')
@@ -129,10 +129,10 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     callback.writeString("serverLog", transformationBasePath)
     callback.writeString("serverLog", xslFilename)
 
-    xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
+    xslroot = parseXML(callback, transformationBasePath + '/' + xslFilename)
 
-    # get yodaMeta XML
-    xmlYodaMeta = parseXml(callback, xmlPath)
+    # Retrieve Yoda metadata XML.
+    xmlYodaMeta = parseXML(callback, xmlPath)
 
     transform = etree.XSLT(xslroot)
 
@@ -204,37 +204,6 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     transformationText = ''.join(read_buf.buf)
 
     return transformationText
-
-
-# \brief Parse a metadata XML given its path into an ElementTree
-#
-# \param[in] path Metadata XML path
-#
-# \return XML parsed as ElementTree
-#
-def parseXml(callback, path):
-    # Retrieve XML size.
-    callback.writeString("serverLog", path)
-
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    callback.writeString("serverLog", 'size: ' + str(data_size))
-
-    # Open metadata XML.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read metadata XML.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close metadata XML.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse XML.
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
-    return etree.fromstring(xmlText)
 
 
 # \brief Return the metadata schema location based upon the category of a metadata XML
@@ -406,7 +375,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 
 
 def getMetadataXMLSchema(callback, xmlPath):
-    root = parseMetadataXml(callback, xmlPath)
+    root = parseXML(callback, xmlPath)
 
     # Check if root attributes are present.
     schema = ""
@@ -499,16 +468,20 @@ def copyACLsFromParent(callback, path, recursive_flag):
                 callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
-# \brief Check metadata XML for possible schema updates.
+# \brief Parse XML into an ElementTree.
 #
 # \param[in] path Path of metadata XML to parse
 #
 # \return Parsed XML as ElementTree.
 #
-def parseMetadataXml(callback, path):
+def parseXML(callback, path):
+    callback.writeString("serverLog", path)
+
     # Retrieve XML size.
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
+
+    callback.writeString("serverLog", 'size: ' + str(data_size))
 
     # Open metadata XML.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
@@ -561,7 +534,7 @@ def parseMetadataJson(callback, path):
 # \param[in] data_name  Data name of metadata XML
 ##
 def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
-    root = parseMetadataXml(callback, coll_name + "/" + data_name)
+    root = parseXML(callback, coll_name + "/" + data_name)
 
     # Check if no attributes are present.
     # If not, add xmlns:xsi and xsi:schemaLocation attributes.
