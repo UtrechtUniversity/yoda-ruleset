@@ -408,7 +408,7 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 def getMetadataXMLSchema(callback, xmlPath):
     schema = ""
     try:
-        root = parseXML(callback, xmlPath)
+        root = parseMetadataXml(callback, xmlPath)
     except:
         return schema
 
