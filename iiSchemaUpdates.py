@@ -129,10 +129,10 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
 
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
 
-    xslroot = parseXML(callback, transformationBasePath + '/' + xslFilename)
+    xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
     # Retrieve Yoda metadata XML.
-    xmlYodaMeta = parseXML(callback, xmlPath)
+    xmlYodaMeta = parseXml(callback, xmlPath)
 
     transform = etree.XSLT(xslroot)
 
