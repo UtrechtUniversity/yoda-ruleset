@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xsl:stylesheet version="1.0"
-   xmlns:yoda=""
+   xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default_extended"
    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
    xmlns="http://datacite.org/schema/kernel-4">
   <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
 
   <xsl:template match="/">
-	<xsl:apply-templates select="/yoda:metadata"/>
+        <xsl:apply-templates select="/yoda:metadata"/>
   </xsl:template>
 
   <xsl:template match="/yoda:metadata">
-     <resource 
+     <resource
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd"
        >
@@ -29,25 +29,25 @@
         </descriptions>
         <publisher>Utrecht University</publisher>
         <publicationYear>
-	   <xsl:apply-templates select="yoda:System/yoda:Publication_Date"/>
-	</publicationYear>
-	
-	<xsl:if test="Discipline or Tag">
+           <xsl:apply-templates select="yoda:System/yoda:Publication_Date"/>
+        </publicationYear>
+
+        <xsl:if test="Discipline or Tag">
           <subjects>
             <xsl:apply-templates select="yoda:Discipline"/>
-       	    <xsl:apply-templates select="yoda:Tag"/>
+            <xsl:apply-templates select="yoda:Tag"/>
           </subjects>
-	</xsl:if>
+        </xsl:if>
 
         <creators>
           <xsl:apply-templates select="yoda:Creator"/>
         </creators>
-	
-	<xsl:if test="Contributor">
-		<contributors>
-		  <xsl:apply-templates select="yoda:Contributor"/>
-		</contributors>
-	</xsl:if>
+
+        <xsl:if test="Contributor">
+                <contributors>
+                  <xsl:apply-templates select="yoda:Contributor"/>
+                </contributors>
+        </xsl:if>
 
         <dates>
           <xsl:if test="System/Last_Modified_Date">
@@ -65,7 +65,7 @@
           <xsl:apply-templates select="yoda:License"/>
           <xsl:apply-templates select="yoda:Data_Access_Restriction"/>
         </rightsList>
-	
+
         <resourceType resourceTypeGeneral="Dataset">
             <xsl:text><xsl:value-of select="yoda:Data_Type"/></xsl:text>
         </resourceType>
@@ -75,18 +75,18 @@
             <xsl:apply-templates select="yoda:Related_Datapackage"/>
           </relatedIdentifiers>
         </xsl:if>
-	
-	<xsl:if test="yoda:Covered_Geolocation_Place">
+
+        <xsl:if test="yoda:Covered_Geolocation_Place">
           <geoLocations>
             <xsl:apply-templates select="yoda:Covered_Geolocation_Place"/>
           </geoLocations>
         </xsl:if>
 
-	<xsl:if test="yoda:Funding_Reference">
-	  <fundingReferences>
-	    <xsl:apply-templates select="yoda:Funding_Reference"/>
-	  </fundingReferences>
-	</xsl:if>
+        <xsl:if test="yoda:Funding_Reference">
+          <fundingReferences>
+            <xsl:apply-templates select="yoda:Funding_Reference"/>
+          </fundingReferences>
+        </xsl:if>
       </resource>
   </xsl:template>
 
@@ -103,9 +103,9 @@
   </xsl:template>
 
   <xsl:template match="yoda:System/yoda:Publication_Date">
-      <!-- 
+      <!--
         The date is in YYYY-MM-DD form, so we need to extract the first 4 digits for the year.
-	xslt substring indexes start at 1 -->
+        xslt substring indexes start at 1 -->
       <xsl:value-of select="substring(., 1, 4)" />
   </xsl:template>
 
@@ -124,10 +124,10 @@
   <xsl:template match="yoda:Contributor">
     <contributor>
       <xsl:attribute name="contributorType">
-	<xsl:value-of select="yoda:Properties/yoda:Contributor_Type"/>
+        <xsl:value-of select="yoda:Properties/yoda:Contributor_Type"/>
       </xsl:attribute>
       <contributorName><xsl:value-of select="yoda:Name" /></contributorName>
-      <xsl:apply-templates select="yoda:Properties/yoda:Person_Identifier" /> 
+      <xsl:apply-templates select="yoda:Properties/yoda:Person_Identifier" />
       <xsl:apply-templates select="yoda:Properties/yoda:Affiliation"/>
     </contributor>
   </xsl:template>
@@ -140,11 +140,11 @@
            <xsl:value-of select="yoda:Name_Identifier" />
         </nameIdentifier>
   </xsl:template>
-  
+
   <xsl:template match="yoda:Properties/yoda:Affiliation">
-	<affiliation><xsl:value-of select="." /></affiliation>
+        <affiliation><xsl:value-of select="." /></affiliation>
   </xsl:template>
- 
+
 <xsl:template match="yoda:License">
   <rights>
      <xsl:if test="/yoda:metadata/yoda:System/yoda:License_URI">
@@ -165,7 +165,7 @@
 </xsl:template>
 
 <xsl:template match="yoda:Language">
-  <language><xsl:value-of select="substring(., 1, 2)"/></language>    
+  <language><xsl:value-of select="substring(., 1, 2)"/></language>
 </xsl:template>
 
 <xsl:template match="yoda:Related_Datapackage">
@@ -173,7 +173,7 @@
    <xsl:if test="(yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier) and (yoda:Relation_Type)">
       <relatedIdentifier>
          <xsl:attribute name="relatedIdentifierType">
-  	   <xsl:value-of select="yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier_Scheme" />
+           <xsl:value-of select="yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier_Scheme" />
          </xsl:attribute>
          <xsl:attribute name="relationType"><xsl:value-of select="substring-before(yoda:Relation_Type, ':')"/></xsl:attribute>
          <xsl:value-of select="yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier" />

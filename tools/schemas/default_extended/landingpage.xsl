@@ -2,7 +2,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
  xmlns:str="http://exslt.org/strings"
  xmlns:date="http://exslt.org/dates-and-times"
- xmlns:yoda=""
+ xmlns:yoda="https://utrechtuniversity.github.io/yoda-schemas/default_extended"
  extension-element-prefixes="str date"
  xmlns="http://www.w3.org/1999/xhtml"
  version="1.0">
@@ -23,38 +23,38 @@
         <meta name="description" content="Data Publication platform of Utrecht University"/>
         <meta name="author" content="Utrecht University"/>
         <title>Data Publication platform of Utrecht University</title>
-	<link href="/static/css/yoda-landingpage.css" rel="stylesheet"/>
+        <link href="/static/css/yoda-landingpage.css" rel="stylesheet"/>
       </head>
       <body>
-	<div class="brandbar container">
-	  <div class="logo pull-left">
+        <div class="brandbar container">
+          <div class="logo pull-left">
             <a href="http://www.uu.nl">
               <img src="/static/img/logo-uu.svg" />
             </a>
-	  </div>
-	</div>
-	<nav class="navbar navbar-inverse navbar-static-top">
-	  <div class="container">
+          </div>
+        </div>
+        <nav class="navbar navbar-inverse navbar-static-top">
+          <div class="container">
             <div class="navbar-header">
-	      <span class="navbar-brand">Data Publication platform of Utrecht University</span>
-	    </div>
-	  </div>
-	</nav>
+              <span class="navbar-brand">Data Publication platform of Utrecht University</span>
+            </div>
+          </div>
+        </nav>
         <div class="container">
           <div class="row">
             <div class="col-md-10">
-	      <xsl:apply-templates select="yoda:Title"/>
-	      <xsl:apply-templates select="yoda:Description"/>
-	      <hr />
+              <xsl:apply-templates select="yoda:Title"/>
+              <xsl:apply-templates select="yoda:Description"/>
+              <hr />
               <h3>Descriptive</h3>
               <dl class="dl-horizontal">
                 <xsl:apply-templates select="yoda:Discipline | yoda:Version | yoda:Related_Datapackage | yoda:Language"/>
-		<xsl:if test="yoda:Tag">
+                <xsl:if test="yoda:Tag">
                   <dt>Tag(s)</dt>
                   <dd>
                     <xsl:apply-templates select="yoda:Tag"/>
                   </dd>
-		</xsl:if>
+                </xsl:if>
               </dl>
               <h3>Administrative</h3>
               <dl class="dl-horizontal">
@@ -72,11 +72,11 @@
             </div>
           </div>
         </div>
-	<footer class="footer">
-	  <div class="container">
+        <footer class="footer">
+          <div class="container">
             <img src="/static/img/logo_footer.svg" />
-	  </div>
-	</footer>
+          </div>
+        </footer>
       </body>
     </html>
   </xsl:template>
@@ -88,7 +88,7 @@
   </xsl:template>
   <xsl:template match="System">
     <dt>Persistent Identifier</dt>
-    <dd><xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier_Scheme"/>: <xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier"/></dd>
+    <dd><xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier_Scheme"/>: <xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier"/></dd>
     <xsl:apply-templates select="./yoda:Publication_Date"/>
     <xsl:apply-templates select="./yoda:Last_Modified_Date"/>
   </xsl:template>
@@ -154,16 +154,16 @@
     <dt>License</dt>
     <dd>
       <xsl:choose>
-	<xsl:when test="/yoda:metadata/yoda:System/yoda:License_URI">
-	  <a>
+        <xsl:when test="/yoda:metadata/yoda:System/yoda:License_URI">
+          <a>
             <xsl:attribute name="href"><xsl:value-of select="/yoda:metadata/yoda:System/yoda:License_URI"/></xsl:attribute>
             <xsl:attribute name="target">blank</xsl:attribute>
             <xsl:value-of select="."/>
-	  </a>
-	</xsl:when>
-	<xsl:otherwise>
-	  <xsl:value-of select="."/>
-	</xsl:otherwise>
+          </a>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="."/>
+        </xsl:otherwise>
       </xsl:choose>
     </dd>
   </xsl:template>
