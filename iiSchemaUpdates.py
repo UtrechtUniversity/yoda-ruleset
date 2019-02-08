@@ -14,6 +14,7 @@ import base64
 import json
 import irods_types
 import lxml.etree as etree
+import xml.etree.ElementTree as ET
 
 import time
 
@@ -202,6 +203,37 @@ def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
     transformationText = ''.join(read_buf.buf)
 
     return transformationText
+
+
+# \brief Parse a metadata XML given its path into an ElementTree
+#
+# \param[in] path Metadata XML path
+#
+# \return XML parsed as ElementTree
+#
+def parseXml(callback, path):
+    # Retrieve XML size.
+    callback.writeString("serverLog", path)
+
+    coll_name, data_name = os.path.split(path)
+    data_size = getDataObjSize(callback, coll_name, data_name)
+
+    callback.writeString("serverLog", 'size: ' + str(data_size))
+
+    # Open metadata XML.
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
+    fileHandle = ret_val['arguments'][1]
+
+    # Read metadata XML.
+    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
+
+    # Close metadata XML.
+    callback.msiDataObjClose(fileHandle, 0)
+
+    # Parse XML.
+    read_buf = ret_val['arguments'][2]
+    xmlText = ''.join(read_buf.buf)
+    return etree.fromstring(xmlText)
 
 
 # \brief Return the metadata schema location based upon the category of a metadata XML
@@ -479,14 +511,10 @@ def copyACLsFromParent(callback, path, recursive_flag):
 #
 # \return Parsed XML as ElementTree.
 #
-def parseXML(callback, path):
-    callback.writeString("serverLog", path)
-
+def parseMetadataXml(callback, path):
     # Retrieve XML size.
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
-
-    callback.writeString("serverLog", 'size: ' + str(data_size))
 
     # Open metadata XML.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
@@ -501,7 +529,7 @@ def parseXML(callback, path):
     # Parse XML.
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
-    return etree.fromstring(xmlText)
+    return ET.fromstring(xmlText)
 
 
 # \brief Parse metadata JSON schema into JSON dict.
@@ -539,7 +567,7 @@ def parseMetadataJson(callback, path):
 # \param[in] data_name  Data name of metadata XML
 ##
 def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
-    root = parseXML(callback, coll_name + "/" + data_name)
+    root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
     # Check if no attributes are present.
     # If not, add xmlns:xsi and xsi:schemaLocation attributes.
