@@ -374,10 +374,13 @@ def getLatestVaultMetadataXml(callback, vaultPackage):
 
 
 def getMetadataXMLSchema(callback, xmlPath):
-    root = parseXML(callback, xmlPath)
+    schema = ""
+    try:
+        root = parseXML(callback, xmlPath)
+    except:
+        return schema
 
     # Check if root attributes are present.
-    schema = ""
     if root.attrib:
         key = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
         schemaLocation = root.attrib[key]
