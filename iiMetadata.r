@@ -213,17 +213,22 @@ iiGetXslPath(*metadataXmlPath, *xslPath) {
 # \param[out] xsdPath        path of the vault XSD to use for validation
 # \param[out] err            Zero is valid XML, negative is microservice error, positive is invalid XML
 #
-iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg) {
-	*err = 0;
-	*err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
-
-	# Output in status buffer means XML is not valid.
-	msiBytesBufToStr(*statusBuf, *statusStr);
-	*len = strlen(*statusStr);
-	if (*len > 0) {
-	        *err = 1;
-	        *msg = *statusStr;
-	}
+iiValidateXml(*metadataXmlPath, *xsdPath, *invalid, *msg) {
+    *invalid = 0;
+    *err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
+    if (*err < 0) {
+            *invalid = 1;
+    } else {
+            # Output in status buffer means XML is not valid.
+            msiBytesBufToStr(*statusBuf, *statusStr);
+            *len = strlen(*statusStr);
+            if (*len == 0) {
+                    #DEBUG writeLine("serverLog", "iiValidateXML: *metadataXmlPath validates");
+            } else {
+                    #DEBUG writeLine("serverLog", "iiValidateXML: *metadataXmlPath - *statusStr");
+                    *invalid = 1;
+        }
+}
 }
 
 
