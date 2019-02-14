@@ -55,7 +55,7 @@ def iiRuleTransformXml(rule_args, callback, rei):
     try:
         transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
 
-        result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+        result = globals()[transformationMethod](callback, xmlPath)
         status = result['status']
 
     except KeyError:
@@ -90,7 +90,7 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
         versionTo = getSchemaLocation(callback, rods_zone, group_name)
         versionFrom = getMetadataXMLSchema(callback, xmlPath)
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-        transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+        transformationText = globals()[transformationMethod](callback, xmlPath)
         transformation = 'true'
     except KeyError:
         pass
@@ -107,7 +107,6 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 #   - write new yoda-metadata.xml
 #              including new targetNameSpace etc - so trapping transformation does not occur again
 #              This is taken care of within transformation stylesheet
-# NOT in scope at this moment
 # - In vault
 #   - No backup required for yoda-metadata.xml
 #   - Do data transformation
@@ -117,7 +116,7 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # status
 # transformationText - for frontend
 
-def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
+def ExecTransformation_v1(callback, xmlPath):
     xslFilename = 'v1.xsl'
 
     coll_name, data_name = os.path.split(xmlPath)
@@ -135,19 +134,16 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
     xmlYodaMeta = parseXml(callback, xmlPath)
 
     transform = etree.XSLT(xslroot)
-
     transformationResult = transform(xmlYodaMeta, encoding='utf8')
-
     transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration=True, encoding='UTF-8')
 
     pathParts = xmlPath.split('/')
     groupName = pathParts[3]
 
     # Write transformed xml to yoda-metadata.xml
-
     if "research" in groupName:
         # First save original yoda-metadata.xml
-        copiedYodaXml = coll_name + '/yoda-metadata' + '[' + str(int(time.time())) + '].xml'
+        copiedYodaXml = coll_name + '/transformation-backup' + '[' + str(int(time.time())) + '].xml'
         callback.writeString("serverLog", copiedYodaXml)
         callback.msiDataObjCopy(xmlPath, copiedYodaXml, '', 0)
 
@@ -160,20 +156,21 @@ def ExecTransformation_v1(callback, xmlPath, versionFrom, versionTo):
         fileHandle = ret_val['arguments'][2]
         callback.msiDataObjWrite(fileHandle, transformedXml, 0)
         callback.msiDataObjClose(fileHandle, 0)
-        callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
-
-    #elif "vault" in groupName:  ## will be addressed later
-    #    ofFlags = ''
-    #    xml_file = coll_name + '/yoda-metadata-hdr[' + str(int(time.time())) + '].xml'
-    #    ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-    #    copyACLsFromParent(callback, xml_file, "default")
+        callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
+    elif "vault" in groupName:
+        # Write transformed metadata schema to the vault.
+        ofFlags = ''
+        xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
+        ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
+        copyACLsFromParent(callback, xml_file, "default")
+        callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
 
     result = {}
     result['status'] = 'Success'
     return result
 
 
-def GetTransformationText_v1(callback, xmlPath, versionFrom, versionTo):
+def GetTransformationText_v1(callback, xmlPath):
     htmlFilename = 'v1.html'
 
     coll_name, data_name = os.path.split(xmlPath)
@@ -412,6 +409,12 @@ def getMetadataXMLSchema(callback, xmlPath):
     except:
         return schema
 
+    return getMetadataSchemaFromTree(callback, root)
+
+
+def getMetadataSchemaFromTree(callback, root):
+    schema = ""
+
     # Check if root attributes are present.
     if root.attrib:
         key = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
@@ -569,11 +572,12 @@ def parseMetadataJson(callback, path):
 def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
     root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
-    # Check if no attributes are present.
+    # Retrieve active schema location to be added.
+    schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
+
+    # Check if no attributes are present, for vault and research space.
     # If not, add xmlns:xsi and xsi:schemaLocation attributes.
     if not root.attrib:
-        # Retrieve Schema location to be added.
-        schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
         schemaSpace = getSchemaSpace(callback, group_name)
 
         if schemaLocation != '-1' or schemaSpace != '-1':
@@ -595,7 +599,23 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
-            callback.writeString("serverLog", "[UPDATE METADATA SCHEMA] %s" % (xml_file))
+            callback.writeString("serverLog", "[ADDED SCHEMA TO METADATA] %s" % (xml_file))
+    # Only transform metadata schemas in the vault space.
+    # Transformations in research space are initiated by the researcher.
+    elif "vault" in group_name:
+        # Retrieve current active system schema and schema from metadata.
+        versionTo = schemaLocation
+        versionFrom = getMetadataSchemaFromTree(callback, root)
+
+        # Only try transformation if schemas don't match.
+        if versionTo != versionFrom:
+            try:
+                transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
+                result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+            except:
+                callback.writeString("serverLog", "[TRANSFORMING METADATA FAILED] %s" % (xml_file))
+    else:
+        callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
 
 
 # \brief Loop through all collections with yoda-metadata.xml data objects.
