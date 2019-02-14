@@ -46,7 +46,7 @@ def iiRuleTransformXml(rule_args, callback, rei):
     rods_zone = pathParts[1]
     group_name = pathParts[3]
 
-    versionTo = getSchemaLocation(callback, rods_zone, group_name)
+    versionTo = getSchemaLocation(callback, xmlPath)
     versionFrom = getMetadataXMLSchema(callback, xmlPath)
 
     status = 'Unknown'
@@ -76,18 +76,13 @@ def iiRuleTransformXml(rule_args, callback, rei):
 # \param[out] rule_args[2] transformationText
 #
 def iiRulePossibleTransformation(rule_args, callback, rei):
-    xmlPath = rule_args[0]
-
-    # Retrieve current metadata schemas.
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
+    xmlPath = rule_args[0] + "/yoda-metadata.xml"
 
     transformation = 'false'
     transformationText = ''
 
     try:
-        versionTo = getSchemaLocation(callback, rods_zone, group_name)
+        versionTo = getSchemaLocation(callback, xmlPath)
         versionFrom = getMetadataXMLSchema(callback, xmlPath)
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
         transformationText = globals()[transformationMethod](callback, xmlPath)
@@ -107,7 +102,6 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 #   - write new yoda-metadata.xml
 #              including new targetNameSpace etc - so trapping transformation does not occur again
 #              This is taken care of within transformation stylesheet
-# - In vault
 #   - No backup required for yoda-metadata.xml
 #   - Do data transformation
 #   - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
@@ -243,10 +237,7 @@ def parseXml(callback, path):
 # \param[out] rule_args[1] Metadata schema location
 #
 def iiRuleGetLocation(rule_args, callback, rei):
-    pathParts = rule_args[0].split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-    rule_args[1] = getSchemaLocation(callback, rods_zone, group_name)
+    rule_args[1] = getSchemaLocation(callback, rule_args[0])
 
 
 # \brief Return the metadata schema space based upon the category of a metadata XML
@@ -328,14 +319,18 @@ def getCategory(callback, rods_zone, group_name):
 
 
 # \brief Based upon the category of the current yoda-metadata.xml file,
-#        return the metadata schema involved.
+#        return the active metadata schema involved.
 #
-# \param[in] rods_zone
-# \param[in] group_name
+# \param[in] xmlPath
 #
-# \return schema location
+# \return Schema location
 #
-def getSchemaLocation(callback, rods_zone, group_name):
+def getSchemaLocation(callback, xmlPath):
+    # Retrieve current metadata schemas.
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
+    group_name = pathParts[3]
+
     schemaCategory = getCategory(callback, rods_zone, group_name)
 
     jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
@@ -573,7 +568,7 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
     # Retrieve active schema location to be added.
-    schemaLocation = getSchemaLocation(callback, rods_zone, group_name)
+    schemaLocation = getSchemaLocation(callback, coll_name + "/" + data_name)
 
     # Check if no attributes are present, for vault and research space.
     # If not, add xmlns:xsi and xsi:schemaLocation attributes.
