@@ -690,5 +690,5 @@ def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "checkMetadataXmlForSchemaUpdatesBatch('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "iiCheckMetadataXmlForSchemaUpdates('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
