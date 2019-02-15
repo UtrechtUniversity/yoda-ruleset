@@ -2,7 +2,8 @@
 # \brief     Functions for group management and group queries.
 # \author    Ton Smeele
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015-2017 Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Get the user type for a given user
@@ -859,19 +860,21 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 			if (*allowed == 0) {
 				*message = *reason;
 			}
-			succeed; # Return here (don't fail as that would ruin the status and error message).
+			succeed; # Return here (fail would ruin the status and error message).
 		}
 
-		# Provision external user
-		if (uuExternalUser(*userName)) {
-			uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient);
-		}
-
-		# Send user invitation mail.
-		#uuNewInternalUserMail(*userName, uuClientFullName, *status, *message);
-		#if (*status != 0) {
-		#	succeed; # Return here (don't fail as that would ruin the status and error message).
-		#}
+                # Provision external user.
+                if (uuExternalUser(*userName)) {
+                        *http_code = ""
+                        *message = ""
+                        uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);
+                        if (*message != "") {
+                                writeLine("serverLog", "[EXTERNAL USER] *message");
+                                *status = int(*http_code)
+                                succeed; # Return here (fail would ruin the status and error message).
+                        }
+                        writeLine("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient.");
+                }
 	}
 
 	# User exists, now add them to the group.
