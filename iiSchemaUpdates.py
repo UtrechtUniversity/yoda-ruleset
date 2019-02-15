@@ -152,10 +152,15 @@ def ExecTransformation_v1(callback, xmlPath):
         callback.msiDataObjClose(fileHandle, 0)
         callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
     elif "vault" in groupName:
-        # Write transformed metadata schema to the vault.
+        # Prepare writing transformed metadata schema to the vault.
         ofFlags = ''
         xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
         ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
+
+        # Now write actual new contents
+        fileHandle = ret_val['arguments'][2]
+        callback.msiDataObjWrite(fileHandle, transformedXml, 0)
+        callback.msiDataObjClose(fileHandle, 0)
         copyACLsFromParent(callback, xml_file, "default")
         callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
 
@@ -605,8 +610,9 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
         # Only try transformation if schemas don't match.
         if versionTo != versionFrom:
             try:
+                xmlPath = coll_name + "/" + data_name
                 transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
-                result = globals()[transformationMethod](callback, xmlPath, versionFrom, versionTo)
+                result = globals()[transformationMethod](callback, xmlPath)
             except:
                 callback.writeString("serverLog", "[TRANSFORMING METADATA FAILED] %s" % (xml_file))
     else:
