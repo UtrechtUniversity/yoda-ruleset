@@ -76,7 +76,7 @@ def iiRuleTransformXml(rule_args, callback, rei):
 # \param[out] rule_args[2] transformationText
 #
 def iiRulePossibleTransformation(rule_args, callback, rei):
-    xmlPath = rule_args[0] + "/yoda-metadata.xml"
+    xmlPath = rule_args[0]
 
     transformation = 'false'
     transformationText = ''
