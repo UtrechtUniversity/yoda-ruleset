@@ -162,6 +162,10 @@ def ExecTransformation_v1(callback, xmlPath):
         callback.msiDataObjWrite(fileHandle, transformedXml, 0)
         callback.msiDataObjClose(fileHandle, 0)
         copyACLsFromParent(callback, xml_file, "default")
+
+        # Add item to provenance log.
+        callback.iiAddActionLogRecord("system", coll_name, "Updated metadata schema")
+
         callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
 
     result = {}
