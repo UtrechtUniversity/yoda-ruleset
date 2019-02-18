@@ -1,0 +1,33 @@
+{
+  "name": "4TU Preferred formats",
+  "formats": [
+    "txt",
+    "xml",
+    "html",
+    "pdf",
+    "json",
+    "pdb",
+    "ent",
+    "brk",
+    "xyz",
+    "csv",
+    "jpg",
+    "jpeg",
+    "tif",
+    "tiff",
+    "png",
+    "svg",
+    "gml",
+    "kml",
+    "kmz",
+    "shp",
+    "shx",
+    "dbf",
+    "nc",
+    "wav",
+    "zip",
+    "tar",
+    "gzip",
+    "7z"
+  ]
+}
