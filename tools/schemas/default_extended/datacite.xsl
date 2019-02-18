@@ -67,7 +67,7 @@
         </rightsList>
 
         <resourceType resourceTypeGeneral="Dataset">
-            <xsl:text><xsl:value-of select="yoda:Data_Type"/></xsl:text>
+            <xsl:value-of select="yoda:Data_Type"/>
         </resourceType>
 
         <xsl:if test="(yoda:Related_Datapackage/yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier) and (yoda:Related_Datapackage/yoda:Relation_Type)">
