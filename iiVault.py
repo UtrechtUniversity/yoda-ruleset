@@ -26,11 +26,11 @@ def getPreservableFormatsLists(callback):
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
             data_name = result.sqlResult[0].row(row)
-            coll_name = result.sqlResult[0].row(row)
+            coll_name = result.sqlResult[1].row(row)
 
             # Retrieve filename and name of list.
             filename, file_extension = os.path.splitext(data_name)
-            json = parseJson(callback, coll_name + data_name)
+            json = parseJson(callback, coll_name + "/" + data_name)
             name = json['name']
             callback.writeLine("serverLog", str(name))
 
