@@ -15,6 +15,7 @@ import os
 def getPreservableFormatsLists(callback):
     preservableLists = {}
 
+    # Retrieve all preservable file formats lists on the system.
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, COLL_NAME",
         "COLL_NAME = '/tempZone/yoda/file_formats' AND DATA_NAME like '%%.json'",
@@ -32,14 +33,16 @@ def getPreservableFormatsLists(callback):
             filename, file_extension = os.path.splitext(data_name)
             json = parseJson(callback, coll_name + "/" + data_name)
             name = json['name']
-            callback.writeLine("serverLog", str(name))
+
+            # Add to list of preservable file formats.
+            preservableLists[filename] = name
 
         if result.continueInx == 0:
             break
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
 
-    return {'lists': {'DANS': 'DANS Preservable formats', '4TU': '4TU Preservable formats'}}
+    return {'lists': preservableLists}
 
 
 # \brief Retrieve all unpreservable files in a folder.
@@ -55,6 +58,7 @@ def getUnpreservableFiles(callback, folder, list):
     preservableFormats = json['formats']
     unpreservableFormats = []
 
+    # Retrieve all files in collection.
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, COLL_NAME",
         "COLL_NAME like '%s%%'" % (folder),
