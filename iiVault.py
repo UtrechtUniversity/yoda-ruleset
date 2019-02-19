@@ -24,13 +24,14 @@ def getPreservableFormatsLists(callback):
 # \return List of unpreservable files.
 #
 def getUnpreservableFilesList(callback, folder, list):
+    # Retrieve JSON list of preservable file formats.
     json = parseJson(callback, "/tempZone/yoda/file_formats/DANS.json")
-    preservableFormats = json.formats
+    preservableFormats = json['formats']
     unpreservableFormats = []
 
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '%s/%%'" % (folder),
+        "COLL_NAME like '%s%%'" % (folder),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -40,7 +41,11 @@ def getUnpreservableFilesList(callback, folder, list):
         for row in range(result.rowCnt):
             data_name = result.sqlResult[0].row(row)
             filename, file_extension = os.path.splitext(data_name)
-            file_extension = file_extension.lower()
+
+            # Convert to lowercase and remove dot.
+            file_extension = (file_extension.lower())[1:]
+
+            # Check if extention is in preservable format list.
             if (file_extension not in preservableFormats):
                 unpreservableFormats.append(file_extension)
 
