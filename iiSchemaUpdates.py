@@ -343,7 +343,7 @@ def getSchemaLocation(callback, xmlPath):
     schemaCategory = getCategory(callback, rods_zone, group_name)
 
     jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
-    jsonSchema = parseMetadataJson(callback, jsonSchemaPath)
+    jsonSchema = parseJson(callback, jsonSchemaPath)
     schema, jsonFile = os.path.split(jsonSchema["$id"])
 
     return schema
@@ -539,25 +539,25 @@ def parseMetadataXml(callback, path):
     return ET.fromstring(xmlText)
 
 
-# \brief Parse metadata JSON schema into JSON dict.
+# \brief Parse JSON file into JSON dict.
 #
-# \param[in] path Path of metadata JSON schema to parse
+# \param[in] path Path of JSON file to parse
 #
 # \return Parsed JSON as dict.
 #
-def parseMetadataJson(callback, path):
+def parseJson(callback, path):
     # Retrieve JSON size.
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
 
-    # Open metadata JSON.
+    # Open JSON file.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
     fileHandle = ret_val['arguments'][1]
 
-    # Read metadata JSON.
+    # Read JSON file.
     ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
 
-    # Close metadata JSON.
+    # Close JSON file.
     callback.msiDataObjClose(fileHandle, 0)
 
     # Parse JSON.

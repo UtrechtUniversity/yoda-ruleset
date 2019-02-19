@@ -5,7 +5,7 @@
 # \license   GPLv3, see LICENSE.
 
 import json
-
+import os
 
 # \brief Retrieve lists of preservable file formats on the system.
 #
@@ -23,7 +23,32 @@ def getPreservableFormatsLists(callback):
 # \return List of unpreservable files.
 #
 def getUnpreservableFilesList(callback, folder, list):
-    return ['pdf', 'svg', 'tiff']
+    json = parseJson(callback, "/tempZone/yoda/file_formats/DANS.json)
+    preservableFormats = json.formats
+    unpreservableFormats = []
+
+    ret_val = callback.msiMakeGenQuery(
+        "DATA_NAME, COLL_NAME",
+        "COLL_NAME like '%s/%%'" % (folder),
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val["arguments"][1]
+        for row in range(result.rowCnt):
+            data_name = result.sqlResult[0].row(row)
+            filename, file_extension = os.path.splitext(data_name)
+            file_extension = file_extension.lower()
+            if (file_extension not in preservableFormats):
+                unpreservableFormats.append(file_extension)
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
+
+    return {'formats': unpreservableFormats}
 
 
 # \brief Write preservable file formats lists to stdout.
