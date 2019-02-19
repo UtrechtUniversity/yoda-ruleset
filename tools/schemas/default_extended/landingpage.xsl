@@ -86,7 +86,7 @@
     </u>
     <xsl:text> </xsl:text>
   </xsl:template>
-  <xsl:template match="System">
+  <xsl:template match="yoda:System">
     <dt>Persistent Identifier</dt>
     <dd><xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier_Scheme"/>: <xsl:value-of select="./yoda:Persistent_Identifier_Datapackage/yoda:Identifier"/></dd>
     <xsl:apply-templates select="./yoda:Publication_Date"/>
