@@ -25,7 +25,7 @@ def getPreservableFormatsLists(callback):
 #
 def getUnpreservableFilesList(callback, folder, list):
     # Retrieve JSON list of preservable file formats.
-    json = parseJson(callback, "/tempZone/yoda/file_formats/DANS.json")
+    json = parseJson(callback, "/tempZone/yoda/file_formats/" + list + ".json")
     preservableFormats = json['formats']
     unpreservableFormats = []
 
