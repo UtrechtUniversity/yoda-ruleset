@@ -7,6 +7,7 @@
 import json
 import os
 
+
 # \brief Retrieve lists of preservable file formats on the system.
 #
 # \return Lists of preservable file formats
@@ -23,7 +24,7 @@ def getPreservableFormatsLists(callback):
 # \return List of unpreservable files.
 #
 def getUnpreservableFilesList(callback, folder, list):
-    json = parseJson(callback, "/tempZone/yoda/file_formats/DANS.json)
+    json = parseJson(callback, "/tempZone/yoda/file_formats/DANS.json")
     preservableFormats = json.formats
     unpreservableFormats = []
 
