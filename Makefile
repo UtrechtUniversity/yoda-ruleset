@@ -19,11 +19,10 @@
 # - For the 'install' make target to work, you should place this ruleset
 #   directory in the folder '/etc/irods/'. Don't forget to
 #   append the ruleset name ($RULESET_NAME minus the '.re' extension) to the
-#   reRuleSet line in server/config/server.config.
+#   rulesets in /etc/irods/server_config.json.
 #
 # - This ruleset depends on Utrecht Univerity's irods-ruleset-uu ruleset.
-#   Specify rules-uu *before* rules-research in your server/config/server.config's
-#   reRuleSet line.
+#   Specify rules-uu *before* rules-research in your /etc/irods/server_config.json.
 #
 # make update  - pull changes from git remote, updates .r files
 # make install - install ruleset (concatenated .r files) into the parent directory
