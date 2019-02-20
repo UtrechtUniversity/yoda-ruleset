@@ -10,7 +10,7 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 
 	# Write proposal data to a JSON file in the collection that we just created
 	*filePath = *collPath ++ "/proposal.json";
-	msiDataObjCreate(*filePath, "", *D_FD);
-	msiDataObjWrite(*D_FD, *data, *len_data);
-	msiDataObjClose(*D_FD, *status);
+	msiDataObjCreate(*filePath, "", *fileDesciptor);
+	msiDataObjWrite(*fileDescriptor, *data, *lenData);
+	msiDataObjClose(*fileDescriptor, *status);
 }
