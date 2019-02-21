@@ -15,7 +15,6 @@ It consists of:
 
 DEPENDENCIES
 ------------
-- A ruleset with implementation specific configuration. For example: [irods-ruleset-i-lab](https://github.com/UtrechtUniversity/irods-ruleset-i-lab)
 - [irods-ruleset-uu](https://github.com/UtrechtUniversity/irods-ruleset-uu)
 - [irods-uu-microservices](https://github.com/UtrechtUniversity/irods-uu-microservices)
 - All dependencies of the above
