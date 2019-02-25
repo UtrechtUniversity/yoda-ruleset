@@ -14,3 +14,21 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 	msiDataObjWrite(*fileDescriptor, *data, *lenData);
 	msiDataObjClose(*fileDescriptor, *status);
 }
+
+uuGetProposals(*data, *result, *status, *statusInfo) {
+	*status = "Success";
+	*statusInfo = "";
+
+	# Query iRODS to get a list of submitted proposals (i.e. subcollections
+	# of the the research-datarequest collection)
+	*path = "/tempZone/home/research-datarequest";
+	*fields = list("COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME");
+	*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
+	*orderby = "COLL_NAME";
+	*ascdesc = "asc";
+	*limit = 20;
+	*offset = 0;
+
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
+	uuKvpList2JSON(*kvpList, *result, *size);
+}
