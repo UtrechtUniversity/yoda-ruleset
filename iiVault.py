@@ -84,7 +84,14 @@ def getUnpreservableFiles(callback, folder, list):
         ret_val = callback.msiGetMoreRows(query, result, 0)
     callback.msiCloseGenQuery(query, result)
 
-    return {'formats': unpreservableFormats}
+    # Remove duplicate file formats.
+    output = []
+    for x in unpreservableFormats:
+        if x not in output:
+            output.append(x)
+
+    return {'formats': output}
+
 
 
 # \brief Write preservable file formats lists to stdout.
