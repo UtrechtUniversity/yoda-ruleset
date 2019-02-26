@@ -15,7 +15,7 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 	msiDataObjClose(*fileDescriptor, *status);
 }
 
-uuGetProposals(*data, *result, *status, *statusInfo) {
+uuGetProposals(*limit, *offset, *result, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";
 
@@ -26,8 +26,6 @@ uuGetProposals(*data, *result, *status, *statusInfo) {
 	*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
 	*orderby = "COLL_NAME";
 	*ascdesc = "asc";
-	*limit = 20;
-	*offset = 0;
 
 	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
 	uuKvpList2JSON(*kvpList, *result, *size);
