@@ -61,7 +61,7 @@ def getUnpreservableFiles(callback, folder, list):
     # Retrieve all files in collection.
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '%s/%%'" % (folder),
+        "COLL_NAME like '%s%%'" % (folder),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
