@@ -93,6 +93,14 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 	}
 
 
+        *data = '[{"month=12-tier=Standard": "222222"}, {"month=2-tier=Standard": "3333333"}]';
+   
+        uuRuleGetMonthStoragePerTier(*groupName, *currentMonth, *data);
+        
+
+        succeed;
+        # no longer required. Passed to Python
+
 	*listTierStorages = list();
 
 	*counter = 0;
