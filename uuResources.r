@@ -21,6 +21,7 @@
 # \param[out] *statusInfo	-return specific information regarding *status
 # \param[in]  *resourceName
 #
+#DONE
 uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -32,23 +33,8 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
                 *statusInfo = 'Insufficient permissions';
 		succeed;
 	}
-
-        *resourceData = uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo);
-	# writeLine('stdout', *resourceData);
-
-	if (*result < 0){
-		if (*result == -1) {
-                        *status = 'NotExists';
-                        *statusInfo = 'Resource does not exist';
-                }
-                else {
-                        *status = 'UNRECOVERABLE';
-                        *statusInfo = *errorInfo; # use the info from within the function
-                }
-		succeed;
-	}
-
-	uuKvp2JSON(*resourceData, *data);
+        *data = '';
+        uuRuleGetResourceTierData(*resourceName,*data);
 }
 
 # \brief Collect all groups current user is a member of. Read only groups count as well.
@@ -57,7 +43,8 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
+#DONE
+uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo) 
 {
 	*status = 'Success';
 	*statusInfo = '';
@@ -77,7 +64,8 @@ uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo)
+#DONE
+uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo) 
 {
 	*status = 'Success';
 	*statusInfo = '';
@@ -92,70 +80,8 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 		succeed;
 	}
 
-
-        *data = '[{"month=12-tier=Standard": "222222"}, {"month=2-tier=Standard": "3333333"}]';
-   
-        uuRuleGetMonthStoragePerTier(*groupName, *currentMonth, *data);
-        
-
-        succeed;
-        # no longer required. Passed to Python
-
-	*listTierStorages = list();
-
-	*counter = 0;
-
-
-	# Collect storage for each month 1 year back
-
-	while (*counter < 12) {
-                *newMonth = int(*currentMonth) - *counter;
-                if (*newMonth < 1) {
-                        *newMonth = *newMonth + 12;
-                }
-
-
-		# Collect storages for tiers
-
-		msiString2KeyValPair("", *kvpTierStorage);
-
-		if (*newMonth<10) {
-		        *metadataName = UUMETADATASTORAGEMONTH ++ '0' ++ str(*newMonth);
-		}
-		else {
-			  *metadataName = UUMETADATASTORAGEMONTH ++ str(*newMonth);
-		}
-
-        	foreach (*row in SELECT META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME
-        	                        WHERE META_USER_ATTR_NAME = '*metadataName'
-					AND USER_NAME = '*groupName'
-        	                               ) {
-
-         	        # resolve as JSON string holding an array ["category","tier","storage"]
-        	        *tierName = "";
-                	msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1);
-
-                	*storage = "";
-        	        msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
-
-        	        #*categoryTierStorage."*tierName" = str(double(*categoryTierStorage."*tierName") + double(*storage));
-
-	                # Add month to tiername as it seemd not possible to add a list as a value to a kvp
-			*dblStorage = double(*storage);
-			if (*dblStorage>0) {
-				*monthTierName = "month=" ++ str(*newMonth) ++ "-tier=" ++ *tierName;
-
-                		*kvpTierStorage."*monthTierName" = str(*dblStorage);
-
-                		# Build list with storage amounts on tier level
-                		*listTierStorages = cons(*kvpTierStorage, *listTierStorages);
-			}
-
-        	}
-
-		*counter = *counter + 1;
-        }
-	uuKvpList2JSON(*listTierStorages, *data, *size);
+        *data = '' 
+        uuRuleGetMonthStoragePerTierForGroup(*groupName, *currentMonth, *data);
 }
 
 
@@ -165,7 +91,8 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
+#DONE
+uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)  
 {
         *status = 'Success';
         *statusInfo = '';
@@ -176,15 +103,8 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
                 *statusInfo = 'Insufficient permissions';
                 succeed;
         }
-
-        *allResourceData = uuListResourcesAndStatisticData(*result, *errorInfo);
-
-        uuKvpList2JSON(*allResourceData, *data, *size);
-
-        if (*size == 0 ) {  #TODO:  Mogelijkk nog verder differentieren
-                *status = 'UNRECOVERABLE';
-                *statusInfo = 'Impossible to convert data to JSON';
-        }
+        *data = '';
+        uuRuleGetResourcesAndTierData(*data);
 }
 
 # \brief List available resources and their tier & storage data
@@ -266,7 +186,8 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
                 succeed;
         }
 
-	uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
+        *result = '[]';
+        uuRuleGetMonthlyStorageStatistics(*result);
 }
 
 
@@ -283,7 +204,8 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
         *status = 'Success';
         *statusInfo = '';
 
-	uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo);
+        *result = '[]';
+        uuRuleGetMonthlyStorageStatisticsDatamanager(uuClientFullName, *result);
 }
 
 
@@ -322,7 +244,7 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 #------------------------------------------ Start of supporting functions that probably exist already somewhere
 
 
-# \brief uuResourceExistst - check whether given resource actually exists
+# \brief uuResourceExistst - check whether given resource actually exists ----- LEAVE UNCHANGED
 #
 # \param[in] *resourceName
 # \param[out] *exists
@@ -338,46 +260,6 @@ uuResourceExists(*resourceName, *exists)
 }
 
 #---------------------------------------- End of supporting functions that probably exist already somewhere
-
-# \brief  uuGetResourceAndStatisticData
-#
-# \param[in] *resourceName
-# \param[out] *result
-# \param[out] *errorInfo
-#
-uuGetResourceAndStatisticData(*resourceName, *result, *errorInfo)
-{
-	*result = 0;
-
-        # 1)First check whether resource actually exists
-        uuResourceExists(*resourceName, *rescExists)
-
-        if (!*rescExists) {
-                *result = -1; # Resource does not exist.
-		*errorInfo = 'Resource *resourceName does not exist';
-                succeed;
-        }
-
-	# 2) start collecting the meta information (tier and storage data)
-
-	msiString2KeyValPair("", *kvp);
-
-        # *kvp.resourceId = *resource.resourceId - not known within this situation here.
-        *kvp.resourceName = *resourceName;
-
-        # Initialize the actual metadata related to storage TODO: eet rid of the org_storage part
-        *kvp.org_storage_tier = UUDEFAULTRESOURCETIER;
-
-	*metaName = UURESOURCETIERATTRNAME;
-
-        foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME = '*metaName' ) {
-        	*key = *row.META_RESC_ATTR_NAME;
-                *kvp."*key" = *row.META_RESC_ATTR_VALUE;
-        }
-
-	*kvp;
-}
-
 
 # \brief uuSetResourceTier
 #
@@ -472,33 +354,6 @@ uuListResourceTiers(*result, *errorInfo)
         *allRescTiers;
 }
 
-# \brief List of  all resources and their tier/storage data (if present).
-#
-uuListResourcesAndStatisticData(*result, *errorInfo)
-{
-	*result = 0;
-
-        *allResources = uuListResources();
-        *allRescStats = list();
-
-	*metaName = UURESOURCETIERATTRNAME;
-        foreach (*resource in *allResources) {
-                msiString2KeyValPair("", *kvp);
-                *kvp.resourceId = *resource.resourceId
-                *kvp.resourceName = *resource.resourceName;
-
-		# Initialize the actual metadata related to storage TODO: get rid of the org_storage part
-		*kvp.org_storage_tier = UUDEFAULTRESOURCETIER;
-                # fetch tier information in a seperate sql call as outerjoins are not possible
-                *sqlResource = *resource.resourceName;
-		foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*sqlResource' AND META_RESC_ATTR_NAME = '*metaName'  ) {
-                       	*key = *row.META_RESC_ATTR_NAME;
-                       	*kvp."*key" = *row.META_RESC_ATTR_VALUE;
-		}
-                *allRescStats = cons(*kvp, *allRescStats);
-        }
-        *allRescStats;
-}
 
 # \brief List of all existing resources TODO: exclude coordination resources.
 #
@@ -517,110 +372,6 @@ uuListResources()
         *allResources;
 }
 
-# TODO: deze twee functies kunnen eigenlijk naar niveau dat wordt aangeroepen vanuit frontend
-# \brief uuGetMonthlyStorageStatistics()
-#
-# \param[out] *result - JSON representation of all found storage information on all categories
-# \param[out] *status
-# \param[out] *statusInfo
-#
-uuGetMonthlyStorageStatistics(*result, *status, *statusInfo)
-{
-        *result = '[]';
-
-        *status = 'Success';
-        *statusInfo = '';
-
-        # All categories present
-        *listCategories = uuListCategories();
-
-        #writeLine('stdout', *listCategories);
-	#succeed;
-
-	uuGetMonthlyCategoryStorageStatistics(*listCategories, *result, *status, *statusInfo);
-}
-
-
-# \brief uuGetMonthlyStorageStatisticsDatamanager()
-#
-# \param[out] *result - JSON representation of all found storage information on all categories
-# \param[out] *status
-# \param[out] *statusInfo
-#
-uuGetMonthlyStorageStatisticsDatamanager(*result, *status, *statusInfo)
-{
-	*result = '[]';
-
-        *status = 'Success';
-        *statusInfo = '';
-
-	*listDMCategories = uuListCategoriesDatamanager();
-
-	uuGetMonthlyCategoryStorageStatistics(*listDMCategories, *result, *status, *statusInfo);
-}
-
-# \brief This function is directly dependant on the output of uuStoreMonthlyStorageStatistics.
-#        Current month is used to retrieve data.
-#        So this must be kept in line with the moment when new data is collected and stored!
-#
-# \param[in] *listCategories - list of all categories that statistics need to be collected for
-# \param[out] *result - JSON representation of all found storage information on all categories
-# \param[out] *status
-# \param[out] *statusInfo
-#
-uuGetMonthlyCategoryStorageStatistics(*listCategories, *result, *status, *statusInfo)
-{
-        # Really for the frontend but can be of use for this as well
-        *status = 'Success';
-        *statusInfo = '';
-
-        *month = uuGetCurrentStatisticsMonth();
-
-	  # Collection of all category, tier and storage values
-        *listCatTierStorage = list();
-
-        # Get all existing tiers for initialisation purposes per category
-        *allTiers = uuListResourceTiers(*result, *errorInfo);
-
-        *metadataName = UUMETADATASTORAGEMONTH ++ *month; #UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
-
-	# Aggregate (SUM) 'manually' to category/tier as all information is stored on grouplevel
-        foreach (*categoryName in *listCategories) {
-		msiString2KeyValPair("", *categoryTierStorage);
-
-                # Set all tiers storage values to 0 for this category
-                foreach (*tier in *allTiers) {
-                        *categoryTierStorage."*tier" = '0';
-                }
-
-		foreach (*row in SELECT META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME
-				WHERE META_USER_ATTR_NAME = '*metadataName'
-				AND META_USER_ATTR_VALUE like '[\"*categoryName\",%%'  ) {
-
-			# resolve as JSON string holding an array ["category","tier","storage"]
-			*tierName = "";
-			msi_json_arrayops( *row.META_USER_ATTR_VALUE, *tierName, "get", 1);
-
-                        *storage = "";
-                        msi_json_arrayops( *row.META_USER_ATTR_VALUE, *storage, "get", 2);
-
-			*categoryTierStorage."*tierName" = str(double(*categoryTierStorage."*tierName") + double(*storage));
-		}
-		# Finished handling this category.
-		# Add to kvp list
-                foreach (*tier in *allTiers) {
-			if (*categoryTierStorage."*tier"!='0') { #present only tears with actual data
-                        	msiString2KeyValPair("", *kvp);
-                        	*kvp.category = *categoryName;
-                        	*kvp.tier = *tier;
-                        	*kvp.storage = *categoryTierStorage."*tier";
-                        	*listCatTierStorage = cons(*kvp, *listCatTierStorage);
-			}
-                }
-	}
-
-        uuKvpList2JSON(*listCatTierStorage, *result, *size);
-}
 
 # \brief
 #

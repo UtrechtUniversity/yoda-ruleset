@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 
 import time
 
+## Hoe met constanten om te gaan?
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = "/yoda"
 
@@ -38,24 +39,67 @@ UUMETADATASTORAGEMONTH =  UUORGMETADATAPREFIX + 'storage_data_month'
 
 #--------------------- Interface layer from irods rules
 
+#\ Brief collect
 
-# 
-def uuRuleGetMonthStoragePerTier(rule_args, callback, rei):
+
+#\Brief Get JSON represenation of resource and its tier info
+def uuRuleGetResourceTierData(rule_args, callback, rei):
+    resourceName = rule_args[0]
+
+    tierName = getTierOnResourceName(resourceName, callback)
+
+    rule_args[1] = json.dumps({"resourceName":resourceName,"org_storage_tier":tierName})
+
+
+# \ Brief Get all resources and their tier data as a json representation:
+# resourceName
+# resourceId
+# org_storage_tier
+
+def uuRuleGetResourcesAndTierData(rule_args, callback, rei): 
+
+    ret_val = callback.msiMakeGenQuery(
+        "RESC_ID, RESC_NAME",
+        "",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    callback.writeString("serverLog", 'Resource records found: ' + str(result.rowCnt))
+
+    resourceList = list()
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+            resourceId =  result.sqlResult[0].row(row)
+            resourceName = result.sqlResult[1].row(row)
+            tierName = getTierOnResourceName(resourceName, callback) 
+            resourceList.append({'resourceName':resourceName, 'resourceId':resourceId, 'org_storage_tier':tierName})
+
+    rule_args[0] = json.dumps(resourceList)
+
+
+#\Brief: Get json representation for storage data for a period of 12 months for a specific group
+# Storage isper month and tier 
+# Format is "month=12-tier=Standard": "222222222222"
+
+def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
     groupName = rule_args[0]
     currentMonth = int(rule_args[1])
  
-    all = [{"month=12-tier=Standard": "222222222222"}, {"month=2-tier=Standard": "9999999999999"}]
-    allStorage = []
-    rule_args[2] =  json.dumps(all) #  '[{"month=12-tier=Standard": "5555555555555"}, {"month=2-tier=Standard": "9999999999999"}]'
+    allStorage = [] # list of all month-tier combinations present including their storage size
 
-    # per month gather all present storage information and decypher 
+    # per month gather month/tier/storage information from metadata:
+    # metadata-attr-name = UUMETADATASTORAGEMONTH + '01'...'12'
+    # metadata-attr-val = [category,tier,storage] ... only tier and storage required wihtin this code
 
     for counter in range(0,11):
         referenceMonth = currentMonth - counter
         if referenceMonth < 1:
             referenceMonth = referenceMonth + 12
 
-        # referenceMonth = '%0*d' % (2, referenceMonth) 
         metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
 
         callback.writeString("serverLog", metadataAttrNameRefMonth + '-' + groupName) 
@@ -77,19 +121,161 @@ def uuRuleGetMonthStoragePerTier(rule_args, callback, rei):
                 callback.writeString("serverLog", 'StorageData: ' + metadataAttrNameRefMonth + ' ->' +  temp[0] + ' ->' + data)
               
                 tierName = temp[1]
-                data_size = temp[2]
+                data_size = temp[2] # no construction for summation required in this case
 
-                key = 'month=' + str(referenceMonth) + '-' + tierName
+                key = 'month=' + str(referenceMonth) + '-tier=' + tierName
                 allStorage.append({key:data_size})
 
     callback.writeString("serverLog", json.dumps(allStorage))
-    rule_args[2] = json.dumps(all) #json.dumps(allStorage)
+    rule_args[2] = json.dumps(allStorage)
 
 
-#---------- End of interface layer from irods rules
+#\Brief collect storage data for ALL categories
+def uuRuleGetMonthlyStorageStatistics(rule_args, callback, rei):
+    categories = getCategories(callback)
+
+    rule_args[0] = getMonthlyCategoryStorageStatistics(categories, callback)
 
 
+#\Brief collect storage data for a Datamanager
+def uuRuleGetMonthlyStorageStatisticsDatamanager(rule_args, callback, rei):
+    datamanagerUser = rule_args[0]
+    categories = getCategoriesDatamanager(datamanagerUser, callback)
 
+    rule_args[1] = getMonthlyCategoryStorageStatistics(categories, callback)
+
+
+#----------------------------------------------------------------------------------- End of interface layer from irods rule system
+
+# \Brief collect storage stats of last month only
+# json presentation
+#  Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+
+def getMonthlyCategoryStorageStatistics(categories, callback):
+    month = '02'
+
+    metadataName = UUMETADATASTORAGEMONTH + month
+
+    storageDict = {}
+
+    for category in categories:
+        ret_val = callback.msiMakeGenQuery(
+            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
+            "META_USER_ATTR_VALUE like '[\"" + category+ "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
+            irods_types.GenQueryInp())
+        query = ret_val["arguments"][2]
+
+        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        result = ret_val["arguments"][1]
+
+        if result.rowCnt != 0:
+        # hier wordt door alle groepen gezocht, geordend van een category.
+        # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
+
+            for row in range(0, result.rowCnt):
+                attrValue = result.sqlResult[0].row(row)
+                userName = result.sqlResult[2].row(row)
+                userGroupName = result.sqlResult[3].row(row)
+                #callback.writeString("serverLog", "Month %s" % (month))
+                #callback.writeString("serverLog", "    userName userGroupName %s %s" % (userName, userGroupName))
+
+                # attrValue holds 3 values:  category,tier,storage
+                listValues = attrValue.split('","')
+                category = listValues[0][2:]
+                tier = listValues[1]
+                storage = int(listValues[2][:-2])
+
+                callback.writeString("serverLog", "    Category: %s" % (category))
+                callback.writeString("serverLog", "    Tier: %s" % (tier))
+                callback.writeString("serverLog", "    STORAGE: %s" % (str(storage)))
+
+                # Aggregation of storage amount per category/tier
+                if category in storageDict:
+                    if tier in storageDict[category]:
+                        # Add storage to present storage already for cat/tier
+                        storageDict[category][tier] = storageDict[category][tier]  + storage
+                    else:
+                        storageDict[category][tier] = storage
+                else:
+                    storageDict[category] = {tier:storage}
+
+    # prepare for json output, convert storageDict into dict with keys
+    allStorage = []       
+    for category in storageDict:
+        for tier in storageDict[category]:
+            #callback.writeString("serverLog", 'Cat: ' + category + ' tier: ' + tier + ' storage: ' + str(storageDict[category][tier]) )
+            allStorage.append({'category': category, 'tier': tier, 'storage':str(storageDict[category][tier])})
+
+    return json.dumps(allStorage)
+
+
+#\Brief Get all categories for curent datamanager
+def getCategoriesDatamanager(datamanagerName, callback):
+    categories = []
+
+    ret_val = callback.msiMakeGenQuery(
+        "USER_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+    
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    callback.writeString("serverLog", 'Category records found: ' + str(result.rowCnt))
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+           # @TODO membership still has to be checked
+
+           datamanagerGroupname = result.sqlResult[0].row(row)
+           temp = datamanagerGroupname.split('-')  # 'datamanager-initial' is groupname of datamanager, second part is category 
+           callback.writeString("serverLog", 'Datamanagergroupname: ' + datamanagerGroupname)
+           categories.append(temp[1])
+
+    return categories
+
+
+#\Brief get all categories
+def getCategories(callback):
+    ret_val = callback.msiMakeGenQuery(
+        " META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    callback.writeString("serverLog", 'Category records found: ' + str(result.rowCnt))
+
+    categories = []
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+           categories.append(result.sqlResult[0].row(row))
+    
+    return categories
+
+#\Brief
+def getTierOnResourceName(resourceName, callback):
+    tierName = UUDEFAULTRESOURCETIER # Add default tier as this might not be present in database.
+
+    # find (possibly present) tier for this resource
+    ret_val = callback.msiMakeGenQuery(
+        "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
+        "RESC_NAME = '" + resourceName + "' AND META_RESC_ATTR_NAME = '" + UURESOURCETIERATTRNAME + "'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+            tierName = result.sqlResult[3].row(row)
+
+    return tierName
 
 
 
