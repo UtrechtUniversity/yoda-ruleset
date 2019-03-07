@@ -13,6 +13,11 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 	msiDataObjCreate(*filePath, "", *fileDescriptor);
 	msiDataObjWrite(*fileDescriptor, *data, *lenData);
 	msiDataObjClose(*fileDescriptor, *status);
+
+	# Set the status metadata field of the proposal
+	# that we just submitted to "submitted"
+	msiAddKeyVal(*statusKvp, "status", "submitted");
+	msiSetKeyValuePairsToObj(*statusKvp, *filePath, "-d");
 }
 
 uuGetProposals(*limit, *offset, *result, *status, *statusInfo) {
