@@ -57,8 +57,8 @@ uuGetProposals(*limit, *offset, *result, *status, *statusInfo) {
 	# Query iRODS to get a list of submitted proposals (i.e. subcollections
 	# of the the research-datarequest collection)
 	*path = "/tempZone/home/research-datarequest";
-	*fields = list("COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME");
-	*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
+	*fields = list("COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME", "META_DATA_ATTR_VALUE");
+	*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path), uucondition("DATA_NAME", "=", "proposal.json"));
 	*orderby = "COLL_NAME";
 	*ascdesc = "asc";
 
