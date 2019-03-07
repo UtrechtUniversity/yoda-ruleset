@@ -87,14 +87,22 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 	*status = 'Success';
 	*statusInfo = '';
 
+        *data = '';
+
+        uuGroupGetCategory(*groupName, *category, *subcategory);
+
 
 	uuGroupUserExists(*groupName, uuClientFullName, true, *membership);
 
 	if (!*membership) {
-		# check whether user is member of group
-		*status = 'ERROR_NO_GROUP_MEMBER';
-		*statusInfo = 'User is not a member of group ' ++ *groupName;
-		succeed;
+                # Possibly datamanager of current group without actually being in the group
+                uuIsDatamanagerOfGroup(*groupName, *isDatamanager);
+                if (!*isDatamanager) {
+		    # check whether user is member of group
+		    *status = 'ERROR_NO_GROUP_MEMBER';
+		    *statusInfo = 'User is not a member of group ' ++ *groupName;
+		    succeed;
+                }
 	}
 
         *data = '' 
@@ -260,6 +268,20 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 
 #------------------------------------------ end of front end functions
 #------------------------------------------ Start of supporting functions that probably exist already somewhere
+
+# \brief Check whether user is datamanager of groups category
+uuIsDatamanagerOfGroup(*groupName, *isDatamanager)
+{
+        uuGroupGetCategory(*groupName, *category, *subcategory);
+        *isDatamanager = false;
+
+        writeLine("serverLog", "Category: " ++ *category ++ "for " ++ *groupName);  
+
+        uuGroupUserExists('datamanager-' ++ *category, uuClientFullName, true, *membership)
+        if (*membership) {
+            *isDatamanager = true;
+        }
+}
 
 
 # \brief uuResourceExistst - check whether given resource actually exists ----- LEAVE UNCHANGED
