@@ -55,6 +55,23 @@ uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 	uuList2JSON(*allUserGroups, *data);
 }
 
+# \brief Collect all groups within the categories this user is datamanager of
+uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
+{
+        *status = 'Success';
+        *statusInfo = '';
+
+        *data = '';
+        uuRuleGetAllGroupsForDatamanager(uuClientFullName, *data)
+
+        # include read only groups as well
+#        uuUserGetGroups(uuClientFullName, true, *allUserGroups);
+
+#        uuList2JSON(*allUserGroups, *data);
+}
+
+
+
 # \brief Return an overview that covers a year of storage statistics on a group
 #        It returns a key value pair that is indexed with combination of month/tier data as a key
 #
@@ -113,6 +130,7 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
+# Leave like this - DONE
 uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -137,7 +155,7 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 # \param[out] *statusInfo       -return specific information regarding *status
 # \param[in]  *resourceName
 # \param[in]  *tierName
-#
+# LEAVE LIKE THIS - DONE
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -173,7 +191,7 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 # \param[out] *result - JSON data with category overview
 # \param[out] *status -
 # \param[out] *statusInfo
-#
+# DONE
 uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -198,7 +216,7 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 # \param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
 # \param[out] *status
 # \param[out] *statusInfo
-#
+# DONE
 uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -214,7 +232,7 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 # \param[out] *isDatamanager {'yes', 'no'}
 # \param[out] *status
 # \param[out] *statusInfo
-#
+# LEAVE
 uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 {
         *status = 'Success';
@@ -542,17 +560,6 @@ uuGetCurrentStatisticsMonth()
 {
         msiGetIcatTime(*timestamp, "icat");
         *month = int(timestrf(datetime(int(*timestamp)), "%m"));
-
-# When you want to prevent changes to the statistics after a probe date use the code below
-# I.e. each statistics probe that is stored after the 15th, is related to the month after.
-#	*day = int(timestrf(datetime(int(*timestamp)), "%d"));
-
-#	if (*day > 15) {
-#		*month = *month + 1;
-#		if (*month > 12) {
-#			*month = 1;
-#		}
-#	}
 
 	# Format month as '01'-'12'
 	*strMonth = str(*month);
