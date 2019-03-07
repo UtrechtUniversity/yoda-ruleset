@@ -41,6 +41,15 @@ uuGetProposal(*researchProposalId, *proposalJSON, *proposalStatus, *status, *sta
 	msiBytesBufToStr(*buf, *proposalJSON);
 }
 
+uuApproveProposal(*researchProposalId, *status, *statusInfo) {
+	*status = 0;
+	*statusInfo = "";
+	
+	*proposalPath = "/tempZone/home/research-datarequest/" ++ *researchProposalId ++ "/proposal.json";
+	msiAddKeyVal(*statusKvp, "status", "approved");
+	msiSetKeyValuePairsToObj(*statusKvp, *proposalPath, "-d");
+}
+
 uuGetProposals(*limit, *offset, *result, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";
