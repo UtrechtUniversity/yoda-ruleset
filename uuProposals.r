@@ -20,6 +20,27 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 	msiSetKeyValuePairsToObj(*statusKvp, *filePath, "-d");
 }
 
+uuGetProposal(*researchProposalId, *proposalJSON, *proposalStatus, *status, *statusInfo) {
+	*status = 0;
+	*statusInfo = "";
+
+	# Set collection path and file path
+	*filePath = "/tempZone/home/research-datarequest/" ++ *researchProposalId ++ "/proposal.json";
+	*collPath = "/tempZone/home/research-datarequest/" ++ *researchProposalId;
+
+	# Get the size of the proposal JSON file and the status of the proposal
+	foreach (*row in SELECT DATA_SIZE, META_DATA_ATTR_VALUE where COLL_NAME = "*collPath" and DATA_NAME = 'proposal.json') {
+		*dataSize = *row.DATA_SIZE;
+		*proposalStatus = *row.META_DATA_ATTR_VALUE;
+	}
+
+	# Get the contents of the proposal JSON file and assign them to *proposalJSON
+	msiDataObjOpen("objPath=*filePath", *fd);
+	msiDataObjRead(*fd, *dataSize, *buf);
+	msiDataObjClose(*fd, *status);
+	msiBytesBufToStr(*buf, *proposalJSON);
+}
+
 uuGetProposals(*limit, *offset, *result, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";
