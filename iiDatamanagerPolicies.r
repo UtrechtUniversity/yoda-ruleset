@@ -1,3 +1,4 @@
+
 # \file      iiDatamanagerPolicies.r
 # \brief     Sudo microservices policy implementations to enable datamanager control of vault process.
 # \author    Paul Frederiks
@@ -29,7 +30,7 @@ iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *p
 # \param[out] datamanagerGroup  group name of the datamanager group belonging to the category of the research group
 #                               associated with the vault
 #
-iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {	
+iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup) {
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 	*datamanagerGroup = "datamanager-*category";
@@ -58,14 +59,14 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "A datamanager can only obtain or revoke write access for the datamanager group to a vault package";
 			succeed;
 		}
-		
+
 		msiGetObjType(*objPath, *objType);
 		if (*objType != "-c") {
 			*allowed = false;
 			*reason = "A datamanager can only change permissions on collections in the vault";
 			succeed;
 		}
-		
+
 		uuGroupExists(*otherName, *datamanagerExists);
 		if (!*datamanagerExists) {
 			*allowed = false;
@@ -93,9 +94,15 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			succeed;
 		}
 
-		*baseGroupName = triml(*otherName, IIGROUPPREFIX);	
+		*baseGroupName = triml(*otherName, IIGROUPPREFIX);
 		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
 			uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
+			uuGroupExists("research-*category", *researchExists);
+			if (!*researchExists) {
+				*allowed = false;
+				*reason = "Cannot grant or revoke read access, research group *category does not exist.";
+				succeed;
+			}
 			uuGroupExists("datamanager-*category", *datamanagerExists);
 			if (!*datamanagerExists) {
 				*allowed = false;
@@ -127,8 +134,8 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "*objPath is not part of *vaultGroupName";
 		}
 	}
-      
-	# when a status transition in the research area is invoked by the datamanager, he needs temporary write access to change the folder status  
+
+	# when a status transition in the research area is invoked by the datamanager, he needs temporary write access to change the folder status
 	on (*objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
 
 		if (*accessLevel == "inherit" || *accessLevel == "own") {
@@ -152,7 +159,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "Permission can only be granted to the datamanager-*category group, not *otherName.";
 		}
 	}
-	
+
 	# fallback to prevent users defining and using there own iiCanDatamanagerAclSet. This is also reached when the frontend requests a status change it is not allowed to
 	on (true) {
 		*allowed = false;
