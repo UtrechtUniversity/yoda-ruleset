@@ -21,7 +21,6 @@
 # \param[out] *statusInfo	-return specific information regarding *status
 # \param[in]  *resourceName
 #
-#DONE
 uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -43,7 +42,6 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-#DONE
 uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo) 
 {
 	*status = 'Success';
@@ -56,6 +54,11 @@ uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 }
 
 # \brief Collect all groups within the categories this user is datamanager of
+#
+# \param[out] *data             -return actual requested data if applicable
+# \param[out] *status           -return status to frontend
+# \param[out] *statusInfo       -return specific information regarding *status
+#
 uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -63,11 +66,6 @@ uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
 
         *data = '';
         uuRuleGetAllGroupsForDatamanager(uuClientFullName, *data)
-
-        # include read only groups as well
-#        uuUserGetGroups(uuClientFullName, true, *allUserGroups);
-
-#        uuList2JSON(*allUserGroups, *data);
 }
 
 
@@ -81,7 +79,6 @@ uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-#DONE
 uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo) 
 {
 	*status = 'Success';
@@ -116,7 +113,6 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-#DONE
 uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)  
 {
         *status = 'Success';
@@ -138,7 +134,6 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-# Leave like this - DONE
 uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -163,7 +158,7 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 # \param[out] *statusInfo       -return specific information regarding *status
 # \param[in]  *resourceName
 # \param[in]  *tierName
-# LEAVE LIKE THIS - DONE
+# 
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -199,7 +194,7 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 # \param[out] *result - JSON data with category overview
 # \param[out] *status -
 # \param[out] *statusInfo
-# DONE
+# 
 uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -224,7 +219,7 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
 # \param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
 # \param[out] *status
 # \param[out] *statusInfo
-# DONE
+# 
 uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 {
         *status = 'Success';
@@ -240,7 +235,7 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
 # \param[out] *isDatamanager {'yes', 'no'}
 # \param[out] *status
 # \param[out] *statusInfo
-# LEAVE
+#
 uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 {
         *status = 'Success';
@@ -266,10 +261,14 @@ uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
 }
 
 
-#------------------------------------------ end of front end functions
+#------------------------------------------ End of front end functions
 #------------------------------------------ Start of supporting functions that probably exist already somewhere
 
 # \brief Check whether user is datamanager of groups category
+#
+# \param[in] *groupName
+# \param[out] *isDatamanager
+#
 uuIsDatamanagerOfGroup(*groupName, *isDatamanager)
 {
         uuGroupGetCategory(*groupName, *category, *subcategory);
@@ -282,7 +281,6 @@ uuIsDatamanagerOfGroup(*groupName, *isDatamanager)
             *isDatamanager = true;
         }
 }
-
 
 # \brief uuResourceExistst - check whether given resource actually exists ----- LEAVE UNCHANGED
 #
@@ -298,8 +296,6 @@ uuResourceExists(*resourceName, *exists)
 		succeed;
         }
 }
-
-#---------------------------------------- End of supporting functions that probably exist already somewhere
 
 # \brief uuSetResourceTier
 #
@@ -327,25 +323,14 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 	*metaName = UURESOURCETIERATTRNAME;
         foreach(*row in SELECT RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE WHERE RESC_NAME='*resourceName' AND META_RESC_ATTR_NAME='*metaName' ) {
                 *metaFound = true;
-                #writeLine("stdout",  *row.RESC_ID );
-                #writeLine("stdout",  *row.RESC_NAME);
-                #writeLine("stdout", *row.META_RESC_ATTR_NAME );
-                #writeLine("stdout", *row.META_RESC_ATTR_VALUE);
-                #writeLine("stdout", "------------------------------");
-                #writeLine("stdout", *row.RESC_NAME);
         }
-
-	writeLine('serverLog', 'Tier: ' ++  *tierName);
 
 	msiString2KeyValPair("", *kvpResc);
         msiAddKeyVal(*kvpResc, *metaName, *tierName);
 
         if (!*metaFound ) {
-                #writeLine("serverLog", "META NOT FOUND - INSERT");
-
                 *err = msiAssociateKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
 
-		#writeLine("stdout", "Add KVP of RESC: *err ");
 		if (*err!=0 ) {
 			*result=-999;
 			*errorInfo = 'Something went wrong adding tier metadata';
@@ -353,11 +338,8 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 		}
         }
         else {
-                #writeLine("serverLog", "META FOUND - UPDATE" );
-
 		*err = msiSetKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
 
-		#writeLine("stdout", "UPDATE KVP of RESC: *err");
 		if (*err!=0 ) {
                         *result=-999;
                         *errorInfo = 'Something went wrong updating tier metadata';
@@ -405,7 +387,6 @@ uuListResources()
                 msiString2KeyValPair("", *kvp);
                 *kvp.resourceId = *row.RESC_ID;
                 *kvp.resourceName = *row.RESC_NAME;
-		# writeLine('stdout', 'name: ' ++ *kvp.resourceName);
                 *allResources = cons(*kvp, *allResources);
         }
 
@@ -450,7 +431,6 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 	*statusInfo = '';
 
 	*month = uuGetCurrentStatisticsMonth();
-        writeLine('serverLog', 'Month: *month ');
 
 	*metadataName = UUMETADATASTORAGEMONTH ++ *month;  #UUORGMETADATAPREFIX ++ 'storageDataMonth' ++ *month;
 
@@ -669,7 +649,6 @@ uuListCategories()
                 WHERE  USER_TYPE            = 'rodsgroup'
                   AND  META_USER_ATTR_NAME  = 'category') {
 
-                #writeLine('stdout', *row.META_USER_ATTR_VALUE);
 		*listCategories = cons(*row.META_USER_ATTR_VALUE, *listCategories);
         }
 	*listCategories;
