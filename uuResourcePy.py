@@ -169,14 +169,9 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
                 #try:
                 #    storageDict[category][tier] = storageDict[category][tier]  + storage
                 #except KeyError:
+                #    # if key error, can be either category or category/tier combination is missing
+
                 #    storageDict[category] = {tier:storage}
-
-                try:
-                    storageDict[category][tier] = storageDict[category][tier]  + storage
-                except KeyError:
-                    # if key error, can be either category or category/tier combination is missing
-
-                    storageDict[category] = {tier:storage}
 
 
 
