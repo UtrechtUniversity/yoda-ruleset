@@ -1,5 +1,5 @@
 # \file      uuResourcesPy.py
-# \brief     Functions for handling schema updates within any yoda-metadata.xml.
+# \brief     Functions for statistics module - in essence a python extension directly related to uuResources.r
 # \author    Lazlo Westerhof
 # \author    Felix Croes
 # \author    Harm de Raaff
@@ -156,26 +156,15 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
                 tier = temp[1]
                 storage = int(temp[2])
 
-                # Aggregation of storage amount per category/tier
-                if category in storageDict:
-                    if tier in storageDict[category]:
-                        # Add storage to present storage already for cat/tier
-                        storageDict[category][tier] = storageDict[category][tier]  + storage
-                    else:
+                try:
+                    storageDict[category][tier] = storageDict[category][tier]  + storage
+                except KeyError:
+                    callback.writeString('serverLog', 'Exception')
+                    # if key error, can be either category or category/tier combination is missing
+                    try:
                         storageDict[category][tier] = storage
-                else:
-                    storageDict[category] = {tier:storage}
-                
-                #try:
-                #    storageDict[category][tier] = storageDict[category][tier]  + storage
-                #except KeyError:
-                #    # if key error, can be either category or category/tier combination is missing
-
-                #    storageDict[category] = {tier:storage}
-
-
-
-
+                    except KeyError:
+                        storageDict[category] = {tier:storage}
 
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []       
@@ -201,9 +190,7 @@ def getGroupsOnCategories(categories, callback):
         ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
         result = ret_val["arguments"][1]
 
-        # currentmonth = '%0*d' % (2, datetime.now().month)
         metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
-
 
         if result.rowCnt != 0:
             for row in range(0, result.rowCnt):
@@ -218,14 +205,12 @@ def getGroupsOnCategories(categories, callback):
                 ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
                 result2 = ret_val["arguments"][1]
                 data_size = 0
-                #callback.writeString("serverLog", 'Metadata records count: ' + str(result2.rowCnt))
                 if result2.rowCnt != 0:
                     for row2 in range(0, result2.rowCnt):
                         data = result2.sqlResult[0].row(row2)
                         temp = json.loads(data)
 
                         data_size = data_size + int(temp[2]) # no construction for summation required in this case
-
 
                 groups.append([result.sqlResult[0].row(row), data_size])
 
@@ -252,7 +237,6 @@ def getCategoriesDatamanager(datamanagerName, callback):
 
            datamanagerGroupname = result.sqlResult[0].row(row)
            temp = datamanagerGroupname.split('-')  # 'datamanager-initial' is groupname of datamanager, second part is category 
-           callback.writeString("serverLog", 'Datamanagergroupname: ' + datamanagerGroupname)
            categories.append(temp[1])
 
     return categories
