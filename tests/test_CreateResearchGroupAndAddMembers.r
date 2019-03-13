@@ -1,63 +1,43 @@
 test {
+    for(*i = 0;*i < *groups;*i = *i + 1) {
+        msiGetIcatTime(*timestamp, "human");
+        *category = *groupName;
+        *subcategory = *groupName;
+        *description = "This group is created by a test rule at *timestamp";
+        *group = "research-*groupName*i";
+        *dataClassification = "unspecified";
 
-	
-	msiGetIcatTime(*timestamp, "human");
-	writeLine("stdout", *timestamp);
-	*category = *testname;
-	*subcategory = *testname;
-       	*description = "This Group is created by a test rule at *timestamp";
+        writeLine("stdout", "Attempt to create *group");
+        uuGroupAdd(*group, *category, *subcategory, *description, *dataClassification, *status, *message);
+        writeLine("stdout", "status: *status\n*message");
 
+        writeLine("stdout", "Adding groupmanager to *group");
+        uuGroupUserAdd(*group, "groupmanager", *status, *message);
+        writeLine("stdout", "*status: *message");
 
-	*groupName = "research-*testname";
+        writeLine("stdout", "Adding researcher to *group");
+        uuGroupUserAdd(*group, "researcher", *status, *message);
+        writeLine("stdout", "*status: *message");
 
-	writeLine("stdout", "Attempt to create *groupName");
-	uuGroupAdd(*groupName, *category, *subcategory, *description, *status, *message); 
-	writeLine("stdout", "status: *status\n*message");
+        writeLine("stdout", "Adding viewer to *group");
+        uuGroupUserAdd(*group, "viewer", *status, *message);
+        writeLine("stdout", "*status: *message");
 
+        writeLine("stdout", "Changing role of groupmanager to manager");
+        uuGroupUserChangeRole(*group, 'groupmanager', 'manager', *status, *message);
+        writeLine("stdout", "*status *message");
 
-        uuGetUserType(*otherUser, *userType);	
-	if (*userType == "") {
-		failmsg(-1, "*otherUser not found. please provide existing user as argument \*otherUser");
-	}
-	writeLine("stdout", "*otherUser is a *userType");	
+        writeLine("stdout", "Changing role of viewer to reader");
+        uuGroupUserChangeRole(*group, 'viewer', 'reader', *status, *message);
+        writeLine("stdout", "*status *message");
 
-	*groupName = "research-*testname";	
-
-	writeLine("stdout", "Adding *otherUser to *groupName");
-	uuGroupUserAdd(*groupName, *otherUser, *status, *message); 
-	writeLine("stdout", "*status: *message");
-
-	uuGroupGetMembers(*groupName, true, true, *members);
-	writeLine("stdout", "Members in *groupName:");
-	foreach(*member in *members) {
-		writeLine("stdout", "  *member");	
-	}
-
-	writeLine("stdout", "Changing role of *otherUser to manager");
-	uuGroupUserChangeRole(*groupName, *otherUser, 'manager', *status, *message);
-	writeLine("stdout", "*status *message");
-	
-	uuGroupGetMembers(*groupName, true, true, *members);
-	writeLine("stdout", "Members in *groupName:");
-	foreach(*member in *members) {
-		writeLine("stdout", "  *member");	
-	}
-
-	writeLine("stdout", "Changing role of *otherUser to reader");
-	uuGroupUserChangeRole(*groupName, *otherUser, 'reader', *status, *message);
-	writeLine("stdout", "*status *message");
-	
-	uuGroupGetMembers(*groupName, true, true, *members);
-	writeLine("stdout", "Members in *groupName:");
-	foreach(*member in *members) {
-		writeLine("stdout", "  *member");	
-	}
-
-	writeLine("stdout", "Please try to modify something as user *otherUser in *groupName. it should fail");
-		
-
+        uuGroupGetMembers(*group, true, true, *members);
+        writeLine("stdout", "Members in *group:");
+        foreach(*member in *members) {
+                writeLine("stdout", "  *member");
+        }
+    }
 }
 
-
-input *testname="testgroupmanager", *otherUser="tester"
+input *groupName="testgroup", *groups=100
 output ruleExecOut
