@@ -292,9 +292,9 @@ iiFolderUnsubmit(*folder, *status, *statusInfo) {
 
 	iiFolderStatus(*folder, *currentFolderStatus);
 	if (*currentFolderStatus == SUBMITTED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ FOLDER;
+		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
 		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
+		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
 	} else {
 		*status = "WrongStatus";
 		*statusInfo = "Folder cannot be unsubmitted because its state has changed.";
