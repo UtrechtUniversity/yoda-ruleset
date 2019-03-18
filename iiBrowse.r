@@ -35,10 +35,11 @@ iscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collectio
 # \param[in] ascdesc		Order Ascending or Descending: "asc" or "desc"
 # \param[in] limit		limit the list of results. Cast to int
 #\ param[in] offset		Start returning results from offset. Cast to int
+#\ param[in] space		Research or vault space
 # \param[out] result 		JSON output of subcollections and their flags
 # \param[out] status            Status code: 'Success' of all ok
 # \param[out] statusInfo        Extra information if something went wrong
-iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *result, *status, *statusInfo) {
+iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *space, *result, *status, *statusInfo) {
 	*status = 'Success';
 	*statusInfo = '';
 
