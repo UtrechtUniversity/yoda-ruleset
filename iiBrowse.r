@@ -195,14 +195,14 @@ iiCollectionDetailsVault(*path, *kvp) {
 
         # Check if vault package is currently in state transition.
         *vaultActionPending = "no";
-        *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*coll_id";
+        *vaultActionStatus = UUORGMETADATAPREFIX ++ "vault_status_action_*kvp.id";
         foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *vaultActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
                 *vaultActionPending = "yes";
         }
 
         # Check if vault package is currently in state transition.
         *vaultNewStatus = "";
-        *vaultAction = UUORGMETADATAPREFIX ++ "vault_action_*coll_id";
+        *vaultAction = UUORGMETADATAPREFIX ++ "vault_action_*kvp.id";
         foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultAction) {
                 *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *vaultNewStatus, "get", 1));
                 if (*err < 0) {
