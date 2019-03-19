@@ -46,7 +46,13 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *s
 	*iscollection = iscollection(*collectionOrDataObject);
 	if (*iscollection){
 		*fields = list("COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
-		*conditions = list(uucondition("COLL_PARENT_NAME", "=", *path));
+                if(*space == "research") {
+                        *conditions = list(uucondition("COLL_PARENT_NAME", "=", *path),
+                                           uucondition("COLL_NAME", "not like", "/$rodsZoneClient/home/vault-%"));
+                } else {
+                        *conditions = list(uucondition("COLL_PARENT_NAME", "=", *path),
+                                           uucondition("COLL_NAME", "like", "/$rodsZoneClient/home/vault-%"));
+                }
 	} else {
 		*fields = list("DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions =  list(uucondition("COLL_NAME", "=", *path));
