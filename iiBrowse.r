@@ -193,7 +193,7 @@ iiCollectionDetailsResearch(*path, *kvp) {
         # Check if vault is accesible.
         uuChop(*groupName, *_, *baseName, "-", true);
         *vaultName = IIVAULTPREFIX ++ *baseName;
-        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*vaultName"
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*vaultName") {
                 *kvp.vaultPath = *vaultName;
         }
 }
@@ -293,7 +293,7 @@ iiCollectionDetailsVault(*path, *kvp) {
         # Check if vault is accesible.
         uuChop(*groupName, *_, *baseName, "-", true);
         *researchName = IIGROUPPREFIX ++ *baseName;
-        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*researchNa
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*researchName") {
                 *kvp.researchPath = *researchName;
         }
 }
