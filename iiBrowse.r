@@ -186,8 +186,16 @@ iiCollectionDetailsResearch(*path, *kvp) {
                         }
                 }
         }
+
         *kvp.lockFound = *lockFound;
         *kvp.lockCount = str(*lockCount);
+
+        # Check if vault is accesible.
+        uuChop(*groupName, *_, *baseName, "-", true);
+        *vaultName = IIVAULTPREFIX ++ *baseName;
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*vaultName"
+                *kvp.vaultPath = *vaultName;
+        }
 }
 
 # \brief Return a key value pair containing the details of a vault collection
@@ -195,6 +203,8 @@ iiCollectionDetailsResearch(*path, *kvp) {
 # \param[in]  path  path of vault collection (COLL_NAME)
 # \param[out] kvp   key value pair with all required info on current collection (=*path)
 iiCollectionDetailsVault(*path, *kvp) {
+        iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
+
         *vaultStatus = "";
         foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
                 *vaultStatus = *row.META_COLL_ATTR_VALUE;
@@ -278,6 +288,13 @@ iiCollectionDetailsVault(*path, *kvp) {
         } else {
                 *kvp.hasDatamanager = "no";
                 *kvp.isDatamanager = "no";
+        }
+
+        # Check if vault is accesible.
+        uuChop(*groupName, *_, *baseName, "-", true);
+        *researchName = IIGROUPPREFIX ++ *baseName;
+        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*researchNa
+                *kvp.researchPath = *researchName;
         }
 }
 
