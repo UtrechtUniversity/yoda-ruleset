@@ -18,6 +18,10 @@ uuSubmitProposal(*data, *status, *statusInfo) {
 	# that we just submitted to "submitted"
 	msiAddKeyVal(*statusKvp, "status", "submitted");
 	msiSetKeyValuePairsToObj(*statusKvp, *filePath, "-d");
+
+	# Set permissions for certain groups on the subcollection
+	msiSetACL("recursive", "write", "datarequests-research-datamanagers", *collPath);
+	msiSetACL("recursive", "write", "datarequests-research-board-of-directors", *collPath);
 }
 
 uuGetProposal(*researchProposalId, *proposalJSON, *proposalStatus, *status, *statusInfo) {
