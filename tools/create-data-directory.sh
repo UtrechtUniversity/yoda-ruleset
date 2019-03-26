@@ -1,9 +1,10 @@
 # \file      create-data-directory.sh
-# \brief     Initializes the data request data directory in which data requests (and related files) are stored. Called by Ansible.
+# \brief     Initializes the data request data directory in which data requests (and related files) are stored.
+#            Called by Ansible.
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# Get iRods zone
+# Get iRODS zone
 RODS_ZONE=`iadmin lz`
 : ${RODS_ZONE:?Could not get zone name from iadmin lz}
 
