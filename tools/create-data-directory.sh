@@ -10,6 +10,13 @@
 RODS_ZONE=`iadmin lz`
 : ${RODS_ZONE:?Could not get zone name from iadmin lz}
 
+# Check	if data	directory exists. If it	does, exit
+ils /$RODS_ZONE/home/datarequests-research
+exit_status=$?
+if test $exit_status -eq 0; then
+  exit
+fi
+
 # Create data directory
 imkdir /$RODS_ZONE/home/datarequests-research
 
