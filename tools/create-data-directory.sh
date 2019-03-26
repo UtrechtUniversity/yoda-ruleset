@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # \file      create-data-directory.sh
 # \brief     Initializes the data request data directory in which data requests (and related files) are stored.
 #            Called by Ansible.
