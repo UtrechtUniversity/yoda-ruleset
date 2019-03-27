@@ -105,20 +105,6 @@ uuUserExists(*user, *exists) {
 
 # \brief Check if a user is a member of the given group.
 #
-# \deprecated Use uuGroupUserExists(*group, *user, *includeRo, *membership) instead.
-#
-# \param[in] group        name of the irods group
-# \param[in] user         name of the irods user
-#                         username can optionally include zone ('user#zone')
-#                         default is to use the local zone
-# \param[out] membership  true if user is a member of this group
-#
-uuGroupUserExists(*group, *user, *membership) {
-	uuGroupUserExists(*group, *user, false, *membership);
-}
-
-# \brief Check if a user is a member of the given group.
-#
 # If includeRo is true, membership of a group's read-only shadow group will be
 # considered as well. Otherwise, the user must be a normal member or manager of
 # the given group.
