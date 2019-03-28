@@ -32,10 +32,9 @@ def getPreservableFormatsLists(callback):
             # Retrieve filename and name of list.
             filename, file_extension = os.path.splitext(data_name)
             json = parseJson(callback, coll_name + "/" + data_name)
-            name = json['name']
 
             # Add to list of preservable file formats.
-            preservableLists[filename] = name
+            preservableLists[filename] = json
 
         if result.continueInx == 0:
             break
