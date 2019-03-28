@@ -191,18 +191,26 @@ def uuGetUserGroupData(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(groups))
 
 
-# \brief Check if user is member of group
-def uuUserInGroup(rule_args, callback, rei):
+# \brief Check if a user is a member of the given group.
+#
+# groupUserExists(group, user, includeRo, membership)
+# If includeRo is true, membership of a group's read-only shadow group will be
+# considered as well. Otherwise, the user must be a normal member or manager of
+# the given group.
+#
+def groupUserExists(rule_args, callback, rei):
     groups = getGroupData(callback)
-    user = rule_args[0] + '#' + rule_args[1]
+    user = rule_args[1]
+    if not '#' in user:
+        import session_vars
+        user = user + "#" + session_vars.get_map(rei)["client_user"]["irods_zone"]
 
-    # Filter for groups with the given group name and of which the user is a
-    # member. As group names are unique, this will return either exactly 1
-    # match, or none.
-    groups = list(filter(lambda group: rule_args[2] in group["name"] and user in group["members"], groups))
-    user_in_group = 'true' if len(groups) == 1 else 'false'
+    if rule_args[2] == "false":
+        groups = list(filter(lambda group: rule_args[0] == group["name"] and user in group["members"], groups))
+    else:
+        groups = list(filter(lambda group: rule_args[0] == group["name"] and (user in group["read"] or user in group["members"]), groups))
 
-    callback.writeString("stdout", user_in_group)
+    rule_args[3] = "true" if len(groups) == 1 else "false"
 
 
 # \brief Write category list to stdout.
