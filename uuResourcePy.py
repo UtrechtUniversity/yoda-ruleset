@@ -121,9 +121,96 @@ def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
     rule_args[1] = json.dumps(datamanagerGroups)
 
 
+
+## \Brief collect storage stats for all twelve months based upon categories a user is datamanager of 
+#  - Category
+#  - Subcategory
+#  - Groupname
+#  - Tier
+#  - 12 columns, one per month, with used storage count in bytes
+
+def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
+    datamanagerUser = rule_args[0]
+    categories = getCategoriesDatamanager(datamanagerUser, callback)
+
+
+    allStorage = []
+    
+    # Select a full year by not limiting UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
+    # There always is a maximum of one year of history of storage data 
+    for category in categories:
+        groupToSubcategory = {}
+
+        ret_val = callback.msiMakeGenQuery(
+            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
+            "META_USER_ATTR_VALUE like '[\"" + category+ "\",%' AND META_USER_ATTR_NAME like  '" + UUMETADATASTORAGEMONTH + "%'",
+            irods_types.GenQueryInp())
+        query = ret_val["arguments"][2]
+
+        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        result = ret_val["arguments"][1]
+
+        if result.rowCnt != 0:
+            for row in range(0, result.rowCnt):
+                attrValue = result.sqlResult[0].row(row)
+
+                month = result.sqlResult[1].row(row)
+                month = str(int(month[-2:])) # the month storage data is about, is taken from the attr_name of the AVU
+                groupName = result.sqlResult[3].row(row)
+
+                # Determine subcategory on groupName
+                try:
+		    subcategory = groupToSubcategory[groupName]
+                
+		except KeyError:
+                    catInfo = groupGetCategoryInfo(groupName, callback)
+		    subcategory = catInfo['subcategory']
+                    groupToSubcategory[groupName] = subcategory
+
+                temp = json.loads(attrValue)
+                category = temp[0]
+                tier = temp[1]
+                storage = int(temp[2])
+
+                allStorage.append({'category': category, 'subcategory': subcategory, 'groupname': groupName, 'tier': tier, 'month': month, 'storage': str(storage)})
+
+    rule_args[1] = json.dumps(allStorage)
+
 #----------------------------------------------------------------------------------- End of interface layer from irods rule system
 
+
+# \ Brief get category and subcategory for a group
+#
+# return dict with indices 'category' and 'subcategory'
+def groupGetCategoryInfo(groupName, callback):
+    category = ''
+    subcategory = ''
+
+    ret_val = callback.msiMakeGenQuery(
+        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+        "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME LIKE '%category'",
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    if result.rowCnt != 0:
+        for row in range(0, result.rowCnt):
+           attrName = result.sqlResult[0].row(row)
+           attrValue = result.sqlResult[1].row(row)
+
+           if attrName == 'category':
+               category = attrValue
+           elif attrName == 'subcategory':
+               subcategory = attrValue
+
+    return {'category': category, 'subcategory': subcategory}
+
+
+
 # \Brief collect storage stats of last month only
+# Storage is summed up for each category/tier combination
 # json presentation
 #  Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
 
@@ -168,6 +255,9 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
 
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []       
+    allStorage.append({'category': 'Harm', 'tier': 'tier', 'storage':'10000'})
+
+
     for category in storageDict:
         for tier in storageDict[category]:
             allStorage.append({'category': category, 'tier': tier, 'storage':str(storageDict[category][tier])})
