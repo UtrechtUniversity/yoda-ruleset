@@ -255,8 +255,6 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
 
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []       
-    allStorage.append({'category': 'Harm', 'tier': 'tier', 'storage':'10000'})
-
 
     for category in storageDict:
         for tier in storageDict[category]:
