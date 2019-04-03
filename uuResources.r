@@ -188,6 +188,33 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 }
 
 
+# \brief uuGetExportDMCategoryStorageFullYear()
+#
+# FrontEnd function for retrieving storage overview for a datamanager including all detail information for one full year:
+#  - Category
+#  - Subcategory
+#  - Groupname
+#  - Tier
+#  - 12 columns, one per month, with used storage count in bytes
+ 
+# \param[out] *result - JSON data with category overview
+# \param[out] *status -
+# \param[out] *statusInfo
+#
+uuGetExportDMCategoryStorageFullYear(*result, *status, *statusInfo)
+{
+        *status = 'Success';
+        *statusInfo = '';
+
+        *result = '[]';
+        
+        uuRuleExportMonthlyCategoryStatisticsDM(uuClientFullName, *result);  
+}
+
+
+
+
+
 # \brief uuGetMonthlyCategoryStorageOverview()
 #
 # FrontEnd function for retrieving storage overview for all
