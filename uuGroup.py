@@ -268,7 +268,7 @@ def uuProvisionExternalUser(rule_args, callback, rei):
     elif status == 415:
         message = """Error: Invalid input MIME type for external user service.\n"
                      Please contact a Yoda administrator"""
-    elif status == 201 or status == 409:
+    elif status == 200 or status == 201 or status == 409:
         status = 0
         message = ""
 
