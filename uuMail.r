@@ -197,3 +197,25 @@ uuYourPackagePublishedMail(*researcher, *actor, *title, *yodaDOI, *status, *mess
         *body = "Congratulations, your data has been published.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
         uuMail(*to, *actor, *subject, *body, *status, *message);
 }
+
+# \brief Newly archived package email.
+#
+# \param[in]  datamanager datamanager to be informed
+# \param[in]  actor       actor of the email
+# \param[in]  title       title of the published package
+# \param[in]  yodaDOI     DOI of the published package - must be translated to DANS
+# \param[out] status      zero on success, non-zero on failure
+# \param[out] message     a user friendly error message
+#
+uuNewPackagePublishedMail(*datamanager, *actor, *title, *yodaDOI, *status, *message) {
+        *status  = 1;
+        *message = "An internal error occured.";
+
+        *to = *datamanager;
+        *subject = "[Yoda] New package is published with DOI: *yodaDOI";
+        *doiUrl = "https://DANSDANSDANSDANS.org/*yodaDOI"; ## MUST BE CHANGED
+        *body = "Congratulations, your data has been archived at DANS.\n\nTitle: *title\nDOI: *yodaDOI (*doiUrl)\n\nBest regards,\nYoda system";
+        uuMail(*to, *actor, *subject, *body, *status, *message);
+}
+
+
