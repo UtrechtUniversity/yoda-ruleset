@@ -213,12 +213,8 @@ def GetTransformationText_v1(callback, xmlPath):
 #
 def parseXml(callback, path):
     # Retrieve XML size.
-    callback.writeString("serverLog", path)
-
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
-
-    callback.writeString("serverLog", 'size: ' + str(data_size))
 
     # Open metadata XML.
     ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
