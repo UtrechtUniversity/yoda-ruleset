@@ -26,7 +26,7 @@ import time
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
 
 transformationMatrix = {}
-transformationMatrix['https://utrechtuniversity.github.io/yoda-schemas/default'] = {'https://utrechtuniversity.github.io/yoda-schemas/default_extended': 'v1'}
+transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu.nl/schemas/default-1': 'v1'}
 
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
@@ -240,7 +240,7 @@ def parseXml(callback, path):
 #
 # Example:
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
-# out: 'https://utrechtuniversity.github.io/yoda-schemas/default'
+# out: 'https://yoda.uu.nl/schemas/default-0'
 #
 # \param[in] rule_args[0] XML path
 # \param[out] rule_args[1] Metadata schema location
@@ -269,7 +269,7 @@ def iiRuleGetSpace(rule_args, callback, rei):
 #
 # Example:
 # in:  /tempZone/home/research-initial/yoda-metadata.xml
-# out: 'https://utrechtuniversity.github.io/yoda-schemas/default'
+# out: 'https://yoda.uu.nl/schemas/default-0'
 #
 # \param[in] rule_args[0] XML path
 # \param[out] rule_args[1] Metadata schema location
