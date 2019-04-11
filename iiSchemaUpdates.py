@@ -107,11 +107,18 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # transformationText - for frontend
 
 def ExecTransformation_v1(callback, xmlPath, schema):
-    xslFilename = 'default-1.xsl'
     coll_name, data_name = os.path.split(xmlPath)
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
+    groupName = pathParts[3]
+
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
+
+    # Select correct transformation file.
+    if "research" in groupName:
+        xslFilename = 'default-0-research.xsl'
+    elif "vault" in groupName:
+        xslFilename = 'default-0-vault.xsl'
 
     xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
@@ -121,9 +128,6 @@ def ExecTransformation_v1(callback, xmlPath, schema):
     transform = etree.XSLT(xslroot)
     transformationResult = transform(xmlYodaMeta, encoding='utf8')
     transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-
-    pathParts = xmlPath.split('/')
-    groupName = pathParts[3]
 
     # Write transformed xml to yoda-metadata.xml
     if "research" in groupName:
@@ -165,9 +169,9 @@ def ExecTransformation_v1(callback, xmlPath, schema):
 
 
 def GetTransformationText_v1(callback, xmlPath, schema):
-    htmlFilename = 'default-1.html'
+    htmlFilename = 'default-0.html'
     pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]    
+    rods_zone = pathParts[1]
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
 
     # Collect the transformation explanation text for the enduser.

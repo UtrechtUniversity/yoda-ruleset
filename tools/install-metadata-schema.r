@@ -218,9 +218,9 @@ createXmlXsdCollections {
                 writeLine("stdout", "Installed: *transformationColl");
         }
 
-        # 3. Install transformation XSLs.
-        *transXsl = *transformationColl ++ "/" ++ 'default-1.xsl';
-        *localPath = *src ++ '../transformations/default-0/default-1.xsl';
+        # 3. Install research transformation XSLs.
+        *transXsl = *transformationColl ++ "/" ++ 'default-0.xsl';
+        *localPath = *src ++ '../transformations/default-1/default-0-research.xsl';
 
         if (uuFileExists(*transXsl)) {
                 if (*update == 1) {
@@ -234,9 +234,25 @@ createXmlXsdCollections {
                 writeLine("stdout", "Installed: *transXsl");
         }
 
-        # 4. Install transformation descriptions.
-        *transTxt = *transformationColl ++ "/" ++ 'default-1.html';
-        *localPath = *src ++ '../transformations/default-0/default-1.html';
+        # 4. Install vault transformation XSLs.
+        *transXsl = *transformationColl ++ "/" ++ 'default-0.xsl';
+        *localPath = *src ++ '../transformations/default-1/default-0-vault.xsl';
+
+        if (uuFileExists(*transXsl)) {
+                if (*update == 1) {
+                        msiDataObjPut(*transXsl, *resc, "localPath=*localPath++++forceFlag=", *status);
+                        writeLine("stdout", "Updated: *transXsl");
+                } else {
+                        writeLine("stdout", "Present: *transXsl");
+                }
+        } else {
+                msiDataObjPut(*transXsl, *resc, "localPath=*localPath", *status);
+                writeLine("stdout", "Installed: *transXsl");
+        }
+
+        # 5. Install transformation descriptions.
+        *transTxt = *transformationColl ++ "/" ++ 'default-0.html';
+        *localPath = *src ++ '../transformations/default-1/default-0.html';
 
         if (uuFileExists(*transTxt)) {
                 if (*update == 1) {
