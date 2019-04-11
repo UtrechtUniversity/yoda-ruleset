@@ -50,7 +50,7 @@ def iiRuleTransformXml(rule_args, callback, rei):
         versionFrom = getMetadataXMLSchema(callback, xmlPath)
 
         transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
-        result = globals()[transformationMethod](callback, xmlPath, versionFrom)
+        result = globals()[transformationMethod](callback, xmlPath)
         status = result['status']
     except KeyError:
         # No transformation present to convert yoda-metadata.xml
@@ -81,7 +81,7 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
         versionFrom = getMetadataXMLSchema(callback, xmlPath)
 
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-        transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom)
+        transformationText = globals()[transformationMethod](callback, xmlPath)
         transformation = 'true'
     except KeyError:
         pass
@@ -106,20 +106,19 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # status
 # transformationText - for frontend
 
-def ExecTransformation_v1(callback, xmlPath, schema):
+def ExecTransformation_v1(callback, xmlPath):
     coll_name, data_name = os.path.split(xmlPath)
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
     groupName = pathParts[3]
 
-    schemaName = schema.rsplit('/', 1)[-1]
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schemaName
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-0'
 
     # Select correct transformation file.
     if "research" in groupName:
-        xslFilename = 'default-0-research.xsl'
+        xslFilename = 'default-1-research.xsl'
     elif "vault" in groupName:
-        xslFilename = 'default-0-vault.xsl'
+        xslFilename = 'default-1-vault.xsl'
 
     xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
@@ -169,13 +168,12 @@ def ExecTransformation_v1(callback, xmlPath, schema):
     return result
 
 
-def GetTransformationText_v1(callback, xmlPath, schema):
-    htmlFilename = 'default-0.html'
+def GetTransformationText_v1(callback, xmlPath):
+    htmlFilename = 'default-1.html'
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
 
-    schemaName = schema.rsplit('/', 1)[-1]
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schemaName
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-0'
 
     # Collect the transformation explanation text for the enduser.
     data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)
