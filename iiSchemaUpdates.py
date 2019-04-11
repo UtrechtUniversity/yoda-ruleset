@@ -112,13 +112,13 @@ def ExecTransformation_v1(callback, xmlPath):
     rods_zone = pathParts[1]
     groupName = pathParts[3]
 
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-0'
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-1'
 
     # Select correct transformation file.
     if "research" in groupName:
-        xslFilename = 'default-1-research.xsl'
+        xslFilename = 'default-0-research.xsl'
     elif "vault" in groupName:
-        xslFilename = 'default-1-vault.xsl'
+        xslFilename = 'default-0-vault.xsl'
 
     xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
@@ -169,11 +169,11 @@ def ExecTransformation_v1(callback, xmlPath):
 
 
 def GetTransformationText_v1(callback, xmlPath):
-    htmlFilename = 'default-1.html'
+    htmlFilename = 'default-0.html'
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
 
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-0'
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-1'
 
     # Collect the transformation explanation text for the enduser.
     data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)

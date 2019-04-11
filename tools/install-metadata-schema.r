@@ -219,8 +219,8 @@ createXmlXsdCollections {
         }
 
         # 3. Install research transformation XSLs.
-        *transXsl = *transformationColl ++ "/" ++ 'default-1.xsl';
-        *localPath = *src ++ '../transformations/default-0/default-1-research.xsl';
+        *transXsl = *transformationColl ++ "/" ++ 'default-0.xsl';
+        *localPath = *src ++ '../transformations/default-1/default-0-research.xsl';
 
         if (uuFileExists(*transXsl)) {
                 if (*update == 1) {
@@ -235,8 +235,8 @@ createXmlXsdCollections {
         }
 
         # 4. Install vault transformation XSLs.
-        *transXsl = *transformationColl ++ "/" ++ 'default-1.xsl';
-        *localPath = *src ++ '../transformations/default-0/default-1-vault.xsl';
+        *transXsl = *transformationColl ++ "/" ++ 'default-0.xsl';
+        *localPath = *src ++ '../transformations/default-1/default-0-vault.xsl';
 
         if (uuFileExists(*transXsl)) {
                 if (*update == 1) {
@@ -251,8 +251,8 @@ createXmlXsdCollections {
         }
 
         # 5. Install transformation descriptions.
-        *transTxt = *transformationColl ++ "/" ++ 'default-1.html';
-        *localPath = *src ++ '../transformations/default-0/default-1.html';
+        *transTxt = *transformationColl ++ "/" ++ 'default-0.html';
+        *localPath = *src ++ '../transformations/default-1/default-0.html';
 
         if (uuFileExists(*transTxt)) {
                 if (*update == 1) {
