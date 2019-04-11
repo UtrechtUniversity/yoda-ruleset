@@ -109,6 +109,8 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 def ExecTransformation_v1(callback, xmlPath, schema):
     xslFilename = 'default-1.xsl'
     coll_name, data_name = os.path.split(xmlPath)
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
 
     xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
@@ -164,6 +166,8 @@ def ExecTransformation_v1(callback, xmlPath, schema):
 
 def GetTransformationText_v1(callback, xmlPath, schema):
     htmlFilename = 'default-1.html'
+    pathParts = xmlPath.split('/')
+    rods_zone = pathParts[1]    
     transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
 
     # Collect the transformation explanation text for the enduser.
