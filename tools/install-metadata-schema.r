@@ -185,6 +185,7 @@ createXmlXsdCollections {
 
 
         # TRANSFORMATION
+
         # 1. Install transformations collection
         *isfound = false;
         *transformationsColl = "/" ++ $rodsZoneClient ++ IITRANSFORMATIONCOLLECTION;
@@ -201,9 +202,9 @@ createXmlXsdCollections {
                 writeLine("stdout", "Installed: *transformationsColl");
         }
 
-        # 2. Install transformation collection
+        # 2. Install transformations collection
         *isfound = false;
-        *transformationColl = "/" ++ $rodsZoneClient ++ IITRANSFORMATIONCOLLECTION ++ "/" ++ *category;
+        *transformationColl = "/" ++ $rodsZoneClient ++ IITRANSFORMATIONCOLLECTION ++ "/" ++ *schema;
         foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *transformationColl) {
                 *isfound = true;
         }
@@ -217,9 +218,9 @@ createXmlXsdCollections {
                 writeLine("stdout", "Installed: *transformationColl");
         }
 
-        # 3. Install xsl - in this test case use v1.xsl
+        # 3. Install transformation XSLs.
         *transXsl = *transformationColl ++ "/" ++ 'v1.xsl';
-        *localPath = *src ++ '../transformations/default/v1.xsl';
+        *localPath = *src ++ '../transformations/default-0/default-1.xsl';
 
         if (uuFileExists(*transXsl)) {
                 if (*update == 1) {
@@ -233,9 +234,9 @@ createXmlXsdCollections {
                 writeLine("stdout", "Installed: *transXsl");
         }
 
-        # 4. Install corresponding text file (explanation to end user) - in this test case use v1.txt
+        # 4. Install transformation descriptions.
         *transTxt = *transformationColl ++ "/" ++ 'v1.html';
-        *localPath = *src ++ '../transformations/default/v1.html';
+        *localPath = *src ++ '../transformations/default-0/default-1.html';
 
         if (uuFileExists(*transTxt)) {
                 if (*update == 1) {

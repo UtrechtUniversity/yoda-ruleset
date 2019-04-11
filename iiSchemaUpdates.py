@@ -111,7 +111,7 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # transformationText - for frontend
 
 def ExecTransformation_v1(callback, xmlPath):
-    xslFilename = 'v1.xsl'
+    xslFilename = 'default-1.xsl'
 
     coll_name, data_name = os.path.split(xmlPath)
 
@@ -174,7 +174,7 @@ def ExecTransformation_v1(callback, xmlPath):
 
 
 def GetTransformationText_v1(callback, xmlPath):
-    htmlFilename = 'v1.html'
+    htmlFilename = 'default-1.html'
 
     coll_name, data_name = os.path.split(xmlPath)
 
