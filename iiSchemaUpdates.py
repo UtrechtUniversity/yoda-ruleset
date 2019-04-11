@@ -41,23 +41,17 @@ transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu
 def iiRuleTransformXml(rule_args, callback, rei):
     xmlPath = rule_args[0] + "/yoda-metadata.xml"
 
-    # Retrieve current metadata schemas.
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-
-    versionTo = getSchemaLocation(callback, xmlPath)
-    versionFrom = getMetadataXMLSchema(callback, xmlPath)
-
     status = 'Unknown'
     statusInfo = ''
 
     try:
+        # Retrieve current and future  metadata schemas.
+        versionTo = getSchemaLocation(callback, xmlPath)
+        versionFrom = getMetadataXMLSchema(callback, xmlPath)
+
         transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
-
-        result = globals()[transformationMethod](callback, xmlPath)
+        result = globals()[transformationMethod](callback, xmlPath, versionFrom)
         status = result['status']
-
     except KeyError:
         # No transformation present to convert yoda-metadata.xml
         status = 'ERROR'
@@ -82,10 +76,12 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
     transformationText = ''
 
     try:
+        # Retrieve current and future  metadata schemas.
         versionTo = getSchemaLocation(callback, xmlPath)
         versionFrom = getMetadataXMLSchema(callback, xmlPath)
+
         transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-        transformationText = globals()[transformationMethod](callback, xmlPath)
+        transformationText = globals()[transformationMethod](callback, xmlPath, versionFrom)
         transformation = 'true'
     except KeyError:
         pass
@@ -110,17 +106,10 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # status
 # transformationText - for frontend
 
-def ExecTransformation_v1(callback, xmlPath):
+def ExecTransformation_v1(callback, xmlPath, schema):
     xslFilename = 'default-1.xsl'
-
     coll_name, data_name = os.path.split(xmlPath)
-
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-    category = getCategory(callback, rods_zone, group_name)
-
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
 
     xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
 
@@ -173,17 +162,9 @@ def ExecTransformation_v1(callback, xmlPath):
     return result
 
 
-def GetTransformationText_v1(callback, xmlPath):
+def GetTransformationText_v1(callback, xmlPath, schema):
     htmlFilename = 'default-1.html'
-
-    coll_name, data_name = os.path.split(xmlPath)
-
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-    category = getCategory(callback, rods_zone, group_name)
-
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + category
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
 
     # Collect the transformation explanation text for the enduser.
     data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)
