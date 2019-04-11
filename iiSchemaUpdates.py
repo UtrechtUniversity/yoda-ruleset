@@ -112,7 +112,8 @@ def ExecTransformation_v1(callback, xmlPath, schema):
     rods_zone = pathParts[1]
     groupName = pathParts[3]
 
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
+    schemaName = schema.rsplit('/', 1)[-1]
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schemaName
 
     # Select correct transformation file.
     if "research" in groupName:
@@ -172,7 +173,9 @@ def GetTransformationText_v1(callback, xmlPath, schema):
     htmlFilename = 'default-0.html'
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schema
+
+    schemaName = schema.rsplit('/', 1)[-1]
+    transformationBasePath = '/' + rods_zone + '/yoda/transformations/' + schemaName
 
     # Collect the transformation explanation text for the enduser.
     data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)
