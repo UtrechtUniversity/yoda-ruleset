@@ -219,7 +219,7 @@ createXmlXsdCollections {
         }
 
         # 3. Install transformation XSLs.
-        *transXsl = *transformationColl ++ "/" ++ 'v1.xsl';
+        *transXsl = *transformationColl ++ "/" ++ 'default-1.xsl';
         *localPath = *src ++ '../transformations/default-0/default-1.xsl';
 
         if (uuFileExists(*transXsl)) {
@@ -235,7 +235,7 @@ createXmlXsdCollections {
         }
 
         # 4. Install transformation descriptions.
-        *transTxt = *transformationColl ++ "/" ++ 'v1.html';
+        *transTxt = *transformationColl ++ "/" ++ 'default-1.html';
         *localPath = *src ++ '../transformations/default-0/default-1.html';
 
         if (uuFileExists(*transTxt)) {
