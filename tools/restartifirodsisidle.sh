@@ -1,5 +1,5 @@
 #!/bin/bash
-HOME="/var/lib/irods/iRODS"
+HOME="/var/lib/irods"
 NLINES=`ips |wc -l`
 NPROCS=`expr $NLINES - 2`
 
