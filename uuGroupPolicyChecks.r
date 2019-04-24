@@ -110,7 +110,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 	*allowed = 0;
 	*reason  = "";
 
-	uuGroupUserExists("priv-group-add", *actor, *hasPriv);
+	uuGroupUserExists("priv-group-add", *actor, false, *hasPriv);
 	if (*hasPriv) {
 		if (uuGroupNameIsValid(*groupName)) {
 			uuUserNameIsAvailable(*groupName, *nameAvailable, *existingType);
@@ -194,7 +194,7 @@ uuGroupPolicyCanUseCategory(*actor, *categoryName, *allowed, *reason) {
 			*reason = "You cannot use this group category because you are not a group manager in the *categoryName category.";
 		}
 	} else {
-		uuGroupUserExists("priv-category-add", *actor, *hasPriv);
+		uuGroupUserExists("priv-category-add", *actor, false, *hasPriv);
 		if (*hasPriv) {
 			if (uuGroupCategoryNameIsValid(*categoryName)) {
 				*allowed = 1;
@@ -340,7 +340,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 	} else {
 		uuGroupUserIsManager(*groupName, *actor, *isManager);
 		if (*isManager) {
-			uuGroupUserExists(*groupName, *newMember, *isAlreadyAMember);
+			uuGroupUserExists(*groupName, *newMember, false, *isAlreadyAMember);
 			if (*isAlreadyAMember) {
 				*reason = "User '*newMember' is already a member of group '*groupName'.";
 			} else {

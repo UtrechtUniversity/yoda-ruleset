@@ -105,23 +105,7 @@ uuUserExists(*user, *exists) {
 
 # \brief Check if a user is a member of the given group.
 #
-# \deprecated Use uuGroupUserExists(*group, *user, *includeRo, *membership) instead.
-#
-# \param[in] group        name of the irods group
-# \param[in] user         name of the irods user
-#                         username can optionally include zone ('user#zone')
-#                         default is to use the local zone
-# \param[out] membership  true if user is a member of this group
-#
-uuGroupUserExists(*group, *user, *membership) {
-	uuGroupUserExists(*group, *user, false, *membership);
-}
-
-# \brief Check if a user is a member of the given group.
-#
-# If includeRo is true, membership of a group's read-only shadow group will be
-# considered as well. Otherwise, the user must be a normal member or manager of
-# the given group.
+# This is now a wrapper for the python function.
 #
 # \param[in] group        name of the irods group
 # \param[in] user         name of the irods user
@@ -131,32 +115,12 @@ uuGroupUserExists(*group, *user, *membership) {
 # \param[out] membership  true if user is a member of this group
 #
 uuGroupUserExists(*group, *user, *includeRo, *membership) {
-
-	*membership = false;
-	uuGetUserAndZone(*user,*userName,*userZone);
-	foreach (*row in SELECT USER_NAME,USER_ZONE WHERE USER_GROUP_NAME=*group) {
-		msiGetValByKey(*row, "USER_NAME", *member);
-		msiGetValByKey(*row, "USER_ZONE", *memberZone);
-		if ((*member == *userName) && (*memberZone == *userZone)) {
-			*membership = true;
-			succeed;
-		}
-	}
-
-	if (*includeRo && *group like regex "(research|intake)-.*") {
-		uuChop(*group, *_, *baseName, "-", true);
-		*roName = "read-*baseName";
-
-		foreach (
-			*row in
-			SELECT USER_GROUP_NAME
-			WHERE USER_NAME = '*userName'
-			  AND USER_ZONE = '*userZone'
-			  AND USER_GROUP_NAME = '*roName'
-		) {
-			*membership = true;
-			break;
-		}
+        *membership = "";
+        groupUserExists(*group, *user, str(*includeRo), *membership);
+	if (*membership == "true") {
+	        *membership = true;
+	} else {
+	        *membership = false;
 	}
 }
 
