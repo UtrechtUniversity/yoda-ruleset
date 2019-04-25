@@ -1,4 +1,4 @@
-# \file      uuResourcesPy.py
+# \file      uuResources.py
 # \brief     Functions for statistics module - in essence a python extension directly related to uuResources.r
 # \author    Lazlo Westerhof
 # \author    Felix Croes
@@ -241,7 +241,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
                 temp = json.loads(attrValue)
                 category = temp[0]
                 tier = temp[1]
-                storage = int(temp[2])
+                storage = int(float(temp[2]))
 
                 try:
                     storageDict[category][tier] = storageDict[category][tier]  + storage
