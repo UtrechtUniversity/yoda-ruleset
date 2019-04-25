@@ -17,11 +17,11 @@ def getPreservableFormatsLists(callback):
     zoneName = ""
     clientZone = callback.uuClientZone(zoneName)['arguments'][0]
 
-     # Retrieve all preservable file formats lists on the system.
-     ret_val = callback.msiMakeGenQuery(
-         "DATA_NAME, COLL_NAME",
-         "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
-         irods_types.GenQueryInp())
+    # Retrieve all preservable file formats lists on the system.
+    ret_val = callback.msiMakeGenQuery(
+        "DATA_NAME, COLL_NAME",
+        "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
+        irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
