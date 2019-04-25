@@ -45,6 +45,14 @@ uuGetUserAndZone(*user,*userName,*userZone) {
 	}
 }
 
+# \brief Retrieve the client zone name.
+#
+# \param[out] zoneName
+#
+uuClientZone(*zoneName) {
+    *zoneName = $rodsZoneClient;
+}
+
 uuClientFullName() = "$userNameClient#$rodsZoneClient";
 
 # \brief Check if a group category exists.
