@@ -299,19 +299,6 @@ iiCopyActionLog(*source, *destination) {
 	}
 }
 
-# \brief Copy the original metadata xml into the root of the package.
-#
-# \param[in] vaultPackage  path of a new package in the vault
-#
-iiCopyOriginalMetadataToVault(*vaultPackage) {
-	*originalMetadataXml = "*vaultPackage/original/" ++ IIMETADATAXMLNAME;
-	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
-	msiGetIcatTime(*timestamp, "unix");
-	*timestamp = triml(*timestamp, "0");
-	*vaultMetadataTarget = "*vaultPackage/*baseName[*timestamp].*extension";
-	msiDataObjCopy(*originalMetadataXml, *vaultMetadataTarget, "verifyChksum=", *status);
-}
-
 # \brief Rule to grant read access to the vault package managed by a datamanger.
 #
 # \param[in] path
