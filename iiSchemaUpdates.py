@@ -343,16 +343,13 @@ def getSchemaLocation(callback, xmlPath):
 # \return schema space
 #
 def getSchemaSpace(callback, group_name):
-    space = '-1'
-
     if 'research-' in group_name:
         space = 'research'
-    elif 'vault-' in group_name:
-        space = 'vault'
     else:
-        return '-1'
+        space = 'vault'
 
     return space + '.xsd'
+
 
 
 # \brief getLatestVaultMetadataXml
