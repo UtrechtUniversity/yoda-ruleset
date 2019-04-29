@@ -1,4 +1,5 @@
 check {
+        writeLine("serverLog", "[METADATA] Start updating metadata.");
         iiCheckMetadataXmlForSchemaUpdates("0", *batch, *pause, *delay);
 }
 

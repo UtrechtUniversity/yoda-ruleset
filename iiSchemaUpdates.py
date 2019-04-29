@@ -605,7 +605,6 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     else:
         callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
 
-
 # \brief Loop through all collections with yoda-metadata.xml data objects.
 #        Check metadata XML for schema updates.
 #
@@ -656,9 +655,65 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
     else:
         # All done.
         coll_id = 0
+        callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
 
     return coll_id
 
+# \brief Check metadata XML for schema identifier.
+#
+# \param[in] rods_zone  Zone name
+# \param[in] coll_name  Collection name of metadata XML
+# \param[in] group_name Group name of metadata XML
+# \param[in] data_name  Data name of metadata XML
+##
+def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name):
+    root = parseMetadataXml(callback, coll_name + "/" + data_name)
+
+    # Retrieve active schema location to be added.
+    schemaLocation = getSchemaLocation(callback, coll_name + "/" + data_name)
+
+    # Check if no identifiers are present, for vault and research space.
+    if not root.attrib:
+        callback.writeString("stdout", "[METADATA] Missing identifier: %s" % (xml_file))
+
+# \brief Check metadata XML for schema identifiers.
+#
+def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):\
+    import session_vars
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+
+    callback.writeString("stdout", "[METADATA] Start check for schema identifiers.")
+
+    # Find all research and vault collections, ordered by COLL_ID.
+    ret_val = callback.msiMakeGenQuery(
+        "ORDER(COLL_ID), COLL_NAME",
+        "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml'" % (rods_zone),
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    result = ret_val["arguments"][1]
+
+    if result.rowCnt != 0:
+        # Check each collection in batch.
+        for row in range(min(batch, result.rowCnt)):
+            coll_id = int(result.sqlResult[0].row(row))
+            coll_name = result.sqlResult[1].row(row)
+            pathParts = coll_name.split('/')
+
+            try:
+                group_name = pathParts[3]
+                if 'research-' in group_name:
+                    checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
+                elif 'vault-' in group_name:
+                    # Parent collections should not be 'original'. Those files must remain untouched.
+                    if pathParts[-1] != 'original':
+                        data_name = getLatestVaultMetadataXml(callback, coll_name)
+                        checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name)
+            except:
+                pass
+
+    callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.")
 
 # \brief Check metadata XML for schema updates.
 #
