@@ -678,7 +678,7 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
 
 # \brief Check metadata XML for schema identifiers.
 #
-def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):\
+def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
     import session_vars
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
