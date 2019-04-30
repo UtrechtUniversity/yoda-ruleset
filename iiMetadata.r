@@ -781,6 +781,8 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 	}
 
 	iiAddActionLogRecord(*actor, *vaultPackagePath, "modified metadata");
+	iiWriteProvenanceLogToVault(*vaultPackagePath);
+
 	# Add action log record
 	#DEBUG writeLine("serverLog", "iiIngestDatamanagerMetadataIntoVault: Removing metadata xml from datamanager folder");
 	*err = errorcode(msiDataObjUnlink("objPath=*metadataXmlPath++++forceFlag=", *statusBuf));
