@@ -141,3 +141,59 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
     callback.msiDataObjWrite(fileHandle, newXmlString, 0)
     callback.msiDataObjClose(fileHandle, 0)
 
+
+# \brief Get the provenance log as JSON.
+#
+# \param[in] folder Path of a folder in research or vault space.
+#
+# \return Provenance log as JSON.
+#
+def getProvenanceLog(callback, folder):
+    provenance_log = []
+
+    # Retrieve all provenance logs on a folder.
+    ret_val = callback.msiMakeGenQuery(
+        "order(META_COLL_ATTR_VALUE)",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (folder),
+        irods_types.GenQueryInp())
+    query = ret_val["arguments"][2]
+
+    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    while True:
+        result = ret_val["arguments"][1]
+        for row in range(result.rowCnt):
+            log_item = json.loads(result.sqlResult[0].row(row))
+            provenance_log.append(log_item)
+
+        if result.continueInx == 0:
+            break
+        ret_val = callback.msiGetMoreRows(query, result, 0)
+    callback.msiCloseGenQuery(query, result)
+
+    return provenance_log
+
+
+# \brief Writes the provenance log as a text file into the root of the vault package.
+#
+# \param[in] rule_args[0] Path of a package in the vault.
+#
+def iiWriteProvenanceLogToVault(rule_args, callback, rei):
+    # Retrieve provenance.
+    provenenanceString = ""
+    provenanceLog =  getProvenanceLog(callback, rule_args[0])
+    for item in provenanceLog:
+        dateTime = time.strftime('%Y/%m/%d %H:%M:%S',
+                                 time.localtime(int(item[0])))
+        action = item[1].capitalize()
+        actor = item[2]
+        provenenanceString += dateTime + " - " + action + " - " + actor + "\n"
+
+    # Write provenance log.
+    ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
+    provenanceFile = rule_args[0] + "/Provenance.txt"
+    ret_val = callback.msiDataObjCreate(provenanceFile, ofFlags, 0)
+
+    fileHandle = ret_val['arguments'][2]
+    callback.msiDataObjWrite(fileHandle, provenenanceString, 0)
+    callback.msiDataObjClose(fileHandle, 0)
+

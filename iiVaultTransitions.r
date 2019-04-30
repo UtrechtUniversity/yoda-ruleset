@@ -1,7 +1,7 @@
 # \file      iiVaultTransitions.r
 # \brief     Status transitions for folders in the vault space.
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -239,6 +239,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "submitted for publication");
+		iiWriteProvenanceLogToVault(*folder);
 
 		# Store actor of publication submission.
 		msiString2KeyValPair("", *kvp);
@@ -248,6 +249,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
+		iiWriteProvenanceLogToVault(*folder);
 
 		# Store actor of publication approval.
 		msiString2KeyValPair("", *kvp);
@@ -256,18 +258,22 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
+		iiWriteProvenanceLogToVault(*folder);
 	}
 	on (*newVaultStatus == PENDING_DEPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "requested depublication");
+		iiWriteProvenanceLogToVault(*folder);
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord("system", *folder, "depublished");
+		iiWriteProvenanceLogToVault(*folder);
 	}
 	on (*newVaultStatus == PENDING_REPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "requested republication");
+		iiWriteProvenanceLogToVault(*folder);
 	}
 	on (true) {
 		nop;

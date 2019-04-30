@@ -2,7 +2,7 @@
 # \brief     Status transitions for folders in the research space.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # ---------------- Start of Yoda FrontOffice API ----------------
@@ -436,7 +436,6 @@ iiFolderReject(*folder, *status, *statusInfo) {
 # \param[in] folder
 #
 iiFolderSecure(*folder) {
-
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") {
 		writeLine("stdout", "iiFolderSecure: Should only be called by a rodsadmin");
@@ -498,7 +497,6 @@ iiFolderSecure(*folder) {
 	iiCopyUserMetadata(*folder, *target);
 	iiCopyOriginalMetadataToVault(*target);
 	iiCopyLicenseToVaultPackage(*folder, *target);
-	iiSetVaultPermissions(*folder, *target);
 
 	if (*httpCode != "0") {
 		# save EPIC Persistent ID in metadata
@@ -524,7 +522,12 @@ iiFolderSecure(*folder) {
 		*parent = *coll;
 	}
 
+	# Copy and write provenance log.
 	iiCopyActionLog(*folder, *target);
+	iiWriteProvenanceLogToVault(*target);
+
+	# Set vault permissions for new vault package.
+	iiSetVaultPermissions(*folder, *target);
 
 	# Set vault package status.
 	*vaultStatus = IIVAULTSTATUSATTRNAME;
