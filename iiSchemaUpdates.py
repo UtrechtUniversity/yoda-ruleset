@@ -670,12 +670,15 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
 # \param[in] data_name  Data name of metadata XML
 ##
 def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name):
-    root = parseMetadataXml(callback, coll_name + "/" + data_name)
+    try:
+        root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
-    # Check if no identifiers are present, for vault and research space.
-    if not root.attrib:
-        xml_file = coll_name + "/" + data_name
-        callback.writeString("stdout", "Missing schema identifier: %s\n" % (xml_file))
+        # Check if no identifiers are present, for vault and research space.
+        if not root.attrib:
+            xml_file = coll_name + "/" + data_name
+            callback.writeString("stdout", "Missing schema identifier: %s\n" % (xml_file))
+    except:
+        callback.writeString("stdout", "Unparsable metadata file: %s\n" % (xml_file))
 
 # \brief Check metadata XML for schema identifiers.
 #
