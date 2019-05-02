@@ -678,8 +678,8 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
         # Check if no identifiers are present, for vault and research space.
         if not root.attrib:
             callback.writeLine("stdout", "Missing schema identifier: %s" % (xml_file))
-     except:
-         callback.writeLine("stdout", "Unparsable metadata file: %s" % (xml_file))
+    except:
+        callback.writeLine("stdout", "Unparsable metadata file: %s" % (xml_file))
 
 
 # \brief Check metadata XML for schema identifiers.
