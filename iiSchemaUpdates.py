@@ -583,6 +583,9 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
                 ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
                 copyACLsFromParent(callback, xml_file, "default")
 
+                # Add item to provenance log.
+                callback.iiAddActionLogRecord("system", coll_name, "updated metadata schema")
+
             fileHandle = ret_val['arguments'][2]
             callback.msiDataObjWrite(fileHandle, newXmlString, 0)
             callback.msiDataObjClose(fileHandle, 0)
