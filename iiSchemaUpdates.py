@@ -359,10 +359,9 @@ def getSchemaSpace(callback, group_name):
 # \return metadataXmlPath
 #
 def getLatestVaultMetadataXml(callback, vaultPackage):
-    dataNameQuery = "yoda-metadata[%].xml"
     ret_val = callback.msiMakeGenQuery(
         "DATA_NAME, DATA_SIZE",
-        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like '" + dataNameQuery + "'",
+        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like 'yoda-metadata[%].xml'",
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
@@ -643,10 +642,11 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
                 if 'research-' in group_name:
                     checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
                 elif 'vault-' in group_name:
-                    # Parent collections should not be 'original'. Those files must remain untouched.
-                    if pathParts[-1] != 'original':
-                        data_name = getLatestVaultMetadataXml(callback, coll_name)
-                        checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name)
+                    # Get vault package path.
+                    vault_package = '/'.join(pathParts[:5])
+                    data_name = getLatestVaultMetadataXml(callback, vault_package)
+                    if data_name != "":
+                        checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
             except:
                 pass
 
@@ -668,7 +668,7 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
 # \param[in] coll_name  Collection name of metadata XML
 # \param[in] group_name Group name of metadata XML
 # \param[in] data_name  Data name of metadata XML
-##
+#
 def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name):
     xml_file = coll_name + "/" + data_name
 
@@ -677,9 +677,10 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
 
         # Check if no identifiers are present, for vault and research space.
         if not root.attrib:
-            callback.writeString("stdout", "Missing schema identifier: %s\n" % (xml_file))
-    except:
-        callback.writeString("stdout", "Unparsable metadata file: %s\n" % (xml_file))
+            callback.writeLine("stdout", "Missing schema identifier: %s" % (xml_file))
+     except:
+         callback.writeLine("stdout", "Unparsable metadata file: %s" % (xml_file))
+
 
 # \brief Check metadata XML for schema identifiers.
 #
@@ -710,10 +711,13 @@ def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
             if 'research-' in group_name:
                 checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
             elif 'vault-' in group_name:
-                # Parent collections should not be 'original'. Those files must remain untouched.
-                if pathParts[-1] != 'original':
-                    data_name = getLatestVaultMetadataXml(callback, coll_name)
-                    checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name)
+                # Get vault package path.
+                vault_package = '/'.join(pathParts[:5])
+                data_name = getLatestVaultMetadataXml(callback, vault_package)
+                if data_name != "":
+                    checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
+                else:
+                    callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
 
     callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
 
