@@ -131,6 +131,7 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
     # Set 'xsi:schemaLocation' for the vault space.
     researchSchema = "xsi:schemaLocation=\"" + schemaLocation + " " + IIRESEARCHXSDNAME + "\""
     vaultSchema = "xsi:schemaLocation=\"" + schemaLocation + " " + IIVAULTXSDNAME + "\""
+    xmlString = xmlString.decode('utf-8')
     newXmlString = xmlString.replace(researchSchema, vaultSchema, 1)
 
     # Write new metadata XML.
