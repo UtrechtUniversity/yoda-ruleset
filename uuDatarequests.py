@@ -1,3 +1,8 @@
+# \file      uuDatarequest.py
+# \brief     Functions to handle data requests.
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
 from datetime import datetime
 
 def uuMetaAdd(callback, objType, objName, attribute, value):

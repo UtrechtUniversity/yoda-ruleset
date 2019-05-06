@@ -1,3 +1,8 @@
+# \file      uuProposal.py
+# \brief     Functions to handle research proposals.
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
 import json
 import irods_types
 from datetime import datetime
