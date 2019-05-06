@@ -4,6 +4,11 @@ def uuMetaAdd(callback, objType, objName, attribute, value):
     keyValPair  = callback.msiString2KeyValPair(attribute + "=" + value, irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
+# \brief Persist a data request to disk.
+#
+# \param[in] data       JSON-formatted contents of the data request.
+# \param[in] proposalId Unique identifier of the research proposal.
+#
 def submitDatarequest(callback, data, proposalId):
 
     # Create subcollection
@@ -27,6 +32,10 @@ def submitDatarequest(callback, data, proposalId):
     callback.msiSetACL("recursive", "write", "datarequests-research-datamanagers", collPath)
     callback.msiSetACL("recursive", "write", "datarequests-research-board-of-directors", collPath)
 
+# \brief Retrieve a data request.
+#
+# \param[in] requestId Unique identifier of the data request.
+#
 def getDatarequest(callback, requestId):
 
     fileName = requestId + '.json'

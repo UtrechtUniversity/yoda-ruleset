@@ -1,3 +1,12 @@
+# \brief Retrieve descriptive information of a number of data requests.
+#        This is used to render a paginated table of data requests.
+#
+# \param[in] proposalId  Unique identifier of the research proposal whose data
+#                        requests are to queried.
+# \param[in] limit       The number of data requests to return.
+# \param[in] offset      Offset used for table pagination.
+#
+# \return List of unpreservable files.
 uuGetDatarequests(*proposal, *limit, *offset, *result, *status, *statusInfo) {
 	*status = "Success";
 	*statusInfo = "";

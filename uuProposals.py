@@ -7,8 +7,12 @@ def uuMetaAdd(callback, objType, objName, attribute, value):
     keyValPair  = callback.msiString2KeyValPair(attribute + "=" + value, irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
-def submitProposal(callback, data):
 
+# \brief Persist a research proposal to disk.
+#
+# \param[in] data    JSON-formatted contents of the research proposal.
+#
+def submitProposal(callback, data):
     # Create collection
     zonePath = '/tempZone/home/datarequests-research/'
     timestamp = datetime.now().strftime('%s')
@@ -29,10 +33,21 @@ def submitProposal(callback, data):
     callback.msiSetACL("recursive", "write", "datarequests-research-datamanagers", collPath)
     callback.msiSetACL("recursive", "write", "datarequests-research-board-of-directors", collPath) 
 
+# \brief Set the status of a submitted research proposal to "approved"
+#
+# \param[in] researchProposalId Unique identifier of the research proposal.
+#
 def approveProposal(callback, researchProposalId):
     proposalPath = "/tempZone/home/datarequests-research/" + researchProposalId + "/proposal.json"
     uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
 
+# \brief Retrieve a research proposal.
+#
+# \param[in] researchProposalId Unique identifier of the research proposal.
+#
+# \return The JSON-formatted contents of the research proposal and the status
+#         of the research proposal.
+#
 def getProposal(callback, researchProposalId):
 
     # Set collection path and file path
@@ -59,6 +74,14 @@ def getProposal(callback, researchProposalId):
 
     return {'proposalJSON': proposalJSON, 'proposalStatus': proposalStatus}
 
+# \brief Retrieve descriptive information of a number of research proposals.
+#        This is used to render a paginated table of research proposals.
+#
+# \param[in] limit  The number of proposals to return.
+# \param[in] offset Offset used for table pagination.
+#
+# \return List of descriptive information about a number of research proposals.
+#
 def DRAFTgetProposals(callback, limit, offset):
     # Query iRODS to get a list of submitted proposals (i.e. subcollections
     # of the datarequests-research collection)
