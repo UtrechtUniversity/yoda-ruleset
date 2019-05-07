@@ -54,6 +54,8 @@ def approveProposal(callback, researchProposalId):
 #         of the research proposal.
 #
 def getProposal(callback, researchProposalId):
+    status = 0
+    statusInfo = "OK"
 
     # Set collection path and file path
     collPath = '/tempZone/home/datarequests-research/' + researchProposalId
@@ -69,15 +71,23 @@ def getProposal(callback, researchProposalId):
        dataSize = row['DATA_SIZE']
        proposalStatus = row['META_DATA_ATTR_VALUE']
 
-    # Get the contents of the proposal JSON file
-    ret_val = callback.msiDataObjOpen("objPath=%s" % filePath, 0)
-    fileDescriptor = ret_val['arguments'][1]
-    ret_val = callback.msiDataObjRead(fileDescriptor, dataSize, irods_types.BytesBuf())
-    fileBuffer = ret_val['arguments'][2]
-    callback.msiDataObjClose(fileDescriptor, 0)
-    proposalJSON = ''.join(fileBuffer.buf)
 
-    return {'proposalJSON': proposalJSON, 'proposalStatus': proposalStatus}
+    # Get the contents of the proposal JSON file
+    try:
+        ret_val = callback.msiDataObjOpen("objPath=%s" % filePath, 0)
+        fileDescriptor = ret_val['arguments'][1]
+        ret_val = callback.msiDataObjRead(fileDescriptor, dataSize, irods_types.BytesBuf())
+        fileBuffer = ret_val['arguments'][2]
+        callback.msiDataObjClose(fileDescriptor, 0)
+        proposalJSON = ''.join(fileBuffer.buf)
+    except:
+        status = 1
+        statusInfo = "Failed. Probable cause: user does not have read permissions."
+        proposalStatus = ""
+        proposalJSON = ""
+
+    return {'proposalJSON': proposalJSON, 'proposalStatus': proposalStatus,
+            'status': status, 'statusInfo': statusInfo}
 
 # \brief Retrieve descriptive information of a number of research proposals.
 #        This is used to render a paginated table of research proposals.
