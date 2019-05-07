@@ -54,8 +54,8 @@ def approveProposal(callback, researchProposalId):
 #         of the research proposal.
 #
 def getProposal(callback, researchProposalId):
-    status = 0
-    statusInfo = "OK"
+    status = -1
+    statusInfo = "Internal server error"
 
     # Set collection path and file path
     collPath = '/tempZone/home/datarequests-research/' + researchProposalId
@@ -80,9 +80,9 @@ def getProposal(callback, researchProposalId):
         fileBuffer = ret_val['arguments'][2]
         callback.msiDataObjClose(fileDescriptor, 0)
         proposalJSON = ''.join(fileBuffer.buf)
+        status = 0
+        statusInfo = "OK"
     except:
-        status = 1
-        statusInfo = "Failed. Probable cause: user does not have read permissions."
         proposalStatus = ""
         proposalJSON = ""
 
