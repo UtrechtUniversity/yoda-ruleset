@@ -9,7 +9,8 @@ from datetime import datetime
 from genquery import ( row_iterator, paged_iterator, AS_DICT, AS_LIST )
 
 def uuMetaAdd(callback, objType, objName, attribute, value):
-    keyValPair  = callback.msiString2KeyValPair(attribute + "=" + value, irods_types.KeyValPair())['arguments'][1]
+    keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
+                                                irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
 
@@ -18,33 +19,60 @@ def uuMetaAdd(callback, objType, objName, attribute, value):
 # \param[in] data    JSON-formatted contents of the research proposal.
 #
 def submitProposal(callback, data):
-    # Create collection
-    zonePath = '/tempZone/home/datarequests-research/'
-    timestamp = datetime.now().strftime('%s')
-    collPath = zonePath + str(timestamp)
-    callback.msiCollCreate(collPath, 1, 0)
+    status = -1
+    statusInfo = "Internal server error"
 
-    # Write proposal data as JSON to the created collection
-    proposalPath = collPath + "/proposal.json"
-    ret_val = callback.msiDataObjCreate(proposalPath, "", 0)
-    fileDescriptor = ret_val['arguments'][2]
-    callback.msiDataObjWrite(fileDescriptor, data, 0)
-    callback.msiDataObjClose(fileDescriptor, 0)
+    try:
+        # Create collection
+        zonePath = '/tempZone/home/datarequests-research/'
+        timestamp = datetime.now().strftime('%s')
+        collPath = zonePath + str(timestamp)
+        callback.msiCollCreate(collPath, 1, 0)
 
-    # Set the status metadata field of the proposal to "submitted"
-    uuMetaAdd(callback, "-d", proposalPath, "status", "submitted")
+        # Write proposal data as JSON to the created collection
+        proposalPath = collPath + "/proposal.json"
+        ret_val = callback.msiDataObjCreate(proposalPath, "", 0)
+        fileDescriptor = ret_val['arguments'][2]
+        callback.msiDataObjWrite(fileDescriptor, data, 0)
+        callback.msiDataObjClose(fileDescriptor, 0)
 
-    # Set permissions for certain groups on the subcollection
-    callback.msiSetACL("recursive", "write", "datarequests-research-datamanagers", collPath)
-    callback.msiSetACL("recursive", "write", "datarequests-research-board-of-directors", collPath) 
+        # Set the status metadata field of the proposal to "submitted"
+        uuMetaAdd(callback, "-d", proposalPath, "status", "submitted")
+
+        # Set permissions for certain groups on the subcollection
+        callback.msiSetACL("recursive", "write",
+                           "datarequests-research-datamanagers", collPath)
+        callback.msiSetACL("recursive", "write",
+                           "datarequests-research-board-of-directors", collPath)
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
 
 # \brief Set the status of a submitted research proposal to "approved"
 #
 # \param[in] researchProposalId Unique identifier of the research proposal.
 #
 def approveProposal(callback, researchProposalId):
-    proposalPath = "/tempZone/home/datarequests-research/" + researchProposalId + "/proposal.json"
-    uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
+    status = -1
+    statusInfo = "Internal server error"
+
+    proposalPath = ("/tempZone/home/datarequests-research/" +
+                   researchProposalId + "/proposal.json")
+
+    try:
+        uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
 
 # \brief Retrieve a research proposal.
 #
@@ -64,19 +92,19 @@ def getProposal(callback, researchProposalId):
     # Get the size of the proposal JSON file and the status of the proposal
     results = []
     rows = row_iterator(["DATA_SIZE", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' and DATA_NAME = '%s'" % (collPath, 'proposal.json'),
-                        AS_DICT,
-                        callback)
+                        "COLL_NAME = '%s' and DATA_NAME = '%s'"
+                            % (collPath, 'proposal.json'),
+                        AS_DICT, callback)
     for row in rows:
        dataSize = row['DATA_SIZE']
        proposalStatus = row['META_DATA_ATTR_VALUE']
-
 
     # Get the contents of the proposal JSON file
     try:
         ret_val = callback.msiDataObjOpen("objPath=%s" % filePath, 0)
         fileDescriptor = ret_val['arguments'][1]
-        ret_val = callback.msiDataObjRead(fileDescriptor, dataSize, irods_types.BytesBuf())
+        ret_val = callback.msiDataObjRead(fileDescriptor, dataSize,
+                                          irods_types.BytesBuf())
         fileBuffer = ret_val['arguments'][2]
         callback.msiDataObjClose(fileDescriptor, 0)
         proposalJSON = ''.join(fileBuffer.buf)
@@ -88,6 +116,7 @@ def getProposal(callback, researchProposalId):
 
     return {'proposalJSON': proposalJSON, 'proposalStatus': proposalStatus,
             'status': status, 'statusInfo': statusInfo}
+
 
 # \brief Retrieve descriptive information of a number of research proposals.
 #        This is used to render a paginated table of research proposals.
@@ -101,22 +130,32 @@ def DRAFTgetProposals(callback, limit, offset):
     # Query iRODS to get a list of submitted proposals (i.e. subcollections
     # of the datarequests-research collection)
     path = '/tempZone/home/datarequests-research';
-    fields = ["COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME", "META_DATA_ATTR_VALUE"];
-    conditions = [callback.uucondition("COLL_PARENT_NAME", "=", path), callback.uucondition("DATA_NAME", "=", "proposal.json")];
+    fields = ["COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME",
+              "META_DATA_ATTR_VALUE"];
+    conditions = [callback.uucondition("COLL_PARENT_NAME", "=", path),
+                  callback.uucondition("DATA_NAME", "=", "proposal.json")];
     orderby = "COLL_NAME";
     ascdesc = "asc";
 
-    callback.uuPaginatedQuery(fields, conditions, orderby, ascdesc, limit, offset, 0, 0, 0);
+    callback.uuPaginatedQuery(fields, conditions, orderby, ascdesc,
+                              limit, offset, 0, 0, 0);
     # uuKvpList2JSON(kvpList, result, size);
 
+
 def uuSubmitProposal(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitProposal(callback, rule_args[0])))
+    callback.writeString("stdout", json.dumps(submitProposal(callback,
+                                                             rule_args[0])))
+
 
 def uuApproveProposal(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(approveProposal(callback, rule_args[0])))
+    callback.writeString("stdout", json.dumps(approveProposal(callback,
+                                                              rule_args[0])))
+
 
 def uuGetProposal(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getProposal(callback, rule_args[0])))
+    callback.writeString("stdout", json.dumps(getProposal(callback,
+                                                          rule_args[0])))
+
 
 def DRAFTuuGetProposals(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposals(callback, rule_args[0], rule_args[1])))
