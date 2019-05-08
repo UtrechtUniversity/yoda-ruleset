@@ -108,7 +108,7 @@ acPostProcForDeleteUser {
 
 	# Log removal of user.
 	*actor = uuClientFullName;
-	writeLine("serverLog", "User *userName from zone *userZone is removed by *actor.")
+	writeLine("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
 # acPreProcForObjRename is fired before a data object is renamed or moved.
