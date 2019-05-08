@@ -105,6 +105,10 @@ acPostProcForDeleteUser {
 	if (*userZone == $rodsZoneProxy && uuExternalUser(*userName)) {
 		uuRemoveExternalUser(*userName, *userZone);
 	}
+
+	# Log removal of user.
+	*actor = uuClientFullName;
+	writeLine("serverLog", "User *userName from zone *userZone is removed by *actor.")
 }
 
 # acPreProcForObjRename is fired before a data object is renamed or moved.
