@@ -18,7 +18,7 @@ def uuMetaAdd(callback, objType, objName, attribute, value):
 #
 # \param[in] data    JSON-formatted contents of the research proposal.
 #
-def submitProposal(callback, data):
+def submitProposal(callback, data, rei):
     status = -1
     statusInfo = "Internal server error"
 
@@ -148,7 +148,7 @@ def DRAFTgetProposals(callback, limit, offset):
 
 def uuSubmitProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitProposal(callback,
-                                                             rule_args[0])))
+                                                             rule_args[0], rei)))
 
 
 def uuApproveProposal(rule_args, callback, rei):
