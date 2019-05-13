@@ -36,6 +36,14 @@ def submitProposal(callback, data):
         callback.msiDataObjWrite(fileDescriptor, data, 0)
         callback.msiDataObjClose(fileDescriptor, 0)
 
+        # Set the proposal fields as AVUs on the proposal JSON file
+        #avus = json2avu(json.loads(data), "root")
+        #for avu in avus:
+        #    subprocess.call(["imeta", "add", "-d", proposalPath, avu["a"], avu["v"], avu["u"]])
+        #    callback.writeString("serverLog", avu['a'])
+        rule_args = [proposalPath, "-d", "root", data]
+        setJsonToObj(rule_args, callback, rei)
+
         # Set the status metadata field of the proposal to "submitted"
         uuMetaAdd(callback, "-d", proposalPath, "status", "submitted")
 
