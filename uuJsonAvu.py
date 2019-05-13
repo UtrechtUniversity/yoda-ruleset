@@ -1,3 +1,8 @@
+# \file      uuJsonAvu.py
+# \brief     Functions for setting JSON data as AVUs on an iRODS object
+# \copyright Copyright (c) 2019 Maastricht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
 import json
 import sys
 import jsonavu
