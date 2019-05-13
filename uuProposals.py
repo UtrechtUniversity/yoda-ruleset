@@ -164,6 +164,5 @@ def uuGetProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposal(callback,
                                                           rule_args[0])))
 
-
 def DRAFTuuGetProposals(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposals(callback, rule_args[0], rule_args[1])))
