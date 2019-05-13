@@ -22,12 +22,16 @@ uuGetDatarequests(*proposal, *limit, *offset, *result, *status, *statusInfo) {
 	# of the the research-datarequest collection)
 	#*path = "/tempZone/home/datarequests-research";
        
-	*path = "/tempZone/home/datarequests-research/" ++ *proposal ++ "/datarequests";
-	*fields = list("DATA_NAME", "DATA_CREATE_TIME", "DATA_OWNER_NAME", "META_DATA_ATTR_VALUE");
-	*conditions = list(uucondition("COLL_NAME", "=", *path), uucondition("DATA_NAME", "like", "%.json"));
+	*path = "/tempZone/home/datarequests-research/" ++ *proposal ++
+                "/datarequests";
+	*fields = list("DATA_NAME", "DATA_CREATE_TIME", "DATA_OWNER_NAME",
+                       "META_DATA_ATTR_VALUE");
+	*conditions = list(uucondition("COLL_NAME", "=", *path),
+                           uucondition("DATA_NAME", "like", "%.json"));
 	*orderby = "COLL_NAME";
 	*ascdesc = "asc";
 
-	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvpList, *status, *statusInfo);
+	uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit,
+                         *offset, *kvpList, *status, *statusInfo);
 	uuKvpList2JSON(*kvpList, *result, *size);
 }
