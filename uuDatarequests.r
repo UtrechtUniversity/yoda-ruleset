@@ -1,3 +1,10 @@
+# \file      uuDatarequest.py
+# \brief     Functions to handle data requests (only methods that have not been
+#            rewritten in Python yet).
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
+
 # \brief Retrieve descriptive information of a number of data requests.
 #        This is used to render a paginated table of data requests.
 #
