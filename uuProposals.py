@@ -36,6 +36,10 @@ def submitProposal(callback, data):
         callback.msiDataObjWrite(fileDescriptor, data, 0)
         callback.msiDataObjClose(fileDescriptor, 0)
 
+        # Set the proposal fields as AVUs on the proposal JSON file
+        rule_args = [proposalPath, "-d", "root", data]
+        setJsonToObj(rule_args, callback, rei)
+
         # Set the status metadata field of the proposal to "submitted"
         uuMetaAdd(callback, "-d", proposalPath, "status", "submitted")
 
@@ -155,7 +159,6 @@ def uuApproveProposal(rule_args, callback, rei):
 def uuGetProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposal(callback,
                                                           rule_args[0])))
-
 
 def DRAFTuuGetProposals(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposals(callback, rule_args[0], rule_args[1])))
