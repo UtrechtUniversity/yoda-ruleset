@@ -12,7 +12,7 @@ run {
 
 	# Retrieve current timestamp.
 	msiGetIcatTime(*timestamp, "human");
-	writeLine('stdout', 'Update storage statistics: ' ++ *timestamp);
+	writeLine('stdout', '[' ++ *timestamp ++ '] Update storage statistics');
 	writeLine('stdout', 'Status: ' ++ *status);
 	writeLine('stdout', 'Statusinfo: ' ++ *statusInfo);
 }
