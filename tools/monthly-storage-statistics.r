@@ -10,7 +10,7 @@ run {
         
 	uuStoreMonthlyStorageStatistics(*status, *statusInfo);
 
-	// Retrieve current timestamp.
+	# Retrieve current timestamp.
 	msiGetIcatTime(*timestamp, "human");
 	writeLine('stdout', 'Update storage statistics: ' ++ *timestamp);
 	writeLine('stdout', 'Status: ' ++ *status);
