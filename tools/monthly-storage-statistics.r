@@ -6,13 +6,12 @@ run {
 		failmsg(-1, "This script needs to be run by a rodsadmin");
 	}
 
-	writeLine("stdout",'Gathering storage statistics');
-        
-	uuStoreMonthlyStorageStatistics(*status, *statusInfo);
-
 	# Retrieve current timestamp.
 	msiGetIcatTime(*timestamp, "human");
-	writeLine('stdout', '[' ++ *timestamp ++ '] Update storage statistics');
+	writeLine('stdout', '[' ++ *timestamp ++ '] Gathering storage statistics');
+
+	uuStoreMonthlyStorageStatistics(*status, *statusInfo);
+
 	writeLine('stdout', 'Status: ' ++ *status);
 	writeLine('stdout', 'Statusinfo: ' ++ *statusInfo);
 }
