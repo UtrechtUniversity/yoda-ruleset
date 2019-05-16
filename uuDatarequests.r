@@ -27,7 +27,8 @@ uuGetDatarequests(*proposal, *limit, *offset, *result, *status, *statusInfo) {
 	*fields = list("DATA_NAME", "DATA_CREATE_TIME", "DATA_OWNER_NAME",
                        "META_DATA_ATTR_VALUE");
 	*conditions = list(uucondition("COLL_NAME", "=", *path),
-                           uucondition("DATA_NAME", "like", "%.json"));
+                           uucondition("DATA_NAME", "like", "%.json"),
+                           uucondition("DATA_PATH", "like", "%Vault1_1%"));
 	*orderby = "COLL_NAME";
 	*ascdesc = "asc";
 
