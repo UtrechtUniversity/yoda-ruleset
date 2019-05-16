@@ -160,6 +160,56 @@ def getProposal(callback, researchProposalId):
             'status': status, 'statusInfo': statusInfo}
 
 
+# \brief Get the owner of a research proposal.
+#
+# \param[in] researchProposalId Unique identifier of the research proposal.
+#
+# \return The user ID of the owner of the research proposal.
+#
+def proposalOwner(callback, researchProposalId):
+    status = -1
+    statusInfo = "Internal server error"
+
+    # Get user ID of proposal owner
+    try:
+        # Get list of user IDs with permissions on the proposal and the type of
+        # permission they have
+        rows = row_iterator(["DATA_ACCESS_USER_ID", "DATA_ACCESS_NAME"],
+                            ("DATA_NAME = 'proposal.json' and COLL_NAME like "
+                            + "'/tempZone/home/datarequests-research/%s'" %
+                            (researchProposalId)),
+                            AS_DICT, callback)
+
+        # Get the user ID with ownership permissions
+        proposalOwnerUserId = []
+        for row in rows:
+            if row["DATA_ACCESS_NAME"] == "own":
+                proposalOwnerUserId.append(row["DATA_ACCESS_USER_ID"])
+
+        # Check if exactly 1 owner was found. If not, wipe proposalOwner list
+        # and set error status code
+        if len(proposalOwnerUserId) != 1:
+            status = -2
+            statusInfo = ("Not exactly 1 owner found. " +
+                          "Something is probably wrong.")
+            raise Exception()
+
+        # We only have 1 owner. Set proposalOwner to this owner
+        proposalOwnerUserId = proposalOwnerUserId[0]
+
+        # Set status to OK
+        status = 0
+        statusInfo = "OK"
+    except:
+        # If something went wrong, set proposalOwner to an empty string so
+        # downstream parsing isn't disrupted
+        proposalOwnerUserId = ""
+        pass
+
+    # Return data
+    return {'proposalOwnerUserId': proposalOwnerUserId, 'status': status,
+            'statusInfo': statusInfo}
+
 # \brief Retrieve descriptive information of a number of research proposals.
 #        This is used to render a paginated table of research proposals.
 #
@@ -187,6 +237,9 @@ def uuSubmitProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitProposal(callback,
                                                              rule_args[0], rei)))
 
+def uuProposalOwner(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(proposalOwner(callback,
+                                                            rule_args[0])))
 
 def uuApproveProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(approveProposal(callback,
