@@ -28,7 +28,11 @@ uuGetDatarequests(*proposal, *limit, *offset, *result, *status, *statusInfo) {
                        "META_DATA_ATTR_VALUE");
 	*conditions = list(uucondition("COLL_NAME", "=", *path),
                            uucondition("DATA_NAME", "like", "%.json"),
-                           uucondition("DATA_PATH", "like", "%Vault1_1%"));
+                           # This condition is needed to filter out duplicate
+                           # entries caused by replications of a data object
+                           # (which are automatically created by Yoda)
+                           uucondition("DATA_RESC_HIER", "like",
+                                       elem(UUPRIMARYRESOURCES, 0) ++ ";%"));
 	*orderby = "COLL_NAME";
 	*ascdesc = "asc";
 
