@@ -14,6 +14,43 @@ def uuMetaAdd(callback, objType, objName, attribute, value):
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
 
+def uuMetaAssociate(callback, objType, objName, attribute, value):
+    keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
+                                                irods_types.KeyValPair())['arguments'][1]
+    retval = callback.msiAssociateKeyValuePairsToObj(keyValPair, objName, objType)
+
+
+# \brief Assign a research proposal to one or more DMC members for review
+#
+# \param[in] assignees          JSON-formatted array of DMC members
+# \param[in] researchProposalId Unique identifier of the research proposal
+#
+def assignProposal(callback, assignees, researchProposalId):
+    status = -1
+    statusInfo = "Internal server error"
+
+    try:
+        # Construct research proposal path
+        proposalPath = ('/tempZone/home/datarequests-research/' +
+        researchProposalId + '/proposal.json')
+
+        # Remove existing assignedForReview attributes (in case the list of
+        # assignees is updated)
+        callback.msi_rmw_avu("-d", proposalPath, "assignedForReview", "%", "%")
+
+        # Set assignedForReview metadata on proposal
+        for assignee in json.loads(assignees):
+            uuMetaAdd(callback, "-d", proposalPath, "assignedForReview",
+                      assignee)
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
+
 # \brief Persist a research proposal to disk.
 #
 # \param[in] data    JSON-formatted contents of the research proposal.
@@ -154,6 +191,11 @@ def uuSubmitProposal(rule_args, callback, rei):
 def uuApproveProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(approveProposal(callback,
                                                               rule_args[0])))
+
+
+def uuAssignProposal(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(assignProposal(callback,
+                                                             rule_args[0], rule_args[1])))
 
 
 def uuGetProposal(rule_args, callback, rei):
