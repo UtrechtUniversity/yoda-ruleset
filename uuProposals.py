@@ -133,7 +133,7 @@ def getProposal(callback, researchProposalId):
     # Get the size of the proposal JSON file and the status of the proposal
     results = []
     rows = row_iterator(["DATA_SIZE", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' and DATA_NAME = '%s'"
+                        "COLL_NAME = '%s' and DATA_NAME = '%s' and META_DATA_ATTR_NAME = 'status'"
                             % (collPath, 'proposal.json'),
                         AS_DICT, callback)
     for row in rows:
