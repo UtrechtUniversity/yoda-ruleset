@@ -504,6 +504,17 @@ uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
 	}
 }
 
+
+# \brief Wrapper around uuGroupGetMembers that returns the results in JSON
+#
+# \param[in]  groupName
+# \param[out] members       a list of user names, including their zone names
+#
+uuGroupGetMembersAsJson(*groupName, *members) {
+	uuGroupGetMembers(*groupName, *out);
+	uuList2JSON(*out, *members)
+}
+
 # \brief Get a list of managers for the given group.
 #
 # \param[in]  groupName
