@@ -5,9 +5,10 @@
 
 from datetime import datetime
 
+
 def uuMetaAdd(callback, objType, objName, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                                irods_types.KeyValPair())['arguments'][1]
+                                               irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
 
@@ -27,7 +28,7 @@ def submitDatarequest(callback, data, proposalId):
         collPath = proposalPath + '/datarequests'
         callback.msiCollCreate(collPath, 1, 0)
 
-        # Write data request data to disk  
+        # Write data request data to disk
         timestamp = datetime.now().strftime('%s')
         filePath = collPath + '/' + timestamp + '.json'
         ret_val = callback.msiDataObjCreate(filePath, "", 0)
@@ -71,11 +72,11 @@ def getDatarequest(callback, requestId):
                             AS_DICT,
                             callback)
         for row in rows:
-           collName = row['COLL_NAME']
-           filePath = collName + '/' + fileName
-           proposalId = collName.split('/')[-2]
-           dataSize = row['DATA_SIZE']
-           requestStatus = row['META_DATA_ATTR_VALUE']
+            collName = row['COLL_NAME']
+            filePath = collName + '/' + fileName
+            proposalId = collName.split('/')[-2]
+            dataSize = row['DATA_SIZE']
+            requestStatus = row['META_DATA_ATTR_VALUE']
 
         # Get the contents of the datarequest JSON file
         ret_val = callback.msiDataObjOpen("objPath=%s" % filePath, 0)

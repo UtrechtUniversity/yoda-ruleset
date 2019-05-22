@@ -6,17 +6,18 @@
 import json
 import irods_types
 from datetime import datetime
-from genquery import ( row_iterator, paged_iterator, AS_DICT, AS_LIST )
+from genquery import (row_iterator, paged_iterator, AS_DICT, AS_LIST)
+
 
 def uuMetaAdd(callback, objType, objName, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                                irods_types.KeyValPair())['arguments'][1]
+                                               irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
 
 
 def uuMetaAssociate(callback, objType, objName, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                                irods_types.KeyValPair())['arguments'][1]
+                                               irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiAssociateKeyValuePairsToObj(keyValPair, objName, objType)
 
 
@@ -32,7 +33,7 @@ def assignProposal(callback, assignees, researchProposalId):
     try:
         # Construct research proposal path
         proposalPath = ('/tempZone/home/datarequests-research/' +
-        researchProposalId + '/proposal.json')
+                        researchProposalId + '/proposal.json')
 
         # Remove existing assignedForReview attributes (in case the list of
         # assignees is updated)
@@ -103,7 +104,7 @@ def approveProposal(callback, researchProposalId):
     statusInfo = "Internal server error"
 
     proposalPath = ("/tempZone/home/datarequests-research/" +
-                   researchProposalId + "/proposal.json")
+                    researchProposalId + "/proposal.json")
 
     try:
         uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
@@ -134,11 +135,11 @@ def getProposal(callback, researchProposalId):
     results = []
     rows = row_iterator(["DATA_SIZE", "META_DATA_ATTR_VALUE"],
                         "COLL_NAME = '%s' and DATA_NAME = '%s' and META_DATA_ATTR_NAME = 'status'"
-                            % (collPath, 'proposal.json'),
+                        % (collPath, 'proposal.json'),
                         AS_DICT, callback)
     for row in rows:
-       dataSize = row['DATA_SIZE']
-       proposalStatus = row['META_DATA_ATTR_VALUE']
+        dataSize = row['DATA_SIZE']
+        proposalStatus = row['META_DATA_ATTR_VALUE']
 
     # Get the contents of the proposal JSON file
     try:
@@ -170,17 +171,16 @@ def getProposal(callback, researchProposalId):
 def DRAFTgetProposals(callback, limit, offset):
     # Query iRODS to get a list of submitted proposals (i.e. subcollections
     # of the datarequests-research collection)
-    path = '/tempZone/home/datarequests-research';
+    path = '/tempZone/home/datarequests-research'
     fields = ["COLL_NAME", "COLL_CREATE_TIME", "COLL_OWNER_NAME",
-              "META_DATA_ATTR_VALUE"];
+              "META_DATA_ATTR_VALUE"]
     conditions = [callback.uucondition("COLL_PARENT_NAME", "=", path),
-                  callback.uucondition("DATA_NAME", "=", "proposal.json")];
-    orderby = "COLL_NAME";
-    ascdesc = "asc";
+                  callback.uucondition("DATA_NAME", "=", "proposal.json")]
+    orderby = "COLL_NAME"
+    ascdesc = "asc"
 
     callback.uuPaginatedQuery(fields, conditions, orderby, ascdesc,
-                              limit, offset, 0, 0, 0);
-    # uuKvpList2JSON(kvpList, result, size);
+                              limit, offset, 0, 0, 0)
 
 
 def uuSubmitProposal(rule_args, callback, rei):
@@ -201,6 +201,7 @@ def uuAssignProposal(rule_args, callback, rei):
 def uuGetProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposal(callback,
                                                           rule_args[0])))
+
 
 def DRAFTuuGetProposals(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getProposals(callback, rule_args[0], rule_args[1])))
