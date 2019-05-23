@@ -168,9 +168,10 @@ def getProposal(callback, researchProposalId):
 #
 # \return The user ID of the owner of the research proposal.
 #
-def proposalOwner(callback, researchProposalId):
+def isProposalOwner(callback, researchProposalId, currentUserId):
     status = -1
     statusInfo = "Internal server error"
+    isProposalOwner = True
 
     # Get user ID of proposal owner
     try:
@@ -204,17 +205,17 @@ def proposalOwner(callback, researchProposalId):
         # We only have 1 owner. Set proposalOwner to this owner
         proposalOwnerUserId = proposalOwnerUserId[0]
 
+        # Compare the proposal owner user ID to the user ID of the current user
+        isProposalOwner = proposalOwnerUserId == currentUserId
+
         # Set status to OK
         status = 0
         statusInfo = "OK"
     except:
-        # If something went wrong, set proposalOwner to an empty string so
-        # downstream parsing isn't disrupted
-        proposalOwnerUserId = ""
         pass
 
     # Return data
-    return {'proposalOwnerUserId': proposalOwnerUserId, 'status': status,
+    return {'isProposalOwner': isProposalOwner, 'status': status,
             'statusInfo': statusInfo}
 
 # \brief Retrieve descriptive information of a number of research proposals.
@@ -244,9 +245,9 @@ def uuSubmitProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitProposal(callback,
                                                              rule_args[0], rei)))
 
-def uuProposalOwner(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(proposalOwner(callback,
-                                                            rule_args[0])))
+def uuIsProposalOwner(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(isProposalOwner(callback,
+                                                  rule_args[0], rule_args[1])))
 
 def uuApproveProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(approveProposal(callback,
