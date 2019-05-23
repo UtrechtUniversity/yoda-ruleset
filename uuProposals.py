@@ -99,11 +99,17 @@ def submitProposal(callback, data, rei):
 #
 # \param[in] researchProposalId Unique identifier of the research proposal.
 #
-def approveProposal(callback, researchProposalId):
+def approveProposal(callback, researchProposalId, currentUserId):
     status = -1
     statusInfo = "Internal server error"
 
     try:
+        # Check if approving user owns the proposal. If so, do not allow
+        # approving
+        result = isProposalOwner(callback, researchProposalId, currentUserId)
+        if result['isProposalOwner']:
+            raise Exception()
+
         # Construct path to the collection of the proposal
         zoneName = ""
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
@@ -251,7 +257,7 @@ def uuIsProposalOwner(rule_args, callback, rei):
 
 def uuApproveProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(approveProposal(callback,
-                                                              rule_args[0])))
+                                                  rule_args[0], rule_args[1])))
 
 
 def uuAssignProposal(rule_args, callback, rei):
