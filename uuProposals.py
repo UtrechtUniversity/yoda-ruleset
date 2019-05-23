@@ -99,15 +99,27 @@ def submitProposal(callback, data, rei):
 #
 # \param[in] researchProposalId Unique identifier of the research proposal.
 #
-def approveProposal(callback, researchProposalId):
+def approveProposal(callback, researchProposalId, currentUserId):
     status = -1
     statusInfo = "Internal server error"
 
-    proposalPath = ("/tempZone/home/datarequests-research/" +
-                    researchProposalId + "/proposal.json")
-
     try:
+        # Check if approving user owns the proposal. If so, do not allow
+        # approving
+        result = isProposalOwner(callback, researchProposalId, currentUserId)
+        if result['isProposalOwner']:
+            raise Exception()
+
+        # Construct path to the collection of the proposal
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        proposalPath = ("/" + clientZone + "/home/datarequests-research/" +
+                        researchProposalId + "/proposal.json")
+
+        # Approve proposal
         uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
+
+        # Set status to OK
         status = 0
         statusInfo = "OK"
     except:
@@ -160,6 +172,62 @@ def getProposal(callback, researchProposalId):
             'status': status, 'statusInfo': statusInfo}
 
 
+# \brief Get the owner of a research proposal.
+#
+# \param[in] researchProposalId Unique identifier of the research proposal.
+#
+# \return The user ID of the owner of the research proposal.
+#
+def isProposalOwner(callback, researchProposalId, currentUserId):
+    status = -1
+    statusInfo = "Internal server error"
+    isProposalOwner = True
+
+    # Get user ID of proposal owner
+    try:
+        # Construct path to the collection of the proposal
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        collPath = ("/" + clientZone + "/home/datarequests-research/" +
+                    researchProposalId)
+
+        # Get list of user IDs with permissions on the proposal and the type of
+        # permission they have
+        rows = row_iterator(["DATA_ACCESS_USER_ID", "DATA_ACCESS_NAME"],
+                            ("DATA_NAME = 'proposal.json' and COLL_NAME like "
+                            + "'%s'" % collPath),
+                            AS_DICT, callback)
+
+        # Get the user ID with ownership permissions
+        proposalOwnerUserId = []
+        for row in rows:
+            if row["DATA_ACCESS_NAME"] == "own":
+                proposalOwnerUserId.append(row["DATA_ACCESS_USER_ID"])
+
+        # Check if exactly 1 owner was found. If not, wipe proposalOwner list
+        # and set error status code
+        if len(proposalOwnerUserId) != 1:
+            status = -2
+            statusInfo = ("Not exactly 1 owner found. " +
+                          "Something is probably wrong.")
+            raise Exception()
+
+        # We only have 1 owner. Set proposalOwner to this owner
+        proposalOwnerUserId = proposalOwnerUserId[0]
+
+        # Compare the proposal owner user ID to the user ID of the current user
+        isProposalOwner = proposalOwnerUserId == currentUserId
+
+        # Set status to OK
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    # Return data
+    return {'isProposalOwner': isProposalOwner, 'status': status,
+            'statusInfo': statusInfo}
+
 # \brief Retrieve descriptive information of a number of research proposals.
 #        This is used to render a paginated table of research proposals.
 #
@@ -187,10 +255,13 @@ def uuSubmitProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitProposal(callback,
                                                              rule_args[0], rei)))
 
+def uuIsProposalOwner(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(isProposalOwner(callback,
+                                                  rule_args[0], rule_args[1])))
 
 def uuApproveProposal(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(approveProposal(callback,
-                                                              rule_args[0])))
+                                                  rule_args[0], rule_args[1])))
 
 
 def uuAssignProposal(rule_args, callback, rei):
