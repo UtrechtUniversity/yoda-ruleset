@@ -115,7 +115,11 @@ def approveProposal(callback, researchProposalId, currentUserId):
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
         proposalPath = ("/" + clientZone + "/home/datarequests-research/" +
                         researchProposalId + "/proposal.json")
+
+        # Approve proposal
         uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
+
+        # Set status to OK
         status = 0
         statusInfo = "OK"
     except:
