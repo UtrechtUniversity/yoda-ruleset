@@ -292,8 +292,12 @@ iiCollectionDetailsVault(*path, *kvp) {
         }
 
         # Check if vault is accesible.
-        uuChop(*groupName, *_, *baseName, "-", true);
+        *pathElems = split(*path, "/");
+        *rodsZone = elem(*pathElems, 0);
+        *vaultGroup = elem(*pathElems, 2);
+        uuChop(*vaultGroup, *_, *baseName, "-", true);
         *researchName = IIGROUPPREFIX ++ *baseName;
+        writeLine("serverLog", *researchName);
         foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*researchName") {
                 *kvp.researchPath = *researchName;
         }
