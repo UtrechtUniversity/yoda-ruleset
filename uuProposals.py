@@ -103,10 +103,12 @@ def approveProposal(callback, researchProposalId):
     status = -1
     statusInfo = "Internal server error"
 
-    proposalPath = ("/tempZone/home/datarequests-research/" +
-                    researchProposalId + "/proposal.json")
-
     try:
+        # Construct path to the collection of the proposal
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        proposalPath = ("/" + clientZone + "/home/datarequests-research/" +
+                        researchProposalId + "/proposal.json")
         uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
         status = 0
         statusInfo = "OK"
