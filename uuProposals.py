@@ -174,12 +174,17 @@ def proposalOwner(callback, researchProposalId):
 
     # Get user ID of proposal owner
     try:
+        # Construct path to the collection of the proposal
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        collPath = ("/" + clientZone + "/home/datarequests-research/" +
+                    researchProposalId)
+
         # Get list of user IDs with permissions on the proposal and the type of
         # permission they have
         rows = row_iterator(["DATA_ACCESS_USER_ID", "DATA_ACCESS_NAME"],
                             ("DATA_NAME = 'proposal.json' and COLL_NAME like "
-                            + "'/tempZone/home/datarequests-research/%s'" %
-                            (researchProposalId)),
+                            + "'%s'" % collPath),
                             AS_DICT, callback)
 
         # Get the user ID with ownership permissions
