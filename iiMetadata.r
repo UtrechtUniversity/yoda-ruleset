@@ -2,7 +2,7 @@
 # \brief     This file contains rules related to metadata to a dataset.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 

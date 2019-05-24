@@ -3,7 +3,7 @@
 #            for a research group.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Generate a dataCite compliant XML using XSLT.
@@ -1182,4 +1182,66 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 		*status = "UnkownError";
 		succeed;
 	}
+}
+
+
+# \brief Routine to update the landingpage of a published package.
+#
+# \param[in]  vaultPackage      path to package in the vault to publish
+# \param[out] status		status of the publication
+#
+iiUpdateLandingpage(*vaultPackage, *status) {
+	*status = "Unknown";
+
+	# Check preconditions
+	iiVaultStatus(*vaultPackage, *vaultStatus);
+	if (*vaultStatus != PUBLISHED || *vaultStatus != DEPUBLISHED) {
+		*status = "NotAllowed";
+		succeed;
+	}
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		*status = "NotAllowed" ;
+		succeed;
+	}
+
+	# Load configuration
+	*err = errorcode(iiGetPublicationConfig(*publicationConfig));
+	if (*err < 0) {
+		*status = "Retry";
+		succeed;
+	}
+
+	# Load state
+	iiGetPublicationState(*vaultPackage, *publicationState);
+
+	# Publication must be finsished.
+	if (*publicationState.status != "OK") {
+		*status = "NotAllowed";
+		succeed;
+	}
+
+	# Determine last modification time. Always run, no matter if retry.
+	iiGetLastModifiedDateTime(*publicationState);
+
+	# Create landing page
+	#DEBUG writeLine("serverLog", "iiUpdateLandingpage: starting iiGenerateLandingPage");
+	*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"));
+	if (*err < 0) {
+		*status = "Unrecoverable";
+		succeed;
+	}
+
+	# Use secure copy to push landing page to the public host
+	#DEBUG writeLine("serverLog", "iiUpdateLandingpage: starting iiCopyLandingPage2PublicHost");
+	*err = errorcode(iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState));
+	if (*err < 0) {
+		*status = "Retry";
+		succeed;
+	}
+
+	# The update was a success;
+	writeLine("serverLog", "iiUpdateLandingpage: landingpage updated for *vaultPackage");	
+	*status = "OK";
 }
