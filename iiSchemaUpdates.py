@@ -326,6 +326,9 @@ def getSchemaLocation(callback, xmlPath):
     rods_zone = pathParts[1]
     group_name = pathParts[3]
 
+    if group_name.startswith("vault-"):
+        group_name = group_name.replace("vault-", "research-", 1)
+
     schemaCategory = getCategory(callback, rods_zone, group_name)
 
     jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
