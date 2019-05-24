@@ -86,7 +86,8 @@ iiFrontGetJsonSchema(*folder, *result, *status, *statusInfo)
         *groupName = elem(*pathElems, 2);
 
         # Get category name.
-        uuGroupGetCategory(*groupName, *category, *subcategory);
+        uuGetBaseGroup(*groupName, *baseName);
+        uuGroupGetCategory(*baseName, *category, *subcategory);
         *jsonColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
         *jsonName = IIJSONNAME;
 
