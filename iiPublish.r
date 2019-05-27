@@ -1195,7 +1195,7 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
-	if (*vaultStatus != PUBLISHED || *vaultStatus != DEPUBLISHED) {
+	if (*vaultStatus != PUBLISHED && *vaultStatus != DEPUBLISHED) {
 		*status = "NotAllowed";
 		succeed;
 	}
