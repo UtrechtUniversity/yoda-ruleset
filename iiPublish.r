@@ -286,12 +286,11 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 #
 iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 {
-	*combiXmlPath = *publicationState.combiXmlPath;
-	uuChopPath(*combiXmlPath, *tempColl, *_);
-	*randomId = *publicationState.randomId;
-	*pathElems = split(*combiXmlPath, "/");
+	*vaultPackage = *publicationState.vaultPackage;
+	*pathElems = split(*vaultPackage, "/");
 	*rodsZone = elem(*pathElems, 0);
 	*vaultGroup = elem(*pathElems, 2);
+
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
