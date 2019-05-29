@@ -49,7 +49,7 @@ processVaultActions() {
 						# Check if rods can modify metadata and grant temporary write ACL if necessary.
 						msiCheckAccess(*collName, "modify metadata", *modifyPermission);
 						if (*modifyPermission == 0) {
-							writeLine("stdout", "Granting read access to *collName");
+							writeLine("stdout", "Granting write access to *collName");
 							msiSetACL("default", "admin:write", uuClientFullName, *collName);
 						}
 
@@ -88,7 +88,7 @@ processVaultActions() {
 
 						# Remove the temporary write ACL.
 						if (*modifyPermission == 0) {
-							writeLine("stdout", "Revoking read access to *collName");
+							writeLine("stdout", "Revoking write access to *collName");
 							msiSetACL("default", "admin:null", uuClientFullName, *collName);
 						}
 					}
