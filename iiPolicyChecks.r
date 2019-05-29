@@ -357,7 +357,7 @@ iiCanCopyMetadata(*option, *sourceItemType, *targetItemType, *sourceItemName, *t
 	#DEBUG writeLine("serverLog", "iiCanCopyMetadata: *sourceItemName -> *targetItemName; allowed=*allowed; reason=*reason");
 }
 
-# \brief Ccheck if user metadata can be modified.
+# \brief Check if user metadata can be modified.
 #
 # \param[in] option          parameter of the action passed to the PEP. 'add', 'set' or 'rm'
 # \param[in] itemType        type of item (-C for collection, -d for data object)
