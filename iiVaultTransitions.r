@@ -67,7 +67,6 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 #
 # \param[in] folder
 # \param[in] newFolderStatus
-# \param[in] actor
 #
 iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*status = "Unknown";
