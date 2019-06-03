@@ -81,10 +81,16 @@ def submitProposal(callback, data, rei):
         # Set the status metadata field of the proposal to "submitted"
         uuMetaAdd(callback, "-d", proposalPath, "status", "submitted")
 
+        # Remove write permissions for the submitting user so the proposal
+        # cannot be edited once it has been submitted
+        fullName = ""
+        fullName = callback.uuClientFullNameWrapper(fullName)['arguments'][0]
+        callback.msiSetACL("recursive", "read", fullName, collPath)
+
         # Set permissions for certain groups on the subcollection
-        callback.msiSetACL("recursive", "write",
+        callback.msiSetACL("recursive", "read",
                            "datarequests-research-datamanagers", collPath)
-        callback.msiSetACL("recursive", "write",
+        callback.msiSetACL("recursive", "read",
                            "datarequests-research-board-of-directors", collPath)
 
         status = 0
