@@ -15,19 +15,19 @@ processProposalActions() {
 			# Check if proposal metadata change is requested in datarequests-research group
 			if (*collName like regex "/[^/]+/home/datarequests-research.*") {
 
-                                # Get arguments necessary for processing of metadata change
+				# Get arguments necessary for processing of metadata change
 				*proposalColl  = "";
-                                *attributeName = "";
-				*action        = "";
-                                *attributeValueArrayLength = "";
-				*actor         = "";
+				*attributeName = "";
+				*action	= "";
+				*attributeValueArrayLength = "";
+				*actor	 = "";
 				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *proposalColl, "get", 0));
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *attributeName, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 2));
 				*err4 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *attributeValueArrayLength, "get", 3));
 				*err5 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 4));
 
-                                # If arguments cannot be read, skip processing this request
+				# If arguments cannot be read, skip processing this request
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0 || *err4 < 0) {
 					writeLine("stdout", "Failed to process request on *collName");
 				} else {
@@ -48,7 +48,7 @@ processProposalActions() {
 					if (*pending) {
 						*err = errorcode(uuProposalProcessMetadataChange(*proposalColl, *attributeName, *action, *attributeValueArrayLength, *actor, *status, *statusInfo));
 						if (*err < 0) {
-				                        writeLine("stdout", "uuProposalProcessMetadataChange: *err");
+							writeLine("stdout", "uuProposalProcessMetadataChange: *err");
 							*status = "InternalError";
 							*statusInfo = "";
 						}
@@ -60,14 +60,14 @@ processProposalActions() {
 							msiSetACL("default", "admin:write", uuClientFullName, *collName);
 						}
 
-                                                # Set proposal status action to FAIL if the metadata change was unsuccessful
+						# Set proposal status action to FAIL if the metadata change was unsuccessful
 						if (*status != "Success") {
 							*json_str = "[]";
 							*size = 0;
 							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
-				                        msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
+							msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
 							msiString2KeyValPair("", *proposalActionKvp);
 							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
@@ -78,15 +78,15 @@ processProposalActions() {
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*proposalActionKvp, *collName, "-C"), *msg);
 							msiSetKeyValuePairsToObj(*proposalStatusKvp, *collName, "-C");
 							writeLine("stdout", "uuProposalProcessMetadataChange: *status - *statusInfo");
-                                                # Remove the delayed rule (i.e. the proposal_action_*collId and
-                                                # proposal_status_action_*collId attributes) if the metadata change was successful
+						# Remove the delayed rule (i.e. the proposal_action_*collId and
+						# proposal_status_action_*collId attributes) if the metadata change was successful
 						} else {
 							*json_str = "[]";
 							*size = 0;
 							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
-				                        msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
+							msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
 							msiString2KeyValPair("", *proposalActionKvp);
 							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
