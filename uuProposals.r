@@ -231,29 +231,31 @@ uuProposalProcessMetadataChange(*proposalColl, *attributeName,
                                 META_DATA_ATTR_NAME = *attributeName) {
                         *currentAttributeValue = *row.META_DATA_ATTR_VALUE;
                 }
+                # If it is, do not apply the requested change
                 if (*currentAttributeValue == *newAttributeValue) {
                         *status = "Success";
                         *statusInfo = "";
-                        succeed;
-                }
-
-                # Set new attribute value
-                *AttrValStr = *attributeName ++ "=" ++ *newAttributeValue;
-                msiString2KeyValPair(*AttrValStr, *Kvp);
-                *err = errormsg(msiSetKeyValuePairsToObj(*Kvp,
-                                    *filePath, "-d"), *msg);
-                if (*err < 0) {
-                        if (*err == -818000) {
-                                *status = "PermissionDenied";
-                                *statusInfo = "User is not permitted to " ++
-                                              "modify this attribute";
-                        } else {
-                                *status = "Unrecoverable";
-                                *statusInfo = "*err - *msg";
-                        }
+                # If not, apply the request change
                 } else {
-                        *status = "Success";
-                        *statusInfo = "";
+                        *AttrValStr = *attributeName ++ "=" ++
+                                      *newAttributeValue;
+                        msiString2KeyValPair(*AttrValStr, *Kvp);
+                        *err = errormsg(msiSetKeyValuePairsToObj(*Kvp,
+                                            *filePath, "-d"), *msg);
+                        if (*err < 0) {
+                                if (*err == -818000) {
+                                        *status = "PermissionDenied";
+                                        *statusInfo = "User is not " ++
+                                                      "permitted to modify " ++
+                                                      "this attribute";
+                                } else {
+                                        *status = "Unrecoverable";
+                                        *statusInfo = "*err - *msg";
+                                }
+                        } else {
+                                *status = "Success";
+                                *statusInfo = "";
+                        }
                 }
         }
 
