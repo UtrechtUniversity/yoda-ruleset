@@ -67,6 +67,7 @@ processProposalActions() {
 							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
+				                        msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
 							msiString2KeyValPair("", *proposalActionKvp);
 							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
@@ -85,6 +86,7 @@ processProposalActions() {
 							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
+				                        msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
 							msiString2KeyValPair("", *proposalActionKvp);
 							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
