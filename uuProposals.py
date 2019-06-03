@@ -35,6 +35,21 @@ def assignProposal(callback, assignees, researchProposalId):
         proposalColl = ('/tempZone/home/datarequests-research/' +
                         researchProposalId)
 
+        # Check if proposal has already been assigned. If true, set status code
+        # to failure and do not perform requested assignment
+        results = []
+        rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                        ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
+                         "META_DATA_ATTR_NAME = 'status'")
+                        % (proposalColl, 'proposal.json'),
+                        AS_DICT, callback)
+        for row in rows:
+            proposalStatus = row['META_DATA_ATTR_VALUE']
+        if not proposalStatus == "submitted":
+            status = -1
+            statusInfo = "Proposal is already assigned."
+            raise Exception()
+
         # Approve the proposal by adding a delayed rule that sets the status of
         # the proposal to "approved" ...
         status = ""
