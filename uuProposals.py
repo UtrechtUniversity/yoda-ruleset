@@ -188,18 +188,18 @@ def getProposal(callback, researchProposalId):
             'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Get the owner of a research proposal.
+# \brief Check if the invoking user is also the owner of a given proposal.
 #
 # \param[in] researchProposalId Unique identifier of the research proposal.
 #
-# \return The user ID of the owner of the research proposal.
+# \return The user name of the owner of the research proposal.
 #
-def isProposalOwner(callback, researchProposalId, currentUserId):
+def isProposalOwner(callback, researchProposalId, currentUserName):
     status = -1
     statusInfo = "Internal server error"
     isProposalOwner = True
 
-    # Get user ID of proposal owner
+    # Get user name of proposal owner
     try:
         # Construct path to the collection of the proposal
         zoneName = ""
@@ -207,32 +207,31 @@ def isProposalOwner(callback, researchProposalId, currentUserId):
         collPath = ("/" + clientZone + "/home/datarequests-research/" +
                     researchProposalId)
 
-        # Get list of user IDs with permissions on the proposal and the type of
-        # permission they have
-        rows = row_iterator(["DATA_ACCESS_USER_ID", "DATA_ACCESS_NAME"],
+        # Query iCAT for the user name of the owner of the proposal
+        rows = row_iterator(["DATA_OWNER_NAME"],
                             ("DATA_NAME = 'proposal.json' and COLL_NAME like "
                             + "'%s'" % collPath),
                             AS_DICT, callback)
 
-        # Get the user ID with ownership permissions
-        proposalOwnerUserId = []
+        # Extract user name from query results
+        proposalOwnerUserName = []
         for row in rows:
-            if row["DATA_ACCESS_NAME"] == "own":
-                proposalOwnerUserId.append(row["DATA_ACCESS_USER_ID"])
+            proposalOwnerUserName.append(row["DATA_OWNER_NAME"])
 
-        # Check if exactly 1 owner was found. If not, wipe proposalOwner list
-        # and set error status code
-        if len(proposalOwnerUserId) != 1:
+        # Check if exactly 1 owner was found. If not, wipe
+        # proposalOwnerUsername list and set error status code
+        if len(proposalOwnerUserName) != 1:
             status = -2
             statusInfo = ("Not exactly 1 owner found. " +
                           "Something is probably wrong.")
             raise Exception()
 
         # We only have 1 owner. Set proposalOwner to this owner
-        proposalOwnerUserId = proposalOwnerUserId[0]
+        proposalOwnerUserName = proposalOwnerUserName[0]
 
-        # Compare the proposal owner user ID to the user ID of the current user
-        isProposalOwner = proposalOwnerUserId == currentUserId
+        # Compare the proposal owner user name to the user name of the current
+        # user
+        isProposalOwner = proposalOwnerUserName == currentUserName
 
         # Set status to OK
         status = 0
