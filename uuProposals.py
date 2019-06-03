@@ -47,6 +47,14 @@ def assignProposal(callback, assignees, researchProposalId):
         # ... and triggering the processing of delayed rules
         callback.adminProposalActions()
 
+        # Add and execute a delayed rule for setting the status to "assigned"
+        status = ""
+        statusInfo = ""
+        callback.requestProposalMetadataChange(proposalColl, "status",
+                                               "assigned", "", status,
+                                               statusInfo)
+        callback.adminProposalActions()
+
         status = 0
         statusInfo = "OK"
     except:
