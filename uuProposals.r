@@ -138,10 +138,18 @@ adminProposalActions() {
 
 # \brief Process proposal metadata change request
 #
-# \param[in] proposalColl
-# \param[in] attributeName
-# \param[in] newAttributeValue
-# \param[in] actor
+# \param[in] proposalColl                  Collection of the proposal whose
+#                                          metadata should be changed
+# \param[in] attributeName                 Name of metadata attribute to change
+# \param[in] newAttributeValue             The new value of the metadata
+#                                          attribute
+# \param[in] newAttributeValueArrayLength  The length of the array in case
+#                                          newAttributeValue is a JSON array
+# \param[in] actor                         The user that has requested the
+#                                          change
+#
+# \return                                  Status and statusInfo (reports the
+#                                          success/failure of the processing)
 #
 uuProposalProcessMetadataChange(*proposalColl, *attributeName,
                                 *newAttributeValue,
