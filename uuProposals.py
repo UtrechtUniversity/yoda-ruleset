@@ -32,17 +32,20 @@ def assignProposal(callback, assignees, researchProposalId):
 
     try:
         # Construct research proposal path
-        proposalPath = ('/tempZone/home/datarequests-research/' +
-                        researchProposalId + '/proposal.json')
+        proposalColl = ('/tempZone/home/datarequests-research/' +
+                        researchProposalId)
 
-        # Remove existing assignedForReview attributes (in case the list of
-        # assignees is updated)
-        callback.msi_rmw_avu("-d", proposalPath, "assignedForReview", "%", "%")
+        # Approve the proposal by adding a delayed rule that sets the status of
+        # the proposal to "approved" ...
+        status = ""
+        statusInfo = ""
+        callback.requestProposalMetadataChange(proposalColl,
+                                               "assignedForReview", assignees,
+                                               str(len(json.loads(assignees))),
+                                               status, statusInfo)
 
-        # Set assignedForReview metadata on proposal
-        for assignee in json.loads(assignees):
-            uuMetaAdd(callback, "-d", proposalPath, "assignedForReview",
-                      assignee)
+        # ... and triggering the processing of delayed rules
+        callback.adminProposalActions()
 
         status = 0
         statusInfo = "OK"
