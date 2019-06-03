@@ -108,25 +108,32 @@ def submitProposal(callback, data, rei):
 #
 # \param[in] researchProposalId Unique identifier of the research proposal.
 #
-def approveProposal(callback, researchProposalId, currentUserId):
+def approveProposal(callback, researchProposalId, currentUserName):
     status = -1
     statusInfo = "Internal server error"
 
     try:
         # Check if approving user owns the proposal. If so, do not allow
         # approving
-        result = isProposalOwner(callback, researchProposalId, currentUserId)
+        result = isProposalOwner(callback, researchProposalId, currentUserName)
         if result['isProposalOwner']:
             raise Exception()
 
         # Construct path to the collection of the proposal
         zoneName = ""
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
-        proposalPath = ("/" + clientZone + "/home/datarequests-research/" +
-                        researchProposalId + "/proposal.json")
+        proposalColl = ("/" + clientZone + "/home/datarequests-research/" +
+                        researchProposalId)
 
-        # Approve proposal
-        uuMetaAdd(callback, "-d", proposalPath, "status", "approved")
+        # Approve the proposal by adding a delayed rule that sets the status of
+        # the proposal to "approved" ...
+        status = ""
+        statusInfo = ""
+        callback.requestProposalMetadataChange(proposalColl, "status",
+                                               "approved", 0, status, statusInfo)
+
+        # ... and triggering the processing of delayed rules
+        callback.adminProposalActions()
 
         # Set status to OK
         status = 0
