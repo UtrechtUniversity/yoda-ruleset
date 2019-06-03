@@ -29,21 +29,17 @@
     "optionsDataType": {
       "type": "string",
       "enum": [
-        "Audiovisual",
-        "Collection",
         "Dataset",
-        "Event",
-        "Image",
-        "InteractiveResource",
-        "Model",
-        "PhysicalObject",
-        "Service",
+        "Datapaper",
         "Software",
-        "Sound",
-        "Text",
-        "Workflow",
-        "Other"
-      ]
+        "Text"
+      ],
+      "enumNames": [
+        "Package",
+	"Method",
+	"Software",
+	"Other Document"
+      ]	
     },      
     "optionsNameIdentifierScheme": {
       "type": "string",
