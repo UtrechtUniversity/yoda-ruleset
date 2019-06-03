@@ -66,8 +66,25 @@
           <xsl:apply-templates select="yoda:Data_Access_Restriction"/>
         </rightsList>
 
-        <resourceType resourceTypeGeneral="Dataset">
+        <resourceType>
+            <xsl:attribute name="resourceTypeGeneral">
+                <xsl:value-of select=""yoda:Data_Type" />
+            </xsl:attribute>
             <xsl:value-of select="yoda:Data_Type"/>
+   	    <xsl:choose>
+              <xsl:when test="yoda:Data_Type = 'Dataset'">
+                  Research Data
+              </xsl:when>
+              <xsl:when test="yoda:Data_Type = 'Datapaper'">
+                  Method Description
+              </xsl:when>
+              <xsl:when test="yoda:Data_Type = 'Software'">
+                  Computer Code
+              </xsl:when>
+              <xsl:otherwise>
+                  Other Document
+              </xsl:otherwise>
+            </xsl:choose>
         </resourceType>
 
         <xsl:if test="(yoda:Related_Datapackage/yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier) and (yoda:Related_Datapackage/yoda:Relation_Type)">
