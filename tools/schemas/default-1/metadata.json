@@ -36,11 +36,11 @@
       ],
       "enumNames": [
         "Package",
-	"Method",
-	"Software",
-	"Other Document"
-      ]	
-    },      
+        "Method",
+        "Software",
+        "Other Document"
+      ]
+    },
     "optionsNameIdentifierScheme": {
       "type": "string",
       "enum": [
@@ -776,7 +776,7 @@
         "Data_Type": {
           "$ref": "#/definitions/optionsDataType",
           "title": "Data type"
-        },	  
+        },
         "Collection_Name": {
           "$ref": "#/definitions/stringNormal",
           "title": "Name of collection"
@@ -802,7 +802,7 @@
         "Remarks": {
           "$ref": "#/definitions/stringLong",
           "title": "Remarks"
-        }	  
+        }
       }
     },
     "Rights-group": {
