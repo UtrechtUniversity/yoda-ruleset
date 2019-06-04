@@ -164,20 +164,10 @@
   </xs:simpleType>
   <xs:simpleType name="optionsDataType">
     <xs:restriction base="xs:string">
-      <xs:enumeration value="Audiovisual"/>
-      <xs:enumeration value="Collection"/>
       <xs:enumeration value="Dataset"/>
-      <xs:enumeration value="Event"/>
-      <xs:enumeration value="Image"/>
-      <xs:enumeration value="InteractiveResource"/>
-      <xs:enumeration value="Model"/>
-      <xs:enumeration value="PhysicalObject"/>
-      <xs:enumeration value="Service"/>
+      <xs:enumeration value="Datapaper"/>
       <xs:enumeration value="Software"/>
-      <xs:enumeration value="Sound"/>
       <xs:enumeration value="Text"/>
-      <xs:enumeration value="Workflow"/>
-      <xs:enumeration value="Other"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsNameIdentifierScheme">
