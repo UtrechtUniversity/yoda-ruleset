@@ -55,6 +55,15 @@ uuClientZone(*zoneName) {
 
 uuClientFullName() = "$userNameClient#$rodsZoneClient";
 
+# \brief Wrapper around uuClientFullName. Enables uuClientFullName to be called
+#        from the Python iRODS client
+#
+# \param[out] fullName
+#
+uuClientFullNameWrapper(*fullName) {
+    *fullName = uuClientFullName();
+}
+
 # \brief Check if a group category exists.
 #
 # \param[in]  categoryName
