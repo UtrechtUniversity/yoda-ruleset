@@ -23,8 +23,8 @@
                 <meta name="description" content="Data Publication platform of Utrecht University"/>
                 <title><xsl:apply-templates select="yoda:Title"/> - Data Publication platform of Utrecht University</title>
 
-                <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet"/>
-                <link href="/static/css/uu.css?v=1559637767" rel="stylesheet"/>
+                <link href="static/css/bootstrap.min.css?v=1559637767" rel="stylesheet"/>
+                <link href="static/css/uu.css?v=1559637767" rel="stylesheet"/>
             </head>
             <body>
                 <div class="container bg-white no-padding">
@@ -72,6 +72,7 @@
                                 </div>
                                 <div class="group">
                                     <xsl:apply-templates select="yoda:Data_Classification"/>
+                                    <xsl:apply-templates select="yoda:Collection_Name"/>
                                     <xsl:apply-templates select="yoda:Funding_Reference"/>
                                 </div>
                                 <div class="group">
@@ -189,7 +190,7 @@
         <xsl:value-of select="$utcoffset"/>
     </xsl:template>
 
-    <xsl:template match="yoda:Discipline | yoda:Version | yoda:Language | yoda:Affiliation | yoda:Data_Classification">
+    <xsl:template match="yoda:Discipline | yoda:Version | yoda:Language | yoda:Affiliation | yoda:Data_Classification | yoda:Collection_Name">
         <div class="row">
             <div class="col-sm-2">
                 <label><xsl:value-of select="translate(local-name(),'_',' ')"/></label>
