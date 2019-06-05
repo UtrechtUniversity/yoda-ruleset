@@ -32,7 +32,7 @@
            <xsl:apply-templates select="yoda:System/yoda:Publication_Date"/>
         </publicationYear>
 
-        <xsl:if test="Discipline or Tag">
+        <xsl:if test="yoda:Discipline or yoda:Tag">
           <subjects>
             <xsl:apply-templates select="yoda:Discipline"/>
             <xsl:apply-templates select="yoda:Tag"/>
@@ -43,23 +43,24 @@
           <xsl:apply-templates select="yoda:Creator"/>
         </creators>
 
-        <xsl:if test="Contributor">
+        <xsl:if test="yoda:Contributor">
                 <contributors>
                   <xsl:apply-templates select="yoda:Contributor"/>
                 </contributors>
         </xsl:if>
 
         <dates>
-          <xsl:if test="System/Last_Modified_Date">
+          <xsl:if test="yoda:System/yoda:Last_Modified_Date">
             <date dateType="Updated"><xsl:value-of select="yoda:System/yoda:Last_Modified_Date"/></date>
           </xsl:if>
-          <xsl:if test="Embargo_End_Date">
+          <xsl:if test="yoda:Embargo_End_Date">
             <date dateType="Available"><xsl:value-of select="yoda:Embargo_End_Date"/></date>
           </xsl:if>
-          <xsl:if test="Collected">
+          <xsl:if test="yoda:Collected">
             <date dateType="Collected"><xsl:value-of select="yoda:Collected/yoda:Start_Date" />/<xsl:value-of select="yoda:Collected/yoda:End_Date"/></date>
           </xsl:if>
         </dates>
+
         <xsl:apply-templates select="yoda:Version"/>
         <rightsList>
           <xsl:apply-templates select="yoda:License"/>
@@ -67,7 +68,7 @@
         </rightsList>
 
         <resourceType resourceTypeGeneral="Dataset">
-            <xsl:text>Dataset</xsl:text>
+            <xsl:text>Research Data</xsl:text>
         </resourceType>
 
         <xsl:if test="(yoda:Related_Datapackage/yoda:Properties/yoda:Persistent_Identifier/yoda:Identifier) and (yoda:Related_Datapackage/yoda:Relation_Type)">
@@ -110,7 +111,12 @@
   </xsl:template>
 
   <xsl:template match="yoda:Title">
-    <title xml:lang="en-us"><xsl:value-of select="." /></title>
+     <title>
+       <xsl:attribute name="xml:lang">
+        <xsl:value-of select="substring(../yoda:Language,1,2)"/>
+      </xsl:attribute>
+         <xsl:value-of select="." />
+      </title>
   </xsl:template>
 
   <xsl:template match="yoda:Discipline">
