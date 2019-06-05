@@ -23,8 +23,8 @@
                 <meta name="description" content="Data Publication platform of Utrecht University"/>
                 <title><xsl:apply-templates select="yoda:Title"/> - Data Publication platform of Utrecht University</title>
 
-                <link href="static/css/bootstrap.min.css?v=1559637767" rel="stylesheet"/>
-                <link href="static/css/uu.css?v=1559637767" rel="stylesheet"/>
+                <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet"/>
+                <link href="/static/css/uu.css?v=1559637767" rel="stylesheet"/>
             </head>
             <body>
                 <div class="container bg-white no-padding">
