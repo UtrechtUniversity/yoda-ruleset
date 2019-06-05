@@ -769,13 +769,13 @@
           "format": "date",
           "title": "Embargo end date"
         },
-        "Data_Classification": {
-          "$ref": "#/definitions/optionsDataClassification",
-          "title": "Data classification"
-        },
         "Data_Type": {
           "$ref": "#/definitions/optionsDataType",
           "title": "Data type"
+        },
+        "Data_Classification": {
+          "$ref": "#/definitions/optionsDataClassification",
+          "title": "Data classification"
         },
         "Collection_Name": {
           "$ref": "#/definitions/stringNormal",

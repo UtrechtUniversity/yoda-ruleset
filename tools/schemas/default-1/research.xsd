@@ -51,8 +51,8 @@
         <xs:element maxOccurs="1" minOccurs="0" name="Retention_Period" type="xs:integer"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Retention_Information" type="stringNormal"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Embargo_End_Date" type="xs:date"/>
-        <xs:element maxOccurs="1" minOccurs="0" name="Data_Classification" type="optionsDataClassification"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Data_Type" type="optionsDataType"/>
+        <xs:element maxOccurs="1" minOccurs="0" name="Data_Classification" type="optionsDataClassification"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Collection_Name" type="stringNormal"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" name="Funding_Reference">
           <xs:complexType>
