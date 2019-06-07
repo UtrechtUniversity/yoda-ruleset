@@ -37,8 +37,11 @@
                     </header>
                     <main>
                         <section class="content">
+                            <br /><br />
                             <p>This data package (<xsl:apply-templates select="*[local-name()='System']/*[local-name()='Persistent_Identifier_Datapackage']"/>) has been made temporarily unavailable.</p>
+                            <br /><br />
                         </section>
+                        <hr />
                         <section class="questions">
                             <h2>Questions?</h2>
                             <div class="col text-center">
