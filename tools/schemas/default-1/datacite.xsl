@@ -72,7 +72,6 @@
             <xsl:attribute name="resourceTypeGeneral">
                 <xsl:value-of select="yoda:Data_Type" />
             </xsl:attribute>
-            <xsl:value-of select="yoda:Data_Type"/>
    	        <xsl:choose>
               <xsl:when test="yoda:Data_Type = 'Dataset'">
                   Research Data
