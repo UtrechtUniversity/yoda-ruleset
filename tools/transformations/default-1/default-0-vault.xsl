@@ -43,6 +43,21 @@
                </End_Date>
             </Collected>
         </xsl:if>
+        <xsl:if test="yoda:Covered_Geolocation_Place">
+            <xsl:apply-templates select="yoda:Covered_Geolocation_Place"/>
+        </xsl:if>
+		
+        <xsl:if test="yoda:Covered_Period">
+            <Covered_Period>
+               <Start_Date>
+                    <xsl:value-of select="yoda:Covered_Period/yoda:Start_Date"/>
+               </Start_Date>
+               <End_Date>
+                    <xsl:value-of select="yoda:Covered_Period/yoda:End_Date"/>
+               </End_Date>
+            </Covered_Period>
+        </xsl:if>
+		
        <xsl:if test="yoda:Tag">
                <xsl:apply-templates select="yoda:Tag"/>
        </xsl:if>
@@ -51,9 +66,6 @@
             <xsl:apply-templates select="yoda:Related_Datapackage"/>
         </xsl:if>
 
-        <xsl:if test="yoda:Covered_Geolocation_Place">
-            <xsl:apply-templates select="yoda:Covered_Geolocation_Place"/>
-        </xsl:if>
 
         <xsl:if test="yoda:Retention_Period">
             <Retention_Period>
@@ -70,13 +82,12 @@
                <xsl:value-of select="yoda:Embargo_End_Date"/>
             </Embargo_End_Date>
         </xsl:if>
+        <Data_Type>Dataset</Data_Type>
         <xsl:if test="yoda:Data_Classification">
             <Data_Classification>
                <xsl:value-of select="yoda:Data_Classification"/>
             </Data_Classification>
         </xsl:if>
-
-        <Data_Type>Dataset</Data_Type>
 
         <xsl:if test="yoda:Collection_Name">
             <Collection_Name>
