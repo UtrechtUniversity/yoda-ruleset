@@ -123,7 +123,8 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
 
     # Parse original metadata.
     tree = parseXml(callback, originalMetadataXml)
-    xmlString = etree.tostring(tree, pretty_print=True, xml_declaration=True, encoding='UTF-8')
+    xmlString = ('<?xml version="1.0" encoding="UTF-8"?>' + '\n' +
+                 etree.tostring(tree, pretty_print=True, xml_declaration=False, encoding="UTF-8"))
 
     # Retrieve active schema location and space to be added.
     schemaLocation = getSchemaLocation(callback, vaultPackage)
@@ -197,4 +198,3 @@ def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     fileHandle = ret_val['arguments'][2]
     callback.msiDataObjWrite(fileHandle, provenenanceString, 0)
     callback.msiDataObjClose(fileHandle, 0)
-
