@@ -68,6 +68,7 @@
           <xsl:apply-templates select="yoda:Data_Access_Restriction"/>
         </rightsList>
 
+        <language><xsl:value-of select="substring(yoda:Language, 1, 2)"/></language>
         <resourceType>
             <xsl:attribute name="resourceTypeGeneral">
                 <xsl:value-of select="yoda:Data_Type" />
