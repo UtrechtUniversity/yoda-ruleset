@@ -1,9 +1,10 @@
-processProposalActions() {
-	# Scan for any pending proposal actions.
+processDatarequestActions() {
+
+	# Scan for any pending data request actions.
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
-	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "proposal_action_%", *GenQInp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "datarequest_action_%", *GenQInp);
 
 	msiExecGenQuery(*GenQInp, *GenQOut);
 	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
@@ -12,16 +13,16 @@ processProposalActions() {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
 
-			# Check if proposal metadata change is requested in datarequests-research group
+			# Check if data request metadata change is requested in datarequests-research group
 			if (*collName like regex "/[^/]+/home/datarequests-research.*") {
 
 				# Get arguments necessary for processing of metadata change
-				*proposalColl  = "";
+				*datarequestColl  = "";
 				*attributeName = "";
 				*action	= "";
 				*attributeValueArrayLength = "";
 				*actor	 = "";
-				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *proposalColl, "get", 0));
+				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *datarequestColl, "get", 0));
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *attributeName, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 2));
 				*err4 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *attributeValueArrayLength, "get", 3));
@@ -31,24 +32,24 @@ processProposalActions() {
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0 || *err4 < 0) {
 					writeLine("stdout", "Failed to process request on *collName");
 				} else {
-					# Retrieve collection id of proposal collection
-					foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *proposalColl) {
+					# Retrieve collection id of this data request
+					foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *datarequestColl) {
 						*collId = *row.COLL_ID;
 					}
 
-					# Check if proposal is currently pending for metadata change
+					# Check if a metadata change is currently pending for this data request
 					*pending = false;
-					*proposalActionStatus = UUORGMETADATAPREFIX ++ "proposal_status_action_" ++ "*collId";
-					foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *proposalActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
+					*datarequestActionStatus = UUORGMETADATAPREFIX ++ "datarequest_status_action_" ++ "*collId";
+					foreach(*row in SELECT COLL_ID WHERE META_COLL_ATTR_NAME = *datarequestActionStatus AND META_COLL_ATTR_VALUE = 'PENDING') {
 						*pending = true;
 					}
 
 
 					# Perform metadata change if action is pending
 					if (*pending) {
-						*err = errorcode(uuProposalProcessMetadataChange(*proposalColl, *attributeName, *action, *attributeValueArrayLength, *actor, *status, *statusInfo));
+						*err = errorcode(uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName, *action, *attributeValueArrayLength, *actor, *status, *statusInfo));
 						if (*err < 0) {
-							writeLine("stdout", "uuProposalProcessMetadataChange: *err");
+							writeLine("stdout", "uuDatarequestProcessMetadataChange: *err");
 							*status = "InternalError";
 							*statusInfo = "";
 						}
@@ -60,44 +61,44 @@ processProposalActions() {
 							msiSetACL("default", "admin:write", uuClientFullName, *collName);
 						}
 
-						# Set proposal status action to FAIL if the metadata change was unsuccessful
+						# Set data request status action to FAIL if the metadata change was unsuccessful
 						if (*status != "Success") {
 							*json_str = "[]";
 							*size = 0;
-							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
+							msi_json_arrayops(*json_str, *datarequestColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
 							msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
-							msiString2KeyValPair("", *proposalActionKvp);
-							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
+							msiString2KeyValPair("", *datarequestActionKvp);
+							msiAddKeyVal(*datarequestActionKvp, UUORGMETADATAPREFIX ++ "datarequest_action_" ++ *collId, *json_str);
 
-							*proposalStatus = UUORGMETADATAPREFIX ++ "proposal_status_action_" ++ "*collId" ++ "=FAIL";
-							msiString2KeyValPair(*proposalStatus, *proposalStatusKvp);
+							*datarequestStatus = UUORGMETADATAPREFIX ++ "datarequest_status_action_" ++ "*collId" ++ "=FAIL";
+							msiString2KeyValPair(*datarequestStatus, *datarequestStatusKvp);
 
-							*err = errormsg(msiRemoveKeyValuePairsFromObj(*proposalActionKvp, *collName, "-C"), *msg);
-							msiSetKeyValuePairsToObj(*proposalStatusKvp, *collName, "-C");
-							writeLine("stdout", "uuProposalProcessMetadataChange: *status - *statusInfo");
-						# Remove the delayed rule (i.e. the proposal_action_*collId and
-						# proposal_status_action_*collId attributes) if the metadata change was successful
+							*err = errormsg(msiRemoveKeyValuePairsFromObj(*datarequestActionKvp, *collName, "-C"), *msg);
+							msiSetKeyValuePairsToObj(*datarequestStatusKvp, *collName, "-C");
+							writeLine("stdout", "uuDatarequestProcessMetadataChange: *status - *statusInfo");
+						# Remove the delayed rule (i.e. the datarequest_action_*collId and
+						# datarequest_status_action_*collId attributes) if the metadata change was successful
 						} else {
 							*json_str = "[]";
 							*size = 0;
-							msi_json_arrayops(*json_str, *proposalColl, "add", *size);
+							msi_json_arrayops(*json_str, *datarequestColl, "add", *size);
 							msi_json_arrayops(*json_str, *attributeName, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
 							msi_json_arrayops(*json_str, *attributeValueArrayLength, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
-							msiString2KeyValPair("", *proposalActionKvp);
-							msiAddKeyVal(*proposalActionKvp, UUORGMETADATAPREFIX ++ "proposal_action_" ++ *collId, *json_str);
+							msiString2KeyValPair("", *datarequestActionKvp);
+							msiAddKeyVal(*datarequestActionKvp, UUORGMETADATAPREFIX ++ "datarequest_action_" ++ *collId, *json_str);
 
-							*proposalStatus = UUORGMETADATAPREFIX ++ "proposal_status_action_" ++ "*collId" ++ "=PENDING";
-							msiString2KeyValPair(*proposalStatus, *proposalStatusKvp);
+							*datarequestStatus = UUORGMETADATAPREFIX ++ "datarequest_status_action_" ++ "*collId" ++ "=PENDING";
+							msiString2KeyValPair(*datarequestStatus, *datarequestStatusKvp);
 
-							*err = errormsg(msiRemoveKeyValuePairsFromObj(*proposalActionKvp, *collName, "-C"), *msg);
-							*err = errormsg(msiRemoveKeyValuePairsFromObj(*proposalStatusKvp, *collName, "-C"), *msg);
+							*err = errormsg(msiRemoveKeyValuePairsFromObj(*datarequestActionKvp, *collName, "-C"), *msg);
+							*err = errormsg(msiRemoveKeyValuePairsFromObj(*datarequestStatusKvp, *collName, "-C"), *msg);
 
-							writeLine("stdout", "uuProposalProcessMetadataChange: Successfully processed *action by *actor on *proposalColl");
+							writeLine("stdout", "uuDatarequestProcessMetadataChange: Successfully processed *action by *actor on *datarequestColl");
 						}
 
 						# Remove the temporary write ACL.
