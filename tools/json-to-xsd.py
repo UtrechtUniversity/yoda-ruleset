@@ -258,6 +258,10 @@ def convertType(body, typename=None):
                  'All elements and type declarations must contain a \'type\' attribute.',
                  typeName=typename)
 
+    # Check if type is nullable (type is list).
+    if isinstance(body['type'], (list,)):
+        body['type'] = body['type'][0]
+
     typ = None # The generated type, either a string (name), or an element describing the type.
 
     if 'yoda:structure' in body:

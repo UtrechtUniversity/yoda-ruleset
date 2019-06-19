@@ -2,7 +2,7 @@
   "$id": "https://yoda.uu.nl/schemas/default-0/metadata.json",
   "definitions": {
     "stringNormal": {
-      "type": "string",
+      "type": ["string", "null"],
       "maxLength": 255
     },
     "stringLong": {
@@ -103,7 +103,7 @@
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
         "Humanities - Other humanities (6.5)",
-	""
+        ""
       ]
     },
     "optionsContributorType": {
