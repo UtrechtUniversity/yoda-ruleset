@@ -74,7 +74,7 @@
       ]
     },
     "optionsDiscipline": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
         "Natural Sciences - Mathematics (1.1)",
         "Natural Sciences - Computer and information sciences (1.2)",
