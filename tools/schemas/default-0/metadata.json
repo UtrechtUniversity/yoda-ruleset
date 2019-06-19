@@ -819,7 +819,7 @@
                 "type": "array",
                 "default": ["Utrecht University"],
                 "items": {
-                  "$ref": "#/definitions/stringNormalNullable",
+                  "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
                   "yoda:required": true
                 }
@@ -869,7 +869,7 @@
                 "type": "array",
                 "default": ["Utrecht University"],
                 "items": {
-                  "$ref": "#/definitions/stringNormalNullable",
+                  "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
                   "yoda:required": true
                 }
