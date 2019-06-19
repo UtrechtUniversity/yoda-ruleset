@@ -2,6 +2,10 @@
   "$id": "https://yoda.uu.nl/schemas/default-0/metadata.json",
   "definitions": {
     "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "stringNormalNullable": {
       "type": ["string", "null"],
       "maxLength": 255
     },
@@ -659,7 +663,7 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/definitions/stringNormal",
+            "$ref": "#/definitions/stringNormalNullable",
             "title": "Location(s) covered",
             "default": ""
           }
@@ -689,7 +693,7 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/definitions/stringNormal",
+            "$ref": "#/definitions/stringNormalNullable",
             "title": "Tag",
             "default": ""
           }
@@ -815,7 +819,7 @@
                 "type": "array",
                 "default": ["Utrecht University"],
                 "items": {
-                  "$ref": "#/definitions/stringNormal",
+                  "$ref": "#/definitions/stringNormalNullable",
                   "title": "Affiliation",
                   "yoda:required": true
                 }
@@ -865,7 +869,7 @@
                 "type": "array",
                 "default": ["Utrecht University"],
                 "items": {
-                  "$ref": "#/definitions/stringNormal",
+                  "$ref": "#/definitions/stringNormalNullable",
                   "title": "Affiliation",
                   "yoda:required": true
                 }
