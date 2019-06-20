@@ -207,6 +207,7 @@
   </xs:simpleType>
   <xs:simpleType name="optionsDiscipline">
     <xs:restriction base="xs:string">
+      <xs:enumeration value=""/>
       <xs:enumeration value="Natural Sciences - Mathematics (1.1)"/>
       <xs:enumeration value="Natural Sciences - Computer and information sciences (1.2)"/>
       <xs:enumeration value="Natural Sciences - Physical sciences (1.3)"/>
@@ -249,7 +250,6 @@
       <xs:enumeration value="Humanities - Philosophy, ethics and religion (6.3)"/>
       <xs:enumeration value="Humanities - Art (arts, history of arts, performing arts, music) (6.4)"/>
       <xs:enumeration value="Humanities - Other humanities (6.5)"/>
-      <xs:enumeration value=""/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="optionsContributorType">

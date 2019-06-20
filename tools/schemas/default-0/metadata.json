@@ -65,6 +65,7 @@
     "optionsDiscipline": {
       "type": ["string", "null"],
       "enum": [
+        null,
         "Natural Sciences - Mathematics (1.1)",
         "Natural Sciences - Computer and information sciences (1.2)",
         "Natural Sciences - Physical sciences (1.3)",
@@ -106,10 +107,10 @@
         "Humanities - Languages and literature (6.2)",
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
-        "Humanities - Other humanities (6.5)",
-        null
+        "Humanities - Other humanities (6.5)"
       ],
       "enumNames": [
+        " ",
         "Natural Sciences - Mathematics (1.1)",
         "Natural Sciences - Computer and information sciences (1.2)",
         "Natural Sciences - Physical sciences (1.3)",
@@ -151,8 +152,7 @@
         "Humanities - Languages and literature (6.2)",
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
-        "Humanities - Other humanities (6.5)",
-        " "
+        "Humanities - Other humanities (6.5)"
       ]
     },
     "optionsContributorType": {
