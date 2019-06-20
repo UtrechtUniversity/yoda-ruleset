@@ -134,6 +134,8 @@ def flattenSchema(jsonDocument, uri):
                 for i, v in enumerate(el):
                     el[i] = flattenObject(v, fragment)
 
+            if el is None:
+                return ""
             return el
         return flattenObject(doc, '/')
     return flattenDocument(jsonDocument, uri)

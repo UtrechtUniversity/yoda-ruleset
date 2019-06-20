@@ -107,7 +107,52 @@
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
         "Humanities - Other humanities (6.5)",
-        ""
+        null
+      ],
+      "enumNames": [
+        "Natural Sciences - Mathematics (1.1)",
+        "Natural Sciences - Computer and information sciences (1.2)",
+        "Natural Sciences - Physical sciences (1.3)",
+        "Natural Sciences - Chemical sciences (1.4)",
+        "Natural Sciences - Earth and related environmental sciences (1.5)",
+        "Natural Sciences - Biological sciences (1.6)",
+        "Natural Sciences - Other natural sciences (1.7)",
+        "Engineering and Technology - Civil engineering (2.1)",
+        "Engineering and Technology - Electrical engineering, electronic engineering, information engineering (2.2)",
+        "Engineering and Technology - Mechanical engineering (2.3)",
+        "Engineering and Technology - Chemical engineering (2.4)",
+        "Engineering and Technology - Materials engineering (2.5)",
+        "Engineering and Technology - Medical engineering (2.6)",
+        "Engineering and Technology - Environmental engineering (2.7)",
+        "Engineering and Technology - Environmental biotechnology (2.8)",
+        "Engineering and Technology - Industrial Biotechnology (2.9)",
+        "Engineering and Technology - Nano-technology (2.10)",
+        "Engineering and Technology - Other engineering and technologies (2.11)",
+        "Medical and Health Sciences - Basic medicine (3.1)",
+        "Medical and Health Sciences - Clinical medicine (3.2)",
+        "Medical and Health Sciences - Health sciences (3.3)",
+        "Medical and Health Sciences - Health biotechnology (3.4)",
+        "Medical and Health Sciences - Other medical sciences (3.5)",
+        "Agricultural Sciences - Agriculture, forestry, and fisheries (4.1)",
+        "Agricultural Sciences - Animal and dairy science (4.2)",
+        "Agricultural Sciences - Veterinary science (4.3)",
+        "Agricultural Sciences - Agricultural biotechnology (4.4)",
+        "Agricultural Sciences - Other agricultural sciences (4.5)",
+        "Social Sciences - Psychology (5.1)",
+        "Social Sciences - Economics and business (5.2)",
+        "Social Sciences - Educational sciences (5.3)",
+        "Social Sciences - Sociology (5.4)",
+        "Social Sciences - Law (5.5)",
+        "Social Sciences - Political Science (5.6)",
+        "Social Sciences - Social and economic geography (5.7)",
+        "Social Sciences - Media and communications (5.8)",
+        "Social Sciences - Other social sciences (5.9)",
+        "Humanities - History and archaeology (6.1)",
+        "Humanities - Languages and literature (6.2)",
+        "Humanities - Philosophy, ethics and religion (6.3)",
+        "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
+        "Humanities - Other humanities (6.5)",
+        " "
       ]
     },
     "optionsContributorType": {
@@ -626,7 +671,7 @@
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Discipline",
-            "default": ""
+            "default": null
           }
         },
         "Version": {
