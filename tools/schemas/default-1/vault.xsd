@@ -5,7 +5,7 @@
       <xs:sequence>
         <xs:element maxOccurs="1" minOccurs="1" name="Title" type="stringNormal"/>
         <xs:element maxOccurs="1" minOccurs="1" name="Description" type="stringLong"/>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Discipline" type="optionsDiscipline"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Discipline" type="optionsDiscipline"/>
         <xs:element maxOccurs="1" minOccurs="1" name="Version" type="stringNormal"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Language" type="optionsISO639-1"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Collected">
@@ -16,7 +16,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Covered_Geolocation_Place" type="stringNormalNullable"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Covered_Geolocation_Place" type="stringNormalNullable"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Covered_Period">
           <xs:complexType>
             <xs:sequence>
@@ -25,8 +25,8 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Tag" type="stringNormalNullable"/>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Related_Datapackage">
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Tag" type="stringNormalNullable"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Related_Datapackage">
           <xs:complexType>
             <xs:sequence>
               <xs:element maxOccurs="1" minOccurs="0" name="Relation_Type" type="optionsRelationType"/>
@@ -54,7 +54,7 @@
         <xs:element maxOccurs="1" minOccurs="0" name="Data_Type" type="optionsDataType"/>
         <xs:element maxOccurs="1" minOccurs="1" name="Data_Classification" type="optionsDataClassification"/>
         <xs:element maxOccurs="1" minOccurs="0" name="Collection_Name" type="stringNormal"/>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Funding_Reference">
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Funding_Reference">
           <xs:complexType>
             <xs:sequence>
               <xs:element maxOccurs="1" minOccurs="0" name="Funder_Name" type="stringNormal"/>
@@ -77,7 +77,7 @@
                 <xs:complexType>
                   <xs:sequence>
                     <xs:element maxOccurs="unbounded" minOccurs="1" name="Affiliation" type="stringNormal"/>
-                    <xs:element maxOccurs="unbounded" minOccurs="1" name="Person_Identifier">
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="Person_Identifier">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element maxOccurs="1" minOccurs="0" name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme"/>
@@ -91,7 +91,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element maxOccurs="unbounded" minOccurs="1" name="Contributor">
+        <xs:element maxOccurs="unbounded" minOccurs="0" name="Contributor">
           <xs:complexType>
             <xs:sequence>
               <xs:element maxOccurs="1" minOccurs="0" name="Name" type="stringNormal"/>
@@ -100,7 +100,7 @@
                   <xs:sequence>
                     <xs:element maxOccurs="1" minOccurs="0" name="Contributor_Type" type="optionsContributorType"/>
                     <xs:element maxOccurs="unbounded" minOccurs="0" name="Affiliation" type="stringNormal"/>
-                    <xs:element maxOccurs="unbounded" minOccurs="1" name="Person_Identifier">
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="Person_Identifier">
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element maxOccurs="1" minOccurs="0" name="Name_Identifier_Scheme" type="optionsNameIdentifierScheme"/>

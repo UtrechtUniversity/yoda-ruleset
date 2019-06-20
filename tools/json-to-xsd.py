@@ -427,7 +427,7 @@ def convertProperty(name, body, topLevel = False):
 
             # Check min/max occurrences and annotate.
             setArrayOccurs(el,
-                           str(body['minItems']) if 'minItems' in body else '0',
+                           '0',
                            str(body['maxItems']) if 'maxItems' in body else 'unbounded')
 
         else:
