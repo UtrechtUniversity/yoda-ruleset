@@ -7,6 +7,8 @@
 import json
 import os
 
+import genquery
+
 
 # \brief Retrieve lists of preservable file formats on the system.
 #
