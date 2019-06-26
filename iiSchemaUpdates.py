@@ -19,13 +19,13 @@ import time
 
 import genquery
 
+
 # ------- Global declaration of transformation matrix---------------
 # results in a string that is a postfix of two methods:
 # 1. execTransformation_
 #        executes transformation
 # 2. getTransformationText_
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
-
 transformationMatrix = {}
 transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu.nl/schemas/default-1': 'v1'}
 
@@ -347,7 +347,6 @@ def getSchemaSpace(callback, group_name):
     return space + '.xsd'
 
 
-
 # \brief getLatestVaultMetadataXml
 #
 # \param[in] vaultPackage
@@ -584,6 +583,7 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     else:
         callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
 
+
 # \brief Loop through all collections with yoda-metadata.xml data objects.
 #        Check metadata XML for schema updates.
 #
@@ -638,6 +638,7 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
         callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
 
     return coll_id
+
 
 # \brief Check metadata XML for schema identifier.
 #
@@ -697,6 +698,7 @@ def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
                     callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
 
     callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
+
 
 # \brief Check metadata XML for schema updates.
 #
