@@ -151,7 +151,6 @@ def getProvenanceLog(callback, folder):
     return provenance_log
 
 
-
 # \brief Writes the provenance log as a text file into the root of the vault package.
 #
 # \param[in] rule_args[0] Path of a package in the vault.
