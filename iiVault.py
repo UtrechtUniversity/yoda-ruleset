@@ -65,30 +65,21 @@ def getUnpreservableFiles(callback, folder, list):
     unpreservableFormats = []
 
     # Retrieve all files in collection.
-    ret_val = callback.msiMakeGenQuery(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '%s%%'" % (folder),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+    iter = genquery.row_iterator(
+               "DATA_NAME, COLL_NAME",
+               "COLL_NAME like '%s%%'" % (folder),
+               genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            filename, file_extension = os.path.splitext(data_name)
+    for row in iter:
+        filename, file_extension = os.path.splitext(row[0])
 
-            # Convert to lowercase and remove dot.
-            file_extension = (file_extension.lower())[1:]
+        # Convert to lowercase and remove dot.
+        file_extension = (file_extension.lower())[1:]
 
-            # Check if extention is in preservable format list.
-            if (file_extension not in preservableFormats):
-                unpreservableFormats.append(file_extension)
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Check if extention is in preservable format list.
+        if (file_extension not in preservableFormats):
+            unpreservableFormats.append(file_extension)
 
     # Remove duplicate file formats.
     output = []
@@ -97,7 +88,6 @@ def getUnpreservableFiles(callback, folder, list):
             output.append(x)
 
     return {'formats': output}
-
 
 
 # \brief Write preservable file formats lists to stdout.
@@ -177,7 +167,8 @@ def getProvenanceLog(callback, folder):
 def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     # Retrieve provenance.
     provenenanceString = ""
-    provenanceLog =  getProvenanceLog(callback, rule_args[0])
+    provenanceLog = getProvenanceLog(callback, rule_args[0])
+
     for item in provenanceLog:
         dateTime = time.strftime('%Y/%m/%d %H:%M:%S',
                                  time.localtime(int(item[0])))
