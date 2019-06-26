@@ -154,25 +154,18 @@ def getProvenanceLog(callback, folder):
     provenance_log = []
 
     # Retrieve all provenance logs on a folder.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "order(META_COLL_ATTR_VALUE)",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (folder),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            log_item = json.loads(result.sqlResult[0].row(row))
-            provenance_log.append(log_item)
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+    for row in iter:
+        log_item = json.loads(row[0])
+        provenance_log.append(log_item)
 
     return provenance_log
+
 
 
 # \brief Writes the provenance log as a text file into the root of the vault package.
