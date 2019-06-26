@@ -426,19 +426,16 @@ def getDataObjSize(callback, coll_name, data_name):
 # \return User name
 #
 def getUserNameFromUserId(callback, user_id):
-    ret_val = callback.msiMakeGenQuery(
+    user_name = ""
+
+    iter = genquery.row_iterator(
         "USER_NAME",
         "USER_ID = '%s'" % (str(user_id)),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    user_name = ''
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            user_name = result.sqlResult[0].row(row)
+    for row in iter:
+        user_name = row[0]
 
     return user_name
 
