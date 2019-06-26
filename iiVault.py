@@ -20,30 +20,22 @@ def getPreservableFormatsLists(callback):
     clientZone = callback.uuClientZone(zoneName)['arguments'][0]
 
     # Retrieve all preservable file formats lists on the system.
-    ret_val = callback.msiMakeGenQuery(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+    iter = genquery.row_iterator(
+               "DATA_NAME, COLL_NAME",
+               "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
+               genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            coll_name = result.sqlResult[1].row(row)
+    for row in iter:
+        data_name = row[0]
+        coll_name = row[1]
 
-            # Retrieve filename and name of list.
-            filename, file_extension = os.path.splitext(data_name)
-            json = parseJson(callback, coll_name + "/" + data_name)
+        # Retrieve filename and name of list.
+        filename, file_extension = os.path.splitext(data_name)
+        json = parseJson(callback, coll_name + "/" + data_name)
 
-            # Add to list of preservable file formats.
-            preservableLists[filename] = json
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Add to list of preservable file formats.
+        preservableLists[filename] = json
 
     return {'lists': preservableLists}
 
