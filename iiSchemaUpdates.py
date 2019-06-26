@@ -448,30 +448,27 @@ def getUserNameFromUserId(callback, user_id):
 def copyACLsFromParent(callback, path, recursive_flag):
     parent = os.path.dirname(path)
 
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
         "COLL_NAME = '" + parent + "'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    for row in iter:
+        access_name = row[0]
+        user_id = int(row[1])
 
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            access_name = result.sqlResult[0].row(row)
-            user_id = int(result.sqlResult[1].row(row))
-            user_name = getUserNameFromUserId(callback, user_id)
+        user_name = getUserNameFromUserId(callback, user_id)
 
-            if access_name == "own":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "own", user_name, path)
-            elif access_name == "read object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "read", user_name, path)
-            elif access_name == "modify object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "write", user_name, path)
+        if access_name == "own":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "own", user_name, path)
+        elif access_name == "read object":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "read", user_name, path)
+        elif access_name == "modify object":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
 # \brief Parse XML into an ElementTree.
