@@ -15,8 +15,9 @@ import json
 import irods_types
 import lxml.etree as etree
 import xml.etree.ElementTree as ET
-
 import time
+
+import genquery
 
 # ------- Global declaration of transformation matrix---------------
 # results in a string that is a postfix of two methods:
@@ -422,19 +423,16 @@ def getMetadataSchemaFromTree(callback, root):
 # \return Data object size
 #
 def getDataObjSize(callback, coll_name, data_name):
-    ret_val = callback.msiMakeGenQuery(
+    data_size = 0
+
+    iter = genquery.row_iterator(
         "DATA_SIZE",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    data_size = 0
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            data_size = result.sqlResult[0].row(row)
+    for row in iter:
+        data_size = row[0]
 
     return data_size
 
