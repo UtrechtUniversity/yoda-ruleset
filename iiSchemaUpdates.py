@@ -277,20 +277,14 @@ def getCategory(callback, rods_zone, group_name):
     schemaCategory = 'default'
 
     # Find out category based on current group_name.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    if result.rowCnt != 0:
-        # Check each data object in batch.
-        for row in range(0, result.rowCnt):
-            attrValue = result.sqlResult[1].row(row)
-            category = attrValue
+    for row in iter:
+        category = row[1]
 
     if category != '-1':
         # Test whether found category actually has a collection with XSD's.
@@ -299,16 +293,14 @@ def getCategory(callback, rods_zone, group_name):
         # - metadata.xsd
         # - vault.xsd
         xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
-        ret_val = callback.msiMakeGenQuery(
+
+        iter = genquery.row_iterator(
             "COLL_NAME",
             "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
-
-        if result.rowCnt != 0:
+        for row in iter:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
     return schemaCategory
