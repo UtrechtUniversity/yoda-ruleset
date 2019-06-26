@@ -363,31 +363,21 @@ def getSchemaSpace(callback, group_name):
 # \return metadataXmlPath
 #
 def getLatestVaultMetadataXml(callback, vaultPackage):
-    ret_val = callback.msiMakeGenQuery(
+    dataName = ""
+
+    iter = genquery.row_iterator(
         "DATA_NAME, DATA_SIZE",
         "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like 'yoda-metadata[%].xml'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        genquery.AS_LIST, callback
+    )
 
     # Loop through all XMLs.
-    dataName = ""
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            data_size = int(result.sqlResult[1].row(row))
+    for row in iter:
+            data_name = row[0]
+            data_size = int(row[1])
 
             if dataName == "" or (dataName < data_name and len(dataName) <= len(data_name)):
                 dataName = data_name
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
 
     return dataName
 
