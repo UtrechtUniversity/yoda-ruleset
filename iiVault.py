@@ -8,6 +8,7 @@ import json
 import os
 
 import genquery
+import session_vars
 
 
 # \brief Retrieve lists of preservable file formats on the system.
@@ -17,12 +18,12 @@ import genquery
 def getPreservableFormatsLists(callback):
     preservableLists = {}
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve all preservable file formats lists on the system.
     iter = genquery.row_iterator(
                "DATA_NAME, COLL_NAME",
-               "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
+               "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(rods_zone),
                genquery.AS_LIST, callback
     )
 
@@ -49,10 +50,10 @@ def getPreservableFormatsLists(callback):
 #
 def getUnpreservableFiles(callback, folder, list):
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve JSON list of preservable file formats.
-    json = parseJson(callback, "/" + clientZone + "/yoda/file_formats/" + list + ".json")
+    json = parseJson(callback, "/" + rods_zone + "/yoda/file_formats/" + list + ".json")
     preservableFormats = json['formats']
     unpreservableFormats = []
 
