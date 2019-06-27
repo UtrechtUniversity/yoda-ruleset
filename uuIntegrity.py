@@ -2,7 +2,7 @@
 # \brief     Functions for data integrity.
 # \author    Lazlo Westerhof
 # \author    Felix Croes
-# \copyright Copyright (c) 2018 Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 import os.path
