@@ -117,9 +117,9 @@ def getSubcategories(callback, category):
     )
 
     for row in iter:
-        group = result.sqlResult[0].row(row)
-        key = result.sqlResult[1].row(row)
-        value = result.sqlResult[2].row(row)
+        group = row[0]
+        key = row[1]
+        value = row[2]
 
         if group not in groupCategories:
             groupCategories[group] = {}
