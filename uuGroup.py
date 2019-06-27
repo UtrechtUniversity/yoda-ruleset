@@ -6,6 +6,8 @@
 # \license   GPLv3, see LICENSE.
 
 import json
+import requests
+
 
 # \brief Return groups and related data.
 #
@@ -201,7 +203,7 @@ def uuGetUserGroupData(rule_args, callback, rei):
 def groupUserExists(rule_args, callback, rei):
     groups = getGroupData(callback)
     user = rule_args[1]
-    if not '#' in user:
+    if '#' not in user:
         import session_vars
         user = user + "#" + session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -231,8 +233,6 @@ def credentialsStoreGet(key):
     config = json.loads(open('/var/lib/irods/.credentials_store/store_config.json').read())
     return config[key]
 
-
-import requests
 
 # \brief Call External User Service API to add new user
 #
@@ -320,6 +320,7 @@ def removeExternalUser(callback, username, userzone):
                              verify=False)
 
     return str(response.status_code)
+
 
 # \brief Remove external user
 #
