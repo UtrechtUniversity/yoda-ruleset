@@ -9,6 +9,8 @@
 import os
 from datetime import datetime
 import json
+
+import genquery
 import irods_types
 
 
@@ -26,25 +28,21 @@ def uuRuleGetResourceTierData(rule_args, callback, rei):
 # \brief Get all resources and their tier data as a json representation:
 #
 def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
-    ret_val = callback.msiMakeGenQuery(
-        "RESC_ID, RESC_NAME",
-        "",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
     resourceList = list()
 
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            resourceId = result.sqlResult[0].row(row)
-            resourceName = result.sqlResult[1].row(row)
-            tierName = getTierOnResourceName(resourceName, callback)
-            resourceList.append({'resourceName': resourceName,
-                                 'resourceId': resourceId,
-                                 'org_storage_tier': tierName})
+    iter = genquery.row_iterator(
+        "RESC_ID, RESC_NAME",
+        "",
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        resourceId = row[0]
+        resourceName = row[1]
+        tierName = getTierOnResourceName(resourceName, callback)
+        resourceList.append({'resourceName': resourceName,
+                             'resourceId': resourceId,
+                             'org_storage_tier': tierName})
 
     rule_args[0] = json.dumps(resourceList)
 
@@ -69,26 +67,20 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
 
         metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
 
-        ret_val = callback.msiMakeGenQuery(
+        iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
             "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
+        for row in iter:
+            data = json.loads(row[0])
 
-        callback.writeString("serverLog", 'Metadata records count: ' + str(result.rowCnt))
-        if result.rowCnt != 0:
-            for row in range(0, result.rowCnt):
-                data = result.sqlResult[0].row(row)
-                temp = json.loads(data)
+            tierName = data[1]
+            data_size = data[2]  # no construction for summation required in this case
 
-                tierName = temp[1]
-                data_size = temp[2]  # no construction for summation required in this case
-
-                key = 'month=' + str(referenceMonth) + '-tier=' + tierName
-                allStorage.append({key: data_size})
+            key = 'month=' + str(referenceMonth) + '-tier=' + tierName
+            allStorage.append({key: data_size})
 
     rule_args[2] = json.dumps(allStorage)
 
@@ -138,37 +130,37 @@ def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
     for category in categories:
         groupToSubcategory = {}
 
-        ret_val = callback.msiMakeGenQuery(
+        iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
             "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME like  '" + UUMETADATASTORAGEMONTH + "%'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
+        for row in iter:
+            attrValue = row[0]
+            month = row[1]
+            month = str(int(month[-2:]))  # the month storage data is about, is taken from the attr_name of the AVU
+            groupName = row[3]
 
-        if result.rowCnt != 0:
-            for row in range(0, result.rowCnt):
-                attrValue = result.sqlResult[0].row(row)
+            # Determine subcategory on groupName
+            try:
+                subcategory = groupToSubcategory[groupName]
+            except KeyError:
+                catInfo = groupGetCategoryInfo(groupName, callback)
+                subcategory = catInfo['subcategory']
+                groupToSubcategory[groupName] = subcategory
 
-                month = result.sqlResult[1].row(row)
-                month = str(int(month[-2:]))  # the month storage data is about, is taken from the attr_name of the AVU
-                groupName = result.sqlResult[3].row(row)
+            temp = json.loads(attrValue)
+            category = temp[0]
+            tier = temp[1]
+            storage = int(temp[2])
 
-                # Determine subcategory on groupName
-                try:
-                    subcategory = groupToSubcategory[groupName]
-                except KeyError:
-                    catInfo = groupGetCategoryInfo(groupName, callback)
-                    subcategory = catInfo['subcategory']
-                    groupToSubcategory[groupName] = subcategory
-
-                temp = json.loads(attrValue)
-                category = temp[0]
-                tier = temp[1]
-                storage = int(temp[2])
-
-                allStorage.append({'category': category, 'subcategory': subcategory, 'groupname': groupName, 'tier': tier, 'month': month, 'storage': str(storage)})
+            allStorage.append({'category': category,
+                               'subcategory': subcategory,
+                               'groupname': groupName,
+                               'tier': tier,
+                               'month': month,
+                               'storage': str(storage)})
 
     rule_args[1] = json.dumps(allStorage)
 
@@ -180,24 +172,20 @@ def groupGetCategoryInfo(groupName, callback):
     category = ''
     subcategory = ''
 
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME LIKE '%category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    for row in iter:
+        attrName = row[0]
+        attrValue = row[1]
 
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            attrName = result.sqlResult[0].row(row)
-            attrValue = result.sqlResult[1].row(row)
-
-            if attrName == 'category':
-                category = attrValue
-            elif attrName == 'subcategory':
-                subcategory = attrValue
+        if attrName == 'category':
+            category = attrValue
+        elif attrName == 'subcategory':
+            subcategory = attrValue
 
     return {'category': category, 'subcategory': subcategory}
 
@@ -212,35 +200,31 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
     storageDict = {}
 
     for category in categories:
-        ret_val = callback.msiMakeGenQuery(
+        iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
             "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
-
-        if result.rowCnt != 0:
+        for row in iter:
             # hier wordt door alle groepen gezocht, geordend van een category.
             # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
-            for row in range(0, result.rowCnt):
-                attrValue = result.sqlResult[0].row(row)
+            attrValue = row[0]
 
-                temp = json.loads(attrValue)
-                category = temp[0]
-                tier = temp[1]
-                storage = int(float(temp[2]))
+            temp = json.loads(attrValue)
+            category = temp[0]
+            tier = temp[1]
+            storage = int(float(temp[2]))
 
+            try:
+                storageDict[category][tier] = storageDict[category][tier] + storage
+            except KeyError:
+                callback.writeString('serverLog', 'Exception')
+                # if key error, can be either category or category/tier combination is missing
                 try:
-                    storageDict[category][tier] = storageDict[category][tier] + storage
+                    storageDict[category][tier] = storage
                 except KeyError:
-                    callback.writeString('serverLog', 'Exception')
-                    # if key error, can be either category or category/tier combination is missing
-                    try:
-                        storageDict[category][tier] = storage
-                    except KeyError:
-                        storageDict[category] = {tier: storage}
+                    storageDict[category] = {tier: storage}
 
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []
@@ -258,40 +242,31 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
 #
 def getGroupsOnCategories(categories, callback):
     groups = []
+    metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
 
     for category in categories:
-
-        ret_val = callback.msiMakeGenQuery(
+        iter = genquery.row_iterator(
             "USER_NAME",
             "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
+        for row in iter:
+            groupName = row[0]
 
-        metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
+            iter2 = genquery.row_iterator(
+                "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
+                "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
+                genquery.AS_LIST, callback
+            )
 
-        if result.rowCnt != 0:
-            for row in range(0, result.rowCnt):
-                groupName = result.sqlResult[0].row(row)
+            data_size = 0
+            for row in iter2:
+                data = row[0]
+                temp = json.loads(data)
+                data_size = data_size + int(temp[2])  # no construction for summation required in this case
 
-                ret_val = callback.msiMakeGenQuery(
-                    "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-                    "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-                    irods_types.GenQueryInp())
-                query = ret_val["arguments"][2]
-
-                ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-                result2 = ret_val["arguments"][1]
-                data_size = 0
-                if result2.rowCnt != 0:
-                    for row2 in range(0, result2.rowCnt):
-                        data = result2.sqlResult[0].row(row2)
-                        temp = json.loads(data)
-                        data_size = data_size + int(temp[2])  # no construction for summation required in this case
-
-                groups.append([result.sqlResult[0].row(row), data_size])
+            groups.append([groupName, data_size])
 
     return groups
 
@@ -301,21 +276,17 @@ def getGroupsOnCategories(categories, callback):
 def getCategoriesDatamanager(datamanagerName, callback):
     categories = []
 
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "USER_NAME",
         "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            # @TODO membership still has to be checked
-            datamanagerGroupname = result.sqlResult[0].row(row)
-            temp = datamanagerGroupname.split('-')  # 'datamanager-initial' is groupname of datamanager, second part is category
-            categories.append(temp[1])
+    for row in iter:
+        # @TODO membership still has to be checked
+        datamanagerGroupname = row[0]
+        temp = datamanagerGroupname.split('-')  # 'datamanager-initial' is groupname of datamanager, second part is category
+        categories.append(temp[1])
 
     return categories
 
@@ -323,20 +294,16 @@ def getCategoriesDatamanager(datamanagerName, callback):
 # \brief get all categories currently present
 #
 def getCategories(callback):
-    ret_val = callback.msiMakeGenQuery(
-        " META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
     categories = []
 
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            categories.append(result.sqlResult[0].row(row))
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        categories.append(row[0])
 
     return categories
 
@@ -348,17 +315,13 @@ def getTierOnResourceName(resourceName, callback):
     tierName = UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
     # find (possibly present) tier for this resource
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
         "RESC_NAME = '" + resourceName + "' AND META_RESC_ATTR_NAME = '" + UURESOURCETIERATTRNAME + "'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            tierName = result.sqlResult[3].row(row)
+    for row in iter:
+        tierName = row[3]
 
     return tierName
