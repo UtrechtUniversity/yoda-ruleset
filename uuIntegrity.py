@@ -10,7 +10,10 @@ from collections import namedtuple
 from enum import Enum
 import hashlib
 import base64
+import time
+
 import irods_types
+import session_vars
 
 
 DataObject = namedtuple('DataObject', ['id', 'name', 'size', 'checksum', 'coll_name', 'resc_path', 'resc_loc'])
@@ -92,69 +95,49 @@ def checkDataObjectRemote(rule_args, callback, rei):
 
 def checkDataObjectIntegrity(callback, data_id):
     # Obtain all replicas of a data object.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "DATA_ID, DATA_NAME, DATA_SIZE, DATA_CHECKSUM, COLL_NAME, RESC_VAULT_PATH, RESC_LOC",
         "DATA_ID = '%s'" % data_id,
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        genquery.AS_LIST, callback
+    )
 
     # Loop through all replicas.
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_object = DataObject._make([result.sqlResult[0].row(row),
-                                            result.sqlResult[1].row(row),
-                                            result.sqlResult[2].row(row),
-                                            result.sqlResult[3].row(row),
-                                            result.sqlResult[4].row(row),
-                                            result.sqlResult[5].row(row),
-                                            result.sqlResult[6].row(row)])
+    for row in iter:
+        data_object = DataObject._make([row[0], row[1], row[2],
+                                        row[3], row[4], row[5],
+                                        row[6]])
 
-            # Build file path to data object.
-            coll_name = os.path.join(*(data_object.coll_name.split(os.path.sep)[2:]))
-            file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
+        # Build file path to data object.
+        coll_name = os.path.join(*(data_object.coll_name.split(os.path.sep)[2:]))
+        file_path = data_object.resc_path + "/" + coll_name + "/" + data_object.name
 
-            # Check integrity on the resource.
-            remote_rule = "checkDataObjectRemote('%s', '%s', '%s')" % \
-                          (file_path.replace("'", "\\'"), data_object.size, data_object.checksum)
-            callback.remoteExec(
-                "%s" % data_object.resc_loc,
-                "",
-                remote_rule,
-                ""
-            )
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Check integrity on the resource.
+        remote_rule = "checkDataObjectRemote('%s', '%s', '%s')" % \
+                      (file_path.replace("'", "\\'"), data_object.size, data_object.checksum)
+        callback.remoteExec(
+            "%s" % data_object.resc_loc,
+            "",
+            remote_rule,
+            ""
+        )
 
 
 # Check integrity of one batch of data objects in the vault.
 def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
-    import time
-
     # Go through data in the vault, ordered by DATA_ID.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "ORDER(DATA_ID)",
         "DATA_ID >= '%d'" % (data_id),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    # Check each data object in batch.
+    for row in iter:
+        data_id = int(row[0])
+        checkDataObjectIntegrity(callback, data_id)
 
-    if result.rowCnt != 0:
-        # Check each data object in batch.
-        for row in range(min(batch, result.rowCnt)):
-            data_id = int(result.sqlResult[0].row(row))
-            checkDataObjectIntegrity(callback, data_id)
-
-            # Sleep briefly between checks.
-            time.sleep(pause)
+        # Sleep briefly between checks.
+        time.sleep(pause)
 
         # The next data object to check must have a higher DATA_ID.
         data_id = data_id + 1
@@ -172,8 +155,6 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
 # \param[in] delay    delay between batches in seconds
 #
 def uuCheckVaultIntegrity(rule_args, callback, rei):
-    import session_vars
-
     data_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
