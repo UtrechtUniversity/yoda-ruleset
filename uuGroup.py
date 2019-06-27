@@ -39,6 +39,7 @@ def getGroupData(callback):
                 "read": []
             }
             groups[name] = group
+
         if attr in ["data_classification", "category", "subcategory"]:
             group[attr] = value
         elif attr == "description":
@@ -56,7 +57,7 @@ def getGroupData(callback):
     )
 
     for row in iter:
-        me = row[0]
+        name = row[0]
         user = row[1]
         zone = row[2]
 
