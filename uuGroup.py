@@ -15,87 +15,69 @@ def getGroupData(callback):
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            name = result.sqlResult[0].row(row)
-            attr = result.sqlResult[1].row(row)
-            value = result.sqlResult[2].row(row)
+    for row in iter:
+        name = row[0]
+        attr = row[1]
+        value = row[2]
 
-            # Create/update group with this information.
-            try:
-                group = groups[name]
-            except Exception:
-                group = {
-                    "name": name,
-                    "managers": [],
-                    "members": [],
-                    "read": []
-                }
-                groups[name] = group
-            if attr in ["data_classification", "category", "subcategory"]:
-                group[attr] = value
-            elif attr == "description":
-                # Deal with legacy use of '.' for empty description metadata.
-                # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
-                group[attr] = '' if value == '.' else value
-            elif attr == "manager":
-                group["managers"].append(value)
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Create/update group with this information.
+        try:
+            group = groups[name]
+        except Exception:
+            group = {
+                "name": name,
+                "managers": [],
+                "members": [],
+                "read": []
+            }
+            groups[name] = group
+        if attr in ["data_classification", "category", "subcategory"]:
+            group[attr] = value
+        elif attr == "description":
+            # Deal with legacy use of '.' for empty description metadata.
+            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+            group[attr] = '' if value == '.' else value
+        elif attr == "manager":
+            group["managers"].append(value)
 
     # Second query: obtain list of groups with memberships.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            name = result.sqlResult[0].row(row)
-            user = result.sqlResult[1].row(row)
-            zone = result.sqlResult[2].row(row)
+    for row in iter:
+        me = row[0]
+        user = row[1]
+        zone = row[2]
 
-            if name != user and name != "rodsadmin" and name != "public":
-                user = user + "#" + zone
-                if name.startswith("read-"):
-                    # Match read-* group with research-* or initial-* group.
-                    name = name[5:]
+        if name != user and name != "rodsadmin" and name != "public":
+            user = user + "#" + zone
+            if name.startswith("read-"):
+                # Match read-* group with research-* or initial-* group.
+                name = name[5:]
+                try:
+                    # Attempt to add to read list of research group.
+                    group = groups["research-" + name]
+                    group["read"].append(user)
+                except Exception:
                     try:
-                        # Attempt to add to read list of research group.
-                        group = groups["research-" + name]
+                        # Attempt to add to read list of initial group.
+                        group = groups["initial-" + name]
                         group["read"].append(user)
                     except Exception:
-                        try:
-                            # Attempt to add to read list of initial group.
-                            group = groups["initial-" + name]
-                            group["read"].append(user)
-                        except Exception:
-                            pass
-                elif not name.startswith("vault-"):
-                    # Ardinary group.
-                    group = groups[name]
-                    group["members"].append(user)
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+                        pass
+            elif not name.startswith("vault-"):
+                # Ardinary group.
+                group = groups[name]
+                group["members"].append(user)
 
     return groups.values()
 
@@ -105,22 +87,14 @@ def getGroupData(callback):
 def getCategories(callback):
     categories = []
 
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            categories.append(result.sqlResult[0].row(row))
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+    for row in iter:
+        categories.append(row[0])
 
     return categories
 
@@ -136,39 +110,31 @@ def getSubcategories(callback, category):
     # Collect metadata of each group into `groupCategories` until both
     # the category and subcategory are available, then add the subcategory
     # to `categories` if the category name matches.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
-        irods_types.GenQueryInp())
-    query = ret_val['arguments'][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val['arguments'][1]
-        for row in range(result.rowCnt):
-            group = result.sqlResult[0].row(row)
-            key = result.sqlResult[1].row(row)
-            value = result.sqlResult[2].row(row)
+    for row in iter:
+        group = result.sqlResult[0].row(row)
+        key = result.sqlResult[1].row(row)
+        value = result.sqlResult[2].row(row)
 
-            if group not in groupCategories:
-                groupCategories[group] = {}
+        if group not in groupCategories:
+            groupCategories[group] = {}
 
-            if key in ['category', 'subcategory']:
-                groupCategories[group][key] = value
+        if key in ['category', 'subcategory']:
+            groupCategories[group][key] = value
 
-            if ('category' in groupCategories[group] and
-                'subcategory' in groupCategories[group]):
-                # Metadata complete, now filter on category.
-                if groupCategories[group]['category'] == category:
-                    # Bingo, add to the subcategory list.
-                    categories.add(groupCategories[group]['subcategory'])
+        if ('category' in groupCategories[group] and
+            'subcategory' in groupCategories[group]):
+            # Metadata complete, now filter on category.
+            if groupCategories[group]['category'] == category:
+                # Bingo, add to the subcategory list.
+                categories.add(groupCategories[group]['subcategory'])
 
-                del groupCategories[group]
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+            del groupCategories[group]
 
     return list(categories)
 
