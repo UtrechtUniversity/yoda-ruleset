@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 import time
 
 import genquery
+import session_vars
 
 
 # ------- Global declaration of transformation matrix---------------
@@ -595,40 +596,34 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
 # \return Collection id to continue with in next batch.
 #
 def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause):
-    import time
-
     # Find all research and vault collections, ordered by COLL_ID.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
         "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        pathParts = coll_name.split('/')
 
-    if result.rowCnt != 0:
-        # Check each collection in batch.
-        for row in range(min(batch, result.rowCnt)):
-            coll_id = int(result.sqlResult[0].row(row))
-            coll_name = result.sqlResult[1].row(row)
-            pathParts = coll_name.split('/')
+        try:
+            group_name = pathParts[3]
+            if 'research-' in group_name:
+                checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
+            elif 'vault-' in group_name:
+                # Get vault package path.
+                vault_package = '/'.join(pathParts[:5])
+                data_name = getLatestVaultMetadataXml(callback, vault_package)
+                if data_name != "":
+                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
+        except:
+            pass
 
-            try:
-                group_name = pathParts[3]
-                if 'research-' in group_name:
-                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-                elif 'vault-' in group_name:
-                    # Get vault package path.
-                    vault_package = '/'.join(pathParts[:5])
-                    data_name = getLatestVaultMetadataXml(callback, vault_package)
-                    if data_name != "":
-                        checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
-            except:
-                pass
-
-            # Sleep briefly between checks.
-            time.sleep(pause)
+        # Sleep briefly between checks.
+        time.sleep(pause)
 
         # The next collection to check must have a higher COLL_ID.
         coll_id = coll_id + 1
@@ -663,39 +658,34 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
 # \brief Check metadata XML for schema identifiers.
 #
 def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
-    import session_vars
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     callback.writeString("stdout", "[METADATA] Start check for schema identifiers.\n")
 
     # Find all research and vault collections, ordered by COLL_ID.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
         "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml'" % (rods_zone),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        pathParts = coll_name.split('/')
 
-    if result.rowCnt != 0:
-        # Check each collection in batch.
-        for row in range(0, result.rowCnt):
-            coll_id = int(result.sqlResult[0].row(row))
-            coll_name = result.sqlResult[1].row(row)
-            pathParts = coll_name.split('/')
-
-            group_name = pathParts[3]
-            if 'research-' in group_name:
-                checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-            elif 'vault-' in group_name:
-                # Get vault package path.
-                vault_package = '/'.join(pathParts[:5])
-                data_name = getLatestVaultMetadataXml(callback, vault_package)
-                if data_name != "":
-                    checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
-                else:
-                    callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
+        group_name = pathParts[3]
+        if 'research-' in group_name:
+            checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
+        elif 'vault-' in group_name:
+            # Get vault package path.
+            vault_package = '/'.join(pathParts[:5])
+            data_name = getLatestVaultMetadataXml(callback, vault_package)
+            if data_name != "":
+                checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
+            else:
+                callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
 
     callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
 
@@ -708,8 +698,6 @@ def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
 # \param[in] delay    delay between batches in seconds
 #
 def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
-    import session_vars
-
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
