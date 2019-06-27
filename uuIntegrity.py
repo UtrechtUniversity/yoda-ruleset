@@ -12,6 +12,7 @@ import hashlib
 import base64
 import time
 
+import genquery
 import irods_types
 import session_vars
 

@@ -8,6 +8,8 @@
 import json
 import requests
 
+import genquery
+
 
 # \brief Return groups and related data.
 #
