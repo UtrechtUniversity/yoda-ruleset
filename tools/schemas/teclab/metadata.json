@@ -1136,35 +1136,6 @@
              }
            }
         },
-        "Covered_Geolocation_Place": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Location(s) covered",
-            "default": ""
-          }
-        },
-        "Covered_Period": {
-          "type": "object",
-          "title": "Period covered",
-          "yoda:structure": "compound",
-          "properties": {
-            "Start_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "Start date"
-            },
-            "End_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "End date"
-            }
-          },
-          "dependencies": {
-            "Start_Date": ["End_Date"],
-            "End_Date": ["Start_Date"]
-          }
-        },
         "Tag": {
           "type": "array",
           "items": {
