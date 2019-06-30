@@ -956,25 +956,85 @@
             "End_Date": ["Start_Date"]
           }
         },
-	"Geo_Box": {
- 	  "type": "object",
-	  "title": "Geo Location",
-	  "yoda:structure": "geoLocation",
-	  "properties": {
-    	      "northBoundLatitude": {
-      	   	 "type": "number"
-              },
-	      "westBoundLongitude": {
-      		 "type": "number"
-    	      },
-    	      "southBoundLatitude": {
-                 "type": "number"
-              },
-              "eastBoundLongitude": {
-                 "type": "number"
-              }
-           }
+        "Geo_Box_Spatial": {
+          "type": "array",
+          "items": {
+	     "type": "object",
+	     "title": "geo spatial",
+	     "yoda:structure": "compound",
+	     "properties": {
+                "geoLocationBox": {
+                    "type": "object",
+                    "title": "Geo Location",
+                    "yoda:structure": "geoLocation",
+                    "properties": {
+                       "northBoundLatitude": {
+                          "type": "number"
+                       },
+                       "westBoundLongitude": {
+                          "type": "number"
+                       },
+                       "southBoundLatitude": {
+                          "type": "number"
+                       },
+                       "eastBoundLongitude": {
+                          "type": "number"
+		       }
+                    }
+		},  
+		"Description_Spatial": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Description"
+                }
+	     }
+	   }
 	},
+        "Geo_Box_Temporal": {
+          "type": "array",
+          "items": {
+             "type": "object",
+             "title": "geo temp",
+             "yoda:structure": "compound",
+             "properties": {
+                "geoLocationBox": {
+                    "type": "object",
+                    "title": "Geo Location",
+                    "yoda:structure": "geoLocation",
+                    "properties": {
+                       "northBoundLatitude": {
+                          "type": "number"
+                       },
+                       "westBoundLongitude": {
+                          "type": "number"
+                       },
+                       "southBoundLatitude": {
+                          "type": "number"
+                       },
+                       "eastBoundLongitude": {
+                          "type": "number"
+                       }
+                    }
+                },
+                "Description_Temporal": {
+	          "type": "object",
+        	  "title": "Period covered",
+          	  "yoda:structure": "compound",
+          	  "properties": {
+                      "Start_Date": {
+	                "type": "string",
+        	        "format": "date",
+        	        "title": "Start date"
+                      },
+                      "End_Date": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "End date"
+                      }
+                  }
+                }
+             }
+           }
+        },
         "Covered_Geolocation_Place": {
           "type": "array",
           "items": {
