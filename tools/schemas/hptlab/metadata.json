@@ -24,46 +24,6 @@
         "Laboratoire de modélisation analogique Géosciences Montpellier (CNRS-Montpellier University,  France)"
       ]
     },
-    "optionsMainSetting": {
-      "type": "string",
-      "enum": [
-	"tectonically defined setting",
-	"extended terrane setting",
-	"plate margin setting",
-	"earth surface setting",
-	"terrestrial setting",
-	"subaqueus setting",
-	"marine setting",
-	"earth interior setting",
-	"crustal setting",
-	"continental-crustal setting",
-	"oceanic-crustal setting",
-	"active spreading center setting",
-	"back arc setting",
-	"continental rift setting",
-	"hot spot setting",
-	"intraplate tectonic setting",
-	"passive continental margin setting",
-	"active continental margin setting",
-	"active spreading center setting",
-	"forearc setting",
-	"subduction zone setting",
-	"transform plate boundary setting",
-	"volcanic arc setting",
-	"plate spreading center setting",
-	"hillslope setting",
-	"shoreline setting",
-	"river plain system setting",
-	"basin plain setting",
-	"deltaic system setting",
-	"collisional setting",
-	"foreland setting",
-	"upper continental crustal setting",
-	"upper oceanic crustal setting",
-	"mantle setting",
-	"graben"
-      ]
-    },
     "optionsProcessHazard": {
       "type": "string",
       "enum": [
@@ -289,67 +249,6 @@
 	"Photoelasticity",
 	"Piezotransducer"
       ]
-    },
-    "optionsSoftware": {
-      "type": "string",
-      "enum": [
-	"Envi-IDL",
-	"Erdas (LEYCA)",
-	"Geomodeller (Intrepid Geoscience)",
-	"GeoSec",
-	"GeoTools (AOA Geophysics Inc)",
-	"GOCAD (Earth Decision - Paradigm)",
-	"LabView Data Viewer",
-	"LabView Deformation Mapper",
-	"Lens (Agisoft)",
-	"Light-3D",
-	"Matlab (Mathworks)",
-	"Microstation XM (Bentley)",
-	"Move (Midland Valley)",
-	"OPTUM",
-	"Particle Flow Code (numerical software)",
-	"Pathfinder (Trimble)",
-	"Petrel (Schlumberger)",
-	"Polyworks (Innovmetric)",
-	"Promax (Landmark)", 
-	"PyLith (numerical software)",
-	"QDYN (numerical software)",
-	"RMS (Roxar)",
-	"Seiswork (Landmark)",
-	"SLAMTEC",
-	"Solidworks",
-	"StereoScan (Agisoft)",
-	"Terrasync (Trimble)", 
-	"The Kingdom Suite (SMT)",
-	"TopPad (Topcon)", 
-	"Visual Basic (Microsoft)",
-	"Visual Fortran (Compaq)",
-	"Visual Studio (Microsoft)",
-	"Digital Image Correlation (DIC) / Particle Image Velocimetry (PIV)", 
-	"Matlab code",
-	"PIVlab",
-	"TecPIV",
-	"GeoPIV",
-	"StrainMaster (La Vision GmbH)",
-	"Digital Camera",
-	"MicMac",
-	"MatPIV",
-	"COSI-Corr",
-	"Feature Tracking",
-	"Optical Flow",
-	"Structure from Motion (SfM)",
-	"Photoscan (Agisoft)",
-	"Pix4d (Analist Group)",
-	"Python Photogrammetry Toolbox (PPT)",
-	"MicMac",
-	"Apero",
-	"3DF Zephyr (3Dflow)",
-	"Remake (Autodesk)",
-	"OpenMVS Open Multiple View Stereovision",
-	"Other SFM based software",
-	"MeshLab",
-	"CloudCompare"
-	]
     },
     "optionsMeasuredProperty": {
       "type": "string",
@@ -1057,6 +956,25 @@
             "End_Date": ["Start_Date"]
           }
         },
+	"Geo_Box": {
+ 	  "type": "object",
+	  "title": "Geo Location",
+	  "yoda:structure": "geoLocation",
+	  "properties": {
+    	      "northBoundLatitude": {
+      	   	 "type": "number"
+              },
+	      "westBoundLongitude": {
+      		 "type": "number"
+    	      },
+    	      "southBoundLatitude": {
+                 "type": "number"
+              },
+              "eastBoundLongitude": {
+                 "type": "number"
+              }
+           }
+	},
         "Covered_Geolocation_Place": {
           "type": "array",
           "items": {
@@ -1094,32 +1012,11 @@
             "default": ""
           }
         },
-        "Main_Setting": {
+        "Apparatus": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/optionsMainSetting",
-            "title": "Main setting"
-          }
-        },
-        "Process_Hazard": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/optionsProcessHazard",
-            "title": "Process hazard"
-          }
-        },
-        "Geological_Structure": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/optionsGeologicalStructure",
-            "title": "Geological structure"
-          }
-        },
-        "Geomorphical_Feature": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/optionsGeomorphicalFeature",
-            "title": "Geomorphical feature"
+            "$ref": "#/definitions/optionsApparatus",
+            "title": "Apparatus"
           }
         },
         "Material": {
@@ -1129,11 +1026,11 @@
             "title": "Material"
           }
         },
-        "Apparatus": {
+        "Measured_Property": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/optionsApparatus",
-            "title": "Apparatus"
+            "$ref": "#/definitions/optionsMeasuredProperty",
+            "title": "Measured property"
           }
         },
         "Monitoring": {
@@ -1141,20 +1038,6 @@
           "items": {
             "$ref": "#/definitions/optionsMonitoring",
             "title": "Monitoring"
-          }
-        },
-        "Software": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/optionsSoftware",
-            "title": "Software"
-          }
-        },
-        "Measured_Property": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/optionsMeasuredProperty",
-            "title": "Measured property"
           }
         }
       }
