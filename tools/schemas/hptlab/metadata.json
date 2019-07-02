@@ -996,7 +996,7 @@
              "title": "geo temp",
              "yoda:structure": "compound",
              "properties": {
-                "geoLocationB": {
+                "geoLocationBox": {
                     "type": "object",
                     "title": "Geo Location",
                     "yoda:structure": "geoLocation",
