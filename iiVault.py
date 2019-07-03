@@ -15,7 +15,7 @@ import session_vars
 #
 # \return Lists of preservable file formats
 #
-def getPreservableFormatsLists(callback):
+def getPreservableFormatsLists(callback, rei):
     preservableLists = {}
     zoneName = ""
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
@@ -48,7 +48,7 @@ def getPreservableFormatsLists(callback):
 #
 # \return List of unpreservable files.
 #
-def getUnpreservableFiles(callback, folder, list):
+def getUnpreservableFiles(callback, rei, folder, list):
     zoneName = ""
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -86,7 +86,7 @@ def getUnpreservableFiles(callback, folder, list):
 # \brief Write preservable file formats lists to stdout.
 #
 def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback)))
+    callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback, rei)))
 
 
 # \brief Write unpreservable files in folder to stdout.
@@ -95,7 +95,7 @@ def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
 # \param[in] rule_args[1] Name of preservable file format list.
 #
 def iiGetUnpreservableFilesJson(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
+    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rei, rule_args[0], rule_args[1])))
 
 
 # \brief Copy the original metadata xml into the root of the package.
