@@ -119,6 +119,14 @@ acPreProcForObjRename(*src, *dst) {
 			}
 		}
 	}
+
+        if($objPath like regex "/[^/]+/home/" ++ ".[^/]*") {
+                uuGetUserType(uuClientFullName, *userType);
+                if (*userType != "rodsadmin") {
+                        cut;
+                        msiOprDisallowed;
+                }
+        }
 }
 
 
