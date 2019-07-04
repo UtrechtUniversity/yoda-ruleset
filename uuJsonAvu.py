@@ -4,12 +4,12 @@
 # \license   GPLv3, see LICENSE.
 
 import json
-import sys
 import jsonavu
-import session_vars
 import genquery
 import jsonschema
 import requests
+import requests_cache
+import irods_types
 import re
 
 # Global vars
@@ -41,41 +41,25 @@ def setJsonToObj(rule_args, callback, rei):
     try:
         data = json.loads(json_string)
     except ValueError:
-        callback.writeLine("serverLog", "Invalid json provided")
-        callback.msiExit("-1101000", "Invalid json provided")
+        callback.msiExit("-1101000", "Invalid JSON provided")
         return
 
-    # check if validation is required
-    validation_required = False
-    json_schema_url = ""
+    # Retrieve a JSON-schema if any is set
+    ret_val = callback.getJsonSchemaFromObject(object_name, object_type, json_root, "")
+    schema = ret_val['arguments'][3]
 
-    # Find AVUs with a = '$id', and u = json_root. Their value is the JSON-schema URL
-    fields = getFieldsForType(callback, object_type, object_name)
-    fields['WHERE'] = fields['WHERE'] + " AND %s = '$id' AND %s = '%s'" % (fields['a'], fields['u'], json_root)
-    rows = genquery.row_iterator([fields['a'], fields['v'], fields['u']], fields['WHERE'], genquery.AS_DICT, callback)
-
-    # We're only expecting one row to be returned if any
-    for row in rows:
-        validation_required = True
-        json_schema_url = row[fields['v']]
-
-    if validation_required:
-        # TODO: This needs to accept more types of URLs
+    # Perform validation if required
+    if schema != "false":
         try:
-            r = requests.get(json_schema_url)
-        except requests.exceptions.RequestException as e:  # This is the correct syntax
-            callback.writeLine("serverLog",
-                               "JSON schema could not be downloaded :" + str(e.message))
-            callback.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e.message))
+            schema = json.loads(schema)
+        except ValueError:
+            callback.msiExit("-1101000", "Invalid JSON-schema provided")
             return
 
-        schema = r.json()
         try:
             jsonschema.validate(instance=data, schema=schema)
         except jsonschema.exceptions.ValidationError, e:
-            callback.writeLine("serverLog",
-                               "JSON Instance could not be validated against JSON-schema " + str(e.message))
-            callback.msiExit("-1101000", "JSON Instance could not be validated against JSON-schema : " + str(e.message))
+            callback.msiExit("-1101000", "JSON instance could not be validated against JSON-schema: " + str(e.message))
             return
 
     # Load global variable activelyUpdatingAVUs and set this to true. At this point we are actively updating
@@ -85,7 +69,6 @@ def setJsonToObj(rule_args, callback, rei):
 
     ret_val = callback.msi_rmw_avu(object_type, object_name, "%", "%", json_root + "_%")
     if ret_val['status'] is False and ret_val['code'] != -819000:
-        callback.writeLine("serverLog", "msi_rmw_avu failed with: " + ret_val['code'])
         return
 
     avu = jsonavu.json2avu(data, json_root)
@@ -93,7 +76,7 @@ def setJsonToObj(rule_args, callback, rei):
     for i in avu:
         callback.msi_add_avu(object_type, object_name, i["a"], i["v"], i["u"])
 
-    # Set global variable activelyUpdatingAVUsthis to false. At this point we are done updating AVU and want
+    # Set global variable activelyUpdatingAVUs to false. At this point we are done updating AVU and want
     # to enable some of the checks.
     activelyUpdatingAVUs = False
 
@@ -109,7 +92,7 @@ def getJsonFromObj(rule_args, callback, rei):
                         -C for collection
                         -u for user
         Argument 2: The JSON root according to https://github.com/MaastrichtUniversity/irods_avu_json.
-        Argument 3: The
+        Argument 3: The JSON string
     :param callback:
     :param rei:
     :return: JSON string is returned in rule_args[3]
@@ -184,7 +167,6 @@ def getFieldsForType(callback, object_type, object_name):
 
         fields['WHERE'] = "USER_NAME = '" + object_name + "'"
     else:
-        callback.writeLine("serverLog", "Object type should be -d, -C, -R or -u")
         callback.msiExit("-1101000", "Object type should be -d, -C, -R or -u")
 
     return fields
