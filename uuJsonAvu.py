@@ -308,4 +308,4 @@ def getJsonSchemaFromiRODSObject(path, callback):
     # Close iRODS file
     callback.msiDataObjClose(file_desc, 0)
 
-return output_json
+    return output_json
