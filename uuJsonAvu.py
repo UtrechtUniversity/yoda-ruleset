@@ -170,3 +170,142 @@ def getFieldsForType(callback, object_type, object_name):
         callback.msiExit("-1101000", "Object type should be -d, -C, -R or -u")
 
     return fields
+
+
+def setJsonSchemaToObj(rule_args, callback, rei):
+    """
+    This rule stores a given JSON-schema as AVU's to an object
+    :param rule_args:
+        Argument 0: The object name (/nlmumc/P000000003, /nlmumc/projects/metadata.xml, user@mail.com, demoResc)
+        Argument 1: The object type
+                        -d for data object
+                        -R for resource
+                        -C for collection
+                        -u for user
+        Argument 2: URL to the JSON-Schema example https://api.myjson.com/bins/17vejk
+        Argument 3: The JSON root according to https://github.com/MaastrichtUniversity/irods_avu_json.
+    :param callback:
+    :param rei:
+    :return:
+    """
+    object_name = rule_args[0]
+    object_type = rule_args[1]
+    json_schema_url = rule_args[2]
+    json_root = rule_args[3]
+
+    # Check if this root has been used before
+    fields = getFieldsForType(callback, object_type, object_name)
+    avus = genquery.row_iterator([fields['a'], fields['v'], fields['u']], fields['WHERE'], genquery.AS_DICT, callback)
+
+    # Regular expression pattern for unit field
+    pattern = re.compile(jsonavu.RE_UNIT)
+
+    for avu in avus:
+        # Match unit to extract all info
+        unit = str(avu[fields['u']])
+
+        # If unit is matching
+        if pattern.match(unit) and unit.startswith(json_root + "_"):
+            callback.msiExit("-1101000", "JSON root " + json_root + " is already in use")
+
+    # Delete existing $id AVU for this JSON root
+    callback.msi_rmw_avu(object_type, object_name, '$id', "%", json_root)
+
+    # Set new $id AVU
+    callback.msi_add_avu(object_type, object_name, '$id', json_schema_url, json_root)
+
+
+def getJsonSchemaFromObject(rule_args, callback, rei):
+    """
+    This rule get the json formatted Schema AVUs
+    :param rule_args:
+        Argument 0: The object name (/nlmumc/P000000003, /nlmumc/projects/metadata.xml, user@mail.com, demoResc)
+        Argument 1: The object type
+                        -d for data object
+                        -R for resource
+                        -C for collection
+                        -u for user
+        Argument 2: The JSON root according to https://github.com/MaastrichtUniversity/irods_avu_json.
+        Argument 3: The JSON-schema or "false" when no schema is set
+    :param callback:
+    :param rei:
+    :return: JSON-schema or "false". Also set in rule_args[3]
+    """
+    object_name = rule_args[0]
+    object_type = rule_args[1]
+    json_root = rule_args[2]
+
+    # Find AVU with a = '$id', and u = json_root. Their value is the JSON-schema URL
+    fields = getFieldsForType(callback, object_type, object_name)
+    fields['WHERE'] = fields['WHERE'] + " AND %s = '$id' AND %s = '%s'" % (fields['a'], fields['u'], json_root)
+    rows = genquery.row_iterator([fields['a'], fields['v'], fields['u']], fields['WHERE'], genquery.AS_DICT, callback)
+
+    # We're only expecting one row to be returned if any
+    json_schema_url = None
+    for row in rows:
+        json_schema_url = row[fields['v']]
+
+    # If no JSON-schema is known, the object is not under validation for this JSON-root
+    if json_schema_url is None:
+        rule_args[3] = "false"
+        return "false"
+
+    # Fetch the schema from
+    schema = ""
+    if json_schema_url.startswith("i:"):
+        # Schema is stored as an iRODS file
+        json_schema_url_irods = json_schema_url[2:]
+        schema = getJsonSchemaFromiRODSObject(json_schema_url_irods, callback)
+
+    elif json_schema_url.startswith("http://") or json_schema_url.startswith("https://"):
+        # Schema is stored as an web object
+
+        # Use requests-cache to prevent fetching the JSON-schema too often
+        requests_cache.install_cache('/tmp/irods_avu_json-ruleset-cache', backend='sqlite', expire_after=60 * 60 * 24)
+
+        try:
+            r = requests.get(json_schema_url)
+        except requests.exceptions.RequestException as e:  # This is the correct syntax
+            callback.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e.message))
+            return
+        schema = r.text
+    else:
+        # Schema is stored as an unknown object
+        callback.msiExit("-1101000", "Unknown protocol or method for retrieving the JSON-schema")
+
+    rule_args[3] = schema
+
+    return schema
+
+
+def getJsonSchemaFromiRODSObject(path, callback):
+    """
+        This rule gets a JSON schema stored as an iRODS object
+        :param path: Full path of the json file (/nlmumc/home/rods/weight.json)
+        :param callback:
+        :return: JSON formatted schema
+        """
+
+    ret_val = callback.msiGetObjType(path, "")
+    type_file = ret_val['arguments'][1]
+
+    if type_file != '-d':
+        callback.msiExit("-1101000", "Only files in iRODS can be used for JSON storage")
+        return
+
+    # Open iRODS file
+    ret_val = callback.msiDataObjOpen("objPath=" + path, 0)
+    file_desc = ret_val['arguments'][1]
+
+    # Read iRODS file
+    ret_val = callback.msiDataObjRead(file_desc, 2 ** 31 - 1, irods_types.BytesBuf())
+    read_buf = ret_val['arguments'][2]
+
+    # Convert BytesBuffer to string
+    ret_val = callback.msiBytesBufToStr(read_buf, "")
+    output_json = ret_val['arguments'][1]
+
+    # Close iRODS file
+    callback.msiDataObjClose(file_desc, 0)
+
+return output_json
