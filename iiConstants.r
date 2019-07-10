@@ -46,6 +46,9 @@ IIMETADATAXMLNAME = "yoda-metadata.xml"
 # \constant IIJSONNAME Name of the metadata JSON
 IIJSONNAME = "metadata.json"
 
+# \constant IIJSONNAME Name of the JSON UI schema
+IIJSONUINAME = "uischema.json"
+
 # \constant IIRESEARCHXSDNAME Name of the research XSD
 IIRESEARCHXSDNAME = "research.xsd"
 

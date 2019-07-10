@@ -47,7 +47,7 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *schemasColl");
 	}
 
-        # Install schema for XSD
+    # Install schema for XSD
 	*xsdforxsd = *schemasColl ++ "/" ++ "schema-for-xsd.xsd";
 	if (uuFileExists(*xsdforxsd)) {
 		if (*update == 1) {
@@ -97,6 +97,21 @@ createXmlXsdCollections {
 	*jsondefault = *schemaColl ++ "/" ++ IIJSONNAME;
         *defaultJsonSchema = IIJSONNAME;
         if (uuFileExists(*jsondefault)) {
+		if (*update == 1) {
+			msiDataObjPut(*jsondefault, *resc, "localPath=*src/*schema/*defaultJsonSchema++++forceFlag=", *status);
+			writeLine("stdout", "Updated: *jsondefault");
+		} else {
+			writeLine("stdout", "Present: *jsondefault");
+		}
+	} else {
+		msiDataObjPut(*jsondefault, *resc, "localPath=*src/*schema/*defaultJsonSchema", *status);
+		writeLine("stdout", "Installed: *jsondefault");
+	}
+
+	# Install metadata JSON UI schema
+	*jsondefault = *schemaColl ++ "/" ++ IIJSONUINAME;
+    *defaultJsonSchema = IIJSONUINAME;
+    if (uuFileExists(*jsondefault)) {
 		if (*update == 1) {
 			msiDataObjPut(*jsondefault, *resc, "localPath=*src/*schema/*defaultJsonSchema++++forceFlag=", *status);
 			writeLine("stdout", "Updated: *jsondefault");
