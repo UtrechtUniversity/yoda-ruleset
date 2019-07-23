@@ -1,0 +1,12 @@
+{
+   "Descriptive-group":{
+      "Description":{
+         "ui:widget":"textarea"
+      }
+   },
+   "Administrative-group":{
+      "Retention_Period":{
+         "ui:widget":"numberWidget"
+      }
+   }
+}
