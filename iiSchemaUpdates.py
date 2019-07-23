@@ -15,8 +15,11 @@ import json
 import irods_types
 import lxml.etree as etree
 import xml.etree.ElementTree as ET
-
 import time
+
+import genquery
+import session_vars
+
 
 # ------- Global declaration of transformation matrix---------------
 # results in a string that is a postfix of two methods:
@@ -24,7 +27,6 @@ import time
 #        executes transformation
 # 2. getTransformationText_
 #        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
-
 transformationMatrix = {}
 transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu.nl/schemas/default-1': 'v1'}
 
@@ -276,20 +278,14 @@ def getCategory(callback, rods_zone, group_name):
     schemaCategory = 'default'
 
     # Find out category based on current group_name.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    if result.rowCnt != 0:
-        # Check each data object in batch.
-        for row in range(0, result.rowCnt):
-            attrValue = result.sqlResult[1].row(row)
-            category = attrValue
+    for row in iter:
+        category = row[1]
 
     if category != '-1':
         # Test whether found category actually has a collection with XSD's.
@@ -298,16 +294,14 @@ def getCategory(callback, rods_zone, group_name):
         # - metadata.xsd
         # - vault.xsd
         xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
-        ret_val = callback.msiMakeGenQuery(
+
+        iter = genquery.row_iterator(
             "COLL_NAME",
             "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
-            irods_types.GenQueryInp())
-        query = ret_val["arguments"][2]
+            genquery.AS_LIST, callback
+        )
 
-        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-        result = ret_val["arguments"][1]
-
-        if result.rowCnt != 0:
+        for row in iter:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
     return schemaCategory
@@ -354,7 +348,6 @@ def getSchemaSpace(callback, group_name):
     return space + '.xsd'
 
 
-
 # \brief getLatestVaultMetadataXml
 #
 # \param[in] vaultPackage
@@ -362,31 +355,21 @@ def getSchemaSpace(callback, group_name):
 # \return metadataXmlPath
 #
 def getLatestVaultMetadataXml(callback, vaultPackage):
-    ret_val = callback.msiMakeGenQuery(
+    dataName = ""
+
+    iter = genquery.row_iterator(
         "DATA_NAME, DATA_SIZE",
         "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like 'yoda-metadata[%].xml'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        genquery.AS_LIST, callback
+    )
 
     # Loop through all XMLs.
-    dataName = ""
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            data_size = int(result.sqlResult[1].row(row))
+    for row in iter:
+            data_name = row[0]
+            data_size = int(row[1])
 
             if dataName == "" or (dataName < data_name and len(dataName) <= len(data_name)):
                 dataName = data_name
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
 
     return dataName
 
@@ -422,19 +405,16 @@ def getMetadataSchemaFromTree(callback, root):
 # \return Data object size
 #
 def getDataObjSize(callback, coll_name, data_name):
-    ret_val = callback.msiMakeGenQuery(
+    data_size = 0
+
+    iter = genquery.row_iterator(
         "DATA_SIZE",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    data_size = 0
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            data_size = result.sqlResult[0].row(row)
+    for row in iter:
+        data_size = row[0]
 
     return data_size
 
@@ -446,19 +426,16 @@ def getDataObjSize(callback, coll_name, data_name):
 # \return User name
 #
 def getUserNameFromUserId(callback, user_id):
-    ret_val = callback.msiMakeGenQuery(
+    user_name = ""
+
+    iter = genquery.row_iterator(
         "USER_NAME",
         "USER_ID = '%s'" % (str(user_id)),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
-
-    user_name = ''
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            user_name = result.sqlResult[0].row(row)
+    for row in iter:
+        user_name = row[0]
 
     return user_name
 
@@ -471,30 +448,27 @@ def getUserNameFromUserId(callback, user_id):
 def copyACLsFromParent(callback, path, recursive_flag):
     parent = os.path.dirname(path)
 
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
         "COLL_NAME = '" + parent + "'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    for row in iter:
+        access_name = row[0]
+        user_id = int(row[1])
 
-    if result.rowCnt != 0:
-        for row in range(0, result.rowCnt):
-            access_name = result.sqlResult[0].row(row)
-            user_id = int(result.sqlResult[1].row(row))
-            user_name = getUserNameFromUserId(callback, user_id)
+        user_name = getUserNameFromUserId(callback, user_id)
 
-            if access_name == "own":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "own", user_name, path)
-            elif access_name == "read object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "read", user_name, path)
-            elif access_name == "modify object":
-                callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-                callback.msiSetACL(recursive_flag, "write", user_name, path)
+        if access_name == "own":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "own", user_name, path)
+        elif access_name == "read object":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "read", user_name, path)
+        elif access_name == "modify object":
+            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
 # \brief Parse XML into an ElementTree.
@@ -610,6 +584,7 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     else:
         callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
 
+
 # \brief Loop through all collections with yoda-metadata.xml data objects.
 #        Check metadata XML for schema updates.
 #
@@ -621,40 +596,34 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
 # \return Collection id to continue with in next batch.
 #
 def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause):
-    import time
-
     # Find all research and vault collections, ordered by COLL_ID.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
         "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        pathParts = coll_name.split('/')
 
-    if result.rowCnt != 0:
-        # Check each collection in batch.
-        for row in range(min(batch, result.rowCnt)):
-            coll_id = int(result.sqlResult[0].row(row))
-            coll_name = result.sqlResult[1].row(row)
-            pathParts = coll_name.split('/')
+        try:
+            group_name = pathParts[3]
+            if 'research-' in group_name:
+                checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
+            elif 'vault-' in group_name:
+                # Get vault package path.
+                vault_package = '/'.join(pathParts[:5])
+                data_name = getLatestVaultMetadataXml(callback, vault_package)
+                if data_name != "":
+                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
+        except:
+            pass
 
-            try:
-                group_name = pathParts[3]
-                if 'research-' in group_name:
-                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-                elif 'vault-' in group_name:
-                    # Get vault package path.
-                    vault_package = '/'.join(pathParts[:5])
-                    data_name = getLatestVaultMetadataXml(callback, vault_package)
-                    if data_name != "":
-                        checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
-            except:
-                pass
-
-            # Sleep briefly between checks.
-            time.sleep(pause)
+        # Sleep briefly between checks.
+        time.sleep(pause)
 
         # The next collection to check must have a higher COLL_ID.
         coll_id = coll_id + 1
@@ -664,6 +633,7 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
         callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
 
     return coll_id
+
 
 # \brief Check metadata XML for schema identifier.
 #
@@ -688,41 +658,37 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
 # \brief Check metadata XML for schema identifiers.
 #
 def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
-    import session_vars
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     callback.writeString("stdout", "[METADATA] Start check for schema identifiers.\n")
 
     # Find all research and vault collections, ordered by COLL_ID.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
         "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml'" % (rods_zone),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    result = ret_val["arguments"][1]
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        pathParts = coll_name.split('/')
 
-    if result.rowCnt != 0:
-        # Check each collection in batch.
-        for row in range(0, result.rowCnt):
-            coll_id = int(result.sqlResult[0].row(row))
-            coll_name = result.sqlResult[1].row(row)
-            pathParts = coll_name.split('/')
-
-            group_name = pathParts[3]
-            if 'research-' in group_name:
-                checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-            elif 'vault-' in group_name:
-                # Get vault package path.
-                vault_package = '/'.join(pathParts[:5])
-                data_name = getLatestVaultMetadataXml(callback, vault_package)
-                if data_name != "":
-                    checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
-                else:
-                    callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
+        group_name = pathParts[3]
+        if 'research-' in group_name:
+            checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
+        elif 'vault-' in group_name:
+            # Get vault package path.
+            vault_package = '/'.join(pathParts[:5])
+            data_name = getLatestVaultMetadataXml(callback, vault_package)
+            if data_name != "":
+                checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
+            else:
+                callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
 
     callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
+
 
 # \brief Check metadata XML for schema updates.
 #
@@ -732,8 +698,6 @@ def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
 # \param[in] delay    delay between batches in seconds
 #
 def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
-    import session_vars
-
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])

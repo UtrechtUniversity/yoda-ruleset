@@ -7,41 +7,36 @@
 import json
 import os
 
+import genquery
+import session_vars
+
 
 # \brief Retrieve lists of preservable file formats on the system.
 #
 # \return Lists of preservable file formats
 #
-def getPreservableFormatsLists(callback):
+def getPreservableFormatsLists(callback, rei):
     preservableLists = {}
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve all preservable file formats lists on the system.
-    ret_val = callback.msiMakeGenQuery(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(clientZone),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+    iter = genquery.row_iterator(
+               "DATA_NAME, COLL_NAME",
+               "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(rods_zone),
+               genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            coll_name = result.sqlResult[1].row(row)
+    for row in iter:
+        data_name = row[0]
+        coll_name = row[1]
 
-            # Retrieve filename and name of list.
-            filename, file_extension = os.path.splitext(data_name)
-            json = parseJson(callback, coll_name + "/" + data_name)
+        # Retrieve filename and name of list.
+        filename, file_extension = os.path.splitext(data_name)
+        json = parseJson(callback, coll_name + "/" + data_name)
 
-            # Add to list of preservable file formats.
-            preservableLists[filename] = json
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Add to list of preservable file formats.
+        preservableLists[filename] = json
 
     return {'lists': preservableLists}
 
@@ -53,40 +48,31 @@ def getPreservableFormatsLists(callback):
 #
 # \return List of unpreservable files.
 #
-def getUnpreservableFiles(callback, folder, list):
+def getUnpreservableFiles(callback, rei, folder, list):
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve JSON list of preservable file formats.
-    json = parseJson(callback, "/" + clientZone + "/yoda/file_formats/" + list + ".json")
+    json = parseJson(callback, "/" + rods_zone + "/yoda/file_formats/" + list + ".json")
     preservableFormats = json['formats']
     unpreservableFormats = []
 
     # Retrieve all files in collection.
-    ret_val = callback.msiMakeGenQuery(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '%s%%'" % (folder),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+    iter = genquery.row_iterator(
+               "DATA_NAME, COLL_NAME",
+               "COLL_NAME like '%s%%'" % (folder),
+               genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            data_name = result.sqlResult[0].row(row)
-            filename, file_extension = os.path.splitext(data_name)
+    for row in iter:
+        filename, file_extension = os.path.splitext(row[0])
 
-            # Convert to lowercase and remove dot.
-            file_extension = (file_extension.lower())[1:]
+        # Convert to lowercase and remove dot.
+        file_extension = (file_extension.lower())[1:]
 
-            # Check if extention is in preservable format list.
-            if (file_extension not in preservableFormats):
-                unpreservableFormats.append(file_extension)
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        # Check if extention is in preservable format list.
+        if (file_extension not in preservableFormats):
+            unpreservableFormats.append(file_extension)
 
     # Remove duplicate file formats.
     output = []
@@ -97,11 +83,10 @@ def getUnpreservableFiles(callback, folder, list):
     return {'formats': output}
 
 
-
 # \brief Write preservable file formats lists to stdout.
 #
 def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback)))
+    callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback, rei)))
 
 
 # \brief Write unpreservable files in folder to stdout.
@@ -110,7 +95,7 @@ def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
 # \param[in] rule_args[1] Name of preservable file format list.
 #
 def iiGetUnpreservableFilesJson(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
+    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rei, rule_args[0], rule_args[1])))
 
 
 # \brief Copy the original metadata xml into the root of the package.
@@ -154,23 +139,15 @@ def getProvenanceLog(callback, folder):
     provenance_log = []
 
     # Retrieve all provenance logs on a folder.
-    ret_val = callback.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "order(META_COLL_ATTR_VALUE)",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (folder),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, callback
+    )
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            log_item = json.loads(result.sqlResult[0].row(row))
-            provenance_log.append(log_item)
-
-        if result.continueInx == 0:
-            break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+    for row in iter:
+        log_item = json.loads(row[0])
+        provenance_log.append(log_item)
 
     return provenance_log
 
@@ -182,7 +159,8 @@ def getProvenanceLog(callback, folder):
 def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     # Retrieve provenance.
     provenenanceString = ""
-    provenanceLog =  getProvenanceLog(callback, rule_args[0])
+    provenanceLog = getProvenanceLog(callback, rule_args[0])
+
     for item in provenanceLog:
         dateTime = time.strftime('%Y/%m/%d %H:%M:%S',
                                  time.localtime(int(item[0])))

@@ -134,6 +134,8 @@ def flattenSchema(jsonDocument, uri):
                 for i, v in enumerate(el):
                     el[i] = flattenObject(v, fragment)
 
+            if el is None:
+                return ""
             return el
         return flattenObject(doc, '/')
     return flattenDocument(jsonDocument, uri)
@@ -257,6 +259,10 @@ def convertType(body, typename=None):
     gentleAssert('type' in body,
                  'All elements and type declarations must contain a \'type\' attribute.',
                  typeName=typename)
+
+    # Check if type is nullable (type is list).
+    if isinstance(body['type'], (list,)):
+        body['type'] = body['type'][0]
 
     typ = None # The generated type, either a string (name), or an element describing the type.
 
@@ -421,7 +427,7 @@ def convertProperty(name, body, topLevel = False):
 
             # Check min/max occurrences and annotate.
             setArrayOccurs(el,
-                           str(body['minItems']) if 'minItems' in body else '0',
+                           '0',
                            str(body['maxItems']) if 'maxItems' in body else 'unbounded')
 
         else:

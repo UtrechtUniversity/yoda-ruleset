@@ -129,6 +129,68 @@ iiFrontGetJsonSchema(*folder, *result, *status, *statusInfo)
 }
 
 
+# \brief Get the JSON UI schema for the metadata form.
+#
+# \param[in]  folder        Path of the folder
+# \param[out] result        JSON UI schema
+# \param[out] status        Status of the action
+# \param[out] statusInfo    Information message when action was not successful
+#
+iiFrontGetJsonUiSchema(*folder, *result, *status, *statusInfo)
+{
+        *status = "Unknown";
+        *statusInfo = "";
+
+        *jsonPath = "";
+        *pathElems = split(*folder, '/');
+        *rodsZone = elem(*pathElems, 0);
+        *groupName = elem(*pathElems, 2);
+
+        # Get category name.
+        uuGetBaseGroup(*groupName, *baseName);
+        uuGroupGetCategory(*baseName, *category, *subcategory);
+        *jsonColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
+        *jsonName = IIJSONUINAME;
+
+
+        # Check if category schema is used.
+        *categorySchema = false;
+        foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *jsonColl AND DATA_NAME = *jsonName) {
+               *categorySchema = true;
+        }
+        if (!*categorySchema) {
+                *jsonColl = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME
+        }
+
+	# Retrieve schema path and data size.
+        foreach(*row in SELECT COLL_NAME, DATA_NAME, DATA_SIZE WHERE COLL_NAME = *jsonColl AND DATA_NAME = *jsonName) {
+               *jsonPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+	       *dataSize = *row.DATA_SIZE;
+        }
+
+	# Open JSON schema.
+	*err = errorcode(msiDataObjOpen("objPath=*jsonPath", *fd));
+	if (*err < 0) {
+		writeLine("serverLog", "iiFrontGetJsonSchema: Opening *jsonPath failed with errorcode: *err");
+		*status = "PermissionDenied";
+		*statusInfo = "Could not open JSON UI schema.";
+		succeed;
+	}
+
+	# Read JSON schema.
+	*err1 = errorcode(msiDataObjRead(*fd, *dataSize, *buf));
+	*err2 = errorcode(msiDataObjClose(*fd, *status));
+	*err3 = errorcode(msiBytesBufToStr(*buf, *result));
+	if (*err1 == 0 && *err2 == 0 && *err3 == 0) {
+		*status = "Success";
+	} else {
+		writeLine("serverLog", "iiFrontGetJsonUiSchema: Reading *jsonPath failed with errorcode: *err1, *err2, *err3.");
+		*status = "ReadFailure";
+		*statusInfo = "Failed to read JSON schema from disk.";
+	}
+}
+
+
 # \brief Locate the research XSD to use for a metadata path.
 #
 # \param[in] metadataXmlPath path of the metadata XML file that needs to be validated
