@@ -385,28 +385,33 @@ iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 # \param[in] recursiveFlag 	either "default" for no recursion or "recursive"
 #
 iiCopyACLsFromParent(*path, *recursiveFlag) {
+        uuChopPath(*path, *parent, *child);
 
-	uuChopPath(*path, *parent, *child);
+        foreach(*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *parent) {
+                *accessName = *row.COLL_ACCESS_NAME;
+                *userId = *row.COLL_ACCESS_USER_ID;
+                *userFound = false;
 
-	foreach(*row in SELECT COLL_ACCESS_NAME, COLL_ACCESS_USER_ID WHERE COLL_NAME = *parent) {
-		*accessName = *row.COLL_ACCESS_NAME;
-		*userId = *row.COLL_ACCESS_USER_ID;
-		foreach(*user in SELECT USER_NAME WHERE USER_ID = *userId) {
-			*userName = *user.USER_NAME;
-		}
-		if (*accessName == "own") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-			msiSetACL(*recursiveFlag, "own", *userName, *path);
-		} else if (*accessName == "read object") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-			msiSetACL(*recursiveFlag, "read", *userName, *path);
-		} else if (*accessName == "modify object") {
-			writeLine("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
-			msiSetACL(*recursiveFlag, "write", *userName, *path);
-		}
-	}
+                foreach(*user in SELECT USER_NAME WHERE USER_ID = *userId) {
+                        *userName = *user.USER_NAME;
+                        *userFound = true;
+                }
 
+                if (*userFound) {
+                        if (*accessName == "own") {
+                                writeLine("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                                msiSetACL(*recursiveFlag, "own", *userName, *path);
+                        } else if (*accessName == "read object") {
+                                writeLine("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                                msiSetACL(*recursiveFlag, "read", *userName, *path);
+                        } else if (*accessName == "modify object") {
+                                writeLine("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
+                                msiSetACL(*recursiveFlag, "write", *userName, *path);
+                        }
+                }
+        }
 }
+
 
 # \brief When a license is added to the metadata and it is available in the License collection,
 #        this will copy the text to the package in the vault.
