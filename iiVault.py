@@ -128,6 +128,9 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
     callback.msiDataObjWrite(fileHandle, newXmlString, 0)
     callback.msiDataObjClose(fileHandle, 0)
 
+    # Checksum new metadata XML.
+    callback.msiDataObjChksum(xml_file, "verifyChksum=", 0)
+
 
 # \brief Get the provenance log as JSON.
 #
@@ -176,3 +179,6 @@ def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     fileHandle = ret_val['arguments'][2]
     callback.msiDataObjWrite(fileHandle, provenenanceString, 0)
     callback.msiDataObjClose(fileHandle, 0)
+
+    # Checksum provenance file.
+    callback.msiDataObjChksum(provenanceFile, "verifyChksum=", 0)

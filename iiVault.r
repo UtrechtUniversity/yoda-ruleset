@@ -210,16 +210,11 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
 		}
 	} else {
-		*error = errorcode(msiDataObjChksum(*sourcePath, "ChksumAll=++++forceChksum=", *chksum));
-		if (*error < 0) {
-			*buffer.msg = "Failed to Checksum *sourcePath";
-		} else {
-			writeLine("stdout", "iiIngestObject: *sourcePath has checksum *chksum");
-			*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
-			if (*error < 0) {
-				*buffer.msg = "Failed to copy *sourcePath to *destPath";
-			}
-		}
+	    # Copy data object to vault and compute checksum.
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+	    if (*error < 0) {
+		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
+	    }
 	}
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
