@@ -54,6 +54,17 @@ checkCollACL(*topColl, *update) {
     }
 }
 
+# Note: The results of the following rules will include user IDs that are no
+#       longer in use, e.g. when an owner group is removed.  Even though the
+#       user/group is removed, the access relation will persist.
+
+# The result type is a kvlist with key "own" and one key per user id.
+#
+# { "own"         => owner_user_id
+# , owner_user_id => "own"
+# , user_id_x     => "read"
+# , user_id_y     => "write" }
+
 # retrieve the ACLs of a collection
 getCollAccess(*coll) {
     *access.own = "";
@@ -100,6 +111,8 @@ getDataAccess(*coll, *data) {
 
 # check ACLs
 checkAccess(*path, *oldAccess, *newAccess, *update) {
+    # Note: both the current owner (*oldAccess.own) and the new owner
+    #       (*newAccess.own) may be empty.
     if (*oldAccess.own != *newAccess.own) {
 	*own = *oldAccess.own;
 	if (*own != "") {
@@ -118,10 +131,12 @@ checkAccess(*path, *oldAccess, *newAccess, *update) {
 	msiString2StrArray(*newAccess.own, *owners);
 	foreach (*owner in *owners) {
 	    *newOwn = *owner;
-	    *oldAccess."*newOwn" = "";
-	    foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
-		*newOwn = *user.USER_NAME;
-		break;
+	    if (*newOwn != "") {
+		*oldAccess."*newOwn" = "";
+		foreach (*user in SELECT USER_NAME WHERE USER_ID = *newOwn) {
+		    *newOwn = *user.USER_NAME;
+		    break;
+		}
 	    }
 	}
 	if (*own != *newOwn) {

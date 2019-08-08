@@ -1,9 +1,10 @@
 {
   "name": "DANS Preferred formats",
-  "help": "Praesentium eum provident magni est in rem minima. Porro et rerum qui quia illo consequatur similique numquam. Eos libero autem illo ipsa earum. Eos dolor qui consequatur repudiandae cupiditate.",
-  "advice": "Praesentium eum provident magni est in rem minima. Porro et rerum qui quia illo consequatur similique numquam. Eos libero autem illo ipsa earum. Eos dolor qui consequatur repudiandae cupiditate.",
+  "help": "Checks if the files in the data folder and subfolders comply with the DANS guidelines for preferred file formats as per 1-Aug-2019. Their guidelines states that the preferred file formats offer the best long-term guarantees in terms of usability, accessibility and sustainability. For more information see https://dans.knaw.nl/. Disclaimer: Please note that Yoda currently deducts the file format from the filename. It does not inspect the file content.",
+  "advice": "For files that do not comply with preferred formats, we recommend that you include in the data package a specification of the file format. Should you want to reference an external specification document then try to find a sustainable link, ideally use a DOI.  If feasible, also include in a separate folder of your data package a copy of the file transformed into of the preferred formats.  Please consult a datamanager or consult the Research Support desk (see https://www.uu.nl/rdm) in case you need any assistance.",
   "formats": [
     "pdf",
+    "odt",
     "txt",
     "xml",
     "html",
@@ -23,12 +24,12 @@
     "tiff",
     "png",
     "jp2",
+    "dcm",
     "svg",
     "bwf",
     "mxf",
     "mka",
     "flac",
-    "opus",
     "mxf",
     "mkv",
     "dxf",
@@ -37,6 +38,12 @@
     "mid",
     "asc",
     "obj",
-    "x3d"
-  ]
+    "ply",
+    "x3d",
+    "dae",
+    "rdf",
+    "trig",
+    "ttl",
+    "nt"
+    ]
 }

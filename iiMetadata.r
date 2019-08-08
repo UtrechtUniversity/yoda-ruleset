@@ -814,7 +814,7 @@ iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo) {
 		succeed;
 	}
 
-	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "", *statusBuf));
+	*err = errorcode(msiDataObjCopy(*metadataXmlPath, *vaultMetadataTarget, "verifyChksum=", *statusBuf));
 	if (*err < 0) {
 		*status = "FailedToCopyXML";
 		*statusInfo = "Copy to vault failed from *metadataXmlPath to *vaultMetadataTarget with errorcode *err";
