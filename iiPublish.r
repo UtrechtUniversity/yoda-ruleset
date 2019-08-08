@@ -1228,6 +1228,14 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
 
+	# Generate Combi XML consisting of user and system metadata
+	#DEBUG writeLine("serverLog", "iiUpdateLandingpage: starting iiGenerateCombiXml");
+	*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
+	if (*err < 0) {
+		*status = "Unrecoverable";
+		succeed;
+	}
+
 	# Create landing page
 	#DEBUG writeLine("serverLog", "iiUpdateLandingpage: starting iiGenerateLandingPage");
 	*err = errorcode(iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"));
@@ -1245,6 +1253,6 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 	}
 
 	# The update was a success;
-	writeLine("serverLog", "iiUpdateLandingpage: landingpage updated for *vaultPackage");	
+	writeLine("serverLog", "iiUpdateLandingpage: landingpage updated for *vaultPackage");
 	*status = "OK";
 }
