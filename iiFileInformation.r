@@ -3,7 +3,8 @@
 #            Functions in this file extract statistics from files and collections.
 # \author    Jan de Mooij
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 #
 
@@ -31,13 +32,13 @@ iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
     *data_modified = 0;
     *coll_modified = 0;
 
-    foreach (*row in SELECT DATA_ID WHERE COLL_NAME like "*path%") {
+    foreach (*row in SELECT DATA_ID, DATA_SIZE WHERE COLL_NAME like "*path%") {
         *filecount = *filecount + 1;
+        *totalSize = *totalSize + int(*row."DATA_SIZE");
     }
 
-    foreach (*row in SELECT DATA_ID, DATA_SIZE, DATA_MODIFY_TIME
+    foreach (*row in SELECT DATA_ID, DATA_MODIFY_TIME
                      WHERE COLL_NAME like "*path%") {
-        *totalSize = *totalSize + int(*row."DATA_SIZE");
 	if (*data_modified < int(*row."DATA_MODIFY_TIME")) {
 	    *data_modified = int(*row."DATA_MODIFY_TIME");
 	}
@@ -83,7 +84,7 @@ iiCollectionGroupName(*path, *groupName) {
 				*isfound = true;
 				break;
 			}
-		}	
+		}
 	}
 	if (!*isfound){
 		# No results found. Not a group folder
@@ -99,14 +100,14 @@ iiCollectionGroupName(*path, *groupName) {
 # \param[out] isDatamanager
 #
 iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager) {
-	iiCollectionGroupName(*path, *groupName); 
+	iiCollectionGroupName(*path, *groupName);
 	uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
 
-	uuGroupGetCategory(*groupName, *category, *subcategory);	
+	uuGroupGetCategory(*groupName, *category, *subcategory);
 	uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
 	if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
 		*isDatamanager = true;
 	} else {
 		*isDatamanager = false;
-	}	
+	}
 }
