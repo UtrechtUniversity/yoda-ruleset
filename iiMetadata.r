@@ -381,6 +381,27 @@ iiPrepareMetadataForm(*path, *result) {
                         *kvp.metadataXmlLocks = *json_str;
                 }
 
+                # Retrieve yoda-metadata.json path.
+                *jsonName = "yoda-metadata.json";
+                *jsonPath = "";
+                foreach(*row in SELECT COLL_NAME, DATA_NAME
+                                WHERE COLL_NAME = *path
+                                  AND DATA_NAME = *jsonName) {
+                        *jsonPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
+                }
+
+                if (*jsonPath == "") {
+                        *kvp.hasMetadataJson = "false";
+                        *kvp.metadataJsonPath = *path ++ "/" ++ "yoda-metadata.json";
+                } else {
+                        *kvp.hasMetadataJson = "true";
+                        *kvp.metadataJsonPath = *jsonPath;
+                        # Check for locks on metadata JSON.
+                        iiDataObjectMetadataKvpList(*path, IILOCKATTRNAME, true, *metadataJsonLocks);
+                        uuKvpList2JSON(*metadataJsonLocks, *json_str, *size);
+                        *kvp.metadataJsonLocks = *json_str;
+                }
+
                 # Retrieve category information.
                 uuGroupGetCategory(*groupName, *category, *subcategory);
                 *kvp.category = *category;
