@@ -498,39 +498,6 @@ def copyACLsFromParent(callback, path, recursive_flag):
             callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
-def writeFile(callback, path, data):
-    """Write a string to an iRODS data object."""
-
-    ret_val = callback.msiDataObjCreate(path, 'forceFlag=', 0)
-    handle = ret_val['arguments'][2]
-    ret_val = callback.msiDataObjWrite(handle, data, 0)
-    callback.msiDataObjClose(handle, 0)
-
-    # TODO: Error reporting.
-    #       Note that objOpen/Create msis may indicate failure through the file
-    #       handle outpt arg, instead of via the status code.
-
-
-def readFile(callback, path):
-    """Read an entire iRODS data object into a string."""
-    # Get file size.
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open, read, close.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    handle = ret_val['arguments'][1]
-
-    ret_val = callback.msiDataObjRead(handle, data_size, irods_types.BytesBuf())
-
-    callback.msiDataObjClose(handle, 0)
-
-    return ''.join(ret_val['arguments'][2].buf)
-
-    # TODO: Error reporting.
-    #       Note that objOpen/Create msis may indicate failure through the file
-    #       handle outpt arg, instead of via the status code.
-
 
 # \brief Parse XML into an ElementTree.
 #
@@ -539,7 +506,7 @@ def readFile(callback, path):
 # \return Parsed XML as ElementTree.
 #
 def parseMetadataXml(callback, path):
-    return ET.fromstring(readFile(callback, path))
+    return ET.fromstring(read_data_object(callback, path))
 
 
 # \brief Parse JSON file into JSON dict.
@@ -549,7 +516,7 @@ def parseMetadataXml(callback, path):
 # \return Parsed JSON as dict.
 #
 def parseJson(callback, path):
-    return json.loads(readFile(callback, path))
+    return json.loads(read_data_object(callback, path))
 
 
 # \brief Check metadata XML for possible schema updates.

@@ -15,18 +15,24 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     coll, metadata_text = rule_args
 
-    schema = getSchema(callback, coll)
-
     def report(x):
         """ XXX Temporary, for debugging """
         callback.writeString("serverLog", x)
         callback.writeString("stdout", x)
 
+    try:
+        schema = getSchema(callback, coll)
+    except UUException as e:
+        report(json.dumps({'status': 'Error',
+                           'statusInfo': 'Could not load metadata schema'}))
+        return
+
     # Load form metadata input.
     try:
         metadata = json.loads(metadata_text)
-    except JSONDecodeError as e:
-        # Should only happen if the form was tampered with.
+    except ValueError as e:
+        # NB: python3 raises json.JSONDecodeError instead.
+        # This should only happen if the form was tampered with.
         report(json.dumps({'status':     'ValidationError',
                            'statusInfo': 'JSON decode error'}))
         return
@@ -57,7 +63,12 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     # TODO: Use a constant for json filename.
 
-    writeFile(callback, '{}/{}'.format(coll, 'yoda-metadata.json'),
-              json.dumps(metadata))
+    try:
+        write_data_object(callback, '{}/{}'.format(coll, 'yoda-metadata.json'),
+                          json.dumps(metadata))
+    except UUException as e:
+        report(json.dumps({'status': 'Error',
+                           'statusInfo': 'Could not save yoda-metadata.json'}))
+        return
 
     report(json.dumps({'status': 'Success', 'statusInfo': ''}))
