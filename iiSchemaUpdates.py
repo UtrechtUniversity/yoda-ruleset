@@ -307,6 +307,48 @@ def getCategory(callback, rods_zone, group_name):
     return schemaCategory
 
 
+# \brief Get the iRODS path to a schema file from the path to a yoda metadata file.
+#
+# \param[in] metadata_path
+#
+# \return Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json
+#
+def getSchemaPath(callback, metadata_path):
+    # Retrieve current metadata schemas.
+    path_parts = metadata_path.split('/')
+    rods_zone  = path_parts[1]
+    group_name = path_parts[3]
+
+    if group_name.startswith("vault-"):
+        group_name = group_name.replace("vault-", "research-", 1)
+
+    category = getCategory(callback, rods_zone, group_name)
+
+    return '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
+
+
+# \brief Get a schema object from the path to a yoda metadata file.
+#
+# \param[in] metadata_path
+#
+# \return Schema object (parsed from JSON)
+#
+def getSchema(callback, metadata_path):
+    return parseJson(callback, getSchemaPath(callback, metadata_path))
+
+# \brief Get a schema URL from the path to a yoda metadata file.
+#
+# \param[in] metadata_path
+#
+# \return Schema URL (e.g. https://yoda.uu.nl/schemas/...)
+#
+def getSchemaUrl(callback, metadata_path):
+    schema = getSchema(callback, metadata_path)
+    url, jsonFile = os.path.split(schema["$id"])
+
+    return url
+
+
 # \brief Based upon the category of the current yoda-metadata.xml file,
 #        return the active metadata schema involved.
 #
@@ -315,21 +357,7 @@ def getCategory(callback, rods_zone, group_name):
 # \return Schema location
 #
 def getSchemaLocation(callback, xmlPath):
-    # Retrieve current metadata schemas.
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-
-    if group_name.startswith("vault-"):
-        group_name = group_name.replace("vault-", "research-", 1)
-
-    schemaCategory = getCategory(callback, rods_zone, group_name)
-
-    jsonSchemaPath = '/' + rods_zone + '/yoda/schemas/' + schemaCategory + '/metadata.json'
-    jsonSchema = parseJson(callback, jsonSchemaPath)
-    schema, jsonFile = os.path.split(jsonSchema["$id"])
-
-    return schema
+    return getSchemaUrl(callback, xmlPath)
 
 
 # \brief Based upon the group name of the current yoda-metadata.xml file,
@@ -470,6 +498,39 @@ def copyACLsFromParent(callback, path, recursive_flag):
             callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
+def writeFile(callback, path, data):
+    """Write a string to an iRODS data object."""
+
+    ret_val = callback.msiDataObjCreate(path, 'forceFlag=', 0)
+    handle = ret_val['arguments'][2]
+    ret_val = callback.msiDataObjWrite(handle, data, 0)
+    callback.msiDataObjClose(handle, 0)
+
+    # TODO: Error reporting.
+    #       Note that objOpen/Create msis may indicate failure through the file
+    #       handle outpt arg, instead of via the status code.
+
+
+def readFile(callback, path):
+    """Read an entire iRODS data object into a string."""
+    # Get file size.
+    coll_name, data_name = os.path.split(path)
+    data_size = getDataObjSize(callback, coll_name, data_name)
+
+    # Open, read, close.
+    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
+    handle = ret_val['arguments'][1]
+
+    ret_val = callback.msiDataObjRead(handle, data_size, irods_types.BytesBuf())
+
+    callback.msiDataObjClose(handle, 0)
+
+    return ''.join(ret_val['arguments'][2].buf)
+
+    # TODO: Error reporting.
+    #       Note that objOpen/Create msis may indicate failure through the file
+    #       handle outpt arg, instead of via the status code.
+
 
 # \brief Parse XML into an ElementTree.
 #
@@ -478,24 +539,7 @@ def copyACLsFromParent(callback, path, recursive_flag):
 # \return Parsed XML as ElementTree.
 #
 def parseMetadataXml(callback, path):
-    # Retrieve XML size.
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open metadata XML.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read metadata XML.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close metadata XML.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse XML.
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
-    return ET.fromstring(xmlText)
+    return ET.fromstring(readFile(callback, path))
 
 
 # \brief Parse JSON file into JSON dict.
@@ -505,24 +549,7 @@ def parseMetadataXml(callback, path):
 # \return Parsed JSON as dict.
 #
 def parseJson(callback, path):
-    # Retrieve JSON size.
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON file.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read JSON file.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON file.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-    return json.loads(jsonText)
+    return json.loads(readFile(callback, path))
 
 
 # \brief Check metadata XML for possible schema updates.
