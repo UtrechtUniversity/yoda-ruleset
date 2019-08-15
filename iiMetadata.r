@@ -363,6 +363,7 @@ iiPrepareMetadataForm(*path, *result) {
                 # Retrieve yoda-metadata.xml path.
                 *xmlname = IIMETADATAXMLNAME;
                 *xmlpath = "";
+                *kvp.hasMetadataXml = "false";
                 foreach(*row in SELECT COLL_NAME, DATA_NAME
                                 WHERE COLL_NAME = *path
                                   AND DATA_NAME = *xmlname) {
@@ -384,6 +385,7 @@ iiPrepareMetadataForm(*path, *result) {
                 # Retrieve yoda-metadata.json path.
                 *jsonName = "yoda-metadata.json";
                 *jsonPath = "";
+                *kvp.hasMetadataJson = "false";
                 foreach(*row in SELECT COLL_NAME, DATA_NAME
                                 WHERE COLL_NAME = *path
                                   AND DATA_NAME = *jsonName) {
