@@ -508,6 +508,17 @@ iiPrepareMetadataForm(*path, *result) {
                         *kvp.metadataXmlPath = *metadataXmlPath;
                 }
 
+                # Retrieve latest version of the metadata JSON.
+                iiGetLatestVaultMetadataJson(*path, *metadataJsonPath, *metadataJsonSize);
+                if (*metadataJsonPath == "") {
+                        *hasMetadataJson = false;
+                        *kvp.hasMetadataJson = "no";
+                } else {
+                        *hasMetadataJson = true;
+                        *kvp.hasMetadataJson = "yes";
+                        *kvp.metadataJsonPath = *metadataJsonPath;
+                }
+
                 # Check if a shadow metadata XML exists
                 if (*isDatamanager && *hasMetadataXml) {
                         *shadowMetadataXml = "/*rodsZone/home/datamanager-*category/*vaultGroup/*vaultPackageSubPath/" ++ IIMETADATAXMLNAME;
