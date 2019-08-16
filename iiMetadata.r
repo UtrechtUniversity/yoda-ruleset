@@ -740,29 +740,28 @@ iiMetadataXmlUnregisteredPost(*logicalPath) {
 
 # \brief iiPrepareVaultMetadataForEditing
 #
-# \param[in]  metadataXmlPath
-# \param[out] tempMetadataXmlPath
+# \param[in]  metadataJsonPath
+# \param[out] tempMetadataJsonPath
 # \param[out] status
 # \param[out] statusInfo
 #
-iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status, *statusInfo) {
-	# path of metadataxml in vault:
-	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/yoda-metadata[123456789].xml
+iiPrepareVaultMetadataForEditing(*metadataJsonPath, *tempMetadataJsonPath, *status, *statusInfo) {
+	# path of metadata JSON in vault:
+	# /nluu1dev/home/vault-groupName/path/to/vaultPackage/yoda-metadata[123456789].json
 	# /0       /1   /2              /(3)/(4)/(5)         /(6)
 	*status =  "Unknown";
 	*statusInfo = "An internal error has occurred";
-	*tempMetadataXmlPath = "";
-	*pathElems = split(*metadataXmlPath, "/");
+	*tempMetadataJsonPath = "";
+	*pathElems = split(*metadataJsonPath, "/");
 	*rodsZone = elem(*pathElems, 0);
 	*vaultGroup = elem(*pathElems, 2);
-	uuJoin("/", tl(tl(tl(*pathElems))), *metadataXmlSubPath);
+	uuJoin("/", tl(tl(tl(*pathElems))), *metadataJsonSubPath);
 
-	*vaultPackageSubPath = trimr(*metadataXmlSubPath, "/");
+	*vaultPackageSubPath = trimr(*metadataJsonSubPath, "/");
 	iiDatamanagerGroupFromVaultGroup(*vaultGroup, *datamanagerGroup);
 	if (*datamanagerGroup == "") {
 		fail;
 	}
-	*metadataXmlName = IIMETADATAXMLNAME;
 	*tempPath = "/*rodsZone/home/*datamanagerGroup/*vaultGroup/*vaultPackageSubPath";
 
 	if (!uuCollectionExists(*tempPath)) {
@@ -774,8 +773,8 @@ iiPrepareVaultMetadataForEditing(*metadataXmlPath, *tempMetadataXmlPath, *status
 		}
 	}
 
-	*tempMetadataXmlPath = *tempPath ++ "/" ++ IIMETADATAXMLNAME;
-	#DEBUG writeLine("serverLog", "iiPrepareVaultMetadataForEditing: *tempMetadataXmlPath");
+	*tempMetadataJsonPath = *tempPath ++ "/" ++ IIJSONMETADATA;
+	#DEBUG writeLine("serverLog", "iiPrepareVaultMetadataForEditing: *tempMetadataJsonPath");
 	*status = "Success";
 	*statusInfo = "";
 
