@@ -103,33 +103,12 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
 # \param[in] rule_args[0] Path of a new package in the vault.
 #
 def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
-    vaultPackage = rule_args[0]
-    originalMetadataXml = vaultPackage + "/original/" + IIMETADATAXMLNAME
+    vault_package = rule_args[0]
+    original_metadata = vault_package + "/original/" + IIJSONMETADATA
 
-    # Parse original metadata.
-    tree = parseXml(callback, originalMetadataXml)
-    xmlString = ('<?xml version="1.0" encoding="UTF-8"?>' + '\n' +
-                 etree.tostring(tree, pretty_print=True, xml_declaration=False, encoding="UTF-8"))
-
-    # Retrieve active schema location and space to be added.
-    schemaLocation = getSchemaLocation(callback, vaultPackage)
-
-    # Set 'xsi:schemaLocation' for the vault space.
-    researchSchema = "xsi:schemaLocation=\"" + schemaLocation + " " + IIRESEARCHXSDNAME + "\""
-    vaultSchema = "xsi:schemaLocation=\"" + schemaLocation + " " + IIVAULTXSDNAME + "\""
-    xmlString = xmlString.decode('utf-8')
-    newXmlString = xmlString.replace(researchSchema, vaultSchema, 1)
-
-    # Write new metadata XML.
-    ofFlags = ''
-    xml_file = vaultPackage + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-    ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-    fileHandle = ret_val['arguments'][2]
-    callback.msiDataObjWrite(fileHandle, newXmlString, 0)
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Checksum new metadata XML.
-    callback.msiDataObjChksum(xml_file, "verifyChksum=", 0)
+    # Copy original metadata JSON.
+    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
+    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
 # \brief Get the provenance log as JSON.
