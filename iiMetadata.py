@@ -60,11 +60,8 @@ def iiSaveFormMetadata(rule_args, callback, rei):
         return
 
     # No errors: write out JSON.
-
-    # TODO: Use a constant for json filename.
-
     try:
-        write_data_object(callback, '{}/{}'.format(coll, 'yoda-metadata.json'),
+        write_data_object(callback, '{}/{}'.format(coll, IIJSONMETADATA),
                           json.dumps(metadata))
     except UUException as e:
         report(json.dumps({'status': 'Error',
@@ -72,3 +69,33 @@ def iiSaveFormMetadata(rule_args, callback, rei):
         return
 
     report(json.dumps({'status': 'Success', 'statusInfo': ''}))
+
+def iiValidateMetadata(rule_args, callback, rei):
+    """Validate JSON metadata for a given collection"""
+
+    coll = rule_args[0]
+
+    # Retrieve metadata schema for collection.
+    try:
+        schema = getSchema(callback, coll)
+    except UUException as e:
+        rule_args[1] = "1"
+        return
+
+    # Load JSON metadata.
+    try:
+        metadata_text = read_data_object(callback, '{}/{}'.format(coll, IIJSONMETADATA))
+        metadata = json.loads(metadata_text)
+    except UUException as e:
+        rule_args[1] = "1"
+        return
+
+    # Perform validation.
+    validator = jsonschema.Draft7Validator(schema)
+
+    if validator.is_valid(metadata):
+        rule_args[1] = "0"
+    else:
+        rule_args[1] = "1"
+
+    return

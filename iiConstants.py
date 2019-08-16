@@ -6,6 +6,9 @@
 # \copyright Copyright (c) 2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+# \constant IIMETADATAJSONNAME Name of metadata JSON file
+IIJSONMETADATA = "yoda-metadata.json"
+
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 

@@ -501,20 +501,20 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 	}
 
 	if (*transitionTo == SUBMITTED) {
-		*metadataXmlPath = *folder ++ "/" ++ IIMETADATAXMLNAME;
-		if (!uuFileExists(*metadataXmlPath)) {
-			*allowed = false;
-			*reason = "Metadata missing, unable to submit this folder.";
-			succeed;
-		} else {
-			iiGetVaultXsdPath(*metadataXmlPath, *xsdPath);
-			iiValidateXml(*metadataXmlPath, *xsdPath, *err, *msg);
-			if (*err != 0) {
-				*allowed = false;
-				*reason = "Metadata is invalid, please check metadata form.";
-				succeed;
+			*metadataJsonPath = *folder ++ "/" ++ IIJSONMETADATA;
+			if (!uuFileExists(*metadataJsonPath)) {
+					*allowed = false;
+					*reason = "Metadata missing, unable to submit this folder.";
+					succeed;
+			} else {
+					*status = "";
+					iiValidateMetadata(*folder, *status);
+					if (*status != "0") {
+							*allowed = false;
+							*reason = "Metadata is invalid, please check metadata form.";
+							succeed;
+					}
 			}
-		}
 	}
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {

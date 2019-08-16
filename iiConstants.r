@@ -40,6 +40,9 @@ IITRANSFORMATIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/transformations"
 # \constant IIDEFAULTSCHEMANAME
 IIDEFAULTSCHEMANAME = "default"
 
+# \constant IIMETADATAJSONNAME Name of metadata JSON file
+IIJSONMETADATA = "yoda-metadata.json"
+
 # \constant IIMETADATAXMLNAME
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 
