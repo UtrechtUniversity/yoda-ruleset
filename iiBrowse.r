@@ -244,9 +244,19 @@ iiCollectionDetailsVault(*path, *kvp) {
                         *kvp.hasMetadataXml = "yes";
                         *kvp.metadataXmlPath = *metadataXmlPath;
                 }
+
+                iiGetLatestVaultMetadataJson(*path, *metadataJsonPath, *metadataJsonSize);
+                if (*metadataJsonPath == "") {
+                        *kvp.hasMetadataJson = "no";
+                } else {
+                        *kvp.userMetadata = "true";
+                        *kvp.hasMetadataJson = "yes";
+                        *kvp.metadataJsonPath = *metadataJsonPath;
+                }
         } else {
                 *kvp.isVaultPackage = "no";
                 *kvp.hasMetadataXml = "no";
+                *kvp.hasMetadataJson = "no";
                 *kvp.userMetadata = "false";
         }
 
