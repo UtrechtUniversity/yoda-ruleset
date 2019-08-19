@@ -6,6 +6,8 @@
 
 # Utility / convenience functions for data object IO. {{{
 
+import json
+import irods_types
 
 def write_data_object(callback, path, data):
     """Write a string to an iRODS data object.
@@ -36,5 +38,26 @@ def read_data_object(callback, path):
     data_obj_close(callback, handle, 0)
 
     return ''.join(ret['arguments'][2].buf)
+
+# }}}
+# Utility / convenience functions for dealing with JSON. {{{
+
+
+class UUJsonException(UUException):
+    """Exception for unparsable JSON text"""
+    # Python2's JSON lib raises ValueError on bad parses, which is ambiguous.
+    # Use this exception (together with the functions below) instead.
+    # (this can also ease transitions to python3, since python3's json already
+    # uses a different, unambiguous exception type: json.JSONDecodeError)
+
+def parse_json(text):
+    try:
+        return json.loads(text)
+    except ValueError:
+        raise UUJsonException('JSON file format error')
+
+def read_json_object(callback, path):
+    """Read an iRODS data object and parse it as JSON."""
+    return parse_json(read_data_object(callback, path))
 
 # }}}

@@ -30,9 +30,8 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     # Load form metadata input.
     try:
-        metadata = json.loads(metadata_text)
-    except ValueError as e:
-        # NB: python3 raises json.JSONDecodeError instead.
+        metadata = parse_json(metadata_text)
+    except UUException as e:
         # This should only happen if the form was tampered with.
         report(json.dumps({'status':     'ValidationError',
                            'statusInfo': 'JSON decode error'}))
@@ -76,17 +75,13 @@ def iiValidateMetadata(rule_args, callback, rei):
 
     coll = rule_args[0]
 
-    # Retrieve metadata schema for collection.
     try:
+        # Retrieve metadata schema for collection.
         schema = getSchema(callback, coll)
-    except UUException as e:
-        rule_args[1] = "1"
-        return
 
-    # Load JSON metadata.
-    try:
-        metadata_text = read_data_object(callback, '{}/{}'.format(coll, IIJSONMETADATA))
-        metadata = json.loads(metadata_text)
+        # Load JSON metadata.
+        metadata = read_json_object(callback, '{}/{}'.format(coll, IIJSONMETADATA))
+
     except UUException as e:
         rule_args[1] = "1"
         return
@@ -98,5 +93,3 @@ def iiValidateMetadata(rule_args, callback, rei):
         rule_args[1] = "0"
     else:
         rule_args[1] = "1"
-
-    return

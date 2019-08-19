@@ -334,7 +334,7 @@ def getSchemaPath(callback, metadata_path):
 # \return Schema object (parsed from JSON)
 #
 def getSchema(callback, metadata_path):
-    return parseJson(callback, getSchemaPath(callback, metadata_path))
+    return read_json_object(callback, getSchemaPath(callback, metadata_path))
 
 # \brief Get a schema URL from the path to a yoda metadata file.
 #
@@ -507,16 +507,6 @@ def copyACLsFromParent(callback, path, recursive_flag):
 #
 def parseMetadataXml(callback, path):
     return ET.fromstring(read_data_object(callback, path))
-
-
-# \brief Parse JSON file into JSON dict.
-#
-# \param[in] path Path of JSON file to parse
-#
-# \return Parsed JSON as dict.
-#
-def parseJson(callback, path):
-    return json.loads(read_data_object(callback, path))
 
 
 # \brief Check metadata XML for possible schema updates.

@@ -33,7 +33,7 @@ def getPreservableFormatsLists(callback, rei):
 
         # Retrieve filename and name of list.
         filename, file_extension = os.path.splitext(data_name)
-        json = parseJson(callback, coll_name + "/" + data_name)
+        json = read_json_object(callback, coll_name + "/" + data_name)
 
         # Add to list of preservable file formats.
         preservableLists[filename] = json
@@ -53,7 +53,7 @@ def getUnpreservableFiles(callback, rei, folder, list):
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve JSON list of preservable file formats.
-    json = parseJson(callback, "/" + rods_zone + "/yoda/file_formats/" + list + ".json")
+    json = read_json_object(callback, "/" + rods_zone + "/yoda/file_formats/" + list + ".json")
     preservableFormats = json['formats']
     unpreservableFormats = []
 
@@ -128,7 +128,7 @@ def getProvenanceLog(callback, folder):
     )
 
     for row in iter:
-        log_item = json.loads(row[0])
+        log_item = parse_json(row[0])
         provenance_log.append(log_item)
 
     return provenance_log
