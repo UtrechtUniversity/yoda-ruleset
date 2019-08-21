@@ -21,23 +21,31 @@ def write_data_object(callback, path, data):
     data_obj_close(callback, handle, 0)
 
 
-def read_data_object(callback, path):
+def read_data_object(callback, path, max_size = IIDATA_MAX_SLURP_SIZE):
     """Read an entire iRODS data object into a string."""
 
-    # Get file size.
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
+    data_size = getDataObjSize(callback, *chop_path(path))
+    if data_size > max_size:
+        raise UUFileSizeException('read_data_object: file size limit exceeded ({} > {})'
+                                  .format(data_size, max_size))
 
-    # Open, read, close.
+    if data_size == 0:
+        # Don't bother reading an empty file.
+        return ''
+
     ret = data_obj_open(callback, 'objPath=' + path, 0)
     handle = ret['arguments'][1]
 
-    ret = data_obj_read(callback, handle, data_size,
+    ret = data_obj_read(callback,
+                        handle,
+                        data_size,
                         irods_types.BytesBuf())
+
+    buf = ret['arguments'][2]
 
     data_obj_close(callback, handle, 0)
 
-    return ''.join(ret['arguments'][2].buf)
+    return ''.join(buf.buf[0:buf.len])
 
 # }}}
 # Utility / convenience functions for dealing with JSON. {{{

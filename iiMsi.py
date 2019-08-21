@@ -10,6 +10,9 @@ import irods_types
 class UUException(Exception):
     """Generic Python rule exception"""
 
+class UUFileSizeException(UUException):
+    """File size limit exceeded"""
+
 # Microservices may fail and indicate failure in a number of different ways.
 # With this module, we aim to unify microservice error handling by converting
 # all errors to unambiguous Python exceptions.
@@ -20,20 +23,29 @@ class UUException(Exception):
 class UUMsiException(UUException):
     """Exception for microservice failure"""
 
-    def __init__(self, message, msi_status, msi_code, msi_args):
+    def __init__(self, message, msi_status, msi_code, msi_args, src_exception):
         super(UUMsiException, self).__init__(message)
         # Store msi result, if any.
         # These may be None when an msi aborts in an abnormal way.
-        self.msi_status = msi_status
-        self.msi_code   = msi_code
-        self.msi_args   = msi_args
+        self.msi_status    = msi_status
+        self.msi_code      = msi_code
+        self.msi_args      = msi_args
+        self.src_exception = src_exception
+
+    def __str__(self):
+        if self.msi_status is not None:
+            return '{}: error code {}'.format(self.message, self.msi_code)
+        elif self.src_exception is not None:
+            return '{}: iRODS error <{}>'.format(self.message, self.src_exception)
+        else:
+            return self.message
 
 def make_msi_exception(name, message):
     """Create a UUMsiException subtype for a specific microservice"""
 
     t = type('UUMsi{}Exception'.format(name), (UUMsiException,), {})
-    t.__init__ = lambda self, status, code, args: \
-        super(t, self).__init__(message, status, code, args)
+    t.__init__ = lambda self, status, code, args, e = None: \
+        super(t, self).__init__(message, status, code, args, e)
     return t
 
 
@@ -45,7 +57,7 @@ def run_msi(msi, exception, *args):
         # msi failures may be raised as non-specific RuntimeErrors.
         # There is no result to save, but we can still convert this to a
         # msi-specific exception.
-        raise exception(None, None, None)
+        raise exception(None, None, None, e)
 
     if not ret['status']:
         # False status indicates error.
