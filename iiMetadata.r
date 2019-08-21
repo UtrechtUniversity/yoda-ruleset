@@ -544,20 +544,6 @@ iiPrepareMetadataForm(*path, *result) {
         }
 }
 
-# \brief Remove the yoda-metadata.xml file and remove all user metadata from irods.
-#
-# \param[in] path		Path of collection to scrub of metadata
-#
-iiRemoveAllMetadata(*path) {
-	*metadataxmlpath =  *path ++ "/" ++ IIMETADATAXMLNAME;
-	msiAddKeyValToMspStr("objPath", *metadataxmlpath, *options);
-	msiAddKeyValToMspStr("forceFlag", "", *options);
-	*err = errorcode(msiDataObjUnlink(*options, *status));
-	if (*err < 0) {
-		writeLine("serverLog", "iiRemoveMetadata *path returned errorcode: *err");
-	}
-}
-
 # \brief Remove the User AVU's from the irods AVU store.
 #
 # \param[in] coll	    Collection to scrub of user metadata

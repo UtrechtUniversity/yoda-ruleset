@@ -70,6 +70,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     report(json.dumps({'status': 'Success', 'statusInfo': ''}))
 
+
 def is_json_metadata_valid(callback, metadata_path):
     """Check if a json metadata file is valid"""
     try:
@@ -109,6 +110,7 @@ def get_collection_metadata_path(callback, coll):
 
     return None
 
+
 def iiCollectionHasMetadata(rule_args, callback, rei):
     """Check if a collection has a metadata file (JSON or XML), returns its path."""
 
@@ -116,6 +118,7 @@ def iiCollectionHasMetadata(rule_args, callback, rei):
     path = get_collection_metadata_path(callback, coll)
 
     rule_args[1:3] = ('false', '') if path is None else ('true', path)
+
 
 def iiCollectionHasValidMetadata(rule_args, callback, rei):
     """Check if a collection has metadata, and validate it.
@@ -141,6 +144,21 @@ def iiCollectionHasValidMetadata(rule_args, callback, rei):
         invalid, msg = ret['arguments'][2:4]
         if invalid != b'\x01':
             rule_args[1:3] = ('true', path)
+
+
+def iiRemoveAllMetadata(rule_args, callback, rei):
+    """Remove a collection's metadata JSON and XML, if they exist"""
+
+    coll = rule_args[0]
+
+    for path in ['{}/{}'.format(coll, x) for x in [IIJSONMETADATA, IIMETADATAXMLNAME]]:
+        try:
+            data_obj_unlink(callback,
+                            'objPath={}++++forceFlag='.format(path),
+                            irods_types.BytesBuf())
+        except UUMsiException as e:
+            # ignore non-existent files.
+            pass
 
 
 def iiCloneMetadataFile(rule_args, callback, rei):
