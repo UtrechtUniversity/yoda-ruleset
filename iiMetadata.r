@@ -411,22 +411,14 @@ iiPrepareMetadataForm(*path, *result) {
 
                 # Check if parent metadata XML exists and is valid.
                 iiGetResearchXsdPath(*xmlpath, *xsdPath);
+
+                *parentHasMetadata  = "false";
+                *parentMetadataPath = "";
                 uuChopPath(*path, *parent, *child);
-                *kvp.parentHasMetadataXml = "false";
-                foreach(*row in SELECT DATA_NAME, COLL_NAME
-                                WHERE COLL_NAME = *parent
-                                  AND DATA_NAME = *xmlname) {
-                        *parentxmlpath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-                        iiValidateXml(*parentxmlpath, *xsdPath, *err, *msg);
-                        if (*err < 0) {
-                                writeLine("serverLog", *msg);
-                        } else if (*err == 0) {
-                                *kvp.parentHasMetadataXml = "true";
-                                *kvp.parentMetadataXmlPath = *parentxmlpath;
-                        } else {
-                                writeLine("serverLog", "iiPrepareMetadataForm: *msg");
-                        }
-                }
+                iiCollectionHasValidMetadata(*parent, *parentHasMetadata, *parentMetadataPath);
+
+                *kvp.parentHasMetadata  = *parentHasMetadata;
+                *kvp.parentMetadataPath = *parentMetadataPath;
 
                 # Check for transformations.
                 *kvp.transformation = "false";
@@ -621,19 +613,6 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
 	} else {
 		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from *metadataxmlpath");
-	}
-}
-
-# \brief Clone metadata file from one place to the other.
-#
-# \param[in] *src	path of source metadataxml
-# \param[in] *dst	path of destination metadataxml
-#
-iiCloneMetadataXml(*src, *dst) {
-	writeLine("serverLog", "iiCloneMetadataXml:*src -> *dst");
-	*err = errormsg(msiDataObjCopy(*src, *dst, "", *status), *msg);
-	if (*err < 0) {
-		writeLine("serverLog", "iiCloneMetadataXml: *err - *msg)");
 	}
 }
 

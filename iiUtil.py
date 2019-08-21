@@ -47,6 +47,24 @@ def read_data_object(callback, path, max_size = IIDATA_MAX_SLURP_SIZE):
 
     return ''.join(buf.buf[0:buf.len])
 
+def chop_path(path):
+    """Split off the rightmost path component of a path
+       /a/b/c -> (/a/b, c)
+    """
+    if path == '/' or len(path) == 0:
+        return '/', ''
+    else:
+        x = path.split('/')
+        return '/'.join(x[:-1]), x[-1]
+
+def data_object_exists(callback, path):
+    """Check if a data object with the given path exists"""
+    return len(list(genquery.row_iterator(
+                "DATA_ID",
+                "COLL_NAME = '%s' AND DATA_NAME = '%s'" % chop_path(path),
+                genquery.AS_LIST, callback))) > 0
+
+
 # }}}
 # Utility / convenience functions for dealing with JSON. {{{
 

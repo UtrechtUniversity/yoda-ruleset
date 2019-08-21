@@ -85,12 +85,14 @@ UUMsiDataObjOpenException   = make_msi_exception('DataObjOpen',   'Could not ope
 UUMsiDataObjReadException   = make_msi_exception('DataObjRead',   'Could not read data object')
 UUMsiDataObjWriteException  = make_msi_exception('DataObjWrite',  'Could not write data object')
 UUMsiDataObjCloseException  = make_msi_exception('DataObjClose',  'Could not close data object')
+UUMsiDataObjCopyException   = make_msi_exception('DataObjCopy',   'Could not copy data object')
 
 data_obj_create = wrap_msi('msiDataObjCreate', UUMsiDataObjCreateException)
 data_obj_open   = wrap_msi('msiDataObjOpen',   UUMsiDataObjOpenException)
 data_obj_read   = wrap_msi('msiDataObjRead',   UUMsiDataObjReadException)
 data_obj_write  = wrap_msi('msiDataObjWrite',  UUMsiDataObjWriteException)
 data_obj_close  = wrap_msi('msiDataObjClose',  UUMsiDataObjCloseException)
+data_obj_copy   = wrap_msi('msiDataObjCopy',   UUMsiDataObjCopyException)
 
 # Add new msis here as needed.
 

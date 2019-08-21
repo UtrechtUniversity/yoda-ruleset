@@ -98,7 +98,7 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rei, rule_args[0], rule_args[1])))
 
 
-# \brief Copy the original metadata xml into the root of the package.
+# \brief Copy the original metadata JSON into the root of the package.
 #
 # \param[in] rule_args[0] Path of a new package in the vault.
 #

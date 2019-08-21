@@ -1,6 +1,6 @@
-test_iiCloneMetadataXml {
-	iiCloneMetadataXml(*src, *dst);
+test_iiCloneMetadataFile {
+	iiCloneMetadataFile(*coll);
 }
 
-input *src="", *dst=""
+input *coll=""
 output ruleExecOut

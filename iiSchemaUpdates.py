@@ -425,7 +425,9 @@ def getMetadataSchemaFromTree(callback, root):
     return schema
 
 
-# \brief getDataObjSize
+# \brief Get the size of a data object's newest replica.
+#
+# The size with the newest modify date is returned.
 #
 # \param[in] coll_name Data object collection name
 # \param[in] data_name Data object name
@@ -433,18 +435,17 @@ def getMetadataSchemaFromTree(callback, root):
 # \return Data object size
 #
 def getDataObjSize(callback, coll_name, data_name):
-    data_size = 0
 
     iter = genquery.row_iterator(
-        "DATA_SIZE",
+        "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
         genquery.AS_LIST, callback
     )
 
     for row in iter:
-        data_size = row[0]
-
-    return data_size
+        return int(row[0])
+    else:
+        return -1
 
 
 # \brief getUserNameFromUserId
