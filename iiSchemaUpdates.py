@@ -33,14 +33,17 @@ transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
-# \brief Transform yoda-metadata.xml from schema x to schema y.
-#        Depending on research/vault - different handling.
-#
-# \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] statusPy
-# \param[out] rule_args[2] statusInfoPy
-#
 def iiRuleTransformXml(rule_args, callback, rei):
+    """Transform yoda-metadata.xml from schema x to schema y.
+       Depending on research/vault - different handling.
+
+       Arguments:
+       rule_args[0] -- XML path
+
+       Return:
+       rule_args[1] -- statusPy
+       rule_args[2] -- statusInfoPy
+    """
     xmlPath = rule_args[0] + "/yoda-metadata.xml"
 
     status = 'Unknown'
@@ -63,15 +66,18 @@ def iiRuleTransformXml(rule_args, callback, rei):
     rule_args[2] = statusInfo
 
 
-# \brief Check if yoda-metadata.xml transformation from schema x to schema y
-#        is possible and retrieve transformation description.
-#        Depending on research/vault - different handling.
-#
-# \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] transformation
-# \param[out] rule_args[2] transformationText
-#
 def iiRulePossibleTransformation(rule_args, callback, rei):
+    """Check if yoda-metadata.xml transformation from schema x to schema y
+       is possible and retrieve transformation description.
+       Depending on research/vault - different handling.
+
+       Arguments:
+       rule_args[0] -- XML path
+
+       Return:
+       rule_args[1] -- transformation
+       rule_args[2] -- transformationText
+    """
     xmlPath = rule_args[0]
 
     transformation = 'false'
@@ -94,21 +100,22 @@ def iiRulePossibleTransformation(rule_args, callback, rei):
 # ------------------ end of interface functions -----------------------------
 
 
-# General steps within each transformation function
-# In reseach:
-#   - make copy of yoda-metadata.xml and rename to yoda-metadata[timestamp].xml
-#   - write new yoda-metadata.xml
-#              including new targetNameSpace etc - so trapping transformation does not occur again
-#              This is taken care of within transformation stylesheet
-#   - No backup required for yoda-metadata.xml
-#   - Do data transformation
-#   - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
-
-# returns dictionary:
-# status
-# transformationText - for frontend
-
 def ExecTransformation_v1(callback, xmlPath):
+    """General steps within each transformation function.
+
+       In reseach:
+       - make copy of yoda-metadata.xml and rename to yoda-metadata[timestamp].xml
+       - write new yoda-metadata.xml
+         including new targetNameSpace etc - so trapping transformation does not occur again
+         This is taken care of within transformation stylesheet
+       - No backup required for yoda-metadata.xml
+       - Do data transformation
+       - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
+
+       Return:
+       dict -- Status and transformation text for frontend.
+
+    """
     coll_name, data_name = os.path.split(xmlPath)
     pathParts = xmlPath.split('/')
     rods_zone = pathParts[1]
@@ -197,13 +204,15 @@ def GetTransformationText_v1(callback, xmlPath):
     return transformationText
 
 
-# \brief Parse a metadata XML given its path into an ElementTree
-#
-# \param[in] path Metadata XML path
-#
-# \return XML parsed as ElementTree
-#
 def parseXml(callback, path):
+    """Parse a metadata XML given its path into an ElementTree.
+
+       Arguments:
+       path -- Path of metadata XML
+
+       Return:
+       XML parsed as ElementTree
+    """
     # Retrieve XML size.
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
@@ -224,56 +233,67 @@ def parseXml(callback, path):
     return etree.fromstring(xmlText)
 
 
-# \brief Return the metadata schema location based upon the category of a metadata XML
-#
-# Example:
-# in:  /tempZone/home/research-initial/yoda-metadata.xml
-# out: 'https://yoda.uu.nl/schemas/default-0'
-#
-# \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] Metadata schema location
-#
 def iiRuleGetLocation(rule_args, callback, rei):
+    """Return the metadata schema location based upon the category of a metadata XML.
+
+       Example:
+       in:  /tempZone/home/research-initial/yoda-metadata.xml
+       out: 'https://yoda.uu.nl/schemas/default-0'
+
+       Arguments:
+       rule_args[0] -- Path of metadata XML
+
+       Return:
+       rule_args[1] -- Metadata schema location
+    """
     rule_args[1] = getSchemaLocation(callback, rule_args[0])
 
 
-# \brief Return the metadata schema space based upon the category of a metadata XML
-#
-# Example:
-# in:  /tempZone/home/research-initial/yoda-metadata.xml
-# out: 'research.xsd'
-#
-# \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] Metadata schema space
-#
 def iiRuleGetSpace(rule_args, callback, rei):
+    """Return the metadata schema space based upon the category of a metadata XML.
+
+       Example:
+       in:  /tempZone/home/research-initial/yoda-metadata.xml
+       out: 'research.xsd'
+
+       Arguments:
+       rule_args[0] -- Path of metadata XML
+
+       Return:
+       rule_args[1] -- Metadata schema space
+    """
     pathParts = rule_args[0].split('/')
     rods_zone = pathParts[1]
     group_name = pathParts[3]
     rule_args[1] = getSchemaSpace(callback, group_name)
 
 
-# \brief Return the location of schema of a metadata XML
-#
-# Example:
-# in:  /tempZone/home/research-initial/yoda-metadata.xml
-# out: 'https://yoda.uu.nl/schemas/default-0'
-#
-# \param[in] rule_args[0] XML path
-# \param[out] rule_args[1] Metadata schema location
-#
 def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
+    """Return the location of schema of a metadata XML.
+
+       Example:
+       in:  /tempZone/home/research-initial/yoda-metadata.xml
+       out: 'https://yoda.uu.nl/schemas/default-0'
+
+       Arguments:
+       rule_args[0] -- Path of metadata XML
+
+       Return:
+       rule_args[1] -- Metadata schema location
+    """
     rule_args[1] = getMetadataXMLSchema(callback, rule_args[0])
 
 
-# \brief Determine category based upon rods zone and name of the group
-#
-# \param[in] rods_zone
-# \param[in] group_name
-#
-# \return schema space
-#
 def getCategory(callback, rods_zone, group_name):
+    """Determine category based upon rods zone and name of the group.
+
+       Arguments:
+       rods_zone  -- Rods zone name
+       group_name -- Group name
+
+       Return:
+       string -- Category
+    """
     category = '-1'
     schemaCategory = 'default'
 
@@ -307,13 +327,15 @@ def getCategory(callback, rods_zone, group_name):
     return schemaCategory
 
 
-# \brief Get the iRODS path to a schema file from the path to a yoda metadata file.
-#
-# \param[in] metadata_path
-#
-# \return Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json
-#
 def getSchemaPath(callback, metadata_path):
+    """Get the iRODS path to a schema file from the path to a yoda metadata file.
+
+       Arguments:
+       metadata_path -- Path of metadata XML
+
+       Return:
+       Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json
+    """
     # Retrieve current metadata schemas.
     path_parts = metadata_path.split('/')
     rods_zone  = path_parts[1]
@@ -327,47 +349,56 @@ def getSchemaPath(callback, metadata_path):
     return '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
 
 
-# \brief Get a schema object from the path to a yoda metadata file.
-#
-# \param[in] metadata_path
-#
-# \return Schema object (parsed from JSON)
-#
 def getSchema(callback, metadata_path):
+    """Get a schema object from the path to a yoda metadata file.
+
+       Arguments:
+       metadata_path -- Path of metadata XML
+
+       Return:
+       Schema object (parsed from JSON)
+    """
     return read_json_object(callback, getSchemaPath(callback, metadata_path))
 
-# \brief Get a schema URL from the path to a yoda metadata file.
-#
-# \param[in] metadata_path
-#
-# \return Schema URL (e.g. https://yoda.uu.nl/schemas/...)
-#
+
 def getSchemaUrl(callback, metadata_path):
+    """Get a schema URL from the path to a yoda metadata file.
+
+       Arguments:
+       metadata_path -- Path of metadata XML
+
+       Return:
+       string -- Schema URL (e.g. https://yoda.uu.nl/schemas/...)
+    """
     schema = getSchema(callback, metadata_path)
     url, jsonFile = os.path.split(schema["$id"])
 
     return url
 
 
-# \brief Based upon the category of the current yoda-metadata.xml file,
-#        return the active metadata schema involved.
-#
-# \param[in] xmlPath
-#
-# \return Schema location
-#
 def getSchemaLocation(callback, xmlPath):
+    """Based upon the category of the current yoda-metadata.xml file,
+       return the active metadata schema involved.
+
+       Arguments:
+       xmlPath -- Path of metadata XML
+
+       Return:
+       string -- Schema location
+    """
     return getSchemaUrl(callback, xmlPath)
 
 
-# \brief Based upon the group name of the current yoda-metadata.xml file,
-#     return the (research or vault) XSD schema involved.
-#
-# \param[in] group_name
-#
-# \return schema space
-#
 def getSchemaSpace(callback, group_name):
+    """Based upon the group name of the current yoda-metadata.xml file,
+       return the (research or vault) XSD schema involved.
+
+       Arguments:
+       group_name -- Name of the group
+
+       Return:
+       string -- Schema space
+    """
     if 'research-' in group_name:
         space = 'research'
     else:
@@ -376,13 +407,15 @@ def getSchemaSpace(callback, group_name):
     return space + '.xsd'
 
 
-# \brief getLatestVaultMetadataXml
-#
-# \param[in] vaultPackage
-#
-# \return metadataXmlPath
-#
 def getLatestVaultMetadataXml(callback, vaultPackage):
+    """Get the latest vault metadata XML.
+
+       Arguments:
+       vaultPackage -- Vault package collection
+
+       Return:
+       string -- Metdata XML path
+    """
     dataName = ""
 
     iter = genquery.row_iterator(
@@ -425,17 +458,16 @@ def getMetadataSchemaFromTree(callback, root):
     return schema
 
 
-# \brief Get the size of a data object's newest replica.
-#
-# The size with the newest modify date is returned.
-#
-# \param[in] coll_name Data object collection name
-# \param[in] data_name Data object name
-#
-# \return Data object size
-#
 def getDataObjSize(callback, coll_name, data_name):
+    """Get data object size.
 
+       Arguments:
+       coll_name -- Data object collection name
+       data_name -- Data object name
+
+       Return:
+       integer -- Data object size
+    """
     iter = genquery.row_iterator(
         "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
         "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
@@ -448,13 +480,15 @@ def getDataObjSize(callback, coll_name, data_name):
         return -1
 
 
-# \brief getUserNameFromUserId
-#
-# \param[in] user_id User id
-#
-# \return User name
-#
 def getUserNameFromUserId(callback, user_id):
+    """Retrieve username from user ID.
+
+       Arguments:
+       user_id -- User id
+
+       Return:
+       string -- User name
+    """
     user_name = ""
 
     iter = genquery.row_iterator(
@@ -469,12 +503,13 @@ def getUserNameFromUserId(callback, user_id):
     return user_name
 
 
-# \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
-#
-# \param[in] path               Path of object that needs the permissions of parent
-# \param[in] recursive_flag     either "default" for no recursion or "recursive"
-#
 def copyACLsFromParent(callback, path, recursive_flag):
+    """When inheritance is missing we need to copy ACL's when introducing new data in vault package.
+
+       Arguments:
+       path           -- Path of object that needs the permissions of parent
+       recursive_flag -- Either "default" for no recursion or "recursive"
+    """
     parent = os.path.dirname(path)
 
     iter = genquery.row_iterator(
@@ -500,24 +535,39 @@ def copyACLsFromParent(callback, path, recursive_flag):
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
-# \brief Parse XML into an ElementTree.
-#
-# \param[in] path Path of metadata XML to parse
-#
-# \return Parsed XML as ElementTree.
-#
 def parseMetadataXml(callback, path):
+    """Parse XML into an ElementTree.
+
+       Arguments:
+       path -- Path of metadata XML to parse
+
+       Return:
+       Parsed XML as ElementTree.
+    """
     return ET.fromstring(read_data_object(callback, path))
 
 
-# \brief Check metadata XML for possible schema updates.
-#
-# \param[in] rods_zone  Zone name
-# \param[in] coll_name  Collection name of metadata XML
-# \param[in] group_name Group name of metadata XML
-# \param[in] data_name  Data name of metadata XML
-##
+def parseJson(callback, path):
+    """Parse JSON file into JSON dict.
+
+       Arguments:
+       path -- Path of JSON file to parse
+
+       Return:
+       Parsed JSON as dict.
+    """
+    return json.loads(read_data_object(callback, path))
+
+
 def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
+    """Check metadata XML for possible schema updates.
+
+    Arguments:
+    rods_zone  -- Zone name
+    coll_name  -- Collection name of metadata XML
+    group_name -- Group name of metadata XML
+    data_name  -- Data name of metadata XML
+    """
     root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
     # Retrieve active schema location to be added.
@@ -570,17 +620,19 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
         callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
 
 
-# \brief Loop through all collections with yoda-metadata.xml data objects.
-#        Check metadata XML for schema updates.
-#
-# \param[in] rods_zone Zone name
-# \param[in] coll_id   First collection id of batch
-# \param[in] batch     Batch size, <= 256
-# \param[in] pause     Pause between checks (float)
-#
-# \return Collection id to continue with in next batch.
-#
 def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause):
+    """Loop through all collections with yoda-metadata.xml data objects
+       and check metadata XML for schema updates.
+
+       Arguments:
+       rods_zone -- Zone name
+       coll_id   -- First collection id of batch
+       batch     -- Batch size, <= 256
+       pause     -- Pause between checks (float)
+
+       Return:
+       coll_id -- Collection id to continue with in next batch.
+   """
     # Find all research and vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
@@ -620,14 +672,15 @@ def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, p
     return coll_id
 
 
-# \brief Check metadata XML for schema identifier.
-#
-# \param[in] rods_zone  Zone name
-# \param[in] coll_name  Collection name of metadata XML
-# \param[in] group_name Group name of metadata XML
-# \param[in] data_name  Data name of metadata XML
-#
 def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name):
+    """Check metadata XML for schema identifier.
+
+       Arguments:
+       rods_zone  -- Zone name
+       coll_name  -- Collection name of metadata XML
+       group_name -- Group name of metadata XML
+       data_name  -- Data name of metadata XML
+    """
     xml_file = coll_name + "/" + data_name
 
     try:
@@ -640,9 +693,8 @@ def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_na
         callback.writeLine("stdout", "Unparsable metadata file: %s" % (xml_file))
 
 
-# \brief Check metadata XML for schema identifiers.
-#
 def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
+    """Check metadata XML for schema identifiers."""
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     callback.writeString("stdout", "[METADATA] Start check for schema identifiers.\n")
@@ -675,14 +727,15 @@ def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
     callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
 
 
-# \brief Check metadata XML for schema updates.
-#
-# \param[in] coll_id  first COLL_ID to check
-# \param[in] batch    batch size, <= 256
-# \param[in] pause    pause between checks (float)
-# \param[in] delay    delay between batches in seconds
-#
 def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
+    """Check metadata XML for schema updates.
+
+       Arguments:
+       coll_id -- first COLL_ID to check
+       batch   -- batch size, <= 256
+       pause   -- pause between checks (float)
+       delay   -- delay between batches in seconds
+    """
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])

@@ -40,6 +40,7 @@ class UUMsiException(UUException):
         else:
             return self.message
 
+
 def make_msi_exception(name, message):
     """Create a UUMsiException subtype for a specific microservice"""
 
@@ -79,6 +80,7 @@ def wrap_msi(msi, exception):
 
 # }}}
 # Microservice wrappers for data object IO. {{{
+
 
 UUMsiDataObjCreateException = make_msi_exception('DataObjCreate', 'Could not create data object')
 UUMsiDataObjOpenException   = make_msi_exception('DataObjOpen',   'Could not open data object')
