@@ -123,8 +123,8 @@ def checkDataObjectIntegrity(callback, data_id):
         )
 
 
-# Check integrity of one batch of data objects in the vault.
 def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
+    """Check integrity of one batch of data objects in the vault."""
     # Go through data in the vault, ordered by DATA_ID.
     iter = genquery.row_iterator(
         "ORDER(DATA_ID)",
@@ -149,13 +149,15 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     return data_id
 
 
-# \brief Check integrity of all data objects in the vault.
-# \param[in] data_id  first DATA_ID to check
-# \param[in] batch    batch size, <= 256
-# \param[in] pause    pause between checks (float)
-# \param[in] delay    delay between batches in seconds
-#
 def uuCheckVaultIntegrity(rule_args, callback, rei):
+    """Check integrity of all data objects in the vault.
+
+    Arguments:
+    data_id -- first DATA_ID to check
+    batch   -- batch size, <= 256
+    pause   -- pause between checks (float)
+    delay   -- delay between batches in seconds
+    """
     data_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])

@@ -14,9 +14,8 @@ import genquery
 import irods_types
 
 
-# \brief Get JSON represenation of resource and its tier info
-#
 def uuRuleGetResourceTierData(rule_args, callback, rei):
+    """Get JSON represenation of resource and its tier info."""
     resourceName = rule_args[0]
 
     tierName = getTierOnResourceName(resourceName, callback)
@@ -25,9 +24,8 @@ def uuRuleGetResourceTierData(rule_args, callback, rei):
                                "org_storage_tier": tierName})
 
 
-# \brief Get all resources and their tier data as a json representation:
-#
 def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
+    """Get all resources and their tier data as a json representation."""
     resourceList = list()
 
     iter = genquery.row_iterator(
@@ -47,11 +45,12 @@ def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
     rule_args[0] = json.dumps(resourceList)
 
 
-# \brief Get json representation for storage data for a period of 12 months for a specific group
-# Storage is per month and tier
-# Format is "month=12-tier=Standard": "222222222222"
-#
 def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
+    """Get json representation for storage data for a period of 12 months for a specific group.
+
+       Storage is per month and tier
+       Format is "month=12-tier=Standard": "222222222222"
+    """
     groupName = rule_args[0]
     currentMonth = int(rule_args[1])  # this is the month that came from the frontend
 
@@ -85,26 +84,23 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
     rule_args[2] = json.dumps(allStorage)
 
 
-# \brief collect storage data for ALL categories
-#
 def uuRuleGetMonthlyStorageStatistics(rule_args, callback, rei):
+    """Collect storage data for all categories."""
     categories = getCategories(callback)
 
     rule_args[0] = getMonthlyCategoryStorageStatistics(categories, callback)
 
 
-# \brief collect storage data for a Datamanager
-#
 def uuRuleGetMonthlyStorageStatisticsDatamanager(rule_args, callback, rei):
+    """Collect storage data for a datamanager."""
     datamanagerUser = rule_args[0]
     categories = getCategoriesDatamanager(datamanagerUser, callback)
 
     rule_args[1] = getMonthlyCategoryStorageStatistics(categories, callback)
 
 
-# \brief Get all groups for all categories a person is datamanager of
-#
 def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
+    """Get all groups for all categories a person is datamanager of."""
     datamanagerUser = rule_args[0]
     categories = getCategoriesDatamanager(datamanagerUser, callback)
 
@@ -113,14 +109,14 @@ def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
     rule_args[1] = json.dumps(datamanagerGroups)
 
 
-# \brief collect storage stats for all twelve months based upon categories a user is datamanager of
-#  - Category
-#  - Subcategory
-#  - Groupname
-#  - Tier
-#  - 12 columns, one per month, with used storage count in bytes
-
 def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
+    """Collect storage stats for all twelve months based upon categories a user is datamanager of:
+       - Category
+       - Subcategory
+       - Groupname
+       - Tier
+       - 12 columns, one per month, with used storage count in bytes
+    """
     datamanagerUser = rule_args[0]
     categories = getCategoriesDatamanager(datamanagerUser, callback)
     allStorage = []
@@ -165,10 +161,11 @@ def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
     rule_args[1] = json.dumps(allStorage)
 
 
-# \brief Get category and subcategory for a group
-#
-# \return dict with indices 'category' and 'subcategory'
 def groupGetCategoryInfo(groupName, callback):
+    """Get category and subcategory for a group.
+
+       Returns a dict with indices 'category' and 'subcategory'.
+    """
     category = ''
     subcategory = ''
 
@@ -190,11 +187,12 @@ def groupGetCategoryInfo(groupName, callback):
     return {'category': category, 'subcategory': subcategory}
 
 
-# \brief collect storage stats of last month only
-# Storage is summed up for each category/tier combination
-# json presentation
-#  Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
 def getMonthlyCategoryStorageStatistics(categories, callback):
+    """Collect storage stats of last month only.
+
+       Storage is summed up for each category/tier combination.
+       JSON presentation: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+    """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = UUMETADATASTORAGEMONTH + month
     storageDict = {}
@@ -238,9 +236,8 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
     return json.dumps(allStorage)
 
 
-# \brief Get all groups belonging to all given categories
-#
 def getGroupsOnCategories(categories, callback):
+    """Get all groups belonging to all given categories."""
     groups = []
     metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
 
@@ -271,9 +268,8 @@ def getGroupsOnCategories(categories, callback):
     return groups
 
 
-# \brief Get all categories for curent datamanager
-#
 def getCategoriesDatamanager(datamanagerName, callback):
+    """Get all categories for curent datamanager."""
     categories = []
 
     iter = genquery.row_iterator(
@@ -291,9 +287,10 @@ def getCategoriesDatamanager(datamanagerName, callback):
     return categories
 
 
-# \brief get all categories currently present
+# \brief
 #
 def getCategories(callback):
+    """Get all categories currently present."""
     categories = []
 
     iter = genquery.row_iterator(
@@ -308,10 +305,11 @@ def getCategories(callback):
     return categories
 
 
-# \brief Get Tiername, if present, for given resource
-# If not present, fall back to default tier name
-#
 def getTierOnResourceName(resourceName, callback):
+    """Get Tiername, if present, for given resource.
+
+       If not present, fall back to default tier name.
+    """
     tierName = UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
     # find (possibly present) tier for this resource

@@ -11,9 +11,8 @@ import requests
 import genquery
 
 
-# \brief Return groups and related data.
-#
 def getGroupData(callback):
+    """Return groups and related data."""
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
@@ -85,9 +84,8 @@ def getGroupData(callback):
     return groups.values()
 
 
-# \brief Get a list of all group categories.
-#
 def getCategories(callback):
+    """Get a list of all group categories."""
     categories = []
 
     iter = genquery.row_iterator(
@@ -102,11 +100,13 @@ def getCategories(callback):
     return categories
 
 
-# \brief Get a list of all subcategories within a given group category.
-#
-# \param[in] category
-#
 def getSubcategories(callback, category):
+    """
+       Get a list of all subcategories within a given group category.
+
+       Arguments:
+       category -- Category to retrieve subcategories of
+    """
     categories = set()    # Unique subcategories.
     groupCategories = {}  # Group name => { category => .., subcategory => .. }
 
@@ -142,18 +142,16 @@ def getSubcategories(callback, category):
     return list(categories)
 
 
-# \brief Write group data for all users to stdout.
-#
 def uuGetGroupData(rule_args, callback, rei):
+    """Write group data for all users to stdout."""
     groups = getGroupData(callback)
 
     # Convert to json string and write to stdout.
     callback.writeString("stdout", json.dumps(groups))
 
 
-# \brief Write group data for a single user to stdout.
-#
 def uuGetUserGroupData(rule_args, callback, rei):
+    """Write group data for a single user to stdout."""
     groups = getGroupData(callback)
     user = rule_args[0] + '#' + rule_args[1]
 
@@ -162,14 +160,14 @@ def uuGetUserGroupData(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(groups))
 
 
-# \brief Check if a user is a member of the given group.
-#
-# groupUserExists(group, user, includeRo, membership)
-# If includeRo is true, membership of a group's read-only shadow group will be
-# considered as well. Otherwise, the user must be a normal member or manager of
-# the given group.
-#
 def groupUserExists(rule_args, callback, rei):
+    """Check if a user is a member of the given group.
+
+       groupUserExists(group, user, includeRo, membership)
+       If includeRo is true, membership of a group's read-only shadow group will be
+       considered as well. Otherwise, the user must be a normal member or manager of
+       the given group.
+    """
     groups = getGroupData(callback)
     user = rule_args[1]
     if '#' not in user:
@@ -184,32 +182,30 @@ def groupUserExists(rule_args, callback, rei):
     rule_args[3] = "true" if len(groups) == 1 else "false"
 
 
-# \brief Write category list to stdout.
-#
 def uuGroupGetCategoriesJson(rule_args, callback, rei):
+    """Write category list to stdout."""
     callback.writeString("stdout", json.dumps(getCategories(callback)))
 
 
-# \brief Write subcategory list to stdout.
-#
 def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
+    """Write subcategory list to stdout."""
     callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))
 
 
-# \brief Retrieve config value from credentials store.
-#
 def credentialsStoreGet(key):
+    """Retrieve config value from credentials store."""
     config = json.loads(open('/var/lib/irods/.credentials_store/store_config.json').read())
     return config[key]
 
 
-# \brief Call External User Service API to add new user
-#
-# \param[in] username
-# \param[in] creatorUser
-# \param[in] creatorZone
-#
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
+    """Call External User Service API to add new user
+
+    Arguments:
+    username    --
+    creatorUser --
+    creatorZone --
+    """
     eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
     eus_api_port = credentialsStoreGet("eus_api_port")
     eus_api_secret = credentialsStoreGet("eus_api_secret")
@@ -233,9 +229,8 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     return response.status_code
 
 
-# \brief Provision external user
-#
 def uuProvisionExternalUser(rule_args, callback, rei):
+    """Provision external user."""
     status = 1
     message = "An internal error occured."
 
@@ -267,12 +262,13 @@ def uuProvisionExternalUser(rule_args, callback, rei):
     rule_args[4] = message
 
 
-# \brief Call External User Service API to remove user
-#
-# \param[in] username
-# \param[in] userzone
-#
 def removeExternalUser(callback, username, userzone):
+    """Call External User Service API to remove user.
+
+    Arguments:
+    username --
+    userzone --
+    """
     eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
     eus_api_port = credentialsStoreGet("eus_api_port")
     eus_api_secret = credentialsStoreGet("eus_api_secret")
@@ -291,7 +287,6 @@ def removeExternalUser(callback, username, userzone):
     return str(response.status_code)
 
 
-# \brief Remove external user
-#
 def uuRemoveExternalUser(rule_args, callback, rei):
+    """Remove external user."""
     callback.writeString("serverLog", removeExternalUser(callback, rule_args[0], rule_args[1]))
