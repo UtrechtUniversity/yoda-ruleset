@@ -5,12 +5,41 @@
 
 import irods_types
 from datetime import datetime
+from smtplib import SMTP
+from email.mime.text import MIMEText
 
 
 def uuMetaAdd(callback, objType, objName, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
                                                irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
+
+
+# \brief Send an email using the specified parameters
+#
+# \param[in] to       Recipient email address
+# \param[in] subject  Email message subject
+# \param[in] body     Email message body
+#
+def sendMail(to, subject, body):
+        # Construct message
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = "test@example.org"
+        msg["To"] = to
+
+        # Send message
+        #
+        # TO-DO: fetch credentials (smtp_server_address, email_address,
+        # password) from credential store
+        s = SMTP('smtp_server_address')
+        s.starttls()
+        s.login("email_address", "password")
+        s.sendmail("from_email_address", to, msg.as_string()) # When testing,
+                                                              # replace to with
+                                                              # hardcoded email
+                                                              # address
+        s.quit()
 
 
 # \brief Persist a data request to disk.
