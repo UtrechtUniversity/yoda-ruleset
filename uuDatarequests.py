@@ -585,6 +585,82 @@ def getReview(callback, requestId):
             'statusInfo': statusInfo}
 
 
+# \brief Persist an evaluation to disk.
+#
+# \param[in] data       JSON-formatted contents of the evaluation
+# \param[in] proposalId Unique identifier of the research proposal
+#
+def submitEvaluation(callback, data, requestId, rei):
+    status = -1
+    statusInfo = "Internal server error"
+
+    try:
+        # Check if user is a member of the Board of Directors. If not, do not
+        # allow submission of the evaluation
+        isBoardMember = False
+        name = ""
+        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                            ['arguments'][0],
+                                        callback)
+        if not isBoardMember:
+            status = -2
+            statusInfo = "User is not a member of the Board of Directors."
+            raise Exception()
+
+        # Construct path to collection of the evaluation
+        zonePath = '/tempZone/home/datarequests-research/'
+        collPath = zonePath + requestId
+
+        # Get username
+        name = ""
+        clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        # Write evaluation data to disk
+        reviewPath = collPath + '/evaluation_' + clientName + '.json'
+        ret_val = callback.msiDataObjCreate(reviewPath, "", 0)
+        fileDescriptor = ret_val['arguments'][2]
+        callback.msiDataObjWrite(fileDescriptor, data, 0)
+        callback.msiDataObjClose(fileDescriptor, 0)
+
+        # Update the status of the data request to "approved"
+        status = ""
+        statusInfo = ""
+        callback.requestDatarequestMetadataChange(collPath, "status",
+                                                  "approved", 0,
+                                                  status, statusInfo)
+        callback.adminDatarequestActions()
+
+        # Get parameters needed for sending emails
+        researcherName  = ""
+        researcherEmail = ""
+        datamanagerEmails = ""
+        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s'") % (collPath,
+                                                    'datarequest.json'),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            name  = row["META_DATA_ATTR_NAME"]
+            value = row["META_DATA_ATTR_VALUE"]
+            if name == "name":
+                researcherName  = value
+            elif name == "email":
+                researcherEmail = value
+        datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+
+        # Send an email to the researcher informing them of whether their data
+        # request has been approved or rejected.
+        evaluation = "approved"
+        if evaluation == "approved":
+            sendMail(researcherEmail, "[researcher] YOUth data request %s: approved" % requestId, "Dear %s,\n\nCongratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+            for datamanagerEmail in datamanagerEmails:
+                if not datamanagerEmail == "rods":
+                    sendMail("j.j.zondergeld@uu.nl", "[data manager] YOUth data request %s: approved" % requestId, "Dear data manager,\n\nData request %s has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.\n\nThe following link will take you directly to the data request: https://portal.yoda.test/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+        elif evaluation == "rejected":
+            sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected. Please log in to Yoda to view additional details.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, requestId, datamanagerEmail[0]))
+
         status = 0
         statusInfo = "OK"
     except:
