@@ -669,7 +669,76 @@ def submitEvaluation(callback, data, requestId, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Set the status of a submitted datarequest to "approved"
+# \brief  Grant read permissions on the DTA to the owner of the associated data
+#         request.
+#
+# \param[in] requestId
+# \param[in] username
+#
+def DTAGrantReadPermissions(callback, requestId, username, rei):
+    status = -1
+    status = "Internal server error."
+
+    try:
+        # Construct path to the collection of the datarequest
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        collPath = ("/" + clientZone + "/home/datarequests-research/" +
+                    requestId)
+
+        # Query iCAT for the username of the owner of the data request
+        rows = row_iterator(["DATA_OWNER_NAME"],
+                            ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
+                            + "'%s'" % collPath),
+                            AS_DICT, callback)
+
+        # Extract username from query results
+        requestOwnerUsername = []
+        for row in rows:
+            requestOwnerUsername.append(row["DATA_OWNER_NAME"])
+
+        # Check if exactly 1 owner was found. If not, wipe
+        # requestOwnerUserName list and set error status code
+        if len(requestOwnerUsername) != 1:
+            status = -2
+            statusInfo = ("Not exactly 1 owner found. " +
+                          "Something is probably wrong.")
+            raise Exception()
+
+        requestOwnerUsername = requestOwnerUsername[0]
+
+        callback.msiSetACL("default", "read", requestOwnerUsername, collPath + "/dta.pdf")
+
+        # Get parameters needed for sending emails
+        researcherName  = ""
+        researcherEmail = ""
+        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s'") % (collPath,
+                                                    'datarequest.json'),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            name  = row["META_DATA_ATTR_NAME"]
+            value = row["META_DATA_ATTR_VALUE"]
+            if name == "name":
+                researcherName  = value
+            elif name == "email":
+                researcherEmail = value
+
+        # Send an email to the researcher informing them that the DTA of their
+        # data request is ready for them to sign and upload
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: DTA ready" % requestId, "Dear %s,\n\nThe YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
+
+# \brief Set the status of a submitted datarequest to "DTA ready"
 #
 # \param[in] requestId        Unique identifier of the datarequest.
 # \param[in] currentUserName  Username of the user whose ownership is checked.
