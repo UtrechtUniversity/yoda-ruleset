@@ -539,6 +539,52 @@ def submitReview(callback, data, requestId, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
+# \brief Retrieve a data request review
+#
+# \param[in] requestId Unique identifier of the data request
+#
+def getReview(callback, requestId):
+    status = -1
+    statusInfo = "Internal server error"
+
+    try:
+        # Construct filename
+        collName = '/tempZone/home/datarequests-research/' + requestId
+        fileName = 'review_dmcmember.json'
+
+        # Get the size of the review JSON file and the review's status
+        results = []
+        rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME like '%s'") % (collName, fileName),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            collName = row['COLL_NAME']
+            dataName = row['DATA_NAME']
+            dataSize = row['DATA_SIZE']
+
+        # Construct path to file
+        filePath = collName + '/' + dataName
+
+        # Get the contents of the review JSON file
+        ret_val = callback.msiDataObjOpen("objPath=%s" % filePath, 0)
+        fileDescriptor = ret_val['arguments'][1]
+        ret_val = callback.msiDataObjRead(fileDescriptor, dataSize,
+                                          irods_types.BytesBuf())
+        fileBuffer = ret_val['arguments'][2]
+        callback.msiDataObjClose(fileDescriptor, 0)
+        reviewJSON = ''.join(fileBuffer.buf)
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        reviewJSON = ""
+
+    return {'reviewJSON': reviewJSON, 'status': status,
+            'statusInfo': statusInfo}
+
+
         status = 0
         statusInfo = "OK"
     except:
