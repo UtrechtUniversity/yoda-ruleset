@@ -299,6 +299,55 @@ def isRequestOwner(callback, requestId, currentUserName):
             'statusInfo': statusInfo}
 
 
+# \brief  Check if the invoking user is assigned as reviewer to the given data
+#         request
+#
+# \param[in] requestId        Unique identifier of the data request.
+# \param[in] currentUserName  Username of the user that is to be checked.
+#
+# \return A boolean specifying whether the user is assigned as reviewer to the
+#         data request.
+#
+def isReviewer(callback, requestId, currentUsername):
+    status = -1
+    statusInfo = "Internal server error"
+    isReviewer = False
+
+    try:
+        # Reviewers are stored in one or more assignedForReview attributes on
+        # the data request, so our first step is to query the metadata of our
+        # data request file for these attributes
+
+        # Declare variables needed for retrieving the list of reviewers
+        collName = '/tempZone/home/datarequests-research/' + requestId
+        fileName = 'datarequest.json'
+        reviewers = []
+
+        # Retrieve list of reviewers
+        rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s' AND " +
+                             "META_DATA_ATTR_NAME = 'assignedForReview'") % (collName,
+                                                                  fileName),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            reviewers.append(row['META_DATA_ATTR_VALUE'])
+
+        # Check if the reviewers list contains the current user
+        isReviewer = currentUsername in reviewers
+
+        # Set status to OK
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    # Return the isReviewer boolean
+    return {"isReviewer": isReviewer, "status": status,
+            "statusInfo": statusInfo}
+
+
 # \brief Assign a data request to one or more DMC members for review
 #
 # \param[in] assignees          JSON-formatted array of DMC members
