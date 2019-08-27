@@ -10,10 +10,18 @@ from smtplib import SMTP
 from email.mime.text import MIMEText
 
 
-def uuMetaAdd(callback, objType, objName, attribute, value):
+# \brief Set an attribute on an object (only if current user permissions
+#        suffice)
+#
+# \param[in] objType    The object type (e.g. -d or -C)
+# \param[in] objPath    The path of the object
+# \param[in] attribute  The name of the attribute to set
+# \param[in] value      The value that the attribute should have
+#
+def uuMetaAdd(callback, objType, objPath, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                               irods_types.KeyValPair())['arguments'][1]
-    retval = callback.msiSetKeyValuePairsToObj(keyValPair, objName, objType)
+                                       irods_types.KeyValPair())['arguments'][1]
+    retval = callback.msiSetKeyValuePairsToObj(keyValPair, objPath, objType)
 
 
 # \brief Send an email using the specified parameters
@@ -151,7 +159,6 @@ def groupUserMember(group, user, callback):
 # \brief Persist a data request to disk.
 #
 # \param[in] data       JSON-formatted contents of the data request.
-# \param[in] proposalId Unique identifier of the research proposal.
 #
 def submitDatarequest(callback, data, rei):
     status = -1
@@ -160,8 +167,9 @@ def submitDatarequest(callback, data, rei):
     try:
         # Create collection
         zonePath = '/tempZone/home/datarequests-research/'
-        timestamp = datetime.now().strftime('%s')
-        collPath = zonePath + str(timestamp)
+        timestamp = datetime.now()
+        requestId = str(timestamp.strftime('%s'))
+        collPath = zonePath + requestId
         callback.msiCollCreate(collPath, 1, 0)
 
         # Write data request data to disk
@@ -175,14 +183,55 @@ def submitDatarequest(callback, data, rei):
         rule_args = [filePath, "-d", "root", data]
         setJsonToObj(rule_args, callback, rei)
 
-        # Set the status metadata field to "submitted"
-        uuMetaAdd(callback, "-d", filePath, "status", "submitted")
-
         # Set permissions for certain groups on the subcollection
         callback.msiSetACL("recursive", "write",
                            "datarequests-research-datamanagers", collPath)
         callback.msiSetACL("recursive", "write",
+                           "datarequests-research-data-management-committee",
+                           collPath)
+        callback.msiSetACL("recursive", "write",
                            "datarequests-research-board-of-directors", collPath)
+
+        # Set the status metadata field to "submitted"
+        uuMetaAdd(callback, "-d", filePath, "status", "submitted")
+
+        # Get parameters needed for sending emails
+        researcherName  = ""
+        researcherEmail = ""
+        researcherInstitute = ""
+        researcherDepartment = ""
+        proposalTitle   = ""
+        submissionDate  = timestamp.strftime('%c')
+        datamanagerEmails = ""
+        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s'") % (collPath,
+                                                    'datarequest.json'),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            name  = row["META_DATA_ATTR_NAME"]
+            value = row["META_DATA_ATTR_VALUE"]
+            if name == "name":
+                researcherName  = value
+            elif name == "email":
+                researcherEmail = value
+            elif name == "institution":
+                researcherInstitute = value
+            elif name == "department":
+                researcherDepartment = value
+            elif name == "title":
+                proposalTitle   = value
+        datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson(
+                                           'datarequests-research-datamanagers',
+                                            datamanagerEmails)['arguments'][1])
+
+        # Send email to researcher and data manager notifying them of the
+        # submission of this data request
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: submitted" % requestId, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+        for datamanagerEmail in datamanagerEmails:
+            if not datamanagerEmail == "rods":
+                sendMail(datamanagerEmail, "[data manager] YOUth data request %s: submitted" % requestId, "Dear data manager,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the detail page of the data request: https://portal.yoda.test/datarequest/view/%s.\n\nPlease review it carefully and assign it for review to the Data Management Committee using the \"Assign request\" button.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
 
         status = 0
         statusInfo = "OK"
@@ -238,8 +287,6 @@ def getDatarequest(callback, requestId):
     return {'requestJSON': requestJSON,
             'requestStatus': requestStatus, 'status': status,
             'statusInfo': statusInfo}
-
-
 
 
 # \brief Check if the invoking user is also the owner of a given data request.
@@ -358,6 +405,19 @@ def assignRequest(callback, assignees, requestId):
     statusInfo = "Internal server error"
 
     try:
+        # Check if user is a data manager. If not, do not the user to assign the
+        # request
+        isDatamanager = False
+        name = ""
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                            ['arguments'][0],
+                                        callback)
+        if not isDatamanager:
+            status = -2
+            statusInfo = "User is not a data manager."
+            raise Exception()
+
         # Construct data request collection path
         requestColl = ('/tempZone/home/datarequests-research/' +
                         requestId)
@@ -399,6 +459,42 @@ def assignRequest(callback, assignees, requestId):
                                                   "assigned", "", status,
                                                   statusInfo)
         callback.adminDatarequestActions()
+
+        # Get parameters required for sending emails
+        assigneeEmails  = []
+        researcherName  = ""
+        researcherEmail = ""
+        proposalTitle   = ""
+        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s'") % (requestColl,
+                                                    'datarequest.json'),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            name  = row["META_DATA_ATTR_NAME"]
+            value = row["META_DATA_ATTR_VALUE"]
+            if name == "name":
+                researcherName  = value
+            elif name == "email":
+                researcherEmail = value
+            elif name == "title":
+                proposalTitle   = value
+            elif name == "assignedForReview":
+                assigneeEmails.append(value)
+
+        # Send emails to the researcher and to the assignees
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: assigned" % requestId, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+        for assigneeEmail in assigneeEmails:
+            sendMail(assigneeEmail, "[assignee] YOUth data request %s: assigned" % requestId, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (requestId, proposalTitle, requestId))
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
 
 # \brief Persist a data request review to disk.
 #
@@ -824,6 +920,12 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
+# \brief Set the status of a data request to "DTA signed"
+#
+# \param[in] requestId        Unique identifier of the datarequest.
+# \param[in] currentUserName  Username of the user whose role is checked.
+#
+def requestDTASigned(callback, requestId):
     status = -1
     statusInfo = "Internal server error"
 
@@ -840,14 +942,14 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
         requestColl = ("/" + clientZone + "/home/datarequests-research/" +
                         requestId)
 
-        # Approve the datarequest by adding a delayed rule that sets the status
-        # of the datarequest to "approved" ...
+        # Add delayed rule to update datarequest status
         status = ""
         statusInfo = ""
         callback.requestDatarequestMetadataChange(requestColl, "status",
-                                               "approved", 0, status, statusInfo)
+                                                  "dta_signed", 0, status,
+                                                  statusInfo)
 
-        # ... and triggering the processing of delayed rules
+        # Trigger the processing of delayed rules
         callback.adminDatarequestActions()
 
         # Set status to OK
@@ -859,19 +961,73 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-def uuAssignRequest(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(assignRequest(callback,
-                                                            rule_args[0], rule_args[1])))
+# \brief Set the status of a submitted datarequest to "Data ready"
+#
+# \param[in] requestId        Unique identifier of the datarequest.
+# \param[in] currentUserName  Username of the user whose ownership is checked.
+#
+def requestDataReady(callback, requestId, currentUserName):
+    status = -1
+    statusInfo = "Internal server error"
 
+    try:
+        # Check if the user requesting the status transition is a data manager.
+        # If not, do not allow status transition
+        isDatamanager = False
+        name = ""
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                            ['arguments'][0],
+                                        callback)
+        if not isDatamanager:
+            status = -2
+            statusInfo = "User is not a data manager."
+            raise Exception()
 
-def uuApproveRequest(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(approveRequest(callback,
-                                                  rule_args[0], rule_args[1])))
+        # Construct path to the collection of the datarequest
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        requestColl = ("/" + clientZone + "/home/datarequests-research/" +
+                      requestId)
 
+        # Add delayed rule to update datarequest status
+        status = ""
+        statusInfo = ""
+        callback.requestDatarequestMetadataChange(requestColl, "status",
+                                                  "data_ready", 0, status,
+                                                  statusInfo)
 
-def uuIsRequestOwner(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(isRequestOwner(callback,
-                                                  rule_args[0], rule_args[1])))
+        # Trigger the processing of delayed rules
+        callback.adminDatarequestActions()
+
+        # Get parameters needed for sending emails
+        researcherName  = ""
+        researcherEmail = ""
+        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s'") % (requestColl,
+                                                    'datarequest.json'),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            name  = row["META_DATA_ATTR_NAME"]
+            value = row["META_DATA_ATTR_VALUE"]
+            if name == "name":
+                researcherName  = value
+            elif name == "email":
+                researcherEmail = value
+
+        # Send email to researcher notifying him of of the submission of his
+        # request
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: Data ready" % requestId, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcherName)
+
+        # Set status to OK
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
 
 
 def uuSubmitDatarequest(rule_args, callback, rei):
