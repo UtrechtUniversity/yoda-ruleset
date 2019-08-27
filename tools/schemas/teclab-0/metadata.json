@@ -1,5 +1,5 @@
 {
-  "$id": "https://yoda.uu.nl/schemas/teclab-1/metadata.json",
+  "$id": "https://yoda.uu.nl/schemas/teclab-0/metadata.json",
   "definitions": {
     "stringNormal": {
       "type": "string",
