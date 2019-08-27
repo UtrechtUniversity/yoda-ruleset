@@ -743,7 +743,48 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
 # \param[in] requestId        Unique identifier of the datarequest.
 # \param[in] currentUserName  Username of the user whose ownership is checked.
 #
-def approveRequest(callback, requestId, currentUserName):
+def requestDTAReady(callback, requestId, currentUserName):
+    status = -1
+    statusInfo = "Internal server error"
+
+    try:
+        # Check if the user requesting the status transition is a data manager.
+        # If not, do not allow status transition
+        isDatamanager = False
+        name = ""
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                            ['arguments'][0],
+                                        callback)
+        if not isDatamanager:
+            status = -2
+            statusInfo = "User is not a data manager."
+            raise Exception()
+
+        # Construct path to the collection of the datarequest
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        requestColl = ("/" + clientZone + "/home/datarequests-research/" +
+                        requestId)
+
+        # Add delayed rule to update datarequest status
+        status = ""
+        statusInfo = ""
+        callback.requestDatarequestMetadataChange(requestColl, "status",
+                                               "dta_ready", 0, status, statusInfo)
+
+        # Trigger the processing of delayed rules
+        callback.adminDatarequestActions()
+
+        # Set status to OK
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
+
     status = -1
     statusInfo = "Internal server error"
 
