@@ -876,9 +876,71 @@ def uuIsRequestOwner(rule_args, callback, rei):
 
 def uuSubmitDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitDatarequest(callback,
-                                                                rule_args[0], rei)))
+                                                                rule_args[0],
+                                                                rei)))
 
 
 def uuGetDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getDatarequest(callback,
                                                              rule_args[0])))
+
+
+def uuIsRequestOwner(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(isRequestOwner(callback,
+                                                  rule_args[0], rule_args[1])))
+
+
+def uuIsReviewer(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(isReviewer(callback, rule_args[0],
+                                                         rule_args[1])))
+
+
+def uuAssignRequest(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(assignRequest(callback,
+                                                            rule_args[0],
+                                                            rule_args[1])))
+
+
+def uuSubmitReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(submitReview(callback,
+                                                           rule_args[0],
+                                                           rule_args[1], rei)))
+
+
+def uuGetReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getReview(callback,
+                                                        rule_args[0])))
+
+
+def uuSubmitEvaluation(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(submitEvaluation(callback,
+                                                               rule_args[0],
+                                                               rule_args[1],
+                                                               rei)))
+
+
+def uuDTAGrantReadPermissions(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(DTAGrantReadPermissions(callback,
+                                                  rule_args[0], rule_args[1],
+                                                  rei)))
+
+
+def uuRequestDTAReady(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(requestDTAReady(callback,
+                                                  rule_args[0], rule_args[1])))
+
+
+def uuSignedDTAGrantReadPermissions(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(
+                                                  callback, rule_args[0],
+                                                  rule_args[1], rei)))
+
+
+def uuRequestDTASigned(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(requestDTASigned(callback,
+                                                  rule_args[0], rule_args[1])))
+
+
+def uuRequestDataReady(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(requestDataReady(callback,
+                                                  rule_args[0], rule_args[1])))
