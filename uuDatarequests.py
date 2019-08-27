@@ -785,6 +785,45 @@ def requestDTAReady(callback, requestId, currentUserName):
     return {'status': status, 'statusInfo': statusInfo}
 
 
+# \brief  Grant read permissions on the signed DTA to the datamanagers group.
+#
+# \param[in] requestId
+# \param[in] username
+#
+def signedDTAGrantReadPermissions(callback, requestId, username, rei):
+    status = -1
+    status = "Internal server error."
+
+    try:
+        # Construct path to the collection of the datarequest
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+        collPath = ("/" + clientZone + "/home/datarequests-research/" +
+                    requestId)
+
+        callback.msiSetACL("default", "read",
+                           "datarequests-research-datamanagers",
+                           collPath + "/signed_dta.pdf")
+
+        status = 0
+        statusInfo = "OK"
+
+        # Get parameters needed for sending emails
+        datamanagerEmails = ""
+        datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+
+        # Send an email to the data manager informing them that the DTA has been
+        # signed by the researcher
+        for datamanagerEmail in datamanagerEmails:
+            if not datamanagerEmail == "rods":
+                sendMail(datamanagerEmail, "[data manager] YOUth data request %s: DTA signed" % requestId, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
+
     status = -1
     statusInfo = "Internal server error"
 
