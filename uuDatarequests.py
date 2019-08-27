@@ -400,6 +400,145 @@ def assignRequest(callback, assignees, requestId):
                                                   statusInfo)
         callback.adminDatarequestActions()
 
+# \brief Persist a data request review to disk.
+#
+# \param[in] data       JSON-formatted contents of the data request review
+# \param[in] proposalId Unique identifier of the research proposal
+#
+def submitReview(callback, data, requestId, rei):
+    status = -1
+    statusInfo = "Internal server error"
+
+    try:
+        # Check if user is a member of the Data Management Committee. If not, do
+        # not allow submission of the review
+        isDmcMember = False
+        name = ""
+        isDmcMember = groupUserMember("datarequests-research-data-management-committee",
+                                      callback.uuClientFullNameWrapper(name)
+                                          ['arguments'][0], callback)
+        if not isDmcMember:
+            status = -2
+            statusInfo = "User is not a member of the Data Management Committee."
+            raise Exception()
+
+        # Check if the user has been assigned as a reviewer. If not, do not
+        # allow submission of the review
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        if not isReviewer(callback, requestId, username)['isReviewer']:
+            status = -3
+            statusInfo = "User is not assigned as a reviewer to this request."
+            raise Exception()
+
+        # Construct path to collection of review
+        zonePath = '/tempZone/home/datarequests-research/'
+        collPath = zonePath + requestId
+
+        # Get username
+        name = ""
+        clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        # Write review data to disk
+        reviewPath = collPath + '/review_' + clientName + '.json'
+        ret_val = callback.msiDataObjCreate(reviewPath, "", 0)
+        fileDescriptor = ret_val['arguments'][2]
+        callback.msiDataObjWrite(fileDescriptor, data, 0)
+        callback.msiDataObjClose(fileDescriptor, 0)
+
+        # Give read permission on the review to Board of Director members
+        callback.msiSetACL("default", "read",
+                           "datarequests-research-board-of-directors",
+                           reviewPath)
+
+        # Remove the assignedForReview attribute of this user by first fetching
+        # the list of reviewers ...
+        collName = '/tempZone/home/datarequests-research/' + requestId
+        fileName = 'datarequest.json'
+        reviewers = []
+        zoneName = ""
+        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+
+        ret_val = callback.msiMakeGenQuery(
+            "META_DATA_ATTR_VALUE",
+            (("COLL_NAME = '%s' AND DATA_NAME = 'datarequest.json' AND " +
+             "META_DATA_ATTR_NAME = 'assignedForReview'") %
+             (collName)).format(clientZone),
+            irods_types.GenQueryInp())
+        query = ret_val["arguments"][2]
+        ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+        while True:
+            result = ret_val["arguments"][1]
+            for row in range(result.rowCnt):
+                reviewers.append(result.sqlResult[0].row(row))
+
+            if result.continueInx == 0:
+                break
+            ret_val = callback.msiGetMoreRows(query, result, 0)
+        callback.msiCloseGenQuery(query, result)
+
+        # ... then removing the current reviewer from the list
+        reviewers.remove(clientName)
+
+        # ... and then updating the assignedForReview attributes
+        status = ""
+        statusInfo = ""
+        callback.requestDatarequestMetadataChange(collName,
+                                                  "assignedForReview",
+                                                  json.dumps(reviewers),
+                                                  str(len(
+                                                      reviewers)),
+                                                  status, statusInfo)
+        callback.adminDatarequestActions()
+
+        # If there are no reviewers left, change the status of the proposal to
+        # 'reviewed' and send an email to the board of directors members
+        # informing them that the proposal is ready to be evaluated by them.
+        if len(reviewers) < 1:
+            status = ""
+            statusInfo = ""
+            callback.requestDatarequestMetadataChange(collName, "status",
+                                                      "reviewed", "", status,
+                                                      statusInfo)
+            callback.adminDatarequestActions()
+
+            # Get parameters needed for sending emails
+            researcherName  = ""
+            researcherEmail = ""
+            bodmemberEmails = ""
+            rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                                ("COLL_NAME = '%s' AND " +
+                                 "DATA_NAME = '%s'") % (collPath,
+                                                        'datarequest.json'),
+                                AS_DICT,
+                                callback)
+            for row in rows:
+                name  = row["META_DATA_ATTR_NAME"]
+                value = row["META_DATA_ATTR_VALUE"]
+                if name == "name":
+                    researcherName  = value
+                elif name == "email":
+                    researcherEmail = value
+            bodmemberEmails = json.loads(callback.uuGroupGetMembersAsJson(
+                                             'datarequests-research-board-of-directors',
+                                             bodmemberEmails)['arguments'][1])
+
+            # Send email to researcher and data manager notifying them of the
+            # submission of this data request
+            sendMail(researcherEmail, "[researcher] YOUth data request %s: reviewed" % requestId, "Dear %s,\n\nYour data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+            for bodmemberEmail in bodmemberEmails:
+                if not bodmemberEmail == "rods":
+                    sendMail(bodmemberEmail, "[bod member] YOUth data request %s: reviewed" %requestId, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+
+        status = 0
+        statusInfo = "OK"
+    except:
+        pass
+
+    return {'status': status, 'statusInfo': statusInfo}
+
+
         status = 0
         statusInfo = "OK"
     except:
