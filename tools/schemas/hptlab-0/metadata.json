@@ -871,12 +871,11 @@
       "required": [
         "Title",
         "Description",
-        "Discipine",
+        "Discipline",
         "Lab",
         "Version",
         "Language",
         "Collected",
-        "Keywords",
         "Main_Setting",
         "Process_Hazard",
         "Geological_Structure",
