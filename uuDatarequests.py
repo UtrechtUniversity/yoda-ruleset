@@ -1,5 +1,7 @@
 # \file      uuDatarequest.py
 # \brief     Functions to handle data requests.
+# \author    Jelmer Zondergeld
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
@@ -10,49 +12,51 @@ from smtplib import SMTP
 from email.mime.text import MIMEText
 
 
-# \brief Set an attribute on an object (only if current user permissions
-#        suffice)
-#
-# \param[in] objType    The object type (e.g. -d or -C)
-# \param[in] objPath    The path of the object
-# \param[in] attribute  The name of the attribute to set
-# \param[in] value      The value that the attribute should have
-#
 def uuMetaAdd(callback, objType, objPath, attribute, value):
+    """Set an attribute on an object (only if current user permissions suffice).
+
+       Arguments:
+       objType   -- The object type (e.g. -d or -C)
+       objPath   -- The path of the object
+       attribute -- The name of the attribute to set
+       value     -- The value that the attribute should have
+    """
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
                                                irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objPath, objType)
 
 
-# \brief Send an email using the specified parameters
-#
-# \param[in] to       Recipient email address
-# \param[in] subject  Email message subject
-# \param[in] body     Email message body
-#
 def sendMail(to, subject, body):
-        # Construct message
-        msg = MIMEText(body)
-        msg["Subject"] = subject
-        msg["From"] = "test@example.org"
-        msg["To"] = to
+    """Send an email using the specified parameters.
 
-        # Send message
-        #
-        # TO-DO: fetch credentials (smtp_server_address, email_address,
-        # password) from credential store
-        # When testing, replace to with hardcoded email address
-        s = SMTP('smtp_server_address')
-        s.starttls()
-        s.login("email_address", "password")
-        s.sendmail("from_email_address", to, msg.as_string())
-        s.quit()
+       Arguments:
+       to      -- Recipient email address
+       subject -- Email message subject
+       body    -- Email message body
+    """
+    # Construct message
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = "test@example.org"
+    msg["To"] = to
+
+    # Send message
+    #
+    # TO-DO: fetch credentials (smtp_server_address, email_address,
+    # password) from credential store
+    # When testing, replace to with hardcoded email address
+    s = SMTP('smtp_server_address')
+    s.starttls()
+    s.login("email_address", "password")
+    s.sendmail("from_email_address", to, msg.as_string())
+    s.quit()
 
 
-# \brief Return groups and related data.
-#        Copied from irods-ruleset-uu/uuGroup.py.
-#
 def getGroupData(callback):
+    """Return groups and related data.
+
+       Copied from irods-ruleset-uu/uuGroup.py.
+    """
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
@@ -141,12 +145,13 @@ def getGroupData(callback):
     return groups.values()
 
 
-# \brief Check if a user is a member of the given group.
-#
-# \param[in] group  Name of group
-# \param[in] user   Name of user
-#
 def groupUserMember(group, user, callback):
+    """Check if a user is a member of the given group.
+
+       Arguments:
+       group -- Name of group
+       user  -- Name of user
+    """
     groups = getGroupData(callback)
     groups = list(filter(lambda grp: group == grp["name"] and
                          user in grp["members"], groups))
@@ -154,11 +159,12 @@ def groupUserMember(group, user, callback):
     return "true" if len(groups) == 1 else "false"
 
 
-# \brief Persist a data request to disk.
-#
-# \param[in] data       JSON-formatted contents of the data request.
-#
 def submitDatarequest(callback, data, rei):
+    """Persist a data request to disk.
+
+       Arguments:
+       data -- JSON-formatted contents of the data request.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -239,11 +245,12 @@ def submitDatarequest(callback, data, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Retrieve a data request.
-#
-# \param[in] requestId Unique identifier of the data request.
-#
 def getDatarequest(callback, requestId):
+    """Retrieve a data request.
+
+       Arguments:
+       requestId -- Unique identifier of the data request.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -287,14 +294,16 @@ def getDatarequest(callback, requestId):
             'statusInfo': statusInfo}
 
 
-# \brief Check if the invoking user is also the owner of a given data request.
-#
-# \param[in] requestId        Unique identifier of the data request.
-# \param[in] currentUserName  Username of the user whose ownership is checked.
-#
-# \return A boolean specifying whether the user owns the data request.
-#
 def isRequestOwner(callback, requestId, currentUserName):
+    """Check if the invoking user is also the owner of a given data request.
+
+       Arguments:
+       requestId       -- Unique identifier of the data request.
+       currentUserName -- Username of the user whose ownership is checked.
+
+       Return:
+       dict -- A JSON dict specifying whether the user owns the data request.
+    """
     status = -1
     statusInfo = "Internal server error"
     isRequestOwner = True
@@ -344,16 +353,16 @@ def isRequestOwner(callback, requestId, currentUserName):
             'statusInfo': statusInfo}
 
 
-# \brief  Check if the invoking user is assigned as reviewer to the given data
-#         request
-#
-# \param[in] requestId        Unique identifier of the data request.
-# \param[in] currentUserName  Username of the user that is to be checked.
-#
-# \return A boolean specifying whether the user is assigned as reviewer to the
-#         data request.
-#
 def isReviewer(callback, requestId, currentUsername):
+    """Check if the invoking user is assigned as reviewer to the given data request.
+
+       Arguments:
+       requestId       -- Unique identifier of the data request.
+       currentUserName -- Username of the user that is to be checked.
+
+       Return:
+       dict -- A JSON dict specifying whether the user is assigned as reviewer to the data request.
+    """
     status = -1
     statusInfo = "Internal server error"
     isReviewer = False
@@ -393,12 +402,16 @@ def isReviewer(callback, requestId, currentUsername):
             "statusInfo": statusInfo}
 
 
-# \brief Assign a data request to one or more DMC members for review
-#
-# \param[in] assignees          JSON-formatted array of DMC members
-# \param[in] requestId          Unique identifier of the data request
-#
 def assignRequest(callback, assignees, requestId):
+    """Assign a data request to one or more DMC members for review.
+
+       Arguments:
+       assignees -- JSON-formatted array of DMC members.
+       requestId -- Unique identifier of the data request
+
+       Return:
+       dict -- A JSON dict with status info for the front office.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -496,12 +509,16 @@ def assignRequest(callback, assignees, requestId):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Persist a data request review to disk.
-#
-# \param[in] data       JSON-formatted contents of the data request review
-# \param[in] proposalId Unique identifier of the research proposal
-#
 def submitReview(callback, data, requestId, rei):
+    """Persist a data request review to disk.
+
+       Arguments:
+       data -- JSON-formatted contents of the data request review
+       proposalId -- Unique identifier of the research proposal
+
+       Return:
+       dict -- A JSON dict with status info for the front office.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -636,11 +653,12 @@ def submitReview(callback, data, requestId, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Retrieve a data request review
-#
-# \param[in] requestId Unique identifier of the data request
-#
 def getReview(callback, requestId):
+    """Retrieve a data request review.
+
+       Arguments:
+       requestId -- Unique identifier of the data request
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -682,12 +700,13 @@ def getReview(callback, requestId):
             'statusInfo': statusInfo}
 
 
-# \brief Persist an evaluation to disk.
-#
-# \param[in] data       JSON-formatted contents of the evaluation
-# \param[in] proposalId Unique identifier of the research proposal
-#
 def submitEvaluation(callback, data, requestId, rei):
+    """Persist an evaluation to disk.
+
+       Arguments:
+       data       -- JSON-formatted contents of the evaluation
+       proposalId -- Unique identifier of the research proposal
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -766,13 +785,13 @@ def submitEvaluation(callback, data, requestId, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief  Grant read permissions on the DTA to the owner of the associated data
-#         request.
-#
-# \param[in] requestId
-# \param[in] username
-#
 def DTAGrantReadPermissions(callback, requestId, username, rei):
+    """Grant read permissions on the DTA to the owner of the associated data request.
+
+       Arguments:
+       requestId --
+       username  --
+    """
     status = -1
     status = "Internal server error."
 
@@ -835,12 +854,13 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Set the status of a submitted datarequest to "DTA ready"
-#
-# \param[in] requestId        Unique identifier of the datarequest.
-# \param[in] currentUserName  Username of the user whose ownership is checked.
-#
 def requestDTAReady(callback, requestId, currentUserName):
+    """Set the status of a submitted datarequest to "DTA ready".
+
+       Arguments:
+       requestId       -- Unique identifier of the datarequest.
+       currentUserName -- Username of the user whose ownership is checked.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -882,12 +902,13 @@ def requestDTAReady(callback, requestId, currentUserName):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief  Grant read permissions on the signed DTA to the datamanagers group.
-#
-# \param[in] requestId
-# \param[in] username
-#
 def signedDTAGrantReadPermissions(callback, requestId, username, rei):
+    """Grant read permissions on the signed DTA to the datamanagers group.
+
+       Arguments:
+       requestId -- Unique identifier of the datarequest.
+       username  --
+    """
     status = -1
     status = "Internal server error."
 
@@ -921,12 +942,13 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Set the status of a data request to "DTA signed"
-#
-# \param[in] requestId        Unique identifier of the datarequest.
-# \param[in] currentUserName  Username of the user whose role is checked.
-#
 def requestDTASigned(callback, requestId):
+    """Set the status of a data request to "DTA signed".
+
+       Arguments:
+       requestId       -- Unique identifier of the datarequest.
+       currentUserName -- Username of the user whose role is checked.
+    """
     status = -1
     statusInfo = "Internal server error"
 
@@ -962,12 +984,13 @@ def requestDTASigned(callback, requestId):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-# \brief Set the status of a submitted datarequest to "Data ready"
-#
-# \param[in] requestId        Unique identifier of the datarequest.
-# \param[in] currentUserName  Username of the user whose ownership is checked.
-#
 def requestDataReady(callback, requestId, currentUserName):
+    """Set the status of a submitted datarequest to "Data ready".
+
+       Arguments:
+       requestId       -- Unique identifier of the datarequest.
+       currentUserName -- Username of the user whose ownership is checked.
+    """
     status = -1
     statusInfo = "Internal server error"
 
