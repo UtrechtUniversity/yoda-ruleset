@@ -20,7 +20,7 @@ from email.mime.text import MIMEText
 #
 def uuMetaAdd(callback, objType, objPath, attribute, value):
     keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                       irods_types.KeyValPair())['arguments'][1]
+                                               irods_types.KeyValPair())['arguments'][1]
     retval = callback.msiSetKeyValuePairsToObj(keyValPair, objPath, objType)
 
 
@@ -41,13 +41,11 @@ def sendMail(to, subject, body):
         #
         # TO-DO: fetch credentials (smtp_server_address, email_address,
         # password) from credential store
+        # When testing, replace to with hardcoded email address
         s = SMTP('smtp_server_address')
         s.starttls()
         s.login("email_address", "password")
-        s.sendmail("from_email_address", to, msg.as_string()) # When testing,
-                                                              # replace to with
-                                                              # hardcoded email
-                                                              # address
+        s.sendmail("from_email_address", to, msg.as_string())
         s.quit()
 
 
@@ -151,7 +149,7 @@ def getGroupData(callback):
 def groupUserMember(group, user, callback):
     groups = getGroupData(callback)
     groups = list(filter(lambda grp: group == grp["name"] and
-                                     user in grp["members"], groups))
+                         user in grp["members"], groups))
 
     return "true" if len(groups) == 1 else "false"
 
@@ -196,12 +194,12 @@ def submitDatarequest(callback, data, rei):
         uuMetaAdd(callback, "-d", filePath, "status", "submitted")
 
         # Get parameters needed for sending emails
-        researcherName  = ""
+        researcherName = ""
         researcherEmail = ""
         researcherInstitute = ""
         researcherDepartment = ""
-        proposalTitle   = ""
-        submissionDate  = timestamp.strftime('%c')
+        proposalTitle = ""
+        submissionDate = timestamp.strftime('%c')
         datamanagerEmails = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
@@ -210,10 +208,10 @@ def submitDatarequest(callback, data, rei):
                             AS_DICT,
                             callback)
         for row in rows:
-            name  = row["META_DATA_ATTR_NAME"]
+            name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName  = value
+                researcherName = value
             elif name == "email":
                 researcherEmail = value
             elif name == "institution":
@@ -221,10 +219,10 @@ def submitDatarequest(callback, data, rei):
             elif name == "department":
                 researcherDepartment = value
             elif name == "title":
-                proposalTitle   = value
+                proposalTitle = value
         datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson(
-                                           'datarequests-research-datamanagers',
-                                            datamanagerEmails)['arguments'][1])
+                                       'datarequests-research-datamanagers',
+                                       datamanagerEmails)['arguments'][1])
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
@@ -375,7 +373,7 @@ def isReviewer(callback, requestId, currentUsername):
                             ("COLL_NAME = '%s' AND " +
                              "DATA_NAME = '%s' AND " +
                              "META_DATA_ATTR_NAME = 'assignedForReview'") % (collName,
-                                                                  fileName),
+                                                                             fileName),
                             AS_DICT,
                             callback)
         for row in rows:
@@ -411,7 +409,7 @@ def assignRequest(callback, assignees, requestId):
         name = ""
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
-                                            ['arguments'][0],
+                                        ['arguments'][0],
                                         callback)
         if not isDatamanager:
             status = -2
@@ -420,18 +418,20 @@ def assignRequest(callback, assignees, requestId):
 
         # Construct data request collection path
         requestColl = ('/tempZone/home/datarequests-research/' +
-                        requestId)
+                       requestId)
 
         # Check if data request has already been assigned. If true, set status
         # code to failure and do not perform requested assignment
         results = []
         rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
-                         "META_DATA_ATTR_NAME = 'status'")
-                        % (requestColl, 'datarequest.json'),
-                        AS_DICT, callback)
+                            ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
+                            "META_DATA_ATTR_NAME = 'status'")
+                            % (requestColl, 'datarequest.json'),
+                            AS_DICT, callback)
+
         for row in rows:
             requestStatus = row['META_DATA_ATTR_VALUE']
+
         if not requestStatus == "submitted":
             status = -1
             statusInfo = "Proposal is already assigned."
@@ -461,10 +461,10 @@ def assignRequest(callback, assignees, requestId):
         callback.adminDatarequestActions()
 
         # Get parameters required for sending emails
-        assigneeEmails  = []
-        researcherName  = ""
+        assigneeEmails = []
+        researcherName = ""
         researcherEmail = ""
-        proposalTitle   = ""
+        proposalTitle = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
                              "DATA_NAME = '%s'") % (requestColl,
@@ -472,14 +472,14 @@ def assignRequest(callback, assignees, requestId):
                             AS_DICT,
                             callback)
         for row in rows:
-            name  = row["META_DATA_ATTR_NAME"]
+            name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName  = value
+                researcherName = value
             elif name == "email":
                 researcherEmail = value
             elif name == "title":
-                proposalTitle   = value
+                proposalTitle = value
             elif name == "assignedForReview":
                 assigneeEmails.append(value)
 
@@ -512,7 +512,7 @@ def submitReview(callback, data, requestId, rei):
         name = ""
         isDmcMember = groupUserMember("datarequests-research-data-management-committee",
                                       callback.uuClientFullNameWrapper(name)
-                                          ['arguments'][0], callback)
+                                      ['arguments'][0], callback)
         if not isDmcMember:
             status = -2
             statusInfo = "User is not a member of the Data Management Committee."
@@ -600,7 +600,7 @@ def submitReview(callback, data, requestId, rei):
             callback.adminDatarequestActions()
 
             # Get parameters needed for sending emails
-            researcherName  = ""
+            researcherName = ""
             researcherEmail = ""
             bodmemberEmails = ""
             rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
@@ -610,12 +610,13 @@ def submitReview(callback, data, requestId, rei):
                                 AS_DICT,
                                 callback)
             for row in rows:
-                name  = row["META_DATA_ATTR_NAME"]
+                name = row["META_DATA_ATTR_NAME"]
                 value = row["META_DATA_ATTR_VALUE"]
                 if name == "name":
-                    researcherName  = value
+                    researcherName = value
                 elif name == "email":
                     researcherEmail = value
+
             bodmemberEmails = json.loads(callback.uuGroupGetMembersAsJson(
                                              'datarequests-research-board-of-directors',
                                              bodmemberEmails)['arguments'][1])
@@ -697,7 +698,7 @@ def submitEvaluation(callback, data, requestId, rei):
         name = ""
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
                                         callback.uuClientFullNameWrapper(name)
-                                            ['arguments'][0],
+                                        ['arguments'][0],
                                         callback)
         if not isBoardMember:
             status = -2
@@ -728,7 +729,7 @@ def submitEvaluation(callback, data, requestId, rei):
         callback.adminDatarequestActions()
 
         # Get parameters needed for sending emails
-        researcherName  = ""
+        researcherName = ""
         researcherEmail = ""
         datamanagerEmails = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
@@ -738,10 +739,10 @@ def submitEvaluation(callback, data, requestId, rei):
                             AS_DICT,
                             callback)
         for row in rows:
-            name  = row["META_DATA_ATTR_NAME"]
+            name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName  = value
+                researcherName = value
             elif name == "email":
                 researcherEmail = value
         datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
@@ -806,7 +807,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
         callback.msiSetACL("default", "read", requestOwnerUsername, collPath + "/dta.pdf")
 
         # Get parameters needed for sending emails
-        researcherName  = ""
+        researcherName = ""
         researcherEmail = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
@@ -815,10 +816,10 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
                             AS_DICT,
                             callback)
         for row in rows:
-            name  = row["META_DATA_ATTR_NAME"]
+            name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName  = value
+                researcherName = value
             elif name == "email":
                 researcherEmail = value
 
@@ -850,7 +851,7 @@ def requestDTAReady(callback, requestId, currentUserName):
         name = ""
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
-                                            ['arguments'][0],
+                                        ['arguments'][0],
                                         callback)
         if not isDatamanager:
             status = -2
@@ -861,13 +862,13 @@ def requestDTAReady(callback, requestId, currentUserName):
         zoneName = ""
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
         requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                        requestId)
+                       requestId)
 
         # Add delayed rule to update datarequest status
         status = ""
         statusInfo = ""
         callback.requestDatarequestMetadataChange(requestColl, "status",
-                                               "dta_ready", 0, status, statusInfo)
+                                                  "dta_ready", 0, status, statusInfo)
 
         # Trigger the processing of delayed rules
         callback.adminDatarequestActions()
@@ -940,7 +941,7 @@ def requestDTASigned(callback, requestId):
         zoneName = ""
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
         requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                        requestId)
+                       requestId)
 
         # Add delayed rule to update datarequest status
         status = ""
@@ -977,7 +978,7 @@ def requestDataReady(callback, requestId, currentUserName):
         name = ""
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
-                                            ['arguments'][0],
+                                        ['arguments'][0],
                                         callback)
         if not isDatamanager:
             status = -2
@@ -988,7 +989,7 @@ def requestDataReady(callback, requestId, currentUserName):
         zoneName = ""
         clientZone = callback.uuClientZone(zoneName)['arguments'][0]
         requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                      requestId)
+                       requestId)
 
         # Add delayed rule to update datarequest status
         status = ""
@@ -1001,7 +1002,7 @@ def requestDataReady(callback, requestId, currentUserName):
         callback.adminDatarequestActions()
 
         # Get parameters needed for sending emails
-        researcherName  = ""
+        researcherName = ""
         researcherEmail = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
@@ -1010,10 +1011,10 @@ def requestDataReady(callback, requestId, currentUserName):
                             AS_DICT,
                             callback)
         for row in rows:
-            name  = row["META_DATA_ATTR_NAME"]
+            name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName  = value
+                researcherName = value
             elif name == "email":
                 researcherEmail = value
 
@@ -1043,7 +1044,7 @@ def uuGetDatarequest(rule_args, callback, rei):
 
 def uuIsRequestOwner(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(isRequestOwner(callback,
-                                                  rule_args[0], rule_args[1])))
+                                              rule_args[0], rule_args[1])))
 
 
 def uuIsReviewer(rule_args, callback, rei):
@@ -1077,26 +1078,26 @@ def uuSubmitEvaluation(rule_args, callback, rei):
 
 def uuDTAGrantReadPermissions(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(DTAGrantReadPermissions(callback,
-                                                  rule_args[0], rule_args[1],
-                                                  rei)))
+                                              rule_args[0], rule_args[1],
+                                              rei)))
 
 
 def uuRequestDTAReady(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(requestDTAReady(callback,
-                                                  rule_args[0], rule_args[1])))
+                                              rule_args[0], rule_args[1])))
 
 
 def uuSignedDTAGrantReadPermissions(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(
-                                                  callback, rule_args[0],
-                                                  rule_args[1], rei)))
+                                              callback, rule_args[0],
+                                              rule_args[1], rei)))
 
 
 def uuRequestDTASigned(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(requestDTASigned(callback,
-                                                  rule_args[0], rule_args[1])))
+                                              rule_args[0], rule_args[1])))
 
 
 def uuRequestDataReady(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(requestDataReady(callback,
-                                                  rule_args[0], rule_args[1])))
+                                              rule_args[0], rule_args[1])))
