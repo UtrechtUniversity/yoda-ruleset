@@ -1,0 +1,1362 @@
+{
+  "$id": "https://yoda.uu.nl/schemas/hptlab-0/metadata.json",
+  "definitions": {
+    "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "stringLong": {
+      "type": "string",
+      "maxLength": 2700
+    },
+    "optionsLabs": {
+      "type": "string",
+      "enum": [
+        "1b9abbf97c7caa2d763b647d476b2910",
+        "9cd562c216daa82792972a074a222c52",
+        "09e434194091574963c80f83d586875d",
+        "f780441f60a30a86b752e00adb66f107"
+      ],
+      "enumNames": [
+        "Laboratoire de modélisation analogique Fluides Automatique et Systèmes Thermiques (CNRS-Paris Sud Orsay University,  France)",
+        "Fragmentation Lab (Ludwig-Maximilians-University Munich,  Germany)",
+        "Laboratoire de modélisation analogique Géosciences Rennes  (CNRS-Rennes 1 University,  France)",
+        "Laboratoire de modélisation analogique Géosciences Montpellier (CNRS-Montpellier University,  France)"
+      ]
+    },
+    "optionsProcessHazard": {
+      "type": "string",
+      "enum": [
+        "Rifting",
+        "Isostatic uplift",
+        "Tectonic uplift"
+      ]
+    },
+    "optionsGeologicalStructure": {
+      "type": "string",
+      "enum": [
+        "lava flow",
+        "lahar",
+        "cone",
+        "neck",
+        "trenche",
+        "resurgence",
+        "boudin",
+        "mullion",
+        "megathrust",
+        "thrust sheet/nappe/overthrust",
+        "diapir",
+        "sill",
+        "dike",
+        "cone sheet",
+        "ring dike",
+        "radial dike",
+        "pluton",
+        "fracture",
+        "crack",
+        "joint",
+        "shatter cone",
+        "volcanic crater",
+        "impact crater",
+        "vein",
+        "fissure",
+        "flexure/buckle",
+        "core complex",
+        "fauld-thrust belt",
+        "kink band",
+        "shear band",
+        "caldera",
+        "cinder cone",
+        "geyser",
+        "graben",
+        "horst",
+        "lava dome",
+        "lava plain",
+        "maar",
+        "mountains",
+        "plateau",
+        "ridge",
+        "rift valley",
+        "tuya",
+        "volcano"
+      ]
+    },
+    "optionsGeomorphicalFeature": {
+      "type": "string",
+      "enum": [
+        "Natural Geomorphologic Feature Type",
+        "alluvial and fluvial features",
+        "base slope",
+        "buried feature",
+        "constructional feature",
+        "crest",
+        "degradation feature",
+        "depression",
+        "destructional feature",
+        "drainage pattern",
+        "eolian features",
+        "erosion surface",
+        "erosional features",
+        "exhumed feature",
+        "glacial, glaciofluvial, glaciolacustrine and glaciomarine features",
+        "head slope",
+        "hill",
+        "hydrothermal features",
+        "impact features",
+        "interfluve",
+        "karst and chemical weathering features",
+        "lacustrine features",
+        "marine, littoral and coastal wetlands features",
+        "mountain",
+        "mountainbase",
+        "mountainflank",
+        "mountainslope",
+        "mountaintop",
+        "nival, periglacial and permafrost features",
+        "nose slope",
+        "pediment",
+        "plain",
+        "relic",
+        "slope and gravitational features",
+        "tectonic and structural features",
+        "volcanic features"
+      ]
+    },
+    "optionsMaterial": {
+      "type": "string",
+      "enum": [
+        "Microsphere",
+        "Glassy",
+        "Siliceus",
+        "PVC Roods",
+        "Polycrisstalline CaTiO3",
+        "Sand",
+        "Corundum Sand",
+        "Quartz Sand",
+        "Feldspar Sand",
+        "Glass fragments",
+        "Rubber pellet",
+        "Sugar",
+        "Alumina Powder",
+        "Iron Powder",
+        "Ignimbrite",
+        "Graphyte",
+        "Plastic",
+        "Flour",
+        "Rice Flour",
+        "Air",
+        "Nitrogen",
+        "Vegetable oil",
+        "Water",
+        "Pyrex",
+        "Water saturated paste",
+        "Golden syrup",
+        "Carbopol",
+        "Clay",
+        "Paraffin",
+        "Silicon",
+        "Plasticine",
+        "Cement-Plaster",
+        "Gelatine",
+        "Pig skin",
+        "K-caragean",
+        "Gellan gum",
+        "Xantan",
+        "Natrosol",
+        "Glycerine",
+        "Foam rubber",
+        "Polytungstate",
+        "Barium sulphate"
+      ]
+    },
+    "optionsApparatus": {
+      "type": "string",
+      "enum": [
+        "2D Convection box",
+        "3D Convection box",
+        "Cooler device",
+        "Densimeter",
+        "Dynamometer",
+        "Earthquake simulator",
+        "Electric engine (mm/hr)",
+        "Electronic microscope",
+        "Extension box",
+        "Fault simulator",
+        "Flow channel",
+        "Fluid injector",
+        "Fluid injector termally controlled",
+        "Fluid pressure device",
+        "Fog box",
+        "Glass/Plexiglas box (cm scale)",
+        "Glass/Plexiglas box (meter scale)",
+        "Glass/Plexiglas box",
+        "Granular flow simulator",
+        "Gravity load device (Centrifuge)",
+        "Gravity sliding simulator",
+        "Heating device",
+        "Hubbert-type shear box",
+        "Peristaltic pump",
+        "Perspex cylinder",
+        "Pycnometer",
+        "Rainfall system",
+        "Rheometer",
+        "Ring-shear tester",
+        "River sytem simulator",
+        "Sandbox",
+        "Sandbox (meter scale)",
+        "Sandbox (cm scale)",
+        "Sediment feeders",
+        "Shear box",
+        "Sieving device",
+        "Squeeze box",
+        "Subduction box",
+        "Thermomechanics apparatus",
+        "Triaxal tester",
+        "Tsunami simulator",
+        "Turbidity current simulator",
+        "Uniaxial tester",
+        "Vice tester",
+        "Viscometer",
+        "Wedge simulator"
+      ]
+    },
+    "optionsMonitoring": {
+      "type": "string",
+      "enum": [
+        "Conductivity measuring system",
+        "Deflection of a light beam",
+        "Discharge meter",
+        "Electrochemical techniques",
+        "High frame rate camera",
+        "Kinetic Microfoft",
+        "Laser interferometer",
+        "Laser scanner",
+        "Lidar",
+        "MEMS accelerometer",
+        "Schlieren/Moiré",
+        "Sectioning",
+        "Seismic reflection techniques",
+        "SLR camera",
+        "Temperature measurement",
+        "Thermochromic liquid crystals",
+        "Time lapse camera",
+        "Ultrasonic doppler velocimetry",
+        "Videocamera",
+        "X-ray computed tomographic scanner (CT-scan)",
+        "Generic camera",
+        "Force sensor",
+        "Strain gauge",
+        "Photoelasticity",
+        "Piezotransducer"
+      ]
+    },
+    "optionsMeasuredProperty": {
+      "type": "string",
+      "enum": [
+        "Tensile strength",
+        "Cohesion",
+        "Friction coefficient",
+        "Rate-state parameters",
+        "Young modulus",
+        "Bulk modulus",
+        "Shear modulus",
+        "Poisson ratio",
+        "Lame constant",
+        "Fracture toughness",
+        "S-wave velocity",
+        "P-wave velocity",
+        "Viscosity",
+        "Stress exponent",
+        "Yield stress",
+        "Loss modulus",
+        "Storage modulus",
+        "Maxwell relaxation time",
+        "Rheological model",
+        "Density",
+        "Surface image",
+        "Surface roughness",
+        "Grain size distribution"
+      ]
+    },
+    "optionsDataAccessRestriction": {
+      "type": "string",
+      "enum": [
+        "Open - freely retrievable",
+        "Restricted - available upon request",
+        "Closed"
+      ]
+    },
+    "optionsDataClassification": {
+      "type": "string",
+      "enum": [
+        "Public",
+        "Basic",
+        "Sensitive",
+        "Critical"
+      ]
+    },
+    "optionsDataType": {
+      "type": "string",
+      "enum": [
+        "Dataset",
+        "Datapaper",
+        "Software",
+        "Text"
+      ],
+      "enumNames": [
+        "Datapackage",
+        "Method",
+        "Software",
+        "Other Document"
+      ]
+    },
+    "optionsNameIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ORCID",
+        "DAI",
+        "Author identifier (Scopus)",
+        "ResearcherID (Web of Science)",
+        "ISNI"
+      ]
+    },
+    "optionsPersistentIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ARK",
+        "arXiv",
+        "bibcode",
+        "DOI",
+        "EAN13",
+        "EISSN",
+        "Handle",
+        "IGSN",
+        "ISBN",
+        "ISSN",
+        "ISTC",
+        "LISSN",
+        "LSID",
+        "PMID",
+        "PURL",
+        "UPC",
+        "URL",
+        "URN"
+      ]
+    },
+    "optionsDiscipline": {
+      "type": "string",
+      "enum": [
+        "Analog modelling",
+        "Geochemical data",
+        "Paleomagnetic data",
+        "Rock and melt physical properties"
+      ]
+    },
+    "optionsContributorType": {
+      "type": "string",
+      "enum": [
+        "ContactPerson",
+        "DataCollector",
+        "DataCurator",
+        "DataManager",
+        "Distributor",
+        "Editor",
+        "HostingInstitution",
+        "Producer",
+        "ProjectLeader",
+        "ProjectManager",
+        "ProjectMember",
+        "RegistrationAgency",
+        "RegistrationAuthority",
+        "RelatedPerson",
+        "Researcher",
+        "ResearchGroup",
+        "RightsHolder",
+        "Sponsor",
+        "Supervisor",
+        "WorkPackageLeader"
+      ]
+    },
+    "optionsLicense": {
+      "type": "string",
+      "enum": [
+        "Creative Commons Attribution 4.0 International Public License",
+        "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Open Data Commons Attribution License (ODC-By) v1.0",
+        "Custom"
+      ]
+    },
+    "optionsRelationType": {
+      "type": "string",
+      "enum": [
+        "IsCitedBy",
+        "Cites",
+        "IsSupplementTo",
+        "IsSupplementedBy",
+        "IsContinuedBy",
+        "Continues",
+        "IsNewVersionOf",
+        "IsPreviousVersionOf",
+        "IsPartOf",
+        "HasPart",
+        "IsReferencedBy",
+        "References",
+        "IsDocumentedBy",
+        "Documents",
+        "IsCompiledBy",
+        "Compiles",
+        "IsVariantFormOf",
+        "IsOriginalFormOf",
+        "IsIdenticalTo",
+        "HasMetadata",
+        "IsMetadataFor",
+        "Reviews",
+        "IsReviewedBy",
+        "IsDerivedFrom",
+        "IsSourceOf",
+        "Describes",
+        "IsDescribedBy",
+        "HasVersion",
+        "IsVersionOf",
+        "Requires",
+        "IsRequiredBy",
+        "Obsoletes",
+        "IsObsoletedBy"
+      ]
+    },
+    "optionsISO639-1": {
+      "type": "string",
+      "enum": [
+        "ab - Abkhazian",
+        "aa - Afar",
+        "af - Afrikaans",
+        "ak - Akan",
+        "sq - Albanian",
+        "am - Amharic",
+        "ar - Arabic",
+        "an - Aragonese",
+        "hy - Armenian",
+        "as - Assamese",
+        "av - Avaric",
+        "ae - Avestan",
+        "ay - Aymara",
+        "az - Azerbaijani",
+        "bm - Bambara",
+        "ba - Bashkir",
+        "eu - Basque",
+        "be - Belarusian",
+        "bn - Bengali",
+        "bh - Bihari languages",
+        "bi - Bislama",
+        "nb - Bokmål, Norwegian",
+        "bs - Bosnian",
+        "br - Breton",
+        "bg - Bulgarian",
+        "my - Burmese",
+        "es - Castilian",
+        "ca - Catalan",
+        "km - Central Khmer",
+        "ch - Chamorro",
+        "ce - Chechen",
+        "ny - Chewa",
+        "ny - Chichewa",
+        "zh - Chinese",
+        "za - Chuang",
+        "cu - Church Slavic",
+        "cv - Chuvash",
+        "kw - Cornish",
+        "co - Corsican",
+        "cr - Cree",
+        "hr - Croatian",
+        "cs - Czech",
+        "da - Danish",
+        "dv - Dhivehi",
+        "dv - Divehi",
+        "nl - Dutch",
+        "dz - Dzongkha",
+        "en - English",
+        "eo - Esperanto",
+        "et - Estonian",
+        "ee - Ewe",
+        "fo - Faroese",
+        "fj - Fijian",
+        "fi - Finnish",
+        "nl - Flemish",
+        "fr - French",
+        "ff - Fulah",
+        "gd - Gaelic",
+        "gl - Galician",
+        "lg - Ganda",
+        "ka - Georgian",
+        "de - German",
+        "ki - Gikuyu",
+        "el - Greek, Modern (1453-)",
+        "kl - Greenlandic",
+        "gn - Guarani",
+        "gu - Gujarati",
+        "ht - Haitian",
+        "ht - Haitian Creole",
+        "ha - Hausa",
+        "he - Hebrew",
+        "hz - Herero",
+        "hi - Hindi",
+        "ho - Hiri Motu",
+        "hu - Hungarian",
+        "is - Icelandic",
+        "io - Ido",
+        "ig - Igbo",
+        "id - Indonesian",
+        "ia - Interlingua (International Auxiliary Language Association)",
+        "ie - Interlingue",
+        "iu - Inuktitut",
+        "ik - Inupiaq",
+        "ga - Irish",
+        "it - Italian",
+        "ja - Japanese",
+        "jv - Javanese",
+        "kl - Kalaallisut",
+        "kn - Kannada",
+        "kr - Kanuri",
+        "ks - Kashmiri",
+        "kk - Kazakh",
+        "ki - Kikuyu",
+        "rw - Kinyarwanda",
+        "ky - Kirghiz",
+        "kv - Komi",
+        "kg - Kongo",
+        "ko - Korean",
+        "kj - Kuanyama",
+        "ku - Kurdish",
+        "kj - Kwanyama",
+        "ky - Kyrgyz",
+        "lo - Lao",
+        "la - Latin",
+        "lv - Latvian",
+        "lb - Letzeburgesch",
+        "li - Limburgan",
+        "li - Limburger",
+        "li - Limburgish",
+        "ln - Lingala",
+        "lt - Lithuanian",
+        "lu - Luba-Katanga",
+        "lb - Luxembourgish",
+        "mk - Macedonian",
+        "mg - Malagasy",
+        "ms - Malay",
+        "ml - Malayalam",
+        "dv - Maldivian",
+        "mt - Maltese",
+        "gv - Manx",
+        "mi - Maori",
+        "mr - Marathi",
+        "mh - Marshallese",
+        "ro - Moldavian",
+        "ro - Moldovan",
+        "mn - Mongolian",
+        "na - Nauru",
+        "nv - Navaho",
+        "nv - Navajo",
+        "nd - Ndebele, North",
+        "nr - Ndebele, South",
+        "ng - Ndonga",
+        "ne - Nepali",
+        "nd - North Ndebele",
+        "se - Northern Sami",
+        "no - Norwegian",
+        "nb - Norwegian Bokmål",
+        "nn - Norwegian Nynorsk",
+        "ii - Nuosu",
+        "ny - Nyanja",
+        "nn - Nynorsk, Norwegian",
+        "ie - Occidental",
+        "oc - Occitan (post 1500)",
+        "oj - Ojibwa",
+        "or - Oriya",
+        "om - Oromo",
+        "os - Ossetian",
+        "os - Ossetic",
+        "pi - Pali",
+        "pa - Panjabi",
+        "ps - Pashto",
+        "fa - Persian",
+        "pl - Polish",
+        "pt - Portuguese",
+        "pa - Punjabi",
+        "ps - Pushto",
+        "qu - Quechua",
+        "ro - Romanian",
+        "rm - Romansh",
+        "rn - Rundi",
+        "ru - Russian",
+        "sm - Samoan",
+        "sg - Sango",
+        "sa - Sanskrit",
+        "sc - Sardinian",
+        "gd - Scottish Gaelic",
+        "sr - Serbian",
+        "sn - Shona",
+        "ii - Sichuan Yi",
+        "sd - Sindhi",
+        "si - Sinhala",
+        "si - Sinhalese",
+        "sk - Slovak",
+        "sl - Slovenian",
+        "so - Somali",
+        "st - Sotho, Southern",
+        "nr - South Ndebele",
+        "es - Spanish",
+        "su - Sundanese",
+        "sw - Swahili",
+        "ss - Swati",
+        "sv - Swedish",
+        "tl - Tagalog",
+        "ty - Tahitian",
+        "tg - Tajik",
+        "ta - Tamil",
+        "tt - Tatar",
+        "te - Telugu",
+        "th - Thai",
+        "bo - Tibetan",
+        "ti - Tigrinya",
+        "to - Tonga (Tonga Islands)",
+        "ts - Tsonga",
+        "tn - Tswana",
+        "tr - Turkish",
+        "tk - Turkmen",
+        "tw - Twi",
+        "ug - Uighur",
+        "uk - Ukrainian",
+        "ur - Urdu",
+        "ug - Uyghur",
+        "uz - Uzbek",
+        "ca - Valencian",
+        "ve - Venda",
+        "vi - Vietnamese",
+        "vo - Volapük",
+        "wa - Walloon",
+        "cy - Welsh",
+        "fy - Western Frisian",
+        "wo - Wolof",
+        "xh - Xhosa",
+        "yi - Yiddish",
+        "yo - Yoruba",
+        "za - Zhuang",
+        "zu - Zulu"
+      ],
+      "enumNames": [
+        "Abkhazian",
+        "Afar",
+        "Afrikaans",
+        "Akan",
+        "Albanian",
+        "Amharic",
+        "Arabic",
+        "Aragonese",
+        "Armenian",
+        "Assamese",
+        "Avaric",
+        "Avestan",
+        "Aymara",
+        "Azerbaijani",
+        "Bambara",
+        "Bashkir",
+        "Basque",
+        "Belarusian",
+        "Bengali",
+        "Bihari languages",
+        "Bislama",
+        "Bokmål, Norwegian",
+        "Bosnian",
+        "Breton",
+        "Bulgarian",
+        "Burmese",
+        "Castilian",
+        "Catalan",
+        "Central Khmer",
+        "Chamorro",
+        "Chechen",
+        "Chewa",
+        "Chichewa",
+        "Chinese",
+        "Chuang",
+        "Church Slavic",
+        "Chuvash",
+        "Cornish",
+        "Corsican",
+        "Cree",
+        "Croatian",
+        "Czech",
+        "Danish",
+        "Dhivehi",
+        "Divehi",
+        "Dutch",
+        "Dzongkha",
+        "English",
+        "Esperanto",
+        "Estonian",
+        "Ewe",
+        "Faroese",
+        "Fijian",
+        "Finnish",
+        "Flemish",
+        "French",
+        "Fulah",
+        "Gaelic",
+        "Galician",
+        "Ganda",
+        "Georgian",
+        "German",
+        "Gikuyu",
+        "Greek, Modern (1453-)",
+        "Greenlandic",
+        "Guarani",
+        "Gujarati",
+        "Haitian",
+        "Haitian Creole",
+        "Hausa",
+        "Hebrew",
+        "Herero",
+        "Hindi",
+        "Hiri Motu",
+        "Hungarian",
+        "Icelandic",
+        "Ido",
+        "Igbo",
+        "Indonesian",
+        "Interlingua (International Auxiliary Language Association)",
+        "Interlingue",
+        "Inuktitut",
+        "Inupiaq",
+        "Irish",
+        "Italian",
+        "Japanese",
+        "Javanese",
+        "Kalaallisut",
+        "Kannada",
+        "Kanuri",
+        "Kashmiri",
+        "Kazakh",
+        "Kikuyu",
+        "Kinyarwanda",
+        "Kirghiz",
+        "Komi",
+        "Kongo",
+        "Korean",
+        "Kuanyama",
+        "Kurdish",
+        "Kwanyama",
+        "Kyrgyz",
+        "Lao",
+        "Latin",
+        "Latvian",
+        "Letzeburgesch",
+        "Limburgan",
+        "Limburger",
+        "Limburgish",
+        "Lingala",
+        "Lithuanian",
+        "Luba-Katanga",
+        "Luxembourgish",
+        "Macedonian",
+        "Malagasy",
+        "Malay",
+        "Malayalam",
+        "Maldivian",
+        "Maltese",
+        "Manx",
+        "Maori",
+        "Marathi",
+        "Marshallese",
+        "Moldavian",
+        "Moldovan",
+        "Mongolian",
+        "Nauru",
+        "Navaho",
+        "Navajo",
+        "Ndebele, North",
+        "Ndebele, South",
+        "Ndonga",
+        "Nepali",
+        "North Ndebele",
+        "Northern Sami",
+        "Norwegian",
+        "Norwegian Bokmål",
+        "Norwegian Nynorsk",
+        "Nuosu",
+        "Nyanja",
+        "Nynorsk, Norwegian",
+        "Occidental",
+        "Occitan (post 1500)",
+        "Ojibwa",
+        "Oriya",
+        "Oromo",
+        "Ossetian",
+        "Ossetic",
+        "Pali",
+        "Panjabi",
+        "Pashto",
+        "Persian",
+        "Polish",
+        "Portuguese",
+        "Punjabi",
+        "Pushto",
+        "Quechua",
+        "Romanian",
+        "Romansh",
+        "Rundi",
+        "Russian",
+        "Samoan",
+        "Sango",
+        "Sanskrit",
+        "Sardinian",
+        "Scottish Gaelic",
+        "Serbian",
+        "Shona",
+        "Sichuan Yi",
+        "Sindhi",
+        "Sinhala",
+        "Sinhalese",
+        "Slovak",
+        "Slovenian",
+        "Somali",
+        "Sotho, Southern",
+        "South Ndebele",
+        "Spanish",
+        "Sundanese",
+        "Swahili",
+        "Swati",
+        "Swedish",
+        "Tagalog",
+        "Tahitian",
+        "Tajik",
+        "Tamil",
+        "Tatar",
+        "Telugu",
+        "Thai",
+        "Tibetan",
+        "Tigrinya",
+        "Tonga (Tonga Islands)",
+        "Tsonga",
+        "Tswana",
+        "Turkish",
+        "Turkmen",
+        "Twi",
+        "Uighur",
+        "Ukrainian",
+        "Urdu",
+        "Uyghur",
+        "Uzbek",
+        "Valencian",
+        "Venda",
+        "Vietnamese",
+        "Volapük",
+        "Walloon",
+        "Welsh",
+        "Western Frisian",
+        "Wolof",
+        "Xhosa",
+        "Yiddish",
+        "Yoruba",
+        "Zhuang",
+        "Zulu"
+      ]
+    }
+  },
+  "title": "",
+  "type": "object",
+  "properties": {
+    "Descriptive-group": {
+      "type": "object",
+      "title": "Descriptive",
+      "required": [
+        "Title",
+        "Description",
+        "Discipine",
+        "Lab",
+        "Version",
+        "Language",
+        "Collected",
+        "Keywords",
+        "Main_Setting",
+        "Process_Hazard",
+        "Geological_Structure",
+        "Geomorphical_Feature",
+        "Material",
+        "Apparatus",
+        "Monitoring",
+        "Software",
+        "Measured_Property"
+      ],
+      "properties": {
+        "Title": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Title"
+        },
+        "Description": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Abstract"
+        },
+        "Additional_Documentation": {
+          "$ref": "#/definitions/stringLong",
+          "title": "(Additional technical) Documentation"
+        },
+        "Discipline": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsDiscipline",
+            "title": "Subdomain",
+            "default": "Analog modelling"
+          }
+        },
+        "Lab": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsLabs",
+            "title": "Originating labs",
+            "default": "Lab2"
+          }
+        },
+        "Additional_Lab": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Additional labs",
+            "default": ""
+          }
+        },
+        "Version": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Version",
+          "default": "Version 1.0"
+        },
+        "Language": {
+          "$ref": "#/definitions/optionsISO639-1",
+          "title": "Language of the data",
+          "default": "en - English"
+        },
+        "Collected": {
+          "type": "object",
+          "title": "Collection period",
+          "yoda:structure": "compound",
+          "properties": {
+            "Start_Date": {
+              "type": "string",
+              "format": "date",
+              "title": "Start date"
+            },
+            "End_Date": {
+              "type": "string",
+              "format": "date",
+              "title": "End date"
+            }
+          },
+          "dependencies": {
+            "Start_Date": ["End_Date"],
+            "End_Date": ["Start_Date"]
+          }
+        },
+        "Geo_Box_Spatial": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "geo spatial",
+            "yoda:structure": "compound",
+            "properties": {
+              "geoLocationBox": {
+                "type": "object",
+                "title": "Geo Location",
+                "yoda:structure": "geoLocation",
+                "properties": {
+                  "northBoundLatitude": {
+                    "type": "number"
+                  },
+                  "westBoundLongitude": {
+                    "type": "number"
+                  },
+                  "southBoundLatitude": {
+                    "type": "number"
+                  },
+                  "eastBoundLongitude": {
+                    "type": "number"
+                  }
+                }
+              },
+              "Description_Spatial": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Description"
+              }
+            }
+          }
+        },
+        "Geo_Box_Temporal": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "geo temp",
+            "yoda:structure": "compound",
+            "properties": {
+              "geoLocationBox": {
+                "type": "object",
+                "title": "Geo Location",
+                "yoda:structure": "geoLocation",
+                "properties": {
+                  "northBoundLatitude": {
+                    "type": "number"
+                  },
+                  "westBoundLongitude": {
+                    "type": "number"
+                  },
+                  "southBoundLatitude": {
+                    "type": "number"
+                  },
+                  "eastBoundLongitude": {
+                    "type": "number"
+                  }
+                }
+              },
+              "Description_Temporal": {
+                "type": "object",
+                "title": "Period covered",
+                "yoda:structure": "compound",
+                "properties": {
+                  "Start_Date": {
+                    "type": "string",
+                    "format": "date",
+                    "title": "Start date"
+                  },
+                  "End_Date": {
+                    "type": "string",
+                    "format": "date",
+                    "title": "End date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Tag": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Tags",
+            "default": ""
+          }
+        },
+        "Apparatus": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsApparatus",
+            "title": "Apparatus"
+          }
+        },
+        "Material": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsMaterial",
+            "title": "Material"
+          }
+        },
+        "Measured_Property": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsMeasuredProperty",
+            "title": "Measured property"
+          }
+        },
+        "Monitoring": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/optionsMonitoring",
+            "title": "Monitoring"
+          }
+        }
+      }
+    },
+    "Administrative-group": {
+      "type": "object",
+      "title": "Administrative",
+      "required": [
+        "Related_Datapackage",
+        "Retention_Period",
+        "Data_Classification"
+      ],
+      "properties": {
+        "Related_Datapackage": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "yoda:structure": "subproperties",
+            "properties": {
+              "Relation_Type": {
+                "$ref": "#/definitions/optionsRelationType",
+                "title": "Related work"
+              },
+              "Title": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Title"
+              },
+              "Persistent_Identifier": {
+                "type": "object",
+                "title": "Persistent identifier",
+                "yoda:structure": "compound",
+                "properties": {
+                  "Identifier_Scheme": {
+                    "$ref": "#/definitions/optionsPersistentIdentifierScheme",
+                    "title": "Type"
+                  },
+                  "Identifier": {
+                    "$ref": "#/definitions/stringNormal",
+                    "title": "Identifier"
+                  }
+                },
+                "dependencies": {
+                  "Identifier_Scheme": ["Identifier"],
+                  "Identifier": ["Identifier_Scheme"]
+                }
+              }
+            },
+            "dependencies": {
+              "Relation_Type": ["Title"]
+            }
+          }
+        },
+        "Funding_Reference": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "Funding reference",
+            "yoda:structure": "subproperties",
+            "properties": {
+              "Funder_Reference": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Funding reference"
+              },
+              "Funder_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Funder name"
+              },
+              "Award_Number": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Grant number"
+              }
+            },
+            "dependencies": {
+              "Funder_Reference": ["Funder_Name", "Award_Number"],
+              "Award_Number": ["Funder_Reference", "Funder_Name"],
+              "Funder_Name": ["Funder_Reference", "Award_Number"]
+            }
+          }
+        },
+        "Retention_Period": {
+          "type": "integer",
+          "title": "Retention period (years)",
+          "default": 10
+        },
+        "Data_Classification": {
+          "$ref": "#/definitions/optionsDataClassification",
+          "title": "Data classification"
+        },
+        "Embargo_End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "Embargo end date"
+        },
+        "Dataset_Created": {
+          "type": "string",
+          "format": "date",
+          "title": "Dataset created"
+        },
+        "Data_Type": {
+          "$ref": "#/definitions/optionsDataType",
+          "title": "Data type"
+        }
+      }
+    },
+    "Rights-group": {
+      "type": "object",
+      "title": "Rights",
+      "required": [
+        "Creator",
+        "License",
+        "Data_Access_Restriction"
+      ],
+      "properties": {
+        "Creator": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "yoda:structure": "subproperties",
+            "required": [
+              "Name",
+              "Affiliation"
+            ],
+            "properties": {
+              "Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Creator of datapackage"
+              },
+              "Affiliation": {
+                "type": "array",
+                "minItems": 1,
+                "default": ["Utrecht University"],
+                "items": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Affiliation",
+                  "yoda:required": true
+                }
+              },
+              "Person_Identifier": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "title": "Person identifier",
+                  "yoda:structure": "compound",
+                  "properties": {
+                    "Name_Identifier_Scheme": {
+                      "$ref": "#/definitions/optionsNameIdentifierScheme",
+                      "title": "Type"
+                    },
+                    "Name_Identifier": {
+                      "$ref": "#/definitions/stringNormal",
+                      "title": "Identifier"
+                    }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Contributor": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "yoda:structure": "subproperties",
+            "properties": {
+              "Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Contributor to datapackage"
+              },
+              "Affiliation": {
+                "type": "array",
+                "minItems": 1,
+                "default": ["Utrecht University"],
+                "items": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Affiliation",
+                  "yoda:required": true
+                }
+              },
+              "Person_Identifier": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "title": "Person identifier",
+                  "yoda:structure": "compound",
+                  "properties": {
+                    "Name_Identifier_Scheme": {
+                      "$ref": "#/definitions/optionsNameIdentifierScheme",
+                      "title": "Type"
+                    },
+                    "Name_Identifier": {
+                      "$ref": "#/definitions/stringNormal",
+                      "title": "Identifier"
+                    }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "Contact": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "yoda:structure": "subproperties",
+            "properties": {
+              "Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Contact person"
+              },
+              "Position": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Position"
+              },
+              "Email": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "E-mail"
+              },
+              "Affiliation": {
+                "type": "array",
+                "minItems": 1,
+                "default": ["Utrecht University"],
+                "items": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Affiliation",
+                  "yoda:required": true
+                }
+              },
+              "Person_Identifier": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "title": "Person identifier",
+                  "yoda:structure": "compound",
+                  "properties": {
+                    "Name_Identifier_Scheme": {
+                      "$ref": "#/definitions/optionsNameIdentifierScheme",
+                      "title": "Type"
+                    },
+                    "Name_Identifier": {
+                      "$ref": "#/definitions/stringNormal",
+                      "title": "Identifier"
+                    }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "License": {
+          "$ref": "#/definitions/optionsLicense",
+          "title": "License",
+          "default": "Creative Commons Attribution 4.0 International Public License"
+        },
+        "Data_Access_Restriction": {
+          "$ref": "#/definitions/optionsDataAccessRestriction",
+          "title": "Data package access",
+          "default": "Restricted - available upon request"
+        }
+      }
+    }
+  }
+}
