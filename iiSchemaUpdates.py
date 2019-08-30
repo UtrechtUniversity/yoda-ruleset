@@ -308,16 +308,14 @@ def getCategory(callback, rods_zone, group_name):
         category = row[1]
 
     if category != '-1':
-        # Test whether found category actually has a collection with XSD's.
-        # If not, fall back to default schema collection. Otherwise use category schema collection
-        # /tempZone/yoda/schemas/default
-        # - metadata.xsd
-        # - vault.xsd
-        xsdCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
+        # Test whether found category actually has a metadata JSON.
+        # If not, fall back to default schema collection.
+        # /tempZone/yoda/schemas/default/metadata.json
+        schemaCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
 
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "DATA_NAME like '%%.xsd' AND COLL_NAME = '" + xsdCollectionName + "'",
+            "DATA_NAME like 'metadata.json' AND COLL_NAME = '" + schemaCollectionName + "'",
             genquery.AS_LIST, callback
         )
 
