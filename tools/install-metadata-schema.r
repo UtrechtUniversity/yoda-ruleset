@@ -123,81 +123,81 @@ createXmlXsdCollections {
 		writeLine("stdout", "Installed: *jsondefault");
 	}
 
-	# Install research XSD
-	*xsddefault = *schemaColl ++ "/" ++ IIRESEARCHXSDNAME;
+    if (*schema == "default-0") {
+	    # Install research XSD
+	    *xsddefault = *schemaColl ++ "/" ++ IIRESEARCHXSDNAME;
         *defaultResearchSchema = IIRESEARCHXSDNAME;
         if (uuFileExists(*xsddefault)) {
-		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema++++forceFlag=", *status);
-			writeLine("stdout", "Updated: *xsddefault");
-		} else {
-			writeLine("stdout", "Present: *xsddefault");
-		}
-	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema", *status);
-		writeLine("stdout", "Installed: *xsddefault");
-	}
+	    	if (*update == 1) {
+	    		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema++++forceFlag=", *status);
+		    	writeLine("stdout", "Updated: *xsddefault");
+		    } else {
+	    		writeLine("stdout", "Present: *xsddefault");
+	    	}
+	    } else {
+		    writeLine("stdout", "Installed: *xsddefault");
+	    }
 
-	# Install vault XSD
-	*xsddefault = *schemaColl ++ "/" ++ IIVAULTXSDNAME;
+	    # Install vault XSD
+	    *xsddefault = *schemaColl ++ "/" ++ IIVAULTXSDNAME;
         *defaultVaultSchema = IIVAULTXSDNAME;
         if (uuFileExists(*xsddefault)) {
-		if (*update == 1) {
-			msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema++++forceFlag=", *status);
-			writeLine("stdout", "Updated: *xsddefault");
-		} else {
-			writeLine("stdout", "Present: *xsddefault");
-		}
-	} else {
-		msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema", *status);
-		writeLine("stdout", "Installed: *xsddefault");
-	}
+		    if (*update == 1) {
+			    msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema++++forceFlag=", *status);
+     			writeLine("stdout", "Updated: *xsddefault");
+		    } else {
+			    writeLine("stdout", "Present: *xsddefault");
+		    }
+    	} else {
+	    	msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultVaultSchema", *status);
+		    writeLine("stdout", "Installed: *xsddefault");
+	    }
 
-	# Install AVU XSL (Yoda metadata XML to AVU XML)
-	*xsldefault = *schemaColl ++ "/" ++ IIAVUXSLNAME;
-	*xsl = IIAVUXSLNAME;
+    	# Install AVU XSL (Yoda metadata XML to AVU XML)
+	    *xsldefault = *schemaColl ++ "/" ++ IIAVUXSLNAME;
+	    *xsl = IIAVUXSLNAME;
         if (uuFileExists(*xsldefault)) {
-		if (*update == 1) {
-			msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status)
-			writeLine("stdout", "Updated: *xsldefault");
-		} else {
-			writeLine("stdout", "Present: *xsldefault");
-		}
-	} else {
-		msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl", *status);
-		writeLine("stdout", "Installed: *xsldefault");
-	}
+		    if (*update == 1) {
+			    msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status)
+	    		writeLine("stdout", "Updated: *xsldefault");
+	    	} else {
+		    	writeLine("stdout", "Present: *xsldefault");
+		    }
+    	} else {
+	    	msiDataObjPut(*xsldefault, *resc, "localPath=*src/*schema/*xsl", *status);
+		    writeLine("stdout", "Installed: *xsldefault");
+    	}
 
-	# Install DataCite XSL (Yoda metadata XML to DataCite XML)
+	    # Install DataCite XSL (Yoda metadata XML to DataCite XML)
         *xsldatacite = *schemaColl ++ "/" ++ IIDATACITEXSLNAME;
-	*xsl = IIDATACITEXSLNAME;
+	    *xsl = IIDATACITEXSLNAME;
         if (uuFileExists(*xsldatacite)) {
-		if (*update == 1) {
-			msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
-			writeLine("stdout", "Updated: *xsldatacite");
-		} else {
-			writeLine("stdout", "Present: *xsldatacite");
-		}
- 	} else {
-		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl", *status);
-		writeLine("stdout", "Installed: *xsldatacite");
+		    if (*update == 1) {
+	    		msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
+		    	writeLine("stdout", "Updated: *xsldatacite");
+    		} else {
+	    		writeLine("stdout", "Present: *xsldatacite");
+	    	}
+ 	    } else {
+		    msiDataObjPut(*xsldatacite, *resc, "localPath=*src/*schema/*xsl", *status);
+	    	writeLine("stdout", "Installed: *xsldatacite");
         }
 
         # Install landingpage XSL (Yoda metadata XML to landingpage HTML)
         *xsllandingpage = *schemaColl ++ "/" ++ IILANDINGPAGEXSLNAME;
-	*xsl = IILANDINGPAGEXSLNAME;
+	    *xsl = IILANDINGPAGEXSLNAME;
         if (uuFileExists(*xsllandingpage)) {
-		if (*update == 1) {
-			msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
- 			writeLine("stdout", "Updated: *xsllandingpage");
-		} else {
-			writeLine("stdout", "Present: *xsllandingpage");
-		}
- 	} else {
-		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl", *status);
-		writeLine("stdout", "Installed: *xsllandingpage");
+		    if (*update == 1) {
+	    		msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl++++forceFlag=", *status);
+ 		    	writeLine("stdout", "Updated: *xsllandingpage");
+	    	} else {
+		    	writeLine("stdout", "Present: *xsllandingpage");
+    		}
+ 	    } else {
+		    msiDataObjPut(*xsllandingpage, *resc, "localPath=*src/*schema/*xsl", *status);
+		    writeLine("stdout", "Installed: *xsllandingpage");
         }
-
+	}
 
         # TRANSFORMATION
 
@@ -282,5 +282,5 @@ createXmlXsdCollections {
         }
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/schemas", *schema="default", *category="default", *update=0
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-research/tools/schemas", *schema="default-0", *category="default", *update=0
 output ruleExecOut
