@@ -21,4 +21,22 @@ IIVAULTXSDNAME = "vault.xsd"
 
 # The maximum file size that can be read into a string in memory,
 # to prevent DOSing / out of control memory consumption.
-IIDATA_MAX_SLURP_SIZE  = 4*1024*1024 # 4 MiB
+IIDATA_MAX_SLURP_SIZE = 4*1024*1024 # 4 MiB
+
+# Prefix of user metadata (applied via legacy XML metadata file changes).
+UUUSERMETADATAPREFIX = "usr_"
+
+# JSONAVU JSON root / namespace of user metadata (applied via JSON metadata file changes).
+UUUSERMETADATAROOT = "usr"
+
+# Prefix for organisational metadata.
+UUORGMETADATAPREFIX = "org_"
+
+# Cronjob states
+CRONJOB_STATE = {
+    'PENDING':       'CRONJOB_PENDING',
+    'PROCESSING':    'CRONJOB_PROCESSING',
+    'RETRY':         'CRONJOB_RETRY',
+    'UNRECOVERABLE': 'CRONJOB_UNRECOVERABLE',
+    'OK':            'CRONJOB_OK',
+}

@@ -5,8 +5,76 @@
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+import re
 import json
 import jsonschema
+import jsonavu
+
+
+def get_json_metadata_errors(callback,
+                             metadata_path,
+                             metadata = None,
+                             ignore_required = False):
+    """Validate JSON metadata, and return a list of errors, if any.
+       The path to the JSON object must be provided, so that the schema path can be derived.
+       Optionally, a pre-parsed JSON object may be provided in 'metadata'.
+
+       Will throw exceptions on missing metadata / schema files and invalid JSON formats.
+    """
+
+    schema = getSchema(callback, metadata_path)
+
+    if metadata is None:
+        metadata = read_json_object(callback, metadata_path)
+
+    # Perform validation and filter errors.
+
+    validator = jsonschema.Draft7Validator(schema)
+
+    errors = validator.iter_errors(metadata)
+
+    if ignore_required:
+        errors = filter(lambda e: e.validator != 'required', errors)
+
+    def transform_error(e):
+        """Turn a ValidationError into a data structure for the frontend"""
+        return {'message':     e.message,
+                'path':        list(e.path),
+                'schema_path': list(e.path),
+                'validator':   e.validator}
+
+    return map(transform_error, errors)
+
+
+def is_json_metadata_valid(callback,
+                           metadata_path,
+                           metadata = None,
+                           ignore_required = False):
+    """Check if json metadata contains no errors.
+       argument 'metadata' may contain a preparsed JSON document, otherwise it
+       is loaded from the provided path.
+    """
+
+    try:
+        return len(get_json_metadata_errors(callback,
+                                            metadata_path,
+                                            metadata        = metadata,
+                                            ignore_required = ignore_required)) == 0
+    except UUException as e:
+        # File may be missing or not valid JSON.
+        return False
+
+
+def get_collection_metadata_path(callback, coll):
+    """Check if a collection has a metadata file and provide its path, if any.
+       Both JSON and legacy XML are checked, JSON has precedence if it exists.
+    """
+
+    for path in ['{}/{}'.format(coll, x) for x in [IIJSONMETADATA, IIMETADATAXMLNAME]]:
+        if data_object_exists(callback, path):
+            return path
+
+    return None
 
 
 def iiSaveFormMetadata(rule_args, callback, rei):
@@ -21,13 +89,6 @@ def iiSaveFormMetadata(rule_args, callback, rei):
         callback.writeString("serverLog", x)
         callback.writeString("stdout", x)
 
-    try:
-        schema = getSchema(callback, coll)
-    except UUException as e:
-        report(json.dumps({'status': 'Error',
-                           'statusInfo': 'Could not load metadata schema'}))
-        return
-
     # Load form metadata input.
     try:
         metadata = parse_json(metadata_text)
@@ -37,21 +98,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
                            'statusInfo': 'JSON decode error'}))
         return
 
-    def transform_error(e):
-        """Turn a ValidationError into a data structure for the frontend"""
-        return {'message': e.message,
-                'path': list(e.path),
-                'schema_path': list(e.path),
-                'validator': e.validator}
-
-    # Perform validation and filter errors.
-
-    validator = jsonschema.Draft7Validator(schema)
-
-    errors = map(transform_error,
-                 # Filter out 'required' errors, to allow saving WIP forms.
-                 filter(lambda e: e.validator != 'required',
-                        validator.iter_errors(metadata)))
+    errors = get_json_metadata_errors(callback, coll, metadata, ignore_required = True)
 
     if len(errors) > 0:
         report(json.dumps({'status':     'ValidationError',
@@ -71,25 +118,8 @@ def iiSaveFormMetadata(rule_args, callback, rei):
     report(json.dumps({'status': 'Success', 'statusInfo': ''}))
 
 
-def is_json_metadata_valid(callback, metadata_path):
-    """Check if a json metadata file is valid"""
-    try:
-        # Retrieve metadata schema for collection.
-        schema = getSchema(callback, metadata_path)
-
-        # Load JSON metadata.
-        metadata = read_json_object(callback, metadata_path)
-
-    except UUException as e:
-        return False
-
-    validator = jsonschema.Draft7Validator(schema)
-
-    return validator.is_valid(metadata)
-
-
 def iiValidateMetadata(rule_args, callback, rei):
-    """Validate JSON metadata for a given collection"""
+    """Validate JSON metadata file for a given collection"""
 
     coll = rule_args[0]
 
@@ -99,30 +129,12 @@ def iiValidateMetadata(rule_args, callback, rei):
         rule_args[1] = "1"
 
 
-def get_collection_metadata_path(callback, coll):
-    """Check if a collection has a metadata file and provide its path, if any.
-       Both JSON and legacy XML are checked, JSON has precedence if it exists.
-    """
-
-    for path in ['{}/{}'.format(coll, x) for x in [IIJSONMETADATA, IIMETADATAXMLNAME]]:
-        if data_object_exists(callback, path):
-            return path
-
-    return None
-
-
-def iiCollectionHasMetadata(rule_args, callback, rei):
-    """Check if a collection has a metadata file (JSON or XML), returns its path."""
-
-    coll = rule_args[0]
-    path = get_collection_metadata_path(callback, coll)
-
-    rule_args[1:3] = ('false', '') if path is None else ('true', path)
-
-
-def iiCollectionHasValidMetadata(rule_args, callback, rei):
+def iiCollectionHasCloneableMetadata(rule_args, callback, rei):
     """Check if a collection has metadata, and validate it.
        Returns ('true', metadata_path) on success.
+
+       This always ignores 'required' schema attributes, since metadata can
+       only be cloned in the research area.
     """
 
     coll = rule_args[0]
@@ -134,10 +146,11 @@ def iiCollectionHasValidMetadata(rule_args, callback, rei):
         return
 
     elif path.endswith('.json'):
-        if is_json_metadata_valid(callback, path):
+        if is_json_metadata_valid(callback, path, ignore_required = True):
             rule_args[1:3] = ('true', path)
 
     elif path.endswith('.xml'):
+        # Run XML validator instead.
         ret = callback.iiGetResearchXsdPath(path, '')
         xsd_path = ret['arguments'][1]
         ret = callback.iiValidateXml(path, xsd_path, '', '')
@@ -188,3 +201,58 @@ def iiCloneMetadataFile(rule_args, callback, rei):
     except UUMsiException as e:
         callback.writeString("serverLog",'Metadata copy from <{}> to <{}> failed: {}'
                             .format(source_data, target_data, e))
+
+
+def iiMetadataJsonModifiedPost(rule_args, callback, rei):
+
+    path, user, zone = rule_args[0:4]
+
+    if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*/{}$'
+                    .format(zone, IIJSONMETADATA), path):
+        # Vault metadata?
+        # Set cronjob metadata flag and trigger vault ingest.
+
+        set_key_value_pairs_to_obj(callback, ret['arguments'][1], path, '-d')
+
+        ret = string_2_key_val_pair(callback,
+                                    '{}{}{}'.format(UUORGMETADATAPREFIX,
+                                                    'cronjob_vault_ingest=',
+                                                    CRONJOB_STATE['PENDING']),
+                                    irods_types.BytesBuf())
+
+        set_key_value_pairs_to_obj(callback, ret['arguments'][1], path, '-d')
+
+        callback.iiAdminVaultIngest()
+
+    else:
+        # Research metadata: update AVUs
+        coll, data = chop_path(path)
+        callback.writeString('serverLog',
+                             'iiMetadataJsonModifiedPost: {} added to {}. Importing metadata\n'
+                             .format(data, coll))
+
+        try:
+            metadata = read_json_object(callback, path)
+        except UUException as e:
+            callback.writeString('serverLog',
+                                 'iiMetadataJsonModifiedPost failed: Could not read {} as JSON\n'
+                                 .format(path))
+            return
+
+        if not is_json_metadata_valid(callback, path, metadata, ignore_required = True):
+            callback.writeString('serverLog',
+                                 'iiMetadataJsonModifiedPost failed: {} is invalid\n'
+                                 .format(path))
+            return
+
+        # Remove any remaining legacy XML-style AVUs.
+        callback.iiRemoveAVUs(coll, UUUSERMETADATAPREFIX)
+
+        # Note: We do not set a schema $id in research space: this would trigger jsonavu
+        # validation, which does not respect our wish to ignore required
+        # properties in the research area.
+
+        # Replace all metadata under this namespace.
+        callback.setJsonToObj(coll, '-C',
+                              UUUSERMETADATAROOT,
+                              json.dumps(metadata))

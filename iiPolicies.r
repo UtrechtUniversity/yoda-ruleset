@@ -5,7 +5,7 @@
 # \author    Paul Frederiks
 # \author    Felix Croes
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2015-2018 Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
 # \brief This policy is fired when a file is put onto iRODS. In the research area we need to check
@@ -359,15 +359,18 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 # \param[in] KVPairs                     a copy of $KVPairs from the dynamic PEP
 uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	# possible match
-	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
-	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.xml"
+	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.json"
+	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.json"
+	# writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
+
+	# JSON changed?
 	if (*KVPairs.logical_path like regex "^/"
 	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/"
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
-	    ++ "[^/]+(/.\*)\*/" ++ IIMETADATAXMLNAME ++ "$") {
+	    ++ "[^/]+(/.\*)\*/" ++ IIJSONMETADATA ++ "$") {
 		#DEBUG writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
-		iiMetadataXmlModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
+		iiMetadataJsonModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
 	}
 }
 

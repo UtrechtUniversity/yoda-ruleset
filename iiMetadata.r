@@ -415,7 +415,7 @@ iiPrepareMetadataForm(*path, *result) {
                 *parentHasMetadata  = "false";
                 *parentMetadataPath = "";
                 uuChopPath(*path, *parent, *child);
-                iiCollectionHasValidMetadata(*parent, *parentHasMetadata, *parentMetadataPath);
+                iiCollectionHasCloneableMetadata(*parent, *parentHasMetadata, *parentMetadataPath);
 
                 *kvp.parentHasMetadata  = *parentHasMetadata;
                 *kvp.parentMetadataPath = *parentMetadataPath;
@@ -599,36 +599,6 @@ iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
 		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
 	} else {
 		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from *metadataxmlpath");
-	}
-}
-
-# \brief iiMetadataXmlModifiedPost
-#
-# \param[in] xmlPath
-# \param[in] userName
-# \param[in] userZone
-#
-iiMetadataXmlModifiedPost(*xmlPath, *userName, *userZone) {
-	if (*xmlPath like regex "/*userZone/home/datamanager-[^/]+/vault-[^/]+/.*/" ++ IIMETADATAXMLNAME ++ "$") {
-		 msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_vault_ingest=" ++ CRONJOB_PENDING, *kvp);
-		 msiSetKeyValuePairsToObj(*kvp, *xmlPath, "-d");
-		 iiAdminVaultIngest();
-	} else {
-		uuChopPath(*xmlPath, *parent, *basename);
-		#DEBUG writeLine("serverLog", "iiMetadataXmlModifiedPost: *basename added to *parent. Import of metadata started");
-		iiGetResearchXsdPath(*xmlPath, *xsdPath);
-		iiValidateXml(*xmlPath, *xsdPath, *err, *msg);
-		if (*err < 0) {
-			writeLine("serverLog", *msg);
-		} else if (*err == 0) {
-			#DEBUG writeLine("serverLog", "XSD validation successful. Start indexing");
-			iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-			iiGetXslPath(*xmlPath, *xslPath);
-			iiImportMetadataFromXML(*xmlPath, *xslPath);
-		} else {
-			writeLine("serverLog", "iiMetadataXmlModifiedPost: Validation report of *xmlPath below.");
-			writeLine("serverLog", *msg);
-		}
 	}
 }
 
