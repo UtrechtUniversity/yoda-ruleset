@@ -1529,15 +1529,15 @@
             "$ref": "#/definitions/optionsMeasuredProperty",
             "title": "Measured property",
             "default": null
-          },
-          "Tag": {
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "$ref": "#/definitions/stringNormal",
-              "title": "Tags",
-              "default": ""
-            }
+          }
+        },
+        "Tag": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Tags",
+            "default": ""
           }
         }
       }
