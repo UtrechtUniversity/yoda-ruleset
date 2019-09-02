@@ -80,11 +80,11 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
         }
 
 	*iscollection = iscollection(*collectionOrDataObject);
-	*likeprefix = UUUSERMETADATAPREFIX ++ "%";
+	*likeprefix = UUUSERMETADATAROOT ++ "_%";
 	if (*iscollection) {
 		*fields = list("COLL_PARENT_NAME", "COLL_ID", "COLL_NAME", "COLL_MODIFY_TIME", "COLL_CREATE_TIME");
 		*conditions = list(uumakelikecondition("META_COLL_ATTR_VALUE", *searchStringEscaped),
-				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
+				   uumakestartswithcondition("META_COLL_ATTR_UNITS", UUUSERMETADATAROOT ++ "_"),
 				   uumakestartswithcondition("COLL_PARENT_NAME", *startpath));
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
@@ -97,15 +97,19 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 			*msize = 0;
 			*matches_lst = list();
 
-			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE WHERE COLL_ID = *coll_id AND META_COLL_ATTR_NAME like *likeprefix) {
+			foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS WHERE COLL_ID = *coll_id AND META_COLL_ATTR_UNITS like *likeprefix) {
+				*name = *row.META_COLL_ATTR_NAME;
+				*val  = *row.META_COLL_ATTR_VALUE;
+				*unit = *row.META_COLL_ATTR_UNITS;
+
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_COLL_ATTR_VALUE, *upperValue);
 				msiStrToUpper(*searchString, *upperSearchstring);
-				if (*upperValue like "**upperSearchstring*") {
+				if (*upperValue like "**upperSearchstring*"
+					# Filter out structural elements: Only match metadata values of string/number type.
+					&& *unit like regex ".*[sn]") {
+
 					msiString2KeyValPair("", *match);
-					*name_lst = split(*row.META_COLL_ATTR_NAME, "_");
-					uuJoin(" ", tl(tl(*name_lst)), *name);
-					*val = *row.META_COLL_ATTR_VALUE;
 					msiAddKeyVal(*match, *name, *val);
 					*match_json = "";
 					msi_json_objops(*match_json, *match, "set");
@@ -120,7 +124,7 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 	} else {
 		*fields = list("COLL_NAME", "DATA_ID", "DATA_NAME", "MIN(DATA_CREATE_TIME)", "MAX(DATA_MODIFY_TIME)");
 		*conditions = list(uumakelikecondition("META_DATA_ATTR_VALUE", *searchStringEscaped),
-				   uumakestartswithcondition("META_COLL_ATTR_NAME", UUUSERMETADATAPREFIX),
+				   uumakestartswithcondition("META_COLL_ATTR_UNITS", UUUSERMETADATAROOT),
 				   uumakestartswithcondition("COLL_NAME", *startpath));
 		uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *rowList, *status, *statusInfo);
                 if (*status!='Success') {
@@ -133,14 +137,18 @@ iiSearchByMetadata(*startpath, *searchString, *searchStringEscaped, *collectionO
 			*data_id = *kvp.id;
 			*matches_lst = list();
 			*msize = 0;
-			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE WHERE DATA_ID = *data_id AND META_DATA_ATTR_NAME like *likeprefix) {
+			foreach(*row in SELECT META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS WHERE DATA_ID = *data_id AND META_DATA_ATTR_UNITS like *likeprefix) {
+				*name = *row.META_DATA_ATTR_NAME;
+				*val  = *row.META_DATA_ATTR_VALUE;
+				*unit = *row.META_DATA_ATTR_UNITS;
 				# Convert value and searchstring to uppercase for case insensitive search.
 				msiStrToUpper(*row.META_DATA_ATTR_VALUE, *upperValue);
 				msiStrToUpper(*searchString, *upperSearchstring);
-				if (*upperValue like "**upperSearchstring*") {
+				if (*upperValue like "**upperSearchstring*"
+					# Filter out structural elements: Only match metadata values of string/number type.
+					&& *unit like regex ".*[sn]") {
+
 					msiString2KeyValPair("", *match);
-					*name = triml(*row.META_DATA_ATTR_NAME, UUUSERMETADATAPREFIX);
-					*val = *row.META_DATA_ATTR_VALUE;
 					msiAddKeyVal(*match, *name, *val);
 					*match_json = "";
 					msi_json_objops(*match_json, *match, "set");
