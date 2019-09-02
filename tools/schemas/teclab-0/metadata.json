@@ -63,7 +63,7 @@
         "mantle setting",
         "graben"
       ],
-      "enum": [
+      "enumNames": [
         " ",
         "tectonically defined setting",
         "extended terrane setting",
