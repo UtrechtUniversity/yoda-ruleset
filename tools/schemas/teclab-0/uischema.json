@@ -3,6 +3,9 @@
       "Description":{
          "ui:widget":"textarea"
       },
+      "Additional_Documentation":{
+         "ui:widget":"textarea"
+      },
       "GeoLocation": {
          "items":{
             "geoLocationBox":{
