@@ -78,25 +78,31 @@ def wrap_msi(msi, exception):
     """
     return lambda callback, *args: run_msi(getattr(callback, msi), exception, *args)
 
+
+def make_msi(name, error_text):
+    """Creates msi wrapper function and exception type as a tuple.
+       (see functions above)
+    """
+    e = make_msi_exception(name, error_text)
+    return (wrap_msi('msi'+name, e), e)
+
+
 # }}}
-# Microservice wrappers for data object IO. {{{
+# Microservice wrappers {{{
 
+data_obj_create, UUMsiDataObjCreateException = make_msi('DataObjCreate', 'Could not create data object')
+data_obj_open,   UUMsiDataObjOpenException   = make_msi('DataObjOpen',   'Could not open data object')
+data_obj_read,   UUMsiDataObjReadException   = make_msi('DataObjRead',   'Could not read data object')
+data_obj_write,  UUMsiDataObjWriteException  = make_msi('DataObjWrite',  'Could not write data object')
+data_obj_close,  UUMsiDataObjCloseException  = make_msi('DataObjClose',  'Could not close data object')
+data_obj_copy,   UUMsiDataObjCopyException   = make_msi('DataObjCopy',   'Could not copy data object')
+data_obj_unlink, UUMsiDataObjUnlinkException = make_msi('DataObjUnlink', 'Could not remove data object')
 
-UUMsiDataObjCreateException = make_msi_exception('DataObjCreate', 'Could not create data object')
-UUMsiDataObjOpenException   = make_msi_exception('DataObjOpen',   'Could not open data object')
-UUMsiDataObjReadException   = make_msi_exception('DataObjRead',   'Could not read data object')
-UUMsiDataObjWriteException  = make_msi_exception('DataObjWrite',  'Could not write data object')
-UUMsiDataObjCloseException  = make_msi_exception('DataObjClose',  'Could not close data object')
-UUMsiDataObjCopyException   = make_msi_exception('DataObjCopy',   'Could not copy data object')
-UUMsiDataObjUnlinkException = make_msi_exception('DataObjUnlink', 'Could not remove data object')
+string_2_key_val_pair, UUMsiString2KeyValPairException = \
+        make_msi('String2KeyValPair', 'Could not create keyval pair')
 
-data_obj_create = wrap_msi('msiDataObjCreate', UUMsiDataObjCreateException)
-data_obj_open   = wrap_msi('msiDataObjOpen',   UUMsiDataObjOpenException)
-data_obj_read   = wrap_msi('msiDataObjRead',   UUMsiDataObjReadException)
-data_obj_write  = wrap_msi('msiDataObjWrite',  UUMsiDataObjWriteException)
-data_obj_close  = wrap_msi('msiDataObjClose',  UUMsiDataObjCloseException)
-data_obj_copy   = wrap_msi('msiDataObjCopy',   UUMsiDataObjCopyException)
-data_obj_unlink = wrap_msi('msiDataObjUnlink', UUMsiDataObjUnlinkException)
+set_key_value_pairs_to_obj, UUMsiSetKeyValuePairsToObjException = \
+        make_msi('SetKeyValuePairsToObj', 'Could not set metadata on object')
 
 # Add new msis here as needed.
 
