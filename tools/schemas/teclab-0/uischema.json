@@ -1,22 +1,22 @@
 {
-   "Descriptive-group":{
-      "Description":{
-         "ui:widget":"textarea"
-      },
-      "Additional_Documentation":{
-         "ui:widget":"textarea"
-      },
-      "GeoLocation": {
-         "items":{
-            "geoLocationBox":{
-               "ui:field":"geo"
-            }
-         }
+  "Descriptive-group": {
+    "Description": {
+      "ui:widget": "textarea"
+    },
+    "Additional_Documentation": {
+      "ui:widget": "textarea"
+    },
+    "GeoLocation": {
+      "items": {
+        "geoLocationBox": {
+          "ui:field": "geo"
+        }
       }
-   },
-   "Administrative-group":{
-      "Retention_Period":{
-         "ui:widget":"numberWidget"
-      }
-   }
+    }
+  },
+  "Administrative-group": {
+    "Retention_Period": {
+      "ui:widget": "numberWidget"
+    }
+  }
 }
