@@ -109,7 +109,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
     # No errors: write out JSON.
     try:
         write_data_object(callback, '{}/{}'.format(coll, IIJSONMETADATA),
-                          json.dumps(metadata))
+                          json.dumps(metadata, indent = 4))
     except UUException as e:
         report(json.dumps({'status': 'Error',
                            'statusInfo': 'Could not save yoda-metadata.json'}))
