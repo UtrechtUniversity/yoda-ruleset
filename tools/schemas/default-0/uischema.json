@@ -6,7 +6,7 @@
    },
    "Administrative-group":{
       "Retention_Period":{
-         "ui:widget":"numberWidget"
+         "ui:widget":"updown"
       }
    }
 }
