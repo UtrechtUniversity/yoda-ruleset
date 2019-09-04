@@ -352,7 +352,7 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 }
 
 
-# \brief uuResourceModifiedPostResearch  Policy to import metadata when a IIMETADATAXMLNAME file appears. Instance specific rulesets
+# \brief uuResourceModifiedPostResearch  Policy to import metadata when a IIJSONMETADATA file appears. Instance specific rulesets
 #                                        should call this rule from the appropriate dynamic PEP. As the call signatures for dynamic PEPs
 #                                        are in flux between iRODS versions, these rules should be changed.
 # \param[in] pluginInstanceName		 a copy of $pluginInstanceName from the dynamic PEP
@@ -360,18 +360,30 @@ acPostProcForModifyAVUMetadata(*option, *itemType, *itemName, *attributeName, *a
 uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 	# possible match
 	# "/tempZone/home/research-any/possible/path/to/yoda-metadata.json"
+	# "/tempZone/home/vault-any/possible/path/to/yoda-metadata[123][1].json"
 	# "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.json"
 	# writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
 
-	# JSON changed?
+	uuChopFileExtension(IIJSONMETADATA, *jsonMetaName, *jsonExt);
+	*vaultJsonRegex = "^/" ++ *KVPairs.user_rods_zone
+	               ++  "/home/" ++ IIVAULTPREFIX ++ "[^/]+/.+"
+	               ++ "/*jsonMetaName\\[[^/]+\\].*jsonExt$";
+
+	# JSON changed in research or datamanager staging area?
 	if (*KVPairs.logical_path like regex "^/"
 	    ++ *KVPairs.user_rods_zone
 	    ++ "/home/"
 	    ++ "(" ++ IIGROUPPREFIX ++ "|datamanager-)"
-	    ++ "[^/]+(/.\*)\*/" ++ IIJSONMETADATA ++ "$") {
-		#DEBUG writeLine("serverLog", "uuResourceModifiedPostResearch:\n KVPairs = *KVPairs\npluginInstanceName = *pluginInstanceName");
+	    ++ "[^/]+(/.\*)\*/" ++ IIJSONMETADATA ++ "$"
+	    # Or in the vault?
+     || *KVPairs.logical_path like regex *vaultJsonRegex) {
+
+		writeLine("serverLog", "uuResourceModifiedPostResearch: Metadata JSON at <"
+		       ++ *KVPairs.logical_path ++ "> updated by " ++ uuClientFullName
+		       ++ ", ingesting");
+
 		iiMetadataJsonModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
-	}
+    }
 }
 
 # \brief This PEP is called whenever a data object or collection is renamed or moved.

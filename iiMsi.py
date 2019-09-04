@@ -90,6 +90,9 @@ def make_msi(name, error_text):
 # }}}
 # Microservice wrappers {{{
 
+# This naming scheme follows the original msi name, changed to snake_case and
+# with the msi prefix removed.
+
 data_obj_create, UUMsiDataObjCreateException = make_msi('DataObjCreate', 'Could not create data object')
 data_obj_open,   UUMsiDataObjOpenException   = make_msi('DataObjOpen',   'Could not open data object')
 data_obj_read,   UUMsiDataObjReadException   = make_msi('DataObjRead',   'Could not read data object')
@@ -97,12 +100,20 @@ data_obj_write,  UUMsiDataObjWriteException  = make_msi('DataObjWrite',  'Could 
 data_obj_close,  UUMsiDataObjCloseException  = make_msi('DataObjClose',  'Could not close data object')
 data_obj_copy,   UUMsiDataObjCopyException   = make_msi('DataObjCopy',   'Could not copy data object')
 data_obj_unlink, UUMsiDataObjUnlinkException = make_msi('DataObjUnlink', 'Could not remove data object')
+coll_create,     UUMsiCollCreateException    = make_msi('CollCreate',    'Could not create collection')
+rm_coll,         UUMsiRmCollException        = make_msi('RmColl',        'Could not remove collection')
+check_access,    UUMsiCheckAccessException   = make_msi('CheckAccess',   'Could not check access')
+set_acl,         UUMsiSetACLException        = make_msi('SetACL',        'Could not set ACL')
+get_icat_time,   UUMsiGetIcatTimeException   = make_msi('GetIcatTime',   'Could not get Icat time')
 
 string_2_key_val_pair, UUMsiString2KeyValPairException = \
         make_msi('String2KeyValPair', 'Could not create keyval pair')
 
 set_key_value_pairs_to_obj, UUMsiSetKeyValuePairsToObjException = \
         make_msi('SetKeyValuePairsToObj', 'Could not set metadata on object')
+
+associate_key_value_pairs_to_obj, UUMsiAssociateKeyValuePairsToObjException = \
+        make_msi('AssociateKeyValuePairsToObj', 'Could not associate metadata to object')
 
 # Add new msis here as needed.
 

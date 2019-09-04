@@ -507,8 +507,9 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 					*reason = "Metadata missing, unable to submit this folder.";
 					succeed;
 			} else {
-					*status = "";
-					iiValidateMetadata(*folder, *status);
+					*status     = "";
+					*statusInfo = "";
+					iiValidateMetadata(*metadataJsonPath, *status, *statusInfo);
 					if (*status != "0") {
 							*allowed = false;
 							*reason = "Metadata is invalid, please check metadata form.";

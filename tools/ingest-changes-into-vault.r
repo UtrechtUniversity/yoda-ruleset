@@ -2,7 +2,7 @@ ingestChangesIntoVault {
 	# First scan for any pending changes in the datamanager area
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
-	msiAddConditionToGenQuery("DATA_NAME", "=", IIMETADATAXMLNAME, *GenQInp);
+	msiAddConditionToGenQuery("DATA_NAME", "=", IIJSONMETADATA, *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_vault_ingest", *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQInp);
 
@@ -13,11 +13,13 @@ ingestChangesIntoVault {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
-			*metadataXmlPath = *row.COLL_NAME ++ "/" ++ IIMETADATAXMLNAME;
+			*metadataPath = *row.COLL_NAME ++ "/" ++ IIJSONMETADATA;
 			
 			if (*collName like regex "/[^/]+/home/datamanager-.*") {	
 				# ensure rodsadmin access to the datamanager collection and metadata
-				*err = errorcode(iiIngestDatamanagerMetadataIntoVault(*metadataXmlPath, *status, *statusInfo));
+				*status     = "";
+				*statusInfo = "";
+				*err = errorcode(iiIngestDatamanagerMetadataIntoVault(*metadataPath, *status, *statusInfo));
 				if (*err < 0) {
 					writeLine("stdout", "iiIngestDatamanagerMetadataIntoVault: *err");
 					*status = "InternalError";
@@ -26,13 +28,13 @@ ingestChangesIntoVault {
 				if (*status != "Success") {
 					msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_vault_ingest=CRONJOB_UNRECOVERABLE"
 						     ++ UUORGMETADATAPREFIX ++ "cronjob_vault_ingest_info=*statusInfo", *kvp);
-					*err = errorcode(msiSetKeyValuePairsToObj(*kvp, *metadataXmlPath, "-d"));
+					*err = errorcode(msiSetKeyValuePairsToObj(*kvp, *metadataPath, "-d"));
 					if (*err < 0) {
-						writeLine("stdout", "iiIngestDatamanagerIntoVault: could not set error status on *metadataXmlPath");
+						writeLine("stdout", "iiIngestDatamanagerIntoVault: could not set error status on *metadataPath");
 					}
 					writeLine("stdout", "iiIngestDatamanagerIntoVault: *status - *statusInfo");
 				} else {
-					writeLine("stdout", "iiIngestDatamanagerIntoVault: Successfully processed *metadataXmlPath");
+					writeLine("stdout", "iiIngestDatamanagerIntoVault: Successfully processed *metadataPath");
 				}
 			}
 		}

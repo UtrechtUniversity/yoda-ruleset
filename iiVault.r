@@ -414,9 +414,10 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
 # \param[in] target               path of the vault package
 #
 iiCopyLicenseToVaultPackage(*folder, *target) {
-	*licenseKey = UUUSERMETADATAPREFIX ++ "0_License";
+	*licenseKey = "License";
+	*licenseUnit = UUUSERMETADATAROOT ++ "_%";
 	*license = "";
-	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey) {
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *licenseKey AND META_COLL_ATTR_UNITS LIKE '*licenseUnit') {
 		*license = *row.META_COLL_ATTR_VALUE;
 	}
 
