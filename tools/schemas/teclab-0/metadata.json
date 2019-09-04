@@ -25,8 +25,46 @@
       ]
     },
     "optionsMainSetting": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "tectonically defined setting",
+        "extended terrane setting",
+        "plate margin setting",
+        "earth surface setting",
+        "terrestrial setting",
+        "subaqueus setting",
+        "marine setting",
+        "earth interior setting",
+        "crustal setting",
+        "continental-crustal setting",
+        "oceanic-crustal setting",
+        "back arc setting",
+        "continental rift setting",
+        "hot spot setting",
+        "intraplate tectonic setting",
+        "passive continental margin setting",
+        "active continental margin setting",
+        "active spreading center setting",
+        "forearc setting",
+        "subduction zone setting",
+        "transform plate boundary setting",
+        "volcanic arc setting",
+        "plate spreading center setting",
+        "hillslope setting",
+        "shoreline setting",
+        "river plain system setting",
+        "basin plain setting",
+        "deltaic system setting",
+        "collisional setting",
+        "foreland setting",
+        "upper continental crustal setting",
+        "upper oceanic crustal setting",
+        "mantle setting",
+        "graben"
+      ],
+      "enumNames": [
+        " ",
         "tectonically defined setting",
         "extended terrane setting",
         "plate margin setting",
@@ -64,16 +102,71 @@
       ]
     },
     "optionsProcessHazard": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Rifting",
+        "Isostatic uplift",
+        "Tectonic uplift"
+      ],
+      "enumNames": [
+        " ",
         "Rifting",
         "Isostatic uplift",
         "Tectonic uplift"
       ]
     },
     "optionsGeologicalStructure": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "lava flow",
+        "lahar",
+        "cone",
+        "neck",
+        "trenche",
+        "resurgence",
+        "boudin",
+        "mullion",
+        "megathrust",
+        "thrust sheet/nappe/overthrust",
+        "diapir",
+        "sill",
+        "dike",
+        "cone sheet",
+        "ring dike",
+        "radial dike",
+        "pluton",
+        "fracture",
+        "crack",
+        "joint",
+        "shatter cone",
+        "volcanic crater",
+        "impact crater",
+        "vein",
+        "fissure",
+        "flexure/buckle",
+        "core complex",
+        "fauld-thrust belt",
+        "kink band",
+        "shear band",
+        "caldera",
+        "cinder cone",
+        "geyser",
+        "graben",
+        "horst",
+        "lava dome",
+        "lava plain",
+        "maar",
+        "mountains",
+        "plateau",
+        "ridge",
+        "rift valley",
+        "tuya",
+        "volcano"
+      ],
+      "enumNames": [
+        " ",
         "lava flow",
         "lahar",
         "cone",
@@ -121,8 +214,48 @@
       ]
     },
     "optionsGeomorphicalFeature": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Natural Geomorphologic Feature Type",
+        "alluvial and fluvial features",
+        "base slope",
+        "buried feature",
+        "constructional feature",
+        "crest",
+        "degradation feature",
+        "depression",
+        "destructional feature",
+        "drainage pattern",
+        "eolian features",
+        "erosion surface",
+        "erosional features",
+        "exhumed feature",
+        "glacial, glaciofluvial, glaciolacustrine and glaciomarine features",
+        "head slope",
+        "hill",
+        "hydrothermal features",
+        "impact features",
+        "interfluve",
+        "karst and chemical weathering features",
+        "lacustrine features",
+        "marine, littoral and coastal wetlands features",
+        "mountain",
+        "mountainbase",
+        "mountainflank",
+        "mountainslope",
+        "mountaintop",
+        "nival, periglacial and permafrost features",
+        "nose slope",
+        "pediment",
+        "plain",
+        "relic",
+        "slope and gravitational features",
+        "tectonic and structural features",
+        "volcanic features"
+      ],
+      "enumNames": [
+        " ",
         "Natural Geomorphologic Feature Type",
         "alluvial and fluvial features",
         "base slope",
@@ -162,8 +295,54 @@
       ]
     },
     "optionsMaterial": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Microsphere",
+        "Glassy",
+        "Siliceus",
+        "PVC Roods",
+        "Polycrisstalline CaTiO3",
+        "Sand",
+        "Corundum Sand",
+        "Quartz Sand",
+        "Feldspar Sand",
+        "Glass fragments",
+        "Rubber pellet",
+        "Sugar",
+        "Alumina Powder",
+        "Iron Powder",
+        "Ignimbrite",
+        "Graphyte",
+        "Plastic",
+        "Flour",
+        "Rice Flour",
+        "Air",
+        "Nitrogen",
+        "Vegetable oil",
+        "Water",
+        "Pyrex",
+        "Water saturated paste",
+        "Golden syrup",
+        "Carbopol",
+        "Clay",
+        "Paraffin",
+        "Silicon",
+        "Plasticine",
+        "Cement-Plaster",
+        "Gelatine",
+        "Pig skin",
+        "K-caragean",
+        "Gellan gum",
+        "Xantan",
+        "Natrosol",
+        "Glycerine",
+        "Foam rubber",
+        "Polytungstate",
+        "Barium sulphate"
+      ],
+      "enumNames": [
+        " ",
         "Microsphere",
         "Glassy",
         "Siliceus",
@@ -209,8 +388,58 @@
       ]
     },
     "optionsApparatus": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "2D Convection box",
+        "3D Convection box",
+        "Cooler device",
+        "Densimeter",
+        "Dynamometer",
+        "Earthquake simulator",
+        "Electric engine (mm/hr)",
+        "Electronic microscope",
+        "Extension box",
+        "Fault simulator",
+        "Flow channel",
+        "Fluid injector",
+        "Fluid injector termally controlled",
+        "Fluid pressure device",
+        "Fog box",
+        "Glass/Plexiglas box (cm scale)",
+        "Glass/Plexiglas box (meter scale)",
+        "Glass/Plexiglas box",
+        "Granular flow simulator",
+        "Gravity load device (Centrifuge)",
+        "Gravity sliding simulator",
+        "Heating device",
+        "Hubbert-type shear box",
+        "Peristaltic pump",
+        "Perspex cylinder",
+        "Pycnometer",
+        "Rainfall system",
+        "Rheometer",
+        "Ring-shear tester",
+        "River sytem simulator",
+        "Sandbox",
+        "Sandbox (meter scale)",
+        "Sandbox (cm scale)",
+        "Sediment feeders",
+        "Shear box",
+        "Sieving device",
+        "Squeeze box",
+        "Subduction box",
+        "Thermomechanics apparatus",
+        "Triaxal tester",
+        "Tsunami simulator",
+        "Turbidity current simulator",
+        "Uniaxial tester",
+        "Vice tester",
+        "Viscometer",
+        "Wedge simulator"
+      ],
+      "enumNames": [
+        " ",
         "2D Convection box",
         "3D Convection box",
         "Cooler device",
@@ -260,8 +489,37 @@
       ]
     },
     "optionsMonitoring": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Conductivity measuring system",
+        "Deflection of a light beam",
+        "Discharge meter",
+        "Electrochemical techniques",
+        "High frame rate camera",
+        "Kinetic Microfoft",
+        "Laser interferometer",
+        "Laser scanner",
+        "Lidar",
+        "MEMS accelerometer",
+        "Schlieren/Moiré",
+        "Sectioning",
+        "Seismic reflection techniques",
+        "SLR camera",
+        "Temperature measurement",
+        "Thermochromic liquid crystals",
+        "Time lapse camera",
+        "Ultrasonic doppler velocimetry",
+        "Videocamera",
+        "X-ray computed tomographic scanner (CT-scan)",
+        "Generic camera",
+        "Force sensor",
+        "Strain gauge",
+        "Photoelasticity",
+        "Piezotransducer"
+      ],
+      "enumNames": [
+        " ",
         "Conductivity measuring system",
         "Deflection of a light beam",
         "Discharge meter",
@@ -290,8 +548,67 @@
       ]
     },
     "optionsSoftware": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Envi-IDL",
+        "Erdas (LEYCA)",
+        "Geomodeller (Intrepid Geoscience)",
+        "GeoSec",
+        "GeoTools (AOA Geophysics Inc)",
+        "GOCAD (Earth Decision - Paradigm)",
+        "LabView Data Viewer",
+        "LabView Deformation Mapper",
+        "Lens (Agisoft)",
+        "Light-3D",
+        "Matlab (Mathworks)",
+        "Microstation XM (Bentley)",
+        "Move (Midland Valley)",
+        "OPTUM",
+        "Particle Flow Code (numerical software)",
+        "Pathfinder (Trimble)",
+        "Petrel (Schlumberger)",
+        "Polyworks (Innovmetric)",
+        "Promax (Landmark)",
+        "PyLith (numerical software)",
+        "QDYN (numerical software)",
+        "RMS (Roxar)",
+        "Seiswork (Landmark)",
+        "SLAMTEC",
+        "Solidworks",
+        "StereoScan (Agisoft)",
+        "Terrasync (Trimble)",
+        "The Kingdom Suite (SMT)",
+        "TopPad (Topcon)",
+        "Visual Basic (Microsoft)",
+        "Visual Fortran (Compaq)",
+        "Visual Studio (Microsoft)",
+        "Digital Image Correlation (DIC) / Particle Image Velocimetry (PIV)",
+        "Matlab code",
+        "PIVlab",
+        "TecPIV",
+        "GeoPIV",
+        "StrainMaster (La Vision GmbH)",
+        "Digital Camera",
+        "MicMac",
+        "MatPIV",
+        "COSI-Corr",
+        "Feature Tracking",
+        "Optical Flow",
+        "Structure from Motion (SfM)",
+        "Photoscan (Agisoft)",
+        "Pix4d (Analist Group)",
+        "Python Photogrammetry Toolbox (PPT)",
+        "Apero",
+        "3DF Zephyr (3Dflow)",
+        "Remake (Autodesk)",
+        "OpenMVS Open Multiple View Stereovision",
+        "Other SFM based software",
+        "MeshLab",
+        "CloudCompare"
+      ],
+      "enumNames": [
+        " ",
         "Envi-IDL",
         "Erdas (LEYCA)",
         "Geomodeller (Intrepid Geoscience)",
@@ -350,8 +667,35 @@
       ]
     },
     "optionsMeasuredProperty": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Tensile strength",
+        "Cohesion",
+        "Friction coefficient",
+        "Rate-state parameters",
+        "Young modulus",
+        "Bulk modulus",
+        "Shear modulus",
+        "Poisson ratio",
+        "Lame constant",
+        "Fracture toughness",
+        "S-wave velocity",
+        "P-wave velocity",
+        "Viscosity",
+        "Stress exponent",
+        "Yield stress",
+        "Loss modulus",
+        "Storage modulus",
+        "Maxwell relaxation time",
+        "Rheological model",
+        "Density",
+        "Surface image",
+        "Surface roughness",
+        "Grain size distribution"
+      ],
+      "enumNames": [
+        " ",
         "Tensile strength",
         "Cohesion",
         "Friction coefficient",
@@ -445,10 +789,10 @@
     "optionsDiscipline": {
       "type": "string",
       "enum": [
-        "Analog modelling",
-        "Geochemical data",
-        "Paleomagnetic data",
-        "Rock and melt physical properties"
+        "Analogue modelling of geologic processes",
+        "Paleomagnetic and magnetic data",
+        "Rock and melt physical properties",
+        "Analytical and microscopy data"
       ]
     },
     "optionsContributorType": {
@@ -1004,7 +1348,7 @@
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Subdomain",
-            "default": "Analog modelling"
+            "default": "Analogue modelling of geologic processes"
           }
         },
         "Lab": {
@@ -1056,13 +1400,12 @@
             "End_Date": ["Start_Date"]
           }
         },
-        "Geo_Box_Spatial": {
+        "GeoLocation": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "title": "geo spatial",
-            "yoda:structure": "compound",
+            "yoda:structure": "subproperties",
             "properties": {
               "geoLocationBox": {
                 "type": "object",
@@ -1086,36 +1429,6 @@
               "Description_Spatial": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "Description"
-              }
-            }
-          }
-        },
-        "Geo_Box_Temporal": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "title": "geo temp",
-            "yoda:structure": "compound",
-            "properties": {
-              "geoLocationBox": {
-                "type": "object",
-                "title": "Geo Location",
-                "yoda:structure": "geoLocation",
-                "properties": {
-                  "northBoundLatitude": {
-                    "type": "number"
-                  },
-                  "westBoundLongitude": {
-                    "type": "number"
-                  },
-                  "southBoundLatitude": {
-                    "type": "number"
-                  },
-                  "eastBoundLongitude": {
-                    "type": "number"
-                  }
-                }
               },
               "Description_Temporal": {
                 "type": "object",
@@ -1137,21 +1450,13 @@
             }
           }
         },
-        "Tag": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Tags",
-            "default": ""
-          }
-        },
         "Main_Setting": {
           "type": "array",
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMainSetting",
-            "title": "Main setting"
+            "title": "Main setting",
+            "default": null
           }
         },
         "Process_Hazard": {
@@ -1159,7 +1464,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsProcessHazard",
-            "title": "Process hazard"
+            "title": "Process hazard",
+            "default": null
           }
         },
         "Geological_Structure": {
@@ -1167,7 +1473,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsGeologicalStructure",
-            "title": "Geological structure"
+            "title": "Geological structure",
+            "default": null
           }
         },
         "Geomorphical_Feature": {
@@ -1175,7 +1482,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsGeomorphicalFeature",
-            "title": "Geomorphical feature"
+            "title": "Geomorphical feature",
+            "default": null
           }
         },
         "Material": {
@@ -1183,7 +1491,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMaterial",
-            "title": "Material"
+            "title": "Material",
+            "default": null
           }
         },
         "Apparatus": {
@@ -1191,7 +1500,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsApparatus",
-            "title": "Apparatus"
+            "title": "Apparatus",
+            "default": null
           }
         },
         "Monitoring": {
@@ -1199,7 +1509,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMonitoring",
-            "title": "Monitoring"
+            "title": "Monitoring",
+            "default": null
           }
         },
         "Software": {
@@ -1207,7 +1518,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsSoftware",
-            "title": "Software"
+            "title": "Software",
+            "default": null
           }
         },
         "Measured_Property": {
@@ -1215,7 +1527,17 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMeasuredProperty",
-            "title": "Measured property"
+            "title": "Measured property",
+            "default": null
+          }
+        },
+        "Tag": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Tags",
+            "default": ""
           }
         }
       }

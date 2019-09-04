@@ -24,107 +24,55 @@
         "Laboratoire de modélisation analogique Géosciences Montpellier (CNRS-Montpellier University,  France)"
       ]
     },
-    "optionsProcessHazard": {
-      "type": "string",
-      "enum": [
-        "Rifting",
-        "Isostatic uplift",
-        "Tectonic uplift"
-      ]
-    },
-    "optionsGeologicalStructure": {
-      "type": "string",
-      "enum": [
-        "lava flow",
-        "lahar",
-        "cone",
-        "neck",
-        "trenche",
-        "resurgence",
-        "boudin",
-        "mullion",
-        "megathrust",
-        "thrust sheet/nappe/overthrust",
-        "diapir",
-        "sill",
-        "dike",
-        "cone sheet",
-        "ring dike",
-        "radial dike",
-        "pluton",
-        "fracture",
-        "crack",
-        "joint",
-        "shatter cone",
-        "volcanic crater",
-        "impact crater",
-        "vein",
-        "fissure",
-        "flexure/buckle",
-        "core complex",
-        "fauld-thrust belt",
-        "kink band",
-        "shear band",
-        "caldera",
-        "cinder cone",
-        "geyser",
-        "graben",
-        "horst",
-        "lava dome",
-        "lava plain",
-        "maar",
-        "mountains",
-        "plateau",
-        "ridge",
-        "rift valley",
-        "tuya",
-        "volcano"
-      ]
-    },
-    "optionsGeomorphicalFeature": {
-      "type": "string",
-      "enum": [
-        "Natural Geomorphologic Feature Type",
-        "alluvial and fluvial features",
-        "base slope",
-        "buried feature",
-        "constructional feature",
-        "crest",
-        "degradation feature",
-        "depression",
-        "destructional feature",
-        "drainage pattern",
-        "eolian features",
-        "erosion surface",
-        "erosional features",
-        "exhumed feature",
-        "glacial, glaciofluvial, glaciolacustrine and glaciomarine features",
-        "head slope",
-        "hill",
-        "hydrothermal features",
-        "impact features",
-        "interfluve",
-        "karst and chemical weathering features",
-        "lacustrine features",
-        "marine, littoral and coastal wetlands features",
-        "mountain",
-        "mountainbase",
-        "mountainflank",
-        "mountainslope",
-        "mountaintop",
-        "nival, periglacial and permafrost features",
-        "nose slope",
-        "pediment",
-        "plain",
-        "relic",
-        "slope and gravitational features",
-        "tectonic and structural features",
-        "volcanic features"
-      ]
-    },
     "optionsMaterial": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Microsphere",
+        "Glassy",
+        "Siliceus",
+        "PVC Roods",
+        "Polycrisstalline CaTiO3",
+        "Sand",
+        "Corundum Sand",
+        "Quartz Sand",
+        "Feldspar Sand",
+        "Glass fragments",
+        "Rubber pellet",
+        "Sugar",
+        "Alumina Powder",
+        "Iron Powder",
+        "Ignimbrite",
+        "Graphyte",
+        "Plastic",
+        "Flour",
+        "Rice Flour",
+        "Air",
+        "Nitrogen",
+        "Vegetable oil",
+        "Water",
+        "Pyrex",
+        "Water saturated paste",
+        "Golden syrup",
+        "Carbopol",
+        "Clay",
+        "Paraffin",
+        "Silicon",
+        "Plasticine",
+        "Cement-Plaster",
+        "Gelatine",
+        "Pig skin",
+        "K-caragean",
+        "Gellan gum",
+        "Xantan",
+        "Natrosol",
+        "Glycerine",
+        "Foam rubber",
+        "Polytungstate",
+        "Barium sulphate"
+      ],
+      "enumNames": [
+        " ",
         "Microsphere",
         "Glassy",
         "Siliceus",
@@ -170,8 +118,58 @@
       ]
     },
     "optionsApparatus": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "2D Convection box",
+        "3D Convection box",
+        "Cooler device",
+        "Densimeter",
+        "Dynamometer",
+        "Earthquake simulator",
+        "Electric engine (mm/hr)",
+        "Electronic microscope",
+        "Extension box",
+        "Fault simulator",
+        "Flow channel",
+        "Fluid injector",
+        "Fluid injector termally controlled",
+        "Fluid pressure device",
+        "Fog box",
+        "Glass/Plexiglas box (cm scale)",
+        "Glass/Plexiglas box (meter scale)",
+        "Glass/Plexiglas box",
+        "Granular flow simulator",
+        "Gravity load device (Centrifuge)",
+        "Gravity sliding simulator",
+        "Heating device",
+        "Hubbert-type shear box",
+        "Peristaltic pump",
+        "Perspex cylinder",
+        "Pycnometer",
+        "Rainfall system",
+        "Rheometer",
+        "Ring-shear tester",
+        "River sytem simulator",
+        "Sandbox",
+        "Sandbox (meter scale)",
+        "Sandbox (cm scale)",
+        "Sediment feeders",
+        "Shear box",
+        "Sieving device",
+        "Squeeze box",
+        "Subduction box",
+        "Thermomechanics apparatus",
+        "Triaxal tester",
+        "Tsunami simulator",
+        "Turbidity current simulator",
+        "Uniaxial tester",
+        "Vice tester",
+        "Viscometer",
+        "Wedge simulator"
+      ],
+      "enumNames": [
+        " ",
         "2D Convection box",
         "3D Convection box",
         "Cooler device",
@@ -221,8 +219,37 @@
       ]
     },
     "optionsMonitoring": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Conductivity measuring system",
+        "Deflection of a light beam",
+        "Discharge meter",
+        "Electrochemical techniques",
+        "High frame rate camera",
+        "Kinetic Microfoft",
+        "Laser interferometer",
+        "Laser scanner",
+        "Lidar",
+        "MEMS accelerometer",
+        "Schlieren/Moiré",
+        "Sectioning",
+        "Seismic reflection techniques",
+        "SLR camera",
+        "Temperature measurement",
+        "Thermochromic liquid crystals",
+        "Time lapse camera",
+        "Ultrasonic doppler velocimetry",
+        "Videocamera",
+        "X-ray computed tomographic scanner (CT-scan)",
+        "Generic camera",
+        "Force sensor",
+        "Strain gauge",
+        "Photoelasticity",
+        "Piezotransducer"
+      ],
+      "enumNames": [
+        " ",
         "Conductivity measuring system",
         "Deflection of a light beam",
         "Discharge meter",
@@ -251,8 +278,35 @@
       ]
     },
     "optionsMeasuredProperty": {
-      "type": "string",
+      "type": ["string", "null"],
       "enum": [
+        null,
+        "Tensile strength",
+        "Cohesion",
+        "Friction coefficient",
+        "Rate-state parameters",
+        "Young modulus",
+        "Bulk modulus",
+        "Shear modulus",
+        "Poisson ratio",
+        "Lame constant",
+        "Fracture toughness",
+        "S-wave velocity",
+        "P-wave velocity",
+        "Viscosity",
+        "Stress exponent",
+        "Yield stress",
+        "Loss modulus",
+        "Storage modulus",
+        "Maxwell relaxation time",
+        "Rheological model",
+        "Density",
+        "Surface image",
+        "Surface roughness",
+        "Grain size distribution"
+      ],
+      "enumNames": [
+        " ",
         "Tensile strength",
         "Cohesion",
         "Friction coefficient",
@@ -346,10 +400,10 @@
     "optionsDiscipline": {
       "type": "string",
       "enum": [
-        "Analog modelling",
-        "Geochemical data",
-        "Paleomagnetic data",
-        "Rock and melt physical properties"
+        "Analogue modelling of geologic processes",
+        "Paleomagnetic and magnetic data",
+        "Rock and melt physical properties",
+        "Analytical and microscopy data"
       ]
     },
     "optionsContributorType": {
@@ -883,7 +937,6 @@
         "Material",
         "Apparatus",
         "Monitoring",
-        "Software",
         "Measured_Property"
       ],
       "properties": {
@@ -905,7 +958,7 @@
           "items": {
             "$ref": "#/definitions/optionsDiscipline",
             "title": "Subdomain",
-            "default": "Analog modelling"
+            "default": "Analogue modelling of geologic processes"
           }
         },
         "Lab": {
@@ -957,13 +1010,12 @@
             "End_Date": ["Start_Date"]
           }
         },
-        "Geo_Box_Spatial": {
+        "GeoLocation": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "title": "geo spatial",
-            "yoda:structure": "compound",
+            "yoda:structure": "subproperties",
             "properties": {
               "geoLocationBox": {
                 "type": "object",
@@ -987,36 +1039,6 @@
               "Description_Spatial": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "Description"
-              }
-            }
-          }
-        },
-        "Geo_Box_Temporal": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "title": "geo temp",
-            "yoda:structure": "compound",
-            "properties": {
-              "geoLocationBox": {
-                "type": "object",
-                "title": "Geo Location",
-                "yoda:structure": "geoLocation",
-                "properties": {
-                  "northBoundLatitude": {
-                    "type": "number"
-                  },
-                  "westBoundLongitude": {
-                    "type": "number"
-                  },
-                  "southBoundLatitude": {
-                    "type": "number"
-                  },
-                  "eastBoundLongitude": {
-                    "type": "number"
-                  }
-                }
               },
               "Description_Temporal": {
                 "type": "object",
@@ -1038,21 +1060,13 @@
             }
           }
         },
-        "Tag": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Tags",
-            "default": ""
-          }
-        },
         "Apparatus": {
           "type": "array",
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsApparatus",
-            "title": "Apparatus"
+            "title": "Apparatus",
+            "default": null
           }
         },
         "Material": {
@@ -1060,7 +1074,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMaterial",
-            "title": "Material"
+            "title": "Material",
+            "default": null
           }
         },
         "Measured_Property": {
@@ -1068,7 +1083,8 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMeasuredProperty",
-            "title": "Measured property"
+            "title": "Measured property",
+            "default": null
           }
         },
         "Monitoring": {
@@ -1076,7 +1092,17 @@
           "minItems": 1,
           "items": {
             "$ref": "#/definitions/optionsMonitoring",
-            "title": "Monitoring"
+            "title": "Monitoring",
+            "default": null
+          }
+        },
+        "Tag": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Tags",
+            "default": ""
           }
         }
       }
