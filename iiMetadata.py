@@ -13,13 +13,15 @@ import jsonavu
 
 def get_json_metadata_errors(callback,
                              metadata_path,
-                             metadata = None,
-                             ignore_required = False):
+                             metadata=None,
+                             ignore_required=False):
     """Validate JSON metadata, and return a list of errors, if any.
-       The path to the JSON object must be provided, so that the schema path can be derived.
-       Optionally, a pre-parsed JSON object may be provided in 'metadata'.
+       The path to the JSON object must be provided, so that the schema path
+       can be derived. Optionally, a pre-parsed JSON object may be provided in
+       'metadata'.
 
-       Will throw exceptions on missing metadata / schema files and invalid JSON formats.
+       Will throw exceptions on missing metadata / schema files and invalid
+       JSON formats.
     """
 
     schema = getSchema(callback, metadata_path)
@@ -48,8 +50,8 @@ def get_json_metadata_errors(callback,
 
 def is_json_metadata_valid(callback,
                            metadata_path,
-                           metadata = None,
-                           ignore_required = False):
+                           metadata=None,
+                           ignore_required=False):
     """Check if json metadata contains no errors.
        argument 'metadata' may contain a preparsed JSON document, otherwise it
        is loaded from the provided path.
@@ -58,8 +60,8 @@ def is_json_metadata_valid(callback,
     try:
         return len(get_json_metadata_errors(callback,
                                             metadata_path,
-                                            metadata        = metadata,
-                                            ignore_required = ignore_required)) == 0
+                                            metadata=metadata,
+                                            ignore_required=ignore_required)) == 0
     except UUException as e:
         # File may be missing or not valid JSON.
         return False
@@ -78,7 +80,7 @@ def get_collection_metadata_path(callback, coll):
 
 
 def iiSaveFormMetadata(rule_args, callback, rei):
-    """Validate and store JSON metadata for a given collection"""
+    """Validate and store JSON metadata for a given collection."""
 
     def report(x):
         """ XXX Temporary, for debugging """
@@ -89,7 +91,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     # Assume we are in the research area until proven otherwise.
     # (overwritten below in the vault case)
-    is_vault  = False
+    is_vault = False
     json_path = '{}/{}'.format(coll, IIJSONMETADATA)
 
     m = re.match('^/([^/]+)/home/(vault-[^/]+)/(.+)$', coll)
@@ -114,7 +116,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
             return
 
         # Use staging area instead of trying to write to the vault directly.
-        is_vault  = True
+        is_vault = True
         json_path = '{}/{}'.format(tmp_coll, IIJSONMETADATA)
 
     # Load form metadata input.
@@ -126,7 +128,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
                            'statusInfo': 'JSON decode error'}))
         return
 
-    errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required = not is_vault)
+    errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
 
     if len(errors) > 0:
         report(json.dumps({'status':     'ValidationError',
@@ -136,7 +138,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
 
     # No errors: write out JSON.
     try:
-        write_data_object(callback, json_path, json.dumps(metadata, indent = 4))
+        write_data_object(callback, json_path, json.dumps(metadata, indent=4))
     except UUException as e:
         report(json.dumps({'status': 'Error',
                            'statusInfo': 'Could not save yoda-metadata.json'}))
@@ -180,7 +182,7 @@ def iiCollectionHasCloneableMetadata(rule_args, callback, rei):
         return
 
     elif path.endswith('.json'):
-        if is_json_metadata_valid(callback, path, ignore_required = True):
+        if is_json_metadata_valid(callback, path, ignore_required=True):
             rule_args[1:3] = ('true', path)
 
     elif path.endswith('.xml'):
@@ -216,7 +218,7 @@ def iiCloneMetadataFile(rule_args, callback, rei):
     """
 
     target_coll = rule_args[0]
-    source_coll = chop_path(target_coll)[0] # = parent collection
+    source_coll = chop_path(target_coll)[0]  # = parent collection
 
     source_data = get_collection_metadata_path(callback, source_coll)
 
@@ -233,8 +235,8 @@ def iiCloneMetadataFile(rule_args, callback, rei):
     try:
         data_obj_copy(callback, source_data, target_data, '', irods_types.BytesBuf())
     except UUMsiException as e:
-        callback.writeString("serverLog",'Metadata copy from <{}> to <{}> failed: {}'
-                            .format(source_data, target_data, e))
+        callback.writeString("serverLog", 'Metadata copy from <{}> to <{}> failed: {}'
+                             .format(source_data, target_data, e))
 
 
 # Functions that deal with ingesting metadata into AVU's {{{
@@ -252,7 +254,7 @@ def ingest_metadata_research(callback, path):
                              .format(path))
         return
 
-    if not is_json_metadata_valid(callback, path, metadata, ignore_required = True):
+    if not is_json_metadata_valid(callback, path, metadata, ignore_required=True):
         callback.writeString('serverLog',
                              'ingest_metadata_research failed: {} is invalid\n'
                              .format(path))
@@ -269,6 +271,7 @@ def ingest_metadata_research(callback, path):
     callback.setJsonToObj(coll, '-C',
                           UUUSERMETADATAROOT,
                           json.dumps(metadata))
+
 
 def ingest_metadata_staging(callback, path):
     """Sets cronjob metadata flag and triggers vault ingest."""
@@ -315,6 +318,7 @@ def ingest_metadata_vault(callback, path):
 
 # }}}
 
+
 def iiMetadataJsonModifiedPost(rule_args, callback, rei):
 
     path, user, zone = rule_args[0:4]
@@ -328,7 +332,7 @@ def iiMetadataJsonModifiedPost(rule_args, callback, rei):
 
 
 def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
-    """Ingest changes to metadata into the vault"""
+    """Ingest changes to metadata into the vault."""
 
     # This rule is called via ExecCmd during a policy rule
     # (ingest_metadata_staging), with as an argument the path to a metadata
@@ -353,17 +357,16 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
         return
 
     # Parse path to JSON object.
-
     m = re.match('^/([^/]+)/home/(datamanager-[^/]+)/(vault-[^/]+)/(.+)/{}$'.format(IIJSONMETADATA), json_path)
     if not m:
         set_result('JsonPathInvalid', 'Json staging path <{}> invalid'.format(json_path))
         return
 
     zone, dm_group, vault_group, vault_subpath = m.groups()
-    dm_path        = '/{}/home/{}'.format(zone, dm_group)
+    dm_path = '/{}/home/{}'.format(zone, dm_group)
 
     # Make sure the vault package coll exists.
-    vault_path     = '/{}/home/{}'.format(zone, vault_group)
+    vault_path = '/{}/home/{}'.format(zone, vault_group)
     vault_pkg_path = '{}/{}'.format(vault_path, vault_subpath)
 
     if not collection_exists(callback, vault_pkg_path):
@@ -374,10 +377,9 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     if actor is None:
         set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
         return
-    actor = actor[0] # Discard zone name.
+    actor = actor[0]  # Discard zone name.
 
     # Make sure rods has access to the json file.
-
     client_full_name = get_client_full_name(rei)
 
     try:
@@ -391,7 +393,6 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     # Determine destination filename.
     # FIXME - TOCTOU: also exists in XML version
     #      -> should do this in a loop around data_obj_copy instead.
-
     ret = get_icat_time(callback, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
@@ -405,7 +406,6 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     # Validate metadata.
     # FIXME - TOCTOU: also exists in XML version
     #      -> might fix by reading JSON only once, and validating and writing to vault from that.
-
     ret = callback.iiValidateMetadata(json_path, '', '')
     invalid = ret['arguments'][1]
     if invalid == '1':
@@ -413,13 +413,12 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
         return
 
     # Copy the file, with its ACLs.
-
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
         data_obj_copy(callback, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
     except UUException as e:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
-                                 .format(json_path, dest))
+                   .format(json_path, dest))
         return
 
     try:
@@ -429,12 +428,10 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
         return
 
     # Log actions.
-
     callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
     callback.iiWriteProvenanceLogToVault(vault_pkg_path)
 
     # Cleanup staging area.
-
     try:
         data_obj_unlink(callback, 'objPath={}++++forceFlag='.format(json_path), irods_types.BytesBuf())
     except Exception as e:
@@ -445,7 +442,7 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     if collection_empty(callback, stage_coll):
         try:
             # We may or may not have delete access already.
-            set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path) 
+            set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
         except UUException as e:
             pass
         try:

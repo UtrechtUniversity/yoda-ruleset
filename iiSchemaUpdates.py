@@ -336,7 +336,7 @@ def getSchemaPath(callback, metadata_path):
     """
     # Retrieve current metadata schemas.
     path_parts = metadata_path.split('/')
-    rods_zone  = path_parts[1]
+    rods_zone = path_parts[1]
     group_name = path_parts[3]
 
     if group_name.startswith("vault-"):

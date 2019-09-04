@@ -10,6 +10,7 @@ import irods_types
 class UUException(Exception):
     """Generic Python rule exception"""
 
+
 class UUFileSizeException(UUException):
     """File size limit exceeded"""
 
@@ -27,9 +28,9 @@ class UUMsiException(UUException):
         super(UUMsiException, self).__init__(message)
         # Store msi result, if any.
         # These may be None when an msi aborts in an abnormal way.
-        self.msi_status    = msi_status
-        self.msi_code      = msi_code
-        self.msi_args      = msi_args
+        self.msi_status = msi_status
+        self.msi_code = msi_code
+        self.msi_args = msi_args
         self.src_exception = src_exception
 
     def __str__(self):
@@ -84,7 +85,7 @@ def make_msi(name, error_text):
        (see functions above)
     """
     e = make_msi_exception(name, error_text)
-    return (wrap_msi('msi'+name, e), e)
+    return (wrap_msi('msi' + name, e), e)
 
 
 # }}}
@@ -107,13 +108,13 @@ set_acl,         UUMsiSetACLException        = make_msi('SetACL',        'Could 
 get_icat_time,   UUMsiGetIcatTimeException   = make_msi('GetIcatTime',   'Could not get Icat time')
 
 string_2_key_val_pair, UUMsiString2KeyValPairException = \
-        make_msi('String2KeyValPair', 'Could not create keyval pair')
+    make_msi('String2KeyValPair', 'Could not create keyval pair')
 
 set_key_value_pairs_to_obj, UUMsiSetKeyValuePairsToObjException = \
-        make_msi('SetKeyValuePairsToObj', 'Could not set metadata on object')
+    make_msi('SetKeyValuePairsToObj', 'Could not set metadata on object')
 
 associate_key_value_pairs_to_obj, UUMsiAssociateKeyValuePairsToObjException = \
-        make_msi('AssociateKeyValuePairsToObj', 'Could not associate metadata to object')
+    make_msi('AssociateKeyValuePairsToObj', 'Could not associate metadata to object')
 
 # Add new msis here as needed.
 

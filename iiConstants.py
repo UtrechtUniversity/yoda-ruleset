@@ -7,32 +7,33 @@
 # \copyright Copyright (c) 2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \constant IIMETADATAJSONNAME Name of metadata JSON file
+# Name of metadata JSON file.
 IIJSONMETADATA = "yoda-metadata.json"
 
-# \constant IIMETADATAXMLNAME
+# Name of metadata XML file.
 IIMETADATAXMLNAME = "yoda-metadata.xml"
 
-# \constant IIRESEARCHXSDNAME Name of the research XSD
+# Name of the research XSD.
 IIRESEARCHXSDNAME = "research.xsd"
 
-# \constant IIVAULTXSDNAME Name of the vault XSD
+# Name of the vault XSD.
 IIVAULTXSDNAME = "vault.xsd"
 
 # The maximum file size that can be read into a string in memory,
 # to prevent DOSing / out of control memory consumption.
-IIDATA_MAX_SLURP_SIZE = 4*1024*1024 # 4 MiB
+IIDATA_MAX_SLURP_SIZE = 4 * 1024 * 1024  # 4 MiB
 
 # Prefix of user metadata (applied via legacy XML metadata file changes).
 UUUSERMETADATAPREFIX = "usr_"
 
-# JSONAVU JSON root / namespace of user metadata (applied via JSON metadata file changes).
+# JSONAVU JSON root / namespace of user metadata
+# (applied via JSON metadata file changes).
 UUUSERMETADATAROOT = "usr"
 
 # Prefix for organisational metadata.
 UUORGMETADATAPREFIX = "org_"
 
-# Cronjob states
+# Cronjob states.
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
     'PROCESSING':    'CRONJOB_PROCESSING',
@@ -41,6 +42,7 @@ CRONJOB_STATE = {
     'OK':            'CRONJOB_OK',
 }
 
+# Vaut package states.
 VAULT_PACKAGE_STATE = {
     'INCOMPLETE':                'INCOMPLETE',
     'COMPLETE':                  'COMPLETE',

@@ -11,20 +11,21 @@ import genquery
 import session_vars
 
 
-# \brief Retrieve lists of preservable file formats on the system.
-#
-# \return Lists of preservable file formats
-#
 def getPreservableFormatsLists(callback, rei):
+    """Retrieve lists of preservable file formats on the system.
+
+       Return:
+       dict -- Lists of preservable file formats
+    """
     preservableLists = {}
     zoneName = ""
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve all preservable file formats lists on the system.
     iter = genquery.row_iterator(
-               "DATA_NAME, COLL_NAME",
-               "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(rods_zone),
-               genquery.AS_LIST, callback
+        "DATA_NAME, COLL_NAME",
+        "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(rods_zone),
+        genquery.AS_LIST, callback
     )
 
     for row in iter:
@@ -41,14 +42,16 @@ def getPreservableFormatsLists(callback, rei):
     return {'lists': preservableLists}
 
 
-# \brief Retrieve all unpreservable files in a folder.
-#
-# \param[in] folder Path of folder to check.
-# \param[in] list   Name of preservable file format list.
-#
-# \return List of unpreservable files.
-#
 def getUnpreservableFiles(callback, rei, folder, list):
+    """Retrieve lists of preservable file formats on the system.
+
+       Arguments:
+       folder -- Path of folder to check.
+       list   -- Name of preservable file format list.
+
+       Return:
+       dict -- Lists of preservable file formats
+    """
     zoneName = ""
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -59,9 +62,9 @@ def getUnpreservableFiles(callback, rei, folder, list):
 
     # Retrieve all files in collection.
     iter = genquery.row_iterator(
-               "DATA_NAME, COLL_NAME",
-               "COLL_NAME like '%s%%'" % (folder),
-               genquery.AS_LIST, callback
+        "DATA_NAME, COLL_NAME",
+        "COLL_NAME like '%s%%'" % (folder),
+        genquery.AS_LIST, callback
     )
 
     for row in iter:
@@ -83,26 +86,27 @@ def getUnpreservableFiles(callback, rei, folder, list):
     return {'formats': output}
 
 
-# \brief Write preservable file formats lists to stdout.
-#
 def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
+    """Write preservable file formats lists to stdout."""
     callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback, rei)))
 
 
-# \brief Write unpreservable files in folder to stdout.
-#
-# \param[in] rule_args[0] Path of folder to check.
-# \param[in] rule_args[1] Name of preservable file format list.
-#
 def iiGetUnpreservableFilesJson(rule_args, callback, rei):
+    """Write unpreservable files in folder to stdout.
+
+       Arguments:
+       rule_args[0] -- Path of folder to check.
+       rule_args[1] -- Name of preservable file format list.
+    """
     callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rei, rule_args[0], rule_args[1])))
 
 
-# \brief Copy the original metadata JSON into the root of the package.
-#
-# \param[in] rule_args[0] Path of a new package in the vault.
-#
 def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
+    """Copy the original metadata JSON into the root of the package.
+
+       Arguments:
+       rule_args[0] -- Path of a new package in the vault.
+    """
     vault_package = rule_args[0]
     original_metadata = vault_package + "/original/" + IIJSONMETADATA
 
@@ -111,13 +115,15 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
-# \brief Get the provenance log as JSON.
-#
-# \param[in] folder Path of a folder in research or vault space.
-#
-# \return Provenance log as JSON.
-#
 def getProvenanceLog(callback, folder):
+    """Get the provenance log of a folder.
+
+       Arguments:
+       folder -- Path of a folder in research or vault space.
+
+       Return:
+       dict -- Provenance log.
+    """
     provenance_log = []
 
     # Retrieve all provenance logs on a folder.
@@ -134,11 +140,12 @@ def getProvenanceLog(callback, folder):
     return provenance_log
 
 
-# \brief Writes the provenance log as a text file into the root of the vault package.
-#
-# \param[in] rule_args[0] Path of a package in the vault.
-#
 def iiWriteProvenanceLogToVault(rule_args, callback, rei):
+    """Writes the provenance log as a text file into the root of the vault package.
+
+       Arguments:
+       rule_args[0] -- Path of a package in the vault.
+    """
     # Retrieve provenance.
     provenenanceString = ""
     provenanceLog = getProvenanceLog(callback, rule_args[0])
