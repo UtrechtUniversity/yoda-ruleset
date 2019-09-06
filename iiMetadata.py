@@ -128,6 +128,11 @@ def iiSaveFormMetadata(rule_args, callback, rei):
                            'statusInfo': 'JSON decode error'}))
         return
 
+    # Add metadata schema id to JSON.
+    schema_id = getSchemaLocation(callback, json_path)
+    metadata["$id"] = schema_id
+
+    # Validate JSON metadata.
     errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
 
     if len(errors) > 0:
