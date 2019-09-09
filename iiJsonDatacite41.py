@@ -4,8 +4,6 @@ from json import loads
 from collections import OrderedDict
 
 
-
-
 # \brief Frontend function to add system info to yoda-metadata in json format
 #
 # \param[in] metadataJsonPath - Path to the most recent vault yoda-metadata.json in the corresponding vault
@@ -33,6 +31,7 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
 
 
     # write combined data to file at location combiJsonPath
+    ofFlags = 'forceFlag='
     ret_val = callback.msiDataObjCreate(combiJsonPath, ofFlags, 0)
     
     combinedJson = json.dumps(metaDict)
@@ -88,11 +87,6 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     # Get dict containing the wanted metadata 
     dict = getYodaMetadataJsonDict(callback, combiJsonPath)
 
-    rule_args[1] = getDataciteXml 
- 	
-
-    dict = json.loads(jsonString)
-
     # Build datacite XML as string
     xmlString = getHeader()
 
@@ -120,11 +114,14 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     #Close the thing
     xmlString = xmlString + "</resource>"    
 
+    callback.writeString('serverLog', xmlString)
+
     rule_args[1] = xmlString
 
 
 def getHeader(): # all that is present before the yoda data  !! Hier moet de ID nog in
-    return '''<resource xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd">
+    return '''
+        <resource xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd">
     '''
 
 def getDOI(dict):
@@ -335,7 +332,7 @@ def getContributors(dict):
         # Possibly multiple affiliations
         affiliations = ''
         for aff in contributor['Affiliation']:
-            affiliations = affiliations + '<affiliation>' + aff + '/affiliation>'
+            affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
 
         contributors = contributors + nameIdentifiers
         contributors = contributors + affiliations
@@ -449,9 +446,9 @@ def getResourceType(dict):
         #     </xsl:choose>
         # </resourceType>
     yodaResourceToDatacite = {'Dataset': 'Research Data', 'Datapaper': 'Method Description', 'Software': 'Computer code'}
-    yodaResourceType = dict['Administrative-group']['Data_Type']
 
     try:
+        yodaResourceType = dict['Administrative-group']['Data_Type']
         dataciteType = yodaResourceToDatacite[yodaResourceType]
     except KeyError:
         dataciteType = 'Other Document'
@@ -487,7 +484,7 @@ def getRelatedDataPackage(dict):
         persistentID = relPackage['Persistent_Identifier']['Identifier']
         relatedIdentifiers = relatedIdentifiers + '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
 
-    return '<relatedIdentifiers>' + relatedIdentifiers + '<relatedIdentifiers>'
+    return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
 
 def getGeoLocations(dict):
 #        <xsl:if test="yoda:Covered_Geolocation_Place">

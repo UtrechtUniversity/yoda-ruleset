@@ -71,9 +71,6 @@ def getMetadaJsonDict(callback, yoda_json_path):
 #####################################################
 ## Create a landing page 
 #####################################################
-
-
-# \
 #
 # \brief Get the landing page of published YoDa metadata as a string
 #

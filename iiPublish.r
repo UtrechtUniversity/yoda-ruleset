@@ -76,7 +76,7 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
         }
 
 	## For whatever reason this doesn't work!!!
-        #*licenseUri = '';
+        *licenseUri = '';
         #if (iiHasKey(*publicationState, "licenseUri")) {
         #   licenseUri = *publicationState.licenseUri;
         #}
