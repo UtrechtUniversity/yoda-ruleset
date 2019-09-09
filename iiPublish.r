@@ -11,11 +11,20 @@
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
 #
+
+# \brief Generate a dataCite compliant XML based up yoda-metadata.json
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
+#
 iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
-	*combiXmlPath = *publicationState.combiXmlPath;
+        *combiJsonPath = *publicationState.combiJsonPath;
+
 	*randomId = *publicationState.randomId;
-	*vaultPackage = *publicationState.vaultPackage;
-	uuChopPath(*combiXmlPath, *tempColl, *_);
+	
+        *vaultPackage = *publicationState.vaultPackage;
+
+	uuChopPath(*combiJsonPath, *tempColl, *_);
 	*dataCiteXmlPath = *tempColl ++ "/" ++ *randomId ++ "-dataCite.xml";
 
 	*pathElems = split(*vaultPackage, "/");
@@ -24,85 +33,72 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
 	uuGetBaseGroup(*vaultGroup, *baseGroup);
 	uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
-	*dataCiteXslPath = "";
-	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
-	*xslName = IIDATACITEXSLNAME;
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
-		*dataCiteXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
+        # Create DataCiteXml based on content in *combiJsonPath
+	*receiveDataciteXml = '' ## initialize before handover to Python
+	# Based on content of *combiJsonPath, get DataciteXml as string
+	iiCreateDataCiteXmlOnJson(*combiJsonPath, *receiveDataciteXml)
 
-	if (*dataCiteXslPath == "") {
-		*dataCiteXslPath = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IIDATACITEXSLNAME;
-	}
-
-	*err = errorcode(msiXsltApply(*dataCiteXslPath, *combiXmlPath, *buf));
-	if (*err < 0) {
-		writeLine("serverLog", "iiGenerateDataCiteXml: failed to apply Xslt *dataCiteXslPath to *combiXmlPath. errorcode *err");
-		*publicationState.status = "Unrecoverable";
-	} else {
- 		msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
-		msiDataObjWrite(*fd, *buf, *len);
-		msiDataObjClose(*fd, *status);
-		*publicationState.dataCiteXmlPath = *dataCiteXmlPath;
-		*publicationState.dataCiteXmlLen = str(*len);
-		#DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
-	}
+        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
+        msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
+        msiDataObjClose(*fd, *status);
+        *publicationState.dataCiteXmlPath = *dataCiteXmlPath;
+        *publicationState.dataCiteXmlLen = str(*len);
+        #DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
 }
 
-# \brief Join system metadata with the user metadata in yoda-metadata.xml.
+
+# \brief Join system metadata with the user metadata in yoda-metadata.json.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
-iiGenerateCombiXml(*publicationConfig, *publicationState){
+iiGenerateCombiJson(*publicationConfig, *publicationState){
+	writeString('serverLog', 'in iiGenerateCombiJson');
+        *tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
+        *davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
 
-	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
-	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
-
-	*vaultPackage = *publicationState.vaultPackage;
-	*randomId = *publicationState.randomId;
-	*yodaDOI = *publicationState.yodaDOI;
+        *vaultPackage = *publicationState.vaultPackage;
+        *randomId = *publicationState.randomId;
+        *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
 
-	*subPath = triml(*vaultPackage, "/home/");
-	msiGetIcatTime(*now, "unix");
-	*publicationDate = uuiso8601date(*now);
-	*combiXmlPath = "*tempColl/*randomId-combi.xml";
-	*systemMetadata =
-	   "  <System>\n" ++
-	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
-	   "    <Persistent_Identifier_Datapackage>\n" ++
-           "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
-           "       <Identifier>*yodaDOI</Identifier>\n" ++
-           "    </Persistent_Identifier_Datapackage>\n" ++
-           "    <Publication_Date>*publicationDate</Publication_Date>\n";
-	if (*publicationState.accessRestriction like "Open*") {
-	   *systemMetadata = *systemMetadata ++
-           "    <Open_Access_Link><![CDATA[https://*davrodsAnonymousVHost/*subPath]]></Open_Access_Link>\n";
-	}
-	if (iiHasKey(*publicationState, "licenseUri")) {
-    	   *systemMetadata = *systemMetadata ++
-           "    <License_URI><![CDATA[" ++ *publicationState.licenseUri ++ "]]></License_URI>\n";
-	}
-	*systemMetadata = *systemMetadata ++
-           "  </System>\n" ++
-           "</metadata>";
+        *subPath = triml(*vaultPackage, "/home/");
+        msiGetIcatTime(*now, "unix");
+        *publicationDate = uuiso8601date(*now);
 
-	iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize);
+        *combiJsonPath = "*tempColl/*randomId-combi.json";
 
-	msiDataObjOpen("objPath=*metadataXmlPath", *fd);
-	msiDataObjRead(*fd, *metadataXmlSize - 12, *buf);
-	msiDataObjClose(*fd, *status);
-	msiDataObjCreate(*combiXmlPath, "forceFlag=", *fd);
-	msiDataObjWrite(*fd, *buf, *lenOut);
-	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
-	msiDataObjClose(*fd, *status);
-	#DEBUG writeLine("serverLog", "iiGenerateCombiXml: generated *combiXmlPath");
-	*publicationState.combiXmlPath = *combiXmlPath;
+	writeString('serverLog', *combiJsonPath);
 
+        *openAccessLink = '';
+        if (*publicationState.accessRestriction like "Open*") {
+           *openAccessLink = 'https://*davrodsAnonymousVHost/*subPath';
+        }
+
+	## For whatever reason this doesn't work!!!
+        #*licenseUri = '';
+        #if (iiHasKey(*publicationState, "licenseUri")) {
+        #   licenseUri = *publicationState.licenseUri;
+        #}
+
+	writeString('serverLog', 'GetLatestMetadataJSON');
+
+	# *metadataJsonPath contains latest json
+	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
+	
+        writeString('serverLog', 'most recent: ' ++ *metadataJsonPath);
+
+	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiXmlPath:
+        iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
+        
+        writeLine("serverLog", "iiGenerateCombiJson: generated *combiJsonPath");
+
+	*publicationState.combiJsonPath = *combiJsonPath;
 }
 
-# \brief Overwrite combi metadata with system-only metadata.
+
+
+# \brief Overwrite combi metadata with system-only metadata.   NOG AAN TE PASSEN!
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
@@ -279,14 +275,17 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	#DEBUG writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 }
 
-# \brief Generate a Landing page from the combi XML using XSLT.
+
+# iiGenerateLandingPage(*publicationConfig, *publicationState, "publish")
+
+# \brief Generate a Landing page from the combi JSON and the landingpage template
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
 iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 {
-        *combiXmlPath = *publicationState.combiXmlPath;
+        *combiJsonPath = *publicationState.combiJsonPath;
         *randomId = *publicationState.randomId;
         uuChopPath(*combiXmlPath, *tempColl, *_);
 
@@ -298,35 +297,29 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
         uuGetBaseGroup(*vaultGroup, *baseGroup);
         uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
-	if (*publish == "publish") {
-		*landingPageXslPath = "";
-		*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
-		*xslName = IILANDINGPAGEXSLNAME;
-		foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
-		        *landingPageXslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-		}
-
-		if (*landingPageXslPath == "") {
-		        *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IILANDINGPAGEXSLNAME;
-	        }
+        if (*publish == "publish") {
+            template_name = 'landingpage.html';
         } else {
-                *landingPageXslPath = "/" ++ $rodsZoneClient ++ IISCHEMACOLLECTION ++ "/" ++ IIEMPTYLANDINGPAGEXSLNAME;
+            template_name = 'landingpage_empty.html'
         }
-	*err = errorcode(msiXsltApply(*landingPageXslPath, *combiXmlPath, *buf));
-	if (*err < 0) {
-		writeLine("serverLog", "iiGenerateLandingPage: failed to apply Xslt *landingPageXslPath to *combiXmlPath. errorcode *err");
-		*publicationState.status = "Unrecoverable";
-	} else {
-		*landingPagePath = "*tempColl/*randomId.html";
- 		msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
-		msiDataObjWrite(*fd, *buf, *len);
-		msiDataObjClose(*fd, *status);
-		#DEBUG writeLine("serverLog", "landing page len=*len");
-		*publicationState.landingPageLen = str(*len);
-		*publicationState.landingPagePath = *landingPagePath;
-		#DEBUG writeLine("serverLog", "iiGenerateLandingPage: Generated *landingPagePath");
-	}
+
+
+        *receiveLandingPage = '' ## initialize before handover to Python
+        # Based on content of *combiJsonPath, get landingpage as string
+        iiCreateJsonLandingPage(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage)
+
+        *landingPagePath = "*tempColl/*randomId.html";
+        msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
+        msiDataObjWrite(*fd, *receiveLandingPage, *len);
+        msiDataObjClose(*fd, *status);
+        #DEBUG writeLine("serverLog", "landing page len=*len");
+        *publicationState.landingPageLen = str(*len);
+        *publicationState.landingPagePath = *landingPagePath;
+        #DEBUG writeLine("serverLog", "iiGenerateLandingPage: Generated *landingPagePath");
 }
+
+
+
 
 # \brief iiCopyLandingPage2PublicHost
 #
@@ -634,15 +627,18 @@ iiProcessPublication(*vaultPackage, *status) {
 		}
 	}
 
+	writeString("serverLog", "in processPublication");
+	writeString("serverLog", *vaultPackage);
+
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
 
 
-	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+	if (!iiHasKey(*publicationState, "combiJsonPath")) {
 		# Generate Combi XML consisting of user and system metadata
 
-		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiXml");
-		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiJson");
+		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
