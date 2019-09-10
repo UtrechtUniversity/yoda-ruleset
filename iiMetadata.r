@@ -633,46 +633,6 @@ iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
 	#DEBUG writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
 }
 
-# \brief iiMetadataXmlRenamedPost
-#
-# \param[in]  src
-# \param[in]  dst
-# \param[in]  zone
-#
-iiMetadataXmlRenamedPost(*src, *dst, *zone) {
-	uuChopPath(*src, *src_parent, *src_basename);
-	# the logical_path in $KVPairs is that of the destination
-	uuChopPath(*dst, *dst_parent, *dst_basename);
-	if (*dst_basename != IIMETADATAXMLNAME && *src_parent == *dst_parent) {
-		#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was renamed to *dst_basename. *src_parent loses user metadata.");
-		iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-	} else if (*src_parent != *dst_parent) {
-		# The IIMETADATAXMLNAME file was moved to another folder or trashed. Check if src_parent still exists and Remove user metadata.
-		if (uuCollectionExists(*src_parent)) {
-			iiRemoveAVUs(*src_parent, UUUSERMETADATAPREFIX);
-			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent. Remove User Metadata from *src_parent.");
-		} else {
-			nop; # Empty else clauses fail
-			#DEBUG writeLine("serverLog", "iiMetadataXmlRenamedPost: " ++ IIMETADATAXMLNAME ++ " was moved to *dst_parent and *src_parent is gone.");
-		}
-	}
-}
-
-# \brief iiMetadataXmlUnregisteredPost
-#
-# \param[in]  logicalPath
-#
-iiMetadataXmlUnregisteredPost(*logicalPath) {
-	# writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = $KVPairs\n\$pluginInstanceName = $pluginInstanceName\n \$status = $status\n \*out = *out");
-	uuChopPath(*logicalPath, *parent, *basename);
-	if (uuCollectionExists(*parent)) {
-		#DEBUG writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename removed. Removing user metadata from *parent");
-		iiRemoveAVUs(*parent, UUUSERMETADATAPREFIX);
-	} else {
-		#DEBUG writeLine("serverLog", "iiMetadataXmlUnregisteredPost: *basename was removed, but *parent is also gone.");
-	}
-}
-
 # \brief iiGetLatestVaultMetadataXml
 #
 # \param[in] vaultPackage
