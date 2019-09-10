@@ -28,6 +28,15 @@
         "Other Document"
       ]
     },
+    "optionsDataClassification": {
+      "type": "string",
+      "enum": [
+        "Public",
+        "Basic",
+        "Sensitive",
+        "Critical"
+      ]
+    },
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
@@ -36,13 +45,14 @@
         "Closed"
       ]
     },
-    "optionsDataClassification": {
+    "optionsNameIdentifierScheme": {
       "type": "string",
       "enum": [
-        "Public",
-        "Basic",
-        "Sensitive",
-        "Critical"
+        "ORCID",
+        "DAI",
+        "Author identifier (Scopus)",
+        "ResearcherID (Web of Science)",
+        "ISNI"
       ]
     },
     "optionsLicense": {
