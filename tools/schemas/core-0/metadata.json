@@ -5,10 +5,6 @@
       "type": "string",
       "maxLength": 255
     },
-    "stringNormalNullable": {
-      "type": ["string", "null"],
-      "maxLength": 255
-    },
     "stringLong": {
       "type": "string",
       "maxLength": 2700
@@ -35,6 +31,13 @@
         "Basic",
         "Sensitive",
         "Critical"
+      ]
+    },
+    "optionsCreatorType": {
+      "type": "string",
+      "enum": [
+        "Person",
+        "Organisation"
       ]
     },
     "optionsDataAccessRestriction": {
@@ -67,111 +70,101 @@
   },
   "title": "",
   "type": "object",
+  "required": [
+    "Title",
+    "Description",
+    "Data_Type",
+    "Data_Classification",
+    "Creator",
+    "License",
+    "Data_Access_Restriction"
+  ],
   "properties": {
-    "Descriptive-group": {
+    "Title": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Title"
+    },
+    "Description": {
+      "$ref": "#/definitions/stringLong",
+      "title": "Description"
+    },
+    "Data_Type": {
+      "$ref": "#/definitions/optionsDataType",
+      "title": "Data type"
+    },
+    "Data_Classification": {
+      "$ref": "#/definitions/optionsDataClassification",
+      "title": "Data classification"
+    }
+  },
+  "Creator": {
+    "type": "array",
+    "minItems": 1,
+    "items": {
       "type": "object",
-      "title": "Descriptive",
+      "yoda:structure": "subproperties",
       "required": [
-        "Title",
-        "Description"
+        "Creator_Type",
+        "Name",
+        "Affiliation"
       ],
       "properties": {
-        "Title": {
+        "Creator_Type": {
+          "$ref": "#/definitions/optionsCreatorType",
+          "title": "Type"
+        },
+        "Name": {
           "$ref": "#/definitions/stringNormal",
-          "title": "Title"
+          "title": "Creator of datapackage"
         },
-        "Description": {
-          "$ref": "#/definitions/stringLong",
-          "title": "Description"
-        }
-      }
-    },
-    "Administrative-group": {
-      "type": "object",
-      "title": "Administrative",
-      "required": [
-        "Data_Classification"
-      ],
-      "properties": {
-        "Data_Type": {
-          "$ref": "#/definitions/optionsDataType",
-          "title": "Data type"
+        "Affiliation": {
+          "type": "array",
+          "default": [
+            "Utrecht University"
+          ],
+          "items": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Affiliation",
+            "yoda:required": true
+          }
         },
-        "Data_Classification": {
-          "$ref": "#/definitions/optionsDataClassification",
-          "title": "Data classification"
-        }
-      }
-    },
-    "Rights-group": {
-      "type": "object",
-      "title": "Rights",
-      "required": [
-        "Creator",
-        "License",
-        "Data_Access_Restriction"
-      ],
-      "properties": {
-        "Creator": {
+        "Person_Identifier": {
           "type": "array",
           "minItems": 1,
           "items": {
             "type": "object",
-            "yoda:structure": "subproperties",
-            "required": [
-              "Name",
-              "Affiliation"
-            ],
+            "title": "Person identifier",
+            "yoda:structure": "compound",
             "properties": {
-              "Name": {
+              "Name_Identifier_Scheme": {
+                "$ref": "#/definitions/optionsNameIdentifierScheme",
+                "title": "Type"
+              },
+              "Name_Identifier": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Creator of datapackage"
-              },
-              "Affiliation": {
-                "type": "array",
-                "default": ["Utrecht University"],
-                "items": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation",
-                  "yoda:required": true
-                }
-              },
-              "Person_Identifier": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "type": "object",
-                  "title": "Person identifier",
-                    "yoda:structure": "compound",
-                  "properties": {
-                    "Name_Identifier_Scheme": {
-                      "$ref": "#/definitions/optionsNameIdentifierScheme",
-                      "title": "Type"
-                    },
-                    "Name_Identifier": {
-                      "$ref": "#/definitions/stringNormal",
-                      "title": "Identifier"
-                    }
-                  },
-                  "dependencies": {
-                    "Name_Identifier_Scheme": ["Name_Identifier"],
-                    "Name_Identifier": ["Name_Identifier_Scheme"]
-                  }
-                }
+                "title": "Identifier"
               }
+            },
+            "dependencies": {
+              "Name_Identifier_Scheme": [
+                "Name_Identifier"
+              ],
+              "Name_Identifier": [
+                "Name_Identifier_Scheme"
+              ]
             }
           }
-        },
-        "License": {
-          "$ref": "#/definitions/optionsLicense",
-          "title": "License"
-        },
-        "Data_Access_Restriction": {
-          "$ref": "#/definitions/optionsDataAccessRestriction",
-          "title": "Data package access",
-          "default": "Restricted - available upon request"
         }
       }
     }
+  },
+  "License": {
+    "$ref": "#/definitions/optionsLicense",
+    "title": "License"
+  },
+  "Data_Access_Restriction": {
+    "$ref": "#/definitions/optionsDataAccessRestriction",
+    "title": "Data package access",
+    "default": "Restricted - available upon request"
   }
 }
