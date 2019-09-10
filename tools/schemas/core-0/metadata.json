@@ -13,6 +13,21 @@
       "type": "string",
       "maxLength": 2700
     },
+    "optionsDataType": {
+      "type": "string",
+      "enum": [
+        "Dataset",
+        "Datapaper",
+        "Software",
+        "Text"
+      ],
+      "enumNames": [
+        "Datapackage",
+        "Method",
+        "Software",
+        "Other Document"
+      ]
+    },
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
@@ -68,6 +83,10 @@
         "Data_Classification"
       ],
       "properties": {
+        "Data_Type": {
+          "$ref": "#/definitions/optionsDataType",
+          "title": "Data type"
+        },
         "Data_Classification": {
           "$ref": "#/definitions/optionsDataClassification",
           "title": "Data classification"
@@ -105,6 +124,29 @@
                   "$ref": "#/definitions/stringNormal",
                   "title": "Affiliation",
                   "yoda:required": true
+                }
+              },
+              "Person_Identifier": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "title": "Person identifier",
+                    "yoda:structure": "compound",
+                  "properties": {
+                    "Name_Identifier_Scheme": {
+                      "$ref": "#/definitions/optionsNameIdentifierScheme",
+                      "title": "Type"
+                    },
+                    "Name_Identifier": {
+                      "$ref": "#/definitions/stringNormal",
+                      "title": "Identifier"
+                    }
+                  },
+                  "dependencies": {
+                    "Name_Identifier_Scheme": ["Name_Identifier"],
+                    "Name_Identifier": ["Name_Identifier_Scheme"]
+                  }
                 }
               }
             }
