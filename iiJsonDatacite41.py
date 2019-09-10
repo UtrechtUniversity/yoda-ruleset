@@ -128,10 +128,14 @@ def getDOI(dict):
     # <identifier identifierType="DOI">
     #       <xsl:value-of select="yoda:System/yoda:Persistent_Identifier_Datapackage[yoda:Identifier_Scheme='DOI']/yoda:Identifier"/>
     #    </identifier>
-    doi = dict['System']['Persistent_Identifier_Datapackage']['Identifier']
 
-    return '<identifier identifierType="DOI">' +  doi + '</identifier>'
+    try:
+        doi = dict['System']['Persistent_Identifier_Datapackage']['Identifier']
 
+        return '<identifier identifierType="DOI">' +  doi + '</identifier>'
+    except KeyError:
+        pass
+    return ''
 
 def getTitles(dict):
       #   <titles>
@@ -146,10 +150,15 @@ def getTitles(dict):
       #     </title>
       # </xsl:template>
 
-    language = dict['Descriptive-group']['Language'][0:2]
-    title = dict['Descriptive-group']['Title']
+    try:
+        language = dict['Descriptive-group']['Language'][0:2]
+        title = dict['Descriptive-group']['Title']
+    
+        return '<titles><title xml:lang="' + language + '">' + title + '</title></titles>'
+    except:
+        pass
 
-    return '<titles><title xml:lang="' + language + '">' + title + '</title></titles>'
+    return ''
 
 def getDescriptions(dict):
     #     <descriptions>
@@ -158,14 +167,19 @@ def getDescriptions(dict):
     #       </description>
     #     </descriptions><
 
-    description = dict['Descriptive-group']['Description']
-    return '<descriptions><description descriptionType="Abstract">' + description + '</description></descriptions>'
+    try:
+        description = dict['Descriptive-group']['Description']
+        return '<descriptions><description descriptionType="Abstract">' + description + '</description></descriptions>'
+    except KeyError:
+        pass
+
+    return ''
 
 
 def getPublisher(dict):
     # <publisher>Utrecht University</publisher>
 
-    return '<publisher>Utrecht University</publisher>'
+    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in XSLT
 
 def getPublicationYear(dict):
 #        <publicationYear>
@@ -179,8 +193,12 @@ def getPublicationYear(dict):
 #              <xsl:value-of select="substring(., 1, 4)" />
 #              </xsl:template>
 
-    publicationYear = '2019'
-    return '<publicationYear>' + publicationYear + '</publicationYear>'
+    try:
+        publicationYear = dict['System']['Publication_Date'][0:4]
+        return '<publicationYear>' + publicationYear + '</publicationYear>'
+    except KeyError:
+        pass
+    return ''
 
 
 def getSubjects(dict):
@@ -205,14 +223,23 @@ def getSubjects(dict):
     subjectDisciplines = ''
     subjectTags = ''
 
-    for disc in dict['Descriptive-group']['Discipline']:
-        subjectDisciplines = subjectDisciplines + '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
+    try:
+        for disc in dict['Descriptive-group']['Discipline']:
+            subjectDisciplines = subjectDisciplines + '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
+    except KeyError:
+        pass
 
-    for tag in dict['Descriptive-group']['Tag']:
-        subjectTags = subjectTags + '<subject subjectScheme="Keyword">' + tag + '</subject>'
+    try:
+        for tag in dict['Descriptive-group']['Tag']:
+            subjectTags = subjectTags + '<subject subjectScheme="Keyword">' + tag + '</subject>'
+    except KeyError:
+        pass
 
 
-    return '<subjects>' + subjectDisciplines + subjectTags + '</subjects>'
+    if subjectDisciplines or subjectTags:
+        return '<subjects>' + subjectDisciplines + subjectTags + '</subjects>'
+
+    return ''
 
 
 def getFunders(dict):
@@ -230,10 +257,16 @@ def getFunders(dict):
 
 
     # !!! test if present
-    fundingRefs = '';
-    for funder in dict['Administrative-group']['Funding_Reference']:
-        fundingRefs = fundingRefs + '<fundingReference><funderName>' + funder['Funder_Name'] + '</funderName><awardNumber>' + funder['Award_Number'] + '</awardNumber></fundingReference>'
-    return '<fundingReferences>' + fundingRefs + '</fundingReferences>'
+    fundingRefs = ''
+    try:
+        for funder in dict['Administrative-group']['Funding_Reference']:
+            fundingRefs = fundingRefs + '<fundingReference><funderName>' + funder['Funder_Name'] + '</funderName><awardNumber>' + funder['Award_Number'] + '</awardNumber></fundingReference>'
+        return '<fundingReferences>' + fundingRefs + '</fundingReferences>'
+
+    except KeyError:
+        pass
+
+    return ''
 
 def getCreators(dict):
   #       <creators>
@@ -261,26 +294,32 @@ def getCreators(dict):
 
 
     creators = ''
-    for creator in dict['Rights-group']['Creator']:
-      creators = creators + '<creator>'
-      creators = creators + '<creatorName>' + creator['Name'] + '</creatorName>'
+    try:
+        for creator in dict['Rights-group']['Creator']:
+            creators = creators + '<creator>'
+            creators = creators + '<creatorName>' + creator['Name'] + '</creatorName>'
 
-      # Possibly multiple person identifiers
-      listIdentifiers = creator['Person_Identifier']
-      nameIdentifiers = ''
-      for dictId in listIdentifiers:
-          nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
+            # Possibly multiple person identifiers
+            listIdentifiers = creator['Person_Identifier']
+            nameIdentifiers = ''
+            for dictId in listIdentifiers:
+                nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
 
-      # Possibly multiple affiliations
-      affiliations = ''
-      for aff in creator['Affiliation']:
-          affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
+            # Possibly multiple affiliations
+            affiliations = ''
+            for aff in creator['Affiliation']:
+                affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
 
-      creators = creators + nameIdentifiers
-      creators = creators + affiliations
-      creators = creators + '</creator>'
+            creators = creators + nameIdentifiers
+            creators = creators + affiliations
+            creators = creators + '</creator>'
+        
+        if creators:
+            return '<creators>' + creators + '</creators>'
+    except KeyError:
+        pass
 
-    return '<creators>' + creators + '</creators>'
+    return ''
 
 
 def getContributors(dict):
@@ -315,30 +354,37 @@ def getContributors(dict):
   # </xsl:template>
 
     contributors = ''
-    for contributor in dict['Rights-group']['Contributor']:
-        # print(contributor)
-        # print(contributor['Name'])
-        # print(contributor['Contributor_Type'])
+    try:
+        for contributor in dict['Rights-group']['Contributor']:
+            # print(contributor)
+            # print(contributor['Name'])
+            # print(contributor['Contributor_Type'])
 
-        contributors = contributors + '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
-        contributors = contributors + '<contributorName>' + contributor['Name'] + '</contributorName>'
+            contributors = contributors + '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
+            contributors = contributors + '<contributorName>' + contributor['Name'] + '</contributorName>'
 
-        #Possibly multiple person identifiers
-        listIdentifiers = contributor['Person_Identifier']
-        nameIdentifiers = ''
-        for dictId in listIdentifiers:
-            nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
+            #Possibly multiple person identifiers
+            listIdentifiers = contributor['Person_Identifier']
+            nameIdentifiers = ''
+            for dictId in listIdentifiers:
+                nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
 
-        # Possibly multiple affiliations
-        affiliations = ''
-        for aff in contributor['Affiliation']:
-            affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
+            # Possibly multiple affiliations
+            affiliations = ''
+            for aff in contributor['Affiliation']:
+                affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
 
-        contributors = contributors + nameIdentifiers
-        contributors = contributors + affiliations
-        contributors = contributors + '</contributor>'
+            contributors = contributors + nameIdentifiers
+            contributors = contributors + affiliations
+            contributors = contributors + '</contributor>'
 
-    return '<contributors>' + contributors + '</contributors>'
+        if contributors:
+            return '<contributors>' + contributors + '</contributors>'
+
+    except KeyError:
+        pass
+
+    return ''
 
 def getDates(dict):
     # <dates>
@@ -353,18 +399,25 @@ def getDates(dict):
     #   </xsl:if>
     # </dates>
 
-    dates = ''
-    dateModified = dict['System']['Last_Modified_Date']
-    dates = dates + '<date dateType="Updated">' + dateModified + '</date>'
 
-    dateEmbargoEnd = dict['Administrative-group']['Embargo_End_Date']
-    dates = dates + '<date dateType="Availlable">' + dateEmbargoEnd + '</date>'
+    try:
+        dates = ''
+        dateModified = dict['System']['Last_Modified_Date']
+        dates = dates + '<date dateType="Updated">' + dateModified + '</date>'
 
-    dateCollectStart = dict['Descriptive-group']['Collected']['Start_Date']
-    dateCollectEnd = dict['Descriptive-group']['Collected']['End_Date']
-    dates = dates + '<date dateType="Collected">' + dateCollectStart + ' / ' + dateCollectEnd + '</date>'
+        dateEmbargoEnd = dict['Administrative-group']['Embargo_End_Date']
+        dates = dates + '<date dateType="Availlable">' + dateEmbargoEnd + '</date>'
 
-    return '<dates>' + dates + '</dates>'
+        dateCollectStart = dict['Descriptive-group']['Collected']['Start_Date']
+        dateCollectEnd = dict['Descriptive-group']['Collected']['End_Date']
+    
+        dates = dates + '<date dateType="Collected">' + dateCollectStart + ' / ' + dateCollectEnd + '</date>'
+
+        if dates:
+            return '<dates>' + dates + '</dates>'
+    except KeyError:
+        pass
+    return ''
 
 def getVersion(dict):
     #   xsl:apply-templates select="yoda:Version"/>
@@ -372,8 +425,11 @@ def getVersion(dict):
     #      <version><xsl:value-of select="."/></version>
     #   </xsl:template>
     #
-    version = dict['Descriptive-group']['Version']
-    return '<version>' + version + '</version>'
+    try:
+        version = dict['Descriptive-group']['Version']
+        return '<version>' + version + '</version>'
+    except KeyError:
+        return ''
 
 def getRightsList(dict):
         # <rightsList>
@@ -401,29 +457,37 @@ def getRightsList(dict):
         #     </xsl:template>
 
 
-    licenseURI = dict['System']['License_URI']
-    rights = '<rights rightsURI="' + licenseURI + '"></rights>'
+    try:
+        licenseURI = dict['System']['License_URI']
+        rights = '<rights rightsURI="' + licenseURI + '"></rights>'
 
-    accessRestriction = dict['Rights-group']['Data_Access_Restriction']
+        accessRestriction = dict['Rights-group']['Data_Access_Restriction']
 
-    accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess' , 'Closed': 'info:eu-repo/semantics/closedAccess'}
+        accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess' , 'Closed': 'info:eu-repo/semantics/closedAccess'}
 
-    rightsURI = ''
-    for option,uri in accessOptions.items():
-        # print(option)
-        # print(uri)
-        if accessRestriction.startswith(option):
-            rightsURI = uri
-            break
+        rightsURI = ''
+        for option,uri in accessOptions.items():
+            if accessRestriction.startswith(option):
+                rightsURI = uri
+                break
+        rights = rights + '<rights rightsURI="' + rightsURI + '"></rights>'
+        if rights:
+            return '<rightslist>' + rights + '</rightslist>'
 
-    rights = rights + '<rights rightsURI="' + rightsURI + '"></rights>'
+    except KeyError:
+        pass
 
-    return '<rightslist>' + rights + '</rightslist>'
+    return ''
 
 def getLanguage(dict):
-    ''' <language><xsl:value-of select="substring(yoda:Language, 1, 2)"/></language>'''
-    language = dict['Descriptive-group']['Language'][0:2]
-    return '<language>' + language + '</language>'
+    # ''' <language><xsl:value-of select="substring(yoda:Language, 1, 2)"/></language>'''
+    try:
+        language = dict['Descriptive-group']['Language'][0:2]
+        return '<language>' + language + '</language>'
+    except KeyError:
+        pass
+    return ''
+
 
 def getResourceType(dict):
         #     <resourceType>
@@ -451,7 +515,7 @@ def getResourceType(dict):
         yodaResourceType = dict['Administrative-group']['Data_Type']
         dataciteType = yodaResourceToDatacite[yodaResourceType]
     except KeyError:
-        dataciteType = 'Other Document'
+        dataciteType = 'Other Document'  # Default value
 
     return '<resourceType>' + dataciteType + '</resourceType>'
 
@@ -477,14 +541,21 @@ def getRelatedDataPackage(dict):
 # </xsl:template>
 
     relatedIdentifiers = ''
-    for relPackage in dict['Descriptive-group']['Related_Datapackage']:
-        relType = relPackage['Relation_Type']
-        #title = relPackage['Title']
-        persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
-        persistentID = relPackage['Persistent_Identifier']['Identifier']
-        relatedIdentifiers = relatedIdentifiers + '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
 
-    return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
+    try:
+        for relPackage in dict['Descriptive-group']['Related_Datapackage']:
+            relType = relPackage['Relation_Type']
+            #title = relPackage['Title']
+            persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
+            persistentID = relPackage['Persistent_Identifier']['Identifier']
+            relatedIdentifiers = relatedIdentifiers + '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
+
+        if relatedIdentifiers:
+            return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
+        return ''   
+    except KeyError:
+        return ''
+
 
 def getGeoLocations(dict):
 #        <xsl:if test="yoda:Covered_Geolocation_Place">
@@ -499,13 +570,20 @@ def getGeoLocations(dict):
 #              </geoLocation>
 #            </xsl:template>
     geoLocations = '';
-    locationList = dict['Descriptive-group']['Covered_Geolocation_Place']
-    for location in locationList:
-        geoLocations = geoLocations + '<geoLocation>' + location + '</geoLocation>'
+    try:
+        locationList = dict['Descriptive-group']['Covered_Geolocation_Place']
+        for location in locationList:
+            geoLocations = geoLocations + '<geoLocation>' + location + '</geoLocation>'
+    except KeyError:
+        return ''
 
-    return '<geoLocations>' + geoLocations + '</geoLocations>'
+    if len(geoLocations):
+        return '<geoLocations>' + geoLocations + '</geoLocations>'
+    return '' 
 
 
+
+## handle geo location box info
 
 
 
