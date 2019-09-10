@@ -95,76 +95,76 @@
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
       "title": "Data classification"
-    }
-  },
-  "Creator": {
-    "type": "array",
-    "minItems": 1,
-    "items": {
-      "type": "object",
-      "yoda:structure": "subproperties",
-      "required": [
-        "Creator_Type",
-        "Name",
-        "Affiliation"
-      ],
-      "properties": {
-        "Creator_Type": {
-          "$ref": "#/definitions/optionsCreatorType",
-          "title": "Type"
-        },
-        "Name": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Creator of datapackage"
-        },
-        "Affiliation": {
-          "type": "array",
-          "default": [
-            "Utrecht University"
-          ],
-          "items": {
+    },
+    "Creator": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "yoda:structure": "subproperties",
+        "required": [
+          "Creator_Type",
+          "Name",
+          "Affiliation"
+        ],
+        "properties": {
+          "Creator_Type": {
+            "$ref": "#/definitions/optionsCreatorType",
+            "title": "Type"
+          },
+          "Name": {
             "$ref": "#/definitions/stringNormal",
-            "title": "Affiliation",
-            "yoda:required": true
-          }
-        },
-        "Person_Identifier": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "title": "Person identifier",
-            "yoda:structure": "compound",
-            "properties": {
-              "Name_Identifier_Scheme": {
-                "$ref": "#/definitions/optionsNameIdentifierScheme",
-                "title": "Type"
+            "title": "Creator of datapackage"
+          },
+          "Affiliation": {
+            "type": "array",
+            "default": [
+              "Utrecht University"
+            ],
+            "items": {
+              "$ref": "#/definitions/stringNormal",
+              "title": "Affiliation",
+              "yoda:required": true
+            }
+          },
+          "Person_Identifier": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Person identifier",
+              "yoda:structure": "compound",
+              "properties": {
+                "Name_Identifier_Scheme": {
+                  "$ref": "#/definitions/optionsNameIdentifierScheme",
+                  "title": "Type"
+                },
+                "Name_Identifier": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Identifier"
+                }
               },
-              "Name_Identifier": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Identifier"
+              "dependencies": {
+                "Name_Identifier_Scheme": [
+                  "Name_Identifier"
+                ],
+                "Name_Identifier": [
+                  "Name_Identifier_Scheme"
+                ]
               }
-            },
-            "dependencies": {
-              "Name_Identifier_Scheme": [
-                "Name_Identifier"
-              ],
-              "Name_Identifier": [
-                "Name_Identifier_Scheme"
-              ]
             }
           }
         }
       }
+    },
+    "License": {
+      "$ref": "#/definitions/optionsLicense",
+      "title": "License"
+    },
+    "Data_Access_Restriction": {
+      "$ref": "#/definitions/optionsDataAccessRestriction",
+      "title": "Data package access",
+      "default": "Restricted - available upon request"
     }
-  },
-  "License": {
-    "$ref": "#/definitions/optionsLicense",
-    "title": "License"
-  },
-  "Data_Access_Restriction": {
-    "$ref": "#/definitions/optionsDataAccessRestriction",
-    "title": "Data package access",
-    "default": "Restricted - available upon request"
   }
 }
