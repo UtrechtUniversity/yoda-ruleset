@@ -354,7 +354,7 @@
         "Software",
         "Other Document"
       ]
-    },    
+    },
     "optionsDataClassification": {
       "type": "string",
       "enum": [
@@ -1232,8 +1232,23 @@
         ],
         "properties": {
           "Name": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Creator of datapackage"
+            "type": "object",
+            "title": "Creator of datapackage",
+            "yoda:structure": "compound",
+            "required": [
+              "First_Name",
+              "Last_Name"
+            ],
+            "properties": {
+              "First_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "First Name"
+              },
+              "Last_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Last Name"
+              }
+            }
           },
           "Affiliation": {
             "type": "array",
@@ -1279,8 +1294,23 @@
         "yoda:structure": "subproperties",
         "properties": {
           "Name": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Contributor to datapackage"
+            "type": "object",
+            "title": "Contributor to datapackage",
+            "yoda:structure": "compound",
+            "required": [
+              "First_Name",
+              "Last_Name"
+            ],
+            "properties": {
+              "First_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "First Name"
+              },
+              "Last_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Last Name"
+              }
+            }
           },
           "Affiliation": {
             "type": "array",
@@ -1326,8 +1356,23 @@
         "yoda:structure": "subproperties",
         "properties": {
           "Name": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Contact person"
+            "type": "object",
+            "title": "Contact person",
+            "yoda:structure": "compound",
+            "required": [
+              "First_Name",
+              "Last_Name"
+            ],
+            "properties": {
+              "First_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "First Name"
+              },
+              "Last_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Last Name"
+              }
+            }
           },
           "Position": {
             "$ref": "#/definitions/stringNormal",

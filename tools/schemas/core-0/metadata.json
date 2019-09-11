@@ -103,24 +103,32 @@
         "type": "object",
         "yoda:structure": "subproperties",
         "required": [
-          "Creator_Type",
           "Name",
           "Affiliation"
         ],
         "properties": {
-          "Creator_Type": {
-            "$ref": "#/definitions/optionsCreatorType",
-            "title": "Creator of datapackage"
-          },
           "Name": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "Name"
+            "type": "object",
+            "title": "Creator of datapackage",
+            "yoda:structure": "compound",
+            "required": [
+              "First_Name",
+              "Last_Name"
+            ],
+            "properties": {
+              "First_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "First Name"
+              },
+              "Last_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Last Name"
+              }
+            }
           },
           "Affiliation": {
             "type": "array",
-            "default": [
-              "Utrecht University"
-            ],
+            "default": ["Utrecht University"],
             "items": {
               "$ref": "#/definitions/stringNormal",
               "title": "Affiliation",
@@ -145,12 +153,8 @@
                 }
               },
               "dependencies": {
-                "Name_Identifier_Scheme": [
-                  "Name_Identifier"
-                ],
-                "Name_Identifier": [
-                  "Name_Identifier_Scheme"
-                ]
+                "Name_Identifier_Scheme": ["Name_Identifier"],
+                "Name_Identifier": ["Name_Identifier_Scheme"]
               }
             }
           }
