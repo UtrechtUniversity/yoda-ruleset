@@ -21,15 +21,6 @@
         "Closed"
       ]
     },
-    "optionsDataClassification": {
-      "type": "string",
-      "enum": [
-        "Public",
-        "Basic",
-        "Sensitive",
-        "Critical"
-      ]
-    },
     "optionsDataType": {
       "type": "string",
       "enum": [
@@ -43,6 +34,15 @@
         "Method",
         "Software",
         "Other Document"
+      ]
+    },
+    "optionsDataClassification": {
+      "type": "string",
+      "enum": [
+        "Public",
+        "Basic",
+        "Sensitive",
+        "Critical"
       ]
     },
     "optionsNameIdentifierScheme": {
