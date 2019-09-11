@@ -110,11 +110,11 @@
         "properties": {
           "Creator_Type": {
             "$ref": "#/definitions/optionsCreatorType",
-            "title": "Type"
+            "title": "Creator of datapackage"
           },
           "Name": {
             "$ref": "#/definitions/stringNormal",
-            "title": "Creator of datapackage"
+            "title": "Name"
           },
           "Affiliation": {
             "type": "array",
