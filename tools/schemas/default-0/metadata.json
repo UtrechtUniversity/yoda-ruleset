@@ -647,319 +647,297 @@
   },
   "title": "",
   "type": "object",
+  "required": [
+    "Title",
+    "Description",
+    "Version",
+    "Retention_Period",
+    "Data_Classification",
+    "Creator",
+    "License",
+    "Data_Access_Restriction"
+  ],
   "properties": {
-    "Descriptive-group": {
-      "type": "object",
-      "title": "Descriptive",
-      "required": [
-        "Title",
-        "Description",
-        "Version"
-      ],
-      "properties": {
-        "Title": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Title"
-        },
-        "Description": {
-          "$ref": "#/definitions/stringLong",
-          "title": "Description"
-        },
-        "Discipline": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/optionsDiscipline",
-            "title": "Discipline",
-            "default": null
-          }
-        },
-        "Version": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Version"
-        },
-        "Language": {
-          "$ref": "#/definitions/optionsISO639-1",
-          "title": "Language of the data",
-          "default": "en - English"
-        },
-        "Collected": {
-          "type": "object",
-          "title": "Collection process",
-          "yoda:structure": "compound",
-          "properties": {
-            "Start_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "Start date"
-            },
-            "End_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "End date"
-            }
-          },
-          "dependencies": {
-            "Start_Date": ["End_Date"],
-            "End_Date": ["Start_Date"]
-          }
-        },
-        "Covered_Geolocation_Place": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/stringNormalNullable",
-            "title": "Location(s) covered",
-            "default": ""
-          }
-        },
-        "Covered_Period": {
-          "type": "object",
-          "title": "Period covered",
-          "yoda:structure": "compound",
-          "properties": {
-            "Start_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "Start date"
-            },
-            "End_Date": {
-              "type": "string",
-              "format": "date",
-              "title": "End date"
-            }
-          },
-          "dependencies": {
-            "Start_Date": ["End_Date"],
-            "End_Date": ["Start_Date"]
-          }
-        },
-        "Tag": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/stringNormalNullable",
-            "title": "Tag",
-            "default": ""
-          }
-        },
-        "Related_Datapackage": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "yoda:structure": "subproperties",
-            "properties": {
-              "Relation_Type": {
-                "$ref": "#/definitions/optionsRelationType",
-                "title": "Related datapackage"
-              },
-              "Title": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Title"
-              },
-              "Persistent_Identifier": {
-                "type": "object",
-                "title": "Persistent identifier",
-                "yoda:structure": "compound",
-                "properties": {
-                  "Identifier_Scheme": {
-                    "$ref": "#/definitions/optionsPersistentIdentifierScheme",
-                    "title": "Type"
-                  },
-                  "Identifier": {
-                    "$ref": "#/definitions/stringNormal",
-                    "title": "Identifier"
-                  }
-                },
-                "dependencies": {
-                  "Identifier_Scheme": ["Identifier"],
-                  "Identifier": ["Identifier_Scheme"]
-                }
-              }
-            },
-            "dependencies": {
-              "Relation_Type": ["Title"]
-            }
-          }
-        }
+    "Title": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Title"
+    },
+    "Description": {
+      "$ref": "#/definitions/stringLong",
+      "title": "Description"
+    },
+    "Discipline": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/optionsDiscipline",
+        "title": "Discipline",
+        "default": null
       }
     },
-    "Administrative-group": {
+    "Version": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Version"
+    },
+    "Language": {
+      "$ref": "#/definitions/optionsISO639-1",
+      "title": "Language of the data",
+      "default": "en - English"
+    },
+    "Collected": {
       "type": "object",
-      "title": "Administrative",
-      "required": [
-        "Retention_Period",
-        "Data_Classification"
-      ],
+      "title": "Collection process",
+      "yoda:structure": "compound",
       "properties": {
-        "Retention_Period": {
-          "type": "integer",
-          "title": "Retention period (years)",
-          "default": 10,
-          "minimum": 0,
-          "maximum": 9999
-        },
-        "Retention_Information": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Retention information"
-        },
-        "Embargo_End_Date": {
+        "Start_Date": {
           "type": "string",
           "format": "date",
-          "title": "Embargo end date"
+          "title": "Start date"
         },
-        "Data_Classification": {
-          "$ref": "#/definitions/optionsDataClassification",
-          "title": "Data classification"
+        "End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "End date"
+        }
+      },
+      "dependencies": {
+        "Start_Date": ["End_Date"],
+        "End_Date": ["Start_Date"]
+      }
+    },
+    "Covered_Geolocation_Place": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/stringNormalNullable",
+        "title": "Location(s) covered",
+        "default": ""
+      }
+    },
+    "Covered_Period": {
+      "type": "object",
+      "title": "Period covered",
+      "yoda:structure": "compound",
+      "properties": {
+        "Start_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "Start date"
         },
-        "Collection_Name": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Name of collection"
-        },
-        "Funding_Reference": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
+        "End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "End date"
+        }
+      },
+      "dependencies": {
+        "Start_Date": ["End_Date"],
+        "End_Date": ["Start_Date"]
+      }
+    },
+    "Tag": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/stringNormalNullable",
+        "title": "Tag",
+        "default": ""
+      }
+    },
+    "Related_Datapackage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Relation_Type": {
+            "$ref": "#/definitions/optionsRelationType",
+            "title": "Related datapackage"
+          },
+          "Title": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Title"
+          },
+          "Persistent_Identifier": {
             "type": "object",
-            "title": "Funder",
-            "yoda:structure": "subproperties",
+            "title": "Persistent identifier",
+            "yoda:structure": "compound",
             "properties": {
-              "Funder_Name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Funder"
+              "Identifier_Scheme": {
+                "$ref": "#/definitions/optionsPersistentIdentifierScheme",
+                "title": "Type"
               },
-              "Award_Number": {
+              "Identifier": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Award number"
+                "title": "Identifier"
+              }
+            },
+            "dependencies": {
+              "Identifier_Scheme": ["Identifier"],
+              "Identifier": ["Identifier_Scheme"]
+            }
+          }
+        },
+        "dependencies": {
+          "Relation_Type": ["Title"]
+        }
+      }
+    },
+    "Retention_Period": {
+      "type": "integer",
+      "title": "Retention period (years)",
+      "default": 10,
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "Retention_Information": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Retention information"
+    },
+    "Embargo_End_Date": {
+      "type": "string",
+      "format": "date",
+      "title": "Embargo end date"
+    },
+    "Data_Classification": {
+      "$ref": "#/definitions/optionsDataClassification",
+      "title": "Data classification"
+    },
+    "Collection_Name": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Name of collection"
+    },
+    "Funding_Reference": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Funder",
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Funder_Name": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Funder"
+          },
+          "Award_Number": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Award number"
+          }
+        }
+      }
+    },
+    "Creator": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "yoda:structure": "subproperties",
+        "required": [
+          "Name",
+          "Affiliation"
+        ],
+        "properties": {
+          "Name": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Creator of datapackage"
+          },
+          "Affiliation": {
+            "type": "array",
+            "default": ["Utrecht University"],
+            "items": {
+              "$ref": "#/definitions/stringNormal",
+              "title": "Affiliation",
+              "yoda:required": true
+            }
+          },
+          "Person_Identifier": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Person identifier",
+              "yoda:structure": "compound",
+              "properties": {
+                "Name_Identifier_Scheme": {
+                  "$ref": "#/definitions/optionsNameIdentifierScheme",
+                  "title": "Type"
+                },
+                "Name_Identifier": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Identifier"
+                }
+              },
+              "dependencies": {
+                "Name_Identifier_Scheme": ["Name_Identifier"],
+                "Name_Identifier": ["Name_Identifier_Scheme"]
               }
             }
           }
         }
       }
     },
-    "Rights-group": {
-      "type": "object",
-      "title": "Rights",
-      "required": [
-        "Creator",
-        "License",
-        "Data_Access_Restriction"
-      ],
-      "properties": {
-        "Creator": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "yoda:structure": "subproperties",
-            "required": [
-              "Name",
-              "Affiliation"
-            ],
-            "properties": {
-              "Name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Creator of datapackage"
-              },
-              "Affiliation": {
-                "type": "array",
-                "default": ["Utrecht University"],
-                "items": {
+    "Contributor": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Name": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Contributor to datapackage"
+          },
+          "Contributor_Type": {
+            "$ref": "#/definitions/optionsContributorType",
+            "title": "Contributor type"
+          },
+          "Affiliation": {
+            "type": "array",
+            "default": ["Utrecht University"],
+            "items": {
+              "$ref": "#/definitions/stringNormal",
+              "title": "Affiliation",
+              "yoda:required": true
+            }
+          },
+          "Person_Identifier": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Person identifier",
+              "yoda:structure": "compound",
+              "properties": {
+                "Name_Identifier_Scheme": {
+                  "$ref": "#/definitions/optionsNameIdentifierScheme",
+                  "title": "Type"
+                },
+                "Name_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation",
-                  "yoda:required": true
+                  "title": "Identifier"
                 }
               },
-              "Person_Identifier": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "type": "object",
-                  "title": "Person identifier",
-                  "yoda:structure": "compound",
-                  "properties": {
-                    "Name_Identifier_Scheme": {
-                      "$ref": "#/definitions/optionsNameIdentifierScheme",
-                      "title": "Type"
-                    },
-                    "Name_Identifier": {
-                      "$ref": "#/definitions/stringNormal",
-                      "title": "Identifier"
-                    }
-                  },
-                  "dependencies": {
-                    "Name_Identifier_Scheme": ["Name_Identifier"],
-                    "Name_Identifier": ["Name_Identifier_Scheme"]
-                  }
-                }
+              "dependencies": {
+                "Name_Identifier_Scheme": ["Name_Identifier"],
+                "Name_Identifier": ["Name_Identifier_Scheme"]
               }
             }
           }
         },
-        "Contributor": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "yoda:structure": "subproperties",
-            "properties": {
-              "Name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Contributor to datapackage"
-              },
-              "Contributor_Type": {
-                "$ref": "#/definitions/optionsContributorType",
-                "title": "Contributor type"
-              },
-              "Affiliation": {
-                "type": "array",
-                "default": ["Utrecht University"],
-                "items": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation",
-                  "yoda:required": true
-                }
-              },
-              "Person_Identifier": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "type": "object",
-                  "title": "Person identifier",
-                  "yoda:structure": "compound",
-                  "properties": {
-                    "Name_Identifier_Scheme": {
-                      "$ref": "#/definitions/optionsNameIdentifierScheme",
-                      "title": "Type"
-                    },
-                    "Name_Identifier": {
-                      "$ref": "#/definitions/stringNormal",
-                      "title": "Identifier"
-                    }
-                  },
-                  "dependencies": {
-                    "Name_Identifier_Scheme": ["Name_Identifier"],
-                    "Name_Identifier": ["Name_Identifier_Scheme"]
-                  }
-                }
-              }
-            },
-            "dependencies": {
-              "Name": ["Contributor_Type", "Affiliation"]
-            }
-          }
-        },
-        "License": {
-          "$ref": "#/definitions/optionsLicense",
-          "title": "License"
-        },
-        "Data_Access_Restriction": {
-          "$ref": "#/definitions/optionsDataAccessRestriction",
-          "title": "Data package access",
-          "default": "Restricted - available upon request"
+        "dependencies": {
+          "Name": ["Contributor_Type", "Affiliation"]
         }
       }
+    },
+    "License": {
+      "$ref": "#/definitions/optionsLicense",
+      "title": "License"
+    },
+    "Data_Access_Restriction": {
+      "$ref": "#/definitions/optionsDataAccessRestriction",
+      "title": "Data package access",
+      "default": "Restricted - available upon request"
     }
   }
 }
