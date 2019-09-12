@@ -153,17 +153,6 @@ pep_resource_rename_post(*instanceName, *context, *out, *newFileName) {
         on(true) {nop;}
 }
 
-# \brief pep_resource_unregister_post
-# \param[in,out] out This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
-pep_resource_unregistered_post(*instanceName, *context, *out) {
-	on (uuinlist(*instanceName, UUPRIMARYRESOURCES)) {
-		uuResourceUnregisteredPostResearch(*instanceName, *context);
-	}
-        # See issue https://github.com/irods/irods/issues/3500.
-	# Workaround to avoid debug messages in irods 4.1.8
-        on(true) {nop;}
-}
-
 # Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
 pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *proxy_user_name = *comm.proxy_user_name;
