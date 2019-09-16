@@ -16,7 +16,7 @@ def get_json_metadata_errors(callback,
                              metadata=None,
                              ignore_required=False):
     """Validate JSON metadata, and return a list of errors, if any.
-       The path to the JSON object must be provided, so that the schema path
+       The path to the JSON object must be provided, so that the active schema path
        can be derived. Optionally, a pre-parsed JSON object may be provided in
        'metadata'.
 
@@ -24,7 +24,7 @@ def get_json_metadata_errors(callback,
        JSON formats.
     """
 
-    schema = getSchema(callback, metadata_path)
+    schema = get_active_schema(callback, metadata_path)
 
     if metadata is None:
         metadata = read_json_object(callback, metadata_path)
@@ -129,8 +129,7 @@ def iiSaveFormMetadata(rule_args, callback, rei):
         return
 
     # Add metadata schema id to JSON.
-    schema_id = getSchemaLocation(callback, json_path)
-    metadata["$id"] = schema_id
+    metadata['$id'] = get_active_schema_id(callback, json_path)
 
     # Validate JSON metadata.
     errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)

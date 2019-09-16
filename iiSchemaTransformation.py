@@ -31,71 +31,83 @@ transformationMatrix = {}
 transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu.nl/schemas/default-1': 'v1'}
 
 
+def execute_transformation(callback, metadata_path, transform):
+    coll, data = os.path.split(metadata_path)
+
+    group_name = metadata_path.split('/')[3]
+
+    metadata = read_json_object(callback, metadata_path)
+    metadata = transform(metadata)
+
+    if group_name.startswith('research'):
+        copy = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
+        print('TRANSFORMING {}, backup @ {}'.format(metadata_path, copy))
+        data_obj_copy(callback, metadata_path, copy, '', irods_types.BytesBuf())
+        write_json_object(callback, metadata_path, metadata)
+    elif group_name.startswith('vault'):
+        pass # TODO
+    else:
+        assert False
+
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
-def iiRuleTransformXml(rule_args, callback, rei):
-    """Transform yoda-metadata.xml from schema x to schema y.
-       Depending on research/vault - different handling.
+def iiRuleTransformMetadata(rule_args, callback, rei):
+    """Transform yoda-metadata.json from schema x to schema y.
 
        Arguments:
-       rule_args[0] -- XML path
+       rule_args[0] -- JSON path
 
        Return:
        rule_args[1] -- statusPy
        rule_args[2] -- statusInfoPy
     """
-    xmlPath = rule_args[0] + "/yoda-metadata.xml"
+    metadata_path = rule_args[0] + "/yoda-metadata.json"
+    transform = get_transformation(callback, metadata_path)
 
-    status = 'Unknown'
-    statusInfo = ''
+    if transform is None:
+        rule_args[1:3] = 'ERROR', 'No transformation found'
+        return
 
+    execute_transformation(callback, metadata_path, transform)
+
+
+def get_transformation(callback, metadata_path):
+    """Find a transformation that can be executed on the given metadata JSON.
+       Returns a transformation function on success, or None if no transformation was found.
+    """
     try:
-        # Retrieve current and future  metadata schemas.
-        versionTo = getSchemaLocation(callback, xmlPath)
-        versionFrom = getMetadataXMLSchema(callback, xmlPath)
+        src = get_schema_id(callback, metadata_path)
+        dst = get_active_schema_id(callback, metadata_path)
 
-        transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
-        result = globals()[transformationMethod](callback, xmlPath)
-        status = result['status']
-    except KeyError:
-        # No transformation present to convert yoda-metadata.xml
-        status = 'ERROR'
-        statusInfo = 'No transformation known for bringing yoda-metadata.xml up to date'
+        # Ideally, we would check that the metadata is valid in its current
+        # schema before claiming that we can transform it...
 
-    rule_args[1] = status
-    rule_args[2] = statusInfo
+        # print('{} -> {}'.format(src,dst))
+
+        return transformations[src][dst]
+    except:
+        return None
 
 
-def iiRulePossibleTransformation(rule_args, callback, rei):
-    """Check if yoda-metadata.xml transformation from schema x to schema y
+def iiGetTransformationInfo(rule_args, callback, rei):
+    """Check if yoda-metadata.json transformation from schema x to schema y
        is possible and retrieve transformation description.
-       Depending on research/vault - different handling.
 
        Arguments:
-       rule_args[0] -- XML path
+       rule_args[0] -- JSON path
 
        Return:
-       rule_args[1] -- transformation
-       rule_args[2] -- transformationText
+       rule_args[1] -- transformation possible? true|false
+       rule_args[2] -- human-readable description of the transformation
     """
-    xmlPath = rule_args[0]
+    json_path = rule_args[0]
 
-    transformation = 'false'
-    transformationText = ''
+    rule_args[1:3] = 'false', ''
 
-    try:
-        # Retrieve current and future  metadata schemas.
-        versionTo = getSchemaLocation(callback, xmlPath)
-        versionFrom = getMetadataXMLSchema(callback, xmlPath)
+    transform = get_transformation(callback, json_path)
 
-        transformationMethod = 'GetTransformationText_' + transformationMatrix[versionFrom][versionTo]
-        transformationText = globals()[transformationMethod](callback, xmlPath)
-        transformation = 'true'
-    except KeyError:
-        pass
-
-    rule_args[1] = transformation
-    rule_args[2] = transformationText
+    if transform is not None:
+        rule_args[1:3] = 'true', transformation_html(transform)
 
 # ------------------ end of interface functions -----------------------------
 
@@ -177,33 +189,6 @@ def ExecTransformation_v1(callback, xmlPath):
     return result
 
 
-def GetTransformationText_v1(callback, xmlPath):
-    htmlFilename = 'default-0.html'
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-1'
-
-    # Collect the transformation explanation text for the enduser.
-    data_size = getDataObjSize(callback, transformationBasePath, htmlFilename)
-    path = transformationBasePath + '/' + htmlFilename
-
-    # Open transformation information file.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read data.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close transformation information file.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    read_buf = ret_val['arguments'][2]
-    transformationText = ''.join(read_buf.buf)
-
-    return transformationText
-
-
 def parseXml(callback, path):
     """Parse a metadata XML given its path into an ElementTree.
 
@@ -246,7 +231,7 @@ def iiRuleGetLocation(rule_args, callback, rei):
        Return:
        rule_args[1] -- Metadata schema location
     """
-    rule_args[1] = getSchemaLocation(callback, rule_args[0])
+    rule_args[1] = get_active_schema_id(callback, rule_args[0])
 
 
 def iiRuleGetSpace(rule_args, callback, rei):
@@ -282,127 +267,6 @@ def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
        rule_args[1] -- Metadata schema location
     """
     rule_args[1] = getMetadataXMLSchema(callback, rule_args[0])
-
-
-def getCategory(callback, rods_zone, group_name):
-    """Determine category based upon rods zone and name of the group.
-
-       Arguments:
-       rods_zone  -- Rods zone name
-       group_name -- Group name
-
-       Return:
-       string -- Category
-    """
-    category = '-1'
-    schemaCategory = 'default'
-
-    # Find out category based on current group_name.
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-        "USER_GROUP_NAME = '" + group_name + "' AND  META_USER_ATTR_NAME like 'category'",
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-        category = row[1]
-
-    if category != '-1':
-        # Test whether found category actually has a metadata JSON.
-        # If not, fall back to default schema collection.
-        # /tempZone/yoda/schemas/default/metadata.json
-        schemaCollectionName = '/' + rods_zone + '/yoda/schemas/' + category
-
-        iter = genquery.row_iterator(
-            "COLL_NAME",
-            "DATA_NAME like 'metadata.json' AND COLL_NAME = '" + schemaCollectionName + "'",
-            genquery.AS_LIST, callback
-        )
-
-        for row in iter:
-            schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
-
-    return schemaCategory
-
-
-def getSchemaPath(callback, metadata_path):
-    """Get the iRODS path to a schema file from the path to a yoda metadata file.
-
-       Arguments:
-       metadata_path -- Path of metadata XML
-
-       Return:
-       Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json
-    """
-    # Retrieve current metadata schemas.
-    path_parts = metadata_path.split('/')
-    rods_zone = path_parts[1]
-    group_name = path_parts[3]
-
-    if group_name.startswith("vault-"):
-        group_name = group_name.replace("vault-", "research-", 1)
-
-    category = getCategory(callback, rods_zone, group_name)
-
-    return '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
-
-
-def getSchema(callback, metadata_path):
-    """Get a schema object from the path to a yoda metadata file.
-
-       Arguments:
-       metadata_path -- Path of metadata XML
-
-       Return:
-       Schema object (parsed from JSON)
-    """
-    return read_json_object(callback, getSchemaPath(callback, metadata_path))
-
-
-def getSchemaUrl(callback, metadata_path):
-    """Get a schema URL from the path to a yoda metadata file.
-
-       Arguments:
-       metadata_path -- Path of metadata XML
-
-       Return:
-       string -- Schema URL (e.g. https://yoda.uu.nl/schemas/...)
-    """
-    schema = getSchema(callback, metadata_path)
-    url, jsonFile = os.path.split(schema["$id"])
-
-    return url
-
-
-def getSchemaLocation(callback, xmlPath):
-    """Based upon the category of the current yoda-metadata.xml file,
-       return the active metadata schema involved.
-
-       Arguments:
-       xmlPath -- Path of metadata XML
-
-       Return:
-       string -- Schema location
-    """
-    return getSchemaUrl(callback, xmlPath)
-
-
-def getSchemaSpace(callback, group_name):
-    """Based upon the group name of the current yoda-metadata.xml file,
-       return the (research or vault) XSD schema involved.
-
-       Arguments:
-       group_name -- Name of the group
-
-       Return:
-       string -- Schema space
-    """
-    if 'research-' in group_name:
-        space = 'research'
-    else:
-        space = 'vault'
-
-    return space + '.xsd'
 
 
 def getLatestVaultMetadataXml(callback, vaultPackage):
@@ -569,7 +433,7 @@ def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name,
     root = parseMetadataXml(callback, coll_name + "/" + data_name)
 
     # Retrieve active schema location to be added.
-    schemaLocation = getSchemaLocation(callback, coll_name + "/" + data_name)
+    schemaLocation = get_active_schema_id(callback, coll_name + "/" + data_name)
 
     # Check if no attributes are present, for vault and research space.
     # If not, add xmlns:xsi and xsi:schemaLocation attributes.

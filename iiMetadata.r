@@ -6,21 +6,21 @@
 # \license   GPLv3, see LICENSE.
 
 
-# \brief Transform yoda-metadata.xml from versionFrom into versionTo. If at all possible
+# \brief Transform yoda-metadata.json from versionFrom into versionTo. If at all possible
 #
-# \param[in]  path        Path of the yoda-metadata.xml
-# \param[in]  versionFrom Version within yoda-metadata.xml
-# \param[in]  versionTo	  Version yoda-metadata.xml must be converted into
+# \param[in]  path        Path of the yoda-metadata.json
+# \param[in]  versionFrom Version within yoda-metadata.json
+# \param[in]  versionTo	  Version yoda-metadata.json must be converted into
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Information message when action was not successful
 #
-iiFrontTransformXml(*path, *status, *statusInfo)
+iiFrontTransformMetadata(*path, *status, *statusInfo)
 {
         *status = "Success";
         *statusInfo = "";
         *statusPy = "";
         *statusInfoPy = "";
-        iiRuleTransformXml(*path, *statusPy, *statusInfoPy);
+        iiRuleTransformMetadata(*path, *statusPy, *statusInfoPy);
 
         *status = *statusPy;
         *statusInfo = *statusInfoPy;
@@ -423,10 +423,10 @@ iiPrepareMetadataForm(*path, *result) {
                 # Check for transformations.
                 *kvp.transformation = "false";
                 *kvp.transformationText = "";
-                if (*xmlpath != "") {
+                if (*jsonPath != "") {
                         *transformation = '';
                         *transformationText = '';
-                        iiRulePossibleTransformation(*xmlpath, *transformation, *transformationText)
+                        iiGetTransformationInfo(*jsonPath, *transformation, *transformationText)
                         *kvp.transformation = *transformation;
                         *kvp.transformationText = *transformationText;
                 }
