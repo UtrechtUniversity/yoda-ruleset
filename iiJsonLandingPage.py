@@ -94,8 +94,19 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
     template = getJinjaLandingPageTemplate(callback, landingpage_template_path)	
 
 
-    # pre work input for render process
+    # pre work input for render process.
+    # When empty landing page, take a short cut
+    if template_name == 'emptylandingpage.html':
+        persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
+        tm = Template(template)
+        landing_page = tm.render(persistent_identifier_datapackage=persistent_identifier_datapackage)
 
+        callback.writeString("serverLog", landing_page)
+        rule_args[3] = landing_page
+        return
+
+
+    # Gather all metadata
 
     title = dictJsonData['Title']
     description = dictJsonData['Description']

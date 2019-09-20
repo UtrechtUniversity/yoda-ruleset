@@ -328,7 +328,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
         if (*publish == "publish") {
             *template_name = 'landingpage.html';
         } else {
-            *template_name = 'landingpage_empty.html';
+            *template_name = 'emptylandingpage.html';
         }
 
         *receiveLandingPage = ''; ## initialize before handover to Python
@@ -1043,7 +1043,7 @@ iiProcessRepublication(*vaultPackage, *status) {
 	iiGetLastModifiedDateTime(*publicationState);
 
 	if (!iiHasKey(*publicationState, "combiJsonPath")) {
-		# Generate Combi XML consisting of user and system metadata
+		# Generate Combi Json consisting of user and system metadata
 
 		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateCombiJson");
 		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
