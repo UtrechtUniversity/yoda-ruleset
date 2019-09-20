@@ -3,7 +3,11 @@ check {
 
         iiGetPublicationConfig(*publicationConfig);
 
-        iiCheckPublishedMetadataXmlForTransformationToJson("0", *batch, *pause, *delay);
+        *publicHost = *publicationConfig.publicHost;
+        *yodaInstance = *publicationConfig.yodaInstance;
+        *yodaPrefix = *publicationConfig.yodaPrefix;
+
+        iiCheckPublishedMetadataXmlForTransformationToJson("0", *batch, *pause, *delay, *publicHost, *yodaInstance, *yodaPrefix);
 }
 
 input *batch="256", *pause="0.5", *delay="60"

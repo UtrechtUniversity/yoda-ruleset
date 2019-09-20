@@ -9,17 +9,19 @@
 
 
 
-# \brief Use secure copy to push publised json data object to MOAI area.
+# \brief Use secure copy to push publised json data object, that arose after transformation from xml->json, to MOAI area.
 #
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in] metadata_json     json metadata data object name to be copied to 
+# \param[in] origin_publication_path  
+# \param[in] publicHost
+# \param[in] yodaInstance
+# \param[in] yodaPrefix 
+
 #
 iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *publicHost, *yodaInstance, *yodaPrefix) {
-        #*publicHost = *publicationConfig.publicHost;
-        #*yodaInstance = *publicationConfig.yodaInstance;
-        #*yodaPrefix = *publicationConfig.yodaPrefix;
         *argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*metadata_json";
-        *origin_json = '/tempZone/yoda/publication/*metadata_json'; 
-        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiXmlPath, 1, *cmdExecOut));
+        *origin_json = '*origin_publication_path/*metadata_json'; 
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_json, 1, *cmdExecOut));
         if (*err < 0) {
                 msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
                 msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
@@ -31,10 +33,6 @@ iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *pu
                 #DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
         }
 }
-
-
-
-
 
 
 # \brief Generate a dataCite compliant XML using XSLT.
@@ -119,7 +117,7 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 	
         writeString('serverLog', 'most recent: ' ++ *metadataJsonPath);
 
-	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiXmlPath:
+	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
         iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
         
         writeLine("serverLog", "iiGenerateCombiJson: generated *combiJsonPath");
@@ -129,42 +127,42 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 
 
-# \brief Overwrite combi metadata with system-only metadata.   NOG AAN TE PASSEN!
+# \brief Overwrite combi metadata json with system-only metadata.  
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
-iiGenerateSystemXml(*publicationConfig, *publicationState) {
-	*tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
-	*davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
+iiGenerateSystemJson(*publicationConfig, *publicationState) {
+        *tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
+        *davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
 
-	*vaultPackage = *publicationState.vaultPackage;
-	*randomId = *publicationState.randomId;
-	*yodaDOI = *publicationState.yodaDOI;
+        *vaultPackage = *publicationState.vaultPackage;
+        *randomId = *publicationState.randomId;
+        *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
 
-	msiGetIcatTime(*now, "unix");
-	*publicationDate = uuiso8601date(*now);
-	*combiXmlPath = "*tempColl/*randomId-combi.xml";
-	*systemMetadata =
-	   "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" ++
-	   "<metadata>\n" ++
-	   "  <System>\n" ++
-	   "    <Last_Modified_Date>*lastModifiedDateTime</Last_Modified_Date>\n" ++
-	   "    <Persistent_Identifier_Datapackage>\n" ++
-	   "       <Identifier_Scheme>DOI</Identifier_Scheme>\n" ++
-	   "       <Identifier>*yodaDOI</Identifier>\n" ++
-	   "    </Persistent_Identifier_Datapackage>\n" ++
-	   "    <Publication_Date>*publicationDate</Publication_Date>\n" ++
-	   "  </System>\n" ++
-	   "</metadata>";
+        msiGetIcatTime(*now, "unix");
+        *publicationDate = uuiso8601date(*now);
+        *combiJsonPath = "*tempColl/*randomId-combi.xml";
 
-	msiDataObjOpen("objPath=*combiXmlPath++++openFlags=O_RDWRO_TRUNC", *fd);
-	msiDataObjWrite(*fd, *systemMetadata, *lenOut);
-	msiDataObjClose(*fd, *status);
-	#DEBUG writeLine("serverLog", "iiGenerateSystemXml: generated *combiXmlPath");
-	*publicationState.combiXmlPath = *combiXmlPath;
+        *systemJsonData = 
+            "{'System': { " ++
+            "    'Last_Modified_Date': *lastModifiedDateTime, " ++
+            "    'Persistent_Identifier_Datapackage': { " ++
+            "        'Identifier_Scheme': 'DOI', " ++
+            "        'Identifier': *yodaDOI " ++
+            "    }, " ++
+            "    'Publication_Date': *publicationDate, " ++
+            "  }" ++
+            "}";  
+
+        msiDataObjOpen("objPath=*combiJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
+        msiDataObjWrite(*fd, *systemJsonData, *lenOut);
+        msiDataObjClose(*fd, *status);
+        #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *combiJsonPath");
+        *publicationState.combiJsonPath = *combiJsonPath;
 }
+
 
 # \brief Determine the time of last modification as a datetime with UTC offset.
 #
@@ -316,45 +314,26 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 #
 iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 {
-        writeLine("serverLog", 'In Gen LP');
-
         *combiJsonPath = *publicationState.combiJsonPath;
-
-        writeLine("serverLog", 'In Gen LP -1');
         *randomId = *publicationState.randomId;
         uuChopPath(*combiJsonPath, *tempColl, *_);
-        writeLine("serverLog", 'In Gen LP -2');
-
 
         *vaultPackage = *publicationState.vaultPackage;
         *pathElems = split(*vaultPackage, "/");
         *rodsZone = elem(*pathElems, 0);
         *vaultGroup = elem(*pathElems, 2);
-         writeLine("serverLog", 'In Gen LP -3');  
 
         uuGetBaseGroup(*vaultGroup, *baseGroup);
         uuGroupGetCategory(*baseGroup, *category, *subcategory);
-        writeLine("serverLog", 'In Gen LP -4');
         if (*publish == "publish") {
             *template_name = 'landingpage.html';
         } else {
             *template_name = 'landingpage_empty.html';
         }
-#	writeLine("serverLog", 'Just before Python iiCreateJsonLandingPage');
-
 
         *receiveLandingPage = ''; ## initialize before handover to Python
         # Based on content of *combiJsonPath, get landingpage as string
-        writeLine("serverLog", 'Just before Python iiCreateJsonLandingPage');
         iiCreateJsonLandingPage(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
-
-        *landingPagePath = "*tempColl/*randomId.html";
-
-	writeString('serverLog', 'IN IRODS AGAIN');
-        writeString('serverLog', *receiveLandingPage);
-        writeString('serverLog', *landingPagePath);
-
-        bla = bbhhhee;
 
         *landingPagePath = "*tempColl/*randomId.html";
         msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
@@ -408,9 +387,9 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 	*yodaInstance = *publicationConfig.yodaInstance;
 	*yodaPrefix = *publicationConfig.yodaPrefix;
 	*randomId = *publicationState.randomId;
-	*combiXmlPath = *publicationState.combiXmlPath;
+	*combiJsonPath = *publicationState.combiJsonPath;
 	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.xml"
-	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiXmlPath, 1, *cmdExecOut));
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiJsonPath, 1, *cmdExecOut));
 	if (*err < 0) {
 		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
 		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
@@ -419,7 +398,7 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 		writeLine("serverLog", *stdout);
 	} else {
 		*publicationState.oaiUploaded = "yes";
-		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
+		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiJsonPath");
 	}
 
 }
@@ -452,34 +431,6 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 	}
 	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
-
-iiGetPublicationConfigMOAI(*publicationConfig) {
-
-
-}
-
-# 
-iiCopyJSONMetadataFromPublishedToMOAI(*publicationConfig, *publishedJsonPath) {
-	*publicHost = *publicationConfig.publicHost;
-	*yodaInstance = *publicationConfig.yodaInstance;
-	*yodaPrefix = *publicationConfig.yodaPrefix;
-	#*randomId = *publicationState.randomId;
-	*publishedJSONPath = *publicationState.combiXmlPath;
-	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.xml"
-	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *publishedJsonPath, 1, *cmdExecOut));
-	if (*err < 0) {
-		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
-		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-		writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
-		writeLine("serverLog", *stderr);
-		writeLine("serverLog", *stdout);
-	} else {
-		*publicationState.oaiUploaded = "yes";
-		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
-	}
-
-}
-
 
 
 
@@ -700,8 +651,8 @@ iiProcessPublication(*vaultPackage, *status) {
 		if  (*publicationState.DOIAvailable == "no") {
 			#DEBUG writeLine("serverLog", "iiProcessPublication: DOI not available, starting iiGeneratePreliminaryDOI");
 			iiGeneratePreliminaryDOI(*publicationConfig, *publicationState);
-			# We need to generate new XMLs
-			*publicationState.combiXmlPath = "";
+			# We need to generate new json and xml
+			*publicationState.combiJsonPath = "";
 			*publicationState.dataCiteXmlPath = "";
 			iiSavePublicationState(*vaultPackage, *publicationState);
 		}
@@ -951,11 +902,11 @@ iiProcessDepublication(*vaultPackage, *status) {
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
 
-	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+	if (!iiHasKey(*publicationState, "combiJsonPath")) {
 		# Generate "Combi" XML consisting of only system metadata
 
-		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiGenerateSystemXml");
-		*err = errorcode(iiGenerateSystemXml(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiGenerateSystemJson");
+		*err = errorcode(iiGenerateSystemJson(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
@@ -1093,11 +1044,11 @@ iiProcessRepublication(*vaultPackage, *status) {
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
 
-	if (!iiHasKey(*publicationState, "combiXmlPath")) {
+	if (!iiHasKey(*publicationState, "combiJsonPath")) {
 		# Generate Combi XML consisting of user and system metadata
 
-		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateCombiXml");
-		*err = errorcode(iiGenerateCombiXml(*publicationConfig, *publicationState));
+		#DEBUG writeLine("serverLog", "iiProcessRepublication: starting iiGenerateCombiJson");
+		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Unrecoverable";
 		}
@@ -1242,7 +1193,7 @@ iiSetUpdatePublicationState(*vaultPackage, *status) {
 	*publicationState.status = "Unknown";
 
 	# Generate new XML's
-	*publicationState.combiXmlPath = "";
+	*publicationState.combiJsonPath = "";
 	*publicationState.dataCiteXmlPath = "";
 
 	# Post metadata to DataCite

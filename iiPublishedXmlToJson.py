@@ -339,6 +339,7 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
 # \param[in] rods_zone  Zone name
 # \param[in] vault_collection  Collection name of metadata XML
 # \param[in] xml_data_name  Data name of metadata XML that requires transformation
+# \param[in] data_name_json  Name of data object to be created containing the 
 ##
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
     # This function simply transforms given data_name to a Json data object. 
@@ -359,22 +360,12 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 
 	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
 
-	#for test in xmlDataDict:
-    	#    for test1 in xmlDataDict[test]:
-        #        #print(test + ' -' + test1)
-        #        if isinstance(xmlDataDict[test][test1], dict):
-        #            for test2 in xmlDataDict[test][test1]:
-        #                callback.writeString('serverLog', test + ' -' + test1 + ' -- ' + test2 )
-
 	newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
 	
 	fileHandle = ret_val['arguments'][2]
 	callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
 	callback.msiDataObjClose(fileHandle, 0)
 
-        # Add item to provenance log.
-        #callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
-	
 	callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
@@ -387,32 +378,30 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 # \param[in] coll_id   First collection id of batch
 # \param[in] batch     Batch size, <= 256
 # \param[in] pause     Pause between checks (float)
+# \param[in] publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
 #
 # \return Collection id to continue with in next batch.
 # If collection_id =0, no more collections are found containing yoda-metadata.xml
 #
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
 
-    publish_collection = '/' + rods_zone + '/yoda/publication'
+    publication_collection = '/' + rods_zone + '/yoda/publication'
     iter = genquery.row_iterator(
         "ORDER(DATA_ID), DATA_NAME, COLL_ID",
-        "COLL_NAME = '%s' AND DATA_NAME like '%%.xml' AND DATA_ID >= '%d'" % (publish_collection, data_id),
+        "COLL_NAME = '%s' AND DATA_NAME like '%%.xml' AND DATA_ID >= '%d'" % (publication_collection, data_id),
         genquery.AS_LIST, callback
     )
 
     # Check each collection in batch.
     for row in iter:
 	data_id = int(row[0])
-        data_name = row[1]
+        data_name_xml = row[1]
         coll_id = int(row[2])
         pathParts = coll_name.split('/')
         data_name_no_extension = os.path.splitext(data_name)[0] # the base name of the data object without extension
         data_name_json = data_name_no_extension + '.json'
 
         try:
-            #group_name = pathParts[3]
-            #vault_collection = '/'.join(pathParts[:5])     
-	
 	    # First make sure that no metadata json file exists already in the published collection .
 	    # If so, no transformation is required and the json file needs not be copied into the MOAI area.
 
@@ -424,17 +413,13 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 	    )
 	    for row2 in iter2:
 		jsonFound = True
-		continue
+		break
 
 	    if jsonFound == False:
                 # At this moment only default schema is used. So not required to figure out which schema is necessary
-	        transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, data_name, data_name_json)
+	        transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
 
-		# copy the new file to MOAI area NOG DOEN!!! CALLBACK NAAR IRODS
-                # HAS TO BE DEALT WITH BY microservice
-                copyTransformedPublishedToMoai(publish_collection + '/' + data_name_json, )
-
-                callback.iiCopyTransformedPublicationToMOAI(data_name_json, publish_collection, publicHost, yodaInstance, yodaPrefix)
+                callback.iiCopyTransformedPublicationToMOAI(data_name_json, publication_collection, publicHost, yodaInstance, yodaPrefix)
         except:
             pass
 
@@ -456,6 +441,7 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 # \param[in] batch    batch size, <= 256
 # \param[in] pause    pause between checks (float)
 # \param[in] delay    delay between batches in seconds
+# \param[in] publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
 #
 def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei):
     coll_id = int(rule_args[0])
