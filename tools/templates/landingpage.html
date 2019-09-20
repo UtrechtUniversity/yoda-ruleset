@@ -7,6 +7,21 @@
 
         <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet"/>
         <link href="/static/css/uu.css?v=1559637767" rel="stylesheet"/>
+
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css"
+            integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+            crossorigin=""/>
+   
+        <!-- Make sure you put this AFTER Leaflet's CSS -->
+        <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js"
+            integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og=="
+            crossorigin=""></script>
+
+        <style>
+            .map { height: 180px; 
+	           width: 240px;
+	    }
+        </style>
     </head>
     <body>
        <div class="container bg-white no-padding">
@@ -25,7 +40,7 @@
                             <label>Creator</label>
                         </div>
                         <div class="col-sm-10">
-                            {% for creator in creators %} {{ creator.Name }} &nbsp; {% endfor %}                             
+                            {% for creator in creators %} {{ creator.Name.First_Name }} {{ creator.Name.Last_Name }} &nbsp; {% endfor %}                             
                         </div>
                     </div>
                     
@@ -88,7 +103,8 @@
                                 </div>
                             </div>                        
                         </div>
-                        
+           
+
                         <div class="group">
                             <div class="row">
                                 <div class="col-sm-2">
@@ -98,6 +114,63 @@
                                     <span>{{ data_classification }}</span>
                                 </div>
                             </div>
+
+                            {{ geolocations }}
+                            {% for loc in geolocations %}
+                                <div class="group">
+                                    <div class="row">
+                                        <div class="col-sm-2">
+                                            <label>Geolocation</label>
+                                        </div>
+                                        <div class="col-sm-10">
+                                            <span>
+                                                <div class='map' id='map{{ loop.index }}'>
+                                                <script>
+		
+                lon0 = {{ loc.geoLocationBox.westBoundLongitude }};
+                lat0  = {{ loc.geoLocationBox.southBoundLatitude }};
+                lon1 = {{ loc.geoLocationBox.eastBoundLongitude }};
+                lat1  = {{ loc.geoLocationBox.northBoundLatitude }};
+//                var mymap = L.map('map{{ loop.index }}').setView([lat0, lon0], 13);
+
+//                let bounds = [[lat0, lon0], [lat1 + 0.1, lon1 + 0.1]];
+
+//                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'padding': [150, 150]});
+
+//		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//			attribution: '&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+//			maxZoom: 18
+//		}).addTo(mymap);
+		
+// 	       map{{ loop.index }}.fitBounds(bounds, {'padding': [150, 150]});	
+
+
+                let bounds = [[lat0, lon0], [lat1, lon1]];
+
+                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'padding': [150, 150], 'maxZoom': 3});
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 18
+                }).addTo(mymap);
+
+                if (lat0==lat1 && lon0==lon1) {
+				    var marker = L.marker([lat0, lon0]).addTo(mymap);
+		}
+		else {
+                    var rectangle = L.rectangle([[lat0, lon0],[lat1, lon1]]).addTo(mymap);
+		}
+
+ 
+                                                </script> 
+                                                </div>
+                                                {{ loc.Description_Spatial }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+			    {% endfor %}	
+
                                                         
                             {% for funder in funding_reference %}
                                 <div class="row">
@@ -186,7 +259,7 @@
                                         <label>Name</label>
                                     </div>
                                     <div class="col-sm-10">
-                                        {{ creator.Name }}
+                                        {{ creator.Name.First_Name }} {{ creator.Name.Last_Name }}
                                     </div>
                                 </div>
                                 <div class="row">
@@ -220,7 +293,7 @@
                                         <label>Name</label>
                                     </div>
                                     <div class="col-sm-10">
-                                        <span>{{ contributor.Name }}</span>
+                                        <span>{{ contributor.Name.First_Name }} {{ contributor.Name.Last_Name }}</span>
                                     </div>
                                 </div>
                                 

@@ -6,6 +6,37 @@
 # \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+
+
+
+# \brief Use secure copy to push publised json data object to MOAI area.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+#
+iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *publicHost, *yodaInstance, *yodaPrefix) {
+        #*publicHost = *publicationConfig.publicHost;
+        #*yodaInstance = *publicationConfig.yodaInstance;
+        #*yodaPrefix = *publicationConfig.yodaPrefix;
+        *argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*metadata_json";
+        *origin_json = '/tempZone/yoda/publication/*metadata_json'; 
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiXmlPath, 1, *cmdExecOut));
+        if (*err < 0) {
+                msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+                msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+                writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+                writeLine("serverLog", *stderr);
+                writeLine("serverLog", *stdout);
+        } else {
+                #*publicationState.oaiUploaded = "yes";
+                #DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
+        }
+}
+
+
+
+
+
+
 # \brief Generate a dataCite compliant XML using XSLT.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -285,28 +316,45 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 #
 iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 {
+        writeLine("serverLog", 'In Gen LP');
+
         *combiJsonPath = *publicationState.combiJsonPath;
+
+        writeLine("serverLog", 'In Gen LP -1');
         *randomId = *publicationState.randomId;
-        uuChopPath(*combiXmlPath, *tempColl, *_);
+        uuChopPath(*combiJsonPath, *tempColl, *_);
+        writeLine("serverLog", 'In Gen LP -2');
+
 
         *vaultPackage = *publicationState.vaultPackage;
         *pathElems = split(*vaultPackage, "/");
         *rodsZone = elem(*pathElems, 0);
         *vaultGroup = elem(*pathElems, 2);
+         writeLine("serverLog", 'In Gen LP -3');  
 
         uuGetBaseGroup(*vaultGroup, *baseGroup);
         uuGroupGetCategory(*baseGroup, *category, *subcategory);
-
+        writeLine("serverLog", 'In Gen LP -4');
         if (*publish == "publish") {
-            template_name = 'landingpage.html';
+            *template_name = 'landingpage.html';
         } else {
-            template_name = 'landingpage_empty.html'
+            *template_name = 'landingpage_empty.html';
         }
+#	writeLine("serverLog", 'Just before Python iiCreateJsonLandingPage');
 
 
-        *receiveLandingPage = '' ## initialize before handover to Python
+        *receiveLandingPage = ''; ## initialize before handover to Python
         # Based on content of *combiJsonPath, get landingpage as string
-        iiCreateJsonLandingPage(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage)
+        writeLine("serverLog", 'Just before Python iiCreateJsonLandingPage');
+        iiCreateJsonLandingPage(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
+
+        *landingPagePath = "*tempColl/*randomId.html";
+
+	writeString('serverLog', 'IN IRODS AGAIN');
+        writeString('serverLog', *receiveLandingPage);
+        writeString('serverLog', *landingPagePath);
+
+        bla = bbhhhee;
 
         *landingPagePath = "*tempColl/*randomId.html";
         msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
@@ -347,6 +395,8 @@ iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
 		#DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
 	}
 }
+
+
 
 # \brief Use secure copy to push the combi XML to MOAI.
 #
@@ -402,6 +452,36 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 	}
 	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
+
+iiGetPublicationConfigMOAI(*publicationConfig) {
+
+
+}
+
+# 
+iiCopyJSONMetadataFromPublishedToMOAI(*publicationConfig, *publishedJsonPath) {
+	*publicHost = *publicationConfig.publicHost;
+	*yodaInstance = *publicationConfig.yodaInstance;
+	*yodaPrefix = *publicationConfig.yodaPrefix;
+	#*randomId = *publicationState.randomId;
+	*publishedJSONPath = *publicationState.combiXmlPath;
+	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.xml"
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *publishedJsonPath, 1, *cmdExecOut));
+	if (*err < 0) {
+		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+		writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+		writeLine("serverLog", *stderr);
+		writeLine("serverLog", *stdout);
+	} else {
+		*publicationState.oaiUploaded = "yes";
+		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
+	}
+
+}
+
+
+
 
 # \brief Configuration is extracted from metadata on the UUSYSTEMCOLLECTION.
 #
@@ -678,7 +758,10 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
-		# Send DataCite XML to metadata end point
+		
+		iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");
+
+                # Send DataCite XML to metadata end point
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
 		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
 		if (*err < 0) {

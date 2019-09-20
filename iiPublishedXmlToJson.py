@@ -1,4 +1,5 @@
 import xmltodict
+import os
 
 from json import loads
 from collections import OrderedDict
@@ -11,7 +12,7 @@ from collections import OrderedDict
 #
 # \return Dict holding data
 #
-def getMetadataXmlAsDict(callback, path):
+def PUBgetMetadataXmlAsDict(callback, path):
     # Retrieve XML size.
 
     coll_name, data_name = os.path.split(path)
@@ -44,7 +45,7 @@ def getMetadataXmlAsDict(callback, path):
 #
 # \return dict hodling the category JSONSchema
 #
-def getMetadaJsonDict(callback, yoda_json_path):   
+def PUBgetMetadaJsonDict(callback, yoda_json_path):   
 	
     coll_name, data_name = os.path.split(yoda_json_path)
 
@@ -81,7 +82,7 @@ def getMetadaJsonDict(callback, yoda_json_path):
 #
 # \return dict hodling the category JSONSchema
 #
-def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
+def PUBgetActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
 
     json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
 
@@ -120,7 +121,7 @@ def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset
 #
 # \return JSON formatted string holding content of yoda-metadata.xml
 #
-def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
+def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
     jsonDict = {}
 
     for elementName in dictSchema['properties']:
@@ -337,22 +338,21 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
 #
 # \param[in] rods_zone  Zone name
 # \param[in] vault_collection  Collection name of metadata XML
-# \param[in] group_name Group name of metadata XML
 # \param[in] xml_data_name  Data name of metadata XML that requires transformation
 ##
-def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, xml_data_name):
+def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
     # This function simply transforms given data_name to a Json data object. 
 	# No further intelligence required further. 
 	# Perhaps handling within vault??
 	
 	ofFlags = ''
-	json_file = vault_collection + '/yoda-metadata[' + str(int(time.time())) + '].json'
+	json_file = publish_collection + '/' + data_name_json
 
 	ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
 	
 	#copyACLsFromParent(callback, json_file, "default")
 
-        xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
+        xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
         
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
@@ -373,14 +373,15 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 	callback.msiDataObjClose(fileHandle, 0)
 
         # Add item to provenance log.
-        callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
+        #callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
 	
 	callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
 
-# \brief Loop through all collections with yoda-metadata.xml data objects.
-#        If NO yoda-metadata.json is found in that collection, the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json
+# \brief Loop through all metadata xml data objects within '/tempZone/yoda/publication'.
+#        If NO corresponding json is found in that collection, the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
+#        The resulting file must be copied to moai collection as well
 #
 # \param[in] rods_zone Zone name
 # \param[in] coll_id   First collection id of batch
@@ -390,32 +391,35 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 # \return Collection id to continue with in next batch.
 # If collection_id =0, no more collections are found containing yoda-metadata.xml
 #
-def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, coll_id, batch, pause):
-    # Find all research and vault collections, ordered by COLL_ID.
+def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
+
+    publish_collection = '/' + rods_zone + '/yoda/publication'
     iter = genquery.row_iterator(
-        "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/vault-%%' AND DATA_NAME like 'yoda-metadata[%%].xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
+        "ORDER(DATA_ID), DATA_NAME, COLL_ID",
+        "COLL_NAME = '%s' AND DATA_NAME like '%%.xml' AND DATA_ID >= '%d'" % (publish_collection, data_id),
         genquery.AS_LIST, callback
     )
 
     # Check each collection in batch.
     for row in iter:
-	coll_id = int(row[0])
-        coll_name = row[1]
+	data_id = int(row[0])
+        data_name = row[1]
+        coll_id = int(row[2])
         pathParts = coll_name.split('/')
+        data_name_no_extension = os.path.splitext(data_name)[0] # the base name of the data object without extension
+        data_name_json = data_name_no_extension + '.json'
 
         try:
-            group_name = pathParts[3]
-            vault_collection = '/'.join(pathParts[:5])     
+            #group_name = pathParts[3]
+            #vault_collection = '/'.join(pathParts[:5])     
 	
-	    # First make sure that no metadata json file exists already in the vault collection .
-	    # If so, no transformation is required.
-	    # As it is unknown what the exact name is of the JSON file, use wildcards:
+	    # First make sure that no metadata json file exists already in the published collection .
+	    # If so, no transformation is required and the json file needs not be copied into the MOAI area.
 
 	    jsonFound = False
 	    iter2 = genquery.row_iterator(
 		 "ORDER(COLL_ID), COLL_NAME",
-		 "DATA_NAME like 'yoda-metadata%%.json' AND COLL_ID = '%d'" % (coll_id),
+		 "DATA_NAME = '%s' AND COLL_ID = '%d'" % (data_name_json, coll_id),
 		 genquery.AS_LIST, callback
 	    )
 	    for row2 in iter2:
@@ -423,47 +427,55 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 		continue
 
 	    if jsonFound == False:
-		data_name = getLatestVaultMetadataXml(callback, vault_collection)
-		if data_name != "":
-		    transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
+                # At this moment only default schema is used. So not required to figure out which schema is necessary
+	        transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, data_name, data_name_json)
+
+		# copy the new file to MOAI area NOG DOEN!!! CALLBACK NAAR IRODS
+                # HAS TO BE DEALT WITH BY microservice
+                copyTransformedPublishedToMoai(publish_collection + '/' + data_name_json, )
+
+                callback.iiCopyTransformedPublicationToMOAI(data_name_json, publish_collection, publicHost, yodaInstance, yodaPrefix)
         except:
             pass
 
         # Sleep briefly between checks.
         time.sleep(pause)
 
-        # The next collection to check must have a higher COLL_ID.
-        coll_id = coll_id + 1
+        # The next data_id to check must have a higher DATA_ID
+        data_id = data_id + 1
     else:
         # All done.
-        coll_id = 0
+        data_id = 0
 
-    return coll_id
+    return data_id
 
 
-# \brief Convert vault metadata XML to JSON - batchwise
+# \brief Convert published metadata XML that residedes in 'published' collection to JSON - batchwise
 #
-# \param[in] coll_id  first COLL_ID to check - initial =0
+# \param[in] data_id  first data to check - initial =0
 # \param[in] batch    batch size, <= 256
 # \param[in] pause    pause between checks (float)
 # \param[in] delay    delay between batches in seconds
 #
-def iiCheckVaultMetadataXmlForTransformationToJson(rule_args, callback, rei):
+def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei):
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
+    publicHost = rule_args[4] 
+    yodaInstance = rule_args[5] 
+    yodaPrefix = rule_args[6]
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Check one	batch of metadata schemas.
-    # If no more collections are found, the function returns 0
-    coll_id = iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, coll_id, batch, pause)
+    # If no more data_ids are found in the main/single publication folder, the function returns 0
+    data_id = iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix)
 
     if coll_id != 0:
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiCheckVaultMetadataXmlForTransformationToJson('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "iiCheckPublishedMetadataXmlForTransformationToJson('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")
 
 
