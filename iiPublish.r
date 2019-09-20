@@ -30,7 +30,7 @@ iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *pu
                 writeLine("serverLog", *stdout);
         } else {
                 #*publicationState.oaiUploaded = "yes";
-                #DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiXmlPath");
+                #DEBUG writeLine("serverLog", "iiCopyTransformedPublicationToMOAI: pushed *");
         }
 }
 
@@ -658,15 +658,13 @@ iiProcessPublication(*vaultPackage, *status) {
 		}
 	}
 
-	writeString("serverLog", "in processPublication");
-	writeString("serverLog", *vaultPackage);
 
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
 
 
 	if (!iiHasKey(*publicationState, "combiJsonPath")) {
-		# Generate Combi XML consisting of user and system metadata
+i		# Generate Combi Json consisting of user and system metadata
 
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiJson");
 		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
@@ -710,7 +708,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
 		
-		iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");
+		iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");    ######################### MOET HIER WEG, puur voor testen
 
                 # Send DataCite XML to metadata end point
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
