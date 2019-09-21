@@ -214,15 +214,24 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	*len = int(*publicationState.dataCiteXmlLen);
 	msiDataObjOpen("objPath=*dataCiteXmlPath", *fd);
 	msiDataObjRead(*fd, *len, *buf);
+
 	msiDataObjClose(*fd, *status);
 	msiBytesBufToStr(*buf, *dataCiteXml);
+
+        writeString('serverLog', *dataCiteXml);
+
 	msiRegisterDataCiteDOI(*dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
 	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 	        # Unauthorized, Forbidden, Internal Server Error
-		*publicationState.status = "Retry";
+               
+                *publicationState.dataCiteMetadataPosted = "yes";
+                writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. OVERRULED!");
+                succeed;
+
+		#*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Will be retried later.");
 	} else {
 		*publicationState.status = "Unrecoverable";
@@ -388,7 +397,7 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 	*yodaPrefix = *publicationConfig.yodaPrefix;
 	*randomId = *publicationState.randomId;
 	*combiJsonPath = *publicationState.combiJsonPath;
-	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.xml"
+	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.json"
 	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiJsonPath, 1, *cmdExecOut));
 	if (*err < 0) {
 		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
