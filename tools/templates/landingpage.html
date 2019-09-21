@@ -131,19 +131,6 @@
                 lat0  = {{ loc.geoLocationBox.southBoundLatitude }};
                 lon1 = {{ loc.geoLocationBox.eastBoundLongitude }};
                 lat1  = {{ loc.geoLocationBox.northBoundLatitude }};
-//                var mymap = L.map('map{{ loop.index }}').setView([lat0, lon0], 13);
-
-//                let bounds = [[lat0, lon0], [lat1 + 0.1, lon1 + 0.1]];
-
-//                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'padding': [150, 150]});
-
-//		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-//			attribution: '&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-//			maxZoom: 18
-//		}).addTo(mymap);
-		
-// 	       map{{ loop.index }}.fitBounds(bounds, {'padding': [150, 150]});	
-
 
                 let bounds = [[lat0, lon0], [lat1, lon1]];
 
@@ -155,7 +142,7 @@
                 }).addTo(mymap);
 
                 if (lat0==lat1 && lon0==lon1) {
-				    var marker = L.marker([lat0, lon0]).addTo(mymap);
+	            var marker = L.marker([lat0, lon0]).addTo(mymap);
 		}
 		else {
                     var rectangle = L.rectangle([[lat0, lon0],[lat1, lon1]]).addTo(mymap);
