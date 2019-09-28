@@ -375,13 +375,14 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 #        The resulting file must be copied to moai collection as well
 #
 # \param[in] rods_zone Zone name
-# \param[in] coll_id   First collection id of batch
+# \param[in] data_id   data id to start searching from
 # \param[in] batch     Batch size, <= 256
 # \param[in] pause     Pause between checks (float)
-# \param[in] publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
+# \param[in] publicHost, yodaInstance, yodaPrefix are required for secure copy from /publication area to MOAI
 #
-# \return Collection id to continue with in next batch.
-# If collection_id =0, no more collections are found containing yoda-metadata.xml
+# \return data_id to continue with in next batch.
+# If data_id =0, no more data objects were found. 
+# Batch is finished
 #
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
 

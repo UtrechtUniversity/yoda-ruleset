@@ -398,9 +398,19 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
         genquery.AS_LIST, callback
     )
 
+    # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
+    
+    prev_coll_id = -1 # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
     # Check each collection in batch.
     for row in iter:
+
 	coll_id = int(row[0])
+
+        if coll_id == prev_coll_id # coll_id should be processed only once!
+            continue
+
+        prev_coll_id = coll_id
+
         coll_name = row[1]
         pathParts = coll_name.split('/')
 
@@ -411,6 +421,10 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 	    # First make sure that no metadata json file exists already in the vault collection .
 	    # If so, no transformation is required.
 	    # As it is unknown what the exact name is of the JSON file, use wildcards:
+
+            # There is no need to specifically test for the samen name.
+	    # The area that is looked into, cannot be accessed by a YoDa user. I.e. the user can not have placed any json files.
+            # If a json file is present, this can only have been added by this batch
 
 	    jsonFound = False
 	    iter2 = genquery.row_iterator(
