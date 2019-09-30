@@ -406,7 +406,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 
 	coll_id = int(row[0])
 
-        if coll_id == prev_coll_id # coll_id should be processed only once!
+        if coll_id == prev_coll_id: # coll_id should be processed only once!
             continue
 
         prev_coll_id = coll_id
