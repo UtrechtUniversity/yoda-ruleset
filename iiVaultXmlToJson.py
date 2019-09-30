@@ -31,7 +31,7 @@ def getMetadataXmlAsDict(callback, path):
     read_buf = ret_val['arguments'][2]
     xmlText = ''.join(read_buf.buf)
 
-    # callback.writeString('serverLog', xmlText)
+    callback.writeString('serverLog', xmlText)
 	
     return xmltodict.parse(xmlText)
 
@@ -63,6 +63,9 @@ def getMetadaJsonDict(callback, yoda_json_path):
     # Parse JSON into dict.
     read_buf = ret_val['arguments'][2]
     jsonText = ''.join(read_buf.buf)
+
+    callback.writeString('serverLog', jsonText)
+    
 
     # Use the hook to keep ordering of elements as in metadata.json
     return json.loads(jsonText, object_pairs_hook=OrderedDict)
@@ -107,9 +110,6 @@ def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset
 
     # Use the hook to keep ordering of elements as in metadata.json
     return json.loads(jsonText, object_pairs_hook=OrderedDict)
-
-
-
 
 
 
@@ -316,17 +316,18 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
         except KeyError:  # No data present for this element
             pass
 
+    # only valid for combi xml!! do not use in vault
     # Hardcoding allowed here 
-    jsonDict['System'] = {
-        'Last_Modified_Date': xmlData['metadata']['System']['Last_Modified_Date'],
-        'Persistent_Identifier_Datapackage': {
-            'Identifier_Scheme': 'DOI',
-            'Identifier': xmlData['metadata']['System']['Persistent_Identifier_Datapackage']['Identifier']
-        },
-        'Publication_Date': xmlData['metadata']['System']['Publication_Date'],
-        'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
-        'License_URI': xmlData['metadata']['System']['License_URI']
-    }
+    # jsonDict['System'] = {
+    #    'Last_Modified_Date': xmlData['metadata']['System']['Last_Modified_Date'],
+    #    'Persistent_Identifier_Datapackage': {
+    #        'Identifier_Scheme': 'DOI',
+    #        'Identifier': xmlData['metadata']['System']['Persistent_Identifier_Datapackage']['Identifier']
+    #    },
+    #    'Publication_Date': xmlData['metadata']['System']['Publication_Date'],
+    #    'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
+    #    'License_URI': xmlData['metadata']['System']['License_URI']
+    # }
     
     return json.dumps(jsonDict)
 
@@ -356,6 +357,9 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
         
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
+
+        callback.writeString('serverLog', category_version)
+
 
 	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
 
