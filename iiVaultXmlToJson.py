@@ -350,7 +350,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
 	ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
 	
-	#copyACLsFromParent(callback, json_file, "default")
+	copyACLsFromParent(callback, json_file, "default")
 
         xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
         
