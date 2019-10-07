@@ -9,22 +9,74 @@ import re
 import json
 import jsonschema
 import jsonavu
+from enum import Enum
+
+class Space(Enum):
+    """Differentiates Yoda path types between research and vault spaces."""
+    OTHER    = 0
+    RESEARCH = 1
+    VAULT    = 2
+
+    def __repr__(self):
+        return 'Space.'+self.name
+
+def get_path_info(path):
+    """
+    Parse a path into a (Space, zone, group, subpath) tuple.
+
+    Synopsis: space, zone, group, subpath = get_path_info(path)
+
+    This can be used to discern research and vault paths, and provides
+    group name and subpath information.
+
+    Examples:
+
+    /                           => Space.OTHER,    '',         '',           ''
+    /tempZone                   => Space.OTHER,    'tempZone', '',           ''
+    /tempZone/yoda/x            => Space.OTHER,    'tempZone', '',           'yoda/x'
+    /tempZone/home              => Space.OTHER,    'tempZone', '',           'home'
+    /tempZone/home/vault-x      => Space.VAULT,    'tempZone', 'vault-x',    ''
+    /tempZone/home/vault-x/y    => Space.VAULT,    'tempZone', 'vault-x',    'y'
+    /tempZone/home/research-x/y => Space.RESEARCH, 'tempZone', 'research-x', 'y'
+    etc.
+    """
+
+    # Turn empty match groups into empty strings.
+    f      = lambda x:    '' if x is None else x
+    g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
+    result = lambda s, m: (s, g(m,1), g(m,2), g(m,3))
+
+    # Try a pattern and report success if it matches.
+    def test(r, space):
+        m = re.match(r, path)
+        return m and result(space, m)
+
+    return (test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',    Space.VAULT)
+         or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$', Space.RESEARCH)
+         or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
+         or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
+         or (Space.OTHER, '', '', '')) # (matches '/' and empty paths)
 
 
 def get_json_metadata_errors(callback,
                              metadata_path,
                              metadata=None,
+                             schema=None,
                              ignore_required=False):
     """Validate JSON metadata, and return a list of errors, if any.
        The path to the JSON object must be provided, so that the active schema path
        can be derived. Optionally, a pre-parsed JSON object may be provided in
        'metadata'.
 
-       Will throw exceptions on missing metadata / schema files and invalid
+       The checked schema is, by default, the active schema for the given metadata path,
+       however it can be overridden by providing a parsed JSON schema as an argument.
+
+       This will throw exceptions on missing metadata / schema files and invalid
        JSON formats.
     """
 
-    schema = get_active_schema(callback, metadata_path)
+    if schema is None:
+        schema = get_active_schema(callback, metadata_path)
 
     if metadata is None:
         metadata = read_json_object(callback, metadata_path)
@@ -36,7 +88,7 @@ def get_json_metadata_errors(callback,
     errors = validator.iter_errors(metadata)
 
     if ignore_required:
-        errors = filter(lambda e: e.validator != 'required', errors)
+        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
 
     def transform_error(e):
         """Turn a ValidationError into a data structure for the frontend"""
@@ -79,76 +131,28 @@ def get_collection_metadata_path(callback, coll):
     return None
 
 
-def iiSaveFormMetadata(rule_args, callback, rei):
-    """Validate and store JSON metadata for a given collection."""
+def get_latest_vault_metadata_path(callback, vault_pkg_coll):
+    """Get the latest vault metadata JSON file.
 
-    def report(x):
-        """ XXX Temporary, for debugging """
-        callback.writeString("serverLog", x)
-        callback.writeString("stdout", x)
+       Arguments:
+       vault_pkg_coll -- Vault package collection
 
-    coll, metadata_text = rule_args[0:2]
+       Return:
+       string -- Metadata JSON path
+    """
+    name = None
 
-    # Assume we are in the research area until proven otherwise.
-    # (overwritten below in the vault case)
-    is_vault = False
-    json_path = '{}/{}'.format(coll, IIJSONMETADATA)
+    iter = genquery.row_iterator(
+        "DATA_NAME",
+        "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(vault_pkg_coll),
+        genquery.AS_LIST, callback)
 
-    m = re.match('^/([^/]+)/home/(vault-[^/]+)/(.+)$', coll)
-    if m:
-        # It's a vault path - set up a staging area in the datamanager collection.
-        zone, vault_group, vault_subpath = m.groups()
+    for row in iter:
+        data_name = row[0]
+        if name is None or (name < data_name and len(name) <= len(data_name)):
+            name = data_name
 
-        ret = callback.iiDatamanagerGroupFromVaultGroup(vault_group, '')
-        datamanager_group = ret['arguments'][1]
-        if datamanager_group == '':
-            report(json.dumps({'status':     'InternalError',
-                               'statusInfo': 'could not get datamanager group'}))
-            return
-
-        tmp_coll = '/{}/home/{}/{}/{}'.format(zone, datamanager_group, vault_group, vault_subpath)
-
-        try:
-            coll_create(callback, tmp_coll, '1', irods_types.BytesBuf())
-        except UUException as e:
-            report(json.dumps({'status':     'FailedToCreateCollection',
-                               'statusInfo': 'Failed to create staging area at <{}>'.format(tmp_coll)}))
-            return
-
-        # Use staging area instead of trying to write to the vault directly.
-        is_vault = True
-        json_path = '{}/{}'.format(tmp_coll, IIJSONMETADATA)
-
-    # Load form metadata input.
-    try:
-        metadata = parse_json(metadata_text)
-    except UUException as e:
-        # This should only happen if the form was tampered with.
-        report(json.dumps({'status':     'ValidationError',
-                           'statusInfo': 'JSON decode error'}))
-        return
-
-    # Add metadata schema id to JSON.
-    metadata['$id'] = get_active_schema_id(callback, json_path)
-
-    # Validate JSON metadata.
-    errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
-
-    if len(errors) > 0:
-        report(json.dumps({'status':     'ValidationError',
-                           'statusInfo': 'Metadata validation failed',
-                           'errors':     errors}))
-        return
-
-    # No errors: write out JSON.
-    try:
-        write_data_object(callback, json_path, json.dumps(metadata, indent=4))
-    except UUException as e:
-        report(json.dumps({'status': 'Error',
-                           'statusInfo': 'Could not save yoda-metadata.json'}))
-        return
-
-    report(json.dumps({'status': 'Success', 'statusInfo': ''}))
+    return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
 
 
 def iiValidateMetadata(rule_args, callback, rei):
@@ -168,35 +172,26 @@ def iiValidateMetadata(rule_args, callback, rei):
         rule_args[1] = '0'
         rule_args[2] = 'metadata validated'
 
-
-def iiCollectionHasCloneableMetadata(rule_args, callback, rei):
+@define_as_rule('iiCollectionHasCloneableMetadata',
+                inputs=[0], outputs=[1],
+                transform=lambda x: x if type(x) is str else '')
+def collection_has_cloneable_metadata(callback, coll):
     """Check if a collection has metadata, and validate it.
-       Returns ('true', metadata_path) on success.
+       Returns the parent metadata_path on success, or False otherwise.
 
        This always ignores 'required' schema attributes, since metadata can
        only be cloned in the research area.
     """
-
-    coll = rule_args[0]
     path = get_collection_metadata_path(callback, coll)
 
-    rule_args[1:3] = ('false', '')
-
     if path is None:
-        return
+        return False
 
-    elif path.endswith('.json'):
+    if path.endswith('.json'):
         if is_json_metadata_valid(callback, path, ignore_required=True):
-            rule_args[1:3] = ('true', path)
+            return path
 
-    elif path.endswith('.xml'):
-        # Run XML validator instead.
-        ret = callback.iiGetResearchXsdPath(path, '')
-        xsd_path = ret['arguments'][1]
-        ret = callback.iiValidateXml(path, xsd_path, '', '')
-        invalid, msg = ret['arguments'][2:4]
-        if invalid != b'\x01':
-            rule_args[1:3] = ('true', path)
+    return False
 
 
 def iiRemoveAllMetadata(rule_args, callback, rei):
@@ -216,8 +211,6 @@ def iiRemoveAllMetadata(rule_args, callback, rei):
 
 def iiCloneMetadataFile(rule_args, callback, rei):
     """Clones a metadata file from a parent collection to a subcollection.
-       Both JSON and XML metadata can be copied, JSON takes precedence if it exists.
-
        The destination collection (where the metadata is copied *to*) is given as an argument.
     """
 
@@ -231,9 +224,8 @@ def iiCloneMetadataFile(rule_args, callback, rei):
         return
     elif source_data.endswith('.json'):
         target_data = '{}/{}'.format(target_coll, IIJSONMETADATA)
-    elif source_data.endswith('.xml'):
-        target_data = '{}/{}'.format(target_coll, IIMETADATAXMLNAME)
     else:
+        # XML metadata files must be transformed to JSON before cloning.
         return
 
     try:
@@ -243,7 +235,7 @@ def iiCloneMetadataFile(rule_args, callback, rei):
                              .format(source_data, target_data, e))
 
 
-# Functions that deal with ingesting metadata into AVU's {{{
+# Functions that deal with ingesting metadata into AVUs {{{
 
 def ingest_metadata_research(callback, path):
     """Validates JSON metadata (without requiredness) and ingests as AVUs in the research space."""
@@ -325,7 +317,7 @@ def ingest_metadata_vault(callback, path):
 
 def iiMetadataJsonModifiedPost(rule_args, callback, rei):
 
-    path, user, zone = rule_args[0:4]
+    path, user, zone = rule_args[:4]
 
     if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_staging(callback, path)

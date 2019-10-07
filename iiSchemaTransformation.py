@@ -1,5 +1,5 @@
-# \file      iiSchemaUpdates.py
-# \brief     Functions for handling schema updates within any yoda-metadata.xml.
+# \file      iiSchemaTransformation.py
+# \brief     Functions for handling schema updates within any yoda-metadata file.
 # \author    Lazlo Westerhof
 # \author    Felix Croes
 # \author    Harm de Raaff
@@ -13,22 +13,10 @@ import hashlib
 import base64
 import json
 import irods_types
-import lxml.etree as etree
-import xml.etree.ElementTree as ET
 import time
 
 import genquery
 import session_vars
-
-
-# ------- Global declaration of transformation matrix---------------
-# results in a string that is a postfix of two methods:
-# 1. execTransformation_
-#        executes transformation
-# 2. getTransformationText_
-#        retrieves the explanation of a transformation in text so an enduser can be informed of what a transformation (in practical terms) entails
-transformationMatrix = {}
-transformationMatrix['https://yoda.uu.nl/schemas/default-0'] = {'https://yoda.uu.nl/schemas/default-1': 'v1'}
 
 
 def execute_transformation(callback, metadata_path, transform):
@@ -39,20 +27,25 @@ def execute_transformation(callback, metadata_path, transform):
     metadata = read_json_object(callback, metadata_path)
     metadata = transform(metadata)
 
-    if group_name.startswith('research'):
-        copy = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
-        print('TRANSFORMING {}, backup @ {}'.format(metadata_path, copy))
-        data_obj_copy(callback, metadata_path, copy, '', irods_types.BytesBuf())
+    if group_name.startswith('research-'):
+        backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
+        # print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
+        data_obj_copy(callback, metadata_path, backup, '', irods_types.BytesBuf())
         write_json_object(callback, metadata_path, metadata)
-    elif group_name.startswith('vault'):
-        pass # TODO
+    elif group_name.startswith('vault-'):
+        new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
+        # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
+        write_json_object(callback, new_path, metadata)
+        copy_acls_from_parent(callback, new_path, "default")
+        callback.iiAddActionLogRecord("system", coll, "updated metadata schema")
+        callback.writeString("serverLog", "Transformed %s" % (new_path))
     else:
         assert False
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
 def iiRuleTransformMetadata(rule_args, callback, rei):
-    """Transform yoda-metadata.json from schema x to schema y.
+    """Transform a yoda-metadata.json to the active schema.
 
        Arguments:
        rule_args[0] -- JSON path
@@ -71,12 +64,12 @@ def iiRuleTransformMetadata(rule_args, callback, rei):
     execute_transformation(callback, metadata_path, transform)
 
 
-def get_transformation(callback, metadata_path):
+def get_transformation(callback, metadata_path, metadata = None):
     """Find a transformation that can be executed on the given metadata JSON.
        Returns a transformation function on success, or None if no transformation was found.
     """
     try:
-        src = get_schema_id(callback, metadata_path)
+        src = get_schema_id(callback, metadata_path, metadata = metadata)
         dst = get_active_schema_id(callback, metadata_path)
 
         # Ideally, we would check that the metadata is valid in its current
@@ -90,8 +83,8 @@ def get_transformation(callback, metadata_path):
 
 
 def iiGetTransformationInfo(rule_args, callback, rei):
-    """Check if yoda-metadata.json transformation from schema x to schema y
-       is possible and retrieve transformation description.
+    """Check if a yoda-metadata.json transformation is possible and if so,
+       retrieve transformation description.
 
        Arguments:
        rule_args[0] -- JSON path
@@ -111,122 +104,15 @@ def iiGetTransformationInfo(rule_args, callback, rei):
 
 # ------------------ end of interface functions -----------------------------
 
-
-def ExecTransformation_v1(callback, xmlPath):
-    """General steps within each transformation function.
-
-       In reseach:
-       - make copy of yoda-metadata.xml and rename to yoda-metadata[timestamp].xml
-       - write new yoda-metadata.xml
-         including new targetNameSpace etc - so trapping transformation does not occur again
-         This is taken care of within transformation stylesheet
-       - No backup required for yoda-metadata.xml
-       - Do data transformation
-       - Write dataobject to yoda-metadata.xml with timestamp to make it the most recent.
-
-       Return:
-       dict -- Status and transformation text for frontend.
-
-    """
-    coll_name, data_name = os.path.split(xmlPath)
-    pathParts = xmlPath.split('/')
-    rods_zone = pathParts[1]
-    groupName = pathParts[3]
-
-    transformationBasePath = '/' + rods_zone + '/yoda/transformations/default-1'
-
-    # Select correct transformation file.
-    if "research" in groupName:
-        xslFilename = 'default-0-research.xsl'
-    elif "vault" in groupName:
-        xslFilename = 'default-0-vault.xsl'
-
-    xslroot = parseXml(callback, transformationBasePath + '/' + xslFilename)
-
-    # Retrieve Yoda metadata XML.
-    xmlYodaMeta = parseXml(callback, xmlPath)
-
-    transform = etree.XSLT(xslroot)
-    transformationResult = transform(xmlYodaMeta, encoding='utf8')
-    transformedXml = etree.tostring(transformationResult, pretty_print=True, xml_declaration=True, encoding='UTF-8')
-
-    # Write transformed xml to yoda-metadata.xml
-    if "research" in groupName:
-        # First save original yoda-metadata.xml
-        copiedYodaXml = coll_name + '/transformation-backup' + '[' + str(int(time.time())) + '].xml'
-        callback.writeString("serverLog", copiedYodaXml)
-        callback.msiDataObjCopy(xmlPath, copiedYodaXml, '', 0)
-
-        # Prepare writing dataobject
-        ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-        xml_file = coll_name + "/" + 'yoda-metadata.xml'
-        ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-
-        # Now write actual new contents
-        fileHandle = ret_val['arguments'][2]
-        callback.msiDataObjWrite(fileHandle, transformedXml, 0)
-        callback.msiDataObjClose(fileHandle, 0)
-        callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
-    elif "vault" in groupName:
-        # Prepare writing transformed metadata schema to the vault.
-        ofFlags = ''
-        xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-        ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-
-        # Now write actual new contents
-        fileHandle = ret_val['arguments'][2]
-        callback.msiDataObjWrite(fileHandle, transformedXml, 0)
-        callback.msiDataObjClose(fileHandle, 0)
-        copyACLsFromParent(callback, xml_file, "default")
-
-        # Add item to provenance log.
-        callback.iiAddActionLogRecord("system", coll_name, "updated metadata schema")
-
-        callback.writeString("serverLog", "[TRANSFORMED METADATA SCHEMA] %s" % (xml_file))
-
-    result = {}
-    result['status'] = 'Success'
-    return result
-
-
-def parseXml(callback, path):
-    """Parse a metadata XML given its path into an ElementTree.
-
-       Arguments:
-       path -- Path of metadata XML
-
-       Return:
-       XML parsed as ElementTree
-    """
-    # Retrieve XML size.
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open metadata XML.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read metadata XML.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close metadata XML.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse XML.
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
-    return etree.fromstring(xmlText)
-
-
 def iiRuleGetLocation(rule_args, callback, rei):
-    """Return the metadata schema location based upon the category of a metadata XML.
+    """Return the metadata schema location based upon the category of a metadata JSON.
 
        Example:
-       in:  /tempZone/home/research-initial/yoda-metadata.xml
+       in:  /tempZone/home/research-initial/yoda-metadata.json
        out: 'https://yoda.uu.nl/schemas/default-0'
 
        Arguments:
-       rule_args[0] -- Path of metadata XML
+       rule_args[0] -- Path of metadata JSON
 
        Return:
        rule_args[1] -- Metadata schema location
@@ -234,139 +120,8 @@ def iiRuleGetLocation(rule_args, callback, rei):
     rule_args[1] = get_active_schema_id(callback, rule_args[0])
 
 
-def iiRuleGetSpace(rule_args, callback, rei):
-    """Return the metadata schema space based upon the category of a metadata XML.
-
-       Example:
-       in:  /tempZone/home/research-initial/yoda-metadata.xml
-       out: 'research.xsd'
-
-       Arguments:
-       rule_args[0] -- Path of metadata XML
-
-       Return:
-       rule_args[1] -- Metadata schema space
-    """
-    pathParts = rule_args[0].split('/')
-    rods_zone = pathParts[1]
-    group_name = pathParts[3]
-    rule_args[1] = getSchemaSpace(callback, group_name)
-
-
-def iiRuleGetMetadataXMLSchema(rule_args, callback, rei):
-    """Return the location of schema of a metadata XML.
-
-       Example:
-       in:  /tempZone/home/research-initial/yoda-metadata.xml
-       out: 'https://yoda.uu.nl/schemas/default-0'
-
-       Arguments:
-       rule_args[0] -- Path of metadata XML
-
-       Return:
-       rule_args[1] -- Metadata schema location
-    """
-    rule_args[1] = getMetadataXMLSchema(callback, rule_args[0])
-
-
-def getLatestVaultMetadataXml(callback, vaultPackage):
-    """Get the latest vault metadata XML.
-
-       Arguments:
-       vaultPackage -- Vault package collection
-
-       Return:
-       string -- Metdata XML path
-    """
-    dataName = ""
-
-    iter = genquery.row_iterator(
-        "DATA_NAME, DATA_SIZE",
-        "COLL_NAME = '" + vaultPackage + "' AND DATA_NAME like 'yoda-metadata[%].xml'",
-        genquery.AS_LIST, callback
-    )
-
-    # Loop through all XMLs.
-    for row in iter:
-            data_name = row[0]
-            data_size = int(row[1])
-
-            if dataName == "" or (dataName < data_name and len(dataName) <= len(data_name)):
-                dataName = data_name
-
-    return dataName
-
-
-def getMetadataXMLSchema(callback, xmlPath):
-    schema = ""
-    try:
-        root = parseMetadataXml(callback, xmlPath)
-    except:
-        return schema
-
-    return getMetadataSchemaFromTree(callback, root)
-
-
-def getMetadataSchemaFromTree(callback, root):
-    schema = ""
-
-    # Check if root attributes are present.
-    if root.attrib:
-        key = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
-        schemaLocation = root.attrib[key]
-
-        schema = schemaLocation.split()[0]
-
-    return schema
-
-
-def getDataObjSize(callback, coll_name, data_name):
-    """Get data object size.
-
-       Arguments:
-       coll_name -- Data object collection name
-       data_name -- Data object name
-
-       Return:
-       integer -- Data object size
-    """
-    iter = genquery.row_iterator(
-        "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
-        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % (coll_name, data_name),
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-        return int(row[0])
-    else:
-        return -1
-
-
-def getUserNameFromUserId(callback, user_id):
-    """Retrieve username from user ID.
-
-       Arguments:
-       user_id -- User id
-
-       Return:
-       string -- User name
-    """
-    user_name = ""
-
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_ID = '%s'" % (str(user_id)),
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-        user_name = row[0]
-
-    return user_name
-
-
-def copyACLsFromParent(callback, path, recursive_flag):
-    """When inheritance is missing we need to copy ACL's when introducing new data in vault package.
+def copy_acls_from_parent(callback, path, recursive_flag):
+    """When inheritance is missing we need to copy ACLs when introducing new data in vault package.
 
        Arguments:
        path           -- Path of object that needs the permissions of parent
@@ -384,7 +139,7 @@ def copyACLsFromParent(callback, path, recursive_flag):
         access_name = row[0]
         user_id = int(row[1])
 
-        user_name = getUserNameFromUserId(callback, user_id)
+        user_name = user_name_from_id(callback, user_id)
 
         if access_name == "own":
             callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
@@ -397,200 +152,8 @@ def copyACLsFromParent(callback, path, recursive_flag):
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
-def parseMetadataXml(callback, path):
-    """Parse XML into an ElementTree.
-
-       Arguments:
-       path -- Path of metadata XML to parse
-
-       Return:
-       Parsed XML as ElementTree.
-    """
-    return ET.fromstring(read_data_object(callback, path))
-
-
-def parseJson(callback, path):
-    """Parse JSON file into JSON dict.
-
-       Arguments:
-       path -- Path of JSON file to parse
-
-       Return:
-       Parsed JSON as dict.
-    """
-    return json.loads(read_data_object(callback, path))
-
-
-def checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, data_name):
-    """Check metadata XML for possible schema updates.
-
-    Arguments:
-    rods_zone  -- Zone name
-    coll_name  -- Collection name of metadata XML
-    group_name -- Group name of metadata XML
-    data_name  -- Data name of metadata XML
-    """
-    root = parseMetadataXml(callback, coll_name + "/" + data_name)
-
-    # Retrieve active schema location to be added.
-    schemaLocation = get_active_schema_id(callback, coll_name + "/" + data_name)
-
-    # Check if no attributes are present, for vault and research space.
-    # If not, add xmlns:xsi and xsi:schemaLocation attributes.
-    if not root.attrib:
-        schemaSpace = getSchemaSpace(callback, group_name)
-
-        if schemaLocation != '-1' or schemaSpace != '-1':
-            root.set('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance')
-            root.set('xmlns', schemaLocation)
-            root.set('xsi:schemaLocation', schemaLocation + ' ' + schemaSpace)
-            newXmlString = ET.tostring(root, encoding='UTF-8')
-
-            if "research" in group_name:
-                ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-                xml_file = coll_name + "/" + data_name
-                ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-            elif "vault" in group_name:
-                ofFlags = ''
-                xml_file = coll_name + '/yoda-metadata[' + str(int(time.time())) + '].xml'
-                ret_val = callback.msiDataObjCreate(xml_file, ofFlags, 0)
-                copyACLsFromParent(callback, xml_file, "default")
-
-                # Add item to provenance log.
-                callback.iiAddActionLogRecord("system", coll_name, "updated metadata schema")
-
-            fileHandle = ret_val['arguments'][2]
-            callback.msiDataObjWrite(fileHandle, newXmlString, 0)
-            callback.msiDataObjClose(fileHandle, 0)
-            callback.writeString("serverLog", "[ADDED SCHEMA TO METADATA] %s" % (xml_file))
-    # Only transform metadata schemas in the vault space.
-    # Transformations in research space are initiated by the researcher.
-    elif "vault" in group_name:
-        # Retrieve current active system schema and schema from metadata.
-        versionTo = schemaLocation
-        versionFrom = getMetadataSchemaFromTree(callback, root)
-
-        # Only try transformation if schemas don't match.
-        if versionTo != versionFrom:
-            try:
-                xmlPath = coll_name + "/" + data_name
-                transformationMethod = 'ExecTransformation_' + transformationMatrix[versionFrom][versionTo]
-                result = globals()[transformationMethod](callback, xmlPath)
-            except:
-                callback.writeString("serverLog", "[TRANSFORMING METADATA FAILED] %s" % (xml_file))
-    else:
-        callback.writeString("serverLog", "[METADATA NOT TRANSFORMED] %s" % (xml_file))
-
-
-def checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause):
-    """Loop through all collections with yoda-metadata.xml data objects
-       and check metadata XML for schema updates.
-
-       Arguments:
-       rods_zone -- Zone name
-       coll_id   -- First collection id of batch
-       batch     -- Batch size, <= 256
-       pause     -- Pause between checks (float)
-
-       Return:
-       coll_id -- Collection id to continue with in next batch.
-   """
-    # Find all research and vault collections, ordered by COLL_ID.
-    iter = genquery.row_iterator(
-        "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
-        genquery.AS_LIST, callback
-    )
-
-    # Check each collection in batch.
-    for row in iter:
-        coll_id = int(row[0])
-        coll_name = row[1]
-        pathParts = coll_name.split('/')
-
-        try:
-            group_name = pathParts[3]
-            if 'research-' in group_name:
-                checkMetadataXmlForSchemaUpdates(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-            elif 'vault-' in group_name:
-                # Get vault package path.
-                vault_package = '/'.join(pathParts[:5])
-                data_name = getLatestVaultMetadataXml(callback, vault_package)
-                if data_name != "":
-                    checkMetadataXmlForSchemaUpdates(callback, rods_zone, vault_package, group_name, data_name)
-        except:
-            pass
-
-        # Sleep briefly between checks.
-        time.sleep(pause)
-
-        # The next collection to check must have a higher COLL_ID.
-        coll_id = coll_id + 1
-    else:
-        # All done.
-        coll_id = 0
-        callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
-
-    return coll_id
-
-
-def checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, data_name):
-    """Check metadata XML for schema identifier.
-
-       Arguments:
-       rods_zone  -- Zone name
-       coll_name  -- Collection name of metadata XML
-       group_name -- Group name of metadata XML
-       data_name  -- Data name of metadata XML
-    """
-    xml_file = coll_name + "/" + data_name
-
-    try:
-        root = parseMetadataXml(callback, coll_name + "/" + data_name)
-
-        # Check if no identifiers are present, for vault and research space.
-        if not root.attrib:
-            callback.writeLine("stdout", "Missing schema identifier: %s" % (xml_file))
-    except:
-        callback.writeLine("stdout", "Unparsable metadata file: %s" % (xml_file))
-
-
-def iiCheckMetadataXmlForSchemaIdentifier(rule_args, callback, rei):
-    """Check metadata XML for schema identifiers."""
-    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
-
-    callback.writeString("stdout", "[METADATA] Start check for schema identifiers.\n")
-
-    # Find all research and vault collections, ordered by COLL_ID.
-    iter = genquery.row_iterator(
-        "ORDER(COLL_ID), COLL_NAME",
-        "COLL_NAME like '/%s/home/%%' AND DATA_NAME like 'yoda-metadata%%xml'" % (rods_zone),
-        genquery.AS_LIST, callback
-    )
-
-    # Check each collection in batch.
-    for row in iter:
-        coll_id = int(row[0])
-        coll_name = row[1]
-        pathParts = coll_name.split('/')
-
-        group_name = pathParts[3]
-        if 'research-' in group_name:
-            checkMetadataXmlForSchemaIdentifier(callback, rods_zone, coll_name, group_name, "yoda-metadata.xml")
-        elif 'vault-' in group_name:
-            # Get vault package path.
-            vault_package = '/'.join(pathParts[:5])
-            data_name = getLatestVaultMetadataXml(callback, vault_package)
-            if data_name != "":
-                checkMetadataXmlForSchemaIdentifier(callback, rods_zone, vault_package, group_name, data_name)
-            else:
-                callback.writeLine("stdout", "Missing metadata file: %s" % (vault_package))
-
-    callback.writeString("stdout", "[METADATA] Finished check for schema identifiers.\n")
-
-
-def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
-    """Check metadata XML for schema updates.
+def iiBatchTransformVaultMetadata(rule_args, callback, rei):
+    """Transform all metadata JSON files in the vault to the active schema.
 
        Arguments:
        coll_id -- first COLL_ID to check
@@ -605,11 +168,44 @@ def iiCheckMetadataXmlForSchemaUpdates(rule_args, callback, rei):
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Check one batch of metadata schemas.
-    coll_id = checkMetadataXmlForSchemaUpdatesBatch(callback, rods_zone, coll_id, batch, pause)
+
+    # Find all research and vault collections, ordered by COLL_ID.
+    iter = genquery.row_iterator(
+        "ORDER(COLL_ID), COLL_NAME",
+        "COLL_NAME like '/%s/home/vault-%%' AND DATA_NAME like 'yoda-metadata%%json' AND COLL_ID >= '%d'" % (rods_zone, coll_id),
+        genquery.AS_LIST, callback)
+
+    # Check each collection in batch.
+    for row in iter:
+        coll_id = int(row[0])
+        coll_name = row[1]
+        path_parts = coll_name.split('/')
+
+        try:
+            group_name = path_parts[3]
+            # Get vault package path.
+            vault_package = '/'.join(path_parts[:5])
+            metadata_path = get_latest_vault_metadata_path(callback, vault_package)
+            if metadata_path  != '':
+                transform = get_transformation(callback, metadata_path)
+                if transform is not None:
+                    execute_transformation(callback, metadata_path, transform)
+        except:
+            pass
+
+        # Sleep briefly between checks.
+        time.sleep(pause)
+
+        # The next collection to check must have a higher COLL_ID.
+        coll_id = coll_id + 1
+    else:
+        # All done.
+        coll_id = 0
+        callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
 
     if coll_id != 0:
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiCheckMetadataXmlForSchemaUpdates('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "iiBatchTransformVaultMetadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
