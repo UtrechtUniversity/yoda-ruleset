@@ -133,6 +133,7 @@ class UUJsonException(UUException):
 
 
 def parse_json(text):
+    """Parse JSON into an OrderedDict."""
     try:
         return json.loads(text, object_pairs_hook=OrderedDict)
     except ValueError:

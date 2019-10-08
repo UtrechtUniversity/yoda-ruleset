@@ -1,41 +1,15 @@
 import xmltodict
 import os
 
-from json import loads
-from collections import OrderedDict
 
-
-
-# \brief Get the content of a yoda-metadata.xml file and return parsed into a dict 
+# \brief Get the content of a yoda-metadata.xml file and return parsed into a dict
 #
 # \param[in] path	yoda-metadata.xml
 #
 # \return Dict holding data
 #
 def PUBgetMetadataXmlAsDict(callback, path):
-    # Retrieve XML size.
-
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open metadata XML.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read metadata XML.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close metadata XML.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse XML.
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
-
-    # callback.writeString('serverLog', xmlText)
-	
-    return xmltodict.parse(xmlText)
-
+    return xmltodict.parse(read_data_object(callback, path))
 
 
 # \brief Get Json Schema of category and return as (ordered!) dict
@@ -45,34 +19,8 @@ def PUBgetMetadataXmlAsDict(callback, path):
 #
 # \return dict hodling the category JSONSchema
 #
-def PUBgetMetadaJsonDict(callback, yoda_json_path):   
-	
-    coll_name, data_name = os.path.split(yoda_json_path)
-
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON file
-    ret_val = callback.msiDataObjOpen('objPath=' + yoda_json_path, 0)
-    fileHandle = ret_val['arguments'][1]
-	
-    # Read JSON 
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON schema.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON into dict.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-
-    # Use the hook to keep ordering of elements as in metadata.json
-    return json.loads(jsonText, object_pairs_hook=OrderedDict)
-
-
-
-
-
-
+def PUBgetMetadaJsonDict(callback, yoda_json_path):
+    return read_json_object(callback, yoda_json_path)
 
 
 # \brief Read yoda-metadata.json from vault and return as (ordered!) dict
@@ -85,33 +33,7 @@ def PUBgetMetadaJsonDict(callback, yoda_json_path):
 def PUBgetActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
 
     json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
-
-    coll_name, data_name = os.path.split(json_schema_path)
-
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON schema for the category
-    ret_val = callback.msiDataObjOpen('objPath=' + json_schema_path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read JSON schema.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON schema.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON into dict.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-
-    # callback.writeString('serverLog', jsonText)
-
-    # Use the hook to keep ordering of elements as in metadata.json
-    return json.loads(jsonText, object_pairs_hook=OrderedDict)
-
-
-
-
+    return read_json_object(json_schema_path)
 
 
 # \brief turn yoda-metadata.xml into Json
@@ -219,9 +141,9 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
                     # Als er sprake is van ['items'] +> dan is vanaf het hoogste niveau een structuur bekend van subproperties // compounds
                     if elementInfo['items']['yoda:structure'] == 'subproperties':
                         counter = 0
-			
+
                         for subElement,subElementInfo in elementInfo['items']['properties'].items():   # keys(): #items()):
-	
+
                             if counter == 0:  # MAIN PART of subproperty structure  ! in itself always a single value
                                 # Added these extra variables for clearer name purposes as there is a distinction between main/sub elements
                                 mainElement = subElement
@@ -301,7 +223,7 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
                             except KeyError:
                                 print('error')
                                 pass
-                
+
                         if (len(compoundList)):
                             # Dit kunnen meerdere compounds  zijn, dan moet het een list worden.
                             #
@@ -317,7 +239,7 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
         except KeyError:  # No data present for this element
             pass
 
-    # Hardcoding allowed here 
+    # Hardcoding allowed here
     jsonDict['System'] = {
         'Last_Modified_Date': xmlData['metadata']['System']['Last_Modified_Date'],
         'Persistent_Identifier_Datapackage': {
@@ -328,10 +250,8 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
         'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
         'License_URI': xmlData['metadata']['System']['License_URI']
     }
-    
+
     return json.dumps(jsonDict)
-
-
 
 
 # \brief Convert current metadata.xml to json
@@ -339,29 +259,29 @@ def PUBtransformYodaXmlDataToJson(callback, dictSchema, xmlData):
 # \param[in] rods_zone  Zone name
 # \param[in] vault_collection  Collection name of metadata XML
 # \param[in] xml_data_name  Data name of metadata XML that requires transformation
-# \param[in] data_name_json  Name of data object to be created containing the 
+# \param[in] data_name_json  Name of data object to be created containing the
 ##
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
-    # This function simply transforms given data_name to a Json data object. 
-	# No further intelligence required further. 
+    # This function simply transforms given data_name to a Json data object.
+	# No further intelligence required further.
 	# Perhaps handling within vault??
-	
+
 	ofFlags = ''
 	json_file = publish_collection + '/' + data_name_json
 
 	ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
-	
+
 	#copyACLsFromParent(callback, json_file, "default")
 
         xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
-        
+
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
 
 	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
 
 	newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
-	
+
 	fileHandle = ret_val['arguments'][2]
 	callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
 	callback.msiDataObjClose(fileHandle, 0)
@@ -381,7 +301,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 # \param[in] publicHost, yodaInstance, yodaPrefix are required for secure copy from /publication area to MOAI
 #
 # \return data_id to continue with in next batch.
-# If data_id =0, no more data objects were found. 
+# If data_id =0, no more data objects were found.
 # Batch is finished
 #
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
@@ -416,7 +336,7 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 		jsonFound = True
 		break
 
-	    if jsonFound == False:
+	    if not jsonFound:
                 # At this moment only default schema is used. So not required to figure out which schema is necessary
 	        transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
 
@@ -449,8 +369,8 @@ def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei)
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
-    publicHost = rule_args[4] 
-    yodaInstance = rule_args[5] 
+    publicHost = rule_args[4]
+    yodaInstance = rule_args[5]
     yodaPrefix = rule_args[6]
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -464,7 +384,3 @@ def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei)
             "<PLUSET>%ds</PLUSET>" % delay,
             "iiCheckPublishedMetadataXmlForTransformationToJson('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")
-
-
-
-
