@@ -59,7 +59,6 @@ VAULT_PACKAGE_STATE = {
     'PENDING_REPUBLICATION':     'PENDING_REPUBLICATION',
 }
 
-
 # All research folder states.
 RESEARCH_PACKAGE_STATE = {
     'FOLDER':    '',
