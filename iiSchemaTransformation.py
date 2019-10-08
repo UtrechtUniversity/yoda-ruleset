@@ -44,7 +44,71 @@ def execute_transformation(callback, metadata_path, transform):
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
-def iiRuleTransformMetadata(rule_args, callback, rei):
+def transformResearchXml(callback, xml_path):
+    """Transform a yoda-metadata XML to JSON in the research area.
+
+    Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
+    """
+    _, zone, _1, _2 = get_path_info(xml_path)
+    xml_data = getMetadataXmlAsDict(callback, xml_path)
+
+    try:
+        xml_ns = xml_data['metadata']['@xmlns']
+        schema_category = xml_ns.split('/')[-1]
+    except Exception as e:
+        print(e)
+        return 'ERROR', 'XML metadata file is malformed'
+
+    try:
+        schema = getActiveJsonSchemaAsDict(callback, zone, schema_category)
+        # FIXME: This should get a dict instead of a json string.
+        metadata = json.loads(transformYodaXmlDataToJson(callback, schema, xml_data))
+        # FIXME: $id should be inserted by the transformer instead.
+        metadata['$id'] = xml_ns + '/metadata.json'
+
+        try:
+            schema = get_schema_by_id(callback, metadata['$id'], xml_path)
+        except Exception as e:
+            callback.writeString('serverLog', 'Warning: could not get JSON schema for XML <{}> with $id <{}>: {}'
+                                              .format(xml_path, metadata['$id'], str(e)))
+            # The result is unusable, as there will be no possible JSON → JSON
+            # transformation that will make this a valid metadata file.
+            raise e # give up.
+
+        # XXX: Temporary. Fixup the type of all integer fields.
+        # (this should happen in the transformer instead, and based on the schema, not hardcoded field names)
+        if 'Retention_Period' in metadata:
+            metadata['Retention_Period'] = int(metadata['Retention_Period'])
+
+        json_path = re.sub('\.xml$', '.json', xml_path)
+
+        # Validate against the metadata's indicated schema.
+        # This is purely for logging / debugging currently,
+        # any validation errors will be reported when the form is next opened.
+        errors = get_json_metadata_errors(callback,
+                                          json_path,
+                                          metadata=metadata,
+                                          schema=schema,
+                                          ignore_required=True)
+
+        if len(errors) > 0:
+            # This is not fatal - there may have been validation errors in the XML as well,
+            # which should remain exactly the same in the new JSON situation.
+            #print(errors)
+            callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with $id <{}>), continuing'
+                                              .format(xml_path, metadata['$id']))
+
+
+
+        write_json_object(callback, json_path, metadata)
+    except Exception as e:
+        print(e)
+        return 'ERROR', 'XML could not be transformed'
+    return 'Success', ''
+
+
+@rule(inputs=[0], outputs=[1,2])
+def iiRuleTransformMetadata(callback, coll):
     """Transform a yoda-metadata.json to the active schema.
 
        Arguments:
@@ -54,14 +118,36 @@ def iiRuleTransformMetadata(rule_args, callback, rei):
        rule_args[1] -- statusPy
        rule_args[2] -- statusInfoPy
     """
-    metadata_path = rule_args[0] + "/yoda-metadata.json"
-    transform = get_transformation(callback, metadata_path)
+    metadata_path = get_collection_metadata_path(callback, coll)
 
-    if transform is None:
-        rule_args[1:3] = 'ERROR', 'No transformation found'
-        return
+    if metadata_path is None:
+        return 'ERROR', 'No metadata found'
+    elif metadata_path.endswith('.xml'):
+        # XML metadata.
 
-    execute_transformation(callback, metadata_path, transform)
+        space, _0, _1, _2 = get_path_info(metadata_path)
+        if space != Space.RESEARCH:
+            # Vault XML metadata is not transformed through this path, currently.
+            return 'ERROR', 'Internal error'
+
+        # Special case: Transform legacy XML metadata to JSON equivalent.
+        # If the metadata is in default-0 format and the active schema is
+        # newer, a second transformation will be needed, and the user will be
+        # prompted for that the next time they open the form.
+        callback.writeString('serverLog', 'Transforming XML -> JSON in the research space')
+        return transformResearchXml(callback, metadata_path)
+
+    else:
+        # JSON metadata.
+        callback.writeString('serverLog', 'Transforming JSON -> JSON in the research space')
+        transform = get_transformation(callback, metadata_path)
+
+        if transform is None:
+            return 'ERROR', 'No transformation found'
+
+        execute_transformation(callback, metadata_path, transform)
+
+    return 'Success', ''
 
 
 def get_transformation(callback, metadata_path, metadata = None):

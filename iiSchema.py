@@ -129,6 +129,7 @@ def get_schema_path_by_id(callback, path, schema_id):
         return None
 
 def get_schema_by_id(callback, path, schema_id):
+    """The path is used solely to get the zone name"""
     path = get_schema_path_by_id(callback, path, schema_id)
     if path is None:
         return None

@@ -33,7 +33,7 @@ def PUBgetMetadaJsonDict(callback, yoda_json_path):
 def PUBgetActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
 
     json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
-    return read_json_object(json_schema_path)
+    return read_json_object(callback, json_schema_path)
 
 
 # \brief turn yoda-metadata.xml into Json
