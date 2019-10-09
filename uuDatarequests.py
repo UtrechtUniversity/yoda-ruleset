@@ -936,10 +936,10 @@ def requestDTASigned(callback, requestId, currentUserName):
     statusInfo = "Internal server error"
 
     try:
-        # Check if approving user owns the datarequest. If so, do not allow
-        # approving
+        # Check if uploading user owns the datarequest and only allow uploading
+        # if this is the case
         result = isRequestOwner(callback, requestId, currentUserName)
-        if result['isRequestOwner']:
+        if not result['isRequestOwner']:
             raise Exception()
 
         setStatus(callback, requestId, "dta_signed")
