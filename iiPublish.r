@@ -619,6 +619,8 @@ iiHasKey(*kvp, *key) {
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "Unknown";
 
+        writeLine("serverLog", "iiProcessPublication: STARTING"); 
+
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
 	if (*vaultStatus != APPROVED_FOR_PUBLICATION &&
@@ -639,6 +641,8 @@ iiProcessPublication(*vaultPackage, *status) {
 		*status = "Retry";
 		succeed;
 	}
+
+        writeLine("serverLog", "iiProcessPublication: STARTING1");
 
 	# Load state
 	iiGetPublicationState(*vaultPackage, *publicationState);
@@ -673,7 +677,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 
 	if (!iiHasKey(*publicationState, "combiJsonPath")) {
-i		# Generate Combi Json consisting of user and system metadata
+		# Generate Combi Json consisting of user and system metadata
 
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiJson");
 		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
@@ -717,7 +721,7 @@ i		# Generate Combi Json consisting of user and system metadata
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
 		
-		iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");    ######################### MOET HIER WEG, puur voor testen
+		#iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");    ######################### MOET HIER WEG, puur voor testen
 
                 # Send DataCite XML to metadata end point
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
