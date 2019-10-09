@@ -12,20 +12,6 @@ from smtplib import SMTP
 from email.mime.text import MIMEText
 
 
-def uuMetaAdd(callback, objType, objPath, attribute, value):
-    """Set an attribute on an object (only if current user permissions suffice).
-
-       Arguments:
-       objType   -- The object type (e.g. -d or -C)
-       objPath   -- The path of the object
-       attribute -- The name of the attribute to set
-       value     -- The value that the attribute should have
-    """
-    keyValPair = callback.msiString2KeyValPair(attribute + "=" + value,
-                                               irods_types.KeyValPair())['arguments'][1]
-    retval = callback.msiSetKeyValuePairsToObj(keyValPair, objPath, objType)
-
-
 def sendMail(to, subject, body):
     """Send an email using the specified parameters.
 
@@ -159,6 +145,31 @@ def groupUserMember(group, user, callback):
     return "true" if len(groups) == 1 else "false"
 
 
+def setStatus(callback, requestId, status):
+    """Set the status of a data request
+
+       Arguments:
+       requestId -- Unique identifier of the data request.
+       status    -- The status to which the data request should be set.
+    """
+
+    # Construct path to the collection of the datarequest
+    zoneName = ""
+    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    requestColl = ("/" + clientZone + "/home/datarequests-research/" +
+                   requestId)
+
+    # Add delayed rule to update datarequest status
+    responseStatus = ""
+    responseStatusInfo = ""
+    callback.requestDatarequestMetadataChange(requestColl, "status",
+                                              status, 0, responseStatus,
+                                              responseStatusInfo)
+
+    # Trigger the processing of delayed rules
+    callback.adminDatarequestActions()
+
+
 def submitDatarequest(callback, data, rei):
     """Persist a data request to disk.
 
@@ -197,7 +208,7 @@ def submitDatarequest(callback, data, rei):
                            "datarequests-research-board-of-directors", collPath)
 
         # Set the status metadata field to "submitted"
-        uuMetaAdd(callback, "-d", filePath, "status", "submitted")
+        setStatus(callback, requestId, "submitted")
 
         # Get parameters needed for sending emails
         researcherName = ""
@@ -466,12 +477,7 @@ def assignRequest(callback, assignees, requestId):
         callback.adminDatarequestActions()
 
         # Add and execute a delayed rule for setting the status to "assigned"
-        status = ""
-        statusInfo = ""
-        callback.requestDatarequestMetadataChange(requestColl, "status",
-                                                  "assigned", "", status,
-                                                  statusInfo)
-        callback.adminDatarequestActions()
+        setStatus(callback, requestId, "assigned")
 
         # Get parameters required for sending emails
         assigneeEmails = []
@@ -609,12 +615,7 @@ def submitReview(callback, data, requestId, rei):
         # 'reviewed' and send an email to the board of directors members
         # informing them that the proposal is ready to be evaluated by them.
         if len(reviewers) < 1:
-            status = ""
-            statusInfo = ""
-            callback.requestDatarequestMetadataChange(collName, "status",
-                                                      "reviewed", "", status,
-                                                      statusInfo)
-            callback.adminDatarequestActions()
+            setStatus(callback, requestId, "reviewed")
 
             # Get parameters needed for sending emails
             researcherName = ""
@@ -740,12 +741,7 @@ def submitEvaluation(callback, data, requestId, rei):
         callback.msiDataObjClose(fileDescriptor, 0)
 
         # Update the status of the data request to "approved"
-        status = ""
-        statusInfo = ""
-        callback.requestDatarequestMetadataChange(collPath, "status",
-                                                  "approved", 0,
-                                                  status, statusInfo)
-        callback.adminDatarequestActions()
+        setStatus(callback, requestId, "approved")
 
         # Get parameters needed for sending emails
         researcherName = ""
@@ -878,20 +874,7 @@ def requestDTAReady(callback, requestId, currentUserName):
             statusInfo = "User is not a data manager."
             raise Exception()
 
-        # Construct path to the collection of the datarequest
-        zoneName = ""
-        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
-        requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                       requestId)
-
-        # Add delayed rule to update datarequest status
-        status = ""
-        statusInfo = ""
-        callback.requestDatarequestMetadataChange(requestColl, "status",
-                                                  "dta_ready", 0, status, statusInfo)
-
-        # Trigger the processing of delayed rules
-        callback.adminDatarequestActions()
+        setStatus(callback, requestId, "dta_ready")
 
         # Set status to OK
         status = 0
@@ -959,21 +942,7 @@ def requestDTASigned(callback, requestId):
         if result['isRequestOwner']:
             raise Exception()
 
-        # Construct path to the collection of the datarequest
-        zoneName = ""
-        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
-        requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                       requestId)
-
-        # Add delayed rule to update datarequest status
-        status = ""
-        statusInfo = ""
-        callback.requestDatarequestMetadataChange(requestColl, "status",
-                                                  "dta_signed", 0, status,
-                                                  statusInfo)
-
-        # Trigger the processing of delayed rules
-        callback.adminDatarequestActions()
+        setStatus(callback, requestId, "dta_signed")
 
         # Set status to OK
         status = 0
@@ -1008,21 +977,7 @@ def requestDataReady(callback, requestId, currentUserName):
             statusInfo = "User is not a data manager."
             raise Exception()
 
-        # Construct path to the collection of the datarequest
-        zoneName = ""
-        clientZone = callback.uuClientZone(zoneName)['arguments'][0]
-        requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                       requestId)
-
-        # Add delayed rule to update datarequest status
-        status = ""
-        statusInfo = ""
-        callback.requestDatarequestMetadataChange(requestColl, "status",
-                                                  "data_ready", 0, status,
-                                                  statusInfo)
-
-        # Trigger the processing of delayed rules
-        callback.adminDatarequestActions()
+        setStatus(callback, requestId, "data_ready")
 
         # Get parameters needed for sending emails
         researcherName = ""
