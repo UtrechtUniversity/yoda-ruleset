@@ -925,7 +925,7 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': status, 'statusInfo': statusInfo}
 
 
-def requestDTASigned(callback, requestId):
+def requestDTASigned(callback, requestId, currentUserName):
     """Set the status of a data request to "DTA signed".
 
        Arguments:
