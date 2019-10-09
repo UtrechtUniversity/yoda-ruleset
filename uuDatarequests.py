@@ -984,7 +984,7 @@ def requestDataReady(callback, requestId, currentUserName):
         researcherEmail = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
-                             "DATA_NAME = '%s'") % (requestColl,
+                             "DATA_NAME = '%s'") % (requestId,
                                                     'datarequest.json'),
                             AS_DICT,
                             callback)
