@@ -133,34 +133,49 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
 iiGenerateSystemJson(*publicationConfig, *publicationState) {
+        writeLine('serverLog', '1');
+
         *tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
         *davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
+
+        writeLine('serverLog', '2');
+
 
         *vaultPackage = *publicationState.vaultPackage;
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
 
+        writeLine('serverLog', '3');
+
+
         msiGetIcatTime(*now, "unix");
         *publicationDate = uuiso8601date(*now);
-        *combiJsonPath = "*tempColl/*randomId-combi.xml";
+        *systemJsonPath = "*tempColl/*randomId-combi.json";
+
+        writeLine('serverLog', '4');
+ 
 
         *systemJsonData = 
-            "{'System': { " ++
-            "    'Last_Modified_Date': *lastModifiedDateTime, " ++
-            "    'Persistent_Identifier_Datapackage': { " ++
-            "        'Identifier_Scheme': 'DOI', " ++
-            "        'Identifier': *yodaDOI " ++
-            "    }, " ++
-            "    'Publication_Date': *publicationDate, " ++
-            "  }" ++
-            "}";  
+            '{"System": { ' ++
+            '    "Last_Modified_Date": "*lastModifiedDateTime", ' ++
+            '    "Persistent_Identifier_Datapackage": { ' ++
+            '        "Identifier_Scheme": "DOI", ' ++
+            '        "Identifier": "*yodaDOI" ' ++
+            '    }, ' ++
+            '    "Publication_Date": "*publicationDate" ' ++
+            '  }' ++
+            '}';  
 
-        msiDataObjOpen("objPath=*combiJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
+        writeString('serverLog', *systemJsonData);
+        writeString('serverLog', *systemJsonPath);
+
+        # msiDataObjCreate(*systemJsonPath, "forceFlag=", *fd);
+        msiDataObjOpen("objPath=*systemJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
         msiDataObjWrite(*fd, *systemJsonData, *lenOut);
         msiDataObjClose(*fd, *status);
-        #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *combiJsonPath");
-        *publicationState.combiJsonPath = *combiJsonPath;
+        #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *systemJsonPath");
+        *publicationState.combiJsonPath = *systemJsonPath;
 }
 
 
@@ -246,6 +261,9 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 #
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
+
+        writeLine('serverLog', 'REMOVE DATAVITE DOI: *yodaDOI'); 
+
 	msiRemoveDataCiteMetadata(*yodaDOI, *httpCode);
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -930,7 +948,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
 		# Remove metadata from DataCite
-		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiRemoveMetadataFromDataCite");
+		writeLine("serverLog", "iiProcessDepublication: starting iiRemoveMetadataFromDataCite");
 		*err = errorcode(iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";
