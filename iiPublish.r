@@ -106,9 +106,9 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 	## For whatever reason this doesn't work!!!
         *licenseUri = '';
-        #if (iiHasKey(*publicationState, "licenseUri")) {
-        #   licenseUri = *publicationState.licenseUri;
-        #}
+        if (iiHasKey(*publicationState, "licenseUri")) {
+           *licenseUri = *publicationState.licenseUri;
+        }
 
 	# *metadataJsonPath contains latest json
 	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
