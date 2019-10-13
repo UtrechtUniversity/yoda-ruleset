@@ -351,7 +351,7 @@ def getLanguage(dict):
 
 # /brief Get string in datacite format containing Resource type and default handling
 def getResourceType(dict):
-    yodaResourceToDatacite = {'Dataset': 'Research Data', 'Datapaper': 'Method Description', 'Software': 'Computer code'}
+    yodaResourceToDatacite = {'Dataset': 'Research Data', 'DataPaper': 'Method Description', 'Software': 'Computer code'}
 
     try:
         resourceType = dict['Data_Type']

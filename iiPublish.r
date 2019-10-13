@@ -97,7 +97,7 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
         *combiJsonPath = "*tempColl/*randomId-combi.json";
 
-	writeString('serverLog', *combiJsonPath);
+	#DEBUG writeString('serverLog', *combiJsonPath);
 
         *openAccessLink = '';
         if (*publicationState.accessRestriction like "Open*") {
@@ -110,18 +110,12 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
         #   licenseUri = *publicationState.licenseUri;
         #}
 
-	writeString('serverLog', 'GetLatestMetadataJSON');
-
 	# *metadataJsonPath contains latest json
 	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
 	
-        writeString('serverLog', 'most recent: ' ++ *metadataJsonPath);
-
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
         iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
         
-        writeLine("serverLog", "iiGenerateCombiJson: generated *combiJsonPath");
-
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
 
@@ -133,28 +127,18 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 #
 iiGenerateSystemJson(*publicationConfig, *publicationState) {
-        writeLine('serverLog', '1');
-
         *tempColl = "/" ++ $rodsZoneClient ++ IIPUBLICATIONCOLLECTION;
         *davrodsAnonymousVHost = *publicationConfig.davrodsAnonymousVHost;
-
-        writeLine('serverLog', '2');
-
 
         *vaultPackage = *publicationState.vaultPackage;
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
 
-        writeLine('serverLog', '3');
-
 
         msiGetIcatTime(*now, "unix");
         *publicationDate = uuiso8601date(*now);
         *systemJsonPath = "*tempColl/*randomId-combi.json";
-
-        writeLine('serverLog', '4');
- 
 
         *systemJsonData = 
             '{"System": { ' ++
@@ -167,8 +151,6 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
             '  }' ++
             '}';  
 
-        writeString('serverLog', *systemJsonData);
-        writeString('serverLog', *systemJsonPath);
 
         # msiDataObjCreate(*systemJsonPath, "forceFlag=", *fd);
         msiDataObjOpen("objPath=*systemJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
@@ -241,12 +223,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 		succeed;
 	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 	        # Unauthorized, Forbidden, Internal Server Error
-               
-                *publicationState.dataCiteMetadataPosted = "yes";
-                writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. OVERRULED!");
-                succeed;
-
-		#*publicationState.status = "Retry";
+		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Will be retried later.");
 	} else {
 		*publicationState.status = "Unrecoverable";
@@ -261,8 +238,6 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 #
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
-
-        writeLine('serverLog', 'REMOVE DATAVITE DOI: *yodaDOI'); 
 
 	msiRemoveDataCiteMetadata(*yodaDOI, *httpCode);
 	if (*httpCode == "200") {
@@ -637,8 +612,6 @@ iiHasKey(*kvp, *key) {
 iiProcessPublication(*vaultPackage, *status) {
 	*status = "Unknown";
 
-        writeLine("serverLog", "iiProcessPublication: STARTING"); 
-
 	# Check preconditions
 	iiVaultStatus(*vaultPackage, *vaultStatus);
 	if (*vaultStatus != APPROVED_FOR_PUBLICATION &&
@@ -659,8 +632,6 @@ iiProcessPublication(*vaultPackage, *status) {
 		*status = "Retry";
 		succeed;
 	}
-
-        writeLine("serverLog", "iiProcessPublication: STARTING1");
 
 	# Load state
 	iiGetPublicationState(*vaultPackage, *publicationState);
@@ -738,9 +709,6 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
-		
-		#iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");    ######################### MOET HIER WEG, puur voor testen
-
                 # Send DataCite XML to metadata end point
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
 		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
