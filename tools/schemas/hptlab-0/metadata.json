@@ -933,7 +933,9 @@
   },
   "title": "",
   "type": "object",
+  "additionalProperties": false,
   "required": [
+    "links",
     "Title",
     "Description",
     "Discipline",
@@ -958,6 +960,20 @@
     "Data_Access_Restriction"
   ],
   "properties": {
+    "links": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 1,
+        "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [ "rel", "href" ],
+            "properties": {
+                "rel":  { "const": "describedby" },
+                "href": { "const": "https://yoda.uu.nl/schemas/hptlab-0/metadata.json" }
+            }
+        }
+    },
     "Title": {
       "$ref": "#/definitions/stringNormal",
       "title": "Title"
@@ -1009,6 +1025,7 @@
     },
     "Collected": {
       "type": "object",
+      "additionalProperties": false,
       "title": "Collection period",
       "yoda:structure": "compound",
       "properties": {
@@ -1033,10 +1050,12 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "properties": {
           "geoLocationBox": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Geo Location",
             "yoda:structure": "geoLocation",
             "properties": {
@@ -1060,6 +1079,7 @@
           },
           "Description_Temporal": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Period covered",
             "yoda:structure": "compound",
             "properties": {
@@ -1128,6 +1148,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "properties": {
           "Relation_Type": {
@@ -1140,6 +1161,7 @@
           },
           "Persistent_Identifier": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Persistent identifier",
             "yoda:structure": "compound",
             "properties": {
@@ -1168,6 +1190,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "title": "Funding reference",
         "yoda:structure": "subproperties",
         "properties": {
@@ -1225,6 +1248,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "required": [
           "Name",
@@ -1233,6 +1257,7 @@
         "properties": {
           "Name": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Creator of datapackage",
             "yoda:structure": "compound",
             "required": [
@@ -1265,6 +1290,7 @@
             "minItems": 1,
             "items": {
               "type": "object",
+              "additionalProperties": false,
               "title": "Person identifier",
               "yoda:structure": "compound",
               "properties": {
@@ -1291,10 +1317,12 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "properties": {
           "Name": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Contributor to datapackage",
             "yoda:structure": "compound",
             "required": [
@@ -1327,6 +1355,7 @@
             "minItems": 1,
             "items": {
               "type": "object",
+              "additionalProperties": false,
               "title": "Person identifier",
               "yoda:structure": "compound",
               "properties": {
@@ -1353,10 +1382,12 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "properties": {
           "Name": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Contact person",
             "yoda:structure": "compound",
             "required": [
@@ -1397,6 +1428,7 @@
             "minItems": 1,
             "items": {
               "type": "object",
+              "additionalProperties": false,
               "title": "Person identifier",
               "yoda:structure": "compound",
               "properties": {
