@@ -113,7 +113,7 @@ def get_schema_id(callback, metadata_path, metadata = None):
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
         metadata = read_json_object(callback, metadata_path)
-    return metadata['$id']
+    return metadata_get_schema_id(metadata)
 
 def get_schema_path_by_id(callback, path, schema_id):
     """Get a schema path from a schema id."""

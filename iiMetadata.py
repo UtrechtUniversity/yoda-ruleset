@@ -57,6 +57,28 @@ def get_path_info(path):
          or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
          or (Space.OTHER, '', '', '')) # (matches '/' and empty paths)
 
+def metadata_get_links(metadata):
+    if 'links' not in metadata or type(metadata['links']) is not list:
+        return []
+    return filter(lambda x: type(x) in (dict, OrderedDict) \
+                            and 'rel'  in x \
+                            and 'href' in x \
+                            and type(x['rel'])  is unicode \
+                            and type(x['href']) is unicode,
+                  metadata['links'])
+
+def metadata_get_schema_id(metadata):
+    desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
+    if len(desc) > 0:
+        return desc[0]['href']
+
+def metadata_set_schema_id(metadata, schema_id):
+    other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
+
+    metadata['links'] = [OrderedDict([
+        ['rel',  'describedby'],
+        ['href', schema_id]
+    ])] + other_links
 
 def get_json_metadata_errors(callback,
                              metadata_path,
@@ -94,7 +116,7 @@ def get_json_metadata_errors(callback,
         """Turn a ValidationError into a data structure for the frontend"""
         return {'message':     e.message,
                 'path':        list(e.path),
-                'schema_path': list(e.path),
+                'schema_path': list(e.schema_path),
                 'validator':   e.validator}
 
     return map(transform_error, errors)
@@ -259,7 +281,7 @@ def ingest_metadata_research(callback, path):
     # Remove any remaining legacy XML-style AVUs.
     callback.iiRemoveAVUs(coll, UUUSERMETADATAPREFIX)
 
-    # Note: We do not set a schema $id in research space: this would trigger jsonavu
+    # Note: We do not set a $id in research space: this would trigger jsonavu
     # validation, which does not respect our wish to ignore required
     # properties in the research area.
 

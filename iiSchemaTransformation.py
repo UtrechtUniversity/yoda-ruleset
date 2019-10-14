@@ -63,14 +63,15 @@ def transformResearchXml(callback, xml_path):
         schema = getActiveJsonSchemaAsDict(callback, zone, schema_category)
         # FIXME: This should get a dict instead of a json string.
         metadata = json.loads(transformYodaXmlDataToJson(callback, schema, xml_data))
-        # FIXME: $id should be inserted by the transformer instead.
-        metadata['$id'] = xml_ns + '/metadata.json'
+        # FIXME: schema id should be inserted by the transformer instead.
+        schema_id = xml_ns + '/metadata.json'
+        metadata_set_schema_id(metadata, schema_id)
 
         try:
-            schema = get_schema_by_id(callback, metadata['$id'], xml_path)
+            schema = get_schema_by_id(callback, schema_id, xml_path)
         except Exception as e:
-            callback.writeString('serverLog', 'Warning: could not get JSON schema for XML <{}> with $id <{}>: {}'
-                                              .format(xml_path, metadata['$id'], str(e)))
+            callback.writeString('serverLog', 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
+                                              .format(xml_path, schema_id, str(e)))
             # The result is unusable, as there will be no possible JSON → JSON
             # transformation that will make this a valid metadata file.
             raise e # give up.
@@ -95,8 +96,8 @@ def transformResearchXml(callback, xml_path):
             # This is not fatal - there may have been validation errors in the XML as well,
             # which should remain exactly the same in the new JSON situation.
             #print(errors)
-            callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with $id <{}>), continuing'
-                                              .format(xml_path, metadata['$id']))
+            callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
+                                              .format(xml_path, schema_id))
 
 
 

@@ -157,25 +157,34 @@ def iiMetadataFormLoad(callback, path):
             # - Creator[0].Person_Identifier[0].Name_Identifier_Scheme
             # New error format:
             # - Creator 1 -> Person Identifier 1 -> Name Identifier Scheme
-            def transform_error_path(path):
+            def transform_error(e):
                 # Make array indices human-readable.
                 path_out = []
-                for i, x in enumerate(path):
+                for i, x in enumerate(e['path']):
                     if type(x) is int:
                         path_out[-1] = '{} {}'.format(path_out[-1], x+1)
                     else:
                         path_out += [x.replace('_', ' ')]
-                return 'This field contains an error: ' + ' -> '.join(path_out)
+
+                # Get the names of disallowed extra fields.
+                # (the jsonschema library isn't of much help here - we must extract it from the message)
+                if e['validator'] == u'additionalProperties' and len(path_out) == 0:
+                    m = re.search('[\'\"]([^\"\']+)[\'\"] was unexpected', e['message'])
+                    if m:
+                        return 'This extra field is not allowed: ' + m.group(1)
+                    else:
+                        return 'Extra fields are not allowed'
+                else:
+                    return 'This field contains an error: ' + ' -> '.join(path_out)
 
             # Try to load the metadata file.
             metadata = dict()
             try:
                 metadata = read_json_object(callback, meta_path)
-                current_schema_id = metadata['$id']
+                current_schema_id = metadata_get_schema_id(metadata)
+                if current_schema_id is None:
+                    errors = ['Please check the structure of this file.']
             except UUJsonException as e:
-                errors = ['Please check the structure of this file.']
-            except KeyError as e:
-                # $id missing.
                 errors = ['Please check the structure of this file.']
             except UUMsiException as e:
                 errors = ['The file could not be read.']
@@ -190,7 +199,7 @@ def iiMetadataFormLoad(callback, path):
                 if transform is None:
                     if current_schema_id == schema['$id']:
                         # Metadata matches active schema, see if it validates.
-                        errors = [transform_error_path(x['path']) for x
+                        errors = [transform_error(x) for x
                                   in get_json_metadata_errors(callback,
                                                               meta_path,
                                                               metadata = metadata,
@@ -211,7 +220,7 @@ def iiMetadataFormLoad(callback, path):
                     # First, make sure that the current metadata is valid against its schema $id,
                     # if not, we cannot offer a transformation option.
                     try:
-                        current_schema = get_schema_by_id(callback, meta_path, metadata['$id'])
+                        current_schema = get_schema_by_id(callback, meta_path, current_schema_id)
                         errors = [transform_error_path(x['path']) for x
                                   in get_json_metadata_errors(callback,
                                                               meta_path,
@@ -299,7 +308,7 @@ def iiMetadataFormSave(rule_args, callback, rei):
         return
 
     # Add metadata schema id to JSON.
-    metadata['$id'] = get_active_schema_id(callback, json_path)
+    metadata_set_schema_id(metadata, get_active_schema_id(callback, json_path))
 
     # Validate JSON metadata.
     errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
