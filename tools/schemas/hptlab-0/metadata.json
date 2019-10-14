@@ -1,5 +1,6 @@
 {
   "$id": "https://yoda.uu.nl/schemas/hptlab-0/metadata.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
   "definitions": {
     "stringNormal": {
       "type": "string",

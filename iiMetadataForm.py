@@ -221,7 +221,7 @@ def iiMetadataFormLoad(callback, path):
                     # if not, we cannot offer a transformation option.
                     try:
                         current_schema = get_schema_by_id(callback, meta_path, current_schema_id)
-                        errors = [transform_error_path(x['path']) for x
+                        errors = [transform_error(x) for x
                                   in get_json_metadata_errors(callback,
                                                               meta_path,
                                                               metadata = metadata,
