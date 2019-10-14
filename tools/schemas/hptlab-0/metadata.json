@@ -344,7 +344,7 @@
       "type": "string",
       "enum": [
         "Dataset",
-        "Datapaper",
+        "DataPaper",
         "Software",
         "Text"
       ],
@@ -362,21 +362,6 @@
         "Basic",
         "Sensitive",
         "Critical"
-      ]
-    },
-    "optionsDataType": {
-      "type": "string",
-      "enum": [
-        "Dataset",
-        "Datapaper",
-        "Software",
-        "Text"
-      ],
-      "enumNames": [
-        "Datapackage",
-        "Method",
-        "Software",
-        "Other Document"
       ]
     },
     "optionsNameIdentifierScheme": {
