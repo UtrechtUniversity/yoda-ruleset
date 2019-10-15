@@ -345,7 +345,7 @@
       "type": "string",
       "enum": [
         "Dataset",
-        "Datapaper",
+        "DataPaper",
         "Software",
         "Text"
       ],
@@ -363,21 +363,6 @@
         "Basic",
         "Sensitive",
         "Critical"
-      ]
-    },
-    "optionsDataType": {
-      "type": "string",
-      "enum": [
-        "Dataset",
-        "Datapaper",
-        "Software",
-        "Text"
-      ],
-      "enumNames": [
-        "Datapackage",
-        "Method",
-        "Software",
-        "Other Document"
       ]
     },
     "optionsNameIdentifierScheme": {
@@ -944,10 +929,6 @@
     "Version",
     "Language",
     "Collected",
-    "Main_Setting",
-    "Process_Hazard",
-    "Geological_Structure",
-    "Geomorphical_Feature",
     "Material",
     "Apparatus",
     "Monitoring",

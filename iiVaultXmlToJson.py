@@ -229,27 +229,32 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                             jsonDict[elementName] = secondList  # compoundList   #@TODO uitwerken!!
                 except KeyError:
                     continue
-            else:
+
+            else:  # Single value
                 try:
-                    jsonDict[elementName] = data
+                    if elementName=='Retention_Period':  # Can be hardcoded, as this script is for one situation solely
+                        jsonDict[elementName] = int(data)
+                    else:
+                        jsonDict[elementName] = data
                 except KeyError:
                     pass
 
         except KeyError:  # No data present for this element
             pass
 
-    # only valid for combi xml!! do not use in vault
-    # Hardcoding allowed here
-    # jsonDict['System'] = {
-    #    'Last_Modified_Date': xmlData['metadata']['System']['Last_Modified_Date'],
-    #    'Persistent_Identifier_Datapackage': {
-    #        'Identifier_Scheme': 'DOI',
-    #        'Identifier': xmlData['metadata']['System']['Persistent_Identifier_Datapackage']['Identifier']
-    #    },
-    #    'Publication_Date': xmlData['metadata']['System']['Publication_Date'],
-    #    'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
-    #    'License_URI': xmlData['metadata']['System']['License_URI']
-    # }
+    try:
+        jsonDict['System'] = {
+            'Last_Modified_Date': xmlData['metadata']['System']['Last_Modified_Date'],
+            'Persistent_Identifier_Datapackage': {
+                'Identifier_Scheme': 'DOI',
+                'Identifier': xmlData['metadata']['System']['Persistent_Identifier_Datapackage']['Identifier']
+            },
+            'Publication_Date': xmlData['metadata']['System']['Publication_Date'],
+            'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
+            'License_URI': xmlData['metadata']['System']['License_URI']
+        }
+    except KeyError: # only published area contains system metadata, not data in the vault 
+        pass
 
     return json.dumps(jsonDict)
 

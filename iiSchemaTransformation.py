@@ -76,11 +76,6 @@ def transformResearchXml(callback, xml_path):
             # transformation that will make this a valid metadata file.
             raise e # give up.
 
-        # XXX: Temporary. Fixup the type of all integer fields.
-        # (this should happen in the transformer instead, and based on the schema, not hardcoded field names)
-        if 'Retention_Period' in metadata:
-            metadata['Retention_Period'] = int(metadata['Retention_Period'])
-
         json_path = re.sub('\.xml$', '.json', xml_path)
 
         # Validate against the metadata's indicated schema.

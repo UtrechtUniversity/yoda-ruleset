@@ -14,7 +14,7 @@
       "type": "string",
       "enum": [
         "Dataset",
-        "Datapaper",
+        "DataPaper",
         "Software",
         "Text"
       ],

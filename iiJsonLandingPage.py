@@ -91,6 +91,7 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
 
     # load the ninja file as text
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
+    callback.writeString("serverLog", landingpage_template_path)
     template = getJinjaLandingPageTemplate(callback, landingpage_template_path)	
 
 

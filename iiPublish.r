@@ -97,7 +97,7 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
         *combiJsonPath = "*tempColl/*randomId-combi.json";
 
-	writeString('serverLog', *combiJsonPath);
+	#DEBUG writeString('serverLog', *combiJsonPath);
 
         *openAccessLink = '';
         if (*publicationState.accessRestriction like "Open*") {
@@ -106,22 +106,16 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 	## For whatever reason this doesn't work!!!
         *licenseUri = '';
-        #if (iiHasKey(*publicationState, "licenseUri")) {
-        #   licenseUri = *publicationState.licenseUri;
-        #}
-
-	writeString('serverLog', 'GetLatestMetadataJSON');
+        if (iiHasKey(*publicationState, "licenseUri")) {
+           *licenseUri = *publicationState.licenseUri;
+        }
 
 	# *metadataJsonPath contains latest json
 	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
 	
-        writeString('serverLog', 'most recent: ' ++ *metadataJsonPath);
-
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
         iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
         
-        writeLine("serverLog", "iiGenerateCombiJson: generated *combiJsonPath");
-
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
 
@@ -141,26 +135,29 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
 
+
         msiGetIcatTime(*now, "unix");
         *publicationDate = uuiso8601date(*now);
-        *combiJsonPath = "*tempColl/*randomId-combi.xml";
+        *systemJsonPath = "*tempColl/*randomId-combi.json";
 
         *systemJsonData = 
-            "{'System': { " ++
-            "    'Last_Modified_Date': *lastModifiedDateTime, " ++
-            "    'Persistent_Identifier_Datapackage': { " ++
-            "        'Identifier_Scheme': 'DOI', " ++
-            "        'Identifier': *yodaDOI " ++
-            "    }, " ++
-            "    'Publication_Date': *publicationDate, " ++
-            "  }" ++
-            "}";  
+            '{"System": { ' ++
+            '    "Last_Modified_Date": "*lastModifiedDateTime", ' ++
+            '    "Persistent_Identifier_Datapackage": { ' ++
+            '        "Identifier_Scheme": "DOI", ' ++
+            '        "Identifier": "*yodaDOI" ' ++
+            '    }, ' ++
+            '    "Publication_Date": "*publicationDate" ' ++
+            '  }' ++
+            '}';  
 
-        msiDataObjOpen("objPath=*combiJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
+
+        # msiDataObjCreate(*systemJsonPath, "forceFlag=", *fd);
+        msiDataObjOpen("objPath=*systemJsonPath++++openFlags=O_RDWRO_TRUNC", *fd);
         msiDataObjWrite(*fd, *systemJsonData, *lenOut);
         msiDataObjClose(*fd, *status);
-        #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *combiJsonPath");
-        *publicationState.combiJsonPath = *combiJsonPath;
+        #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *systemJsonPath");
+        *publicationState.combiJsonPath = *systemJsonPath;
 }
 
 
@@ -226,12 +223,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 		succeed;
 	} else if (*httpCode == "401" || *httpCode == "403" || *httpCode == "500" || *httpCode == "503" || *httpCode == "504") {
 	        # Unauthorized, Forbidden, Internal Server Error
-               
-                *publicationState.dataCiteMetadataPosted = "yes";
-                writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. OVERRULED!");
-                succeed;
-
-		#*publicationState.status = "Retry";
+		*publicationState.status = "Retry";
 		writeLine("serverLog", "iiPostMetadataToDataCite: *httpCode received. Will be retried later.");
 	} else {
 		*publicationState.status = "Unrecoverable";
@@ -246,6 +238,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 #
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
+
 	msiRemoveDataCiteMetadata(*yodaDOI, *httpCode);
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -673,7 +666,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 
 	if (!iiHasKey(*publicationState, "combiJsonPath")) {
-i		# Generate Combi Json consisting of user and system metadata
+		# Generate Combi Json consisting of user and system metadata
 
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateCombiJson");
 		*err = errorcode(iiGenerateCombiJson(*publicationConfig, *publicationState));
@@ -716,9 +709,6 @@ i		# Generate Combi Json consisting of user and system metadata
 	}
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
-		
-		iiGenerateLandingPage(*publicationConfig, *publicationState, "publish");    ######################### MOET HIER WEG, puur voor testen
-
                 # Send DataCite XML to metadata end point
 		#DEBUG writeLine("serverLog", "iiProcessPublication: starting iiPostMetadataToDataCite");
 		*err = errorcode(iiPostMetadataToDataCite(*publicationConfig, *publicationState));
@@ -926,7 +916,7 @@ iiProcessDepublication(*vaultPackage, *status) {
 
 	if (!iiHasKey(*publicationState, "dataCiteMetadataPosted")) {
 		# Remove metadata from DataCite
-		#DEBUG writeLine("serverLog", "iiProcessDepublication: starting iiRemoveMetadataFromDataCite");
+		writeLine("serverLog", "iiProcessDepublication: starting iiRemoveMetadataFromDataCite");
 		*err = errorcode(iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState));
 		if (*err < 0) {
 			*publicationState.status = "Retry";

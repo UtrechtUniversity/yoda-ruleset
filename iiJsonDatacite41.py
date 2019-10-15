@@ -120,9 +120,7 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
 
 
 def getHeader(): # all that is present before the yoda data  !! Hier moet de ID nog in
-    return '''
-        <resource xmlns="http://datacite.org/schema/kernel-3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://datacite.org/schema/kernel-3 http://schema.datacite.org/meta/kernel-3/metadata.xsd">
-    '''
+    return '''<?xml version="1.0" encoding="UTF-8"?><resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xmlns:yoda="https://yoda.uu.nl/schemas/default" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd">'''
 
 def getDOI(dict):
     try:
@@ -296,12 +294,12 @@ def getDates(dict):
         dates = dates + '<date dateType="Updated">' + dateModified + '</date>'
 
         dateEmbargoEnd = dict['Embargo_End_Date']
-        dates = dates + '<date dateType="Availlable">' + dateEmbargoEnd + '</date>'
+        dates = dates + '<date dateType="Available">' + dateEmbargoEnd + '</date>'
 
         dateCollectStart = dict['Collected']['Start_Date']
         dateCollectEnd = dict['Collected']['End_Date']
     
-        dates = dates + '<date dateType="Collected">' + dateCollectStart + ' / ' + dateCollectEnd + '</date>'
+        dates = dates + '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
 
         if dates:
             return '<dates>' + dates + '</dates>'
@@ -320,9 +318,10 @@ def getVersion(dict):
 # /brief Get string in datacite format containing rights related information 
 def getRightsList(dict):
     try:
-        licenseURI = dict['System']['License_URI']
-        rights = '<rights rightsURI="' + licenseURI + '"></rights>'
-
+        #licenseURI = dict['System']['License_URI']
+        #rights = '<rights rightsURI="' + licenseURI + '"></rights>'
+        rights = ''
+        
         accessRestriction = dict['Data_Access_Restriction']
 
         accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess' , 'Closed': 'info:eu-repo/semantics/closedAccess'}
@@ -334,7 +333,7 @@ def getRightsList(dict):
                 break
         rights = rights + '<rights rightsURI="' + rightsURI + '"></rights>'
         if rights:
-            return '<rightslist>' + rights + '</rightslist>'
+            return '<rightsList>' + rights + '</rightsList>'
 
     except KeyError:
         pass
@@ -352,15 +351,16 @@ def getLanguage(dict):
 
 # /brief Get string in datacite format containing Resource type and default handling
 def getResourceType(dict):
-    yodaResourceToDatacite = {'Dataset': 'Research Data', 'Datapaper': 'Method Description', 'Software': 'Computer code'}
+    yodaResourceToDatacite = {'Dataset': 'Research Data', 'DataPaper': 'Method Description', 'Software': 'Computer code'}
 
     try:
-        yodaResourceType = dict['Data_Type']
-        dataciteType = yodaResourceToDatacite[yodaResourceType]
+        resourceType = dict['Data_Type']
+        dataciteDescr = yodaResourceToDatacite[resourceType]
     except KeyError:
-        dataciteType = 'Other Document'  # Default value
+        resourceType = 'Text'
+        dataciteDescr = 'Other Document'  # Default value
 
-    return '<resourceType>' + dataciteType + '</resourceType>'
+    return '<resourceType resourceTypeGeneral="' + resourceType + '">' + dataciteDescr + '</resourceType>'
 
 # /brief Get string in datacite format containing related datapackages 
 def getRelatedDataPackage(dict):
@@ -368,7 +368,7 @@ def getRelatedDataPackage(dict):
 
     try:
         for relPackage in dict['Related_Datapackage']:
-            relType = relPackage['Relation_Type']
+            relType = relPackage['Relation_Type'].split(':')[0]
             #title = relPackage['Title']
             persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
             persistentID = relPackage['Persistent_Identifier']['Identifier']
@@ -434,7 +434,7 @@ def getGeoLocations(dict):
     try:
         locationList = dict['Covered_Geolocation_Place']
         for location in locationList:
-            geoLocations = geoLocations + '<geoLocation>' + location + '</geoLocation>'
+            geoLocations = geoLocations + '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
     except KeyError:
         return ''
 
