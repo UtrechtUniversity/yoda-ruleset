@@ -176,11 +176,12 @@ def submitDatarequest(callback, data, rei):
        Arguments:
        data -- JSON-formatted contents of the data request.
     """
-    # Create collection
     zonePath = '/tempZone/home/datarequests-research/'
     timestamp = datetime.now()
     requestId = str(timestamp.strftime('%s'))
     collPath = zonePath + requestId
+
+    # Create collection
     try:
         coll_create(callback, collPath, '1', irods_types.BytesBuf())
     except UUException as e:
@@ -284,12 +285,7 @@ def getDatarequest(callback, requestId):
 
     # Get the contents of the datarequest JSON file
     try:
-        ret_val = data_obj_open(callback, "objPath=%s" % filePath, irods_types.BytesBuf())
-        fileDescriptor = ret_val['arguments'][1]
-        ret_val = data_obj_read(callback, fileDescriptor, dataSize, irods_types.BytesBuf())
-        fileBuffer = ret_val['arguments'][2]
-        data_obj_close(callback, fileDescriptor, irods_types.BytesBuf())
-        requestJSON = ''.join(fileBuffer.buf)
+        requestJSON = read_data_object(callback, filePath)
     except UUException as e:
         callback.writeString("serverLog", "Could not get contents of datarequest JSON file.")
         return {"status": "FailedGetDatarequestContent", "statusInfo": "Could not get contents of datarequest JSON file."}
@@ -330,12 +326,9 @@ def isRequestOwner(callback, requestId, currentUserName):
 
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
-    try:
-        if len(requestOwnerUserName) != 1:
-            raise UUException
-    except UUException as e:
-            callback.writeString("serverLog", "Not exactly 1 owner of data request found. Something is very wrong.")
-            return {"status": "MoreThanOwnOwner", "statusInfo": "Not exactly 1 owner of data request found. Something is very wrong."}
+    if len(requestOwnerUserName) != 1:
+        callback.writeString("serverLog", "Not exactly 1 owner of data request found. Something is very wrong.")
+        return {"status": "MoreThanOwnOwner", "statusInfo": "Not exactly 1 owner of data request found. Something is very wrong."}
 
     # We only have 1 owner. Set requestOwnerUserName to this owner
     requestOwnerUserName = requestOwnerUserName[0]
@@ -345,8 +338,7 @@ def isRequestOwner(callback, requestId, currentUserName):
     isRequestOwner = requestOwnerUserName == currentUserName
 
     # Return data
-    return {'isRequestOwner': isRequestOwner, 'status': 0,
-            'statusInfo': "OK"}
+    return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
 
 
 def isReviewer(callback, requestId, currentUsername):
@@ -385,8 +377,7 @@ def isReviewer(callback, requestId, currentUsername):
     isReviewer = currentUsername in reviewers
 
     # Return the isReviewer boolean
-    return {"isReviewer": isReviewer, "status": 0,
-            "statusInfo": "OK"}
+    return {"isReviewer": isReviewer, "status": 0, "statusInfo": "OK"}
 
 
 def assignRequest(callback, assignees, requestId):
@@ -403,11 +394,13 @@ def assignRequest(callback, assignees, requestId):
     # request
     isDatamanager = False
     name = ""
-    isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                    callback.uuClientFullNameWrapper(name)
-                                    ['arguments'][0],
-                                    callback)
+
     try:
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
         if not isDatamanager:
             raise UUException
     except UUException as e:
@@ -415,8 +408,7 @@ def assignRequest(callback, assignees, requestId):
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
     # Construct data request collection path
-    requestColl = ('/tempZone/home/datarequests-research/' +
-                   requestId)
+    requestColl = ('/tempZone/home/datarequests-research/' + requestId)
 
     # Check if data request has already been assigned. If true, set status
     # code to failure and do not perform requested assignment
@@ -430,10 +422,7 @@ def assignRequest(callback, assignees, requestId):
     for row in rows:
         requestStatus = row['META_DATA_ATTR_VALUE']
 
-    try:
-        if not requestStatus == "submitted":
-            raise UUException
-    except UUException as e:
+    if not requestStatus == "submitted":
         callback.writeString("serverLog", "Proposal is already assigned.")
         return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
 
@@ -500,10 +489,12 @@ def submitReview(callback, data, requestId, rei):
     # not allow submission of the review
     isDmcMember = False
     name = ""
-    isDmcMember = groupUserMember("datarequests-research-data-management-committee",
-                                  callback.uuClientFullNameWrapper(name)
-                                  ['arguments'][0], callback)
+
     try:
+        isDmcMember = groupUserMember("datarequests-research-data-management-committee",
+                                      callback.uuClientFullNameWrapper(name)
+                                      ['arguments'][0], callback)
+
         if not isDmcMember:
             raise UUException
     except UUException as e:
@@ -561,6 +552,7 @@ def submitReview(callback, data, requestId, rei):
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
     ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+
     while True:
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
@@ -618,7 +610,7 @@ def submitReview(callback, data, requestId, rei):
         sendMail(researcherEmail, "[researcher] YOUth data request %s: reviewed" % requestId, "Dear %s,\n\nYour data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
         for bodmemberEmail in bodmemberEmails:
             if not bodmemberEmail == "rods":
-                sendMail(bodmemberEmail, "[bod member] YOUth data request %s: reviewed" %requestId, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+                sendMail(bodmemberEmail, "[bod member] YOUth data request %s: reviewed" % requestId, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
 
     return {'status': 0, 'statusInfo': "OK"}
 
@@ -655,8 +647,7 @@ def getReview(callback, requestId):
         callback.writeString("serverLog", "Could not get review data.")
         return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
-    return {'reviewJSON': reviewJSON, 'status': 0,
-            'statusInfo': "OK"}
+    return {'reviewJSON': reviewJSON, 'status': 0, 'statusInfo': "OK"}
 
 
 def submitEvaluation(callback, data, requestId, rei):
@@ -670,11 +661,13 @@ def submitEvaluation(callback, data, requestId, rei):
     # allow submission of the evaluation
     isBoardMember = False
     name = ""
-    isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                    callback.uuClientFullNameWrapper(name)
-                                    ['arguments'][0],
-                                    callback)
+
     try:
+        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
         if not isBoardMember:
             raise UUException
     except UUException as e:
@@ -759,10 +752,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
 
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
-    try:
-        if len(requestOwnerUsername) != 1:
-            raise UUException
-    except UUException as e:
+    if len(requestOwnerUsername) != 1:
         callback.writeString("serverLog", "Not exactly 1 owner found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "Not exactly 1 owner found. Something is very wrong."}
 
@@ -809,11 +799,13 @@ def requestDTAReady(callback, requestId, currentUserName):
     # If not, do not allow status transition
     isDatamanager = False
     name = ""
-    isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                    callback.uuClientFullNameWrapper(name)
-                                    ['arguments'][0],
-                                    callback)
+
     try:
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
         if not isDatamanager:
             raise UUException
     except UUException as e:
@@ -866,8 +858,8 @@ def requestDTASigned(callback, requestId, currentUserName):
     """
     # Check if uploading user owns the datarequest and only allow uploading
     # if this is the case
-    result = isRequestOwner(callback, requestId, currentUserName)
     try:
+        result = isRequestOwner(callback, requestId, currentUserName)
         if not result['isRequestOwner']:
             raise UUException
     except UUException as e:
@@ -890,11 +882,13 @@ def requestDataReady(callback, requestId, currentUserName):
     # If not, do not allow status transition
     isDatamanager = False
     name = ""
-    isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                    callback.uuClientFullNameWrapper(name)
-                                    ['arguments'][0],
-                                    callback)
+
     try:
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
         if not isDatamanager:
             raise UUException
     except UUException as e:
