@@ -307,9 +307,13 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                             jsonDict[elementName] = secondList  # compoundList   #@TODO uitwerken!!
                 except KeyError:
                     continue
-            else:
+
+            else:  # Single value
                 try:
-                    jsonDict[elementName] = data
+                    if elementName=='Retention_Period':  # Can be hardcoded, as this script is for one situation solely
+                        jsonDict[elementName] = int(data)
+                    else:
+                        jsonDict[elementName] = data
                 except KeyError:
                     pass
 
