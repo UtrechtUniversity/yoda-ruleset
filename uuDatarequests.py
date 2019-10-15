@@ -279,7 +279,7 @@ def getDatarequest(callback, requestId):
             collName = row['COLL_NAME']
             dataSize = row['DATA_SIZE']
             requestStatus = row['META_DATA_ATTR_VALUE']
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "Could not get data request status and filesize. (Does a request with this requestID exist?")
         return {"status": "FailedGetDatarequestInfo", "statusInfo": "Could not get data request status and filesize. (Does a request with this requestID exist?)"}
 
@@ -403,7 +403,7 @@ def assignRequest(callback, assignees, requestId):
 
         if not isDatamanager:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User is not a data manager.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
@@ -497,7 +497,7 @@ def submitReview(callback, data, requestId, rei):
 
         if not isDmcMember:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User is not a member of the Data Management Committee.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a member of the Data Management Committee."}
 
@@ -670,7 +670,7 @@ def submitEvaluation(callback, data, requestId, rei):
 
         if not isBoardMember:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User is not a member of the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
 
@@ -808,7 +808,7 @@ def requestDTAReady(callback, requestId, currentUserName):
 
         if not isDatamanager:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User is not a data manager.")
         return {"status": "PermissionsError", "statusInfo": "User is not a data manager."}
 
@@ -862,7 +862,7 @@ def requestDTASigned(callback, requestId, currentUserName):
         result = isRequestOwner(callback, requestId, currentUserName)
         if not result['isRequestOwner']:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User does not own the request.")
         return {"status": "PermissionsError", "statusInfo": "User does not own the request."}
 
@@ -891,7 +891,7 @@ def requestDataReady(callback, requestId, currentUserName):
 
         if not isDatamanager:
             raise UUException
-    except UUException as e:
+    except Exception as e:
         callback.writeString("serverLog", "User is not a data manager.")
         return {"status": "PermissionsError", "statusInfo": "User is not a data manager."}
 
