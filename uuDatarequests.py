@@ -190,10 +190,7 @@ def submitDatarequest(callback, data, rei):
     # Write data request data to disk
     try:
         filePath = collPath + '/' + 'datarequest.json'
-        ret_val = data_obj_create(callback, filePath, "", irods_types.BytesBuf())
-        fileDescriptor = ret_val['arguments'][2]
-        data_obj_write(callback, fileDescriptor, data, irods_types.BytesBuf())
-        data_obj_close(callback, fileDescriptor, irods_types.BytesBuf())
+        write_data_object(callback, filePath, data)
     except UUException as e:
         callback.writeString("serverLog", "Could not write data request to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data request to disk."}
@@ -536,10 +533,7 @@ def submitReview(callback, data, requestId, rei):
     # Write review data to disk
     try:
         reviewPath = collPath + '/review_' + clientName + '.json'
-        ret_val = data_obj_create(callback, reviewPath, "", irods_types.BytesBuf())
-        fileDescriptor = ret_val['arguments'][2]
-        data_obj_write(callback, fileDescriptor, data, irods_types.BytesBuf())
-        data_obj_close(callback, fileDescriptor, irods_types.BytesBuf())
+        write_data_object(callback, reviewPath, data)
     except UUException as e:
         callback.writeString("serverLog", "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
@@ -656,12 +650,7 @@ def getReview(callback, requestId):
 
     # Get the contents of the review JSON file
     try:
-        ret_val = data_obj_open(callback, "objPath=%s" % filePath, irods_types.BytesBuf())
-        fileDescriptor = ret_val['arguments'][1]
-        ret_val = data_obj_read(callback, fileDescriptor, dataSize, irods_types.BytesBuf())
-        fileBuffer = ret_val['arguments'][2]
-        data_obj_close(callback, fileDescriptor, irods_types.BytesBuf())
-        reviewJSON = ''.join(fileBuffer.buf)
+        reviewJSON = read_data_object(callback, filePath)
     except UUException as e:
         callback.writeString("serverLog", "Could not get review data.")
         return {"status": "ReadError", "statusInfo": "Could not get review data."}
@@ -703,10 +692,7 @@ def submitEvaluation(callback, data, requestId, rei):
     # Write evaluation data to disk
     try:
         evaluationPath = collPath + '/evaluation_' + clientName + '.json'
-        ret_val = data_obj_create(callback, evaluationPath, "", irods_types.BytesBuf())
-        fileDescriptor = ret_val['arguments'][2]
-        data_obj_write(callback, fileDescriptor, data, irods_types.BytesBuf())
-        data_obj_close(callback, fileDescriptor, irods_types.BytesBuf())
+        write_data_object(callback, evaluationPath, data)
     except UUException as e:
         callback.writeString("serverLog", "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
