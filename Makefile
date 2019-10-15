@@ -1,5 +1,9 @@
-
-# Makefile for building and installing the UU Youth Cohort iRODS ruleset.
+# \file      Makefile
+# \brief     Makefile for building and installing the UU iRODS datarequest ruleset.
+# \author    Lazlo Westerhof
+# \author    Paul Frederiks
+# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 #
 # Please note the following:
 #
@@ -13,25 +17,21 @@
 #   'development' for dev/test environments.
 #
 # - For the 'install' make target to work, you should place this ruleset
-#   directory in the folder 'iRODS/server/config/reConfigs'. Don't forget to
+#   directory in the folder '/etc/irods/'. Don't forget to
 #   append the ruleset name ($RULESET_NAME minus the '.re' extension) to the
-#   reRuleSet line in server/config/server.config.
+#   rulesets in /etc/irods/server_config.json.
 #
 # - This ruleset depends on Utrecht Univerity's irods-ruleset-uu ruleset.
-#   Specify rules-uu *before* rules-yc in your server/config/server.config's
-#   reRuleSet line.
+#   Specify rules-uu *before* rules-research in your /etc/irods/server_config.json.
 #
 # make update  - pull changes from git remote, updates .r files
 # make install - install ruleset (concatenated .r files) into the parent directory
 
 # Input files. Exclude all test rules in ./tests and tools
-
-RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print)
-PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'uu*.py' -print)
-
+RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print | sort)
+PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'ii*.py' -print | sort)
 
 # Output files.
-
 RULESET_NAME ?= rules-dr.re
 RULESET_FILE := $(RULESET_NAME)
 DEBUG_FILE := $(RULESET_NAME).debug
@@ -41,7 +41,6 @@ PYRULESET_FILE := $(PYRULESET_NAME)
 INSTALL_DIR  ?= ..
 
 # Make targets.
-
 all: $(RULESET_FILE) $(PYRULESET_FILE)
 
 $(RULESET_FILE): $(RULE_FILES)
