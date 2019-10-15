@@ -29,7 +29,7 @@
 
 # Input files. Exclude all test rules in ./tests and tools
 RULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print | sort)
-PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'ii*.py' -print | sort)
+PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'uu*.py' -print | sort)
 
 # Output files.
 RULESET_NAME ?= rules-dr.re
