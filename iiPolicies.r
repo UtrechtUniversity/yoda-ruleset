@@ -409,16 +409,14 @@ acPostProcForObjRename(*src, *dst) {
 	}
 }
 
-# \brief This policy is created to support the moving, renaming
-#        and trashing of the .yoda-metadata.xml file as well as
-#        enforcing group ACL's when collections or data objects
+# \brief This policy is created for enforcing group ACLs when collections or data objects
 #        are moved from outside a research group into it.
 #
 # \param[in] pluginInstanceName  a copy of $pluginInstanceName
 # \param[in] KVPairs             a copy of $KVPairs
 #
 uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
-	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.xml"
+	# example match "/mnt/irods01/vault01/home/research-any/possible/path/to/yoda-metadata.json"
 	#DEBUG writeLine("serverLog", "pep_resource_rename_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
 	*zone = *KVPairs.user_rods_zone;
 	*dst = *KVPairs.logical_path;
@@ -431,29 +429,5 @@ uuResourceRenamePostResearch(*pluginInstanceName, *KVPairs) {
 		if (elem(*srcPathElems, 2) != elem(*dstPathElems, 2)) {
 			uuEnforceGroupAcl(*dst);
 		}
-
-	}
-
-	if (*src like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*/" ++ IIMETADATAXMLNAME ++ "$") {
-		iiMetadataXmlRenamedPost(*src, *dst, *zone);
-
-	}
-}
-
-# \brief Policy to act upon the removal of a METADATAXMLNAME file.
-#
-# \param[in] pluginInstanceName   a copy of $pluginInstanceName
-# \param[in] KVPairs  a copy of $KVPairs
-#
-uuResourceUnregisteredPostResearch(*pluginInstanceName, *KVPairs) {
-	# Example match: "/tempZone/home/research-any/possible/path/to/yoda-metadata.xml"
-	if (*KVPairs.logical_path like regex "^/"
-	    ++ *KVPairs.user_rods_zone
-	    ++ "/home/" ++ IIGROUPPREFIX
-	    ++ "[^/]+(/.\*)\*/"
-	    ++ IIMETADATAXMLNAME ++ "$") {
-
-		#DEBUG writeLine("serverLog", "pep_resource_unregistered_post:\n \$KVPairs = *KVPairs\n\$pluginInstanceName = *pluginInstanceName");
-		iiMetadataXmlUnregisteredPost(*KVPairs.logical_path);
 	}
 }

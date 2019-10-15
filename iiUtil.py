@@ -8,6 +8,7 @@
 
 import json
 import irods_types
+from collections import OrderedDict
 
 
 def write_data_object(callback, path, data):
@@ -118,7 +119,7 @@ class UUJsonException(UUException):
 
 def parse_json(text):
     try:
-        return json.loads(text)
+        return json.loads(text, object_pairs_hook=OrderedDict)
     except ValueError:
         raise UUJsonException('JSON file format error')
 
@@ -126,6 +127,12 @@ def parse_json(text):
 def read_json_object(callback, path):
     """Read an iRODS data object and parse it as JSON."""
     return parse_json(read_data_object(callback, path))
+
+
+def write_json_object(callback, path, data):
+    """Write a JSON object to an iRODS data object."""
+    return write_data_object(callback, path, json.dumps(data, indent=4))
+
 # }}}
 
 

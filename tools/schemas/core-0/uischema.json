@@ -1,7 +1,5 @@
 {
-   "Descriptive-group":{
-      "Description":{
-         "ui:widget":"textarea"
-      }
-   }
+  "Description": {
+    "ui:widget": "textarea"
+  }
 }

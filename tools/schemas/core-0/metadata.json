@@ -5,20 +5,23 @@
       "type": "string",
       "maxLength": 255
     },
-    "stringNormalNullable": {
-      "type": ["string", "null"],
-      "maxLength": 255
-    },
     "stringLong": {
       "type": "string",
       "maxLength": 2700
     },
-    "optionsDataAccessRestriction": {
+    "optionsDataType": {
       "type": "string",
       "enum": [
-        "Open - freely retrievable",
-        "Restricted - available upon request",
-        "Closed"
+        "Dataset",
+        "DataPaper",
+        "Software",
+        "Text"
+      ],
+      "enumNames": [
+        "Datapackage",
+        "Method",
+        "Software",
+        "Other Document"
       ]
     },
     "optionsDataClassification": {
@@ -28,6 +31,31 @@
         "Basic",
         "Sensitive",
         "Critical"
+      ]
+    },
+    "optionsCreatorType": {
+      "type": "string",
+      "enum": [
+        "Person",
+        "Organisation"
+      ]
+    },
+    "optionsDataAccessRestriction": {
+      "type": "string",
+      "enum": [
+        "Open - freely retrievable",
+        "Restricted - available upon request",
+        "Closed"
+      ]
+    },
+    "optionsNameIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ORCID",
+        "DAI",
+        "Author identifier (Scopus)",
+        "ResearcherID (Web of Science)",
+        "ISNI"
       ]
     },
     "optionsLicense": {
@@ -42,84 +70,105 @@
   },
   "title": "",
   "type": "object",
+  "required": [
+    "Title",
+    "Description",
+    "Data_Type",
+    "Data_Classification",
+    "Creator",
+    "License",
+    "Data_Access_Restriction"
+  ],
   "properties": {
-    "Descriptive-group": {
-      "type": "object",
-      "title": "Descriptive",
-      "required": [
-        "Title",
-        "Description"
-      ],
-      "properties": {
-        "Title": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Title"
-        },
-        "Description": {
-          "$ref": "#/definitions/stringLong",
-          "title": "Description"
-        }
-      }
+    "Title": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Title"
     },
-    "Administrative-group": {
-      "type": "object",
-      "title": "Administrative",
-      "required": [
-        "Data_Classification"
-      ],
-      "properties": {
-        "Data_Classification": {
-          "$ref": "#/definitions/optionsDataClassification",
-          "title": "Data classification"
-        }
-      }
+    "Description": {
+      "$ref": "#/definitions/stringLong",
+      "title": "Description"
     },
-    "Rights-group": {
-      "type": "object",
-      "title": "Rights",
-      "required": [
-        "Creator",
-        "License",
-        "Data_Access_Restriction"
-      ],
-      "properties": {
-        "Creator": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
+    "Data_Type": {
+      "$ref": "#/definitions/optionsDataType",
+      "title": "Data type"
+    },
+    "Data_Classification": {
+      "$ref": "#/definitions/optionsDataClassification",
+      "title": "Data classification"
+    },
+    "Creator": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "yoda:structure": "subproperties",
+        "required": [
+          "Name",
+          "Affiliation"
+        ],
+        "properties": {
+          "Name": {
             "type": "object",
-            "yoda:structure": "subproperties",
+            "title": "Creator of datapackage",
+            "yoda:structure": "compound",
             "required": [
-              "Name",
-              "Affiliation"
+              "First_Name",
+              "Last_Name"
             ],
             "properties": {
-              "Name": {
+              "First_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Creator of datapackage"
+                "title": "First Name"
               },
-              "Affiliation": {
-                "type": "array",
-                "default": ["Utrecht University"],
-                "items": {
+              "Last_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Last Name"
+              }
+            }
+          },
+          "Affiliation": {
+            "type": "array",
+            "default": ["Utrecht University"],
+            "items": {
+              "$ref": "#/definitions/stringNormal",
+              "title": "Affiliation",
+              "yoda:required": true
+            }
+          },
+          "Person_Identifier": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Person identifier",
+              "yoda:structure": "compound",
+              "properties": {
+                "Name_Identifier_Scheme": {
+                  "$ref": "#/definitions/optionsNameIdentifierScheme",
+                  "title": "Type"
+                },
+                "Name_Identifier": {
                   "$ref": "#/definitions/stringNormal",
-                  "title": "Affiliation",
-                  "yoda:required": true
+                  "title": "Identifier"
                 }
+              },
+              "dependencies": {
+                "Name_Identifier_Scheme": ["Name_Identifier"],
+                "Name_Identifier": ["Name_Identifier_Scheme"]
               }
             }
           }
-        },
-        "License": {
-          "$ref": "#/definitions/optionsLicense",
-          "title": "License"
-        },
-        "Data_Access_Restriction": {
-          "$ref": "#/definitions/optionsDataAccessRestriction",
-          "title": "Data package access",
-          "default": "Restricted - available upon request"
         }
       }
+    },
+    "License": {
+      "$ref": "#/definitions/optionsLicense",
+      "title": "License"
+    },
+    "Data_Access_Restriction": {
+      "$ref": "#/definitions/optionsDataAccessRestriction",
+      "title": "Data package access",
+      "default": "Restricted - available upon request"
     }
   }
 }

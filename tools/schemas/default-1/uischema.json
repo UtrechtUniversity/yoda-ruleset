@@ -1,12 +1,8 @@
 {
-   "Descriptive-group":{
-      "Description":{
-         "ui:widget":"textarea"
-      }
-   },
-   "Administrative-group":{
-      "Retention_Period":{
-          "ui:widget":"updown"
-      }
-   }
+  "Description": {
+    "ui:widget": "textarea"
+  },
+  "Retention_Period": {
+    "ui:widget": "updown"
+  }
 }
