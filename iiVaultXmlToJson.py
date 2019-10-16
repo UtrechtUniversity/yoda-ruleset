@@ -9,48 +9,32 @@ from json import loads
 from collections import OrderedDict
 
 
-# \brief Get the content of a yoda-metadata.xml file and return parsed into a dict
-#
-# \param[in] path	yoda-metadata.xml
-#
-# \return Dict holding data
-#
 def getMetadataXmlAsDict(callback, path):
+    """Get the content of a yoda-metadata.xml file and return parsed into a dict."""
     return xmltodict.parse(read_data_object(callback, path))
 
 
-# \brief Get Json Schema of category and return as (ordered!) dict
-#
-# \param[in] rods_zone
-# \param[in] category    name of category the metadata belongs to
-#
-# \return dict hodling the category JSONSchema
-#
 def getMetadaJsonDict(callback, yoda_json_path):
+    """Get Json Schema of category and return as (ordered!) dict."""
     return read_json_object(callback, yoda_json_path)
 
 
-# \brief Read yoda-metadata.json from vault and return as (ordered!) dict
-#
-# \param[in] rods_zone
-# \param[in] category    name of category the metadata belongs to
-#
-# \return dict hodling the category JSONSchema
-#
 def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
-
+    """Read yoda-metadata.json from vault and return as (ordered!) dict."""
     json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
     return read_json_object(callback, json_schema_path)
 
 
-# \brief turn yoda-metadata.xml into Json
-#
-# \param[in] dictSchema  JSON schema that yoda-metadata.xml must be transformed to
-# \param[in] xmlData     dict with all data in yoda-metadata.xml
-#
-# \return JSON formatted string holding content of yoda-metadata.xml
-#
 def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
+    """Turn yoda-metadata.xml into Json
+
+       Arguments:
+       dictSchema -- JSON schema that yoda-metadata.xml must be transformed to
+       xmlData    -- dict with all data in yoda-metadata.xml
+
+       Return:
+       dict -- JSON formatted string holding content of yoda-metadata.xml
+    """
     jsonDict = {}
 
     for elementName in dictSchema['properties']:
@@ -267,14 +251,16 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
     return json.dumps(jsonDict)
 
 
-# \brief Convert current metadata.xml to json
-#
-# \param[in] rods_zone  Zone name
-# \param[in] vault_collection  Collection name of metadata XML
-# \param[in] group_name Group name of metadata XML
-# \param[in] xml_data_name  Data name of metadata XML that requires transformation
-##
 def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, xml_data_name):
+    """Convert current yoda-metadata.xml to yoda-metadata.json.
+
+       Arguments:
+       rods_zone        -- Zone name
+       vault_collection -- Collection name of metadata XML
+       group_name       -- Group name of metadata XML
+       xml_data_name    -- Data name of metadata XML that requires transformation
+    """
+
     # This function simply transforms given data_name to a Json data object.
 	# No further intelligence required further.
 	# Perhaps handling within vault??
@@ -286,13 +272,11 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
 	copyACLsFromParent(callback, json_file, "default")
 
-        xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
+    xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
 
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
-
-        callback.writeString('serverLog', category_version)
-
+    callback.writeString('serverLog', category_version)
 
 	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
 
@@ -309,24 +293,28 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 	callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
 	callback.msiDataObjClose(fileHandle, 0)
 
-        # Add item to provenance log.
-        callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
+    # Add item to provenance log.
+    callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
 
 	callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
-# \brief Loop through all collections with yoda-metadata.xml data objects.
-#        If NO yoda-metadata.json is found in that collection, the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json
-#
-# \param[in] rods_zone Zone name
-# \param[in] coll_id   First collection id of batch
-# \param[in] batch     Batch size, <= 256
-# \param[in] pause     Pause between checks (float)
-#
-# \return Collection id to continue with in next batch.
-# If collection_id =0, no more collections are found containing yoda-metadata.xml
-#
 def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, coll_id, batch, pause):
+    """Loop through all collections with yoda-metadata.xml data objects.
+       If NO yoda-metadata.json is found in that collection,
+       the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json
+
+       Arguments:
+       rods_zone -- Zone name
+       coll_id   -- First collection id of batch
+       batch     -- Batch size, <= 256
+       pause     -- Pause between checks (float)
+
+       Return:
+       integer -- Collection id to continue with in next batch.
+                  If collection_id=0, no more collections are found containing yoda-metadata.xml
+    """
+
     # Find all research and vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
         "ORDER(COLL_ID), COLL_NAME",
@@ -335,7 +323,6 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     )
 
     # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
-
     prev_coll_id = -1 # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
     # Check each collection in batch.
     for row in iter:
@@ -391,14 +378,15 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     return coll_id
 
 
-# \brief Convert vault metadata XML to JSON - batchwise
-#
-# \param[in] coll_id  first COLL_ID to check - initial =0
-# \param[in] batch    batch size, <= 256
-# \param[in] pause    pause between checks (float)
-# \param[in] delay    delay between batches in seconds
-#
 def iiCheckVaultMetadataXmlForTransformationToJson(rule_args, callback, rei):
+    """Convert vault metadata XML to JSON - batchwise.
+
+       Arguments:
+       coll_id -- first COLL_ID to check - initial =0
+       batch   -- batch size, <= 256
+       pause   -- pause between checks (float)
+       delay   -- delay between batches in seconds
+    """
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
