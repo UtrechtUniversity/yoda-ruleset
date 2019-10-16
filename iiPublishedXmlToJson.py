@@ -2,14 +2,16 @@ import xmltodict
 import os
 
 
-# \brief Convert current metadata.xml to json
-#
-# \param[in] rods_zone  Zone name
-# \param[in] vault_collection  Collection name of metadata XML
-# \param[in] xml_data_name  Data name of metadata XML that requires transformation
-# \param[in] data_name_json  Name of data object to be created containing the
-##
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
+    """Convert current yoda-metadata.xml to yoda-metadata.json.
+
+       Arguments:
+       rods_zone        -- Zone name
+       vault_collection -- Collection name of metadata XML
+       xml_data_name    -- Data name of metadata XML that requires transformation
+       data_name_json   -- Name of data object to be created containing the
+    """
+
     # This function simply transforms given data_name to a Json data object.
 	# No further intelligence required further.
 	# Perhaps handling within vault??
@@ -21,7 +23,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 
 	#copyACLsFromParent(callback, json_file, "default")
 
-        xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
+    xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
 
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
@@ -37,22 +39,23 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 	callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
-
-# \brief Loop through all metadata xml data objects within '/tempZone/yoda/publication'.
-#        If NO corresponding json is found in that collection, the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
-#        The resulting file must be copied to moai collection as well
-#
-# \param[in] rods_zone Zone name
-# \param[in] data_id   data id to start searching from
-# \param[in] batch     Batch size, <= 256
-# \param[in] pause     Pause between checks (float)
-# \param[in] publicHost, yodaInstance, yodaPrefix are required for secure copy from /publication area to MOAI
-#
-# \return data_id to continue with in next batch.
-# If data_id =0, no more data objects were found.
-# Batch is finished
-#
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
+    """Loop through all metadata xml data objects within '/tempZone/yoda/publication'.
+	   If NO corresponding json is found in that collection,
+	   the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
+	   The resulting file must be copied to moai collection as well.
+
+       Arguments:
+       rods_zone -- Zone name
+	   data_id   -- Data id to start searching from
+       batch     -- Batch size, <= 256
+       pause     -- Pause between checks (float)
+       publicHost, yodaInstance, yodaPrefix are required for secure copy from publication area to MOAI
+
+       Return:
+       integer -- Data_id to continue with in next batch.
+	              If data_id =0, no more data objects were found. Batch is finished.
+    """
 
     publication_collection = '/' + rods_zone + '/yoda/publication'
     iter = genquery.row_iterator(
@@ -104,16 +107,18 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
     return data_id
 
 
-# \brief Convert published metadata XML that residedes in 'published' collection to JSON - batchwise
-#
-# \param[in] data_id  first data to check - initial =0
-# \param[in] batch    batch size, <= 256
-# \param[in] pause    pause between checks (float)
-# \param[in] delay    delay between batches in seconds
-# \param[in] publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
-#
 def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei):
-    coll_id = int(rule_args[0])
+    """Convert published metadata XML that residedes in 'published' collection to JSON - batchwise.
+
+       Arguments:
+       data_id -- first DATA_ID to check - initial =0
+       batch   -- batch size, <= 256
+       pause   -- pause between checks (float)
+       delay   -- delay between batches in seconds
+	   publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
+    """
+
+    data_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
