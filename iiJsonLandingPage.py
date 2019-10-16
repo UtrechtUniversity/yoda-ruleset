@@ -1,8 +1,11 @@
+# \file      iiJsonLandingPage.py
+# \brief     Functions for transforming JSON to landingpage HTML.
+# \author    Harm de Raaff
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 from jinja2 import Template
 import os
-#import json
-
-
 from json import loads
 from collections import OrderedDict
 
@@ -13,9 +16,7 @@ from collections import OrderedDict
 # \param[in] category    name of category the metadata belongs to
 #
 # \return dict hodling the category JSONSchema
-
 def getJinjaLandingPageTemplate(callback, path):
-
     coll_name, data_name = os.path.split(path)
     data_size = getDataObjSize(callback, coll_name, data_name)
 
@@ -33,7 +34,6 @@ def getJinjaLandingPageTemplate(callback, path):
     return ''.join(read_buf.buf)
 
 
-
 # \brief Get yodametadata Json and return as (ordered!) dict
 #
 # \param[in] yoda_json_path
@@ -41,7 +41,6 @@ def getJinjaLandingPageTemplate(callback, path):
 # \return dict hodling the content of yoda-metadata.json
 #
 def getMetadaJsonDict(callback, yoda_json_path):
-
     coll_name, data_name = os.path.split(yoda_json_path)
 
     data_size = getDataObjSize(callback, coll_name, data_name)
@@ -64,12 +63,8 @@ def getMetadaJsonDict(callback, yoda_json_path):
     return json.loads(jsonText, object_pairs_hook=OrderedDict)
 
 
-
-
-
-
 #####################################################
-## Create a landing page 
+## Create a landing page
 #####################################################
 #
 # \brief Get the landing page of published YoDa metadata as a string
@@ -78,22 +73,19 @@ def getMetadaJsonDict(callback, yoda_json_path):
 # \param[in] vaultMetadataJsonPath - Path to vault package
 # \param[out] string representation of the landingpage
 #
-# \return string with html cont 
-
+# \return string with html cont
 def iiCreateJsonLandingPage(rule_args, callback, rei):
 
     rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
-	
+
     # Landing page creation is part of the publication proces
     # Read user & system metadata from corresponding combiJson file
     dictJsonData = getMetadaJsonDict(callback, combiJsonPath)
 
-
     # load the ninja file as text
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
     callback.writeString("serverLog", landingpage_template_path)
-    template = getJinjaLandingPageTemplate(callback, landingpage_template_path)	
-
+    template = getJinjaLandingPageTemplate(callback, landingpage_template_path)
 
     # pre work input for render process.
     # When empty landing page, take a short cut
@@ -106,9 +98,7 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
         rule_args[3] = landing_page
         return
 
-
     # Gather all metadata
-
     title = dictJsonData['Title']
     description = dictJsonData['Description']
     disciplines = dictJsonData['Discipline']
@@ -151,7 +141,6 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
 
     collection_name = 'collection-name'
 
-
     tm = Template(template)
     landing_page = tm.render(title=title, description=description, disciplines=disciplines, version=version, language=language, tags=tags, creators=creators, contributors=contributors, publication_date=publication_date,
                 data_access_restriction=data_access_restriction, license=license, license_uri=license_uri, open_access_link=open_access_link, funding_reference=funding_reference,
@@ -161,5 +150,3 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
     callback.writeString("serverLog", landing_page)
 
     rule_args[3] = landing_page
-
-

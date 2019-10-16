@@ -1,17 +1,23 @@
+# \file      iiJsonDatacite41.py
+# \brief     Functions for transforming JSON to DataCite 4.1 XML.
+# \author    Harm de Raaff
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
 import json
 import os
 from json import loads
 from collections import OrderedDict
 
 
-# \brief Frontend function to add system info to yoda-metadata in json format
-#
-# \param[in] metadataJsonPath - Path to the most recent vault yoda-metadata.json in the corresponding vault
-# \param[in] combiJsonPath    - Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-# \param[in] other are system info parametrs
-
 def iiCreateCombiMetadataJson(rule_args, callback, rei):
+    """Frontend function to add system info to yoda-metadata in json format.
 
+       Arguments:
+       metadataJsonPath -- path to the most recent vault yoda-metadata.json in the corresponding vault
+       combiJsonPath    -- path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+       other are system info parameters
+    """
     metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri = rule_args[0:7]
 
     # get the data in the designated YoDa metadata.json and retrieve it as dict
@@ -29,11 +35,10 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
         'License_URI': licenseUri
     }
 
-
     # write combined data to file at location combiJsonPath
     ofFlags = 'forceFlag='
     ret_val = callback.msiDataObjCreate(combiJsonPath, ofFlags, 0)
-    
+
     combinedJson = json.dumps(metaDict)
     callback.writeString('serverLog', combinedJson)
 
@@ -42,15 +47,15 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
     callback.msiDataObjClose(fileHandle, 0)
 
 
-
-# \brief Get yodametadata Json and return as (ordered!) dict
-#
-# \param[in] yoda_json_path
-#
-# \return dict hodling the content of yoda-metadata.json
-#
 def getYodaMetadataJsonDict(callback, yoda_json_path):
+    """Get Yoda metadata JSON and return as (ordered!) dict.
 
+       Arguments:
+       yoda_json_path -- path to Yoda metadata JSON
+
+       Return:
+       dict -- holding the contents of yoda-metadata.json
+    """
     coll_name, data_name = os.path.split(yoda_json_path)
 
     data_size = getDataObjSize(callback, coll_name, data_name)
@@ -73,18 +78,18 @@ def getYodaMetadataJsonDict(callback, yoda_json_path):
     return json.loads(jsonText, object_pairs_hook=OrderedDict)
 
 
-
-# \brief  Based on content of *combiJsonPath, get DataciteXml as string
-#
-# \param[in] combiJsonPath - path to the combined Json file that holds both User and System metadata
-#
-# \return receiveDataciteXml - string holding Datacite formatted metadata of YoDa
-#
 def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
+    """Based on content of *combiJsonPath, get DataciteXml as string.
 
+       Arguments:
+       combiJsonPath -- path to the combined Json file that holds both User and System metadata
+
+       Return:
+       string -- Holds Datacite formatted metadata of YoDa
+    """
     combiJsonPath, receiveDataciteXml = rule_args[0:2]
 
-    # Get dict containing the wanted metadata 
+    # Get dict containing the wanted metadata
     dict = getYodaMetadataJsonDict(callback, combiJsonPath)
 
     # Build datacite XML as string
@@ -111,36 +116,37 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     xmlString = xmlString + getGeoLocations(dict)
     xmlString = xmlString + getFunders(dict)
 
-    #Close the thing
-    xmlString = xmlString + "</resource>"    
+    # Close the XML.
+    xmlString = xmlString + "</resource>"
 
     callback.writeString('serverLog', xmlString)
-
     rule_args[1] = xmlString
 
 
-def getHeader(): # all that is present before the yoda data  !! Hier moet de ID nog in
+def getHeader():
+    # TODO: all that is present before the yoda data  !! Hier moet de ID nog in
     return '''<?xml version="1.0" encoding="UTF-8"?><resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xmlns:yoda="https://yoda.uu.nl/schemas/default" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd">'''
+
 
 def getDOI(dict):
     try:
         doi = dict['System']['Persistent_Identifier_Datapackage']['Identifier']
-
-        return '<identifier identifierType="DOI">' +  doi + '</identifier>'
+        return '<identifier identifierType="DOI">' + doi + '</identifier>'
     except KeyError:
         pass
     return ''
+
 
 def getTitles(dict):
     try:
         language = dict['Language'][0:2]
         title = dict['Title']
-    
         return '<titles><title xml:lang="' + language + '">' + title + '</title></titles>'
-    except:
+    except KeyError:
         pass
 
     return ''
+
 
 def getDescriptions(dict):
     try:
@@ -155,6 +161,7 @@ def getDescriptions(dict):
 def getPublisher(dict):
     return '<publisher>Utrecht University</publisher>'  # Hardcoded like in XSLT
 
+
 def getPublicationYear(dict):
     try:
         publicationYear = dict['System']['Publication_Date'][0:4]
@@ -163,10 +170,13 @@ def getPublicationYear(dict):
         pass
     return ''
 
-# /brief Get string in datacite format containing
-# 1) standard objects like tags/disciplne
-# 2) free items, for now specifically for GEO schemas
+
 def getSubjects(dict):
+    """Get string in DataCite format containing:
+
+       1) standard objects like tags/disciplne
+       2) free items, for now specifically for GEO schemas
+    """
     subjectDisciplines = ''
     subjectTags = ''
     subjectFree = ''
@@ -183,25 +193,24 @@ def getSubjects(dict):
     except KeyError:
         pass
 
-
-    #Geo schemas have some specific fields that need to be added as subject.
+    # Geo schemas have some specific fields that need to be added as subject.
     # Sort of freely usable fields
     subject_fields = ["Main_Setting",
-        "Process_Hazard",
-        "Geological_Structure",
-        "Geomorphical_Feature",
-        "Material",
-        "Apparatus",
-        "Monitoring",
-        "Software",
-        "Measured_Property"]
+                      "Process_Hazard",
+                      "Geological_Structure",
+                      "Geomorphical_Feature",
+                      "Material",
+                      "Apparatus",
+                      "Monitoring",
+                      "Software",
+                      "Measured_Property"]
+
     for field in subject_fields:
         try:
             for value in dict[field]:
                 subjectFree = subjectFree + '<subject subjectScheme="' + field + '">' + value + '</subject>'
         except KeyError:
-            continue # try next field in the list
-
+            continue  # Try next field in the list.
 
     if subjectDisciplines or subjectTags or subjectFree:
         return '<subjects>' + subjectDisciplines + subjectTags + subjectFree + '</subjects>'
@@ -221,8 +230,9 @@ def getFunders(dict):
 
     return ''
 
-# /brief Get string in datacite format containing creator information
+
 def getCreators(dict):
+    """Get string in DataCite format containing creator information."""
     creators = ''
     try:
         for creator in dict['Creator']:
@@ -243,7 +253,7 @@ def getCreators(dict):
             creators = creators + nameIdentifiers
             creators = creators + affiliations
             creators = creators + '</creator>'
-        
+
         if creators:
             return '<creators>' + creators + '</creators>'
     except KeyError:
@@ -251,20 +261,24 @@ def getCreators(dict):
 
     return ''
 
-# /brief Get string in datacite format containing contributors including contact persons if these were added explicitely (GEO)
+
 def getContributors(dict):
+    """Get string in datacite format containing contributors,
+       including contact persons if these were added explicitely (GEO).
+    """
     contributors = ''
+
     try:
-        for yoda_contributor in ['Contributor','Contact']:    # COntact is a special case introduced for Geo - Contributor type = 'contactPerson'
-  
+        for yoda_contributor in ['Contributor', 'Contact']:  # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
             for contributor in dict[yoda_contributor]:
-                if yoda_contributor=='Contact':
-                     contributors = contributors + '<contributor contributorType="ContactPerson">'
-		else:
+                if yoda_contributor == 'Contact':
+                    contributors = contributors + '<contributor contributorType="ContactPerson">'
+                else:
                     contributors = contributors + '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
+
                 contributors = contributors + '<contributorName>' + contributor['Name']['First_Name'] + ' ' + contributor['Name']['Last_Name'] + '</contributorName>'
 
-                #Possibly multiple person identifiers
+                # Possibly multiple person identifiers
                 listIdentifiers = contributor['Person_Identifier']
                 nameIdentifiers = ''
                 for dictId in listIdentifiers:
@@ -286,6 +300,7 @@ def getContributors(dict):
         return '<contributors>' + contributors + '</contributors>'
     return ''
 
+
 # /brief Get string in datacite format containing all date information
 def getDates(dict):
     try:
@@ -298,7 +313,7 @@ def getDates(dict):
 
         dateCollectStart = dict['Collected']['Start_Date']
         dateCollectEnd = dict['Collected']['End_Date']
-    
+
         dates = dates + '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
 
         if dates:
@@ -307,27 +322,29 @@ def getDates(dict):
         pass
     return ''
 
-# /brief Get string in datacite format containing version info
+
 def getVersion(dict):
+    """Get string in DataCite format containing version info."""
     try:
         version = dict['Version']
         return '<version>' + version + '</version>'
     except KeyError:
         return ''
 
-# /brief Get string in datacite format containing rights related information 
+
 def getRightsList(dict):
+    """Get string in DataCite format containing rights related information."""
     try:
-        #licenseURI = dict['System']['License_URI']
-        #rights = '<rights rightsURI="' + licenseURI + '"></rights>'
+        # licenseURI = dict['System']['License_URI']
+        # rights = '<rights rightsURI="' + licenseURI + '"></rights>'
         rights = ''
-        
+
         accessRestriction = dict['Data_Access_Restriction']
 
-        accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess' , 'Closed': 'info:eu-repo/semantics/closedAccess'}
+        accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess', 'Closed': 'info:eu-repo/semantics/closedAccess'}
 
         rightsURI = ''
-        for option,uri in accessOptions.items():
+        for option, uri in accessOptions.items():
             if accessRestriction.startswith(option):
                 rightsURI = uri
                 break
@@ -340,8 +357,9 @@ def getRightsList(dict):
 
     return ''
 
-# /brief Get string in datacite format containing language
+
 def getLanguage(dict):
+    """Get string in DataCite format containing language."""
     try:
         language = dict['Language'][0:2]
         return '<language>' + language + '</language>'
@@ -349,8 +367,9 @@ def getLanguage(dict):
         pass
     return ''
 
-# /brief Get string in datacite format containing Resource type and default handling
+
 def getResourceType(dict):
+    """Get string in DataCite format containing Resource type and default handling."""
     yodaResourceToDatacite = {'Dataset': 'Research Data', 'DataPaper': 'Method Description', 'Software': 'Computer code'}
 
     try:
@@ -362,33 +381,35 @@ def getResourceType(dict):
 
     return '<resourceType resourceTypeGeneral="' + resourceType + '">' + dataciteDescr + '</resourceType>'
 
-# /brief Get string in datacite format containing related datapackages 
+
 def getRelatedDataPackage(dict):
+    """Get string in DataCite format containing related datapackages."""
     relatedIdentifiers = ''
 
     try:
         for relPackage in dict['Related_Datapackage']:
             relType = relPackage['Relation_Type'].split(':')[0]
-            #title = relPackage['Title']
+            # title = relPackage['Title']
             persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
             persistentID = relPackage['Persistent_Identifier']['Identifier']
             relatedIdentifiers = relatedIdentifiers + '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
 
         if relatedIdentifiers:
             return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
-        return ''   
+        return ''
     except KeyError:
         return ''
 
-# /brief Get string in datacite format containing the information of geo locations
-#
-# There are two versions of this
-# 1) Default schema - only textual representation of
-# 2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
-# Both are mutually exclusive.
-# I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
 
 def getGeoLocations(dict):
+    """Get string in datacite format containing the information of geo locations.
+
+       There are two versions of this:
+       1) Default schema - only textual representation of
+       2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
+       Both are mutually exclusive.
+       I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
+    """
     geoLocations = ''
 
     try:
@@ -402,34 +423,33 @@ def getGeoLocations(dict):
             lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
             lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
 
-            geoPlace =''
+            geoPlace = ''
             geoPoint = ''
-            geoBox   = ''
+            geoBox = ''
 
             if spatial_description:
                 geoPlace = '<geoLocationPlace>' + spatial_description + '</geoLocationPlace>'
 
-            if lon0==lon1 and lat0==lat1: # dealing with a point
+            if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
                 pointLong = '<pointLongitude>' + lon0 + '</pointLongitude>'
-                pointLat  = '<pointLatitude>' + lat0  + '</pointLatitude>'
-
+                pointLat = '<pointLatitude>' + lat0 + '</pointLatitude>'
                 geoPoint = '<geoLocationPoint>' + pointLong + pointLat + ' </geoLocationPoint>'
             else:
                 wbLon = '<westBoundLongitude>' + lon0 + '</westBoundLongitude>'
                 ebLon = '<eastBoundLongitude>' + lon1 + '</eastBoundLongitude>'
                 sbLat = '<southBoundLatitude>' + lat0 + '</southBoundLatitude>'
                 nbLat = '<northBoundLatitude>' + lat1 + '</northBoundLatitude>'
-                
+
                 geoBox = '<geoLocationBox>' + wbLon + ebLon + sbLat + nbLat + '</geoLocationBox>'
 
-	    # Put it all together as one geoLocation elemenmt
+        # Put it all together as one geoLocation elemenmt
             geoLocations = geoLocations + '<geoLocation>' + geoPlace + geoPoint + geoBox + '</geoLocation>'
 
         if len(geoLocations):
             return '<geoLocations>' + geoLocations + '</geoLocations>'
 
     except KeyError:
-        pass  
+        pass
 
     try:
         locationList = dict['Covered_Geolocation_Place']
@@ -440,7 +460,4 @@ def getGeoLocations(dict):
 
     if len(geoLocations):
         return '<geoLocations>' + geoLocations + '</geoLocations>'
-    return '' 
-
-
-
+    return ''
