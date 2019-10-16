@@ -1,4 +1,7 @@
 {
+  "links": {
+    "ui:disabled": true
+  },
   "Description": {
     "ui:widget": "textarea"
   },

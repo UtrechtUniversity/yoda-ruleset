@@ -44,10 +44,10 @@ INSTALL_DIR  ?= ..
 all: $(RULESET_FILE) $(PYRULESET_FILE)
 
 $(RULESET_FILE): $(RULE_FILES)
-	cat $(RULE_FILES) | sed '/^\s*\(#.*\)\?$$/d' > $(RULESET_FILE)
+	cat $^ | sed '/^\s*\(#.*\)\?$$/d' > $@
 
 $(PYRULESET_FILE): $(PYRULE_FILES)
-	cat $(PYRULE_FILES) > $(PYRULESET_FILE)
+	cat $^ > $@
 
 install: $(RULESET_FILE) $(PYRULESET_FILE)
 	cp --backup $(RULESET_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
@@ -60,7 +60,7 @@ update:
 	git pull
 
 $(DEBUG_FILE): $(RULE_FILES)
-	cat $(RULE_FILES) | sed 's/#DEBUG\s//' | sed '/^\s*\(#.*\)\?$$/d' > $(DEBUG_FILE)
+	cat $^ | sed 's/#DEBUG\s//' | sed '/^\s*\(#.*\)\?$$/d' > $@
 
 debug: $(DEBUG_FILE)
 

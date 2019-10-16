@@ -4,12 +4,11 @@
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# Utility / convenience functions for data object IO and collections. {{{
-
 import json
 import irods_types
 from collections import OrderedDict
 
+# Utility / convenience functions for data object IO and collections. {{{
 
 def write_data_object(callback, path, data):
     """Write a string to an iRODS data object.
@@ -26,12 +25,12 @@ def write_data_object(callback, path, data):
 def read_data_object(callback, path, max_size=IIDATA_MAX_SLURP_SIZE):
     """Read an entire iRODS data object into a string."""
 
-    data_size = getDataObjSize(callback, *chop_path(path))
-    if data_size > max_size:
+    size = data_size(callback, path)
+    if size > max_size:
         raise UUFileSizeException('read_data_object: file size limit exceeded ({} > {})'
-                                  .format(data_size, max_size))
+                                  .format(size, max_size))
 
-    if data_size == 0:
+    if size == 0:
         # Don't bother reading an empty file.
         return ''
 
@@ -40,20 +39,22 @@ def read_data_object(callback, path, max_size=IIDATA_MAX_SLURP_SIZE):
 
     ret = data_obj_read(callback,
                         handle,
-                        data_size,
+                        size,
                         irods_types.BytesBuf())
 
     buf = ret['arguments'][2]
 
     data_obj_close(callback, handle, 0)
 
-    return ''.join(buf.buf[0:buf.len])
+    return ''.join(buf.buf[:buf.len])
 
 
 def chop_path(path):
     """Split off the rightmost path component of a path
        /a/b/c -> (/a/b, c)
     """
+    # In practice, this is the same as os.path.split on POSIX systems,
+    # but it's better to not rely on OS-defined path syntax for iRODS paths.
     if path == '/' or len(path) == 0:
         return '/', ''
     else:
@@ -84,6 +85,20 @@ def data_owner(callback, path):
                   "COLL_NAME = '%s' AND DATA_NAME = '%s'" % chop_path(path),
                   genquery.AS_LIST, callback))
     return tuple(owners[0]) if len(owners) > 0 else None
+
+
+def data_size(callback, path):
+    """Get a data object's size in bytes."""
+    iter = genquery.row_iterator(
+        "DATA_SIZE, order_desc(DATA_MODIFY_TIME)",
+        "COLL_NAME = '%s' AND DATA_NAME = '%s'" % chop_path(path),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        return int(row[0])
+    else:
+        return -1
 
 
 def collection_owner(callback, path):
@@ -118,6 +133,7 @@ class UUJsonException(UUException):
 
 
 def parse_json(text):
+    """Parse JSON into an OrderedDict."""
     try:
         return json.loads(text, object_pairs_hook=OrderedDict)
     except ValueError:
@@ -136,6 +152,8 @@ def write_json_object(callback, path, data):
 # }}}
 
 
+# Dealing with users {{{
+
 def get_client_name_zone(rei):
     """Obtain client name and zone, as a tuple"""
     client = session_vars.get_map(rei)['client_user']
@@ -145,3 +163,28 @@ def get_client_name_zone(rei):
 def get_client_full_name(rei):
     """Obtain client name and zone, formatted as a 'x#y' string"""
     return '{}#{}'.format(*get_client_name_zone(rei))
+
+
+def user_name_from_id(callback, user_id):
+    """Retrieve username from user ID.
+
+       Arguments:
+       user_id -- User id
+
+       Return:
+       string -- User name
+    """
+    user_name = ""
+
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_ID = '%s'" % (str(user_id)),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        user_name = row[0]
+
+    return user_name
+
+# }}}

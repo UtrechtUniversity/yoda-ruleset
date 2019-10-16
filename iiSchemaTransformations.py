@@ -52,7 +52,7 @@ def _transform_default0_default1(m):
         if 'Name' in person:
             person['Name'] = fixup_name(person['Name'])
 
-    m['$id'] = 'https://yoda.uu.nl/schemas/default-1/metadata.json'
+    metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-1/metadata.json')
 
     return m
 

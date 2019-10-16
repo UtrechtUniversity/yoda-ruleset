@@ -33,6 +33,10 @@ UUUSERMETADATAROOT = "usr"
 # Prefix for organisational metadata.
 UUORGMETADATAPREFIX = "org_"
 
+IILOCKATTRNAME        = UUORGMETADATAPREFIX + "lock"
+IISTATUSATTRNAME      = UUORGMETADATAPREFIX + "status"
+IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + "vault_status"
+
 # Cronjob states.
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
@@ -55,5 +59,12 @@ VAULT_PACKAGE_STATE = {
     'PENDING_REPUBLICATION':     'PENDING_REPUBLICATION',
 }
 
-
-
+# All research folder states.
+RESEARCH_PACKAGE_STATE = {
+    'FOLDER':    '',
+    'LOCKED':    'LOCKED',
+    'SUBMITTED': 'SUBMITTED',
+    'ACCEPTED':  'ACCEPTED',
+    'REJECTED':  'REJECTED',
+    'SECURED':   'SECURED',
+}
