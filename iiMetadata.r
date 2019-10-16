@@ -6,11 +6,9 @@
 # \license   GPLv3, see LICENSE.
 
 
-# \brief Transform yoda-metadata.json from versionFrom into versionTo. If at all possible
+# \brief Transform yoda-metadata.json to the active schema id, if possible.
 #
 # \param[in]  path        Path of the yoda-metadata.json
-# \param[in]  versionFrom Version within yoda-metadata.json
-# \param[in]  versionTo	  Version yoda-metadata.json must be converted into
 # \param[out] status      Status of the action
 # \param[out] statusInfo  Information message when action was not successful
 #
@@ -25,48 +23,6 @@ iiFrontTransformMetadata(*path, *status, *statusInfo)
         *status = *statusPy;
         *statusInfo = *statusInfoPy;
 }
-
-
-# \brief Get the XSD location to be included the metadata form.
-#
-# \param[in]  folder        Path of the folder
-# \param[out] schemaLocation Metadata schema location based upon location of yoda-metadata.xml
-# \param[out] status        Status of the action
-# \param[out] statusInfo    Information message when action was not successful
-#
-iiFrontGetSchemaLocation(*folder, *schemaLocation, *status, *statusInfo)
-{
-        *status = "Success";
-        *statusInfo = "";
-
-        *schema = '';
-
-        iiRuleGetLocation(*folder, *schema); # it is not possible to directly use *schemaLocation here
-
-        *schemaLocation =  *schema; # again, does not work when passing schemaLocation direcly in iiRuleGetLocation
-}
-
-
-# \brief Get the XSD location to be included the metadata form.
-#
-# \param[in]  folder        Path of the folder
-# \param[out] schemaSpace   Metadata schema space based upon location of yoda-metadata.xml
-# \param[out] status        Status of the action
-# \param[out] statusInfo    Information message when action was not successful
-#
-
-iiFrontGetSchemaSpace(*folder, *schemaSpace, *status, *statusInfo)
-{
-        *status = "Success";
-        *statusInfo = "";
-
-        *schema = '';
-
-        iiRuleGetSpace(*folder, *schema); # it is not possible to directly use *schemaLocation here
-
-        *schemaSpace =  *schema; # again, does not work when passing schemaLocation direcly in iiRuleGetSpace
-}
-
 
 # \brief Get the JSON metadata schema for the metadata form.
 #
@@ -246,30 +202,6 @@ iiGetVaultXsdPath(*metadataXmlPath, *xsdPath) {
 }
 
 
-# \brief Locate the XSL to use for a metadata path.
-#
-# \param[in] metadataXmlPath path of the metadata XML file that needs to be converted
-# \param[out] xslPath        path of the XSL to use for conversion to an AVU XML
-#
-iiGetXslPath(*metadataXmlPath, *xslPath) {
-	*xslPath = "";
-	*pathElems = split(*metadataXmlPath, '/');
-	*rodsZone = elem(*pathElems, 0);
-	*groupName = elem(*pathElems, 2);
-
-	uuGroupGetCategory(*groupName, *category, *subcategory);
-	*xslColl = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ *category;
-	*xslName = IIAVUXSLNAME;
-	foreach(*row in SELECT COLL_NAME, DATA_NAME WHERE COLL_NAME = *xslColl AND DATA_NAME = *xslName) {
-		*xslPath = *row.COLL_NAME ++ "/" ++ *row.DATA_NAME;
-	}
-
-	if (*xslPath == "") {
-		*xslPath = "/*rodsZone" ++ IISCHEMACOLLECTION ++ "/" ++ IIDEFAULTSCHEMANAME ++ "/" ++ IIAVUXSLNAME;
-	}
-}
-
-
 # \brief Validate XML against XSD schema.
 #
 # \param[in] metadataXmlPath path of the metadata XML file that needs to be converted
@@ -415,10 +347,9 @@ iiPrepareMetadataForm(*path, *result) {
                 *parentHasMetadata  = "false";
                 *parentMetadataPath = "";
                 uuChopPath(*path, *parent, *child);
-                iiCollectionHasCloneableMetadata(*parent, *parentHasMetadata, *parentMetadataPath);
-
-                *kvp.parentHasMetadata  = *parentHasMetadata;
+                iiCollectionHasCloneableMetadata(*parent, *parentMetadataPath);
                 *kvp.parentMetadataPath = *parentMetadataPath;
+                *kvp.parentHasMetadata  = if (*parentMetadataPath != "") then "true" else "false"
 
                 # Check for transformations.
                 *kvp.transformation = "false";

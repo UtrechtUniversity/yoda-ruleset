@@ -16,28 +16,7 @@ from collections import OrderedDict
 # \return Dict holding data
 #
 def getMetadataXmlAsDict(callback, path):
-    # Retrieve XML size.
-
-    coll_name, data_name = os.path.split(path)
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open metadata XML.
-    ret_val = callback.msiDataObjOpen('objPath=' + path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read metadata XML.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close metadata XML.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse XML.
-    read_buf = ret_val['arguments'][2]
-    xmlText = ''.join(read_buf.buf)
-
-    callback.writeString('serverLog', xmlText)
-
-    return xmltodict.parse(xmlText)
+    return xmltodict.parse(read_data_object(callback, path))
 
 
 # \brief Get Json Schema of category and return as (ordered!) dict
@@ -48,30 +27,7 @@ def getMetadataXmlAsDict(callback, path):
 # \return dict hodling the category JSONSchema
 #
 def getMetadaJsonDict(callback, yoda_json_path):
-
-    coll_name, data_name = os.path.split(yoda_json_path)
-
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON file
-    ret_val = callback.msiDataObjOpen('objPath=' + yoda_json_path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read JSON
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON schema.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON into dict.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-
-    callback.writeString('serverLog', jsonText)
-
-
-    # Use the hook to keep ordering of elements as in metadata.json
-    return json.loads(jsonText, object_pairs_hook=OrderedDict)
+    return read_json_object(callback, yoda_json_path)
 
 
 # \brief Read yoda-metadata.json from vault and return as (ordered!) dict
@@ -84,29 +40,7 @@ def getMetadaJsonDict(callback, yoda_json_path):
 def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
 
     json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
-
-    coll_name, data_name = os.path.split(json_schema_path)
-
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON schema for the category
-    ret_val = callback.msiDataObjOpen('objPath=' + json_schema_path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read JSON schema.
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON schema.
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON into dict.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-
-    # callback.writeString('serverLog', jsonText)
-
-    # Use the hook to keep ordering of elements as in metadata.json
-    return json.loads(jsonText, object_pairs_hook=OrderedDict)
+    return read_json_object(callback, json_schema_path)
 
 
 # \brief turn yoda-metadata.xml into Json
@@ -438,7 +372,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 		jsonFound = True
 		continue
 
-	    if jsonFound == False:
+	    if not jsonFound:
 		data_name = getLatestVaultMetadataXml(callback, vault_collection)
 		if data_name != "":
 		    transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)

@@ -1,38 +1,35 @@
 import xmltodict
 import os
 
-from json import loads
-from collections import OrderedDict
-
 
 # \brief Convert current metadata.xml to json
 #
 # \param[in] rods_zone  Zone name
 # \param[in] vault_collection  Collection name of metadata XML
 # \param[in] xml_data_name  Data name of metadata XML that requires transformation
-# \param[in] data_name_json  Name of data object to be created containing the 
+# \param[in] data_name_json  Name of data object to be created containing the
 ##
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
-    # This function simply transforms given data_name to a Json data object. 
-	# No further intelligence required further. 
+    # This function simply transforms given data_name to a Json data object.
+	# No further intelligence required further.
 	# Perhaps handling within vault??
-	
+
 	ofFlags = ''
 	json_file = publish_collection + '/' + data_name_json
 
 	ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
-	
+
 	#copyACLsFromParent(callback, json_file, "default")
 
         xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
-        
+
 	# take category incuding version from declared namespace in xml
 	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
 
 	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
 
 	newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
-	
+
 	fileHandle = ret_val['arguments'][2]
 	callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
 	callback.msiDataObjClose(fileHandle, 0)
@@ -52,7 +49,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 # \param[in] publicHost, yodaInstance, yodaPrefix are required for secure copy from /publication area to MOAI
 #
 # \return data_id to continue with in next batch.
-# If data_id =0, no more data objects were found. 
+# If data_id =0, no more data objects were found.
 # Batch is finished
 #
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
@@ -87,7 +84,7 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 		jsonFound = True
 		break
 
-	    if jsonFound == False:
+	    if not jsonFound:
                 # At this moment only default schema is used. So not required to figure out which schema is necessary
 	        transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
 
@@ -120,8 +117,8 @@ def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei)
     batch = int(rule_args[1])
     pause = float(rule_args[2])
     delay = int(rule_args[3])
-    publicHost = rule_args[4] 
-    yodaInstance = rule_args[5] 
+    publicHost = rule_args[4]
+    yodaInstance = rule_args[5]
     yodaPrefix = rule_args[6]
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -135,7 +132,3 @@ def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei)
             "<PLUSET>%ds</PLUSET>" % delay,
             "iiCheckPublishedMetadataXmlForTransformationToJson('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")
-
-
-
-
