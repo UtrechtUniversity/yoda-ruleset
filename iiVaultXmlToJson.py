@@ -19,9 +19,9 @@ def getMetadaJsonDict(callback, yoda_json_path):
     return read_json_object(callback, yoda_json_path)
 
 
-def getActiveJsonSchemaAsDict(callback, rods_zone, category):   ## irods-ruleset-uu function in uuResources.py
+def getActiveJsonSchemaAsDict(callback, rods_zone, category):  # irods-ruleset-uu function in uuResources.py
     """Read yoda-metadata.json from vault and return as (ordered!) dict."""
-    json_schema_path = '/' +  rods_zone + '/yoda/schemas/' + category + '/metadata.json'
+    json_schema_path = '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
     return read_json_object(callback, json_schema_path)
 
 
@@ -40,14 +40,13 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
     for elementName in dictSchema['properties']:
         elementInfo = dictSchema['properties'][elementName]
 
-        try:  ## CHECK IF DATA IS PRESENT
+        try:  # CHECK IF DATA IS PRESENT
             data = xmlData['metadata'][elementName]
 
             if isinstance(data, list):  # Multiple data entries for given elemenent
-
-	        totalElementList = []
+                totalElementList = []
                 newData = {}
-                for dataItem in data:  ### MULTIPLE ENTRIES IN DATA
+                for dataItem in data:  # MULTIPLE ENTRIES IN DATA
                     if isinstance(dataItem, dict):  # hier de structuur uitvissen
                         fieldIsMultiple = True  # kan als zeker worden aangenomen nu! Hoeft niet te worden getest omdat de data al multiple wordt aangeleverd
                         newData = {}
@@ -67,7 +66,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                         subPropertyElement = subElement
 
                                         # I this a single or multiple subproperty element??
-                                        subIsMultiple = False;
+                                        subIsMultiple = False
                                         try:
                                             subIsMultiple = (subElementInfo['type'] == 'array')
                                         except KeyError:
@@ -117,9 +116,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                 totalElementList.append(newData)
                         except KeyError:
                             pass
-
-
-                    else:  ## SINGLE ENTRY e.g. Discipline
+                    else:  # SINGLE ENTRY e.g. Discipline
                         totalElementList.append(dataItem)
 
                 jsonDict[elementName] = totalElementList
@@ -133,7 +130,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                     if elementInfo['items']['yoda:structure'] == 'subproperties':
                         counter = 0
 
-                        for subElement,subElementInfo in elementInfo['items']['properties'].items():   # keys(): #items()):
+                        for subElement, subElementInfo in elementInfo['items']['properties'].items():  # keys(): #items()):
 
                             if counter == 0:  # MAIN PART of subproperty structure  ! in itself always a single value
                                 # Added these extra variables for clearer name purposes as there is a distinction between main/sub elements
@@ -144,7 +141,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                 subPropertyElement = subElement
 
                                 # I this a single or multiple subproperty element??
-                                subIsMultiple = False;
+                                subIsMultiple = False
                                 try:
                                     subIsMultiple = (subElementInfo['type'] == 'array')
                                 except KeyError:
@@ -183,7 +180,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                             newData[subElement] = listCompoundData[0]  # compoundDict # Single dict
 
                                 except KeyError as e:
-                                    if subIsMultiple and not isinstance(data['Properties'][subPropertyElement],list):
+                                    if subIsMultiple and not isinstance(data['Properties'][subPropertyElement], list):
                                         newData[subElement] = [data['Properties'][subPropertyElement]]
                                     else:
                                         newData[subElement] = data['Properties'][subPropertyElement]
@@ -198,7 +195,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                         jsonDict[elementName] = newData
 
                 except KeyError as e:
-		    pass
+                    pass
 
                 try:
                     if elementInfo['yoda:structure'] == 'compound':  # Compound handling on highest level, i.e. not as part of subproperty structure
@@ -224,7 +221,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
 
             else:  # Single value
                 try:
-                    if elementName=='Retention_Period':  # Can be hardcoded, as this script is for one situation solely
+                    if elementName == 'Retention_Period':  # Can be hardcoded, as this script is for one situation solely
                         jsonDict[elementName] = int(data)
                     else:
                         jsonDict[elementName] = data
@@ -245,7 +242,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
             'Open_access_Link': xmlData['metadata']['System']['Open_Access_Link'],
             'License_URI': xmlData['metadata']['System']['License_URI']
         }
-    except KeyError: # only published area contains system metadata, not data in the vault
+    except KeyError:  # only published area contains system metadata, not data in the vault
         pass
 
     return json.dumps(jsonDict)
@@ -262,41 +259,41 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
     """
 
     # This function simply transforms given data_name to a Json data object.
-	# No further intelligence required further.
-	# Perhaps handling within vault??
+    # No further intelligence required further.
+    # Perhaps handling within vault??
 
-	ofFlags = ''
-	json_file = vault_collection + '/yoda-metadata[' + str(int(time.time())) + '].json'
+    ofFlags = ''
+    json_file = vault_collection + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
-	ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
+    ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
 
-	copyACLsFromParent(callback, json_file, "default")
+    copyACLsFromParent(callback, json_file, "default")
 
     xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
 
-	# take category incuding version from declared namespace in xml
-	category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
+    # take category incuding version from declared namespace in xml
+    category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
     callback.writeString('serverLog', category_version)
 
-	dictSchema = getActiveJsonSchemaAsDict(callback,rods_zone, category_version)
+    dictSchema = getActiveJsonSchemaAsDict(callback, rods_zone, category_version)
 
-	#for test in xmlDataDict:
-    	#    for test1 in xmlDataDict[test]:
-        #        #print(test + ' -' + test1)
-        #        if isinstance(xmlDataDict[test][test1], dict):
-        #            for test2 in xmlDataDict[test][test1]:
-        #                callback.writeString('serverLog', test + ' -' + test1 + ' -- ' + test2 )
+    # for test in xmlDataDict:
+    #    for test1 in xmlDataDict[test]:
+    #        #print(test + ' -' + test1)
+    #        if isinstance(xmlDataDict[test][test1], dict):
+    #            for test2 in xmlDataDict[test][test1]:
+    #                callback.writeString('serverLog', test + ' -' + test1 + ' -- ' + test2 )
 
-	newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
+    newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
 
-	fileHandle = ret_val['arguments'][2]
-	callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
-	callback.msiDataObjClose(fileHandle, 0)
+    fileHandle = ret_val['arguments'][2]
+    callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
+    callback.msiDataObjClose(fileHandle, 0)
 
     # Add item to provenance log.
     callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
 
-	callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
+    callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
 def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, coll_id, batch, pause):
@@ -323,13 +320,13 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     )
 
     # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
-    prev_coll_id = -1 # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
+    prev_coll_id = -1  # A collection can hold multiple metadata-schemas and that will result in an equal amount of equal coll_id's
     # Check each collection in batch.
     for row in iter:
 
-	coll_id = int(row[0])
+        coll_id = int(row[0])
 
-        if coll_id == prev_coll_id: # coll_id should be processed only once!
+        if coll_id == prev_coll_id:  # coll_id should be processed only once!
             continue
 
         prev_coll_id = coll_id
@@ -341,29 +338,29 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
             group_name = pathParts[3]
             vault_collection = '/'.join(pathParts[:5])
 
-	    # First make sure that no metadata json file exists already in the vault collection .
-	    # If so, no transformation is required.
-	    # As it is unknown what the exact name is of the JSON file, use wildcards:
+            # First make sure that no metadata json file exists already in the vault collection .
+            # If so, no transformation is required.
+            # As it is unknown what the exact name is of the JSON file, use wildcards:
 
             # There is no need to specifically test for the samen name.
-	    # The area that is looked into, cannot be accessed by a YoDa user. I.e. the user can not have placed any json files.
+            # The area that is looked into, cannot be accessed by a YoDa user. I.e. the user can not have placed any json files.
             # If a json file is present, this can only have been added by this batch
 
-	    jsonFound = False
-	    iter2 = genquery.row_iterator(
-		 "ORDER(COLL_ID), COLL_NAME",
-		 "DATA_NAME like 'yoda-metadata%%.json' AND COLL_ID = '%d'" % (coll_id),
-		 genquery.AS_LIST, callback
-	    )
-	    for row2 in iter2:
-		jsonFound = True
-		continue
+            jsonFound = False
+            iter2 = genquery.row_iterator(
+                "ORDER(COLL_ID), COLL_NAME",
+                "DATA_NAME like 'yoda-metadata%%.json' AND COLL_ID = '%d'" % (coll_id),
+                genquery.AS_LIST, callback)
 
-	    if not jsonFound:
-		data_name = getLatestVaultMetadataXml(callback, vault_collection)
-		if data_name != "":
-		    transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
-        except:
+            for row2 in iter2:
+                jsonFound = True
+                continue
+
+            if not jsonFound:
+                data_name = getLatestVaultMetadataXml(callback, vault_collection)
+            if data_name != "":
+                transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
+        except Exception:
             pass
 
         # Sleep briefly between checks.
