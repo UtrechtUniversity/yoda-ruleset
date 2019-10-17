@@ -1,6 +1,7 @@
 # \file      iiUtil.py
 # \brief     Commonly used utility functions
 # \author    Chris Smeele
+# \author    Lazlo Westerhof
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
@@ -72,13 +73,6 @@ def data_object_exists(callback, path):
                genquery.AS_LIST, callback))) > 0
 
 
-def collection_exists(callback, path):
-    """Check if a collection with the given path exists"""
-    return len(list(genquery.row_iterator(
-               "COLL_ID", "COLL_NAME = '%s'" % path,
-               genquery.AS_LIST, callback))) > 0
-
-
 def data_owner(callback, path):
     """Find the owner of a data object. Returns (name, zone) or None."""
     owners = list(genquery.row_iterator(
@@ -102,6 +96,13 @@ def data_size(callback, path):
         return -1
 
 
+def collection_exists(callback, path):
+    """Check if a collection with the given path exists"""
+    return len(list(genquery.row_iterator(
+               "COLL_ID", "COLL_NAME = '%s'" % path,
+               genquery.AS_LIST, callback))) > 0
+
+
 def collection_owner(callback, path):
     """Find the owner of a collection. Returns (name, zone) or None."""
     owners = list(genquery.row_iterator(
@@ -121,6 +122,51 @@ def collection_empty(callback, path):
                     "DATA_ID",
                     "COLL_NAME like '{}/%'".format(path),
                     genquery.AS_LIST, callback))) == 0)
+
+
+def collection_size(callback, path):
+    """Get a collection's size in bytes."""
+    size = 0
+
+    iter = genquery.row_iterator(
+        "DATA_ID, DATA_SIZE",
+        "COLL_NAME like '{}'".format(path),
+        genquery.AS_LIST, callback
+    )
+    for row in iter:
+        size = size + int(row[1])
+
+    iter = genquery.row_iterator(
+        "DATA_ID, DATA_SIZE",
+        "COLL_NAME like '{}/%'".format(path),
+        genquery.AS_LIST, callback
+    )
+    for row in iter:
+        size = size + int(row[1])
+
+    return size
+
+
+def collection_data_count(callback, path):
+    """Get a collection's data count."""
+    return (len(list(genquery.row_iterator(
+                     "DATA_ID",
+                     "COLL_NAME = '{}'".format(path),
+                     genquery.AS_LIST, callback)))
+            + len(list(genquery.row_iterator(
+                    "DATA_ID",
+                    "COLL_NAME like '{}/%'".format(path),
+                    genquery.AS_LIST, callback))))
+
+
+
+def collection_collection_count(callback, path):
+    """Get a collection's collection count."""
+    return (len(list(genquery.row_iterator(
+                     "COLL_ID",
+                     "COLL_NAME like '{}/%'".format(path),
+                     genquery.AS_LIST, callback))))
+
 # }}}
 
 
