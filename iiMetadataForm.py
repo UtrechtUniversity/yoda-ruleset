@@ -13,13 +13,16 @@ def group_category(callback, group):
         group = callback.uuGetBaseGroup(group, '')['arguments'][1]
     return callback.uuGroupGetCategory(group, '', '')['arguments'][1]
 
+
 def user_member_type(callback, group, user):
     """returns: 'none' | 'reader' | 'normal' | 'manager'"""
     return callback.uuGroupGetMemberType(group, user, '')['arguments'][2]
 
+
 def user_is_datamanager(callback, category, user):
     return user_member_type(callback, 'datamanager-{}'.format(category), user) \
-            in ('normal', 'manager')
+        in ('normal', 'manager')
+
 
 def get_client_full_name_r(rule_args, callback, rei):
     """Obtain client name and zone, formatted as a 'x#y' string"""
@@ -31,17 +34,18 @@ def get_client_full_name_r(rule_args, callback, rei):
 def get_coll_org_metadata(callback, path):
     """Obtains a (k,v) list of all organisation metadata on a given collection"""
 
-    return [(k,v) for k, v
-                  in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                           "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
-                                            .format(path, UUORGMETADATAPREFIX),
-                                           genquery.AS_LIST, callback)]
+    return [(k, v) for k, v
+            in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
+                                     .format(path, UUORGMETADATAPREFIX),
+                                     genquery.AS_LIST, callback)]
 
-def get_coll_status(callback, path, org_metadata = None):
+
+def get_coll_status(callback, path, org_metadata=None):
     """Get the status of a research folder."""
 
     if org_metadata is None:
-       org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(callback, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -49,11 +53,12 @@ def get_coll_status(callback, path, org_metadata = None):
         return org_metadata[IISTATUSATTRNAME]
     return RESEARCH_PACKAGE_STATE['FOLDER']
 
-def get_coll_vault_status(callback, path, org_metadata = None):
+
+def get_coll_vault_status(callback, path, org_metadata=None):
     """Get the status of a vault folder."""
 
     if org_metadata is None:
-       org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(callback, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -61,12 +66,13 @@ def get_coll_vault_status(callback, path, org_metadata = None):
         return org_metadata[IIVAULTSTATUSATTRNAME]
     return VAULT_PACKAGE_STATE['UNPUBLISHED']
 
-def get_coll_lock(callback, path, org_metadata = None):
+
+def get_coll_lock(callback, path, org_metadata=None):
     """Check for existence of locks on a collection.
        path -> ((no|here|outoftree|ancestor|descendant), rootcoll)"""
 
     if org_metadata is None:
-       org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(callback, path)
 
     ret = ('no', None)
 
@@ -104,13 +110,13 @@ def iiMetadataFormLoad(callback, path):
     output_keys = ['is_member',
                    'is_datamanager',
                    'can_clone',
-                   'status',              # (folder status)
+                   'status',               # (folder status)
                    'lock_type',
-                   'transformation_text', # ─── only if transformation needed
-                   'errors',              # ─── only if errors present
-                   'schema',              # ─┐
-                   'uischema',            #  ├─ only if no errors and no transformation
-                   'metadata']            # ─┘
+                   'transformation_text',  # ─── only if transformation needed
+                   'errors',               # ─── only if errors present
+                   'schema',               # ─┐
+                   'uischema',             #  ├─ only if no errors and no transformation
+                   'metadata']             # ─┘
 
     # Obtain some context.
     # - Who are we dealing with?
@@ -162,7 +168,7 @@ def iiMetadataFormLoad(callback, path):
                 path_out = []
                 for i, x in enumerate(e['path']):
                     if type(x) is int:
-                        path_out[-1] = '{} {}'.format(path_out[-1], x+1)
+                        path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
                     else:
                         path_out += [x.replace('_', ' ')]
 
@@ -194,7 +200,7 @@ def iiMetadataFormLoad(callback, path):
             else:
                 # Looks like a valid metadata file.
                 # See if its schema is up to date.
-                transform = get_transformation(callback, meta_path, metadata = metadata)
+                transform = get_transformation(callback, meta_path, metadata=metadata)
 
                 if transform is None:
                     if current_schema_id == schema['$id']:
@@ -202,9 +208,9 @@ def iiMetadataFormLoad(callback, path):
                         errors = [transform_error(x) for x
                                   in get_json_metadata_errors(callback,
                                                               meta_path,
-                                                              metadata = metadata,
-                                                              schema = schema,
-                                                              ignore_required = True)]
+                                                              metadata=metadata,
+                                                              schema=schema,
+                                                              ignore_required=True)]
                     else:
                         # Schema ID does not match and there is no defined transformation.
                         # We have no way to parse this file.
@@ -224,9 +230,9 @@ def iiMetadataFormLoad(callback, path):
                         errors = [transform_error(x) for x
                                   in get_json_metadata_errors(callback,
                                                               meta_path,
-                                                              metadata = metadata,
-                                                              schema = current_schema,
-                                                              ignore_required = True)]
+                                                              metadata=metadata,
+                                                              schema=current_schema,
+                                                              ignore_required=True)]
                     except Exception as e:
                         callback.writeString('serverLog',
                                              'Unknown error while validating <{}> against schema id <{}>: {}'
@@ -256,8 +262,7 @@ def iiMetadataFormLoad(callback, path):
     #     print('{} = {}'.format(k, v))
     # print('-----')
 
-    return {k:v for k, v in locals().items() if k in output_keys}
-
+    return {k: v for k, v in locals().items() if k in output_keys}
 
 
 def iiMetadataFormSave(rule_args, callback, rei):

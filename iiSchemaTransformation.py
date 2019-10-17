@@ -44,6 +44,7 @@ def execute_transformation(callback, metadata_path, transform):
 
 # ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
+
 def transformResearchXml(callback, xml_path):
     """Transform a yoda-metadata XML to JSON in the research area.
 
@@ -74,7 +75,7 @@ def transformResearchXml(callback, xml_path):
                                               .format(xml_path, schema_id, str(e)))
             # The result is unusable, as there will be no possible JSON → JSON
             # transformation that will make this a valid metadata file.
-            raise e # give up.
+            raise e  # give up.
 
         json_path = re.sub('\.xml$', '.json', xml_path)
 
@@ -90,11 +91,9 @@ def transformResearchXml(callback, xml_path):
         if len(errors) > 0:
             # This is not fatal - there may have been validation errors in the XML as well,
             # which should remain exactly the same in the new JSON situation.
-            #print(errors)
+            # print(errors)
             callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
                                               .format(xml_path, schema_id))
-
-
 
         write_json_object(callback, json_path, metadata)
     except Exception as e:
@@ -103,7 +102,7 @@ def transformResearchXml(callback, xml_path):
     return 'Success', ''
 
 
-@rule(inputs=[0], outputs=[1,2])
+@rule(inputs=[0], outputs=[1, 2])
 def iiRuleTransformMetadata(callback, coll):
     """Transform a yoda-metadata.json to the active schema.
 
@@ -132,7 +131,6 @@ def iiRuleTransformMetadata(callback, coll):
         # prompted for that the next time they open the form.
         callback.writeString('serverLog', 'Transforming XML -> JSON in the research space')
         return transformResearchXml(callback, metadata_path)
-
     else:
         # JSON metadata.
         callback.writeString('serverLog', 'Transforming JSON -> JSON in the research space')
@@ -146,12 +144,12 @@ def iiRuleTransformMetadata(callback, coll):
     return 'Success', ''
 
 
-def get_transformation(callback, metadata_path, metadata = None):
+def get_transformation(callback, metadata_path, metadata=None):
     """Find a transformation that can be executed on the given metadata JSON.
        Returns a transformation function on success, or None if no transformation was found.
     """
     try:
-        src = get_schema_id(callback, metadata_path, metadata = metadata)
+        src = get_schema_id(callback, metadata_path, metadata=metadata)
         dst = get_active_schema_id(callback, metadata_path)
 
         # Ideally, we would check that the metadata is valid in its current
@@ -160,7 +158,7 @@ def get_transformation(callback, metadata_path, metadata = None):
         # print('{} -> {}'.format(src,dst))
 
         return transformations[src][dst]
-    except:
+    except Exception:
         return None
 
 
@@ -185,6 +183,7 @@ def iiGetTransformationInfo(rule_args, callback, rei):
         rule_args[1:3] = 'true', transformation_html(transform)
 
 # ------------------ end of interface functions -----------------------------
+
 
 def iiRuleGetLocation(rule_args, callback, rei):
     """Return the metadata schema location based upon the category of a metadata JSON.
@@ -272,7 +271,7 @@ def iiBatchTransformVaultMetadata(rule_args, callback, rei):
                 transform = get_transformation(callback, metadata_path)
                 if transform is not None:
                     execute_transformation(callback, metadata_path, transform)
-        except:
+        except Exception:
             pass
 
         # Sleep briefly between checks.

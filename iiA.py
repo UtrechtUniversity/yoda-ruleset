@@ -10,10 +10,12 @@
 from enum import Enum
 import json
 
+
 class RuleOutput(Enum):
     """Specifies rule output handlers."""
-    STORE  = 0 # store in output parameters
-    STDOUT = 1 # write to stdout
+    STORE  = 0  # store in output parameters
+    STDOUT = 1  # write to stdout
+
 
 def rule(inputs=None, outputs=None, transform=lambda x: x, handler=RuleOutput.STORE):
     """Turns a python function into a rule.
@@ -83,6 +85,7 @@ def rule(inputs=None, outputs=None, transform=lambda x: x, handler=RuleOutput.ST
                     # callback.writeString('serverLog', 'rule output (DEBUG): ' + str(x))
         return r
     return deco
+
 
 def define_as_rule(name, **options):
     """Registers a rule with the provided name as a wrapper for the given function.

@@ -85,6 +85,7 @@ def get_active_schema(callback, path):
     """
     return read_json_object(callback, get_active_schema_path(callback, path))
 
+
 def get_active_schema_uischema(callback, path):
     """Get a schema and uischema object from a research or vault path."""
 
@@ -92,7 +93,7 @@ def get_active_schema_uischema(callback, path):
     uischema_path = '{}/{}'.format(chop_path(schema_path)[0], 'uischema.json')
 
     return read_json_object(callback, schema_path), \
-           read_json_object(callback, uischema_path)
+        read_json_object(callback, uischema_path)
 
 
 def get_active_schema_id(callback, path):
@@ -109,11 +110,12 @@ def get_active_schema_id(callback, path):
     return get_active_schema(callback, path)['$id']
 
 
-def get_schema_id(callback, metadata_path, metadata = None):
+def get_schema_id(callback, metadata_path, metadata=None):
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
         metadata = read_json_object(callback, metadata_path)
     return metadata_get_schema_id(metadata)
+
 
 def get_schema_path_by_id(callback, path, schema_id):
     """Get a schema path from a schema id."""
@@ -127,6 +129,7 @@ def get_schema_path_by_id(callback, path, schema_id):
         return '/{}/yoda/schemas/{}/metadata.json'.format(zone, m.group(1))
     else:
         return None
+
 
 def get_schema_by_id(callback, path, schema_id):
     """The path is used solely to get the zone name"""

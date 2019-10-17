@@ -8,6 +8,7 @@ import json
 import irods_types
 from collections import OrderedDict
 
+
 # Utility / convenience functions for data object IO and collections. {{{
 
 def write_data_object(callback, path, data):
@@ -116,10 +117,10 @@ def collection_empty(callback, path):
                      "DATA_ID",
                      "COLL_NAME = '{}'".format(path),
                      genquery.AS_LIST, callback))) == 0
-        and len(list(genquery.row_iterator(
-                     "DATA_ID",
-                     "COLL_NAME like '{}/%'".format(path),
-                     genquery.AS_LIST, callback))) == 0)
+            and len(list(genquery.row_iterator(
+                    "DATA_ID",
+                    "COLL_NAME like '{}/%'".format(path),
+                    genquery.AS_LIST, callback))) == 0)
 # }}}
 
 

@@ -11,6 +11,7 @@ import jsonschema
 import jsonavu
 from enum import Enum
 
+
 class Space(Enum):
     """Differentiates Yoda path types between research and vault spaces."""
     OTHER    = 0
@@ -18,7 +19,8 @@ class Space(Enum):
     VAULT    = 2
 
     def __repr__(self):
-        return 'Space.'+self.name
+        return 'Space.' + self.name
+
 
 def get_path_info(path):
     """
@@ -44,7 +46,7 @@ def get_path_info(path):
     # Turn empty match groups into empty strings.
     f      = lambda x:    '' if x is None else x
     g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
-    result = lambda s, m: (s, g(m,1), g(m,2), g(m,3))
+    result = lambda s, m: (s, g(m, 1), g(m, 2), g(m, 3))
 
     # Try a pattern and report success if it matches.
     def test(r, space):
@@ -55,22 +57,25 @@ def get_path_info(path):
          or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$', Space.RESEARCH)
          or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
          or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
-         or (Space.OTHER, '', '', '')) # (matches '/' and empty paths)
+         or (Space.OTHER, '', '', ''))  # (matches '/' and empty paths)
+
 
 def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
-    return filter(lambda x: type(x) in (dict, OrderedDict) \
-                            and 'rel'  in x \
-                            and 'href' in x \
-                            and type(x['rel'])  is unicode \
+    return filter(lambda x: type(x) in (dict, OrderedDict)
+                            and 'rel'  in x
+                            and 'href' in x
+                            and type(x['rel'])  is unicode
                             and type(x['href']) is unicode,
                   metadata['links'])
+
 
 def metadata_get_schema_id(metadata):
     desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
     if len(desc) > 0:
         return desc[0]['href']
+
 
 def metadata_set_schema_id(metadata, schema_id):
     other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
@@ -79,6 +84,7 @@ def metadata_set_schema_id(metadata, schema_id):
         ['rel',  'describedby'],
         ['href', schema_id]
     ])] + other_links
+
 
 def get_json_metadata_errors(callback,
                              metadata_path,
@@ -104,7 +110,6 @@ def get_json_metadata_errors(callback,
         metadata = read_json_object(callback, metadata_path)
 
     # Perform validation and filter errors.
-
     validator = jsonschema.Draft7Validator(schema)
 
     errors = validator.iter_errors(metadata)
@@ -193,6 +198,7 @@ def iiValidateMetadata(rule_args, callback, rei):
     else:
         rule_args[1] = '0'
         rule_args[2] = 'metadata validated'
+
 
 @define_as_rule('iiCollectionHasCloneableMetadata',
                 inputs=[0], outputs=[1],
@@ -482,7 +488,7 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
             associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
 
             callback.iiSetUpdatePublicationState(vault_pkg_path, irods_types.BytesBuf())
-        except:
+        except Exception:
             set_result('FailedToSetPublicationUpdateStatus',
                        'Failed to set publication update status on <{}>'.format(vault_pkg_path))
             return

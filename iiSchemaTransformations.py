@@ -4,6 +4,7 @@
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+
 # Transformation functions {{{
 
 # Naming scheme: _transform_FROMSCHEMA_TOSCHEMA
@@ -33,7 +34,7 @@ def _transform_default0_default1(m):
         """Split a name into a first and last name.
            This algo is error-prone, but acceptable.
         """
-        n.strip() # Trim whitespace, if any.
+        n.strip()  # Trim whitespace, if any.
 
         # Name contains comma? Parse as: last, first, first, first.
         ns = re.split(r'\s*,\s*', n, 1)
@@ -58,18 +59,19 @@ def _transform_default0_default1(m):
 
 # }}}
 
+
 def transformation_html(f):
     """Get a human-readable HTML description of a transformation function.
        The text is derived from the function's docstring.
     """
 
-    return '\n'.join(map(lambda paragraph: \
-                         '<p>{}</p>'.format(# Trim whitespace.
-                                            re.sub('\s+', ' ', paragraph).strip()),
+    return '\n'.join(map(lambda paragraph:
+                     '<p>{}</p>'.format(  # Trim whitespace.
+                         re.sub('\s+', ' ', paragraph).strip()),
                          # Docstring paragraphs are separated by blank lines.
                          re.split('\n{2,}', f.__doc__)))
 
 
 # Maps old schemas to new schemas with their accompanying transformation function.
 transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
-                    {'https://yoda.uu.nl/schemas/default-1/metadata.json': _transform_default0_default1}}
+                   {'https://yoda.uu.nl/schemas/default-1/metadata.json': _transform_default0_default1}}
