@@ -521,6 +521,41 @@ def submitDatamanagerReview(callback, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
+def getDatamanagerReview(callback, requestId):
+    """Retrieve a data manager review.
+
+       Arguments:
+       requestId -- Unique identifier of the data manager review
+    """
+    # Construct filename
+    collName = '/tempZone/home/datarequests-research/' + requestId
+    fileName = 'datamanager_review_datamanager.json'
+
+    # Get the size of the data manager review JSON file and the review's status
+    results = []
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME like '%s'") % (collName, fileName),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        collName = row['COLL_NAME']
+        dataName = row['DATA_NAME']
+        dataSize = row['DATA_SIZE']
+
+    # Construct path to file
+    filePath = collName + '/' + dataName
+
+    # Get the contents of the data manager review JSON file
+    try:
+        datamanagerReviewJSON = read_data_object(callback, filePath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not get data manager review data.")
+        return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
+
+    return {'datamanagerReviewJSON': datamanagerReviewJSON, 'status': 0, 'statusInfo': "OK"}
+
+
 def isRequestOwner(callback, requestId, currentUserName):
     """Check if the invoking user is also the owner of a given data request.
 
@@ -1168,6 +1203,10 @@ def uuGetPreliminaryReview(rule_args, callback, rei):
 
 def uuSubmitDatamanagerReview(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitDatamanagerReview(callback, rule_args[0], rule_args[1], rei)))
+
+
+def uuGetDatamanagerReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getDatamanagerReview(callback, rule_args[0])))
 
 
 def uuIsRequestOwner(rule_args, callback, rei):
