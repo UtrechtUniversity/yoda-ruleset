@@ -334,6 +334,14 @@ def submitPreliminaryReview(callback, data, requestId, rei):
         callback.writeString("serverLog", "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
+    # Give read permission on the preliminary review to data managers and Board of Directors members
+    try:
+        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
+        set_acl(callback, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
+
     # Get the outcome of the preliminary review (accepted/rejected)
     preliminaryReview = json.loads(data)['preliminary_review']
 
