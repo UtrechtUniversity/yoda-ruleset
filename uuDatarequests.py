@@ -219,7 +219,7 @@ def submitDatarequest(callback, data, rei):
     researcherDepartment = ""
     proposalTitle = ""
     submissionDate = timestamp.strftime('%c')
-    datamanagerEmails = ""
+    bodMemberEmails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME = '%s'") % (collPath,
@@ -239,16 +239,15 @@ def submitDatarequest(callback, data, rei):
             researcherDepartment = value
         elif name == "title":
             proposalTitle = value
-    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson(
-                                   'datarequests-research-datamanagers',
-                                   datamanagerEmails)['arguments'][1])
+    bodMemberEmails = json.loads(callback.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+                                                                  bodMemberEmails)['arguments'][1])
 
     # Send email to researcher and data manager notifying them of the
     # submission of this data request
     sendMail(researcherEmail, "[researcher] YOUth data request %s: submitted" % requestId, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-    for datamanagerEmail in datamanagerEmails:
-        if not datamanagerEmail == "rods":
-            sendMail(datamanagerEmail, "[data manager] YOUth data request %s: submitted" % requestId, "Dear data manager,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the detail page of the data request: https://portal.yoda.test/datarequest/view/%s.\n\nPlease review it carefully and assign it for review to the Data Management Committee using the \"Assign request\" button.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
+    for bodMemberEmail in bodMemberEmails:
+        if not bodMemberEmail == "rods":
+            sendMail(bodMemberEmail, "[bodmember] YOUth data request %s: submitted" % requestId, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
 
     return {'status': 0, 'statusInfo': "OK"}
 
