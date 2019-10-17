@@ -463,6 +463,14 @@ def submitDatamanagerReview(callback, data, requestId, rei):
         callback.writeString("serverLog", "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
+    # Give read permission on the data manager review to data managers and Board of Directors members
+    try:
+        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", datamanagerReviewPath)
+        set_acl(callback, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
+
     # Get the outcome of the data manager review (accepted/rejected)
     datamanagerReview = json.loads(data)['datamanager_review']
 
