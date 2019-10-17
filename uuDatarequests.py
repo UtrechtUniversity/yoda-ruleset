@@ -388,6 +388,41 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
+def getPreliminaryReview(callback, requestId):
+    """Retrieve a preliminary review.
+
+       Arguments:
+       requestId -- Unique identifier of the preliminary review
+    """
+    # Construct filename
+    collName = '/tempZone/home/datarequests-research/' + requestId
+    fileName = 'preliminary_review_bodmember.json'
+
+    # Get the size of the preliminary review JSON file and the review's status
+    results = []
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME like '%s'") % (collName, fileName),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        collName = row['COLL_NAME']
+        dataName = row['DATA_NAME']
+        dataSize = row['DATA_SIZE']
+
+    # Construct path to file
+    filePath = collName + '/' + dataName
+
+    # Get the contents of the review JSON file
+    try:
+        preliminaryReviewJSON = read_data_object(callback, filePath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not get preliminary review data.")
+        return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
+
+    return {'preliminaryReviewJSON': preliminaryReviewJSON, 'status': 0, 'statusInfo': "OK"}
+
+
 def isRequestOwner(callback, requestId, currentUserName):
     """Check if the invoking user is also the owner of a given data request.
 
@@ -1027,6 +1062,10 @@ def uuGetDatarequest(rule_args, callback, rei):
 
 def uuSubmitPreliminaryReview(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitPreliminaryReview(callback, rule_args[0], rule_args[1], rei)))
+
+
+def uuGetPreliminaryReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getPreliminaryReview(callback, rule_args[0])))
 
 
 def uuIsRequestOwner(rule_args, callback, rei):
