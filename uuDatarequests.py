@@ -641,6 +641,72 @@ def isReviewer(callback, requestId, currentUsername):
     return {"isReviewer": isReviewer, "status": 0, "statusInfo": "OK"}
 
 
+def submitAssignment(callback, data, requestId, rei):
+    """Persist an assignment to disk.
+
+       Arguments:
+       data       -- JSON-formatted contents of the assignment
+       proposalId -- Unique identifier of the research proposal
+    """
+    # Check if user is a member of the Board of Directors. If not, do not
+    # allow assignment
+    isBoardMember = False
+    name = ""
+
+    try:
+        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
+        if not isBoardMember:
+            raise Exception
+    except Exception as e:
+        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+        return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
+
+    # Construct path to collection of the evaluation
+    zonePath = '/tempZone/home/datarequests-research/'
+    collPath = zonePath + requestId
+
+    # Get username
+    name = ""
+    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+
+    # Write assignment data to disk
+    try:
+        assignmentPath = collPath + '/assignment_' + clientName + '.json'
+        write_data_object(callback, assignmentPath, data)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not write assignment data to disk.")
+        return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
+
+    # Give read permission on the assignment to data managers and Board of Directors members
+    try:
+        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", assignmentPath)
+        set_acl(callback, "default", "read", "datarequests-research-datamanagers", assignmentPath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not grant read permissions on the assignment file.")
+        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
+
+    # Get the outcome of the assignment (accepted/rejected)
+    decision = json.loads(data)['decision']
+
+    # Update the status of the data request
+    if decision == "Accepted":
+        assignees = json.loads(data)['assign_to']
+        # Use dummy assignee value for now
+        assignees = json.dumps(['dmcmember'])
+        assignRequest(callback, assignees, requestId)
+        setStatus(callback, requestId, "assigned")
+    elif decision == "Rejected":
+        setStatus(callback, requestId, "rejected")
+    else:
+        callback.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
+        return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
+
+    return {'status': 0, 'statusInfo': "OK"}
+
 def assignRequest(callback, assignees, requestId):
     """Assign a data request to one or more DMC members for review.
 
@@ -1217,6 +1283,10 @@ def uuIsRequestOwner(rule_args, callback, rei):
 def uuIsReviewer(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(isReviewer(callback, rule_args[0],
                                                          rule_args[1])))
+
+
+def uuSubmitAssignment(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(submitAssignment(callback, rule_args[0], rule_args[1], rei)))
 
 
 def uuAssignRequest(rule_args, callback, rei):
