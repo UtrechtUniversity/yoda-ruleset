@@ -749,7 +749,7 @@ def assignRequest(callback, assignees, requestId):
     for row in rows:
         requestStatus = row['META_DATA_ATTR_VALUE']
 
-    if not requestStatus == "submitted":
+    if not (requestStatus == "dm_accepted" or requestStatus == "dm_rejected"):
         callback.writeString("serverLog", "Proposal is already assigned.")
         return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
 
