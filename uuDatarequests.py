@@ -346,7 +346,7 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     preliminaryReview = json.loads(data)['preliminary_review']
 
     # Update the status of the data request
-    if preliminaryReview == "Accepted":
+    if preliminaryReview == "Accepted for review":
         setStatus(callback, requestId, "accepted_for_review")
     elif preliminaryReview == "Rejected":
         setStatus(callback, requestId, "rejected_for_review")
