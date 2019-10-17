@@ -21,7 +21,7 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
     metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri = rule_args[0:7]
 
     # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = getYodaMetadataJsonDict(callback, metadataJsonPath)
+    metaDict = read_json_object(callback, metadataJsonPath)
 
     # add System info
     metaDict['System'] = {
@@ -35,47 +35,8 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
         'License_URI': licenseUri
     }
 
-    # write combined data to file at location combiJsonPath
-    ofFlags = 'forceFlag='
-    ret_val = callback.msiDataObjCreate(combiJsonPath, ofFlags, 0)
-
-    combinedJson = json.dumps(metaDict)
-    callback.writeString('serverLog', combinedJson)
-
-    fileHandle = ret_val['arguments'][2]
-    callback.msiDataObjWrite(fileHandle, combinedJson, 0)
-    callback.msiDataObjClose(fileHandle, 0)
-
-
-def getYodaMetadataJsonDict(callback, yoda_json_path):
-    """Get Yoda metadata JSON and return as (ordered!) dict.
-
-       Arguments:
-       yoda_json_path -- path to Yoda metadata JSON
-
-       Return:
-       dict -- holding the contents of yoda-metadata.json
-    """
-    coll_name, data_name = os.path.split(yoda_json_path)
-
-    data_size = getDataObjSize(callback, coll_name, data_name)
-
-    # Open JSON file
-    ret_val = callback.msiDataObjOpen('objPath=' + yoda_json_path, 0)
-    fileHandle = ret_val['arguments'][1]
-
-    # Read JSON
-    ret_val = callback.msiDataObjRead(fileHandle, data_size, irods_types.BytesBuf())
-
-    # Close JSON
-    callback.msiDataObjClose(fileHandle, 0)
-
-    # Parse JSON into dict.
-    read_buf = ret_val['arguments'][2]
-    jsonText = ''.join(read_buf.buf)
-
-    # Use the hook to keep ordering of elements as in metadata.json
-    return json.loads(jsonText, object_pairs_hook=OrderedDict)
+    # Write combined data to file at location combiJsonPath
+    write_json_object(callback, combiJsonPath, metaDict)
 
 
 def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
@@ -90,7 +51,7 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     combiJsonPath, receiveDataciteXml = rule_args[0:2]
 
     # Get dict containing the wanted metadata
-    dict = getYodaMetadataJsonDict(callback, combiJsonPath)
+    dict = read_json_object(callback, combiJsonPath)
 
     # Build datacite XML as string
     xmlString = getHeader()
@@ -119,7 +80,6 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     # Close the XML.
     xmlString = xmlString + "</resource>"
 
-    callback.writeString('serverLog', xmlString)
     rule_args[1] = xmlString
 
 
