@@ -338,6 +338,7 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     try:
         set_acl(callback, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
         set_acl(callback, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
+        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", preliminaryReviewPath)
     except UUException as e:
         callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
@@ -467,6 +468,7 @@ def submitDatamanagerReview(callback, data, requestId, rei):
     try:
         set_acl(callback, "default", "read", "datarequests-research-board-of-directors", datamanagerReviewPath)
         set_acl(callback, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
+        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", datamanagerReviewPath)
     except UUException as e:
         callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
@@ -685,6 +687,7 @@ def submitAssignment(callback, data, requestId, rei):
     try:
         set_acl(callback, "default", "read", "datarequests-research-board-of-directors", assignmentPath)
         set_acl(callback, "default", "read", "datarequests-research-datamanagers", assignmentPath)
+        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", assignmentPath)
     except UUException as e:
         callback.writeString("serverLog", "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
