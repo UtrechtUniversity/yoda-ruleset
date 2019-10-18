@@ -710,6 +710,7 @@ def submitAssignment(callback, data, requestId, rei):
 
     return {'status': 0, 'statusInfo': "OK"}
 
+
 def assignRequest(callback, assignees, requestId):
     """Assign a data request to one or more DMC members for review.
 
