@@ -347,10 +347,10 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     preliminaryReview = json.loads(data)['preliminary_review']
 
     # Update the status of the data request
-    if preliminaryReview == "Accepted for review":
-        setStatus(callback, requestId, "accepted_for_review")
+    if preliminaryReview == "Accepted for data manager review":
+        setStatus(callback, requestId, "accepted_for_dm_review")
     elif preliminaryReview == "Rejected":
-        setStatus(callback, requestId, "rejected_for_review")
+        setStatus(callback, requestId, "preliminary_reject")
     else:
         callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -376,7 +376,7 @@ def submitPreliminaryReview(callback, data, requestId, rei):
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
-    if preliminaryReview == "Accepted":
+    if preliminaryReview == "Accepted for data manager review":
         for datamanagerEmail in datamanagerEmails:
             if not datamanagerEmail == "rods":
                 sendMail("j.j.zondergeld@uu.nl", "[data manager] YOUth data request %s: accepted for review" % requestId, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems with concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
