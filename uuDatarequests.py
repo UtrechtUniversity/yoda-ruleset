@@ -806,6 +806,41 @@ def assignRequest(callback, assignees, requestId):
     return {'status': 0, 'statusInfo': "OK"}
 
 
+def getAssignment(callback, requestId):
+    """Retrieve assignment.
+
+       Arguments:
+       requestId -- Unique identifier of the assignment
+    """
+    # Construct filename
+    collName = '/tempZone/home/datarequests-research/' + requestId
+    fileName = 'assignment_bodmember.json'
+
+    # Get the size of the assignment JSON file and the review's status
+    results = []
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME like '%s'") % (collName, fileName),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        collName = row['COLL_NAME']
+        dataName = row['DATA_NAME']
+        dataSize = row['DATA_SIZE']
+
+    # Construct path to file
+    filePath = collName + '/' + dataName
+
+    # Get the contents of the assignment JSON file
+    try:
+        assignmentJSON = read_data_object(callback, filePath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not get assignment data.")
+        return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
+
+    return {'assignmentJSON': assignmentJSON, 'status': 0, 'statusInfo': "OK"}
+
+
 def submitReview(callback, data, requestId, rei):
     """Persist a data request review to disk.
 
@@ -1297,6 +1332,10 @@ def uuAssignRequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(assignRequest(callback,
                                                             rule_args[0],
                                                             rule_args[1])))
+
+
+def uuGetAssignment(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getAssignment(callback, rule_args[0])))
 
 
 def uuSubmitReview(rule_args, callback, rei):
