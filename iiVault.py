@@ -229,11 +229,7 @@ def vault_collection_metadata(callback, coll):
 
     for row in iter:
         package_doi = row[0]
-
-        if landinpage_url:
-            persistent_identifier_doi = "<a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
-        else:
-            persistent_identifier_doi = "{}".format(package_doi)
+        persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
 
     # Persistent Identifier EPIC.
