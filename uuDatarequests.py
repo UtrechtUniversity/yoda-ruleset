@@ -219,7 +219,7 @@ def submitDatarequest(callback, data, rei):
     researcherDepartment = ""
     proposalTitle = ""
     submissionDate = timestamp.strftime('%c')
-    datamanagerEmails = ""
+    bodMemberEmails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME = '%s'") % (collPath,
@@ -239,16 +239,15 @@ def submitDatarequest(callback, data, rei):
             researcherDepartment = value
         elif name == "title":
             proposalTitle = value
-    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson(
-                                   'datarequests-research-datamanagers',
-                                   datamanagerEmails)['arguments'][1])
+    bodMemberEmails = json.loads(callback.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+                                                                  bodMemberEmails)['arguments'][1])
 
     # Send email to researcher and data manager notifying them of the
     # submission of this data request
     sendMail(researcherEmail, "[researcher] YOUth data request %s: submitted" % requestId, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-    for datamanagerEmail in datamanagerEmails:
-        if not datamanagerEmail == "rods":
-            sendMail(datamanagerEmail, "[data manager] YOUth data request %s: submitted" % requestId, "Dear data manager,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the detail page of the data request: https://portal.yoda.test/datarequest/view/%s.\n\nPlease review it carefully and assign it for review to the Data Management Committee using the \"Assign request\" button.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
+    for bodMemberEmail in bodMemberEmails:
+        if not bodMemberEmail == "rods":
+            sendMail(bodMemberEmail, "[bodmember] YOUth data request %s: submitted" % requestId, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
 
     return {'status': 0, 'statusInfo': "OK"}
 
@@ -293,6 +292,92 @@ def getDatarequest(callback, requestId):
     return {'requestJSON': requestJSON,
             'requestStatus': requestStatus, 'status': 0,
             'statusInfo': "OK"}
+
+
+def submitPreliminaryReview(callback, data, requestId, rei):
+    """Persist a preliminary review to disk.
+
+       Arguments:
+       data       -- JSON-formatted contents of the preliminary review
+       proposalId -- Unique identifier of the research proposal
+    """
+    # Check if user is a member of the Board of Directors. If not, do not
+    # allow submission of the preliminary review
+    isBoardMember = False
+    name = ""
+
+    try:
+        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
+        if not isBoardMember:
+            raise Exception
+    except Exception as e:
+        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+        return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
+
+    # Construct path to collection of the evaluation
+    zonePath = '/tempZone/home/datarequests-research/'
+    collPath = zonePath + requestId
+
+    # Get username
+    name = ""
+    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+
+    # Write preliminary review data to disk
+    try:
+        preliminaryReviewPath = collPath + '/preliminary_review_' + clientName + '.json'
+        write_data_object(callback, preliminaryReviewPath, data)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not write preliminary review data to disk.")
+        return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
+
+    # Get the outcome of the preliminary review (accepted/rejected)
+    preliminaryReview = json.loads(data)['preliminary_review']
+
+    # Update the status of the data request
+    if preliminaryReview == "Accepted":
+        setStatus(callback, requestId, "accepted_for_review")
+    elif preliminaryReview == "Rejected":
+        setStatus(callback, requestId, "rejected_for_review")
+    else:
+        callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
+
+    # Get parameters needed for sending emails
+    researcherName = ""
+    researcherEmail = ""
+    datamanagerEmails = ""
+    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME = '%s'") % (collPath,
+                                                'datarequest.json'),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        name = row["META_DATA_ATTR_NAME"]
+        value = row["META_DATA_ATTR_VALUE"]
+        if name == "name":
+            researcherName = value
+        elif name == "email":
+            researcherEmail = value
+    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+
+    # Send an email to the researcher informing them of whether their data
+    # request has been approved or rejected.
+    if preliminaryReview == "Accepted":
+        for datamanagerEmail in datamanagerEmails:
+            if not datamanagerEmail == "rods":
+                sendMail("j.j.zondergeld@uu.nl", "[data manager] YOUth data request %s: accepted for review" % requestId, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems with concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+    elif preliminaryReview == "Rejected":
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, requestId, datamanagerEmails[0]))
+    else:
+        callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
+
+    return {'status': 0, 'statusInfo': "OK"}
 
 
 def isRequestOwner(callback, requestId, currentUserName):
@@ -721,7 +806,7 @@ def submitEvaluation(callback, data, requestId, rei):
             if not datamanagerEmail == "rods":
                 sendMail("j.j.zondergeld@uu.nl", "[data manager] YOUth data request %s: approved" % requestId, "Dear data manager,\n\nData request %s has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.\n\nThe following link will take you directly to the data request: https://portal.yoda.test/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
     elif evaluation == "rejected":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected. Please log in to Yoda to view additional details.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, requestId, datamanagerEmail[0]))
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected. Please log in to Yoda to view additional details.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, requestId, datamanagerEmails[0]))
 
     return {'status': 0, 'statusInfo': "OK"}
 
@@ -930,6 +1015,10 @@ def uuSubmitDatarequest(rule_args, callback, rei):
 def uuGetDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getDatarequest(callback,
                                                              rule_args[0])))
+
+
+def uuSubmitPreliminaryReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(submitPreliminaryReview(callback, rule_args[0], rule_args[1], rei)))
 
 
 def uuIsRequestOwner(rule_args, callback, rei):
