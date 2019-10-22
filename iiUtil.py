@@ -134,7 +134,7 @@ def collection_size(callback, path):
         genquery.AS_LIST, callback
     )
     for row in iter:
-        size = size + int(row[1])
+        size += int(row[1])
 
     iter = genquery.row_iterator(
         "DATA_ID, DATA_SIZE",
@@ -142,7 +142,7 @@ def collection_size(callback, path):
         genquery.AS_LIST, callback
     )
     for row in iter:
-        size = size + int(row[1])
+        size += int(row[1])
 
     return size
 
