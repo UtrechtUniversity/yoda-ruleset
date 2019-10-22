@@ -334,6 +334,14 @@ def submitPreliminaryReview(callback, data, requestId, rei):
         callback.writeString("serverLog", "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
+    # Give read permission on the preliminary review to data managers and Board of Directors members
+    try:
+        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
+        set_acl(callback, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
+
     # Get the outcome of the preliminary review (accepted/rejected)
     preliminaryReview = json.loads(data)['preliminary_review']
 
@@ -376,6 +384,131 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     else:
         callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
+
+    return {'status': 0, 'statusInfo': "OK"}
+
+
+def getPreliminaryReview(callback, requestId):
+    """Retrieve a preliminary review.
+
+       Arguments:
+       requestId -- Unique identifier of the preliminary review
+    """
+    # Construct filename
+    collName = '/tempZone/home/datarequests-research/' + requestId
+    fileName = 'preliminary_review_bodmember.json'
+
+    # Get the size of the preliminary review JSON file and the review's status
+    results = []
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME like '%s'") % (collName, fileName),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        collName = row['COLL_NAME']
+        dataName = row['DATA_NAME']
+        dataSize = row['DATA_SIZE']
+
+    # Construct path to file
+    filePath = collName + '/' + dataName
+
+    # Get the contents of the review JSON file
+    try:
+        preliminaryReviewJSON = read_data_object(callback, filePath)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not get preliminary review data.")
+        return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
+
+    return {'preliminaryReviewJSON': preliminaryReviewJSON, 'status': 0, 'statusInfo': "OK"}
+
+
+def submitDatamanagerReview(callback, data, requestId, rei):
+    """Persist a preliminary review to disk.
+
+       Arguments:
+       data       -- JSON-formatted contents of the preliminary review
+       proposalId -- Unique identifier of the research proposal
+    """
+    # Check if user is a data manager. If not, do not the user to assign the
+    # request
+    isDatamanager = False
+    name = ""
+
+    try:
+        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback)
+
+        if not isDatamanager:
+            raise Exception
+    except Exception as e:
+        callback.writeString("serverLog", "User is not a data manager.")
+        return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
+
+    # Construct path to collection of the evaluation
+    zonePath = '/tempZone/home/datarequests-research/'
+    collPath = zonePath + requestId
+
+    # Get username
+    name = ""
+    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+
+    # Write data manager review data to disk
+    try:
+        datamanagerReviewPath = collPath + '/datamanager_review_' + clientName + '.json'
+        write_data_object(callback, datamanagerReviewPath, data)
+    except UUException as e:
+        callback.writeString("serverLog", "Could not write data manager review data to disk.")
+        return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
+
+    # Get the outcome of the data manager review (accepted/rejected)
+    datamanagerReview = json.loads(data)['datamanager_review']
+
+    # Update the status of the data request
+    if datamanagerReview == "Accepted":
+        setStatus(callback, requestId, "dm_accepted")
+    elif datamanagerReview == "Rejected":
+        setStatus(callback, requestId, "dm_rejected")
+    else:
+        callback.writeString("serverLog", "Invalid value for datamanager_review in datamanager review JSON data.")
+        return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in datamanager review JSON data."}
+
+    # Get parameters needed for sending emails
+    researcherName = ""
+    researcherEmail = ""
+    bodMemberEmails = ""
+    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
+                        ("COLL_NAME = '%s' AND " +
+                         "DATA_NAME = '%s'") % (collPath,
+                                                'datarequest.json'),
+                        AS_DICT,
+                        callback)
+    for row in rows:
+        name = row["META_DATA_ATTR_NAME"]
+        value = row["META_DATA_ATTR_VALUE"]
+        if name == "name":
+            researcherName = value
+        elif name == "email":
+            researcherEmail = value
+    bodMemberEmails = json.loads(callback.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+                                                                  bodMemberEmails)['arguments'][1])
+
+    # Send emails to:
+    # - the researcher: progress update
+    # - the board of directors: call to action
+    if datamanagerReview == "Accepted":
+        for bodMemberEmail in bodMemberEmails:
+            if not bodMemberEmail == "rods":
+                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: accepted by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been accepted by the data manager.\n\nYou are now asked to assign the data request for review to one or more DMC members. To do so, please go to the detail page of this data request and click the \"Assign for review\" button. This link will take you there: https://portal.yoda.test/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+    elif datamanagerReview == "Rejected":
+        for bodMemberEmail in bodMemberEmails:
+            if not bodMemberEmail == "rods":
+                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager.\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please go to the detail page of this data request and click the \"Assign for review\" button. This link will take you there: https://portal.yoda.test/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+    else:
+        callback.writeString("serverLog", "Invalid value for datamanager_review in preliminary review JSON data.")
+        return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in preliminary review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
 
@@ -1019,6 +1152,14 @@ def uuGetDatarequest(rule_args, callback, rei):
 
 def uuSubmitPreliminaryReview(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitPreliminaryReview(callback, rule_args[0], rule_args[1], rei)))
+
+
+def uuGetPreliminaryReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getPreliminaryReview(callback, rule_args[0])))
+
+
+def uuSubmitDatamanagerReview(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(submitDatamanagerReview(callback, rule_args[0], rule_args[1], rei)))
 
 
 def uuIsRequestOwner(rule_args, callback, rei):
