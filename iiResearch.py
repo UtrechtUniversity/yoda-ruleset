@@ -10,7 +10,7 @@ import json
 @define_as_rule('iiResearchSpaceSystemMetadata',
                 inputs=[0], outputs=[1],
                 transform=json.dumps, handler=RuleOutput.STDOUT)
-def research_collection_stats(callback, coll):
+def research_collection_metadata(callback, coll):
     """Returns collection statistics as JSON."""
 
     import math

@@ -168,3 +168,46 @@ def iiWriteProvenanceLogToVault(rule_args, callback, rei):
 
     # Checksum provenance file.
     callback.msiDataObjChksum(provenanceFile, "verifyChksum=", 0)
+
+
+@define_as_rule('iiVaultSpaceSystemMetadata',
+                inputs=[0], outputs=[1],
+                transform=json.dumps, handler=RuleOutput.STDOUT)
+def vault_collection_metadata(callback, coll):
+    """Returns collection statistics as JSON."""
+
+    import math
+
+    def convert_size(size_bytes):
+        if size_bytes == 0:
+            return "0B"
+
+        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        i = int(math.floor(math.log(size_bytes, 1024)))
+        p = math.pow(1024, i)
+        s = round(size_bytes / p, 2)
+        return '{} {}'.format(s, size_name[i])
+
+    # Package size.
+    data_count = collection_data_count(callback, coll)
+    collection_count = collection_collection_count(callback, coll)
+    size = collection_size(callback, coll)
+    size_readable = convert_size(size)
+
+    package_size = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+
+    # Landingpage URL.
+    landinpage_url = ""
+
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        landinpage_url = "<a href=\"{}\">{}</a>".format(row[0])
+        break
+
+    return {"Package size": package_size,
+            "Landingpage": landingpage}
