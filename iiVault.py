@@ -194,12 +194,18 @@ def vault_collection_metadata(callback, coll):
     collection_count = collection_collection_count(callback, coll)
     size = collection_size(callback, coll)
     size_readable = convert_size(size)
+    system_metadata["Package size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
-    package_size = {
-        "Package size",
-        "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
-    }
-    system_metadata.update(package_size)
+    # Modified date.
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        modified_date = row[0]
+        system_metadata["Modified date"] = "{}".format(modified_date)
 
     # Landingpage URL.
     landinpage_url = ""
@@ -211,13 +217,7 @@ def vault_collection_metadata(callback, coll):
 
     for row in iter:
         landinpage_url = row[0]
-
-    if landinpage_url:
-        landinpage = {
-            "Landingpage",
-            "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
-        }
-        system_metadata.update(landinpage)
+        system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
     # Persistent Identifier DOI.
     package_doi = ""
@@ -230,18 +230,11 @@ def vault_collection_metadata(callback, coll):
     for row in iter:
         package_doi = row[0]
 
-    if package_doi:
         if landinpage_url:
-            persistent_identifier_doi = {
-                "Persistent Identifier",
-                "DOI: <a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
-            }
+            persistent_identifier_doi = "DOI: <a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
         else:
-            persistent_identifier_doi = {
-                "Persistent Identifier",
-                "DOI: {}".format(package_doi)
-            }
-        system_metadata.update(persistent_identifier_doi)
+            persistent_identifier_doi = "DOI: {}".format(package_doi)
+        system_metadata["Persistent Identifier"] = persistent_identifier_doi
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
@@ -266,15 +259,9 @@ def vault_collection_metadata(callback, coll):
 
     if package_epic_pid:
         if package_epic_url:
-            persistent_identifier_epic = {
-                "Persistent Identifier",
-                "EPIC: <a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
-            }
+            persistent_identifier_epic = "EPIC: <a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
         else:
-            persistent_identifier_epic = {
-                "Persistent Identifier",
-                "EPIC: {}".format(package_epic_pid)
-            }
-        system_metadata.update(persistent_identifier_epic)
+            persistent_identifier_epic = "EPIC: {}".format(package_epic_pid)
+        system_metadata["Persistent Identifier"] = persistent_identifier_epic
 
     return system_metadata
