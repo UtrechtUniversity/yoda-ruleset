@@ -188,17 +188,21 @@ def vault_collection_metadata(callback, coll):
         s = round(size_bytes / p, 2)
         return '{} {}'.format(s, size_name[i])
 
+    system_metadata = {}
     # Package size.
     data_count = collection_data_count(callback, coll)
     collection_count = collection_collection_count(callback, coll)
     size = collection_size(callback, coll)
     size_readable = convert_size(size)
 
-    package_size = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    package_size = {
+        "Package size",
+        "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    }
+    system_metadata.update(package_size)
 
     # Landingpage URL.
     landinpage_url = ""
-
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
@@ -206,8 +210,71 @@ def vault_collection_metadata(callback, coll):
     )
 
     for row in iter:
-        landinpage_url = "<a href=\"{}\">{}</a>".format(row[0], row[0])
-        break
+        landinpage_url = row[0]
 
-    return {"Package size": package_size,
-            "Landingpage": landingpage}
+    if landinpage_url:
+        landinpage = {
+            "Landingpage",
+            "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
+        }
+        system_metadata.update(landinpage)
+
+    # Persistent Identifier DOI.
+    package_doi = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        package_doi = row[0]
+
+    if package_doi:
+        if landinpage_url:
+            persistent_identifier_doi = {
+                "Persistent Identifier",
+                "DOI: <a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
+            }
+        else:
+            persistent_identifier_doi = {
+                "Persistent Identifier",
+                "DOI: {}".format(package_doi)
+            }
+        system_metadata.update(persistent_identifier_doi)
+
+    # Persistent Identifier EPIC.
+    package_epic_pid = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_pid'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        package_epic_pid = row[0]
+
+    package_epic_url = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_url'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        package_epic_url = row[0]
+
+    if package_epic_pid:
+        if package_epic_url:
+            persistent_identifier_epic = {
+                "Persistent Identifier",
+                "EPIC: <a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
+            }
+        else:
+            persistent_identifier_epic = {
+                "Persistent Identifier",
+                "EPIC: {}".format(package_epic_pid)
+            }
+        system_metadata.update(persistent_identifier_epic)
+
+    return system_metadata
