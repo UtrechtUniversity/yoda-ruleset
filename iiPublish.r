@@ -7,20 +7,17 @@
 # \license   GPLv3, see LICENSE.
 
 
-
-
 # \brief Use secure copy to push publised json data object, that arose after transformation from xml->json, to MOAI area.
 #
-# \param[in] metadata_json     json metadata data object name to be copied to 
-# \param[in] origin_publication_path  
+# \param[in] metadata_json     json metadata data object name to be copied to
+# \param[in] origin_publication_path
 # \param[in] publicHost
 # \param[in] yodaInstance
-# \param[in] yodaPrefix 
-
+# \param[in] yodaPrefix
 #
 iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *publicHost, *yodaInstance, *yodaPrefix) {
         *argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*metadata_json";
-        *origin_json = '*origin_publication_path/*metadata_json'; 
+        *origin_json = '*origin_publication_path/*metadata_json';
         *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_json, 1, *cmdExecOut));
         if (*err < 0) {
                 msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
@@ -35,12 +32,6 @@ iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *pu
 }
 
 
-# \brief Generate a dataCite compliant XML using XSLT.
-#
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
-#
-
 # \brief Generate a dataCite compliant XML based up yoda-metadata.json
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -50,7 +41,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
         *combiJsonPath = *publicationState.combiJsonPath;
 
 	*randomId = *publicationState.randomId;
-	
+
         *vaultPackage = *publicationState.vaultPackage;
 
 	uuChopPath(*combiJsonPath, *tempColl, *_);
@@ -112,16 +103,15 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 	# *metadataJsonPath contains latest json
 	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
-	
+
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
         iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
-        
+
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
 
 
-
-# \brief Overwrite combi metadata json with system-only metadata.  
+# \brief Overwrite combi metadata json with system-only metadata.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
@@ -140,7 +130,7 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
         *publicationDate = uuiso8601date(*now);
         *systemJsonPath = "*tempColl/*randomId-combi.json";
 
-        *systemJsonData = 
+        *systemJsonData =
             '{"System": { ' ++
             '    "Last_Modified_Date": "*lastModifiedDateTime", ' ++
             '    "Persistent_Identifier_Datapackage": { ' ++
@@ -149,7 +139,7 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
             '    }, ' ++
             '    "Publication_Date": "*publicationDate" ' ++
             '  }' ++
-            '}';  
+            '}';
 
 
         # msiDataObjCreate(*systemJsonPath, "forceFlag=", *fd);
@@ -183,6 +173,7 @@ iiGetLastModifiedDateTime(*publicationState) {
 	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
 	#DEBUG writeLine("serverLog", "iiGetLastModifiedDateTime: *lastModifiedDateTime");
 }
+
 
 # \brief Generate a Preliminary DOI. Preliminary, because we check for collision later.
 #
@@ -231,6 +222,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	}
 }
 
+
 # \brief Remove metadata XML from DataCite.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -256,6 +248,7 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 		writeLine("serverLog", "iiRemoveMetadataFromDataCite: *httpCode received. Unrecoverable error.");
 	}
 }
+
 
 # \brief Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 #
@@ -288,6 +281,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	}
 }
 
+
 # \brief Generate a URL for the landing page.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -306,8 +300,6 @@ iiGenerateLandingPageUrl(*publicationConfig, *publicationState) {
 	#DEBUG writeLine("serverLog", "iiGenerateLandingPageUrl: *landingPageUrl");
 }
 
-
-# iiGenerateLandingPage(*publicationConfig, *publicationState, "publish")
 
 # \brief Generate a Landing page from the combi JSON and the landingpage template
 #
@@ -348,8 +340,6 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 }
 
 
-
-
 # \brief iiCopyLandingPage2PublicHost
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -378,7 +368,6 @@ iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
 }
 
 
-
 # \brief Use secure copy to push the combi XML to MOAI.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -402,8 +391,8 @@ iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
 		*publicationState.oaiUploaded = "yes";
 		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiJsonPath");
 	}
-
 }
+
 
 # \brief Set access restriction for vault package.
 #
@@ -433,7 +422,6 @@ iiSetAccessRestriction(*vaultPackage, *publicationState) {
 	}
 	#DEBUG writeLine("serverLog", "iiSetAccessRestriction: anonymous access level *accessLevel on *vaultPackage");
 }
-
 
 
 # \brief Configuration is extracted from metadata on the UUSYSTEMCOLLECTION.
@@ -494,6 +482,7 @@ iiGetPublicationConfig(*publicationConfig) {
 	#DEBUG writeKeyValPairs("serverLog", *publicationConfig, "=");
 }
 
+
 # \brief The publication state is kept as metadata on the vaultPackage.
 #
 # \param[in] vaultPackage        path to the package in the vault
@@ -521,9 +510,7 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 		*license = *row.META_COLL_ATTR_VALUE;
 	}
 
-
 	if (*license != "") {
-
 		*publicationState.license = *license;
 		*licenseAttrName = UUORGMETADATAPREFIX ++ "license_uri";
 		*licenseUri = "";
@@ -539,6 +526,7 @@ iiGetPublicationState(*vaultPackage, *publicationState) {
 	*publicationState.vaultPackage = *vaultPackage;
 	#DEBUG writeKeyValPairs("serverLog", *publicationState, "=");
 }
+
 
 # \brief Save the publicationState key-value-pair to AVU's on the vaultPackage.
 #
@@ -567,6 +555,7 @@ iiSavePublicationState(*vaultPackage, *publicationState) {
 	}
 	msiRemoveKeyValuePairsFromObj(*kvp, *vaultPackage, "-C");
 }
+
 
 # \brief Request DOI to check on availibity. We want a 404 as return code.
 #
@@ -603,6 +592,7 @@ iiHasKey(*kvp, *key) {
 	}
 	*result;
 }
+
 
 # \brief Routine to process a publication with sanity checks at every step.
 #
@@ -660,10 +650,8 @@ iiProcessPublication(*vaultPackage, *status) {
 		}
 	}
 
-
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
-
 
 	if (!iiHasKey(*publicationState, "combiJsonPath")) {
 		# Generate Combi Json consisting of user and system metadata
@@ -1148,6 +1136,7 @@ iiProcessRepublication(*vaultPackage, *status) {
 	iiSavePublicationState(*vaultPackage, *publicationState);
 	*status = *publicationState.status;
 }
+
 
 # \brief Routine to set publication state of vault package pending to update.
 #
