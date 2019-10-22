@@ -206,7 +206,7 @@ def vault_collection_metadata(callback, coll):
     )
 
     for row in iter:
-        landinpage_url = "<a href=\"{}\">{}</a>".format(row[0])
+        landinpage_url = "<a href=\"{}\">{}</a>".format(row[0], row[0])
         break
 
     return {"Package size": package_size,
