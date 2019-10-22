@@ -231,10 +231,10 @@ def vault_collection_metadata(callback, coll):
         package_doi = row[0]
 
         if landinpage_url:
-            persistent_identifier_doi = "DOI: <a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
+            persistent_identifier_doi = "<a href=\"{}\">{}</a>".format(landinpage_url, package_doi)
         else:
-            persistent_identifier_doi = "DOI: {}".format(package_doi)
-        system_metadata["Persistent Identifier"] = persistent_identifier_doi
+            persistent_identifier_doi = "{}".format(package_doi)
+        system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
@@ -259,9 +259,9 @@ def vault_collection_metadata(callback, coll):
 
     if package_epic_pid:
         if package_epic_url:
-            persistent_identifier_epic = "EPIC: <a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
+            persistent_identifier_epic = "<a href=\"{}\">{}</a>".format(package_epic_url, package_epic_pid)
         else:
-            persistent_identifier_epic = "EPIC: {}".format(package_epic_pid)
-        system_metadata["Persistent Identifier"] = persistent_identifier_epic
+            persistent_identifier_epic = "{}".format(package_epic_pid)
+        system_metadata["EPIC Persistent Identifier"] = persistent_identifier_epic
 
     return system_metadata
