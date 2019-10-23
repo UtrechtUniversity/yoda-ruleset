@@ -116,18 +116,8 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
                 succeed;
         }
 
-        msiString2KeyValPair("", *kvp);
-        msiAddKeyVal(*kvp, "path", *path);
-        foreach(*row in SELECT COLL_ID, COLL_NAME, COLL_PARENT_NAME, COLL_MODIFY_TIME, COLL_CREATE_TIME WHERE COLL_NAME = *path) {
-                *parent = *row.COLL_PARENT_NAME;
-                *kvp.parent = *parent;
-                *kvp.basename = triml(*path, *parent ++ "/");
-                *coll_id = *row.COLL_ID;
-                *kvp.id = *coll_id;
-                *kvp."irods_type" = "Collection";
-                *kvp."coll_create_time" = *row.COLL_CREATE_TIME;
-                *kvp."coll_modify_time" = *row.COLL_MODIFY_TIME;
-        }
+        uuChopPath(*path, *parent, *baseName);
+        *kvp.basename = *baseName;
 
         if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
                 # Retrieve collection details of research collection.
@@ -204,8 +194,6 @@ iiCollectionDetailsResearch(*path, *kvp) {
 # \param[in]  path  path of vault collection (COLL_NAME)
 # \param[out] kvp   key value pair with all required info on current collection (=*path)
 iiCollectionDetailsVault(*path, *kvp) {
-        iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
-
         *vaultStatus = "";
         foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *path AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
                 *vaultStatus = *row.META_COLL_ATTR_VALUE;
@@ -254,8 +242,8 @@ iiCollectionDetailsVault(*path, *kvp) {
                         if (*userName like "datamanager-*") {
                                 *isFound = true;
                                 *datamanagerGroup = *userName;
-                                uuGroupGetMemberType(*datamanagerGroup, uuClientFullName, *userTypeIfDatamanager);
-                                if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+                                uuGroupGetMemberType(*datamanagerGroup, uuClientFullName, *userType);
+                                if (*userType == "normal" || *userType == "manager") {
                                         *kvp.isDatamanager = "yes";
                                 } else {
                                         *kvp.isDatamanager = "no";
