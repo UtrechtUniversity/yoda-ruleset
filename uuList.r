@@ -56,38 +56,6 @@ uuListMatches(*list, *pattern, *inList) {
 	}
 }
 
-# \brief Filter a list using a pattern.
-#
-# \param[in]  list
-# \param[in]  pattern
-# \param[in]  isRegex if true, pattern is treated like a regular expression instead of a plain string
-# \param[in]  include if true, includes matching entries. excludes matches otherwise.
-# \param[out] newList
-#
-uuListFilter(*list, *pattern, *isRegex, *include, *newList) {
-	*separator = "\n\n";
-	*newListString = "";
-
-	foreach (*item in *list) {
-		*matches = false;
-		if (*isRegex) {
-			*matches = *item like regex *pattern;
-		} else {
-			*matches = *item == *pattern;
-		}
-		if (*matches) {
-			if (*include) {
-				*newListString = *newListString ++ *separator ++ *item;
-			}
-		} else if (!*include) {
-			*newListString = *newListString ++ *separator ++ *item;
-		}
-	}
-
-	*newListString = triml(*newListString, *separator);
-	*newList       = split(*newListString, *separator);
-}
-
 # \brief Join a list.
 #
 # \param[in]  delimiter
@@ -127,4 +95,3 @@ uuinlist(*val, *lst) = if size(*lst) == 0  then false else uuheadinlist(*val, *l
 #\brief headinlist	Helper function for in list. Checks the head of the list for value. The list is iterated using
 #                       mutual recursion.
 uuheadinlist(*val, *lst) = if hd(*lst) == *val then true else uuinlist(*val, tl(*lst))
-

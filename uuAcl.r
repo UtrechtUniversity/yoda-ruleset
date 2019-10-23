@@ -10,34 +10,6 @@
 data uuacl =
 	| uuacl : int * int -> uuacl
 
-# \brief Function to return all the user and group ids found in a list of uuacl's.
-#
-# \param[in] aclList   a list of uuacl's
-# \returnvalue   a list of user ids (integer)
-#
-uuids(*aclList) {
-	*ids = list();
-	foreach(*acl in *aclList) {
-		uuacl(*userId, *accessType) = *acl;
-		*ids = cons(*userId, *ids);
-	}
-	*ids;
-}
-
-# \brief Function to compare two uuacl's.
-#
-# \returnvalue false if uuacl aren't equal and true if they are
-#
-uuAclEqual(*aclA, *aclB) {
-	uuacl(*userIdA, *accessTypeA) = *aclA;
-	uuacl(*userIdB, *accessTypeB) = *aclB;
-	*equality = false;
-	if (*userIdA == *userIdB && *accessTypeA == *accessTypeB) {
-		*equality = true;
-	}
-	*equality;
-}
-
 # \brief Find the user name and access level belonging to an uuacl.
 #
 # \param[in] acl          an uuacl
@@ -64,21 +36,6 @@ uuAclToStrings(*acl, *userName, *accessLevel) {
 		*accessLevel = 'read'; # 1050
 	} else {
 		*accessLevel = 'null'; # 1000
-	}
-
-}
-
-# \brief Generate a list of uuacl's from a path.
-#
-# \param[in]  path     collection or data object
-# \param[out] aclList  list of uuacl's
-#
-uuAclListOfPath(*path, *aclList) {
-	msiGetObjType(*path, *objType);
-	if (*objType == "-c") {
-		uuAclListOfColl(*path, *aclList);
-	} else {
-		uuAclListOfDataObj(*path, *aclList);
 	}
 }
 
