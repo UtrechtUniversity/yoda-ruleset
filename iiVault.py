@@ -6,6 +6,7 @@
 
 import json
 import os
+import itertools
 
 import genquery
 import session_vars
@@ -17,73 +18,46 @@ def getPreservableFormatsLists(callback, rei):
        Return:
        dict -- Lists of preservable file formats
     """
-    preservableLists = {}
-    zoneName = ""
-    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Retrieve all preservable file formats lists on the system.
-    iter = genquery.row_iterator(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME = '/{}/yoda/file_formats' AND DATA_NAME like '%%.json'".format(rods_zone),
-        genquery.AS_LIST, callback
-    )
 
-    for row in iter:
-        data_name = row[0]
-        coll_name = row[1]
+    files = [x for x in collection_data_objects(callback, '/{}/yoda/file_formats'.format(zone))
+             if x.endswith('.json')]
 
-        # Retrieve filename and name of list.
-        filename, file_extension = os.path.splitext(data_name)
-        json = read_json_object(callback, coll_name + "/" + data_name)
-
-        # Add to list of preservable file formats.
-        preservableLists[filename] = json
-
-    return {'lists': preservableLists}
+    # Return dict of list filename (without extension) -> JSON contents
+    return {'lists': { os.path.splitext(chop_path(x)[1])[0]:
+                           read_json_object(callback, x) for x in files }}
 
 
-def getUnpreservableFiles(callback, rei, folder, list):
-    """Retrieve lists of preservable file formats on the system.
+def getUnpreservableFiles(callback, path, list_name):
+    """Retrieve lists of unpreservable file formats in a collection.
 
-       Arguments:
-       folder -- Path of folder to check.
-       list   -- Name of preservable file format list.
+    Arguments:
+    path      -- Path of folder to check.
+    list_name -- Name of preservable file format list.
 
-       Return:
-       dict -- Lists of preservable file formats
+    Return:
+    dict -- Lists of unpreservable file formats
     """
-    zoneName = ""
-    rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    zone = get_path_info(path)[1]
 
     # Retrieve JSON list of preservable file formats.
-    json = read_json_object(callback, "/" + rods_zone + "/yoda/file_formats/" + list + ".json")
-    preservableFormats = json['formats']
-    unpreservableFormats = []
+    list_data = read_json_object(callback, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
+    preservable_formats = set(list_data['formats'])
 
-    # Retrieve all files in collection.
-    iter = genquery.row_iterator(
-        "DATA_NAME, COLL_NAME",
-        "COLL_NAME like '%s%%'" % (folder),
-        genquery.AS_LIST, callback
-    )
+    # Get basenames of all data objects within this collection.
+    data_names = itertools.imap(lambda x: chop_path(x)[1],
+                                collection_data_objects(callback, path, recursive=True))
 
-    for row in iter:
-        filename, file_extension = os.path.splitext(row[0])
+    # If JSON is considered unpreservable, ignore yoda-metadata.json.
+    data_names = itertools.ifilter(lambda x: x != unicode(IIJSONMETADATA), data_names)
 
-        # Convert to lowercase and remove dot.
-        file_extension = (file_extension.lower())[1:]
+    # Data names -> lowercase extensions, without the dot.
+    exts = set(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names))
 
-        # Check if extention is in preservable format list.
-        if (file_extension not in preservableFormats):
-            unpreservableFormats.append(file_extension)
-
-    # Remove duplicate file formats.
-    output = []
-    for x in unpreservableFormats:
-        if x not in output:
-            output.append(x)
-
-    return {'formats': output}
+    # Return any ext that is not in the preservable list.
+    return {'formats': list(exts - preservable_formats)}
 
 
 def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
@@ -98,7 +72,7 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
        rule_args[0] -- Path of folder to check.
        rule_args[1] -- Name of preservable file format list.
     """
-    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rei, rule_args[0], rule_args[1])))
+    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
 
 
 def iiCopyOriginalMetadataToVault(rule_args, callback, rei):

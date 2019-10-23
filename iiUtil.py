@@ -8,6 +8,7 @@
 import json
 import irods_types
 from collections import OrderedDict
+import itertools
 
 
 # Utility / convenience functions for data object IO and collections. {{{
@@ -166,6 +167,35 @@ def collection_collection_count(callback, path):
                      "COLL_ID",
                      "COLL_NAME like '{}/%'".format(path),
                      genquery.AS_LIST, callback))))
+
+
+def collection_data_objects(callback, path, recursive=False):
+    """Get a list of all data objects in a collection.
+
+    Note: the returned value is a generator / lazy list, so that large
+          collections can be handled without keeping everything in memory.
+          use list(...) on the result to get an actual list if necessary.
+
+    The returned paths are absolute paths (e.g. ['/tempZone/home/x/y.txt']).
+    """
+
+    # coll+data name -> path
+    to_absolute = lambda row: '{}/{}'.format(*row)
+
+    q_root = genquery.row_iterator("COLL_NAME, DATA_NAME",
+                                   "COLL_NAME = '{}'".format(path),
+                                   genquery.AS_LIST, callback)
+
+    if not recursive:
+        return itertools.imap(to_absolute, q_root)
+
+    # Recursive? Return a generator combining both queries.
+    q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
+                                  "COLL_NAME like '{}/%'".format(path),
+                                   genquery.AS_LIST, callback)
+
+
+    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
 
 # }}}
 
