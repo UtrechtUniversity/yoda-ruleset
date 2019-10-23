@@ -218,15 +218,8 @@ iiCollectionDetailsVault(*path, *kvp) {
                 *vaultActionPending = "yes";
         }
 
-        # Check if vault package is currently in state transition.
-        *vaultNewStatus = "";
-        *vaultAction = UUORGMETADATAPREFIX ++ "vault_action_*kvp.id";
-        foreach(*row in SELECT COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = *vaultAction) {
-                *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *vaultNewStatus, "get", 1));
-                if (*err < 0) {
-                        writeLine("serverLog", "iiBrowse: *vaultAction contains invalid JSON");
-                }
-        }
+		*kvp.isVaultPackage = "no";
+		*kvp.userMetadata = "false";
 
         if (*vaultStatus == SUBMITTED_FOR_PUBLICATION ||
             *vaultStatus == APPROVED_FOR_PUBLICATION ||
@@ -237,32 +230,18 @@ iiCollectionDetailsVault(*path, *kvp) {
             *vaultStatus == COMPLETE) {
                 *kvp.isVaultPackage = "yes";
                 iiGetLatestVaultMetadataXml(*path, *metadataXmlPath, *metadataXmlSize);
-                if (*metadataXmlPath == "") {
-                        *kvp.hasMetadataXml = "no";
-                } else {
+                if (*metadataXmlPath != "") {
                         *kvp.userMetadata = "true";
-                        *kvp.hasMetadataXml = "yes";
-                        *kvp.metadataXmlPath = *metadataXmlPath;
                 }
 
                 iiGetLatestVaultMetadataJson(*path, *metadataJsonPath, *metadataJsonSize);
-                if (*metadataJsonPath == "") {
-                        *kvp.hasMetadataJson = "no";
-                } else {
+                if (*metadataJsonPath != "") {
                         *kvp.userMetadata = "true";
-                        *kvp.hasMetadataJson = "yes";
-                        *kvp.metadataJsonPath = *metadataJsonPath;
                 }
-        } else {
-                *kvp.isVaultPackage = "no";
-                *kvp.hasMetadataXml = "no";
-                *kvp.hasMetadataJson = "no";
-                *kvp.userMetadata = "false";
         }
 
         *kvp.vaultStatus = *vaultStatus;
         *kvp.vaultActionPending = *vaultActionPending;
-        *kvp.vaultNewStatus = *vaultNewStatus;
 
         *isFound = false;
         # Check Access
