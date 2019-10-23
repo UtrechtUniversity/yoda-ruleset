@@ -8,53 +8,6 @@
 # \license   GPLv3, see LICENSE.
 #
 
-# \brief Obtain a count of all files in a collection.
-#
-# \param[in] path 		The full path to a collection (not a file). This
-#				is the COLL_NAME.
-# \param[out] totalSize 	Integer giving the sum of the size of all
-#				the objects in the collection in bytes
-# \param[out] dircount		The number of child directories in this collection
-#				this number is determined recursively, so this does
-#				include all subdirectories and not only those directly
-#				under the given collection
-# \param[out] filecount 	The total number of files in this collection. This
-#				number is determined recursively, so this does include
-#				all subfiles and not just those directly under the
-#				given collection.
-# \param[out] modified          Unix timestamp of the modify datetime of the file that
-#                               was modified last
-#
-iiFileCount(*path, *totalSize, *dircount, *filecount, *modified) {
-    *dircount = 0;
-    *filecount = 0;
-    *totalSize = 0;
-    *data_modified = 0;
-    *coll_modified = 0;
-
-    foreach (*row in SELECT DATA_ID, DATA_SIZE WHERE COLL_NAME like "*path%") {
-        *filecount = *filecount + 1;
-        *totalSize = *totalSize + int(*row."DATA_SIZE");
-    }
-
-    foreach (*row in SELECT DATA_ID, DATA_MODIFY_TIME
-                     WHERE COLL_NAME like "*path%") {
-	if (*data_modified < int(*row."DATA_MODIFY_TIME")) {
-	    *data_modified = int(*row."DATA_MODIFY_TIME");
-	}
-    }
-
-    foreach (*row in SELECT COLL_ID, COLL_MODIFY_TIME
-                     WHERE COLL_NAME like "*path%") {
-        *dircount = *dircount + 1;
-	if (*coll_modified < int(*row."COLL_MODIFY_TIME")) {
-	    *coll_modified = int(*row."COLL_MODIFY_TIME");
-	}
-    }
-
-    *modified = str(max(*data_modified, *coll_modified));
-}
-
 # \brief Return the name of the group a collection belongs to.
 #
 # \param[in]  path
