@@ -1,0 +1,21 @@
+{
+  "links": {
+    "ui:disabled": true
+  },
+  "Description": {
+    "ui:widget": "textarea"
+  },
+  "Additional_Documentation": {
+    "ui:widget": "textarea"
+  },
+  "GeoLocation": {
+    "items": {
+      "geoLocationBox": {
+        "ui:field": "geo"
+      }
+    }
+  },
+  "Retention_Period": {
+    "ui:widget": "updown"
+  }
+}

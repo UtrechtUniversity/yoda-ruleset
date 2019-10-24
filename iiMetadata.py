@@ -1,0 +1,496 @@
+# \file      iiMetadata.py
+# \brief     JSON metadata handling
+# \author    Chris Smeele
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
+# \license   GPLv3, see LICENSE.
+
+import re
+import json
+import jsonschema
+import jsonavu
+from enum import Enum
+
+
+class Space(Enum):
+    """Differentiates Yoda path types between research and vault spaces."""
+    OTHER    = 0
+    RESEARCH = 1
+    VAULT    = 2
+
+    def __repr__(self):
+        return 'Space.' + self.name
+
+
+def get_path_info(path):
+    """
+    Parse a path into a (Space, zone, group, subpath) tuple.
+
+    Synopsis: space, zone, group, subpath = get_path_info(path)
+
+    This can be used to discern research and vault paths, and provides
+    group name and subpath information.
+
+    Examples:
+
+    /                           => Space.OTHER,    '',         '',           ''
+    /tempZone                   => Space.OTHER,    'tempZone', '',           ''
+    /tempZone/yoda/x            => Space.OTHER,    'tempZone', '',           'yoda/x'
+    /tempZone/home              => Space.OTHER,    'tempZone', '',           'home'
+    /tempZone/home/vault-x      => Space.VAULT,    'tempZone', 'vault-x',    ''
+    /tempZone/home/vault-x/y    => Space.VAULT,    'tempZone', 'vault-x',    'y'
+    /tempZone/home/research-x/y => Space.RESEARCH, 'tempZone', 'research-x', 'y'
+    etc.
+    """
+
+    # Turn empty match groups into empty strings.
+    f      = lambda x:    '' if x is None else x
+    g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
+    result = lambda s, m: (s, g(m, 1), g(m, 2), g(m, 3))
+
+    # Try a pattern and report success if it matches.
+    def test(r, space):
+        m = re.match(r, path)
+        return m and result(space, m)
+
+    return (test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',    Space.VAULT)
+         or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$', Space.RESEARCH)
+         or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
+         or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
+         or (Space.OTHER, '', '', ''))  # (matches '/' and empty paths)
+
+
+def metadata_get_links(metadata):
+    if 'links' not in metadata or type(metadata['links']) is not list:
+        return []
+    return filter(lambda x: type(x) in (dict, OrderedDict)
+                            and 'rel'  in x
+                            and 'href' in x
+                            and type(x['rel'])  is unicode
+                            and type(x['href']) is unicode,
+                  metadata['links'])
+
+
+def metadata_get_schema_id(metadata):
+    desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
+    if len(desc) > 0:
+        return desc[0]['href']
+
+
+def metadata_set_schema_id(metadata, schema_id):
+    other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
+
+    metadata['links'] = [OrderedDict([
+        ['rel',  'describedby'],
+        ['href', schema_id]
+    ])] + other_links
+
+
+def get_json_metadata_errors(callback,
+                             metadata_path,
+                             metadata=None,
+                             schema=None,
+                             ignore_required=False):
+    """Validate JSON metadata, and return a list of errors, if any.
+       The path to the JSON object must be provided, so that the active schema path
+       can be derived. Optionally, a pre-parsed JSON object may be provided in
+       'metadata'.
+
+       The checked schema is, by default, the active schema for the given metadata path,
+       however it can be overridden by providing a parsed JSON schema as an argument.
+
+       This will throw exceptions on missing metadata / schema files and invalid
+       JSON formats.
+    """
+
+    if schema is None:
+        schema = get_active_schema(callback, metadata_path)
+
+    if metadata is None:
+        metadata = read_json_object(callback, metadata_path)
+
+    # Perform validation and filter errors.
+    validator = jsonschema.Draft7Validator(schema)
+
+    errors = validator.iter_errors(metadata)
+
+    if ignore_required:
+        errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
+
+    def transform_error(e):
+        """Turn a ValidationError into a data structure for the frontend"""
+        return {'message':     e.message,
+                'path':        list(e.path),
+                'schema_path': list(e.schema_path),
+                'validator':   e.validator}
+
+    return map(transform_error, errors)
+
+
+def is_json_metadata_valid(callback,
+                           metadata_path,
+                           metadata=None,
+                           ignore_required=False):
+    """Check if json metadata contains no errors.
+       argument 'metadata' may contain a preparsed JSON document, otherwise it
+       is loaded from the provided path.
+    """
+
+    try:
+        return len(get_json_metadata_errors(callback,
+                                            metadata_path,
+                                            metadata=metadata,
+                                            ignore_required=ignore_required)) == 0
+    except UUException as e:
+        # File may be missing or not valid JSON.
+        return False
+
+
+def get_collection_metadata_path(callback, coll):
+    """Check if a collection has a metadata file and provide its path, if any.
+       Both JSON and legacy XML are checked, JSON has precedence if it exists.
+    """
+
+    for path in ['{}/{}'.format(coll, x) for x in [IIJSONMETADATA, IIMETADATAXMLNAME]]:
+        if data_object_exists(callback, path):
+            return path
+
+    return None
+
+
+def get_latest_vault_metadata_path(callback, vault_pkg_coll):
+    """Get the latest vault metadata JSON file.
+
+       Arguments:
+       vault_pkg_coll -- Vault package collection
+
+       Return:
+       string -- Metadata JSON path
+    """
+    name = None
+
+    iter = genquery.row_iterator(
+        "DATA_NAME",
+        "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(vault_pkg_coll),
+        genquery.AS_LIST, callback)
+
+    for row in iter:
+        data_name = row[0]
+        if name is None or (name < data_name and len(name) <= len(data_name)):
+            name = data_name
+
+    return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
+
+
+def iiValidateMetadata(rule_args, callback, rei):
+    """Validate JSON metadata file"""
+
+    json_path = rule_args[0]
+
+    try:
+        errs = get_json_metadata_errors(callback, json_path)
+    except UUException as e:
+        errs = {'message': str(e)}
+
+    if len(errs):
+        rule_args[1] = '1'
+        rule_args[2] = 'metadata validation failed:\n' + '\n'.join([e['message'] for e in errs])
+    else:
+        rule_args[1] = '0'
+        rule_args[2] = 'metadata validated'
+
+
+@define_as_rule('iiCollectionHasCloneableMetadata',
+                inputs=[0], outputs=[1],
+                transform=lambda x: x if type(x) is str else '')
+def collection_has_cloneable_metadata(callback, coll):
+    """Check if a collection has metadata, and validate it.
+       Returns the parent metadata_path on success, or False otherwise.
+
+       This always ignores 'required' schema attributes, since metadata can
+       only be cloned in the research area.
+    """
+    path = get_collection_metadata_path(callback, coll)
+
+    if path is None:
+        return False
+
+    if path.endswith('.json'):
+        if is_json_metadata_valid(callback, path, ignore_required=True):
+            return path
+
+    return False
+
+
+def iiRemoveAllMetadata(rule_args, callback, rei):
+    """Remove a collection's metadata JSON and XML, if they exist"""
+
+    coll = rule_args[0]
+
+    for path in ['{}/{}'.format(coll, x) for x in [IIJSONMETADATA, IIMETADATAXMLNAME]]:
+        try:
+            data_obj_unlink(callback,
+                            'objPath={}++++forceFlag='.format(path),
+                            irods_types.BytesBuf())
+        except UUMsiException as e:
+            # ignore non-existent files.
+            pass
+
+
+def iiCloneMetadataFile(rule_args, callback, rei):
+    """Clones a metadata file from a parent collection to a subcollection.
+       The destination collection (where the metadata is copied *to*) is given as an argument.
+    """
+
+    target_coll = rule_args[0]
+    source_coll = chop_path(target_coll)[0]  # = parent collection
+
+    source_data = get_collection_metadata_path(callback, source_coll)
+
+    if source_data is None:
+        # No metadata to clone? Abort.
+        return
+    elif source_data.endswith('.json'):
+        target_data = '{}/{}'.format(target_coll, IIJSONMETADATA)
+    else:
+        # XML metadata files must be transformed to JSON before cloning.
+        return
+
+    try:
+        data_obj_copy(callback, source_data, target_data, '', irods_types.BytesBuf())
+    except UUMsiException as e:
+        callback.writeString("serverLog", 'Metadata copy from <{}> to <{}> failed: {}'
+                             .format(source_data, target_data, e))
+
+
+# Functions that deal with ingesting metadata into AVUs {{{
+
+def ingest_metadata_research(callback, path):
+    """Validates JSON metadata (without requiredness) and ingests as AVUs in the research space."""
+
+    coll, data = chop_path(path)
+
+    try:
+        metadata = read_json_object(callback, path)
+    except UUException as e:
+        callback.writeString('serverLog',
+                             'ingest_metadata_research failed: Could not read {} as JSON\n'
+                             .format(path))
+        return
+
+    if not is_json_metadata_valid(callback, path, metadata, ignore_required=True):
+        callback.writeString('serverLog',
+                             'ingest_metadata_research failed: {} is invalid\n'
+                             .format(path))
+        return
+
+    # Remove any remaining legacy XML-style AVUs.
+    callback.iiRemoveAVUs(coll, UUUSERMETADATAPREFIX)
+
+    # Note: We do not set a $id in research space: this would trigger jsonavu
+    # validation, which does not respect our wish to ignore required
+    # properties in the research area.
+
+    # Replace all metadata under this namespace.
+    callback.setJsonToObj(coll, '-C',
+                          UUUSERMETADATAROOT,
+                          json.dumps(metadata))
+
+
+def ingest_metadata_staging(callback, path):
+    """Sets cronjob metadata flag and triggers vault ingest."""
+
+    coll = chop_path(path)[0]
+
+    ret = string_2_key_val_pair(callback,
+                                '{}{}{}'.format(UUORGMETADATAPREFIX,
+                                                'cronjob_vault_ingest=',
+                                                CRONJOB_STATE['PENDING']),
+                                irods_types.BytesBuf())
+
+    set_key_value_pairs_to_obj(callback, ret['arguments'][1], path, '-d')
+
+    # Note: Validation is triggered via ExecCmd in iiIngestDatamanagerMetadataIntoVault.
+    callback.iiAdminVaultIngest()
+
+
+def ingest_metadata_vault(callback, path):
+    """Ingest (pre-validated) JSON metadata in the vault."""
+
+    # The JSON metadata file has just landed in the vault, required validation /
+    # logging / provenance has already taken place.
+
+    # Read the metadata file and apply it as AVUs.
+
+    coll = chop_path(path)[0]
+
+    try:
+        metadata = read_json_object(callback, path)
+    except UUException as e:
+        callback.writeString('serverLog',
+                             'ingest_metadata_vault failed: Could not read {} as JSON\n'
+                             .format(path))
+        return
+
+    # Remove any remaining legacy XML-style AVUs.
+    callback.iiRemoveAVUs(coll, UUUSERMETADATAPREFIX)
+
+    # Replace all metadata under this namespace.
+    callback.setJsonToObj(coll, '-C',
+                          UUUSERMETADATAROOT,
+                          json.dumps(metadata))
+
+# }}}
+
+
+def iiMetadataJsonModifiedPost(rule_args, callback, rei):
+
+    path, user, zone = rule_args[:4]
+
+    if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
+        ingest_metadata_staging(callback, path)
+    elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
+        ingest_metadata_vault(callback, path)
+    elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
+        ingest_metadata_research(callback, path)
+
+
+def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
+    """Ingest changes to metadata into the vault."""
+
+    # This rule is called via ExecCmd during a policy rule
+    # (ingest_metadata_staging), with as an argument the path to a metadata
+    # JSON in a staging area (a location in a datamanager home collection).
+    #
+    # As user rods, we validate the metadata, and if succesful, copy it, timestamped, into the vault.
+    # Necessary log & provenance info is recorded, and a publication update is triggered if necessary.
+    # An AVU update is triggered via policy during the copy action.
+
+    json_path = rule_args[0]
+    rule_args[1:3] = 'UnknownError', ''
+
+    # FIXME: this kvp issue needs to be addressed on a wider scale.
+    if json_path.find('++++') != -1:
+        return
+
+    def set_result(msg_short, msg_long):
+        rule_args[1:3] = msg_short, msg_long
+        if msg_short != 'Success':
+            callback.writeString('serverLog', 'iiIngestDatamanagerMetadataIntoVault failed: {}\n'
+                                              .format(msg_long))
+        return
+
+    # Parse path to JSON object.
+    m = re.match('^/([^/]+)/home/(datamanager-[^/]+)/(vault-[^/]+)/(.+)/{}$'.format(IIJSONMETADATA), json_path)
+    if not m:
+        set_result('JsonPathInvalid', 'Json staging path <{}> invalid'.format(json_path))
+        return
+
+    zone, dm_group, vault_group, vault_subpath = m.groups()
+    dm_path = '/{}/home/{}'.format(zone, dm_group)
+
+    # Make sure the vault package coll exists.
+    vault_path = '/{}/home/{}'.format(zone, vault_group)
+    vault_pkg_path = '{}/{}'.format(vault_path, vault_subpath)
+
+    if not collection_exists(callback, vault_pkg_path):
+        set_result('JsonPathInvalid', 'Vault path <{}> does not exist'.format(vault_pkg_path))
+        return
+
+    actor = data_owner(callback, json_path)
+    if actor is None:
+        set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
+        return
+    actor = actor[0]  # Discard zone name.
+
+    # Make sure rods has access to the json file.
+    client_full_name = get_client_full_name(rei)
+
+    try:
+        ret = check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
+        if ret['arguments'][2] != b'\x01':
+            set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
+    except UUException as e:
+        set_result('AccessError', 'Couldn\'t grant access to json metadata file')
+        return
+
+    # Determine destination filename.
+    # FIXME - TOCTOU: also exists in XML version
+    #      -> should do this in a loop around data_obj_copy instead.
+    ret = get_icat_time(callback, '', 'unix')
+    timestamp = ret['arguments'][0].lstrip('0')
+
+    json_name, json_ext = IIJSONMETADATA.split('.', 1)
+    dest = '{}/{}[{}].{}'.format(vault_pkg_path, json_name, timestamp, json_ext)
+    i = 0
+    while data_object_exists(callback, dest):
+        i += 1
+        dest = '{}/{}[{}][{}].{}'.format(vault_pkg_path, json_name, timestamp, i, json_ext)
+
+    # Validate metadata.
+    # FIXME - TOCTOU: also exists in XML version
+    #      -> might fix by reading JSON only once, and validating and writing to vault from that.
+    ret = callback.iiValidateMetadata(json_path, '', '')
+    invalid = ret['arguments'][1]
+    if invalid == '1':
+        set_result('FailedToValidateJSON', ret['arguments'][2])
+        return
+
+    # Copy the file, with its ACLs.
+    try:
+        # Note: This copy triggers metadata/AVU ingestion via policy.
+        data_obj_copy(callback, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
+    except UUException as e:
+        set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
+                   .format(json_path, dest))
+        return
+
+    try:
+        callback.iiCopyACLsFromParent(dest, 'default')
+    except Exception as e:
+        set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
+        return
+
+    # Log actions.
+    callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
+    callback.iiWriteProvenanceLogToVault(vault_pkg_path)
+
+    # Cleanup staging area.
+    try:
+        data_obj_unlink(callback, 'objPath={}++++forceFlag='.format(json_path), irods_types.BytesBuf())
+    except Exception as e:
+        set_result('FailedToRemoveDatamanagerXML', 'Failed to remove <{}>'.format(json_path))
+        return
+
+    stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
+    if collection_empty(callback, stage_coll):
+        try:
+            # We may or may not have delete access already.
+            set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
+        except UUException as e:
+            pass
+        try:
+            rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
+        except UUException as e:
+            set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
+            return
+
+    # Update publication if package is published.
+    ret = callback.iiVaultStatus(vault_pkg_path, '')
+    status = ret['arguments'][1]
+    if status == VAULT_PACKAGE_STATE['PUBLISHED']:
+        # Add publication update status to vault package.
+        # Also used in frontend to check if vault package metadata update is pending.
+        s = UUORGMETADATAPREFIX + "cronjob_publication_update=" + CRONJOB_STATE['PENDING']
+        try:
+            ret = string_2_key_val_pair(callback, s, irods_types.BytesBuf())
+            kvp = ret['arguments'][1]
+            associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
+
+            callback.iiSetUpdatePublicationState(vault_pkg_path, irods_types.BytesBuf())
+        except Exception:
+            set_result('FailedToSetPublicationUpdateStatus',
+                       'Failed to set publication update status on <{}>'.format(vault_pkg_path))
+            return
+
+    set_result('Success', '')
