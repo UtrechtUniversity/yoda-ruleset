@@ -282,5 +282,5 @@ createXmlXsdCollections {
         }
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-uu/tools/schemas", *schema="default-0", *category="default", *update=0
+input *resc="irodsResc", *src="/etc/irods/irods-ruleset-uu/schemas", *schema="default-0", *category="default", *update=0
 output ruleExecOut
