@@ -1,2 +1,2 @@
 #!/bin/sh
-irule -F /etc/irods/irods-ruleset-research/tools/process-vault-status-transitions.r
+irule -F /etc/irods/irods-ruleset-uu/tools/process-vault-status-transitions.r

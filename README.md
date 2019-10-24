@@ -53,7 +53,7 @@ $ irule -F ./tools/install-default-xml-for-metadata.r '*resc="demoResc"'
 8) Configure a cronjob under a rodsadmin account to copy datapackages to the vault. Example line for crontab -e:
 
 ```
-*/2 * * * * /bin/irule -F /etc/irods/irods-ruleset-research/tools/copy-accepted-folders-to-vault.r >>$HOME/iRODS/server/log/job_copy-accepted-folder-to-vault.r 2>&1
+*/2 * * * * /bin/irule -F /etc/irods/irods-ruleset-uu/tools/copy-accepted-folders-to-vault.r >>$HOME/iRODS/server/log/job_copy-accepted-folder-to-vault.r 2>&1
 ```
 
 LICENSE

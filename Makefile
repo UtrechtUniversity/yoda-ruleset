@@ -27,15 +27,13 @@
 # make install - install ruleset (concatenated .r files) into the parent directory
 
 # Input files. Exclude all test rules in ./tests
-# RULE_FILES   ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname '*.r' -print | sort)
-# PYRULE_FILES ?= $(shell find . -path "./tests" -prune -o -path "./tools" -prune -o -type f -iname 'uu*.py' -print | sort)
 PYRULE_FILES ?= $(sort $(wildcard uu*.py ii*.py))
 RULE_FILES   ?= $(sort $(wildcard uu*.r  ii*.r))
 
 # Output files.
-RULESET_NAME ?= rules-uu.re
-RULESET_FILE := $(RULESET_NAME)
-DEBUG_FILE := $(RULESET_NAME).debug
+RULESET_NAME   ?= rules-uu.re
+RULESET_FILE   := $(RULESET_NAME)
+DEBUG_FILE     := $(RULESET_NAME).debug
 PYRULESET_NAME ?= rules_uu.py
 PYRULESET_FILE := $(PYRULESET_NAME)
 
