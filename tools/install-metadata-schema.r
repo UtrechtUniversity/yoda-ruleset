@@ -135,6 +135,7 @@ createXmlXsdCollections {
 	    		writeLine("stdout", "Present: *xsddefault");
 	    	}
 	    } else {
+		    msiDataObjPut(*xsddefault, *resc, "localPath=*src/*schema/*defaultResearchSchema", *status);
 		    writeLine("stdout", "Installed: *xsddefault");
 	    }
 
