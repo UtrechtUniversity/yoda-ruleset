@@ -31,7 +31,7 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
 
     # Pre work input for render process.
     # When empty landing page, take a short cut
-    if template_name == 'emptylandingpage.html':
+    if template_name == 'emptylandingpage.html.j2':
         persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
         tm = Template(template)
         landing_page = tm.render(persistent_identifier_datapackage=persistent_identifier_datapackage)

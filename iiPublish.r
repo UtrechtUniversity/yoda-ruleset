@@ -320,9 +320,9 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
         uuGetBaseGroup(*vaultGroup, *baseGroup);
         uuGroupGetCategory(*baseGroup, *category, *subcategory);
         if (*publish == "publish") {
-            *template_name = 'landingpage.html';
+            *template_name = 'landingpage.html.j2';
         } else {
-            *template_name = 'emptylandingpage.html';
+            *template_name = 'emptylandingpage.html.j2';
         }
 
         *receiveLandingPage = ''; ## initialize before handover to Python
