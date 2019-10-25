@@ -43,6 +43,7 @@ iiFolderStatus(*folder, *folderStatus) {
 # \param[out] datamananagerExists
 #
 iiFolderDatamanagerExists(*folder, *datamanagerExists) {
+	*groupName = "";
 	iiCollectionGroupName(*folder, *groupName);
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	uuGroupExists("datamanager-*category", *datamanagerExists);
@@ -332,6 +333,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*statusInfo = "An internal error has occurred";
 
 	# Check if folder is a research group.
+	*groupName = "";
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";

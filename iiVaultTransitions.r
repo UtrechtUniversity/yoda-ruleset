@@ -92,6 +92,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	*actor = uuClientFullName;
 
 	# Retrieve user group name and user type.
+	*actorGroup = "";
 	iiCollectionGroupName(*path, *actorGroup);
 
 	uuGroupGetMemberType(*actorGroup, uuClientFullName, *userType);

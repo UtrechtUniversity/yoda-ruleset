@@ -143,6 +143,8 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			*reason = "Cannot grant own or inherit to *objPath";
 			succeed;
 		}
+
+		*groupName = "";
 		iiCollectionGroupName(*objPath, *groupName);
 		uuGroupGetCategory(*groupName, *category, *subcategory);
 		if (*otherName == "datamanager-*category") {

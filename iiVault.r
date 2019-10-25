@@ -12,6 +12,7 @@
 # \returnvalue target path
 #
 iiDetermineVaultTarget(*folder) {
+	*groupName = "";
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		writeLine("stdout", "iiDetermineVaultTarget: Cannot determine which research group *folder belongs to");
@@ -68,7 +69,7 @@ iiCopyFolderToVault(*folder, *target) {
 # \param[in] target  path of the vault package
 #
 iiSetVaultPermissions(*folder, *target) {
-
+	*groupName = "";
 	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
 	if (*err < 0) {
 		writeLine("stdout", "iiSetVaultPermissions: Cannot determine which research group *folder belongs to");

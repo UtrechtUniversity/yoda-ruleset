@@ -240,6 +240,7 @@ iiPrepareMetadataForm(*path, *result) {
                 *kvp.isVaultPackage = "no";
 
                 # Retrieve user group name and user type.
+                *groupName = "";
                 iiCollectionGroupName(*path, *groupName);
                 *kvp.groupName = *groupName;
 

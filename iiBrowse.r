@@ -136,6 +136,7 @@ iiCollectionDetailsResearch(*path, *kvp) {
         *kvp.userMetadata = "true";
 
         # Retrieve user group name and user type.
+        *groupName = "";
         iiCollectionGroupName(*path, *groupName);
         *kvp.groupName = *groupName;
 

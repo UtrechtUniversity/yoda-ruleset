@@ -519,6 +519,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 	}
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
+		*groupName = "";
 		*err1 = errorcode(iiCollectionGroupName(*folder, *groupName));
 		*err2 = errorcode(uuGroupGetCategory(*groupName, *category, *subcategory));
 		*err3 = errorcode(uuGroupExists("datamanager-*category", *datamanagerExists));
