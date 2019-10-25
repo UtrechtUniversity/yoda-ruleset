@@ -134,10 +134,18 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
 # \param[out] kvp   key value pair with all required info on current collection (=*path)
 iiCollectionDetailsResearch(*path, *kvp) {
         *kvp.userMetadata = "true";
-        iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
+
+        # Retrieve user group name and user type.
+        iiCollectionGroupName(*path, *groupName);
         *kvp.groupName = *groupName;
+
+        uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
         *kvp.userType = *userType;
-        if (*isDatamanager) {
+
+        # Check if user is datamanager.
+        uuGroupGetCategory(*groupName, *category, *subcategory);
+        uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
+        if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
                 *kvp.isDatamanager = "yes";
         } else {
                 *kvp.isDatamanager = "no";

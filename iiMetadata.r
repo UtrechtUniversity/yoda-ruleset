@@ -240,10 +240,16 @@ iiPrepareMetadataForm(*path, *result) {
                 *kvp.isVaultPackage = "no";
 
                 # Retrieve user group name and user type.
-                iiCollectionGroupNameAndUserType(*path, *groupName, *userType, *isDatamanager);
+                iiCollectionGroupName(*path, *groupName);
                 *kvp.groupName = *groupName;
+
+                uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
                 *kvp.userType = *userType;
-                if (*isDatamanager) {
+
+                # Check if user is datamanager.
+                uuGroupGetCategory(*groupName, *category, *subcategory);
+                uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
+                if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
                         *kvp.isDatamanager = "yes";
                 } else {
                         *kvp.isDatamanager = "no";

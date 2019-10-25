@@ -88,11 +88,22 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 	# Determine vault group and actor.
 	*pathElems = split(*folder, "/");
 	*rodsZone = elem(*pathElems, 0);
-        *vaultGroup = elem(*pathElems, 2);
+	*vaultGroup = elem(*pathElems, 2);
 	*actor = uuClientFullName;
 
-	# Check if user is manager of research group.
-	iiCollectionGroupNameAndUserType(*folder, *actorGroup, *userType, *isDatamanager);
+	# Retrieve user group name and user type.
+	iiCollectionGroupName(*path, *actorGroup);
+
+	uuGroupGetMemberType(*actorGroup, uuClientFullName, *userType);
+
+	# Check if user is datamanager.
+	uuGroupGetCategory(*actorGroup, *category, *subcategory);
+	uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
+	if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
+		*isDatamanager = true;
+	} else {
+		*isDatamanager = false;
+	}
 
 	# Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
 	if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
