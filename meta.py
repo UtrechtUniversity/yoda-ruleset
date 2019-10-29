@@ -1,9 +1,8 @@
-# \file      iiMetadata.py
-# \brief     JSON metadata handling
-# \author    Chris Smeele
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""JSON metadata handling."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import re
 import json

@@ -1,9 +1,9 @@
-# \file      iiJsonLandingPage.py
-# \brief     Functions for transforming JSON to landingpage HTML.
-# \author    Harm de Raaff
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for transforming JSON to landingpage HTML."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
 from jinja2 import Template
 import os
 from json import loads

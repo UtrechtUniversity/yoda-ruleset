@@ -1,9 +1,9 @@
-# \file      iiVaultXmlToJson.py
-# \brief     Functions for transforming vault XML to JSON.
-# \author    Harm de Raaff
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for transforming vault XML to JSON."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
 import xmltodict
 from json import loads
 from collections import OrderedDict

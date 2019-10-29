@@ -1,11 +1,8 @@
-# \file      iiSchema.py
-# \brief     Functions for finding the active schema.
-# \author    Lazlo Westerhof
-# \author    Felix Croes
-# \author    Harm de Raaff
-# \author    Chris Smeele
-# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for finding the active schema."""
+
+__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import genquery
 import re

@@ -1,9 +1,8 @@
-# \file      uuIntegrity.py
-# \brief     Functions for data integrity.
-# \author    Lazlo Westerhof
-# \author    Felix Croes
-# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for data integrity."""
+
+__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import os.path
 from collections import namedtuple

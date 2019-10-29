@@ -1,8 +1,8 @@
-# \file      iiTransformations.py
-# \brief     JSON schema transformation functions.
-# \author    Chris Smeele
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""JSON schema transformation functions."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import re
 from meta import *

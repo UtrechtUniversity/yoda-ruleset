@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""Functions for transform Yoda metadata XML to JSON."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
 import xmltodict
 import os
 

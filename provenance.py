@@ -1,9 +1,8 @@
-# \file      iiProvenance.py
-# \brief     Functions for provenance handling.
-# \author    Harm de Raaff
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for provenance handling."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 
 def iiFrontEndAddActionLogRecord(rule_args, callback, rei):

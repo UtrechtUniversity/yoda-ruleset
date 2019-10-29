@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-# \file      iiSchemaTransformation.py
-# \brief     Functions for handling schema updates within any yoda-metadata file.
-# \author    Lazlo Westerhof
-# \author    Felix Croes
-# \author    Harm de Raaff
-# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+"""Functions for handling schema updates within any yoda-metadata file."""
+
+__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import os
 from collections import namedtuple

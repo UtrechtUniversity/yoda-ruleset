@@ -2,6 +2,7 @@
 """Constants that apply to all Yoda environments."""
 
 __copyright__ = 'Copyright (c) 2016-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 # TODO: Naming convention (no capitals, no UU/II prefix)
 # TODO: dicts => enum.Enum

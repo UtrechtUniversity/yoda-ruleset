@@ -1,8 +1,8 @@
-# \file      iiVault.py
-# \brief     Functions to copy packages to the vault and manage permissions of vault packages.
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions to copy packages to the vault and manage permissions of vault packages."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 from util import *
 import constants

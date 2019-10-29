@@ -1,8 +1,8 @@
-# \file      iiCollection.py
-# \brief     Functions to retrieve unformation about collections.
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019, Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions to retrieve unformation about collections."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 from util import *
 import genquery
