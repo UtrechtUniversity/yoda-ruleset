@@ -16,7 +16,7 @@ def get_client_full_name(rei):
     return '{}#{}'.format(*get_client_name_zone(rei))
 
 
-def user_name_from_id(callback, user_id):
+def name_from_id(callback, user_id):
     """Retrieve username from user ID."""
     for row in genquery.row_iterator("USER_NAME",
                                      "USER_ID = '{}'".format(user_id),

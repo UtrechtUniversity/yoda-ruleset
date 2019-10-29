@@ -1,15 +1,18 @@
-# \file      iiTransformations.py
-# \brief     JSON schema transformation functions.
-# \author    Chris Smeele
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""JSON schema transformation functions."""
+
+__copyright__ = 'Copyright (c) 2019 Utrecht University.'
+__license__   = 'GPLv3, see LICENSE.'
+
+# No rules are exported by this module.
+__all__ = []
 
 import re
-from meta import *
+import meta
 
 # Transformation functions {{{
 
-# Naming scheme: _transform_FROMSCHEMA_TOSCHEMA
+# Naming scheme: _FROMSCHEMA_TOSCHEMA
 #
 # A transformation function takes a JSON object (OrderedDict) as an argument,
 # and returns a new JSON object.
@@ -17,7 +20,7 @@ from meta import *
 # The docstring of a transformation function should describe the transformation
 # in a human-readable manner: it is provided to the user executing the transformation.
 
-def _transform_default0_default1(m):
+def _default0_default1(m):
     """
     A Data type field is added to be used for publication purposes to DataCite.
     This makes it possible to specify the type of data that is being published.
@@ -55,25 +58,23 @@ def _transform_default0_default1(m):
         if 'Name' in person:
             person['Name'] = fixup_name(person['Name'])
 
-    metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-1/metadata.json')
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-1/metadata.json')
 
     return m
 
 # }}}
 
+def get(src_id, dst_id):
+    """Get a transformation function that maps metadata from the given src schema id to the dst schema id.
 
-def transformation_html(f):
-    """Get a human-readable HTML description of a transformation function.
-       The text is derived from the function's docstring.
+    :param src_id: The metadata's current schema id
+    :param dst_id: The metadata's destination schema id
+
+    :return: A transformation function, or None if no mapping exists for the given ids
     """
 
-    return '\n'.join(map(lambda paragraph:
-                     '<p>{}</p>'.format(  # Trim whitespace.
-                         re.sub('\s+', ' ', paragraph).strip()),
-                         # Docstring paragraphs are separated by blank lines.
-                         re.split('\n{2,}', f.__doc__)))
+    transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1}}
 
-
-# Maps old schemas to new schemas with their accompanying transformation function.
-transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
-                   {'https://yoda.uu.nl/schemas/default-1/metadata.json': _transform_default0_default1}}
+    x = transformations.get(src_id)
+    return None if x is None else x.get(dst_id)

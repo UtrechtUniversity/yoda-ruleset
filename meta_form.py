@@ -10,7 +10,7 @@ from util import *
 # FIXME: Temporary / transitional: Replace with qualified individual imports.
 from meta   import *
 from schema import *
-from schema_transformation import *
+import schema_transformation
 
 
 # TODO: These belong in the group manager part of our rulesets. {{{
@@ -212,7 +212,7 @@ def iiMetadataFormLoad(callback, coll):
             else:
                 # Looks like a valid metadata file.
                 # See if its schema is up to date.
-                transform = get_transformation(callback, meta_path, metadata=metadata)
+                transform = schema_transformation.get(callback, meta_path, metadata=metadata)
 
                 if transform is None:
                     if current_schema_id == schema['$id']:
@@ -252,7 +252,7 @@ def iiMetadataFormLoad(callback, coll):
                         errors = ['Please check the structure of this file.']
                     else:
                         # No errors! Offer automatic transformation.
-                        transformation_text = transformation_html(transform)
+                        transformation_text = schema_transformation.html(transform)
 
                     del metadata, schema, uischema
 

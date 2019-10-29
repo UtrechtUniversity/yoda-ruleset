@@ -22,8 +22,8 @@ from integrity              import *
 from json_datacite41        import *
 from json_landing_page      import *
 from meta_form              import *
-from schema_transformations import *
 from schema_transformation  import *
+from schema_transformations import *
 from meta                   import *
 from provenance             import *
 from published_xml_to_json  import *

@@ -18,7 +18,7 @@ iiFrontTransformMetadata(*path, *status, *statusInfo)
         *statusInfo = "";
         *statusPy = "";
         *statusInfoPy = "";
-        iiRuleTransformMetadata(*path, *statusPy, *statusInfoPy);
+        rule_uu_transform_metadata(*path, *statusPy, *statusInfoPy);
 
         *status = *statusPy;
         *statusInfo = *statusInfoPy;
@@ -364,7 +364,7 @@ iiPrepareMetadataForm(*path, *result) {
                 if (*jsonPath != "") {
                         *transformation = '';
                         *transformationText = '';
-                        iiGetTransformationInfo(*jsonPath, *transformation, *transformationText)
+                        rule_uu_get_transformation_info(*jsonPath, *transformation, *transformationText)
                         *kvp.transformation = *transformation;
                         *kvp.transformationText = *transformationText;
                 }

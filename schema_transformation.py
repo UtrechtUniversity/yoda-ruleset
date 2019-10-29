@@ -1,34 +1,33 @@
 # -*- coding: utf-8 -*-
-# \file      iiSchemaTransformation.py
-# \brief     Functions for handling schema updates within any yoda-metadata file.
-# \author    Lazlo Westerhof
-# \author    Felix Croes
-# \author    Harm de Raaff
-# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+"""Functions for handling schema updates within any yoda-metadata file."""
+
+__copyright__ = 'Copyright (c) 2018, 2019 Utrecht University.'
+__license__   = 'GPLv3, see LICENSE.'
+
+__all__ = ['rule_uu_batch_transform_vault_metadata',
+           'rule_uu_get_transformation_info',
+           'rule_uu_transform_metadata']
 
 import os
-from collections import namedtuple
-from enum import Enum
-import hashlib
-import base64
-import json
-import irods_types
 import time
 import xmltodict
 import re
 
+import irods_types
 import genquery
 import session_vars
 
 from util import *
+
 import meta
-from meta import *
-from schema import *
-from schema_transformations import *
-from vault_xml_to_json import *
+import schema
+import schema_transformations
+import vault_xml_to_json
+
 
 def execute_transformation(callback, metadata_path, transform):
+    """Transform a metadata file with the given transformation function."""
+
     coll, data = os.path.split(metadata_path)
 
     group_name = metadata_path.split('/')[3]
@@ -51,10 +50,8 @@ def execute_transformation(callback, metadata_path, transform):
     else:
         assert False
 
-# ----------------------------------- interface functions when calling from irods rules have prefix iiRule
 
-
-def transformResearchXml(callback, xml_path):
+def transform_research_xml(callback, xml_path):
     """Transform a yoda-metadata XML to JSON in the research area.
 
     Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
@@ -70,18 +67,17 @@ def transformResearchXml(callback, xml_path):
         return 'ERROR', 'XML metadata file is malformed'
 
     try:
-        # schema = getActiveJsonSchemaAsDict(callback, zone, schema_category)
         json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
-        schema = jsonutil.read(callback, json_schema_path)
+        schem = jsonutil.read(callback, json_schema_path)
 
         # FIXME: This should get a dict instead of a json string.
-        metadata = json.loads(transformYodaXmlDataToJson(callback, schema, xml_data))
+        metadata = jsonutil.parse(vault_xml_to_json.transformYodaXmlDataToJson(callback, schem, xml_data))
         # FIXME: schema id should be inserted by the transformer instead.
         schema_id = xml_ns + '/metadata.json'
-        metadata_set_schema_id(metadata, schema_id)
+        meta.metadata_set_schema_id(metadata, schema_id)
 
         try:
-            schema = get_schema_by_id(callback, schema_id, xml_path)
+            schem = schema.get_schema_by_id(callback, schema_id, xml_path)
         except Exception as e:
             callback.writeString('serverLog', 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
                                               .format(xml_path, schema_id, str(e)))
@@ -94,11 +90,11 @@ def transformResearchXml(callback, xml_path):
         # Validate against the metadata's indicated schema.
         # This is purely for logging / debugging currently,
         # any validation errors will be reported when the form is next opened.
-        errors = get_json_metadata_errors(callback,
-                                          json_path,
-                                          metadata=metadata,
-                                          schema=schema,
-                                          ignore_required=True)
+        errors = meta.get_json_metadata_errors(callback,
+                                               json_path,
+                                               metadata=metadata,
+                                               schema=schem,
+                                               ignore_required=True)
 
         if len(errors) > 0:
             # This is not fatal - there may have been validation errors in the XML as well,
@@ -115,16 +111,9 @@ def transformResearchXml(callback, xml_path):
 
 
 @rule.make(inputs=[0], outputs=[1, 2])
-def iiRuleTransformMetadata(callback, coll):
-    """Transform a yoda-metadata.json to the active schema.
+def rule_uu_transform_metadata(callback, coll):
+    """Transform a yoda-metadata.json to the active schema."""
 
-       Arguments:
-       rule_args[0] -- JSON path
-
-       Return:
-       rule_args[1] -- statusPy
-       rule_args[2] -- statusInfoPy
-    """
     metadata_path = meta.get_collection_metadata_path(callback, coll)
 
     if metadata_path is None:
@@ -142,11 +131,11 @@ def iiRuleTransformMetadata(callback, coll):
         # newer, a second transformation will be needed, and the user will be
         # prompted for that the next time they open the form.
         callback.writeString('serverLog', 'Transforming XML -> JSON in the research space')
-        return transformResearchXml(callback, metadata_path)
+        return transform_research_xml(callback, metadata_path)
     else:
         # JSON metadata.
         callback.writeString('serverLog', 'Transforming JSON -> JSON in the research space')
-        transform = get_transformation(callback, metadata_path)
+        transform = get(callback, metadata_path)
 
         if transform is None:
             return 'ERROR', 'No transformation found'
@@ -156,20 +145,20 @@ def iiRuleTransformMetadata(callback, coll):
     return 'Success', ''
 
 
-def get_transformation(callback, metadata_path, metadata=None):
+def get(callback, metadata_path, metadata=None):
     """Find a transformation that can be executed on the given metadata JSON.
        Returns a transformation function on success, or None if no transformation was found.
     """
     try:
-        src = get_schema_id(callback, metadata_path, metadata=metadata)
-        dst = get_active_schema_id(callback, metadata_path)
+        src = schema.get_schema_id(callback, metadata_path, metadata=metadata)
+        dst = schema.get_active_schema_id(callback, metadata_path)
 
         # Ideally, we would check that the metadata is valid in its current
         # schema before claiming that we can transform it...
 
         # print('{} -> {}'.format(src,dst))
 
-        return transformations[src][dst]
+        return schema_transformations.get(src, dst)
     except KeyError as e:
         return None
     except error.UUError as e:
@@ -177,7 +166,8 @@ def get_transformation(callback, metadata_path, metadata=None):
         return None
 
 
-def iiGetTransformationInfo(rule_args, callback, rei):
+# TODO: @rule.make
+def rule_uu_get_transformation_info(rule_args, callback, rei):
     """Check if a yoda-metadata.json transformation is possible and if so,
        retrieve transformation description.
 
@@ -192,28 +182,10 @@ def iiGetTransformationInfo(rule_args, callback, rei):
 
     rule_args[1:3] = 'false', ''
 
-    transform = get_transformation(callback, json_path)
+    transform = get(callback, json_path)
 
     if transform is not None:
         rule_args[1:3] = 'true', transformation_html(transform)
-
-# ------------------ end of interface functions -----------------------------
-
-
-def iiRuleGetLocation(rule_args, callback, rei):
-    """Return the metadata schema location based upon the category of a metadata JSON.
-
-       Example:
-       in:  /tempZone/home/research-initial/yoda-metadata.json
-       out: 'https://yoda.uu.nl/schemas/default-0'
-
-       Arguments:
-       rule_args[0] -- Path of metadata JSON
-
-       Return:
-       rule_args[1] -- Metadata schema location
-    """
-    rule_args[1] = get_active_schema_id(callback, rule_args[0])
 
 
 def copy_acls_from_parent(callback, path, recursive_flag):
@@ -235,7 +207,7 @@ def copy_acls_from_parent(callback, path, recursive_flag):
         access_name = row[0]
         user_id = int(row[1])
 
-        user_name = user_name_from_id(callback, user_id)
+        user_name = user.name_from_id(callback, user_id)
 
         if access_name == "own":
             callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
@@ -248,7 +220,8 @@ def copy_acls_from_parent(callback, path, recursive_flag):
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
-def iiBatchTransformVaultMetadata(rule_args, callback, rei):
+# TODO: @rule.make
+def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
     """Transform all metadata JSON files in the vault to the active schema.
 
        Arguments:
@@ -258,9 +231,9 @@ def iiBatchTransformVaultMetadata(rule_args, callback, rei):
        delay   -- delay between batches in seconds
     """
     coll_id = int(rule_args[0])
-    batch = int(rule_args[1])
-    pause = float(rule_args[2])
-    delay = int(rule_args[3])
+    batch   = int(rule_args[1])
+    pause   = float(rule_args[2])
+    delay   = int(rule_args[3])
     rods_zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
     # Check one batch of metadata schemas.
@@ -281,9 +254,9 @@ def iiBatchTransformVaultMetadata(rule_args, callback, rei):
             group_name = path_parts[3]
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
-            metadata_path = get_latest_vault_metadata_path(callback, vault_package)
+            metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)
             if metadata_path  != '':
-                transform = get_transformation(callback, metadata_path)
+                transform = get(callback, metadata_path)
                 if transform is not None:
                     execute_transformation(callback, metadata_path, transform)
         except Exception:
@@ -293,7 +266,7 @@ def iiBatchTransformVaultMetadata(rule_args, callback, rei):
         time.sleep(pause)
 
         # The next collection to check must have a higher COLL_ID.
-        coll_id = coll_id + 1
+        coll_id += 1
     else:
         # All done.
         coll_id = 0
@@ -303,5 +276,17 @@ def iiBatchTransformVaultMetadata(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiBatchTransformVaultMetadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "rule_uu_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
+
+
+def html(f):
+    """Get a human-readable HTML description of a transformation function.
+       The text is derived from the function's docstring.
+    """
+
+    return '\n'.join(map(lambda paragraph:
+                     '<p>{}</p>'.format(  # Trim whitespace.
+                         re.sub('\s+', ' ', paragraph).strip()),
+                         # Docstring paragraphs are separated by blank lines.
+                         re.split('\n{2,}', f.__doc__)))
