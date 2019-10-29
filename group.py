@@ -10,6 +10,7 @@ import requests
 
 import genquery
 
+from util import *
 
 def getGroupData(callback):
     """Return groups and related data."""
@@ -147,7 +148,7 @@ def uuGetGroupData(rule_args, callback, rei):
     groups = getGroupData(callback)
 
     # Convert to json string and write to stdout.
-    callback.writeString("stdout", json.dumps(groups))
+    callback.writeString("stdout", jsonutil.dump(groups))
 
 
 def uuGetUserGroupData(rule_args, callback, rei):
@@ -157,7 +158,7 @@ def uuGetUserGroupData(rule_args, callback, rei):
 
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     groups = list(filter(lambda group: user in group["read"] or user in group["members"], groups))
-    callback.writeString("stdout", json.dumps(groups))
+    callback.writeString("stdout", jsonutil.dump(groups))
 
 
 def groupUserExists(rule_args, callback, rei):
@@ -184,12 +185,12 @@ def groupUserExists(rule_args, callback, rei):
 
 def uuGroupGetCategoriesJson(rule_args, callback, rei):
     """Write category list to stdout."""
-    callback.writeString("stdout", json.dumps(getCategories(callback)))
+    callback.writeString("stdout", jsonutil.dump(getCategories(callback)))
 
 
 def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
     """Write subcategory list to stdout."""
-    callback.writeString("stdout", json.dumps(getSubcategories(callback, rule_args[0])))
+    callback.writeString("stdout", jsonutil.dump(getSubcategories(callback, rule_args[0])))
 
 
 def credentialsStoreGet(key):
@@ -218,7 +219,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     data['creator_zone'] = creatorZone
 
     try:
-        response = requests.post(url, data=json.dumps(data),
+        response = requests.post(url, data=jsonutil.dump(data),
                                  headers={'X-Yoda-External-User-Secret':
                                           eus_api_secret},
                                  timeout=5,
@@ -279,7 +280,7 @@ def removeExternalUser(callback, username, userzone):
     data['username'] = username
     data['userzone'] = userzone
 
-    response = requests.post(url, data=json.dumps(data),
+    response = requests.post(url, data=jsonutil.dump(data),
                              headers={'X-Yoda-External-User-Secret':
                                       eus_api_secret},
                              verify=False)

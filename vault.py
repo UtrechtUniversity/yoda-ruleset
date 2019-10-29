@@ -4,6 +4,8 @@
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+from util import *
+import constants
 import json
 import os
 import itertools
@@ -22,12 +24,12 @@ def getPreservableFormatsLists(callback, rei):
 
     # Retrieve all preservable file formats lists on the system.
 
-    files = [x for x in collection_data_objects(callback, '/{}/yoda/file_formats'.format(zone))
+    files = [x for x in collection.data_objects(callback, '/{}/yoda/file_formats'.format(zone))
              if x.endswith('.json')]
 
     # Return dict of list filename (without extension) -> JSON contents
-    return {'lists': { os.path.splitext(chop_path(x)[1])[0]:
-                           read_json_object(callback, x) for x in files }}
+    return {'lists': { os.path.splitext(pathutil.chop(x)[1])[0]:
+                           jsonutil.read(callback, x) for x in files }}
 
 
 def getUnpreservableFiles(callback, path, list_name):
@@ -40,18 +42,18 @@ def getUnpreservableFiles(callback, path, list_name):
     Return:
     dict -- Lists of unpreservable file formats
     """
-    zone = get_path_info(path)[1]
+    zone = pathutil.info(path)[1]
 
     # Retrieve JSON list of preservable file formats.
-    list_data = read_json_object(callback, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
+    list_data = jsonutil.read(callback, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
-    data_names = itertools.imap(lambda x: chop_path(x)[1],
-                                collection_data_objects(callback, path, recursive=True))
+    data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
+                                collection.data_objects(callback, path, recursive=True))
 
     # If JSON is considered unpreservable, ignore yoda-metadata.json.
-    data_names = itertools.ifilter(lambda x: x != unicode(IIJSONMETADATA), data_names)
+    data_names = itertools.ifilter(lambda x: x != unicode(constants.IIJSONMETADATA), data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts = set(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names))
@@ -62,7 +64,7 @@ def getUnpreservableFiles(callback, path, list_name):
 
 def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
     """Write preservable file formats lists to stdout."""
-    callback.writeString("stdout", json.dumps(getPreservableFormatsLists(callback, rei)))
+    callback.writeString("stdout", jsonutil.dump(getPreservableFormatsLists(callback, rei)))
 
 
 def iiGetUnpreservableFilesJson(rule_args, callback, rei):
@@ -72,7 +74,7 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
        rule_args[0] -- Path of folder to check.
        rule_args[1] -- Name of preservable file format list.
     """
-    callback.writeString("stdout", json.dumps(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
+    callback.writeString("stdout", jsonutil.dump(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
 
 
 def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
@@ -82,7 +84,7 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
        rule_args[0] -- Path of a new package in the vault.
     """
     vault_package = rule_args[0]
-    original_metadata = vault_package + "/original/" + IIJSONMETADATA
+    original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
 
     # Copy original metadata JSON.
     copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
@@ -108,7 +110,7 @@ def getProvenanceLog(callback, folder):
     )
 
     for row in iter:
-        log_item = parse_json(row[0])
+        log_item = jsonutil.parse(row[0])
         provenance_log.append(log_item)
 
     return provenance_log
@@ -144,9 +146,6 @@ def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     callback.msiDataObjChksum(provenanceFile, "verifyChksum=", 0)
 
 
-@define_as_rule('iiVaultSpaceSystemMetadata',
-                inputs=[0], outputs=[1],
-                transform=json.dumps, handler=RuleOutput.STDOUT)
 def vault_collection_metadata(callback, coll):
     """Returns collection statistics as JSON."""
 
@@ -164,9 +163,9 @@ def vault_collection_metadata(callback, coll):
 
     system_metadata = {}
     # Package size.
-    data_count = collection_data_count(callback, coll)
-    collection_count = collection_collection_count(callback, coll)
-    size = collection_size(callback, coll)
+    data_count = collection.data_count(callback, coll)
+    collection_count = collection.collection_count(callback, coll)
+    size = collection.size(callback, coll)
     size_readable = convert_size(size)
     system_metadata["Package size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
@@ -235,3 +234,7 @@ def vault_collection_metadata(callback, coll):
         system_metadata["EPIC Persistent Identifier"] = persistent_identifier_epic
 
     return system_metadata
+
+iiVaultSpaceSystemMetadata = rule.make(inputs=[0], outputs=[1],
+                                       transform=jsonutil.dump, handler=rule.Output.STDOUT) \
+                                      (vault_collection_metadata)

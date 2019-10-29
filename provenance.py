@@ -31,6 +31,6 @@ def iiFrontEndAddActionLogRecord(rule_args, callback, rei):
 
     callback.iiAddActionLogRecord(this_actor, folder, action)
 
-    report(json.dumps({'status':     status,
+    report(jsonutil.dump({'status':     status,
                        'statusInfo': statusInfo}))
     return

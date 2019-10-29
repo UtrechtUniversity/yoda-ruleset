@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # \file      iiSchemaTransformation.py
 # \brief     Functions for handling schema updates within any yoda-metadata file.
 # \author    Lazlo Westerhof
@@ -14,28 +15,36 @@ import base64
 import json
 import irods_types
 import time
+import xmltodict
+import re
 
 import genquery
 import session_vars
 
+from util import *
+import meta
+from meta import *
+from schema import *
+from schema_transformations import *
+from vault_xml_to_json import *
 
 def execute_transformation(callback, metadata_path, transform):
     coll, data = os.path.split(metadata_path)
 
     group_name = metadata_path.split('/')[3]
 
-    metadata = read_json_object(callback, metadata_path)
+    metadata = jsonutil.read(callback, metadata_path)
     metadata = transform(metadata)
 
     if group_name.startswith('research-'):
         backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
-        data_obj_copy(callback, metadata_path, backup, '', irods_types.BytesBuf())
-        write_json_object(callback, metadata_path, metadata)
+        msi.data_obj_copy(callback, metadata_path, backup, '', irods_types.BytesBuf())
+        jsonutil.write(callback, metadata_path, metadata)
     elif group_name.startswith('vault-'):
         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
-        write_json_object(callback, new_path, metadata)
+        jsonutil.write(callback, new_path, metadata)
         copy_acls_from_parent(callback, new_path, "default")
         callback.iiAddActionLogRecord("system", coll, "updated metadata schema")
         callback.writeString("serverLog", "Transformed %s" % (new_path))
@@ -50,8 +59,8 @@ def transformResearchXml(callback, xml_path):
 
     Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
     """
-    _, zone, _1, _2 = get_path_info(xml_path)
-    xml_data = getMetadataXmlAsDict(callback, xml_path)
+    _, zone, _1, _2 = pathutil.info(xml_path)
+    xml_data = xmltodict.parse(data_object.read(callback, xml_path))
 
     try:
         xml_ns = xml_data['metadata']['@xmlns']
@@ -61,7 +70,10 @@ def transformResearchXml(callback, xml_path):
         return 'ERROR', 'XML metadata file is malformed'
 
     try:
-        schema = getActiveJsonSchemaAsDict(callback, zone, schema_category)
+        # schema = getActiveJsonSchemaAsDict(callback, zone, schema_category)
+        json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
+        schema = jsonutil.read(callback, json_schema_path)
+
         # FIXME: This should get a dict instead of a json string.
         metadata = json.loads(transformYodaXmlDataToJson(callback, schema, xml_data))
         # FIXME: schema id should be inserted by the transformer instead.
@@ -95,14 +107,14 @@ def transformResearchXml(callback, xml_path):
             callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
                                               .format(xml_path, schema_id))
 
-        write_json_object(callback, json_path, metadata)
+        jsonutil.write(callback, json_path, metadata)
     except Exception as e:
         print(e)
         return 'ERROR', 'XML could not be transformed'
     return 'Success', ''
 
 
-@rule(inputs=[0], outputs=[1, 2])
+@rule.make(inputs=[0], outputs=[1, 2])
 def iiRuleTransformMetadata(callback, coll):
     """Transform a yoda-metadata.json to the active schema.
 
@@ -113,15 +125,15 @@ def iiRuleTransformMetadata(callback, coll):
        rule_args[1] -- statusPy
        rule_args[2] -- statusInfoPy
     """
-    metadata_path = get_collection_metadata_path(callback, coll)
+    metadata_path = meta.get_collection_metadata_path(callback, coll)
 
     if metadata_path is None:
         return 'ERROR', 'No metadata found'
     elif metadata_path.endswith('.xml'):
         # XML metadata.
 
-        space, _0, _1, _2 = get_path_info(metadata_path)
-        if space != Space.RESEARCH:
+        space, _0, _1, _2 = pathutil.info(metadata_path)
+        if space != pathutil.Space.RESEARCH:
             # Vault XML metadata is not transformed through this path, currently.
             return 'ERROR', 'Internal error'
 
@@ -158,7 +170,10 @@ def get_transformation(callback, metadata_path, metadata=None):
         # print('{} -> {}'.format(src,dst))
 
         return transformations[src][dst]
-    except Exception:
+    except KeyError as e:
+        return None
+    except error.UUError as e:
+        # print('{} -> {} ERR {}'.format(src,dst, e))
         return None
 
 

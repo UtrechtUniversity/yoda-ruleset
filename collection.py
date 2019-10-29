@@ -4,10 +4,9 @@
 # \copyright Copyright (c) 2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+from util import *
+import genquery
 
-@define_as_rule('iiCollectionGroupName',
-                inputs=[0], outputs=[1],
-                handler=RuleOutput.STORE)
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
 
@@ -47,3 +46,5 @@ def collection_group_name(callback, coll):
     # No results found. Not a group folder
     callback.writeLine("serverLog", "{} does not belong to a research or intake group or is not available to current user.".format(coll))
     return ""
+
+iiCollectionGroupName = rule.make(inputs=[0], outputs=[1])(collection_group_name)

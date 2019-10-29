@@ -5,11 +5,9 @@
 # \license   GPLv3, see LICENSE.
 
 import json
+from util import *
 
 
-@define_as_rule('iiResearchSpaceSystemMetadata',
-                inputs=[0], outputs=[1],
-                transform=json.dumps, handler=RuleOutput.STDOUT)
 def research_collection_metadata(callback, coll):
     """Returns collection statistics as JSON."""
 
@@ -25,11 +23,15 @@ def research_collection_metadata(callback, coll):
         s = round(size_bytes / p, 2)
         return '{} {}'.format(s, size_name[i])
 
-    data_count = collection_data_count(callback, coll)
-    collection_count = collection_collection_count(callback, coll)
-    size = collection_size(callback, coll)
+    data_count = collection.data_count(callback, coll)
+    collection_count = collection.collection_count(callback, coll)
+    size = collection.size(callback, coll)
     size_readable = convert_size(size)
 
     result = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     return {"Package size": result}
+
+iiResearchSpaceSystemMetadata = rule.make(inputs=[0], outputs=[1],
+                                          transform=jsonutil.dump, handler=rule.Output.STDOUT) \
+                                         (research_collection_metadata)

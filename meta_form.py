@@ -1,11 +1,19 @@
+# -*- coding: utf-8 -*-
 # \file      iiMetadataForm.py
 # \brief     JSON metadata form handling
 # \author    Chris Smeele
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+from util import *
 
-# TODO: These belong in the uu/group manager part of our rulesets. {{{
+# FIXME: Temporary / transitional: Replace with qualified individual imports.
+from meta   import *
+from schema import *
+from schema_transformation import *
+
+
+# TODO: These belong in the group manager part of our rulesets. {{{
 #       (and they should be plain python rules, not just wrappers for iRODS rules)
 
 def group_category(callback, group):
@@ -26,7 +34,7 @@ def user_is_datamanager(callback, category, user):
 
 def get_client_full_name_r(rule_args, callback, rei):
     """Obtain client name and zone, formatted as a 'x#y' string"""
-    rule_args[0] = '{}#{}'.format(*get_client_name_zone(rei))
+    rule_args[0] = '{}#{}'.format(*user.get_client_name_zone(rei))
 
 # }}}
 
@@ -37,7 +45,7 @@ def get_coll_org_metadata(callback, path):
     return [(k, v) for k, v
             in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
                                      "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
-                                     .format(path, UUORGMETADATAPREFIX),
+                                     .format(path, constants.UUORGMETADATAPREFIX),
                                      genquery.AS_LIST, callback)]
 
 
@@ -49,9 +57,9 @@ def get_coll_status(callback, path, org_metadata=None):
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
-    if IISTATUSATTRNAME in org_metadata:
-        return org_metadata[IISTATUSATTRNAME]
-    return RESEARCH_PACKAGE_STATE['FOLDER']
+    if constants.IISTATUSATTRNAME in org_metadata:
+        return org_metadata[constants.IISTATUSATTRNAME]
+    return constants.RESEARCH_PACKAGE_STATE['FOLDER']
 
 
 def get_coll_vault_status(callback, path, org_metadata=None):
@@ -62,9 +70,9 @@ def get_coll_vault_status(callback, path, org_metadata=None):
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
-    if IIVAULTSTATUSATTRNAME in org_metadata:
-        return org_metadata[IIVAULTSTATUSATTRNAME]
-    return VAULT_PACKAGE_STATE['UNPUBLISHED']
+    if constants.IIVAULTSTATUSATTRNAME in org_metadata:
+        return org_metadata[constants.IIVAULTSTATUSATTRNAME]
+    return constants.VAULT_PACKAGE_STATE['UNPUBLISHED']
 
 
 def get_coll_lock(callback, path, org_metadata=None):
@@ -76,7 +84,7 @@ def get_coll_lock(callback, path, org_metadata=None):
 
     ret = ('no', None)
 
-    for root in [v for k, v in org_metadata if k == IILOCKATTRNAME]:
+    for root in [v for k, v in org_metadata if k == constants.IILOCKATTRNAME]:
         if root == path:
             return 'here', root
         elif root.startswith(path):
@@ -90,8 +98,11 @@ def get_coll_lock(callback, path, org_metadata=None):
     return ret
 
 
-@rule(transform=json.dumps, handler=RuleOutput.STDOUT)
-def iiMetadataFormLoad(callback, path):
+# __all__ = ['iiMetadataFormLoad']
+# iiBla = api(aoeu)
+
+@rule.make(transform=jsonutil.dump, handler=rule.Output.STDOUT)
+def iiMetadataFormLoad(callback, coll):
     """Retrieve all information required to load a metadata form
        in either the research or vault space.
 
@@ -124,8 +135,8 @@ def iiMetadataFormLoad(callback, path):
     user = callback.get_client_full_name_r('')['arguments'][0]
 
     # - What's kind of collection path is this?
-    space, zone, group, subpath = get_path_info(path)
-    if space not in [Space.RESEARCH, Space.VAULT]:
+    space, zone, group, subpath = pathutil.info(coll)
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
         return {}
 
     category = group_category(callback, group)
@@ -135,26 +146,26 @@ def iiMetadataFormLoad(callback, path):
     is_datamanager = user_is_datamanager(callback, category, user)
 
     # - What is the active schema for this category?
-    schema, uischema = get_active_schema_uischema(callback, path)
+    schema, uischema = get_active_schema_uischema(callback, coll)
 
     # Obtain org metadata for status and lock information.
     # (needed both for research and vault packages)
-    org_metadata = get_coll_org_metadata(callback, path)
+    org_metadata = get_coll_org_metadata(callback, coll)
 
-    if space is Space.RESEARCH:
-        status = get_coll_status(callback, path, org_metadata)
-        lock_type, lock_root = get_coll_lock(callback, path, org_metadata)
+    if space is pathutil.Space.RESEARCH:
+        status = get_coll_status(callback, coll, org_metadata)
+        lock_type, lock_root = get_coll_lock(callback, coll, org_metadata)
 
         # Analyze a possibly existing metadata JSON/XML file.
 
-        meta_path = get_collection_metadata_path(callback, path)
+        meta_path = get_collection_metadata_path(callback, coll)
         can_clone = False
         errors = []
 
         if meta_path is None:
             # If no metadata file exists, check if we can allow the user to
             # clone it from the parent collection.
-            can_clone = bool(collection_has_cloneable_metadata(callback, chop_path(path)[0]))
+            can_clone = bool(collection_has_cloneable_metadata(callback, pathutil.chop(coll)[0]))
 
         elif meta_path.endswith('.json'):
             # Metadata file is in the correct format. Try to validate it.
@@ -186,13 +197,14 @@ def iiMetadataFormLoad(callback, path):
             # Try to load the metadata file.
             metadata = dict()
             try:
-                metadata = read_json_object(callback, meta_path)
+                metadata = jsonutil.read(callback, meta_path)
                 current_schema_id = metadata_get_schema_id(metadata)
                 if current_schema_id is None:
                     errors = ['Please check the structure of this file.']
-            except UUJsonException as e:
+            except jsonutil.ParseError as e:
                 errors = ['Please check the structure of this file.']
-            except UUMsiException as e:
+                Error 
+            except msi.Error as e:
                 errors = ['The file could not be read.']
 
             if len(errors) > 0:
@@ -216,8 +228,8 @@ def iiMetadataFormLoad(callback, path):
                         # We have no way to parse this file.
                         # XXX: Error message?
                         errors = ['Please check the structure of this file.']
-                        callback.writeString('serverLog', 'Metadata file <{}> has untransformable schema <{}>'
-                                                          .format(meta_path, current_schema_id))
+                        callback.writeString('serverLog', 'Metadata file <{}> has untransformable schema <{}> (need {})'
+                                                          .format(meta_path, current_schema_id, schema['$id']))
 
                     if len(errors):
                         del metadata, schema, uischema
@@ -249,9 +261,9 @@ def iiMetadataFormLoad(callback, path):
             # (ask the user to perform conversion)
             transformation_text = '<p>Your yoda-metadata.xml needs to be converted to the new yoda-metadata.json format to continue.</p>'
 
-    elif space is Space.VAULT:
-        status = get_coll_vault_status(callback, path, org_metadata)
-        meta_path = get_latest_vault_metadata_path(callback, path)
+    elif space is pathutil.Space.VAULT:
+        status = get_coll_vault_status(callback, coll, org_metadata)
+        meta_path = get_latest_vault_metadata_path(callback, coll)
 
         # TODO
 
@@ -270,7 +282,7 @@ def iiMetadataFormSave(rule_args, callback, rei):
 
     # Reports status back to the caller.
     report = lambda x, y, z=[]: callback.writeString('stdout',
-                                                     json.dumps({'status': x,
+                                                     jsonutil.dump({'status': x,
                                                                  'statusInfo': y,
                                                                  'errors': z}))
 
@@ -279,7 +291,7 @@ def iiMetadataFormSave(rule_args, callback, rei):
     # Assume we are in the research area until proven otherwise.
     # (overwritten below in the vault case)
     is_vault = False
-    json_path = '{}/{}'.format(coll, IIJSONMETADATA)
+    json_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
     m = re.match('^/([^/]+)/home/(vault-[^/]+)/(.+)$', coll)
     if m:
@@ -296,18 +308,18 @@ def iiMetadataFormSave(rule_args, callback, rei):
 
         try:
             coll_create(callback, tmp_coll, '1', irods_types.BytesBuf())
-        except UUException as e:
+        except error.UUError as e:
             report('FailedToCreateCollection', 'Failed to create staging area at <{}>'.format(tmp_coll))
             return
 
         # Use staging area instead of trying to write to the vault directly.
         is_vault = True
-        json_path = '{}/{}'.format(tmp_coll, IIJSONMETADATA)
+        json_path = '{}/{}'.format(tmp_coll, constants.IIJSONMETADATA)
 
     # Load form metadata input.
     try:
-        metadata = parse_json(metadata_text)
-    except UUException as e:
+        metadata = jsonutil.parse(metadata_text)
+    except error.UUError as e:
         # This should only happen if the form was tampered with.
         report('ValidationError', 'JSON decode error')
         return
@@ -324,8 +336,8 @@ def iiMetadataFormSave(rule_args, callback, rei):
 
     # No errors: write out JSON.
     try:
-        write_data_object(callback, json_path, json.dumps(metadata, indent=4))
-    except UUException as e:
+        data_object.write(callback, json_path, jsonutil.dump(metadata, indent=4))
+    except error.UUError as e:
         report('Error', 'Could not save yoda-metadata.json')
         return
 

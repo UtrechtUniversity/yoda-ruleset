@@ -8,21 +8,23 @@ import xmltodict
 from json import loads
 from collections import OrderedDict
 
+from util import *
+
 
 def getMetadataXmlAsDict(callback, path):
     """Get the content of a yoda-metadata.xml file and return parsed into a dict."""
-    return xmltodict.parse(read_data_object(callback, path))
+    return xmltodict.parse(data_object.read(callback, path))
 
 
 def getMetadaJsonDict(callback, yoda_json_path):
     """Get Json Schema of category and return as (ordered!) dict."""
-    return read_json_object(callback, yoda_json_path)
+    return jsonutil.read(callback, yoda_json_path)
 
 
 def getActiveJsonSchemaAsDict(callback, rods_zone, category):  # irods-ruleset-uu function in uuResources.py
     """Read yoda-metadata.json from vault and return as (ordered!) dict."""
     json_schema_path = '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
-    return read_json_object(callback, json_schema_path)
+    return jsonutil.read(callback, json_schema_path)
 
 
 def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
@@ -245,7 +247,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
     except KeyError:  # only published area contains system metadata, not data in the vault
         pass
 
-    return json.dumps(jsonDict)
+    return jsonutil.dump(jsonDict)
 
 
 def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, xml_data_name):

@@ -7,6 +7,13 @@
 # \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+import genquery
+import re
+
+from util import *
+
+# FIXME: Temporary / transitional: Replace with qualified individual imports.
+# from meta   import *
 
 def get_group_category(callback, rods_zone, group_name):
     """Determine category (for schema purposes) based upon rods zone and name of the group.
@@ -83,17 +90,17 @@ def get_active_schema(callback, path):
        Return:
        Schema object (parsed from JSON)
     """
-    return read_json_object(callback, get_active_schema_path(callback, path))
+    return jsonutil.read(callback, get_active_schema_path(callback, path))
 
 
 def get_active_schema_uischema(callback, path):
     """Get a schema and uischema object from a research or vault path."""
 
     schema_path   = get_active_schema_path(callback, path)
-    uischema_path = '{}/{}'.format(chop_path(schema_path)[0], 'uischema.json')
+    uischema_path = '{}/{}'.format(pathutil.chop(schema_path)[0], 'uischema.json')
 
-    return read_json_object(callback, schema_path), \
-        read_json_object(callback, uischema_path)
+    return jsonutil.read(callback, schema_path), \
+        jsonutil.read(callback, uischema_path)
 
 
 def get_active_schema_id(callback, path):
@@ -113,14 +120,15 @@ def get_active_schema_id(callback, path):
 def get_schema_id(callback, metadata_path, metadata=None):
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
-        metadata = read_json_object(callback, metadata_path)
+        metadata = jsonutil.read(callback, metadata_path)
+    from meta import *  # XXX Temporary
     return metadata_get_schema_id(metadata)
 
 
 def get_schema_path_by_id(callback, path, schema_id):
     """Get a schema path from a schema id."""
 
-    _, zone, _2, _3 = get_path_info(path)
+    _, zone, _2, _3 = pathutil.info(path)
 
     # We do not fetch schemas from external sources, so for now assume that we
     # can find it using this pattern.
@@ -136,4 +144,4 @@ def get_schema_by_id(callback, path, schema_id):
     path = get_schema_path_by_id(callback, path, schema_id)
     if path is None:
         return None
-    return read_json_object(callback, path)
+    return jsonutil.read(callback, path)

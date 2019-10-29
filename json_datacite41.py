@@ -21,7 +21,7 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
     metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri = rule_args[0:7]
 
     # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = read_json_object(callback, metadataJsonPath)
+    metaDict = jsonutil.read(callback, metadataJsonPath)
 
     # add System info
     metaDict['System'] = {
@@ -36,7 +36,7 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
     }
 
     # Write combined data to file at location combiJsonPath
-    write_json_object(callback, combiJsonPath, metaDict)
+    jsonutil.write(callback, combiJsonPath, metaDict)
 
 
 def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
@@ -51,7 +51,7 @@ def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     combiJsonPath, receiveDataciteXml = rule_args[0:2]
 
     # Get dict containing the wanted metadata
-    dict = read_json_object(callback, combiJsonPath)
+    dict = jsonutil.read(callback, combiJsonPath)
 
     # Build datacite XML as string
     xmlString = getHeader()

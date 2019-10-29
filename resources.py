@@ -12,6 +12,8 @@ import json
 
 import genquery
 import irods_types
+import constants
+from util import *
 
 
 def uuRuleGetResourceTierData(rule_args, callback, rei):
@@ -20,7 +22,7 @@ def uuRuleGetResourceTierData(rule_args, callback, rei):
 
     tierName = getTierOnResourceName(resourceName, callback)
 
-    rule_args[1] = json.dumps({"resourceName": resourceName,
+    rule_args[1] = jsonutil.dump({"resourceName": resourceName,
                                "org_storage_tier": tierName})
 
 
@@ -42,7 +44,7 @@ def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
                              'resourceId': resourceId,
                              'org_storage_tier': tierName})
 
-    rule_args[0] = json.dumps(resourceList)
+    rule_args[0] = jsonutil.dump(resourceList)
 
 
 def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
@@ -57,14 +59,14 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
     allStorage = []  # list of all month-tier combinations present including their storage size
 
     # per month gather month/tier/storage information from metadata:
-    # metadata-attr-name = UUMETADATASTORAGEMONTH + '01'...'12'
+    # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
     # metadata-attr-val = [category,tier,storage] ... only tier and storage required wihtin this code
     for counter in range(0, 11):
         referenceMonth = currentMonth - counter
         if referenceMonth < 1:
             referenceMonth = referenceMonth + 12
 
-        metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
+        metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
 
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
@@ -81,7 +83,7 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
             key = 'month=' + str(referenceMonth) + '-tier=' + tierName
             allStorage.append({key: data_size})
 
-    rule_args[2] = json.dumps(allStorage)
+    rule_args[2] = jsonutil.dump(allStorage)
 
 
 def uuRuleGetMonthlyStorageStatistics(rule_args, callback, rei):
@@ -106,7 +108,7 @@ def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
 
     datamanagerGroups = getGroupsOnCategories(categories, callback)
 
-    rule_args[1] = json.dumps(datamanagerGroups)
+    rule_args[1] = jsonutil.dump(datamanagerGroups)
 
 
 def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
@@ -121,14 +123,14 @@ def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
     categories = getCategoriesDatamanager(datamanagerUser, callback)
     allStorage = []
 
-    # Select a full year by not limiting UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
+    # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
     # There always is a maximum of one year of history of storage data
     for category in categories:
         groupToSubcategory = {}
 
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME like  '" + UUMETADATASTORAGEMONTH + "%'",
+            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME like  '" + constants.UUMETADATASTORAGEMONTH + "%'",
             genquery.AS_LIST, callback
         )
 
@@ -158,7 +160,7 @@ def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
                                'month': month,
                                'storage': str(storage)})
 
-    rule_args[1] = json.dumps(allStorage)
+    rule_args[1] = jsonutil.dump(allStorage)
 
 
 def groupGetCategoryInfo(groupName, callback):
@@ -194,7 +196,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
        JSON presentation: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
     """
     month = '%0*d' % (2, datetime.now().month)
-    metadataName = UUMETADATASTORAGEMONTH + month
+    metadataName = constants.UUMETADATASTORAGEMONTH + month
     storageDict = {}
 
     for category in categories:
@@ -233,13 +235,13 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
                                'tier': tier,
                                'storage': str(storageDict[category][tier])})
 
-    return json.dumps(allStorage)
+    return jsonutil.dump(allStorage)
 
 
 def getGroupsOnCategories(categories, callback):
     """Get all groups belonging to all given categories."""
     groups = []
-    metadataAttrNameRefMonth = UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
+    metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
 
     for category in categories:
         iter = genquery.row_iterator(
@@ -310,12 +312,12 @@ def getTierOnResourceName(resourceName, callback):
 
        If not present, fall back to default tier name.
     """
-    tierName = UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
+    tierName = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
     # find (possibly present) tier for this resource
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
-        "RESC_NAME = '" + resourceName + "' AND META_RESC_ATTR_NAME = '" + UURESOURCETIERATTRNAME + "'",
+        "RESC_NAME = '" + resourceName + "' AND META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
         genquery.AS_LIST, callback
     )
 

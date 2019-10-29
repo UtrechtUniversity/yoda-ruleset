@@ -23,11 +23,11 @@ def iiCreateJsonLandingPage(rule_args, callback, rei):
 
     # Landing page creation is part of the publication proces
     # Read user & system metadata from corresponding combi JSON file
-    dictJsonData = read_json_object(callback, combiJsonPath)
+    dictJsonData = jsonutil.read(callback, combiJsonPath)
 
     # Load the Jinja template.
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
-    template = read_data_object(callback, landingpage_template_path)
+    template = data_object.read(callback, landingpage_template_path)
 
     # Pre work input for render process.
     # When empty landing page, take a short cut

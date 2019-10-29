@@ -34,26 +34,20 @@ RULE_FILES   ?= $(sort $(wildcard uu*.r  ii*.r))
 RULESET_NAME   ?= rules-uu.re
 RULESET_FILE   := $(RULESET_NAME)
 DEBUG_FILE     := $(RULESET_NAME).debug
-PYRULESET_NAME ?= rules_uu.py
-PYRULESET_FILE := $(PYRULESET_NAME)
 
 INSTALL_DIR  ?= ..
 
 # Make targets.
-all: $(RULESET_FILE) $(PYRULESET_FILE)
+all: $(RULESET_FILE)
 
 $(RULESET_FILE): $(RULE_FILES)
 	cat $^ | sed '/^\s*\(#.*\)\?$$/d' > $@
 
-$(PYRULESET_FILE): $(PYRULE_FILES)
-	cat $^ > $@
-
-install: $(RULESET_FILE) $(PYRULESET_FILE)
+install: $(RULESET_FILE)
 	cp --backup $(RULESET_FILE) $(INSTALL_DIR)/$(RULESET_NAME)
-	cp --backup $(PYRULESET_FILE) $(INSTALL_DIR)/$(PYRULESET_NAME)
 
 clean:
-	rm -f $(RULESET_FILE) $(PYRULESET_FILE)
+	rm -f $(RULESET_FILE)
 
 update:
 	git pull
