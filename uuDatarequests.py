@@ -983,7 +983,7 @@ def submitReview(callback, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getReview(callback, requestId):
+def getReviews(callback, requestId):
     """Retrieve a data request review.
 
        Arguments:
@@ -991,31 +991,27 @@ def getReview(callback, requestId):
     """
     # Construct filename
     collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'review_dmcmember.json'
+    fileName = 'review_%.json'
 
-    # Get the size of the review JSON file and the review's status
-    results = []
-    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+    # Get the review JSON files
+    reviewsJSON = []
+    rows = row_iterator(["DATA_NAME"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (collName, fileName),
                         AS_DICT,
                         callback)
     for row in rows:
-        collName = row['COLL_NAME']
-        dataName = row['DATA_NAME']
-        dataSize = row['DATA_SIZE']
+        filePath = collName + '/' + row['DATA_NAME']
+        try:
+            reviewsJSON.append(json.loads(read_data_object(callback, filePath)))
+        except UUException as e:
+            callback.writeString("serverLog", "Could not get review data.")
+            return {"status": "ReadError", "statusInfo": "Could not get review data."}
+            
+    # Convert array with review data to JSON
+    reviewsJSON = json.dumps(reviewsJSON)
 
-    # Construct path to file
-    filePath = collName + '/' + dataName
-
-    # Get the contents of the review JSON file
-    try:
-        reviewJSON = read_data_object(callback, filePath)
-    except UUException as e:
-        callback.writeString("serverLog", "Could not get review data.")
-        return {"status": "ReadError", "statusInfo": "Could not get review data."}
-
-    return {'reviewJSON': reviewJSON, 'status': 0, 'statusInfo': "OK"}
+    return {'reviewsJSON': reviewsJSON, 'status': 0, 'statusInfo': "OK"}
 
 
 def submitEvaluation(callback, data, requestId, rei):
@@ -1357,8 +1353,8 @@ def uuSubmitReview(rule_args, callback, rei):
                                                            rule_args[1], rei)))
 
 
-def uuGetReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getReview(callback,
+def uuGetReviews(rule_args, callback, rei):
+    callback.writeString("stdout", json.dumps(getReviews(callback,
                                                         rule_args[0])))
 
 
