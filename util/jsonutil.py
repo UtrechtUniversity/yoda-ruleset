@@ -2,6 +2,7 @@
 """Utility / convenience functions for dealing with JSON."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import data_object
 import error

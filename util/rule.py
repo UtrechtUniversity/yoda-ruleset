@@ -2,6 +2,7 @@
 """Experimental Python/Rule interface code."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 from error import *
 from enum  import Enum

@@ -4,6 +4,7 @@
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import re
 from enum import Enum
@@ -68,5 +69,3 @@ def info(path):
          or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
          or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
          or (Space.OTHER, '', '', ''))  # (matches '/' and empty paths)
-
-

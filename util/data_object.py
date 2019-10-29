@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import msi
 import pathutil

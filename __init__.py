@@ -2,6 +2,8 @@
 """iRODS ruleset containing rules and policies useful for all Yoda environments."""
 
 __copyright__ = 'Copyright (c) 2015-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
 __author__    =  ('Felix Croes'
               + ', Paul Frederiks'
               + ', Jan de Mooij'

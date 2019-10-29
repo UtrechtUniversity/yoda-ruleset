@@ -1,9 +1,9 @@
-# \file      iiJsonDatacite41.py
-# \brief     Functions for transforming JSON to DataCite 4.1 XML.
-# \author    Harm de Raaff
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for transforming JSON to DataCite 4.1 XML."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
 import json
 import os
 from json import loads

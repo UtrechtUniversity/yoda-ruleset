@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with collections."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import genquery
 import itertools

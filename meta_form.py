@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-# \file      iiMetadataForm.py
-# \brief     JSON metadata form handling
-# \author    Chris Smeele
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+"""JSON metadata form handling."""
+
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 from util import *
 
@@ -203,7 +202,7 @@ def iiMetadataFormLoad(callback, coll):
                     errors = ['Please check the structure of this file.']
             except jsonutil.ParseError as e:
                 errors = ['Please check the structure of this file.']
-                Error 
+                Error
             except msi.Error as e:
                 errors = ['The file could not be read.']
 

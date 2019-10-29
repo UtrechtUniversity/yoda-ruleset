@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """JSON schema transformation functions."""
 
-__copyright__ = 'Copyright (c) 2019 Utrecht University.'
-__license__   = 'GPLv3, see LICENSE.'
+__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 # No rules are exported by this module.
 __all__ = []

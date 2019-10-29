@@ -1,9 +1,8 @@
-# \file      uuGroup.py
-# \brief     Functions for group management and group queries.
-# \author    Felix Croes
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2018-2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions for group management and group queries."""
+
+__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import json
 import requests
