@@ -1007,7 +1007,7 @@ def getReviews(callback, requestId):
         except UUException as e:
             callback.writeString("serverLog", "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
-            
+
     # Convert array with review data to JSON
     reviewsJSON = json.dumps(reviewsJSON)
 
@@ -1065,7 +1065,7 @@ def submitEvaluation(callback, data, requestId, rei):
     else:
         callback.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
-        
+
     # Get parameters needed for sending emails
     researcherName = ""
     researcherEmail = ""
