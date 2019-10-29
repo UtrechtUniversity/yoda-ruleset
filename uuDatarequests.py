@@ -696,9 +696,7 @@ def submitAssignment(callback, data, requestId, rei):
     decision = json.loads(data)['decision']
 
     # If the data request has been accepted for DMC review, get the assignees
-    # assignees = json.loads(data)['assign_to']
-    # Use dummy assignee value for now
-    assignees = json.dumps(['dmcmember'])
+    assignees = json.dumps(json.loads(data)['assign_to'])
 
     # Update the status of the data request
     if decision == "Accepted for DMC review":
