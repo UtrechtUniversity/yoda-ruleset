@@ -515,7 +515,7 @@ def submitDatamanagerReview(callback, data, requestId, rei):
     elif datamanagerReview == "Rejected":
         for bodMemberEmail in bodMemberEmails:
             if not bodMemberEmail == "rods":
-                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager.\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
     else:
         callback.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
