@@ -366,6 +366,8 @@ def submitPreliminaryReview(callback, data, requestId, rei):
         setStatus(callback, requestId, "accepted_for_dm_review")
     elif preliminaryReview == "Rejected":
         setStatus(callback, requestId, "preliminary_reject")
+    elif preliminaryReview == "Rejected (resubmit)":
+        setStatus(callback, requestId, "preliminary_reject_submit")
     else:
         callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -397,6 +399,8 @@ def submitPreliminaryReview(callback, data, requestId, rei):
                 sendMail(datamanagerEmail, "[data manager] YOUth data request %s: accepted for data manager review" % requestId, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
     elif preliminaryReview == "Rejected":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], datamanagerEmails[0]))
+    elif preliminaryReview == "Rejected (resubmit)":
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0]))
     else:
         callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -496,6 +500,8 @@ def submitDatamanagerReview(callback, data, requestId, rei):
         setStatus(callback, requestId, "dm_accepted")
     elif datamanagerReview == "Rejected":
         setStatus(callback, requestId, "dm_rejected")
+    elif datamanagerReview == "Rejected (resubmit)":
+        setStatus(callback, requestId, "dm_rejected_resubmit")
     else:
         callback.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
@@ -531,6 +537,10 @@ def submitDatamanagerReview(callback, data, requestId, rei):
         for bodMemberEmail in bodMemberEmails:
             if not bodMemberEmail == "rods":
                 sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
+    elif datamanagerReview == "Rejected (resubmit)":
+        for bodMemberEmail in bodMemberEmails:
+            if not bodMemberEmail == "rods":
+                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected (resubmit) by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected (resubmission allowed) by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
     else:
         callback.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
@@ -719,6 +729,8 @@ def submitAssignment(callback, data, requestId, rei):
         setStatus(callback, requestId, "assigned")
     elif decision == "Rejected":
         setStatus(callback, requestId, "rejected_after_data_manager_review")
+    elif decision == "Rejected (resubmit)":
+        setStatus(callback, requestId, "rejected_resubmit_after_data_manager_review")
     else:
         callback.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
@@ -752,6 +764,8 @@ def submitAssignment(callback, data, requestId, rei):
             sendMail(assigneeEmail, "[assignee] YOUth data request %s: assigned" % requestId, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (requestId, proposalTitle, requestId))
     elif decision == "Rejected":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher']))
+    elif decision == "Rejected (resubmit)":
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId))
     else:
         callback.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
@@ -1077,6 +1091,8 @@ def submitEvaluation(callback, data, requestId, rei):
         setStatus(callback, requestId, "approved")
     elif decision == "Rejected":
         setStatus(callback, requestId, "rejected")
+    elif decision == "Rejected (resubmit)":
+        setStatus(callback, requestId, "rejected_resubmit")
     else:
         callback.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
@@ -1109,6 +1125,8 @@ def submitEvaluation(callback, data, requestId, rei):
                 sendMail(datamanagerEmail, "[data manager] YOUth data request %s: approved" % requestId, "Dear data manager,\n\nData request %s has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.\n\nThe following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
     elif decision == "Rejected":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], datamanagerEmails[0], requestId))
+    elif decision == "Rejected (resubmit)":
+        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0], requestId))
     else:
         callback.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
