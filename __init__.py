@@ -18,7 +18,6 @@ __author__    =  ('Felix Croes'
 
 from group                  import *
 from collection             import *
-from constants              import *
 from group                  import *
 from integrity              import *
 from json_datacite41        import *

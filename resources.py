@@ -10,7 +10,6 @@ import json
 
 import genquery
 import irods_types
-import constants
 from util import *
 
 
