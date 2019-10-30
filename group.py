@@ -104,8 +104,7 @@ def getSubcategories(callback, category):
     """
        Get a list of all subcategories within a given group category.
 
-       Arguments:
-       category -- Category to retrieve subcategories of
+       :param category: Category to retrieve subcategories of
     """
     categories = set()    # Unique subcategories.
     groupCategories = {}  # Group name => { category => .., subcategory => .. }
@@ -201,10 +200,9 @@ def credentialsStoreGet(key):
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
     """Call External User Service API to add new user
 
-    Arguments:
-    username    --
-    creatorUser --
-    creatorZone --
+    :param username: Username of external user
+    :param creatorUser: User creating the external user
+    :param creatorZone: Zone of user creating the external user
     """
     eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
     eus_api_port = credentialsStoreGet("eus_api_port")
@@ -265,9 +263,8 @@ def uuProvisionExternalUser(rule_args, callback, rei):
 def removeExternalUser(callback, username, userzone):
     """Call External User Service API to remove user.
 
-    Arguments:
-    username --
-    userzone --
+    :param username: Username of user to remove
+    :param userzone: Zone of user to remove
     """
     eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
     eus_api_port = credentialsStoreGet("eus_api_port")

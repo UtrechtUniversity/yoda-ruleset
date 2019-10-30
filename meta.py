@@ -119,11 +119,9 @@ def get_collection_metadata_path(callback, coll):
 def get_latest_vault_metadata_path(callback, vault_pkg_coll):
     """Get the latest vault metadata JSON file.
 
-       Arguments:
-       vault_pkg_coll -- Vault package collection
+       :param vault_pkg_coll: Vault package collection
 
-       Return:
-       string -- Metadata JSON path
+       :returns: string -- Metadata JSON path
     """
     name = None
 

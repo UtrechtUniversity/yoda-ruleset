@@ -13,11 +13,10 @@ from collections import OrderedDict
 def iiCreateJsonLandingPage(rule_args, callback, rei):
     """Get the landing page of published YoDa metadata as a string.
 
-       Arguments:
-       rodsZone           -- Zone name
-       template_name      -- name of landingpage template
-       combiJsonPath      -- path to Yoda metadata JSON
-       receiveLandingPage -- output HTML landing page
+    :param rodsZone: Zone name
+    :param template_name: Name of landingpage template
+    :param combiJsonPath: path to Yoda metadata JSON
+    :param receiveLandingPage: output HTML landing page
     """
     rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
 

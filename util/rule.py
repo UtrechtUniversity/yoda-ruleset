@@ -17,10 +17,10 @@ class Output(Enum):
 def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE):
     """Creates a rule (with iRODS calling conventions) from a Python function.
 
-    :param inputs:  Optional list of rule_args indicies to influence how parameters are passed to the function.
+    :param inputs: Optional list of rule_args indicies to influence how parameters are passed to the function.
     :param outputs: Optional list of rule_args indicies to influence how return values are processed.
     :param transform: Optional function that will be called to transform each output value.
-    :param handler:   Specifies how return values are handled.
+    :param handler: Specifies how return values are handled.
 
     inputs and outputs can optionally be specified as lists of indices to
     influence how parameters are passed to this function, and how the return

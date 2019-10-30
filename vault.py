@@ -17,8 +17,7 @@ import session_vars
 def getPreservableFormatsLists(callback, rei):
     """Retrieve lists of preservable file formats on the system.
 
-       Return:
-       dict -- Lists of preservable file formats
+    :returns: dict -- Lists of preservable file formats
     """
     zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
 
@@ -35,12 +34,10 @@ def getPreservableFormatsLists(callback, rei):
 def getUnpreservableFiles(callback, path, list_name):
     """Retrieve lists of unpreservable file formats in a collection.
 
-    Arguments:
-    path      -- Path of folder to check.
-    list_name -- Name of preservable file format list.
+    :param path: Path of folder to check.
+    :param list_name: Name of preservable file format list
 
-    Return:
-    dict -- Lists of unpreservable file formats
+    :returns: dict -- Lists of unpreservable file formats
     """
     zone = pathutil.info(path)[1]
 
@@ -70,9 +67,8 @@ def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
 def iiGetUnpreservableFilesJson(rule_args, callback, rei):
     """Write unpreservable files in folder to stdout.
 
-       Arguments:
-       rule_args[0] -- Path of folder to check.
-       rule_args[1] -- Name of preservable file format list.
+    :param rule_args[0]: Path of folder to check.
+    :param rule_args[1]: Name of preservable file format list.
     """
     callback.writeString("stdout", jsonutil.dump(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
 
@@ -80,8 +76,7 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
 def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
-       Arguments:
-       rule_args[0] -- Path of a new package in the vault.
+    :param rule_args[0]: Path of a new package in the vault.
     """
     vault_package = rule_args[0]
     original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
@@ -94,11 +89,9 @@ def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
 def getProvenanceLog(callback, folder):
     """Get the provenance log of a folder.
 
-       Arguments:
-       folder -- Path of a folder in research or vault space.
+    :param folder: Path of a folder in research or vault space.
 
-       Return:
-       dict -- Provenance log.
+    :returns dict: Provenance log.
     """
     provenance_log = []
 
@@ -119,8 +112,7 @@ def getProvenanceLog(callback, folder):
 def iiWriteProvenanceLogToVault(rule_args, callback, rei):
     """Writes the provenance log as a text file into the root of the vault package.
 
-       Arguments:
-       rule_args[0] -- Path of a package in the vault.
+    :param rule_args[0]: Path of a package in the vault.
     """
     # Retrieve provenance.
     provenenanceString = ""

@@ -8,13 +8,11 @@ __license__   = 'GPLv3, see LICENSE'
 def iiFrontEndAddActionLogRecord(rule_args, callback, rei):
     """Frontend function to add action log record to specific folder.
 
-       Arguments:
-       actor  -- rodsaccount coming from yoda frontend
-       folder -- folder the logging is linked to
-       action -- the text that is logged
+       :param actor: rodsaccount coming from yoda frontend
+       :param folder: folder the logging is linked to
+       :param action: the text that is logged
 
-       Return:
-       string -- JSON object with status info
+       :returns: string -- JSON object with status info
     """
     actor, folder, action = rule_args[0:3]
 

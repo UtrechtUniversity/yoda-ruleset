@@ -13,10 +13,9 @@ from collections import OrderedDict
 def iiCreateCombiMetadataJson(rule_args, callback, rei):
     """Frontend function to add system info to yoda-metadata in json format.
 
-       Arguments:
-       metadataJsonPath -- path to the most recent vault yoda-metadata.json in the corresponding vault
-       combiJsonPath    -- path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-       other are system info parameters
+    :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                          other are system info parameters
     """
     metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri = rule_args[0:7]
 
@@ -42,11 +41,9 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
 def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
     """Based on content of *combiJsonPath, get DataciteXml as string.
 
-       Arguments:
-       combiJsonPath -- path to the combined Json file that holds both User and System metadata
+    :param combiJsonPath: path to the combined Json file that holds both User and System metadata
 
-       Return:
-       string -- Holds Datacite formatted metadata of YoDa
+    :returns: string -- Holds Datacite formatted metadata of Yoda
     """
     combiJsonPath, receiveDataciteXml = rule_args[0:2]
 

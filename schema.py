@@ -16,12 +16,10 @@ def get_group_category(callback, rods_zone, group_name):
     """Determine category (for schema purposes) based upon rods zone and name of the group.
        If the category does not have a schema, 'default' is returned.
 
-       Arguments:
-       rods_zone  -- Rods zone name
-       group_name -- Group name
+       :param rods_zone: Rods zone name
+       :param group_name: Group name
 
-       Return:
-       string -- Category
+       :returns: string -- Category
     """
     category = '-1'
     schemaCategory = 'default'
@@ -58,12 +56,10 @@ def get_active_schema_path(callback, path):
     """Get the iRODS path to a schema file from a research or vault path.
        The schema path is determined from the category name of the path's group level.
 
-       Arguments:
-       path -- A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-              (anything after the group name is ignored)
+       :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                    (anything after the group name is ignored)
 
-       Return:
-       Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json)
+       :returns: string -- Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json)
     """
     path_parts = path.split('/')
     rods_zone  = path_parts[1]
@@ -80,12 +76,10 @@ def get_active_schema_path(callback, path):
 def get_active_schema(callback, path):
     """Get a schema object from a research or vault path.
 
-       Arguments:
-       path -- A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-              (anything after the group name is ignored)
+       :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                    (anything after the group name is ignored)
 
-       Return:
-       Schema object (parsed from JSON)
+       :returns: Schema object (parsed from JSON)
     """
     return jsonutil.read(callback, get_active_schema_path(callback, path))
 
@@ -103,12 +97,10 @@ def get_active_schema_uischema(callback, path):
 def get_active_schema_id(callback, path):
     """Get the active schema id from a research or vault path.
 
-       Arguments:
-       path -- A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-              (anything after the group name is ignored)
+       :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                    (anything after the group name is ignored)
 
-       Return:
-       string -- Schema $id (e.g. https://yoda.uu.nl/schemas/.../metadata.json)
+       :returns: string -- Schema $id (e.g. https://yoda.uu.nl/schemas/.../metadata.json)
     """
 
     return get_active_schema(callback, path)['$id']

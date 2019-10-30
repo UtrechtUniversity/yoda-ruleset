@@ -171,12 +171,10 @@ def rule_uu_get_transformation_info(rule_args, callback, rei):
     """Check if a yoda-metadata.json transformation is possible and if so,
        retrieve transformation description.
 
-       Arguments:
-       rule_args[0] -- JSON path
+    :param rule_args[0]: JSON path
 
-       Return:
-       rule_args[1] -- transformation possible? true|false
-       rule_args[2] -- human-readable description of the transformation
+    :returns: rule_args[1] -- transformation possible? true|false
+              rule_args[2] -- human-readable description of the transformation
     """
     json_path = rule_args[0]
 
@@ -191,9 +189,8 @@ def rule_uu_get_transformation_info(rule_args, callback, rei):
 def copy_acls_from_parent(callback, path, recursive_flag):
     """When inheritance is missing we need to copy ACLs when introducing new data in vault package.
 
-       Arguments:
-       path           -- Path of object that needs the permissions of parent
-       recursive_flag -- Either "default" for no recursion or "recursive"
+    :param path: Path of object that needs the permissions of parent
+    :param recursive_flag: Either "default" for no recursion or "recursive"
     """
     parent = os.path.dirname(path)
 
@@ -224,11 +221,10 @@ def copy_acls_from_parent(callback, path, recursive_flag):
 def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
     """Transform all metadata JSON files in the vault to the active schema.
 
-       Arguments:
-       coll_id -- first COLL_ID to check
-       batch   -- batch size, <= 256
-       pause   -- pause between checks (float)
-       delay   -- delay between batches in seconds
+    :param coll_id: First COLL_ID to check
+    :param batch: Batch size, <= 256
+    :param pause: Pause between checks (float)
+    :param delay: Delay between batches in seconds
     """
     coll_id = int(rule_args[0])
     batch   = int(rule_args[1])

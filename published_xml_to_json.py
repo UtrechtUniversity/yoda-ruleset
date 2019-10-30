@@ -11,11 +11,10 @@ import os
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
     """Convert current yoda-metadata.xml to yoda-metadata.json.
 
-       Arguments:
-       rods_zone        -- Zone name
-       vault_collection -- Collection name of metadata XML
-       xml_data_name    -- Data name of metadata XML that requires transformation
-       data_name_json   -- Name of data object to be created containing the
+    :param rods_zone: Zone name
+    :param vault_collection: Collection name of metadata XML
+    :param xml_data_name: Data name of metadata XML that requires transformation
+    :param data_name_json: Name of data object to be created containing the
     """
 
     # This function simply transforms given data_name to a Json data object.
@@ -51,16 +50,16 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
        the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
        The resulting file must be copied to moai collection as well.
 
-       Arguments:
-       rods_zone -- Zone name
-       data_id   -- Data id to start searching from
-       batch     -- Batch size, <= 256
-       pause     -- Pause between checks (float)
-       publicHost, yodaInstance, yodaPrefix are required for secure copy from publication area to MOAI
+    :param rods_zone: Zone name
+    :param data_id: Data id to start searching from
+    :param batch: Batch size, <= 256
+    :param pause: Pause between checks (float)
+    :param publicHost: Hostname of public host
+    :param yodaInstance:  Name of Yoda instance
+    :param yodaPrefix: Prefix of Yoda DOIs from this instance
 
-       Return:
-       integer -- Data_id to continue with in next batch.
-                  If data_id =0, no more data objects were found. Batch is finished.
+    :returns: integer -- Data_id to continue with in next batch.
+                         If data_id =0, no more data objects were found. Batch is finished.
     """
 
     publication_collection = '/' + rods_zone + '/yoda/publication'
@@ -115,12 +114,13 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 def iiCheckPublishedMetadataXmlForTransformationToJson(rule_args, callback, rei):
     """Convert published metadata XML that residedes in 'published' collection to JSON - batchwise.
 
-       Arguments:
-       data_id -- first DATA_ID to check - initial =0
-       batch   -- batch size, <= 256
-       pause   -- pause between checks (float)
-       delay   -- delay between batches in seconds
-       publicHost,yodaInstance,yodaPrefix are required for secure copy from /publication area to MOAI
+    :param data_id: First DATA_ID to check - initial =0
+    :param batch: Batch size, <= 256
+    :param pause: Pause between checks (float)
+    :param delay: Delay between batches in seconds
+    :param publicHost: Hostname of public host
+    :param yodaInstance:  Name of Yoda instance
+    :param yodaPrefix: Prefix of Yoda DOIs from this instance
     """
     data_id = int(rule_args[0])
     batch = int(rule_args[1])
