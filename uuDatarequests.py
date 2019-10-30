@@ -152,6 +152,17 @@ def setStatus(callback, requestId, status):
        requestId -- Unique identifier of the data request.
        status    -- The status to which the data request should be set.
     """
+    setMetadata(callback, requestId, "status", status)
+
+
+def setMetadata(callback, requestId, key, value):
+    """Set an arbitrary metadata field on a data request
+
+       Arguments:
+       requestId -- Unique identifier of the data request.
+       key       -- Key of the metdata field
+       value     -- Value of the meta field
+    """
 
     # Construct path to the collection of the datarequest
     zoneName = ""
@@ -162,8 +173,8 @@ def setStatus(callback, requestId, status):
     # Add delayed rule to update datarequest status
     responseStatus = ""
     responseStatusInfo = ""
-    callback.requestDatarequestMetadataChange(requestColl, "status",
-                                              status, 0, responseStatus,
+    callback.requestDatarequestMetadataChange(requestColl, key,
+                                              value, 0, responseStatus,
                                               responseStatusInfo)
 
     # Trigger the processing of delayed rules
