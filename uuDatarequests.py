@@ -181,7 +181,7 @@ def setMetadata(callback, requestId, key, value):
     callback.adminDatarequestActions()
 
 
-def submitDatarequest(callback, data, rei):
+def submitDatarequest(callback, data, previousRequestId, rei):
     """Persist a data request to disk.
 
        Arguments:
@@ -206,6 +206,10 @@ def submitDatarequest(callback, data, rei):
     except UUException as e:
         callback.writeString("serverLog", "Could not write data request to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data request to disk."}
+
+    # Set the previous request ID as metadata if defined
+    if previousRequestId:
+        setMetadata(callback, requestId, "previous_request_id", previousRequestId)
 
     # Set the proposal fields as AVUs on the proposal JSON file
     rule_args = [filePath, "-d", "root", data]
@@ -1309,7 +1313,7 @@ def requestDataReady(callback, requestId, currentUserName):
 
 def uuSubmitDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitDatarequest(callback,
-                                                                rule_args[0],
+                                                                rule_args[0], rule_args[1],
                                                                 rei)))
 
 
