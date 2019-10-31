@@ -4,8 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json
 from util import *
+
+__all__ = ['rule_uu_research_system_metadata']
 
 
 def research_collection_metadata(callback, coll):
@@ -32,6 +33,6 @@ def research_collection_metadata(callback, coll):
 
     return {"Package size": result}
 
-iiResearchSpaceSystemMetadata = rule.make(inputs=[0], outputs=[1],
+rule_uu_research_system_metadata = rule.make(inputs=[0], outputs=[1],
                                           transform=jsonutil.dump, handler=rule.Output.STDOUT) \
                                          (research_collection_metadata)

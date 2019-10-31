@@ -4,14 +4,20 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-import constants
-import json
 import os
+import time
 import itertools
 
 import genquery
 import session_vars
+
+from util import *
+
+__all__ = ['rule_uu_vault_preservable_formats_lists',
+           'rule_uu_vault_unpreservable_files',
+           'rule_uu_vault_copy_original_metadata_to_vault',
+           'rule_uu_vault_write_provenance_log',
+           'rule_uu_vault_system_metadata']
 
 
 def getPreservableFormatsLists(callback, rei):
@@ -59,12 +65,12 @@ def getUnpreservableFiles(callback, path, list_name):
     return {'formats': list(exts - preservable_formats)}
 
 
-def iiGetPreservableFormatsListsJson(rule_args, callback, rei):
+def rule_uu_vault_preservable_formats_lists(rule_args, callback, rei):
     """Write preservable file formats lists to stdout."""
     callback.writeString("stdout", jsonutil.dump(getPreservableFormatsLists(callback, rei)))
 
 
-def iiGetUnpreservableFilesJson(rule_args, callback, rei):
+def rule_uu_vault_unpreservable_files(rule_args, callback, rei):
     """Write unpreservable files in folder to stdout.
 
     :param rule_args[0]: Path of folder to check.
@@ -73,7 +79,7 @@ def iiGetUnpreservableFilesJson(rule_args, callback, rei):
     callback.writeString("stdout", jsonutil.dump(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
 
 
-def iiCopyOriginalMetadataToVault(rule_args, callback, rei):
+def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
     :param rule_args[0]: Path of a new package in the vault.
@@ -109,7 +115,7 @@ def getProvenanceLog(callback, folder):
     return provenance_log
 
 
-def iiWriteProvenanceLogToVault(rule_args, callback, rei):
+def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     """Writes the provenance log as a text file into the root of the vault package.
 
     :param rule_args[0]: Path of a package in the vault.
@@ -227,6 +233,6 @@ def vault_collection_metadata(callback, coll):
 
     return system_metadata
 
-iiVaultSpaceSystemMetadata = rule.make(inputs=[0], outputs=[1],
+rule_uu_vault_system_metadata = rule.make(inputs=[0], outputs=[1],
                                        transform=jsonutil.dump, handler=rule.Output.STDOUT) \
                                       (vault_collection_metadata)

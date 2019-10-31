@@ -5,10 +5,11 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import xmltodict
-from json import loads
 from collections import OrderedDict
 
 from util import *
+
+__all__ = ['rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
 
 
 def getMetadataXmlAsDict(callback, path):
@@ -372,7 +373,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     return coll_id
 
 
-def iiCheckVaultMetadataXmlForTransformationToJson(rule_args, callback, rei):
+def rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert vault metadata XML to JSON - batchwise.
 
     :param coll_id: First COLL_ID to check - initial =0
@@ -394,5 +395,5 @@ def iiCheckVaultMetadataXmlForTransformationToJson(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "iiCheckVaultMetadataXmlForTransformationToJson('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")

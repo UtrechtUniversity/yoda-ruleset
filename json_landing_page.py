@@ -6,11 +6,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 from jinja2 import Template
 import os
-from json import loads
-from collections import OrderedDict
+
+__all__ = ['rule_uu_json_landing_page_create_json_landing_page']
 
 
-def iiCreateJsonLandingPage(rule_args, callback, rei):
+def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei):
     """Get the landing page of published YoDa metadata as a string.
 
     :param rodsZone: Zone name

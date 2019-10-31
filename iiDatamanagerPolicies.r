@@ -145,7 +145,7 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 		}
 
 		*groupName = "";
-		iiCollectionGroupName(*objPath, *groupName);
+		rule_uu_collection_group_name(*objPath, *groupName);
 		uuGroupGetCategory(*groupName, *category, *subcategory);
 		if (*otherName == "datamanager-*category") {
 			uuGroupGetMemberType(*otherName, *actor, *userTypeIfDatamanager);

@@ -4,13 +4,16 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json
 import os
-from json import loads
 from collections import OrderedDict
 
+from util import *
 
-def iiCreateCombiMetadataJson(rule_args, callback, rei):
+__all__ = ['rule_uu_json_datacite41_create_combi_metadata_json',
+           'rule_uu_json_datacite41_create_data_cite_xml_on_json']
+
+
+def rule_uu_json_datacite41_create_combi_metadata_json(rule_args, callback, rei):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
@@ -38,7 +41,7 @@ def iiCreateCombiMetadataJson(rule_args, callback, rei):
     jsonutil.write(callback, combiJsonPath, metaDict)
 
 
-def iiCreateDataCiteXmlOnJson(rule_args, callback, rei):
+def rule_uu_json_datacite41_create_data_cite_xml_on_json(rule_args, callback, rei):
     """Based on content of *combiJsonPath, get DataciteXml as string.
 
     :param combiJsonPath: path to the combined Json file that holds both User and System metadata

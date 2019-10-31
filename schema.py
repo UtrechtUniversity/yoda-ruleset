@@ -8,18 +8,20 @@ import genquery
 import re
 
 from util import *
+import meta
 
-# FIXME: Temporary / transitional: Replace with qualified individual imports.
-# from meta   import *
+__all__ = []
+
 
 def get_group_category(callback, rods_zone, group_name):
     """Determine category (for schema purposes) based upon rods zone and name of the group.
-       If the category does not have a schema, 'default' is returned.
 
-       :param rods_zone: Rods zone name
-       :param group_name: Group name
+    If the category does not have a schema, 'default' is returned.
 
-       :returns: string -- Category
+    :param rods_zone: Rods zone name
+    :param group_name: Group name
+
+    :returns: string -- Category
     """
     category = '-1'
     schemaCategory = 'default'
@@ -110,8 +112,7 @@ def get_schema_id(callback, metadata_path, metadata=None):
     """Get the current schema id from a path to a metadata json."""
     if metadata is None:
         metadata = jsonutil.read(callback, metadata_path)
-    from meta import *  # XXX Temporary
-    return metadata_get_schema_id(metadata)
+    return meta.metadata_get_schema_id(metadata)
 
 
 def get_schema_path_by_id(callback, path, schema_id):

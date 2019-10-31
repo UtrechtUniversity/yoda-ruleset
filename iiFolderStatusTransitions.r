@@ -44,7 +44,7 @@ iiFolderStatus(*folder, *folderStatus) {
 #
 iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 	*groupName = "";
-	iiCollectionGroupName(*folder, *groupName);
+	rule_uu_collection_group_name(*folder, *groupName);
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	uuGroupExists("datamanager-*category", *datamanagerExists);
 }
@@ -334,7 +334,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 
 	# Check if folder is a research group.
 	*groupName = "";
-	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	*err = errorcode(rule_uu_collection_group_name(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";
 		*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
@@ -497,7 +497,7 @@ iiFolderSecure(*folder) {
 	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
-	iiCopyOriginalMetadataToVault(*target);
+	rule_uu_vault_copy_original_metadata_to_vault(*target);
 	iiCopyLicenseToVaultPackage(*folder, *target);
 
 	if (*httpCode != "0") {
@@ -526,7 +526,7 @@ iiFolderSecure(*folder) {
 
 	# Copy and write provenance log.
 	iiCopyActionLog(*folder, *target);
-	iiWriteProvenanceLogToVault(*target);
+	rule_uu_vault_write_provenance_log(*target);
 
 	# Set vault permissions for new vault package.
 	iiSetVaultPermissions(*folder, *target);

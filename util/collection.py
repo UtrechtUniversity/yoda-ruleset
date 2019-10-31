@@ -37,7 +37,7 @@ def empty(callback, path):
 
 def size(callback, path):
     """Get a collection's size in bytes."""
-    return reduce(lambda x, row: x + row[1],
+    return reduce(lambda x, row: x + int(row[1]),
                   itertools.chain(genquery.row_iterator("DATA_ID, DATA_SIZE",
                                                         "COLL_NAME like '{}'".format(path),
                                                         genquery.AS_LIST, callback),
@@ -47,16 +47,22 @@ def size(callback, path):
 
 
 def data_count(callback, path, recursive=True):
-    """Get a collection's data count."""
-    return len(data_objects(callback, path))
+    """Get a collection's data count.
+
+    :param path: A collection path
+    :param recursive: Measure subcollections as well
+    :return: A number of data objects.
+    """
+    # Generators can't be fed to len(), so here we are...
+    return sum(1 for _ in data_objects(callback, path, recursive=recursive))
 
 
 def collection_count(callback, path):
     """Get a collection's collection count (the amount of collections within a collection)."""
-    return (len(list(genquery.row_iterator(
+    return sum(1 for _ in genquery.row_iterator(
                      "COLL_ID",
                      "COLL_NAME like '{}/%'".format(path),
-                     genquery.AS_LIST, callback))))
+                     genquery.AS_LIST, callback))
 
 
 def data_objects(callback, path, recursive=False):

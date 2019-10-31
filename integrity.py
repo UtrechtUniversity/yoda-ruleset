@@ -12,8 +12,11 @@ import base64
 import time
 
 import genquery
-import irods_types
 import session_vars
+
+from util import *
+
+__all__ = ['rule_uu_integrity_check_vault']
 
 
 DataObject = namedtuple('DataObject', ['id', 'name', 'size', 'checksum', 'coll_name', 'resc_path', 'resc_loc'])
@@ -148,7 +151,7 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
     return data_id
 
 
-def uuCheckVaultIntegrity(rule_args, callback, rei):
+def rule_uu_integrity_check_vault(rule_args, callback, rei):
     """Check integrity of all data objects in the vault.
 
     :param data_id: first DATA_ID to check
@@ -169,5 +172,5 @@ def uuCheckVaultIntegrity(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "uuCheckVaultIntegrity('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay),
+            "rule_uu_integrity_check_vault('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay),
             "")

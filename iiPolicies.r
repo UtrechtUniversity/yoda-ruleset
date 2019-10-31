@@ -382,7 +382,7 @@ uuResourceModifiedPostResearch(*pluginInstanceName, *KVPairs) {
 		       ++ *KVPairs.logical_path ++ "> updated by " ++ uuClientFullName
 		       ++ ", ingesting");
 
-		iiMetadataJsonModifiedPost(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
+		rule_uu_meta_modified_post(*KVPairs.logical_path, *KVPairs.user_user_name, *KVPairs.user_rods_zone);
     }
 }
 

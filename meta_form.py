@@ -4,12 +4,18 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import re
+import genquery
+
+import meta
+import schema as schema_
+import schema_transformation
+
 from util import *
 
-# FIXME: Temporary / transitional: Replace with qualified individual imports.
-from meta   import *
-from schema import *
-import schema_transformation
+__all__ = ['rule_uu_meta_form_load',
+           'rule_uu_meta_form_save',
+           'get_client_full_name_r'] # FIXME
 
 
 # TODO: These belong in the group manager part of our rulesets. {{{
@@ -97,11 +103,11 @@ def get_coll_lock(callback, path, org_metadata=None):
     return ret
 
 
-# __all__ = ['iiMetadataFormLoad']
+# __all__ = ['rule_uu_meta_form_load']
 # iiBla = api(aoeu)
 
 @rule.make(transform=jsonutil.dump, handler=rule.Output.STDOUT)
-def iiMetadataFormLoad(callback, coll):
+def rule_uu_meta_form_load(callback, coll):
     """Retrieve all information required to load a metadata form
        in either the research or vault space.
 
@@ -145,7 +151,7 @@ def iiMetadataFormLoad(callback, coll):
     is_datamanager = user_is_datamanager(callback, category, user)
 
     # - What is the active schema for this category?
-    schema, uischema = get_active_schema_uischema(callback, coll)
+    schema, uischema = schema_.get_active_schema_uischema(callback, coll)
 
     # Obtain org metadata for status and lock information.
     # (needed both for research and vault packages)
@@ -157,14 +163,14 @@ def iiMetadataFormLoad(callback, coll):
 
         # Analyze a possibly existing metadata JSON/XML file.
 
-        meta_path = get_collection_metadata_path(callback, coll)
+        meta_path = meta.get_collection_metadata_path(callback, coll)
         can_clone = False
         errors = []
 
         if meta_path is None:
             # If no metadata file exists, check if we can allow the user to
             # clone it from the parent collection.
-            can_clone = bool(collection_has_cloneable_metadata(callback, pathutil.chop(coll)[0]))
+            can_clone = bool(meta.collection_has_cloneable_metadata(callback, pathutil.chop(coll)[0]))
 
         elif meta_path.endswith('.json'):
             # Metadata file is in the correct format. Try to validate it.
@@ -197,7 +203,7 @@ def iiMetadataFormLoad(callback, coll):
             metadata = dict()
             try:
                 metadata = jsonutil.read(callback, meta_path)
-                current_schema_id = metadata_get_schema_id(metadata)
+                current_schema_id = meta.metadata_get_schema_id(metadata)
                 if current_schema_id is None:
                     errors = ['Please check the structure of this file.']
             except jsonutil.ParseError as e:
@@ -217,11 +223,11 @@ def iiMetadataFormLoad(callback, coll):
                     if current_schema_id == schema['$id']:
                         # Metadata matches active schema, see if it validates.
                         errors = [transform_error(x) for x
-                                  in get_json_metadata_errors(callback,
-                                                              meta_path,
-                                                              metadata=metadata,
-                                                              schema=schema,
-                                                              ignore_required=True)]
+                                  in meta.get_json_metadata_errors(callback,
+                                                                   meta_path,
+                                                                   metadata=metadata,
+                                                                   schema=schema,
+                                                                   ignore_required=True)]
                     else:
                         # Schema ID does not match and there is no defined transformation.
                         # We have no way to parse this file.
@@ -237,13 +243,13 @@ def iiMetadataFormLoad(callback, coll):
                     # First, make sure that the current metadata is valid against its schema $id,
                     # if not, we cannot offer a transformation option.
                     try:
-                        current_schema = get_schema_by_id(callback, meta_path, current_schema_id)
+                        current_schema = schema_.get_schema_by_id(callback, meta_path, current_schema_id)
                         errors = [transform_error(x) for x
-                                  in get_json_metadata_errors(callback,
-                                                              meta_path,
-                                                              metadata=metadata,
-                                                              schema=current_schema,
-                                                              ignore_required=True)]
+                                  in meta.get_json_metadata_errors(callback,
+                                                                   meta_path,
+                                                                   metadata=metadata,
+                                                                   schema=current_schema,
+                                                                   ignore_required=True)]
                     except Exception as e:
                         callback.writeString('serverLog',
                                              'Unknown error while validating <{}> against schema id <{}>: {}'
@@ -276,7 +282,7 @@ def iiMetadataFormLoad(callback, coll):
     return {k: v for k, v in locals().items() if k in output_keys}
 
 
-def iiMetadataFormSave(rule_args, callback, rei):
+def rule_uu_meta_form_save(rule_args, callback, rei):
     """Validate and store JSON metadata for a given collection."""
 
     # Reports status back to the caller.
@@ -306,7 +312,7 @@ def iiMetadataFormSave(rule_args, callback, rei):
         tmp_coll = '/{}/home/{}/{}/{}'.format(zone, datamanager_group, vault_group, vault_subpath)
 
         try:
-            coll_create(callback, tmp_coll, '1', irods_types.BytesBuf())
+            msi.coll_create(callback, tmp_coll, '1', irods_types.BytesBuf())
         except error.UUError as e:
             report('FailedToCreateCollection', 'Failed to create staging area at <{}>'.format(tmp_coll))
             return
@@ -324,10 +330,10 @@ def iiMetadataFormSave(rule_args, callback, rei):
         return
 
     # Add metadata schema id to JSON.
-    metadata_set_schema_id(metadata, get_active_schema_id(callback, json_path))
+    meta.metadata_set_schema_id(metadata, schema_.get_active_schema_id(callback, json_path))
 
     # Validate JSON metadata.
-    errors = get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
+    errors = meta.get_json_metadata_errors(callback, json_path, metadata, ignore_required=not is_vault)
 
     if len(errors) > 0:
         report('ValidationError', 'Metadata validation failed', errors)

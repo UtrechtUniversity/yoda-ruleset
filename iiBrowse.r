@@ -137,7 +137,7 @@ iiCollectionDetailsResearch(*path, *kvp) {
 
         # Retrieve user group name and user type.
         *groupName = "";
-        iiCollectionGroupName(*path, *groupName);
+        rule_uu_collection_group_name(*path, *groupName);
         *kvp.groupName = *groupName;
 
         uuGroupGetMemberType(*groupName, uuClientFullName, *userType);

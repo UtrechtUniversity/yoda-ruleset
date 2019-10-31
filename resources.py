@@ -6,15 +6,21 @@ __license__   = 'GPLv3, see LICENSE'
 
 import os
 from datetime import datetime
-import json
 
 import genquery
-import irods_types
-import constants
+
 from util import *
 
+__all__ = ['rule_uu_resource_tier_data',
+           'rule_uu_resource_resource_and_tier_data',
+           'rule_uu_resource_month_storage_per_tier_for_group',
+           'rule_uu_resource_monthly_stats',
+           'rule_uu_resource_monthly_stats_dm',
+           'rule_uu_resource_groups_dm',
+           'rule_uu_resource_monthly_category_stats_export_dm']
 
-def uuRuleGetResourceTierData(rule_args, callback, rei):
+
+def rule_uu_resource_tier_data(rule_args, callback, rei):
     """Get JSON represenation of resource and its tier info."""
     resourceName = rule_args[0]
 
@@ -24,7 +30,7 @@ def uuRuleGetResourceTierData(rule_args, callback, rei):
                                "org_storage_tier": tierName})
 
 
-def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
+def rule_uu_resource_resource_and_tier_data(rule_args, callback, rei):
     """Get all resources and their tier data as a json representation."""
     resourceList = list()
 
@@ -45,7 +51,7 @@ def uuRuleGetResourcesAndTierData(rule_args, callback, rei):
     rule_args[0] = jsonutil.dump(resourceList)
 
 
-def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
+def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
     """Get json representation for storage data for a period of 12 months for a specific group.
 
        Storage is per month and tier
@@ -73,7 +79,7 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
         )
 
         for row in iter:
-            data = json.loads(row[0])
+            data = jsonutil.parse(row[0])
 
             tierName = data[1]
             data_size = data[2]  # no construction for summation required in this case
@@ -84,14 +90,14 @@ def uuRuleGetMonthStoragePerTierForGroup(rule_args, callback, rei):
     rule_args[2] = jsonutil.dump(allStorage)
 
 
-def uuRuleGetMonthlyStorageStatistics(rule_args, callback, rei):
+def rule_uu_resource_monthly_stats(rule_args, callback, rei):
     """Collect storage data for all categories."""
     categories = getCategories(callback)
 
     rule_args[0] = getMonthlyCategoryStorageStatistics(categories, callback)
 
 
-def uuRuleGetMonthlyStorageStatisticsDatamanager(rule_args, callback, rei):
+def rule_uu_resource_monthly_stats_dm(rule_args, callback, rei):
     """Collect storage data for a datamanager."""
     datamanagerUser = rule_args[0]
     categories = getCategoriesDatamanager(datamanagerUser, callback)
@@ -99,7 +105,7 @@ def uuRuleGetMonthlyStorageStatisticsDatamanager(rule_args, callback, rei):
     rule_args[1] = getMonthlyCategoryStorageStatistics(categories, callback)
 
 
-def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
+def rule_uu_resource_groups_dm(rule_args, callback, rei):
     """Get all groups for all categories a person is datamanager of."""
     datamanagerUser = rule_args[0]
     categories = getCategoriesDatamanager(datamanagerUser, callback)
@@ -109,7 +115,7 @@ def uuRuleGetAllGroupsForDatamanager(rule_args, callback, rei):
     rule_args[1] = jsonutil.dump(datamanagerGroups)
 
 
-def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
+def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
     """Collect storage stats for all twelve months based upon categories a user is datamanager of:
        - Category
        - Subcategory
@@ -146,7 +152,7 @@ def uuRuleExportMonthlyCategoryStatisticsDM(rule_args, callback, rei):
                 subcategory = catInfo['subcategory']
                 groupToSubcategory[groupName] = subcategory
 
-            temp = json.loads(attrValue)
+            temp = jsonutil.parse(attrValue)
             category = temp[0]
             tier = temp[1]
             storage = int(temp[2])
@@ -209,7 +215,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
             # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
             attrValue = row[0]
 
-            temp = json.loads(attrValue)
+            temp = jsonutil.parse(attrValue)
             category = temp[0]
             tier = temp[1]
             storage = int(float(temp[2]))
@@ -260,7 +266,7 @@ def getGroupsOnCategories(categories, callback):
             data_size = 0
             for row in iter2:
                 data = row[0]
-                temp = json.loads(data)
+                temp = jsonutil.parse(data)
                 data_size = data_size + int(temp[2])  # no construction for summation required in this case
 
             groups.append([groupName, data_size])

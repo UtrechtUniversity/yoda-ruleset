@@ -133,7 +133,7 @@ uuUserExists(*user, *exists) {
 #
 uuGroupUserExists(*group, *user, *includeRo, *membership) {
         *membership = "";
-        groupUserExists(*group, *user, str(*includeRo), *membership);
+        rule_uu_group_user_exists(*group, *user, str(*includeRo), *membership);
 	if (*membership == "true") {
 	        *membership = true;
 	} else {
@@ -859,7 +859,7 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
                 if (uuExternalUser(*userName)) {
                         *http_code = ""
                         *message = ""
-                        uuProvisionExternalUser(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);
+                        rule_uu_group_provision_external_user(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);
                         if (*message != "") {
                                 writeLine("serverLog", "[EXTERNAL USER] *message");
                                 *status = int(*http_code)

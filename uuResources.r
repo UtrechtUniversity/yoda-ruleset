@@ -33,7 +33,7 @@ uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
 		succeed;
 	}
         *data = '';
-        uuRuleGetResourceTierData(*resourceName,*data);
+        rule_uu_resource_tier_data(*resourceName,*data);
 }
 
 # \brief Collect all groups current user is a member of. Read only groups count as well.
@@ -65,7 +65,7 @@ uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
         *statusInfo = '';
 
         *data = '';
-        uuRuleGetAllGroupsForDatamanager(uuClientFullName, *data)
+        rule_uu_resource_groups_dm(uuClientFullName, *data)
 }
 
 
@@ -103,7 +103,7 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 	}
 
         *data = '' 
-        uuRuleGetMonthStoragePerTierForGroup(*groupName, *currentMonth, *data);
+        rule_uu_resource_month_storage_per_tier_for_group(*groupName, *currentMonth, *data);
 }
 
 
@@ -125,7 +125,7 @@ uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)
                 succeed;
         }
         *data = '';
-        uuRuleGetResourcesAndTierData(*data);
+        rule_uu_resource_resource_and_tier_data(*data);
 }
 
 # \brief List available resources and their tier & storage data
@@ -208,7 +208,7 @@ uuGetExportDMCategoryStorageFullYear(*result, *status, *statusInfo)
 
         *result = '[]';
         
-        uuRuleExportMonthlyCategoryStatisticsDM(uuClientFullName, *result);  
+        rule_uu_resource_monthly_category_stats_export_dm(uuClientFullName, *result);  
 }
 
 
@@ -235,7 +235,7 @@ uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
         }
 
         *result = '[]';
-        uuRuleGetMonthlyStorageStatistics(*result);
+        rule_uu_resource_monthly_stats(*result);
 }
 
 
@@ -253,7 +253,7 @@ uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
         *statusInfo = '';
 
         *result = '[]';
-        uuRuleGetMonthlyStorageStatisticsDatamanager(uuClientFullName, *result);
+        rule_uu_resource_monthly_stats_dm(uuClientFullName, *result);
 }
 
 

@@ -241,7 +241,7 @@ iiPrepareMetadataForm(*path, *result) {
 
                 # Retrieve user group name and user type.
                 *groupName = "";
-                iiCollectionGroupName(*path, *groupName);
+                rule_uu_collection_group_name(*path, *groupName);
                 *kvp.groupName = *groupName;
 
                 uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
@@ -354,7 +354,7 @@ iiPrepareMetadataForm(*path, *result) {
                 *parentHasMetadata  = "false";
                 *parentMetadataPath = "";
                 uuChopPath(*path, *parent, *child);
-                iiCollectionHasCloneableMetadata(*parent, *parentMetadataPath);
+                rule_uu_meta_collection_has_cloneable_metadata(*parent, *parentMetadataPath);
                 *kvp.parentMetadataPath = *parentMetadataPath;
                 *kvp.parentHasMetadata  = if (*parentMetadataPath != "") then "true" else "false"
 

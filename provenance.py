@@ -4,8 +4,12 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from util import *
 
-def iiFrontEndAddActionLogRecord(rule_args, callback, rei):
+__all__ = ['rule_uu_provenance_log_action']
+
+
+def rule_uu_provenance_log_action(rule_args, callback, rei):
     """Frontend function to add action log record to specific folder.
 
        :param actor: rodsaccount coming from yoda frontend
@@ -30,4 +34,3 @@ def iiFrontEndAddActionLogRecord(rule_args, callback, rei):
 
     report(jsonutil.dump({'status':     status,
                        'statusInfo': statusInfo}))
-    return

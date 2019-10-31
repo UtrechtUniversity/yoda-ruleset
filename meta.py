@@ -14,8 +14,15 @@ from enum import Enum
 from collections import OrderedDict
 
 from util import *
-from schema import *   # FIXME: Temporary / transitional: Replace with qualified individual imports.
-# from __init__ import * # FIXME: Temporary / transitional: Replace with qualified individual imports.
+import schema as schema_
+
+__all__ = ['rule_uu_meta_validate',
+           'rule_uu_meta_remove',
+           'rule_uu_meta_clone_file',
+           'rule_uu_meta_modified_post',
+           'rule_uu_meta_datamanager_vault_ingest',
+           'rule_uu_meta_collection_has_cloneable_metadata']
+
 
 def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
@@ -61,7 +68,7 @@ def get_json_metadata_errors(callback,
     """
 
     if schema is None:
-        schema = get_active_schema(callback, metadata_path)
+        schema = schema_.get_active_schema(callback, metadata_path)
 
     if metadata is None:
         metadata = jsonutil.read(callback, metadata_path)
@@ -138,7 +145,7 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
     return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
 
 
-def iiValidateMetadata(rule_args, callback, rei):
+def rule_uu_meta_validate(rule_args, callback, rei):
     """Validate JSON metadata file"""
 
     json_path = rule_args[0]
@@ -174,12 +181,13 @@ def collection_has_cloneable_metadata(callback, coll):
 
     return False
 
-iiCollectionHasCloneableMetadata = (rule.make(inputs=[0], outputs=[1],
-                                              transform=lambda x: x if type(x) is str else '')
-                                    (collection_has_cloneable_metadata))
+rule_uu_meta_collection_has_cloneable_metadata = (
+        rule.make(inputs=[0], outputs=[1],
+                  transform=lambda x: x if type(x) is str else '')
+        (collection_has_cloneable_metadata))
 
 
-def iiRemoveAllMetadata(rule_args, callback, rei):
+def rule_uu_meta_remove(rule_args, callback, rei):
     """Remove a collection's metadata JSON and XML, if they exist"""
 
     coll = rule_args[0]
@@ -195,7 +203,7 @@ def iiRemoveAllMetadata(rule_args, callback, rei):
             pass
 
 
-def iiCloneMetadataFile(rule_args, callback, rei):
+def rule_uu_meta_clone_file(rule_args, callback, rei):
     """Clones a metadata file from a parent collection to a subcollection.
        The destination collection (where the metadata is copied *to*) is given as an argument.
     """
@@ -268,7 +276,7 @@ def ingest_metadata_staging(callback, path):
 
     set_key_value_pairs_to_obj(callback, ret['arguments'][1], path, '-d')
 
-    # Note: Validation is triggered via ExecCmd in iiIngestDatamanagerMetadataIntoVault.
+    # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
     callback.iiAdminVaultIngest()
 
 
@@ -301,7 +309,7 @@ def ingest_metadata_vault(callback, path):
 # }}}
 
 
-def iiMetadataJsonModifiedPost(rule_args, callback, rei):
+def rule_uu_meta_modified_post(rule_args, callback, rei):
 
     path, user, zone = rule_args[:4]
 
@@ -313,7 +321,7 @@ def iiMetadataJsonModifiedPost(rule_args, callback, rei):
         ingest_metadata_research(callback, path)
 
 
-def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
+def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     """Ingest changes to metadata into the vault."""
 
     # This rule is called via ExecCmd during a policy rule
@@ -334,7 +342,7 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     def set_result(msg_short, msg_long):
         rule_args[1:3] = msg_short, msg_long
         if msg_short != 'Success':
-            callback.writeString('serverLog', 'iiIngestDatamanagerMetadataIntoVault failed: {}\n'
+            callback.writeString('serverLog', 'rule_uu_meta_datamanager_vault_ingest failed: {}\n'
                                               .format(msg_long))
         return
 
@@ -388,7 +396,7 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
     # Validate metadata.
     # FIXME - TOCTOU: also exists in XML version
     #      -> might fix by reading JSON only once, and validating and writing to vault from that.
-    ret = callback.iiValidateMetadata(json_path, '', '')
+    ret = callback.rule_uu_meta_validate(json_path, '', '')
     invalid = ret['arguments'][1]
     if invalid == '1':
         set_result('FailedToValidateJSON', ret['arguments'][2])
@@ -411,7 +419,7 @@ def iiIngestDatamanagerMetadataIntoVault(rule_args, callback, rei):
 
     # Log actions.
     callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
-    callback.iiWriteProvenanceLogToVault(vault_pkg_path)
+    callback.rule_uu_vault_write_provenance_log(vault_pkg_path)
 
     # Cleanup staging area.
     try:

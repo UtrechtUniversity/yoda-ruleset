@@ -93,7 +93,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 
 	# Retrieve user group name and user type.
 	*actorGroup = "";
-	iiCollectionGroupName(*path, *actorGroup);
+	rule_uu_collection_group_name(*path, *actorGroup);
 
 	uuGroupGetMemberType(*actorGroup, uuClientFullName, *userType);
 
@@ -250,7 +250,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "submitted for publication");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 
 		# Store actor of publication submission.
 		msiString2KeyValPair("", *kvp);
@@ -260,7 +260,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "approved for publication");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 
 		# Store actor of publication approval.
 		msiString2KeyValPair("", *kvp);
@@ -269,22 +269,22 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == PUBLISHED) {
 		iiAddActionLogRecord("system", *folder, "published");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 	}
 	on (*newVaultStatus == PENDING_DEPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "requested depublication");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord("system", *folder, "depublished");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 	}
 	on (*newVaultStatus == PENDING_REPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
 		iiAddActionLogRecord(*actionActor, *folder, "requested republication");
-		iiWriteProvenanceLogToVault(*folder);
+		rule_uu_vault_write_provenance_log(*folder);
 	}
 	on (true) {
 		nop;

@@ -11,6 +11,15 @@ import genquery
 
 from util import *
 
+__all__ = ['rule_uu_group_data',
+           'rule_uu_group_data_filtered',
+           'rule_uu_group_categories',
+           'rule_uu_group_subcategories',
+           'rule_uu_group_provision_external_user',
+           'rule_uu_group_remove_external_user',
+           'rule_uu_group_user_exists']
+
+
 def getGroupData(callback):
     """Return groups and related data."""
     groups = {}
@@ -141,7 +150,7 @@ def getSubcategories(callback, category):
     return list(categories)
 
 
-def uuGetGroupData(rule_args, callback, rei):
+def rule_uu_group_data(rule_args, callback, rei):
     """Write group data for all users to stdout."""
     groups = getGroupData(callback)
 
@@ -149,7 +158,7 @@ def uuGetGroupData(rule_args, callback, rei):
     callback.writeString("stdout", jsonutil.dump(groups))
 
 
-def uuGetUserGroupData(rule_args, callback, rei):
+def rule_uu_group_data_filtered(rule_args, callback, rei):
     """Write group data for a single user to stdout."""
     groups = getGroupData(callback)
     user = rule_args[0] + '#' + rule_args[1]
@@ -159,10 +168,10 @@ def uuGetUserGroupData(rule_args, callback, rei):
     callback.writeString("stdout", jsonutil.dump(groups))
 
 
-def groupUserExists(rule_args, callback, rei):
+def rule_uu_group_user_exists(rule_args, callback, rei):
     """Check if a user is a member of the given group.
 
-       groupUserExists(group, user, includeRo, membership)
+       rule_uu_group_user_exists(group, user, includeRo, membership)
        If includeRo is true, membership of a group's read-only shadow group will be
        considered as well. Otherwise, the user must be a normal member or manager of
        the given group.
@@ -181,12 +190,12 @@ def groupUserExists(rule_args, callback, rei):
     rule_args[3] = "true" if len(groups) == 1 else "false"
 
 
-def uuGroupGetCategoriesJson(rule_args, callback, rei):
+def rule_uu_group_categories(rule_args, callback, rei):
     """Write category list to stdout."""
     callback.writeString("stdout", jsonutil.dump(getCategories(callback)))
 
 
-def uuGroupGetSubcategoriesJson(rule_args, callback, rei):
+def rule_uu_group_subcategories(rule_args, callback, rei):
     """Write subcategory list to stdout."""
     callback.writeString("stdout", jsonutil.dump(getSubcategories(callback, rule_args[0])))
 
@@ -227,7 +236,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     return response.status_code
 
 
-def uuProvisionExternalUser(rule_args, callback, rei):
+def rule_uu_group_provision_external_user(rule_args, callback, rei):
     """Provision external user."""
     status = 1
     message = "An internal error occured."
@@ -284,6 +293,6 @@ def removeExternalUser(callback, username, userzone):
     return str(response.status_code)
 
 
-def uuRemoveExternalUser(rule_args, callback, rei):
+def rule_uu_group_remove_external_user(rule_args, callback, rei):
     """Remove external user."""
     callback.writeString("serverLog", removeExternalUser(callback, rule_args[0], rule_args[1]))

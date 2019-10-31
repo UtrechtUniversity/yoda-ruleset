@@ -56,7 +56,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
         # Create DataCiteXml based on content in *combiJsonPath
 	*receiveDataciteXml = '' ## initialize before handover to Python
 	# Based on content of *combiJsonPath, get DataciteXml as string
-	iiCreateDataCiteXmlOnJson(*combiJsonPath, *receiveDataciteXml)
+	rule_uu_json_datacite41_create_data_cite_xml_on_json(*combiJsonPath, *receiveDataciteXml)
 
         msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
         msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
@@ -105,7 +105,7 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
 
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-        iiCreateCombiMetadataJson(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
+        rule_uu_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
 
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
@@ -327,7 +327,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 
         *receiveLandingPage = ''; ## initialize before handover to Python
         # Based on content of *combiJsonPath, get landingpage as string
-        iiCreateJsonLandingPage(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
+        rule_uu_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
 
         *landingPagePath = "*tempColl/*randomId.html";
         msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);

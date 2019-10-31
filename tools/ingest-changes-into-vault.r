@@ -19,9 +19,9 @@ ingestChangesIntoVault {
 				# ensure rodsadmin access to the datamanager collection and metadata
 				*status     = "";
 				*statusInfo = "";
-				*err = errorcode(iiIngestDatamanagerMetadataIntoVault(*metadataPath, *status, *statusInfo));
+				*err = errorcode(rule_uu_meta_datamanager_vault_ingest(*metadataPath, *status, *statusInfo));
 				if (*err < 0) {
-					writeLine("stdout", "iiIngestDatamanagerMetadataIntoVault: *err");
+					writeLine("stdout", "rule_uu_meta_datamanager_vault_ingest: *err");
 					*status = "InternalError";
 					*statusInfo = "";
 				}

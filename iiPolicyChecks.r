@@ -509,7 +509,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 			} else {
 					*status     = "";
 					*statusInfo = "";
-					iiValidateMetadata(*metadataJsonPath, *status, *statusInfo);
+					rule_uu_meta_validate(*metadataJsonPath, *status, *statusInfo);
 					if (*status != "0") {
 							*allowed = false;
 							*reason = "Metadata is invalid, please check metadata form.";
@@ -520,7 +520,7 @@ iiCanTransitionFolderStatus(*folder, *transitionFrom, *transitionTo, *actor, *al
 
 	if (*transitionTo == ACCEPTED || *transitionTo == REJECTED) {
 		*groupName = "";
-		*err1 = errorcode(iiCollectionGroupName(*folder, *groupName));
+		*err1 = errorcode(rule_uu_collection_group_name(*folder, *groupName));
 		*err2 = errorcode(uuGroupGetCategory(*groupName, *category, *subcategory));
 		*err3 = errorcode(uuGroupExists("datamanager-*category", *datamanagerExists));
 		if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
