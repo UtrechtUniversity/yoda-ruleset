@@ -273,6 +273,32 @@ def getDatarequest(callback, requestId):
        Arguments:
        requestId -- Unique identifier of the data request.
     """
+    # Check if user is allowed to view to proposal. If not, return
+    # PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isboardmember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isdatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isdmcmember =   groupUserMember("datarequests-research-data-management-committee",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+
+        if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
+            callback.writeString("serverLog", "User is not authorized to view this data request.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data request."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename and filepath
     collName = '/tempZone/home/datarequests-research/' + requestId
@@ -326,12 +352,12 @@ def submitPreliminaryReview(callback, data, requestId, rei):
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
                                         callback)
-
-        if not isBoardMember:
-            raise Exception
+        if not isBoardMember == 'true':
+            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
-        return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
     zonePath = '/tempZone/home/datarequests-research/'
@@ -414,6 +440,27 @@ def getPreliminaryReview(callback, requestId):
        Arguments:
        requestId -- Unique identifier of the preliminary review
     """
+    # Check if user is authorized. If not, return PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isboardmember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isdatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+        if not (isboardmember or isdatamanager or isreviewer):
+            callback.writeString("serverLog", "User is not authorized to view this preliminary review.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
     # Construct filename
     collName = '/tempZone/home/datarequests-research/' + requestId
     fileName = 'preliminary_review_bodmember.json'
@@ -452,20 +499,18 @@ def submitDatamanagerReview(callback, data, requestId, rei):
     """
     # Check if user is a data manager. If not, do not the user to assign the
     # request
-    isDatamanager = False
-    name = ""
-
     try:
+        name = ""
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
-                                        callback)
-
+                                        callback) == 'true'
         if not isDatamanager:
-            raise Exception
+            callback.writeString("serverLog", "User is not a data manager.")
+            return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a data manager.")
-        return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
     zonePath = '/tempZone/home/datarequests-research/'
@@ -554,6 +599,28 @@ def getDatamanagerReview(callback, requestId):
        Arguments:
        requestId -- Unique identifier of the data manager review
     """
+    # Check if user is authorized. If not, return PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isboardmember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isdatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+
+        if not (isboardmember or isdatamanager or isreviewer):
+            callback.writeString("serverLog", "User is not authorized to view this data manager review.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data manager review."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
     # Construct filename
     collName = '/tempZone/home/datarequests-research/' + requestId
     fileName = 'datamanager_review_datamanager.json'
@@ -614,19 +681,22 @@ def isRequestOwner(callback, requestId, currentUserName):
 
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
-    if len(requestOwnerUserName) != 1:
-        callback.writeString("serverLog", "Not exactly 1 owner of data request found. Something is very wrong.")
-        return {"status": "MoreThanOwnOwner", "statusInfo": "Not exactly 1 owner of data request found. Something is very wrong."}
+    if len(requestOwnerUserName) == 1:
+        # We only have 1 owner. Set requestOwnerUserName to this owner
+        requestOwnerUserName = requestOwnerUserName[0]
 
-    # We only have 1 owner. Set requestOwnerUserName to this owner
-    requestOwnerUserName = requestOwnerUserName[0]
+        # Compare the request owner username to the username of the current
+        # user to determine ownership
+        isRequestOwner = requestOwnerUserName == currentUserName
 
-    # Compare the request owner username to the username of the current
-    # user to determine ownership
-    isRequestOwner = requestOwnerUserName == currentUserName
-
-    # Return data
-    return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
+        # Return data
+        return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
+    elif len(requestOwnerUserName) > 1:
+        callback.writeString("serverLog", "More than 1 owner of data request found. Something is very wrong.")
+        return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
+    elif len(requestOwnerUserName) == 0:
+        callback.writeString("serverLog", "No data request owner found. The current user most likely does not have read permission on the data request.")
+        return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
 
 
 def isReviewer(callback, requestId, currentUsername):
@@ -684,13 +754,13 @@ def submitAssignment(callback, data, requestId, rei):
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
-                                        callback)
-
+                                        callback) == "true"
         if not isBoardMember:
-            raise Exception
+            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
-        return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
     zonePath = '/tempZone/home/datarequests-research/'
@@ -884,19 +954,19 @@ def submitReview(callback, data, requestId, rei):
     """
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
-    isDmcMember = False
-    name = ""
-
     try:
-        isDmcMember = groupUserMember("datarequests-research-data-management-committee",
-                                      callback.uuClientFullNameWrapper(name)
-                                      ['arguments'][0], callback)
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        if not isDmcMember:
-            raise Exception
+        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+
+        if not isreviewer:
+            callback.writeString("serverLog", "User is assigned as a reviewer to this data request.")
+            return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a member of the Data Management Committee.")
-        return {"status": "PermissionDenied", "statusInfo": "User is not a member of the Data Management Committee."}
+        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
@@ -1018,6 +1088,22 @@ def getReviews(callback, requestId):
        Arguments:
        requestId -- Unique identifier of the data request
     """
+    # Check if user is authorized. If not, return PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isboardmember = groupUserMember("datarequests-research-board-of-directors",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+        if not isboardmember:
+            callback.writeString("serverLog", "User is not authorized to view this review.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
     # Construct filename
     collName = '/tempZone/home/datarequests-research/' + requestId
     fileName = 'review_%.json'
@@ -1052,20 +1138,18 @@ def submitEvaluation(callback, data, requestId, rei):
     """
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
-    isBoardMember = False
-    name = ""
-
     try:
+        name = ""
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
-                                        callback)
-
+                                        callback) == "true"
         if not isBoardMember:
-            raise Exception
+            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
-        return {"status": "PermissionsError", "statusInfo": "User is not a member of the Board of Directors"}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
     zonePath = '/tempZone/home/datarequests-research/'
@@ -1141,6 +1225,24 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
        requestId --
        username  --
     """
+    # Check if user is allowed to view to proposal. If not, return
+    # PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isdatamanager = groupUserMember("datarequests-research-datamanagers",
+                                        callback.uuClientFullNameWrapper(name)
+                                        ['arguments'][0],
+                                        callback) == 'true'
+
+        if not isdatamanager:
+            callback.writeString("serverLog", "User is not authorized to grant read permissions on the DTA.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
     # Construct path to the collection of the datarequest
     zoneName = ""
     clientZone = callback.uuClientZone(zoneName)['arguments'][0]
@@ -1170,7 +1272,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
         set_acl(callback, "default", "read", requestOwnerUsername, collPath + "/dta.pdf")
     except UUException as e:
         callback.writeString("serverLog", "Could not grant read permissions on the DTA to the data request owner.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
+        return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Get parameters needed for sending emails
     researcherName = ""
@@ -1212,13 +1314,13 @@ def requestDTAReady(callback, requestId, currentUserName):
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
-                                        callback)
-
+                                        callback) == "true"
         if not isDatamanager:
-            raise Exception
+            callback.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a data manager.")
-        return {"status": "PermissionsError", "statusInfo": "User is not a data manager."}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(callback, requestId, "dta_ready")
 
@@ -1232,6 +1334,21 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
        requestId -- Unique identifier of the datarequest.
        username  --
     """
+    # Check if user is allowed to view to proposal. If not, return
+    # PermissionError
+    try:
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+
+        if not isrequestowner:
+            callback.writeString("serverLog", "User is not authorized to grant read permissions on the signed DTA.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the signed DTA."}
+    except Exception as e:
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
     # Construct path to the collection of the datarequest
     zoneName = ""
     clientZone = callback.uuClientZone(zoneName)['arguments'][0]
@@ -1264,15 +1381,20 @@ def requestDTASigned(callback, requestId, currentUserName):
        requestId       -- Unique identifier of the datarequest.
        currentUserName -- Username of the user whose role is checked.
     """
-    # Check if uploading user owns the datarequest and only allow uploading
-    # if this is the case
+    # Check if user is allowed to view to proposal. If not, return
+    # PermissionError
     try:
-        result = isRequestOwner(callback, requestId, currentUserName)
-        if not result['isRequestOwner']:
-            raise Exception
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+
+        if not isrequestowner:
+            callback.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "User does not own the request.")
-        return {"status": "PermissionsError", "statusInfo": "User does not own the request."}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(callback, requestId, "dta_signed")
 
@@ -1286,22 +1408,22 @@ def requestDataReady(callback, requestId, currentUserName):
        requestId       -- Unique identifier of the datarequest.
        currentUserName -- Username of the user whose ownership is checked.
     """
-    # Check if the user requesting the status transition is a data manager.
-    # If not, do not allow status transition
-    isDatamanager = False
-    name = ""
-
+    # Check if user is allowed to view to proposal. If not, return
+    # PermissionError
     try:
-        isDatamanager = groupUserMember("datarequests-research-datamanagers",
+        name = ""
+        username = callback.uuClientNameWrapper(name)['arguments'][0]
+
+        isdatamanager = groupUserMember("datarequests-research-datamanagers",
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
-                                        callback)
-
-        if not isDatamanager:
-            raise Exception
+                                        callback) == 'true'
+        if not isdatamanager:
+            callback.writeString("serverLog", "User is not authorized to mark the data as ready.")
+            return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a data manager.")
-        return {"status": "PermissionsError", "statusInfo": "User is not a data manager."}
+        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(callback, requestId, "data_ready")
 
