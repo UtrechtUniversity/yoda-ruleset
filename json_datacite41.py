@@ -119,7 +119,7 @@ def getDescriptions(dict):
 
 
 def getPublisher(dict):
-    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in XSLT
+    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in former XSLT
 
 
 def getPublicationYear(dict):
@@ -143,13 +143,15 @@ def getSubjects(dict):
 
     try:
         for disc in dict['Discipline']:
-            subjectDisciplines += '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
+            if disc:
+                subjectDisciplines += '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
     except (KeyError, TypeError):
         pass
 
     try:
         for tag in dict['Tag']:
-            subjectTags += '<subject subjectScheme="Keyword">' + tag + '</subject>'
+            if tag:
+                subjectTags += '<subject subjectScheme="Keyword">' + tag + '</subject>'
     except KeyError:
         pass
 
@@ -168,7 +170,8 @@ def getSubjects(dict):
     for field in subject_fields:
         try:
             for value in dict[field]:
-                subjectFree += '<subject subjectScheme="' + field + '">' + value + '</subject>'
+                if value:    
+                    subjectFree += '<subject subjectScheme="' + field + '">' + value + '</subject>'
         except KeyError:
             continue  # Try next field in the list.
 
@@ -214,8 +217,6 @@ def getCreators(dict):
                     affiliations += '<affiliation>' + aff + '</affiliation>'
             except KeyError:
                 pass
-
-
 
             creators += nameIdentifiers
             creators += affiliations
@@ -280,19 +281,26 @@ def getDates(dict):
         dates = ''
         dateModified = dict['System']['Last_Modified_Date']
         dates += '<date dateType="Updated">' + dateModified + '</date>'
+    except KeyError:
+        pass
 
+    try: 
         dateEmbargoEnd = dict['Embargo_End_Date']
         dates += '<date dateType="Available">' + dateEmbargoEnd + '</date>'
+    except KeyError:
+        pass
 
+    try:
         dateCollectStart = dict['Collected']['Start_Date']
         dateCollectEnd = dict['Collected']['End_Date']
 
         dates += '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
-
-        if dates:
-            return '<dates>' + dates + '</dates>'
     except KeyError:
         pass
+    
+    if dates:
+        return '<dates>' + dates + '</dates>'
+
     return ''
 
 
@@ -427,7 +435,8 @@ def getGeoLocations(dict):
     try:
         locationList = dict['Covered_Geolocation_Place']
         for location in locationList:
-            geoLocations += '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
+            if location:
+                geoLocations += '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
     except KeyError:
         return ''
 
