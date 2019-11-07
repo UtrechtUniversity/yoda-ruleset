@@ -92,8 +92,7 @@ def checkDataObjectRemote(rule_args, callback, rei):
     status = checkDataObject(file_path, file_size, file_checksum)
 
     if status != Status.OK:
-        callback.writeString("serverLog", "[INTEGRITY] %s: %s"
-                             % (file_path, str(status)))
+        log.write(callback, "[INTEGRITY] %s: %s" % (file_path, str(status)))
 
 
 def checkDataObjectIntegrity(callback, data_id):

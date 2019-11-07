@@ -46,7 +46,7 @@ def execute_transformation(callback, metadata_path, transform):
         jsonutil.write(callback, new_path, metadata)
         copy_acls_from_parent(callback, new_path, "default")
         callback.iiAddActionLogRecord("system", coll, "updated metadata schema")
-        callback.writeString("serverLog", "Transformed %s" % (new_path))
+        log.write(callback, "Transformed %s" % (new_path))
     else:
         assert False
 
@@ -79,7 +79,7 @@ def transform_research_xml(callback, xml_path):
         try:
             schem = schema.get_schema_by_id(callback, schema_id, xml_path)
         except Exception as e:
-            callback.writeString('serverLog', 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
+            log.write(callback, 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
                                               .format(xml_path, schema_id, str(e)))
             # The result is unusable, as there will be no possible JSON → JSON
             # transformation that will make this a valid metadata file.
@@ -100,7 +100,7 @@ def transform_research_xml(callback, xml_path):
             # This is not fatal - there may have been validation errors in the XML as well,
             # which should remain exactly the same in the new JSON situation.
             # print(errors)
-            callback.writeString('serverLog', 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
+            log.write(callback, 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
                                               .format(xml_path, schema_id))
 
         jsonutil.write(callback, json_path, metadata)
@@ -130,11 +130,11 @@ def rule_uu_transform_metadata(callback, coll):
         # If the metadata is in default-0 format and the active schema is
         # newer, a second transformation will be needed, and the user will be
         # prompted for that the next time they open the form.
-        callback.writeString('serverLog', 'Transforming XML -> JSON in the research space')
+        log.write(callback, 'Transforming XML -> JSON in the research space')
         return transform_research_xml(callback, metadata_path)
     else:
         # JSON metadata.
-        callback.writeString('serverLog', 'Transforming JSON -> JSON in the research space')
+        log.write(callback, 'Transforming JSON -> JSON in the research space')
         transform = get(callback, metadata_path)
 
         if transform is None:
@@ -207,13 +207,13 @@ def copy_acls_from_parent(callback, path, recursive_flag):
         user_name = user.name_from_id(callback, user_id)
 
         if access_name == "own":
-            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             callback.msiSetACL(recursive_flag, "own", user_name, path)
         elif access_name == "read object":
-            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             callback.msiSetACL(recursive_flag, "read", user_name, path)
         elif access_name == "modify object":
-            callback.writeString("serverLog", "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             callback.msiSetACL(recursive_flag, "write", user_name, path)
 
 
@@ -266,7 +266,7 @@ def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
     else:
         # All done.
         coll_id = 0
-        callback.writeString("serverLog", "[METADATA] Finished updating metadata.")
+        log.write(callback, "[METADATA] Finished updating metadata.")
 
     if coll_id != 0:
         # Check the next batch after a delay.

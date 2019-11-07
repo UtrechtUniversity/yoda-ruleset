@@ -13,47 +13,47 @@ import session_vars
 
 from util import *
 
-__all__ = ['rule_uu_vault_preservable_formats_lists',
-           'rule_uu_vault_unpreservable_files',
+__all__ = ['api_uu_vault_preservable_formats_lists',
+           'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
            'rule_uu_vault_write_provenance_log',
            'rule_uu_vault_system_metadata']
 
 
-def getPreservableFormatsLists(callback, rei):
+def preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
 
-    :returns: dict -- Lists of preservable file formats
+    :returns: dict -- Lists of preservable file formats {name => [ext...]}
     """
-    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    zone = user.zone(ctx)
 
     # Retrieve all preservable file formats lists on the system.
 
-    files = [x for x in collection.data_objects(callback, '/{}/yoda/file_formats'.format(zone))
+    files = [x for x in collection.data_objects(ctx, '/{}/yoda/file_formats'.format(zone))
              if x.endswith('.json')]
 
     # Return dict of list filename (without extension) -> JSON contents
-    return {'lists': { os.path.splitext(pathutil.chop(x)[1])[0]:
-                           jsonutil.read(callback, x) for x in files }}
+    return { os.path.splitext(pathutil.chop(x)[1])[0]:
+              jsonutil.read(ctx, x) for x in files }
 
 
-def getUnpreservableFiles(callback, path, list_name):
-    """Retrieve lists of unpreservable file formats in a collection.
+def unpreservable_files(ctx, path, list_name):
+    """Retrieve the set of unpreservable file formats in a collection.
 
     :param path: Path of folder to check.
     :param list_name: Name of preservable file format list
 
-    :returns: dict -- Lists of unpreservable file formats
+    :returns: Set of unpreservable file formats
     """
     zone = pathutil.info(path)[1]
 
     # Retrieve JSON list of preservable file formats.
-    list_data = jsonutil.read(callback, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
+    list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
     preservable_formats = set(list_data['formats'])
 
     # Get basenames of all data objects within this collection.
     data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
-                                collection.data_objects(callback, path, recursive=True))
+                                collection.data_objects(ctx, path, recursive=True))
 
     # If JSON is considered unpreservable, ignore yoda-metadata.json.
     data_names = itertools.ifilter(lambda x: x != unicode(constants.IIJSONMETADATA), data_names)
@@ -62,21 +62,22 @@ def getUnpreservableFiles(callback, path, list_name):
     exts = set(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names))
 
     # Return any ext that is not in the preservable list.
-    return {'formats': list(exts - preservable_formats)}
+    return exts - preservable_formats
 
-
-def rule_uu_vault_preservable_formats_lists(rule_args, callback, rei):
+@api.make()
+def api_uu_vault_preservable_formats_lists(ctx):
     """Write preservable file formats lists to stdout."""
-    callback.writeString("stdout", jsonutil.dump(getPreservableFormatsLists(callback, rei)))
+    return preservable_formats_lists(ctx)
 
 
-def rule_uu_vault_unpreservable_files(rule_args, callback, rei):
+@api.make()
+def api_uu_vault_unpreservable_files(ctx, coll, list_name):
     """Write unpreservable files in folder to stdout.
 
-    :param rule_args[0]: Path of folder to check.
-    :param rule_args[1]: Name of preservable file format list.
+    :param coll:      Path of folder to check.
+    :param list_name: Name of preservable file format list.
     """
-    callback.writeString("stdout", jsonutil.dump(getUnpreservableFiles(callback, rule_args[0], rule_args[1])))
+    return list(unpreservable_files(ctx, coll, list_name))
 
 
 def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):

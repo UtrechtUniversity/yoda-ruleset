@@ -273,7 +273,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
     # take category incuding version from declared namespace in xml
     category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
-    callback.writeString('serverLog', category_version)
+    log.write(callback, category_version)
 
     dictSchema = getActiveJsonSchemaAsDict(callback, rods_zone, category_version)
 
@@ -282,7 +282,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
     #        #print(test + ' -' + test1)
     #        if isinstance(xmlDataDict[test][test1], dict):
     #            for test2 in xmlDataDict[test][test1]:
-    #                callback.writeString('serverLog', test + ' -' + test1 + ' -- ' + test2 )
+    #                log.write(callback, test + ' -' + test1 + ' -- ' + test2 )
 
     newJsonDataString = transformYodaXmlDataToJson(callback, dictSchema, xmlDataDict)
 
@@ -293,7 +293,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
     # Add item to provenance log.
     callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
 
-    callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
+    log.write(callback, "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
 def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, coll_id, batch, pause):

@@ -11,10 +11,11 @@ __license__   = 'GPLv3, see LICENSE'
 # Make sure that importing * from this package gives (qualified) access to all
 # contained modules.
 # i.e. importing code can use these modules like: collection.exists(callback, 'bla')
-__all__ = ['error',
+__all__ = ['log',
+           'error',
            'jsonutil',
            'rule',
-           #'api',
+           'api',
            'msi',
            'pathutil',
            'constants',

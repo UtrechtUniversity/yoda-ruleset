@@ -11,10 +11,10 @@ import genquery
 
 from util import *
 
-__all__ = ['rule_uu_group_data',
-           'rule_uu_group_data_filtered',
-           'rule_uu_group_categories',
-           'rule_uu_group_subcategories',
+__all__ = ['api_uu_group_data',
+           'api_uu_group_data_filtered',
+           'api_uu_group_categories',
+           'api_uu_group_subcategories',
            'rule_uu_group_provision_external_user',
            'rule_uu_group_remove_external_user',
            'rule_uu_group_user_exists']
@@ -150,31 +150,29 @@ def getSubcategories(callback, category):
     return list(categories)
 
 
-def rule_uu_group_data(rule_args, callback, rei):
+@api.make()
+def api_uu_group_data(ctx):
     """Write group data for all users to stdout."""
-    groups = getGroupData(callback)
-
-    # Convert to json string and write to stdout.
-    callback.writeString("stdout", jsonutil.dump(groups))
+    return getGroupData(ctx)
 
 
-def rule_uu_group_data_filtered(rule_args, callback, rei):
+@api.make()
+def api_uu_group_data_filtered(ctx, user_name, zone_name):
     """Write group data for a single user to stdout."""
-    groups = getGroupData(callback)
-    user = rule_args[0] + '#' + rule_args[1]
+    groups    = getGroupData(ctx)
+    full_name = '{}#{}'.format(user_name, zone_name)
 
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
-    groups = list(filter(lambda group: user in group["read"] or user in group["members"], groups))
-    callback.writeString("stdout", jsonutil.dump(groups))
+    return list(filter(lambda group: full_name in group['read']+group['members'], groups))
 
 
 def rule_uu_group_user_exists(rule_args, callback, rei):
     """Check if a user is a member of the given group.
 
-       rule_uu_group_user_exists(group, user, includeRo, membership)
-       If includeRo is true, membership of a group's read-only shadow group will be
-       considered as well. Otherwise, the user must be a normal member or manager of
-       the given group.
+    rule_uu_group_user_exists(group, user, includeRo, membership)
+    If includeRo is true, membership of a group's read-only shadow group will be
+    considered as well. Otherwise, the user must be a normal member or manager of
+    the given group.
     """
     groups = getGroupData(callback)
     user = rule_args[1]
@@ -190,14 +188,16 @@ def rule_uu_group_user_exists(rule_args, callback, rei):
     rule_args[3] = "true" if len(groups) == 1 else "false"
 
 
-def rule_uu_group_categories(rule_args, callback, rei):
+@api.make()
+def api_uu_group_categories(ctx):
     """Write category list to stdout."""
-    callback.writeString("stdout", jsonutil.dump(getCategories(callback)))
+    return getCategories(ctx)
 
 
-def rule_uu_group_subcategories(rule_args, callback, rei):
+@api.make()
+def api_uu_group_subcategories(ctx, category):
     """Write subcategory list to stdout."""
-    callback.writeString("stdout", jsonutil.dump(getSubcategories(callback, rule_args[0])))
+    return getSubcategories(ctx, category)
 
 
 def credentialsStoreGet(key):
@@ -295,4 +295,4 @@ def removeExternalUser(callback, username, userzone):
 
 def rule_uu_group_remove_external_user(rule_args, callback, rei):
     """Remove external user."""
-    callback.writeString("serverLog", removeExternalUser(callback, rule_args[0], rule_args[1]))
+    log.write(callback, removeExternalUser(callback, rule_args[0], rule_args[1]))

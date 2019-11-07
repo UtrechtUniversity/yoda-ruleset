@@ -27,10 +27,10 @@ def rule_uu_provenance_log_action(rule_args, callback, rei):
     statusInfo = ''
 
     def report(x):
-        # callback.writeString("serverLog", x)
+        # log.write(x)
         callback.writeString("stdout", x)
 
     callback.iiAddActionLogRecord(this_actor, folder, action)
 
     report(jsonutil.dump({'status':     status,
-                       'statusInfo': statusInfo}))
+                          'statusInfo': statusInfo}))

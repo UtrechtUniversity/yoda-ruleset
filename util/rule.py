@@ -8,6 +8,20 @@ from error import *
 from enum  import Enum
 import json
 
+class Context(object):
+    """Combined type of a callback and rei struct.
+
+    `Context` can be treated as a rule engine callback for all intents and purposes.
+    However @rule and @api functions that need access to the rei, can do so through this object.
+    """
+    def __init__(self, callback, rei):
+        self.callback = callback
+        self.rei      = rei
+
+    def __getattr__(self, name):
+        """Allow accessing the callback directly."""
+        return getattr(self.callback, name)
+
 class Output(Enum):
     """Specifies rule output handlers."""
     STORE      = 0 # store in output parameters
@@ -17,10 +31,10 @@ class Output(Enum):
 def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE):
     """Creates a rule (with iRODS calling conventions) from a Python function.
 
-    :param inputs: Optional list of rule_args indicies to influence how parameters are passed to the function.
-    :param outputs: Optional list of rule_args indicies to influence how return values are processed.
+    :param inputs:    Optional list of rule_args indicies to influence how parameters are passed to the function.
+    :param outputs:   Optional list of rule_args indicies to influence how return values are processed.
     :param transform: Optional function that will be called to transform each output value.
-    :param handler: Specifies how return values are handled.
+    :param handler:   Specifies how return values are handled.
 
     inputs and outputs can optionally be specified as lists of indices to
     influence how parameters are passed to this function, and how the return
@@ -37,7 +51,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
     Examples:
 
         @rule.make(inputs=[0,1], outputs=[2])
-        def foo(callback, x, y):
+        def foo(ctx, x, y):
             return int(x) + int(y)
 
     is equivalent to:
@@ -49,7 +63,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
     and...
 
         @rule.make(transform=json.dumps, handler=Output.STDOUT)
-        def foo(callback, x, y):
+        def foo(ctx, x, y):
             return {'result': int(x) + int(y)}
 
     is equivalent to:
@@ -69,7 +83,8 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
 
     def deco(f):
         def r(rule_args, callback, rei):
-            result = f(callback, *rule_args if inputs is None else [rule_args[i] for i in inputs])
+            a = rule_args if inputs is None else [rule_args[i] for i in inputs]
+            result = f(Context(callback, rei), *a)
 
             if result is None:
                 return
@@ -88,7 +103,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
                 for x in result:
                     callback.writeString('stdout', encode_val(x)+'\n')
                     # XXX for debugging:
-                    # callback.writeString('serverLog', 'rule output (DEBUG): ' + encode_val(x))
+                    # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
             elif handler is Output.STDOUT_BIN:
                 for x in result:
                     callback.writeString('stdout', encode_val(x))

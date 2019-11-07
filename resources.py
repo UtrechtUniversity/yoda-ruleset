@@ -223,7 +223,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
             try:
                 storageDict[category][tier] = storageDict[category][tier] + storage
             except KeyError:
-                callback.writeString('serverLog', 'Exception')
+                log.write(callback, 'Exception')
                 # if key error, can be either category or category/tier combination is missing
                 try:
                     storageDict[category][tier] = storage

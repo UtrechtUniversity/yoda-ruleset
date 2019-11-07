@@ -17,8 +17,8 @@ from util import *
 import schema as schema_
 
 __all__ = ['rule_uu_meta_validate',
-           'rule_uu_meta_remove',
-           'rule_uu_meta_clone_file',
+           'api_uu_meta_remove',
+           'api_uu_meta_clone_file',
            'rule_uu_meta_modified_post',
            'rule_uu_meta_datamanager_vault_ingest',
            'rule_uu_meta_collection_has_cloneable_metadata']
@@ -187,31 +187,31 @@ rule_uu_meta_collection_has_cloneable_metadata = (
         (collection_has_cloneable_metadata))
 
 
-def rule_uu_meta_remove(rule_args, callback, rei):
+@api.make()
+def api_uu_meta_remove(ctx, coll):
     """Remove a collection's metadata JSON and XML, if they exist"""
 
-    coll = rule_args[0]
+    log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
                                                    constants.IIMETADATAXMLNAME]]:
         try:
-            msi.data_obj_unlink(callback,
-                            'objPath={}++++forceFlag='.format(path),
-                            irods_types.BytesBuf())
+            msi.data_obj_unlink(ctx,
+                                'objPath={}++++forceFlag='.format(path),
+                                irods_types.BytesBuf())
         except msi.Error as e:
             # ignore non-existent files.
             pass
 
 
-def rule_uu_meta_clone_file(rule_args, callback, rei):
+@api.make()
+def api_uu_meta_clone_file(ctx, target_coll):
     """Clones a metadata file from a parent collection to a subcollection.
        The destination collection (where the metadata is copied *to*) is given as an argument.
     """
 
-    target_coll = rule_args[0]
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
-
-    source_data = get_collection_metadata_path(callback, source_coll)
+    source_data = get_collection_metadata_path(ctx, source_coll)
 
     if source_data is None:
         # No metadata to clone? Abort.
@@ -223,64 +223,60 @@ def rule_uu_meta_clone_file(rule_args, callback, rei):
         return
 
     try:
-        msi.data_obj_copy(callback, source_data, target_data, '', irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, source_data, target_data, '', irods_types.BytesBuf())
     except msi.Error as e:
-        callback.writeString("serverLog", 'Metadata copy from <{}> to <{}> failed: {}'
-                             .format(source_data, target_data, e))
+        raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
+
 
 
 # Functions that deal with ingesting metadata into AVUs {{{
 
-def ingest_metadata_research(callback, path):
+def ingest_metadata_research(ctx, path):
     """Validates JSON metadata (without requiredness) and ingests as AVUs in the research space."""
 
     coll, data = pathutil.chop(path)
 
     try:
-        metadata = jsonutil.read(callback, path)
+        metadata = jsonutil.read(ctx, path)
     except error.UUError as e:
-        callback.writeString('serverLog',
-                             'ingest_metadata_research failed: Could not read {} as JSON\n'
-                             .format(path))
+        log.write(ctx, 'ingest_metadata_research failed: Could not read {} as JSON'.format(path))
         return
 
-    if not is_json_metadata_valid(callback, path, metadata, ignore_required=True):
-        callback.writeString('serverLog',
-                             'ingest_metadata_research failed: {} is invalid\n'
-                             .format(path))
+    if not is_json_metadata_valid(ctx, path, metadata, ignore_required=True):
+        log.write(ctx, 'ingest_metadata_research failed: {} is invalid'.format(path))
         return
 
     # Remove any remaining legacy XML-style AVUs.
-    callback.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
+    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
 
     # Note: We do not set a $id in research space: this would trigger jsonavu
     # validation, which does not respect our wish to ignore required
     # properties in the research area.
 
     # Replace all metadata under this namespace.
-    callback.setJsonToObj(coll, '-C',
-                          constants.UUUSERMETADATAROOT,
-                          jsonutil.dump(metadata))
+    ctx.setJsonToObj(coll, '-C',
+                     constants.UUUSERMETADATAROOT,
+                     jsonutil.dump(metadata))
 
 
-def ingest_metadata_staging(callback, path):
+def ingest_metadata_staging(ctx, path):
     """Sets cronjob metadata flag and triggers vault ingest."""
 
     coll = pathutil.chop(path)[0]
 
-    ret = string_2_key_val_pair(callback,
+    ret = string_2_key_val_pair(ctx,
                                 '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
                                                 'cronjob_vault_ingest=',
                                                 CRONJOB_STATE['PENDING']),
                                 irods_types.BytesBuf())
 
-    set_key_value_pairs_to_obj(callback, ret['arguments'][1], path, '-d')
+    set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
     # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
-    callback.iiAdminVaultIngest()
+    ctx.iiAdminVaultIngest()
 
 
-def ingest_metadata_vault(callback, path):
+def ingest_metadata_vault(ctx, path):
     """Ingest (pre-validated) JSON metadata in the vault."""
 
     # The JSON metadata file has just landed in the vault, required validation /
@@ -291,34 +287,31 @@ def ingest_metadata_vault(callback, path):
     coll = pathutil.chop(path)[0]
 
     try:
-        metadata = jsonutil.read(callback, path)
+        metadata = jsonutil.read(ctx, path)
     except error.UUError as e:
-        callback.writeString('serverLog',
-                             'ingest_metadata_vault failed: Could not read {} as JSON\n'
-                             .format(path))
+        log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
 
     # Remove any remaining legacy XML-style AVUs.
-    callback.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
+    ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
 
     # Replace all metadata under this namespace.
-    callback.setJsonToObj(coll, '-C',
-                          constants.UUUSERMETADATAROOT,
-                          jsonutil.dump(metadata))
+    ctx.setJsonToObj(coll, '-C',
+                     constants.UUUSERMETADATAROOT,
+                     jsonutil.dump(metadata))
 
 # }}}
 
 
-def rule_uu_meta_modified_post(rule_args, callback, rei):
-
-    path, user, zone = rule_args[:4]
+@rule.make()
+def rule_uu_meta_modified_post(ctx, path, user, zone):
 
     if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
-        ingest_metadata_staging(callback, path)
+        ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
-        ingest_metadata_vault(callback, path)
+        ingest_metadata_vault(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
-        ingest_metadata_research(callback, path)
+        ingest_metadata_research(ctx, path)
 
 
 def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
@@ -342,8 +335,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     def set_result(msg_short, msg_long):
         rule_args[1:3] = msg_short, msg_long
         if msg_short != 'Success':
-            callback.writeString('serverLog', 'rule_uu_meta_datamanager_vault_ingest failed: {}\n'
-                                              .format(msg_long))
+            log.write(callback, 'rule_uu_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
         return
 
     # Parse path to JSON object.

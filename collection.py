@@ -48,7 +48,7 @@ def collection_group_name(callback, coll):
                 return group_name
 
     # No results found. Not a group folder
-    callback.writeLine("serverLog", "{} does not belong to a research or intake group or is not available to current user.".format(coll))
+    log.write(callback, "{} does not belong to a research or intake group or is not available to current user.".format(coll))
     return ""
 
 rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)

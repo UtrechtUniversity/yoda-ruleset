@@ -45,7 +45,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
     callback.msiDataObjWrite(fileHandle, newJsonDataString, 0)
     callback.msiDataObjClose(fileHandle, 0)
 
-    callback.writeString("serverLog", "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
+    log.write(callback, "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
 
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
