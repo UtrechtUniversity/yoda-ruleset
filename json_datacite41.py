@@ -57,28 +57,28 @@ def rule_uu_json_datacite41_create_data_cite_xml_on_json(rule_args, callback, re
     xmlString = getHeader()
 
     # Build datacite XML as string
-    xmlString = xmlString + getDOI(dict)
+    xmlString += getDOI(dict)
 
-    xmlString = xmlString + getTitles(dict)
-    xmlString = xmlString + getDescriptions(dict)
-    xmlString = xmlString + getPublisher(dict)
-    xmlString = xmlString + getPublicationYear(dict)
-    xmlString = xmlString + getSubjects(dict)
+    xmlString += getTitles(dict)
+    xmlString += getDescriptions(dict)
+    xmlString += getPublisher(dict)
+    xmlString += getPublicationYear(dict)
+    xmlString += getSubjects(dict)
 
-    xmlString = xmlString + getCreators(dict)
-    xmlString = xmlString + getContributors(dict)
-    xmlString = xmlString + getDates(dict)
-    xmlString = xmlString + getVersion(dict)
-    xmlString = xmlString + getRightsList(dict)
-    xmlString = xmlString + getLanguage(dict)
-    xmlString = xmlString + getResourceType(dict)
-    xmlString = xmlString + getRelatedDataPackage(dict)
+    xmlString += getCreators(dict)
+    xmlString += getContributors(dict)
+    xmlString += getDates(dict)
+    xmlString += getVersion(dict)
+    xmlString += getRightsList(dict)
+    xmlString += getLanguage(dict)
+    xmlString += getResourceType(dict)
+    xmlString += getRelatedDataPackage(dict)
 
-    xmlString = xmlString + getGeoLocations(dict)
-    xmlString = xmlString + getFunders(dict)
+    xmlString += getGeoLocations(dict)
+    xmlString += getFunders(dict)
 
     # Close the XML.
-    xmlString = xmlString + "</resource>"
+    xmlString += '</resource>'
 
     rule_args[1] = xmlString
 
@@ -119,7 +119,7 @@ def getDescriptions(dict):
 
 
 def getPublisher(dict):
-    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in XSLT
+    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in former XSLT
 
 
 def getPublicationYear(dict):
@@ -143,13 +143,15 @@ def getSubjects(dict):
 
     try:
         for disc in dict['Discipline']:
-            subjectDisciplines = subjectDisciplines + '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
-    except KeyError:
+            if disc:
+                subjectDisciplines += '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
+    except (KeyError, TypeError):
         pass
 
     try:
         for tag in dict['Tag']:
-            subjectTags = subjectTags + '<subject subjectScheme="Keyword">' + tag + '</subject>'
+            if tag:
+                subjectTags += '<subject subjectScheme="Keyword">' + tag + '</subject>'
     except KeyError:
         pass
 
@@ -168,7 +170,8 @@ def getSubjects(dict):
     for field in subject_fields:
         try:
             for value in dict[field]:
-                subjectFree = subjectFree + '<subject subjectScheme="' + field + '">' + value + '</subject>'
+                if value:    
+                    subjectFree += '<subject subjectScheme="' + field + '">' + value + '</subject>'
         except KeyError:
             continue  # Try next field in the list.
 
@@ -182,7 +185,7 @@ def getFunders(dict):
     fundingRefs = ''
     try:
         for funder in dict['Funding_Reference']:
-            fundingRefs = fundingRefs + '<fundingReference><funderName>' + funder['Funder_Name'] + '</funderName><awardNumber>' + funder['Award_Number'] + '</awardNumber></fundingReference>'
+            fundingRefs += '<fundingReference><funderName>' + funder['Funder_Name'] + '</funderName><awardNumber>' + funder['Award_Number'] + '</awardNumber></fundingReference>'
         return '<fundingReferences>' + fundingRefs + '</fundingReferences>'
 
     except KeyError:
@@ -196,23 +199,28 @@ def getCreators(dict):
     creators = ''
     try:
         for creator in dict['Creator']:
-            creators = creators + '<creator>'
-            creators = creators + '<creatorName>' + creator['Name']['First_Name'] + ' ' + creator['Name']['Last_Name'] + '</creatorName>'
+            creators += '<creator>'
+            creators += '<creatorName>' + creator['Name']['First_Name'] + ' ' + creator['Name']['Last_Name'] + '</creatorName>'
 
             # Possibly multiple person identifiers
-            listIdentifiers = creator['Person_Identifier']
             nameIdentifiers = ''
-            for dictId in listIdentifiers:
-                nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
+            try:
+                for dictId in creator['Person_Identifier']:
+                    nameIdentifiers += '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
+            except KeyError:
+                pass
 
             # Possibly multiple affiliations
             affiliations = ''
-            for aff in creator['Affiliation']:
-                affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
+            try: 
+                for aff in creator['Affiliation']:
+                    affiliations += '<affiliation>' + aff + '</affiliation>'
+            except KeyError:
+                pass
 
-            creators = creators + nameIdentifiers
-            creators = creators + affiliations
-            creators = creators + '</creator>'
+            creators += nameIdentifiers
+            creators += affiliations
+            creators += '</creator>'
 
         if creators:
             return '<creators>' + creators + '</creators>'
@@ -232,26 +240,32 @@ def getContributors(dict):
         for yoda_contributor in ['Contributor', 'Contact']:  # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
             for contributor in dict[yoda_contributor]:
                 if yoda_contributor == 'Contact':
-                    contributors = contributors + '<contributor contributorType="ContactPerson">'
+                    contributors += '<contributor contributorType="ContactPerson">'
                 else:
-                    contributors = contributors + '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
+                    contributors += '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
 
-                contributors = contributors + '<contributorName>' + contributor['Name']['First_Name'] + ' ' + contributor['Name']['Last_Name'] + '</contributorName>'
+                contributors += '<contributorName>' + contributor['Name']['First_Name'] + ' ' + contributor['Name']['Last_Name'] + '</contributorName>'
 
                 # Possibly multiple person identifiers
-                listIdentifiers = contributor['Person_Identifier']
                 nameIdentifiers = ''
-                for dictId in listIdentifiers:
-                    nameIdentifiers = nameIdentifiers + '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
-
+                try:
+                    for dictId in contributor['Person_Identifier']:
+                        nameIdentifiers += '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
+                except KeyError:
+                    pass 
+                
                 # Possibly multiple affiliations
                 affiliations = ''
-                for aff in contributor['Affiliation']:
-                    affiliations = affiliations + '<affiliation>' + aff + '</affiliation>'
+                try:
+                    for aff in contributor['Affiliation']:
+                        affiliations += '<affiliation>' + aff + '</affiliation>'
+                except KeyError:
+                    pass
 
-                contributors = contributors + nameIdentifiers
-                contributors = contributors + affiliations
-                contributors = contributors + '</contributor>'
+
+                contributors += nameIdentifiers
+                contributors += affiliations
+                contributors += '</contributor>'
 
     except KeyError:
         pass
@@ -266,20 +280,27 @@ def getDates(dict):
     try:
         dates = ''
         dateModified = dict['System']['Last_Modified_Date']
-        dates = dates + '<date dateType="Updated">' + dateModified + '</date>'
+        dates += '<date dateType="Updated">' + dateModified + '</date>'
+    except KeyError:
+        pass
 
+    try: 
         dateEmbargoEnd = dict['Embargo_End_Date']
-        dates = dates + '<date dateType="Available">' + dateEmbargoEnd + '</date>'
+        dates += '<date dateType="Available">' + dateEmbargoEnd + '</date>'
+    except KeyError:
+        pass
 
+    try:
         dateCollectStart = dict['Collected']['Start_Date']
         dateCollectEnd = dict['Collected']['End_Date']
 
-        dates = dates + '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
-
-        if dates:
-            return '<dates>' + dates + '</dates>'
+        dates += '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
     except KeyError:
         pass
+    
+    if dates:
+        return '<dates>' + dates + '</dates>'
+
     return ''
 
 
@@ -308,7 +329,7 @@ def getRightsList(dict):
             if accessRestriction.startswith(option):
                 rightsURI = uri
                 break
-        rights = rights + '<rights rightsURI="' + rightsURI + '"></rights>'
+        rights += '<rights rightsURI="' + rightsURI + '"></rights>'
         if rights:
             return '<rightsList>' + rights + '</rightsList>'
 
@@ -352,7 +373,7 @@ def getRelatedDataPackage(dict):
             # title = relPackage['Title']
             persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
             persistentID = relPackage['Persistent_Identifier']['Identifier']
-            relatedIdentifiers = relatedIdentifiers + '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
+            relatedIdentifiers += '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
 
         if relatedIdentifiers:
             return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
@@ -414,7 +435,8 @@ def getGeoLocations(dict):
     try:
         locationList = dict['Covered_Geolocation_Place']
         for location in locationList:
-            geoLocations = geoLocations + '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
+            if location:
+                geoLocations += '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
     except KeyError:
         return ''
 
