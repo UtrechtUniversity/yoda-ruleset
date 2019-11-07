@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_uu_batch_transform_vault_metadata',
            'rule_uu_get_transformation_info',
-           'rule_uu_transform_metadata']
+           'api_uu_transform_metadata']
 
 import os
 import time
@@ -109,40 +109,37 @@ def transform_research_xml(callback, xml_path):
         return 'ERROR', 'XML could not be transformed'
     return 'Success', ''
 
+@api.make()
+def api_uu_transform_metadata(ctx, coll):
 
-@rule.make(inputs=[0], outputs=[1, 2])
-def rule_uu_transform_metadata(callback, coll):
-    """Transform a yoda-metadata.json to the active schema."""
-
-    metadata_path = meta.get_collection_metadata_path(callback, coll)
+    metadata_path = meta.get_collection_metadata_path(ctx, coll)
 
     if metadata_path is None:
-        return 'ERROR', 'No metadata found'
+        return api.Error('no_metadata', 'No metadata file found')
     elif metadata_path.endswith('.xml'):
         # XML metadata.
 
         space, _0, _1, _2 = pathutil.info(metadata_path)
         if space != pathutil.Space.RESEARCH:
             # Vault XML metadata is not transformed through this path, currently.
-            return 'ERROR', 'Internal error'
+            log.write(ctx, 'vault metadata transformation not supported via API, currently')
+            return api.Error('internal', 'Internal error')
 
         # Special case: Transform legacy XML metadata to JSON equivalent.
         # If the metadata is in default-0 format and the active schema is
         # newer, a second transformation will be needed, and the user will be
         # prompted for that the next time they open the form.
-        log.write(callback, 'Transforming XML -> JSON in the research space')
-        return transform_research_xml(callback, metadata_path)
+        log.write(ctx, 'Transforming XML -> JSON in the research space')
+        return transform_research_xml(ctx, metadata_path)
     else:
         # JSON metadata.
-        log.write(callback, 'Transforming JSON -> JSON in the research space')
-        transform = get(callback, metadata_path)
+        log.write(ctx, 'Transforming JSON -> JSON in the research space')
+        transform = get(ctx, metadata_path)
 
         if transform is None:
-            return 'ERROR', 'No transformation found'
+            return api.Error('undefined_transformation', 'No transformation found')
 
-        execute_transformation(callback, metadata_path, transform)
-
-    return 'Success', ''
+        execute_transformation(ctx, metadata_path, transform)
 
 
 def get(callback, metadata_path, metadata=None):
