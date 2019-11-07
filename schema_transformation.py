@@ -111,6 +111,7 @@ def transform_research_xml(callback, xml_path):
 
 @api.make()
 def api_uu_transform_metadata(ctx, coll):
+    """Transform a yoda-metadata file in the given collection to the active schema."""
 
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
 
