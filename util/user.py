@@ -21,6 +21,14 @@ def name(ctx):
 def zone(ctx):
     return session_vars.get_map(ctx.rei)['client_user']['irods_zone']
 
+def user_type(ctx):
+    """Obtain user type."""
+    for row in genquery.row_iterator("USER_TYPE",
+                                     "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user_and_zone(ctx)),
+                                     genquery.AS_LIST, ctx):
+        return row[0]
+    return ''
+
 # TODO: Remove. {{{
 def get_client_name_zone(rei):
     """Obtain client name and zone, as a tuple"""

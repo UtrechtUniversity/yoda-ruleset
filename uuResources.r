@@ -14,35 +14,13 @@
 
 # FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
 
-# \brief uuFrontEndGetResourceStatisticData
-#
-# \param[out] *data		-return actual requested data if applicable
-# \param[out] *status		-return status to frontend
-# \param[out] *statusInfo	-return specific information regarding *status
-# \param[in]  *resourceName
-#
-uuFrontEndGetResourceStatisticData(*resourceName, *data, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin"){
-		*status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-		succeed;
-	}
-        *data = '';
-        rule_uu_resource_tier_data(*resourceName,*data);
-}
-
 # \brief Collect all groups current user is a member of. Read only groups count as well.
 #
 # \param[out] *data             -return actual requested data if applicable
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo) 
+uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 {
 	*status = 'Success';
 	*statusInfo = '';
@@ -52,22 +30,6 @@ uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
 
 	uuList2JSON(*allUserGroups, *data);
 }
-
-# \brief Collect all groups within the categories this user is datamanager of
-#
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-#
-uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        *data = '';
-        rule_uu_resource_groups_dm(uuClientFullName, *data)
-}
-
 
 
 # \brief Return an overview that covers a year of storage statistics on a group
@@ -79,7 +41,7 @@ uuFrontEndGetUserGroupsForStatisticsDM(*data, *status, *statusInfo)
 # \param[out] *status           -return status to frontend
 # \param[out] *statusInfo       -return specific information regarding *status
 #
-uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo) 
+uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo)
 {
 	*status = 'Success';
 	*statusInfo = '';
@@ -102,31 +64,10 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
                 }
 	}
 
-        *data = '' 
+        *data = ''
         rule_uu_resource_month_storage_per_tier_for_group(*groupName, *currentMonth, *data);
 }
 
-
-# \brief List available resources and their tier & storage data
-#
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-#
-uuFrontEndListResourcesAndStatisticData(*data, *status, *statusInfo)  
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-        *data = '';
-        rule_uu_resource_resource_and_tier_data(*data);
-}
 
 # \brief List available resources and their tier & storage data
 #
@@ -158,7 +99,7 @@ uuFrontEndListResourceTiers(*data, *status, *statusInfo)
 # \param[out] *statusInfo       -return specific information regarding *status
 # \param[in]  *resourceName
 # \param[in]  *tierName
-# 
+#
 uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 {
         *status = 'Success';
@@ -196,7 +137,7 @@ uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
 #  - Groupname
 #  - Tier
 #  - 12 columns, one per month, with used storage count in bytes
- 
+
 # \param[out] *result - JSON data with category overview
 # \param[out] *status -
 # \param[out] *statusInfo
@@ -207,53 +148,8 @@ uuGetExportDMCategoryStorageFullYear(*result, *status, *statusInfo)
         *statusInfo = '';
 
         *result = '[]';
-        
-        rule_uu_resource_monthly_category_stats_export_dm(uuClientFullName, *result);  
-}
 
-
-
-
-
-# \brief uuGetMonthlyCategoryStorageOverview()
-#
-# FrontEnd function for retrieving storage overview for all
-# \param[out] *result - JSON data with category overview
-# \param[out] *status -
-# \param[out] *statusInfo
-# 
-uuGetMonthlyCategoryStorageOverview(*result, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-
-        *result = '[]';
-        rule_uu_resource_monthly_stats(*result);
-}
-
-
-# \brief Front end function for retrieving storage overview for a datamanager.
-#        Anyone can use this function - it will not yield anything if not a datamanager.
-#        So no check for permissions is required.
-#
-# \param[out] *result - JSON data with category overview restricted to categories where user is part of a datamanager group
-# \param[out] *status
-# \param[out] *statusInfo
-# 
-uuGetMonthlyCategoryStorageOverviewDatamanager(*result, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        *result = '[]';
-        rule_uu_resource_monthly_stats_dm(uuClientFullName, *result);
+        rule_uu_resource_monthly_category_stats_export_dm(uuClientFullName, *result);
 }
 
 
@@ -301,7 +197,7 @@ uuIsDatamanagerOfGroup(*groupName, *isDatamanager)
         uuGroupGetCategory(*groupName, *category, *subcategory);
         *isDatamanager = false;
 
-        writeLine("serverLog", "Category: " ++ *category ++ "for " ++ *groupName);  
+        writeLine("serverLog", "Category: " ++ *category ++ "for " ++ *groupName);
 
         uuGroupUserExists('datamanager-' ++ *category, uuClientFullName, true, *membership)
         if (*membership) {

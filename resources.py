@@ -11,13 +11,13 @@ import genquery
 
 from util import *
 
-__all__ = ['rule_uu_resource_tier_data',
-           'rule_uu_resource_resource_and_tier_data',
-           'rule_uu_resource_month_storage_per_tier_for_group',
-           'rule_uu_resource_monthly_stats',
-           'rule_uu_resource_monthly_stats_dm',
-           'rule_uu_resource_groups_dm',
-           'rule_uu_resource_monthly_category_stats_export_dm']
+__all__ = ['api_uu_resource_groups_dm',
+           'api_uu_resource_monthly_stats_dm',
+           'api_uu_resource_monthly_category_stats_export_dm',
+           'api_uu_resource_monthly_stats',
+           'api_uu_resource_resource_and_tier_data',
+           'rule_uu_resource_tier_data',
+           'rule_uu_resource_month_storage_per_tier_for_group']
 
 
 def rule_uu_resource_tier_data(rule_args, callback, rei):
@@ -30,25 +30,30 @@ def rule_uu_resource_tier_data(rule_args, callback, rei):
                                "org_storage_tier": tierName})
 
 
-def rule_uu_resource_resource_and_tier_data(rule_args, callback, rei):
-    """Get all resources and their tier data as a json representation."""
+@api.make()
+def api_uu_resource_resource_and_tier_data(ctx):
+    """Get all resources and their tier data."""
+
+    if user.user_type(ctx) != 'rodsadmin':
+        return api.Error('not_allowed', 'Insufficient permissions')
+
     resourceList = list()
 
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME",
         "",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
         resourceId = row[0]
         resourceName = row[1]
-        tierName = getTierOnResourceName(resourceName, callback)
-        resourceList.append({'resourceName': resourceName,
-                             'resourceId': resourceId,
-                             'org_storage_tier': tierName})
+        tierName = getTierOnResourceName(resourceName, ctx)
+        resourceList.append({'name': resourceName,
+                             'id': resourceId,
+                             'tier': tierName})
 
-    rule_args[0] = jsonutil.dump(resourceList)
+    return resourceList
 
 
 def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
@@ -90,32 +95,38 @@ def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
     rule_args[2] = jsonutil.dump(allStorage)
 
 
-def rule_uu_resource_monthly_stats(rule_args, callback, rei):
+@api.make()
+def api_uu_resource_monthly_stats(ctx):
     """Collect storage data for all categories."""
-    categories = getCategories(callback)
 
-    rule_args[0] = getMonthlyCategoryStorageStatistics(categories, callback)
+    if user.user_type(ctx) != 'rodsadmin':
+        return api.Error('not_allowed', 'Insufficient permissions')
+
+    categories = getCategories(ctx)
+
+    return getMonthlyCategoryStorageStatistics(categories, ctx)
 
 
-def rule_uu_resource_monthly_stats_dm(rule_args, callback, rei):
+@api.make()
+def api_uu_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
-    datamanagerUser = rule_args[0]
-    categories = getCategoriesDatamanager(datamanagerUser, callback)
+    datamanager = user.full_name(ctx)
+    categories = getCategoriesDatamanager(datamanager, ctx)
 
-    rule_args[1] = getMonthlyCategoryStorageStatistics(categories, callback)
+    return getMonthlyCategoryStorageStatistics(categories, ctx)
 
 
-def rule_uu_resource_groups_dm(rule_args, callback, rei):
+@api.make()
+def api_uu_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
-    datamanagerUser = rule_args[0]
-    categories = getCategoriesDatamanager(datamanagerUser, callback)
+    datamanager = user.full_name(ctx)
+    categories = getCategoriesDatamanager(datamanager, ctx)
 
-    datamanagerGroups = getGroupsOnCategories(categories, callback)
-
-    rule_args[1] = jsonutil.dump(datamanagerGroups)
+    return getGroupsOnCategories(categories, ctx)
 
 
-def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
+@api.make()
+def api_uu_resource_monthly_category_stats_export_dm(ctx):
     """Collect storage stats for all twelve months based upon categories a user is datamanager of:
        - Category
        - Subcategory
@@ -123,8 +134,8 @@ def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
        - Tier
        - 12 columns, one per month, with used storage count in bytes
     """
-    datamanagerUser = rule_args[0]
-    categories = getCategoriesDatamanager(datamanagerUser, callback)
+    datamanager = user.full_name(ctx)
+    categories = getCategoriesDatamanager(datamanager, ctx)
     allStorage = []
 
     # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
@@ -135,7 +146,7 @@ def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
             "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME like  '" + constants.UUMETADATASTORAGEMONTH + "%'",
-            genquery.AS_LIST, callback
+            genquery.AS_LIST, ctx
         )
 
         for row in iter:
@@ -148,7 +159,7 @@ def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
             try:
                 subcategory = groupToSubcategory[groupName]
             except KeyError:
-                catInfo = groupGetCategoryInfo(groupName, callback)
+                catInfo = groupGetCategoryInfo(groupName, ctx)
                 subcategory = catInfo['subcategory']
                 groupToSubcategory[groupName] = subcategory
 
@@ -164,7 +175,7 @@ def rule_uu_resource_monthly_category_stats_export_dm(rule_args, callback, rei):
                                'month': month,
                                'storage': str(storage)})
 
-    rule_args[1] = jsonutil.dump(allStorage)
+    return allStorage
 
 
 def groupGetCategoryInfo(groupName, callback):
@@ -197,7 +208,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
     """Collect storage stats of last month only.
 
        Storage is summed up for each category/tier combination.
-       JSON presentation: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+       Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
@@ -223,7 +234,6 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
             try:
                 storageDict[category][tier] = storageDict[category][tier] + storage
             except KeyError:
-                log.write(callback, 'Exception')
                 # if key error, can be either category or category/tier combination is missing
                 try:
                     storageDict[category][tier] = storage
@@ -239,7 +249,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
                                'tier': tier,
                                'storage': str(storageDict[category][tier])})
 
-    return jsonutil.dump(allStorage)
+    return allStorage
 
 
 def getGroupsOnCategories(categories, callback):
