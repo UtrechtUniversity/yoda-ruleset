@@ -329,6 +329,8 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
         # Based on content of *combiJsonPath, get landingpage as string
         rule_uu_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
 
+        writeString('serverLog', *receiveLandingPage);
+
         *landingPagePath = "*tempColl/*randomId.html";
         msiDataObjCreate(*landingPagePath, "forceFlag=", *fd);
         msiDataObjWrite(*fd, *receiveLandingPage, *len);

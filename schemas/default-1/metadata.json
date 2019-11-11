@@ -953,10 +953,6 @@
             "additionalProperties": false,
             "title": "Contributor to datapackage",
             "yoda:structure": "compound",
-            "required": [
-              "First_Name",
-              "Last_Name"
-            ],
             "properties": {
               "First_Name": {
                 "$ref": "#/definitions/stringNormal",
@@ -966,6 +962,10 @@
                 "$ref": "#/definitions/stringNormal",
                 "title": "Last Name"
               }
+            },
+            "dependencies": {
+              "First_Name": ["Last_Name"],
+              "Last_Name": ["First_Name"]
             }
           },
           "Contributor_Type": {
@@ -1007,7 +1007,7 @@
           }
         },
         "dependencies": {
-          "Name": ["Contributor_Type", "Affiliation"]
+          "First_Name": ["Contributor_Type", "Affiliation"]
         }
       }
     },

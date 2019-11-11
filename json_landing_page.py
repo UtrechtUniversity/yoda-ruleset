@@ -41,7 +41,7 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     # Gather all metadata.
     title = dictJsonData['Title']
     description = dictJsonData['Description']
-    disciplines = dictJsonData['Discipline']
+    disciplines = dictJsonData['Discipline']  # niet verplicht
     version = dictJsonData['Version']
     language = dictJsonData['Language']
     collected = dictJsonData['Collected']
@@ -56,14 +56,15 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     except KeyError:
         covered_period = []
 
-    tags = dictJsonData['Tag']
-    related_datapackages = dictJsonData['Related_Datapackage']
+    tags = dictJsonData['Tag']  # not mandatory
+    related_datapackages = dictJsonData['Related_Datapackage'] # not mandatory
     creators = dictJsonData['Creator']
     contributors = dictJsonData['Contributor']
     license = dictJsonData['License']
     data_access_restriction = dictJsonData['Data_Access_Restriction']
     funding_reference = dictJsonData['Funding_Reference']
     data_classification = dictJsonData['Data_Classification']
+    
     last_modified_date = dictJsonData['System']['Last_Modified_Date']
     persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
     publication_date = dictJsonData['System']['Publication_Date']
@@ -76,19 +77,29 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
         geolocations = {}
         pass
 
-    # FIXME: ?
-    collection_name = 'collection-name'
+    # Collection name  ILAB specific - part of default schemas
+    try:
+        collection_name = dictJsonData['Collection_Name']
+    except KeyError:
+        collection_name = ''
 
     tm = Template(template)
-    landing_page = tm.render(
-        title=title, description=description,
-        disciplines=disciplines, version=version,
-        language=language, tags=tags, creators=creators,
-        contributors=contributors, publication_date=publication_date,
+    landing_page = tm.render(title=title, 
+        description=description,
+        disciplines=disciplines, 
+        version=version,
+        language=language, 
+        tags=tags, 
+        creators=creators,
+        contributors=contributors, 
+        publication_date=publication_date,
         data_access_restriction=data_access_restriction,
-        license=license, license_uri=license_uri,
-        open_access_link=open_access_link, funding_reference=funding_reference,
-        data_classification=data_classification, collection_name=collection_name,
+        license=license, 
+        license_uri=license_uri,
+        open_access_link=open_access_link, 
+        funding_reference=funding_reference,
+        data_classification=data_classification, 
+        collection_name=collection_name,
         last_modified_date=last_modified_date,
         related_datapackages=related_datapackages,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
