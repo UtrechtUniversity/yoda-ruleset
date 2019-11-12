@@ -19,41 +19,43 @@ __all__ = ['api_uu_meta_form_load',
 
 # TODO: These belong in the group manager part of our rulesets. {{{
 #       (and they should be plain python rules, not just wrappers for iRODS rules)
+#
+# Since a group manager overhaul is pending, this is left as it is for now.
 
-def group_category(callback, group):
+def group_category(ctx, group):
     if group.startswith('vault-'):
-        group = callback.uuGetBaseGroup(group, '')['arguments'][1]
-    return callback.uuGroupGetCategory(group, '', '')['arguments'][1]
+        group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
+    return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
 
 
-def user_member_type(callback, group, user):
+def user_member_type(ctx, group, user):
     """returns: 'none' | 'reader' | 'normal' | 'manager'"""
-    return callback.uuGroupGetMemberType(group, user, '')['arguments'][2]
+    return ctx.uuGroupGetMemberType(group, user, '')['arguments'][2]
 
 
-def user_is_datamanager(callback, category, user):
-    return user_member_type(callback, 'datamanager-{}'.format(category), user) \
+def user_is_datamanager(ctx, category, user):
+    return user_member_type(ctx, 'datamanager-{}'.format(category), user) \
         in ('normal', 'manager')
 
 
 # }}}
 
 
-def get_coll_org_metadata(callback, path):
+def get_coll_org_metadata(ctx, path):
     """Obtains a (k,v) list of all organisation metadata on a given collection"""
 
     return [(k, v) for k, v
             in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
                                      "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
                                      .format(path, constants.UUORGMETADATAPREFIX),
-                                     genquery.AS_LIST, callback)]
+                                     genquery.AS_LIST, ctx)]
 
 
-def get_coll_status(callback, path, org_metadata=None):
+def get_coll_status(ctx, path, org_metadata=None):
     """Get the status of a research folder."""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -62,11 +64,11 @@ def get_coll_status(callback, path, org_metadata=None):
     return constants.RESEARCH_PACKAGE_STATE['FOLDER']
 
 
-def get_coll_vault_status(callback, path, org_metadata=None):
+def get_coll_vault_status(ctx, path, org_metadata=None):
     """Get the status of a vault folder."""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -75,12 +77,12 @@ def get_coll_vault_status(callback, path, org_metadata=None):
     return constants.VAULT_PACKAGE_STATE['UNPUBLISHED']
 
 
-def get_coll_lock(callback, path, org_metadata=None):
+def get_coll_lock(ctx, path, org_metadata=None):
     """Check for existence of locks on a collection.
        path -> ((no|here|outoftree|ancestor|descendant), rootcoll)"""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(callback, path)
+        org_metadata = get_coll_org_metadata(ctx, path)
 
     ret = ('no', None)
 
@@ -96,6 +98,34 @@ def get_coll_lock(callback, path, org_metadata=None):
             ret = ('outoftree', root)
 
     return ret
+
+
+def humanize_validation_error(e):
+    """Transforms a jsonschema validation error such that it is readable by humans.
+
+    :param e: a jsonschema.exceptions.ValidationError
+    :returns: a supposedly human-readable description of the error
+    """
+    # Error format: "Creator 1 -> Person Identifier 1 -> Name Identifier Scheme"
+
+    # Make array indices human-readable.
+    path_out = []
+    for i, x in enumerate(e['path']):
+        if type(x) is int:
+            path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
+        else:
+            path_out += [x.replace('_', ' ')]
+
+    # Get the names of disallowed extra fields.
+    # (the jsonschema library isn't of much help here - we must extract it from the message)
+    if e['validator'] == u'additionalProperties' and len(path_out) == 0:
+        m = re.search('[\'\"]([^\"\']+)[\'\"] was unexpected', e['message'])
+        if m:
+            return 'This extra field is not allowed: ' + m.group(1)
+        else:
+            return 'Extra fields are not allowed'
+    else:
+        return 'This field contains an error: ' + ' -> '.join(path_out)
 
 
 @api.make()
@@ -114,23 +144,19 @@ def api_uu_meta_form_load(ctx, coll):
        impossible, this is indicated by the 'errors' array being present in the
        output.
     """
-    # The information that is returned to the caller, in dict form.
-    output_keys = ['is_member',
-                   'is_datamanager',
+    # The information that is returned to the caller, in dict form,
+    # if everything is in order.
+    output_keys = ['can_edit',
                    'can_clone',
-                   'status',               # (folder status)
-                   'lock_type',
-                   'transformation_text',  # ─── only if transformation needed
-                   'errors',               # ─── only if errors present
-                   'schema',               # ─┐
-                   'uischema',             #  ├─ only if no errors and no transformation
-                   'metadata']             # ─┘
+                   'schema',
+                   'uischema',
+                   'metadata']
 
     # Obtain some context.
     # - Who are we dealing with?
     user_full_name = user.full_name(ctx)
 
-    # - What's kind of collection path is this?
+    # - What kind of collection path is this?
     space, zone, group, subpath = pathutil.info(coll)
     if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
         return {}
@@ -138,8 +164,7 @@ def api_uu_meta_form_load(ctx, coll):
     category = group_category(ctx, group)
 
     # - What rights does the client have?
-    is_member      = user_member_type(ctx, group, user_full_name) in ['normal', 'manager']
-    is_datamanager = user_is_datamanager(ctx, category, user_full_name)
+    is_member = user_member_type(ctx, group, user_full_name) in ['normal', 'manager']
 
     # - What is the active schema for this category?
     schema, uischema = schema_.get_active_schema_uischema(ctx, coll)
@@ -149,14 +174,15 @@ def api_uu_meta_form_load(ctx, coll):
     org_metadata = get_coll_org_metadata(ctx, coll)
 
     if space is pathutil.Space.RESEARCH:
-        status = get_coll_status(ctx, coll, org_metadata)
-        lock_type, lock_root = get_coll_lock(ctx, coll, org_metadata)
+        lock_type, _ = get_coll_lock(ctx, coll, org_metadata)
+        can_edit     = is_member and lock_type not in ['here', 'ancestor']
 
         # Analyze a possibly existing metadata JSON/XML file.
 
         meta_path = meta.get_collection_metadata_path(ctx, coll)
+        metadata  = None
         can_clone = False
-        errors = []
+        errors    = []
 
         if meta_path is None:
             # If no metadata file exists, check if we can allow the user to
@@ -166,100 +192,82 @@ def api_uu_meta_form_load(ctx, coll):
         elif meta_path.endswith('.json'):
             # Metadata file is in the correct format. Try to validate it.
 
-            # Old error format:
-            # - Creator[0].Person_Identifier[0].Name_Identifier_Scheme
-            # New error format:
-            # - Creator 1 -> Person Identifier 1 -> Name Identifier Scheme
-            def transform_error(e):
-                # Make array indices human-readable.
-                path_out = []
-                for i, x in enumerate(e['path']):
-                    if type(x) is int:
-                        path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
-                    else:
-                        path_out += [x.replace('_', ' ')]
-
-                # Get the names of disallowed extra fields.
-                # (the jsonschema library isn't of much help here - we must extract it from the message)
-                if e['validator'] == u'additionalProperties' and len(path_out) == 0:
-                    m = re.search('[\'\"]([^\"\']+)[\'\"] was unexpected', e['message'])
-                    if m:
-                        return 'This extra field is not allowed: ' + m.group(1)
-                    else:
-                        return 'Extra fields are not allowed'
-                else:
-                    return 'This field contains an error: ' + ' -> '.join(path_out)
-
             # Try to load the metadata file.
-            metadata = dict()
             try:
                 metadata = jsonutil.read(ctx, meta_path)
                 current_schema_id = meta.metadata_get_schema_id(metadata)
                 if current_schema_id is None:
-                    errors = ['Please check the structure of this file.']
+                    return api.Error('no_schema_id', 'Please check the structure of this file.',
+                                     'schema id missing')
             except jsonutil.ParseError as e:
-                errors = ['Please check the structure of this file.']
+                return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
             except msi.Error as e:
-                errors = ['The file could not be read.']
+                return api.Error('internal', 'The metadata file could not be read.', e)
 
-            if len(errors) > 0:
-                del metadata, schema, uischema
-            else:
-                # Looks like a valid metadata file.
-                # See if its schema is up to date.
-                transform = schema_transformation.get(ctx, meta_path, metadata=metadata)
+            # Looks like a valid metadata file.
+            # See if its schema is up to date.
+            transform = schema_transformation.get(ctx, meta_path, metadata=metadata)
 
-                if transform is None:
-                    if current_schema_id == schema['$id']:
-                        # Metadata matches active schema, see if it validates.
-                        errors = [transform_error(x) for x
-                                  in meta.get_json_metadata_errors(ctx,
-                                                                   meta_path,
-                                                                   metadata=metadata,
-                                                                   schema=schema,
-                                                                   ignore_required=True)]
-                    else:
-                        # Schema ID does not match and there is no defined transformation.
-                        # We have no way to parse this file.
-                        # XXX: Error message?
-                        errors = ['Please check the structure of this file.']
-                        log.write(ctx, 'Metadata file <{}> has untransformable schema <{}> (need {})'
-                                  .format(meta_path, current_schema_id, schema['$id']))
-
-                    if len(errors):
-                        del metadata, schema, uischema
+            if transform is not None:
+                # Transformation is available & required. Do not load a metadata form.
+                # First, make sure that the current metadata is valid against its schema $id,
+                # if not, we cannot offer a transformation option.
+                try:
+                    current_schema = schema_.get_schema_by_id(ctx, meta_path, current_schema_id)
+                    errors = [humanize_validation_error(x) for x
+                              in meta.get_json_metadata_errors(ctx,
+                                                               meta_path,
+                                                               metadata=metadata,
+                                                               schema=current_schema,
+                                                               ignore_required=True)]
+                    if errors:
+                        return api.Error('validation', 'The metadata file is not compliant with the schema.',
+                                         data={'errors': errors})
+                except Exception as e:
+                    log.write(ctx, 'Unknown error while validating <{}> against schema id <{}>: {}'
+                              .format(meta_path, current_schema_id, str(e)))
+                    return api.Error('internal', 'The metadata file is could not be validated due to an internal error.')
                 else:
-                    # Transformation is available. Do not load a metadata form.
-                    # First, make sure that the current metadata is valid against its schema $id,
-                    # if not, we cannot offer a transformation option.
-                    try:
-                        current_schema = schema_.get_schema_by_id(ctx, meta_path, current_schema_id)
-                        errors = [transform_error(x) for x
-                                  in meta.get_json_metadata_errors(ctx,
-                                                                   meta_path,
-                                                                   metadata=metadata,
-                                                                   schema=current_schema,
-                                                                   ignore_required=True)]
-                    except Exception as e:
-                        log.write(ctx, 'Unknown error while validating <{}> against schema id <{}>: {}'
-                                  .format(meta_path, current_schema_id, str(e)))
-                        errors = ['Please check the structure of this file.']
-                    else:
-                        # No errors! Offer automatic transformation.
-                        transformation_text = schema_transformation.html(transform)
+                    # No errors! Offer automatic transformation.
+                    return api.Error('transformation_needed',
+                                     'The metadata file needs to be transformed to the new schema to continue.',
+                                     data={'transformation_html': schema_transformation.html(transform),
+                                           'can_edit': can_edit})
 
-                    del metadata, schema, uischema
+            if current_schema_id == schema['$id']:
+                # Metadata matches active schema, see if it validates.
+                errors = [humanize_validation_error(x) for x
+                          in meta.get_json_metadata_errors(ctx,
+                                                           meta_path,
+                                                           metadata=metadata,
+                                                           schema=schema,
+                                                           ignore_required=True)]
+                if errors:
+                    return api.Error('validation', 'The metadata file is not compliant with the schema.',
+                                     data={'errors': errors})
+            else:
+                # Schema ID does not match and there is no defined transformation.
+                # We have no way to parse this file.
+                log.write(ctx, 'Metadata file <{}> has untransformable schema <{}> (need {})'
+                               .format(meta_path, current_schema_id, schema['$id']))
+                return api.Error('bad_schema',
+                                 'The metadata file is not compliant with the schema in this category and cannot be transformed. '
+                               + 'Please contact your datamanager.')
 
         elif meta_path.endswith('.xml'):
-            # XXX: Prompt text?
-            # (ask the user to perform conversion)
-            transformation_text = '<p>Your yoda-metadata.xml needs to be converted to the new yoda-metadata.json format to continue.</p>'
+            # Offer automatic transformation.
+            return api.Error('transformation_needed',
+                             'The metadata file format needs to be transformed from XML to JSON to continue.',
+                             data={'transformation_html': '<p>Your yoda-metadata.xml needs to be converted to the new yoda-metadata.json format to continue.</p>',
+                                   'can_edit': can_edit})
 
     elif space is pathutil.Space.VAULT:
         status = get_coll_vault_status(ctx, coll, org_metadata)
         meta_path = get_latest_vault_metadata_path(ctx, coll)
 
         # TODO
+        assert False
+
 
     return {k: v for k, v in locals().items() if k in output_keys}
 
@@ -272,22 +280,19 @@ def api_uu_meta_form_save(ctx, collection, metadata):
 
     log.write(ctx, 'save form for coll <{}>'.format(coll))
 
-    # Assume we are in the research area until proven otherwise.
-    # (overwritten below in the vault case)
-    is_vault = False
     json_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
-    m = re.match('^/([^/]+)/home/(vault-[^/]+)/(.+)$', coll)
-    if m:
+    space, zone, group, subpath = pathutil.info(coll)
+    is_vault = space is pathutil.Space.VAULT
+    if is_vault:
         # It's a vault path - set up a staging area in the datamanager collection.
-        zone, vault_group, vault_subpath = m.groups()
 
-        ret = ctx.iiDatamanagerGroupFromVaultGroup(vault_group, '')
+        ret = ctx.iiDatamanagerGroupFromVaultGroup(group, '')
         datamanager_group = ret['arguments'][1]
         if datamanager_group == '':
             return api.Error('internal', 'could not get datamanager group')
 
-        tmp_coll = '/{}/home/{}/{}/{}'.format(zone, datamanager_group, vault_group, vault_subpath)
+        tmp_coll = '/{}/home/{}/{}/{}'.format(zone, datamanager_group, group, subpath)
 
         try:
             msi.coll_create(ctx, tmp_coll, '1', irods_types.BytesBuf())
@@ -295,7 +300,6 @@ def api_uu_meta_form_save(ctx, collection, metadata):
             return api.Error('coll_create', 'Failed to create staging area at <{}>'.format(tmp_coll))
 
         # Use staging area instead of trying to write to the vault directly.
-        is_vault = True
         json_path = '{}/{}'.format(tmp_coll, constants.IIJSONMETADATA)
 
     # Add metadata schema id to JSON.
@@ -309,6 +313,6 @@ def api_uu_meta_form_save(ctx, collection, metadata):
 
     # No errors: write out JSON.
     try:
-        data_object.write(ctx, json_path, jsonutil.dump(metadata, indent=4))
+        jsonutil.write(ctx, json_path, metadata)
     except error.UUError as e:
         return api.Error('internal', 'Could not save yoda-metadata.json')
