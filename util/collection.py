@@ -88,6 +88,6 @@ def data_objects(callback, path, recursive=False):
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                   "COLL_NAME like '{}/%'".format(path),
-                                   genquery.AS_LIST, callback)
+                                  genquery.AS_LIST, callback)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))

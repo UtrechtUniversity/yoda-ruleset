@@ -30,8 +30,8 @@ def metadata_get_links(metadata):
     return filter(lambda x: type(x) in (dict, OrderedDict)
                             and 'rel'  in x
                             and 'href' in x
-                            and type(x['rel'])  is unicode
-                            and type(x['href']) is unicode,
+                            and type(x['rel'])  is str
+                            and type(x['href']) is str,
                   metadata['links'])
 
 

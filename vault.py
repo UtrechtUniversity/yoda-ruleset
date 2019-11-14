@@ -56,7 +56,7 @@ def unpreservable_files(ctx, path, list_name):
                                 collection.data_objects(ctx, path, recursive=True))
 
     # If JSON is considered unpreservable, ignore yoda-metadata.json.
-    data_names = itertools.ifilter(lambda x: x != unicode(constants.IIJSONMETADATA), data_names)
+    data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
 
     # Data names -> lowercase extensions, without the dot.
     exts = set(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names))

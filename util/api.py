@@ -10,7 +10,6 @@ import rule
 import log
 from error import *
 
-import json
 import jsonutil
 import error
 import inspect
@@ -172,6 +171,6 @@ def make():
 
         # The JSON-in, JSON-out rule.
         return rule.make(inputs=[0], outputs=[],
-                         transform=json.dumps, handler=rule.Output.STDOUT)(base)
+                         transform=jsonutil.dump, handler=rule.Output.STDOUT)(base)
 
     return deco
