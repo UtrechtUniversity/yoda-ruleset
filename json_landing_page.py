@@ -103,6 +103,7 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
         last_modified_date=last_modified_date,
         related_datapackages=related_datapackages,
         persistent_identifier_datapackage=persistent_identifier_datapackage,
-        geolocations=geolocations)
+        geolocations=geolocations,
+        covered_geolocation_place=covered_geolocation_place)
 
     rule_args[3] = landing_page
