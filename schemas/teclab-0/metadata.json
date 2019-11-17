@@ -6,6 +6,10 @@
       "type": "string",
       "maxLength": 255
     },
+    "stringNormalNullable": {
+      "type": ["string", "null"],
+      "maxLength": 255
+    },
     "stringLong": {
       "type": "string",
       "maxLength": 2700
@@ -1384,7 +1388,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/definitions/stringNormal",
+        "$ref": "#/definitions/stringNormalNullable",
         "title": "Additional labs",
         "default": ""
       }
@@ -1559,7 +1563,7 @@
       "type": "array",
       "minItems": 1,
       "items": {
-        "$ref": "#/definitions/stringNormal",
+        "$ref": "#/definitions/stringNormalNullable",
         "title": "Tags",
         "default": ""
       }

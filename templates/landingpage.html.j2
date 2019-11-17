@@ -6,20 +6,34 @@
     <meta name="description" content="Data Publication platform of Utrecht University" />
     <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
+
+    <style>
+        .map {
+            height: 450px;
+            width: 600px;
+        }
+        a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {
+            text-decoration: none ! important;
+        }
+        .indented {
+            padding-left: 10px;
+        }
+    </style>
+
+
     <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet" />
+    </style>
     <link href="/static/css/uu.css?v=1559637767" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
 
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
 
-    <style>
-        .map {
-            height: 180px;
-            width: 240px;
-        }
-    </style>
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+    <script>
+        let bounds = [[1.0, 1.0], [1.0, 1.0]]; // initialization of coordinate pairs with arbitrary values. These will be overwritten 
+    </script>
 </head>
 
 <body>
@@ -81,7 +95,7 @@
                                 <span>{% for discipline in disciplines %}
                                                {{ discipline }}{{ ",&nbsp;" if not loop.last }}
                                            {% endfor %}
-                                    </span>
+                                </span>
                             </div>
                         </div>
 
@@ -113,16 +127,41 @@
                                 <span>{{ data_classification }}</span>
                             </div>
                         </div>
+                    </div>
+
+
+                    {% for loc in covered_geolocation_place %}
+                      {% if loop.first %}
+                        <div class="group">
+                      {% endif %}
+                          
+                         <div class="row">
+                          <div class="col-sm-2">
+                            <label>Geolocation</label>
+                          </div>
+                          <div class="col-sm-10">
+                            <span>{{ loc }}</span>
+                          </div>
+                         </div>
+
+                      {% if loop.last %}
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+
+                    
 
                         {% for loc in geolocations %}
-                        <div class="group">
+                          {% if loop.first %}
+                            <div class="group">
+                          {% endif %} 
                             <div class="row">
                                 <div class="col-sm-2">
                                     <label>Geolocation</label>
                                 </div>
                                 <div class="col-sm-10">
                                     <span>
-                                                <div class='map' id='map{{ loop.index }}'>
+                                        <div class='map' id='map{{ loop.index }}'></div>
                                                 <script>
 
                 lon0 = {{ loc.geoLocationBox.westBoundLongitude }};
@@ -130,9 +169,9 @@
                 lon1 = {{ loc.geoLocationBox.eastBoundLongitude }};
                 lat1  = {{ loc.geoLocationBox.northBoundLatitude }};
 
-                let bounds = [[lat0, lon0], [lat1, lon1]];
+                bounds = [[lat0, lon0], [lat1, lon1]];
 
-                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'padding': [150, 150], 'maxZoom': 3});
+                var mymap = L.map('map{{ loop.index }}').fitBounds(bounds, {'maxZoom': 5});
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
@@ -148,16 +187,26 @@
 
 
                                                 </script>
-                                                </div>
-                                                {{ loc.Description_Spatial }}
-                                            </span>
+                                    </span>
+                                    <span>
+                                       {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} | {{ loc.Description_Spatial }} 
+                                    </span>
                                 </div>
                             </div>
-                        </div>
+                          {% if loop.last %}
+                            </div>
+                          {% endif %}
+                        
                         {% endfor %}
 
-
+                    
+                    
                         {% for funder in funding_reference %}
+                         {% if funder.Funder_Name %}
+                          {% if loop.first %}
+                            <div class="group">
+                          {% endif %}
+
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Funder</label>
@@ -168,14 +217,20 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Award Number</label>
+                                <label class="indented">Award Number</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ funder.Award_Number }}</span>
                             </div>
                         </div>
+
+                          {% if loop.last %}
+                            </div>
+                          {% endif %}
+                         {% endif %}
                         {% endfor %}
-                    </div>
+                    
+
                     <div class="group">
                         <div class="row">
                             <div class="col-sm-2">
@@ -205,8 +260,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="group">
+                    
                         {% for pack in related_datapackages %}
+                         {% if pack.Relation_Type %}
+                          {% if loop.first %}
+                            <div class="group">
+                          {% endif %}
+
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Related datapackage</label>
@@ -218,7 +278,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Type of relation</label>
+                                <label class="indented">Type of relation</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ pack.Relation_Type }}</span>
@@ -227,7 +287,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Persistent Identifier</label>
+                                <label class="indented">Persistent Identifier</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>
@@ -235,8 +295,13 @@
                                 </span>
                             </div>
                         </div>
+
+                          {% if loop.last %}
+                            </div>
+                          {% endif %}
+                         {% endif %}
                         {% endfor %}
-                    </div>
+                    
                     <div class="group">
                         {% for creator in creators %}
                         <div class="row">
@@ -249,7 +314,7 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Person Identifier</label>
+                                <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>
@@ -262,7 +327,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Affiliation</label>
+                                <label class="indented">Affiliation</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>
@@ -286,7 +351,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Person Identifier</label>
+                                <label class="indented">Person Identifier</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>
@@ -299,7 +364,7 @@
 
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Affiliation</label>
+                                <label class="indented">Affiliation</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>
@@ -350,7 +415,7 @@
         <footer>
             <div class="logo">
                 <img src="/static/img/logo_footer.svg"/>
-                </div>
+            </div>
         </footer>
     </div>
 </body>
