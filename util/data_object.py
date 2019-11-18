@@ -78,3 +78,16 @@ def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
     msi.data_obj_close(callback, handle, 0)
 
     return ''.join(buf.buf[:buf.len])
+
+def remove(ctx, path, force=True):
+    """Delete a data object.
+
+    :param path: data object path
+    :param force: applies "forceFlag"
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.data_obj_unlink(ctx,
+                        'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
+                        irods_types.BytesBuf())

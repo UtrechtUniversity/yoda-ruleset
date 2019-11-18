@@ -196,11 +196,10 @@ def api_uu_meta_remove(ctx, coll):
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
                                                    constants.IIMETADATAXMLNAME]]:
         try:
-            msi.data_obj_unlink(ctx,
-                                'objPath={}++++forceFlag='.format(path),
-                                irods_types.BytesBuf())
-        except msi.Error as e:
+            data_object.remove(ctx, path)
+        except error.UUError as e:
             # ignore non-existent files.
+            # (this may also fail for other reasons, but we can't distinguish them)
             pass
 
 
@@ -415,7 +414,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
 
     # Cleanup staging area.
     try:
-        msi.data_obj_unlink(callback, 'objPath={}++++forceFlag='.format(json_path), irods_types.BytesBuf())
+        data_object.remove(callback, json_path)
     except Exception as e:
         set_result('FailedToRemoveDatamanagerXML', 'Failed to remove <{}>'.format(json_path))
         return

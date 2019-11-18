@@ -273,10 +273,8 @@ def api_uu_meta_form_load(ctx, coll):
 
 
 @api.make()
-def api_uu_meta_form_save(ctx, collection, metadata):
+def api_uu_meta_form_save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection."""
-
-    coll = '/{}/home{}'.format(user.zone(ctx), collection)
 
     log.write(ctx, 'save form for coll <{}>'.format(coll))
 
