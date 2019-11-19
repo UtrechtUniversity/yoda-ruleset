@@ -16,18 +16,17 @@ __all__ = ['api_uu_resource_groups_dm',
            'api_uu_resource_monthly_category_stats_export_dm',
            'api_uu_resource_monthly_stats',
            'api_uu_resource_resource_and_tier_data',
-           'rule_uu_resource_tier_data',
+           'api_uu_resource_tier',
            'rule_uu_resource_month_storage_per_tier_for_group']
 
+@api.make()
+def api_uu_resource_tier(ctx, res_name):
+    """Get the tier belonging to the given resource."""
 
-def rule_uu_resource_tier_data(rule_args, callback, rei):
-    """Get JSON represenation of resource and its tier info."""
-    resourceName = rule_args[0]
+    if user.user_type(ctx) != 'rodsadmin':
+        return api.Error('not_allowed', 'Insufficient permissions')
 
-    tierName = getTierOnResourceName(resourceName, callback)
-
-    rule_args[1] = jsonutil.dump({"resourceName": resourceName,
-                               "org_storage_tier": tierName})
+    return get_tier_by_resource_name(ctx, res_name)
 
 
 @api.make()
@@ -48,7 +47,7 @@ def api_uu_resource_resource_and_tier_data(ctx):
     for row in iter:
         resourceId = row[0]
         resourceName = row[1]
-        tierName = getTierOnResourceName(resourceName, ctx)
+        tierName = get_tier_by_resource_name(ctx, resourceName)
         resourceList.append({'name': resourceName,
                              'id': resourceId,
                              'tier': tierName})
@@ -321,21 +320,22 @@ def getCategories(callback):
     return categories
 
 
-def getTierOnResourceName(resourceName, callback):
+def get_tier_by_resource_name(ctx, res_name):
     """Get Tiername, if present, for given resource.
 
        If not present, fall back to default tier name.
     """
-    tierName = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
+    tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
     # find (possibly present) tier for this resource
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
-        "RESC_NAME = '" + resourceName + "' AND META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
-        genquery.AS_LIST, callback
+        "RESC_NAME = '{}' AND META_RESC_ATTR_NAME = '{}'"
+            .format(res_name, constants.UURESOURCETIERATTRNAME),
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
-        tierName = row[3]
+        tier = row[3]
 
-    return tierName
+    return tier
