@@ -381,6 +381,8 @@ def rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_jso
     :param pause: Pause between checks (float)
     :param delay: Delay between batches in seconds
     """
+    import session_vars
+
     coll_id = int(rule_args[0])
     batch = int(rule_args[1])
     pause = float(rule_args[2])
