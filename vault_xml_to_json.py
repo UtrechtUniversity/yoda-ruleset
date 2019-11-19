@@ -309,6 +309,8 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     :returns: integer -- Collection id to continue with in next batch.
                          If collection_id=0, no more collections are found containing yoda-metadata.xml
     """
+    import genquery
+    import time
 
     # Find all research and vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
