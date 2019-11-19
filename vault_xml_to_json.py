@@ -357,10 +357,11 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 continue
 
             if not jsonFound:
-                data_name = getLatestVaultMetadataXml(callback, vault_collection)
+                data_name = iiGetLatestVaultMetadataXml(callback, vault_collection)
             if data_name != "":
                 transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
-        except Exception:
+        except Exception as e:
+            log.write(callback, str(e))
             pass
 
         # Sleep briefly between checks.
