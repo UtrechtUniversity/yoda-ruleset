@@ -33,8 +33,8 @@ def preservable_formats_lists(ctx):
              if x.endswith('.json')]
 
     # Return dict of list filename (without extension) -> JSON contents
-    return { os.path.splitext(pathutil.chop(x)[1])[0]:
-              jsonutil.read(ctx, x) for x in files }
+    return {os.path.splitext(pathutil.chop(x)[1])[0]:
+            jsonutil.read(ctx, x) for x in files}
 
 
 def unpreservable_files(ctx, path, list_name):
@@ -63,6 +63,7 @@ def unpreservable_files(ctx, path, list_name):
 
     # Return any ext that is not in the preservable list.
     return exts - preservable_formats
+
 
 @api.make()
 def api_uu_vault_preservable_formats_lists(ctx):
@@ -234,6 +235,6 @@ def vault_collection_metadata(callback, coll):
 
     return system_metadata
 
-rule_uu_vault_system_metadata = rule.make(inputs=[0], outputs=[1],
-                                       transform=jsonutil.dump, handler=rule.Output.STDOUT) \
-                                      (vault_collection_metadata)
+
+rule_uu_vault_system_metadata = rule.make(inputs=[0], outputs=[1], transform=jsonutil.dump,
+                                          handler=rule.Output.STDOUT)(vault_collection_metadata)

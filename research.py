@@ -33,6 +33,6 @@ def research_collection_metadata(callback, coll):
 
     return {"Package size": result}
 
-rule_uu_research_system_metadata = rule.make(inputs=[0], outputs=[1],
-                                          transform=jsonutil.dump, handler=rule.Output.STDOUT) \
-                                         (research_collection_metadata)
+
+rule_uu_research_system_metadata = rule.make(inputs=[0], outputs=[1], transform=jsonutil.dump,
+                                             handler=rule.Output.STDOUT)(research_collection_metadata)

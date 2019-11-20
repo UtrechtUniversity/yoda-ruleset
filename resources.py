@@ -19,6 +19,7 @@ __all__ = ['api_uu_resource_groups_dm',
            'api_uu_resource_tier',
            'rule_uu_resource_month_storage_per_tier_for_group']
 
+
 @api.make()
 def api_uu_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource."""
@@ -331,7 +332,7 @@ def get_tier_by_resource_name(ctx, res_name):
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
         "RESC_NAME = '{}' AND META_RESC_ATTR_NAME = '{}'"
-            .format(res_name, constants.UURESOURCETIERATTRNAME),
+        .format(res_name, constants.UURESOURCETIERATTRNAME),
         genquery.AS_LIST, ctx
     )
 

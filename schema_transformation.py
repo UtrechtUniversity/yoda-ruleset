@@ -80,7 +80,7 @@ def transform_research_xml(callback, xml_path):
             schem = schema.get_schema_by_id(callback, schema_id, xml_path)
         except Exception as e:
             log.write(callback, 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
-                                              .format(xml_path, schema_id, str(e)))
+                      .format(xml_path, schema_id, str(e)))
             # The result is unusable, as there will be no possible JSON → JSON
             # transformation that will make this a valid metadata file.
             raise e  # give up.
@@ -101,13 +101,14 @@ def transform_research_xml(callback, xml_path):
             # which should remain exactly the same in the new JSON situation.
             # print(errors)
             log.write(callback, 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
-                                              .format(xml_path, schema_id))
+                      .format(xml_path, schema_id))
 
         jsonutil.write(callback, json_path, metadata)
     except Exception as e:
         print(e)
         return 'ERROR', 'XML could not be transformed'
     return 'Success', ''
+
 
 @api.make()
 def api_uu_transform_metadata(ctx, coll):

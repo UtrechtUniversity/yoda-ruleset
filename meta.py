@@ -181,10 +181,11 @@ def collection_has_cloneable_metadata(callback, coll):
 
     return False
 
+
 rule_uu_meta_collection_has_cloneable_metadata = (
-        rule.make(inputs=[0], outputs=[1],
-                  transform=lambda x: x if type(x) is str else '')
-        (collection_has_cloneable_metadata))
+    rule.make(inputs=[0], outputs=[1],
+              transform=lambda x: x if type(x) is str else '')
+             (collection_has_cloneable_metadata))
 
 
 @api.make()
@@ -225,7 +226,6 @@ def api_uu_meta_clone_file(ctx, target_coll):
         msi.data_obj_copy(ctx, source_data, target_data, '', irods_types.BytesBuf())
     except msi.Error as e:
         raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
-
 
 
 # Functions that deal with ingesting metadata into AVUs {{{
