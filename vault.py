@@ -59,7 +59,8 @@ def unpreservable_files(ctx, path, list_name):
     data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
 
     # Data names -> lowercase extensions, without the dot.
-    exts = set(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names))
+    exts  = set(list(itertools.imap(lambda x: os.path.splitext(x)[1][1:].lower(), data_names)))
+    exts -= set([''])
 
     # Return any ext that is not in the preservable list.
     return exts - preservable_formats

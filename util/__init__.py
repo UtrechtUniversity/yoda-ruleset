@@ -21,4 +21,5 @@ __all__ = ['log',
            'constants',
            'collection',
            'data_object',
-           'user']
+           'user',
+           'query']
