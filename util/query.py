@@ -11,16 +11,16 @@ import genquery
 import irods_types
 
 class Option(object):
-    """QueryInp option flags - used internally.
+    """iRODS QueryInp option flags - used internally.
 
     AUTO_CLOSE, RETURN_TOTAL_ROW_COUNT, and UPPER_CASE_WHERE should not be set
     by calling code, as Query already provides convenient functionality for this.
 
     See irods: lib/core/include/rodsGenQuery.h
     """
-    RETURN_TOTAL_ROW_COUNT = 0x20
-    NO_DISTINCT            = 0x40
-    QUOTA_QUERY            = 0x80
+    RETURN_TOTAL_ROW_COUNT = 0x020
+    NO_DISTINCT            = 0x040
+    QUOTA_QUERY            = 0x080
     AUTO_CLOSE             = 0x100
     UPPER_CASE_WHERE       = 0x200
 
@@ -73,7 +73,7 @@ class Query(object):
             print('name: {}'.format(x['COLL_NAME']))
 
         # ... or make it into a list
-        colls = list(Query(callback, 'COLL_NAME'))
+        colls = [x[0] for x in Query(callback, 'COLL_NAME', output=AS_LIST)]
 
         # Print all data objects, ordered descending by data name, owned by a
         # username containing 'r' or 'R', in a collection under
@@ -118,7 +118,7 @@ class Query(object):
         self.gqo = None  # (genquery out)
         self.cti = None  # (continue index)
 
-        # Filled when calling len() on the Query.
+        # Filled when calling total_rows() on the Query.
         self._total = None
 
     def exec_if_not_yet_execed(self):
@@ -131,7 +131,7 @@ class Query(object):
             else:
                 # If offset is 0, we can (relatively) cheaply let iRODS count rows.
                 # - with non-zero offset, the query must be executed twice if the
-                #   row count is needed (see __len__()).
+                #   row count is needed (see total_rows()).
                 self.options |= Option.RETURN_TOTAL_ROW_COUNT
 
             if self.limit is not None and self.limit < genquery.MAX_SQL_ROWS - 1:
@@ -169,6 +169,7 @@ class Query(object):
         return self._total
 
     def __len__(self):
+        """Get the amount of results in this query, within provided limit/offset"""
         x = max(0, self.total_rows() - self.offset)
         return x if self.limit is None else min(x, self.limit)
 
@@ -177,9 +178,7 @@ class Query(object):
 
         row_i = 0
 
-        # print('iter count - %d' % self.gqo.rowCnt)
         while True:
-            # print(self.columns, row_i, self.gqo.rowCnt, self.limit)
             try:
                 for r in range(self.gqo.rowCnt):
                     if self.limit is not None and row_i >= self.limit:
@@ -200,7 +199,6 @@ class Query(object):
                 return
 
             if self.cti <= 0 or self.limit is not None and row_i >= self.limit:
-                # print('end? cti%d'%self.cti)
                 self._close()
                 return
 
@@ -211,7 +209,6 @@ class Query(object):
         ret      = self.ctx.msiGetMoreRows(self.gqi, self.gqo, 0)
         self.gqo = ret['arguments'][1]
         self.cti = ret['arguments'][2]
-        # print('fetch count - %d' % self.gqo.rowCnt)
 
     def _close(self):
         """Close the query (prevents filling the statement table)."""

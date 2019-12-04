@@ -13,7 +13,7 @@ import irods_types
 from util import *
 from util.query import Query
 
-__all__ =  ['api_uu_browse_folder']
+__all__ = ['api_uu_browse_folder']
 
 @api.make()
 def api_uu_browse_folder(ctx,
