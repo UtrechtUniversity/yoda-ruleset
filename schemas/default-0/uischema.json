@@ -2,10 +2,54 @@
   "links": {
     "ui:disabled": true
   },
+  "Title": {
+    "ui:help": "The title of your data package"
+  },
   "Description": {
+    "ui:help": "A description of your data package",
     "ui:widget": "textarea"
   },
+  "Discipline": {
+    "ui:help": "Categorize your research to a (sub)discipline"
+  },
+  "Version": {
+    "ui:help": "A version number for the data package"
+  },
+  "Language": {
+    "ui:help": "The language of the data package"
+  },
+  "Collected": {
+    "ui:help": "Indicate when collecting the data for this data package started and ended"
+  },
+  "Covered_Geolocation_Place": {
+    "ui:help": "Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)"
+  },
+  "Covered_Period": {
+    "ui:help": "An indication of the period covered by your data package"
+  },
+  "Tag": {
+    "ui:help": "Free text field for adding (searchable) key words to your data package"
+  },
   "Retention_Period": {
+    "ui:help": "The minimal number of years the data will be kept in the archive",
     "ui:widget": "updown"
+  },
+  "Retention_Information": {
+    "ui:help": "Provide the reason when you deviate from the minimum of 10 years retention of the data package"
+  },
+  "Embargo_End_Date": {
+    "ui:help": "If there is an embargo on the data package; when will it end?"
+  },
+  "Data_Classification": {
+    "ui:help": "How is your data classified with regards to information security policy"
+  },
+  "Collection_Name": {
+    "ui:help": "Collection this data package is a part of. E.g. Project Name"
+  },
+  "License": {
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+  },
+  "Data_Access_Restriction": {
+    "ui:help": "Once archived, how is your data package accessible to third parties?"
   }
 }

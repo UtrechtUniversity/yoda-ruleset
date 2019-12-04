@@ -163,7 +163,7 @@ def api_uu_group_data_filtered(ctx, user_name, zone_name):
     full_name = '{}#{}'.format(user_name, zone_name)
 
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
-    return list(filter(lambda group: full_name in group['read']+group['members'], groups))
+    return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
 
 def rule_uu_group_user_exists(rule_args, callback, rei):

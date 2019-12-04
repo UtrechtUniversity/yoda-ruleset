@@ -170,7 +170,7 @@ def getSubjects(dict):
     for field in subject_fields:
         try:
             for value in dict[field]:
-                if value:    
+                if value:
                     subjectFree += '<subject subjectScheme="' + field + '">' + value + '</subject>'
         except KeyError:
             continue  # Try next field in the list.
@@ -212,7 +212,7 @@ def getCreators(dict):
 
             # Possibly multiple affiliations
             affiliations = ''
-            try: 
+            try:
                 for aff in creator['Affiliation']:
                     affiliations += '<affiliation>' + aff + '</affiliation>'
             except KeyError:
@@ -252,8 +252,8 @@ def getContributors(dict):
                     for dictId in contributor['Person_Identifier']:
                         nameIdentifiers += '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
                 except KeyError:
-                    pass 
-                
+                    pass
+
                 # Possibly multiple affiliations
                 affiliations = ''
                 try:
@@ -261,7 +261,6 @@ def getContributors(dict):
                         affiliations += '<affiliation>' + aff + '</affiliation>'
                 except KeyError:
                     pass
-
 
                 contributors += nameIdentifiers
                 contributors += affiliations
@@ -284,7 +283,7 @@ def getDates(dict):
     except KeyError:
         pass
 
-    try: 
+    try:
         dateEmbargoEnd = dict['Embargo_End_Date']
         dates += '<date dateType="Available">' + dateEmbargoEnd + '</date>'
     except KeyError:
@@ -297,7 +296,7 @@ def getDates(dict):
         dates += '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
     except KeyError:
         pass
-    
+
     if dates:
         return '<dates>' + dates + '</dates>'
 

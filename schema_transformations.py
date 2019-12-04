@@ -10,6 +10,7 @@ __all__ = []
 import re
 import meta
 
+
 # Transformation functions {{{
 
 # Naming scheme: _FROMSCHEMA_TOSCHEMA
@@ -63,6 +64,7 @@ def _default0_default1(m):
     return m
 
 # }}}
+
 
 def get(src_id, dst_id):
     """Get a transformation function that maps metadata from the given src schema id to the dst schema id.

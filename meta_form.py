@@ -252,7 +252,7 @@ def api_uu_meta_form_load(ctx, coll):
                                .format(meta_path, current_schema_id, schema['$id']))
                 return api.Error('bad_schema',
                                  'The metadata file is not compliant with the schema in this category and cannot be transformed. '
-                               + 'Please contact your datamanager.')
+                                 + 'Please contact your datamanager.')
 
         elif meta_path.endswith('.xml'):
             # Offer automatic transformation.
@@ -267,7 +267,6 @@ def api_uu_meta_form_load(ctx, coll):
 
         # TODO
         assert False
-
 
     return {k: v for k, v in locals().items() if k in output_keys}
 
