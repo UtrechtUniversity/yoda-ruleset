@@ -10,7 +10,9 @@
     "ui:widget": "textarea"
   },
   "Discipline": {
-    "ui:help": "Categorize your research to a (sub)discipline"
+    "items": {
+      "ui:help": "Categorize your research to a (sub)discipline"
+    }
   },
   "Version": {
     "ui:help": "A version number for the data package"
@@ -19,16 +21,52 @@
     "ui:help": "The language of the data package"
   },
   "Collected": {
-    "ui:help": "Indicate when collecting the data for this data package started and ended"
+    "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "Start_Date": {
+      "ui:help": "Indicate when you've started collecting the data for this data package"
+    },
+    "End_Date": {
+      "ui:help": "Indicate when you've finished collecting the data for this data package"
+    }
   },
   "Covered_Geolocation_Place": {
-    "ui:help": "Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)"
+    "items": {
+      "ui:help": "Indication of the geographical entities, like countries, regions and cities, covered with this data package (English naming convention preferred)"
+    }
   },
   "Covered_Period": {
-    "ui:help": "An indication of the period covered by your data package"
+    "ui:help": "An indication of the period covered by your data package",
+    "Start_Date": {
+      "ui:help": "An indication of the start date of the period covered by your data package"
+    },
+    "End_Date": {
+      "ui:help": "An indication of the end date of the period covered by your data package"
+    }
   },
   "Tag": {
-    "ui:help": "Free text field for adding (searchable) key words to your data package"
+    "items": {
+      "ui:help": "Free text field for adding (searchable) key words to your data package"
+    }
+  },
+  "Related_Datapackage": {
+    "items": {
+      "ui:help": "Free text field for adding (searchable) key words to your data package",
+      "Relation_Type": {
+        "ui:help": "Relation to this data package"
+      },
+      "Title": {
+        "ui:help": "Title of the related data package"
+      },
+      "Persistent_Identifier": {
+        "ui:help": "Persistent identifier of the related data package",
+        "Identifier_Scheme": {
+          "ui:help": "Type of Persistent identifier of the related data package"
+        },
+        "Identifier": {
+          "ui:help": "The identifier as it can be resolved on the appropriate service"
+        }
+      }
+    }
   },
   "Retention_Period": {
     "ui:help": "The minimal number of years the data will be kept in the archive",
@@ -45,6 +83,65 @@
   },
   "Collection_Name": {
     "ui:help": "Collection this data package is a part of. E.g. Project Name"
+  },
+  "Funding_Reference": {
+    "items": {
+      "Funder_Name": {
+        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"
+      },
+      "Award_Number": {
+        "ui:help": "The award or grant number issued by the funding organisation"
+      }
+    }
+  },
+  "Creator": {
+    "items": {
+      "Name": {
+        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name"
+      },
+      "Affiliation": {
+        "items": {
+          "ui:help": "The organizational or institutional affiliation of the creator"
+        }
+      },
+      "Person_Identifier": {
+        "ui:help": "Person identifier of creator of the data package",
+        "items": {
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "Contributor": {
+    "items": {
+      "Name": {
+        "ui:help": "The name(s) of the persons who have contributed to this data package"
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite"
+      },
+      "Affiliation": {
+        "items": {
+          "ui:help": "The organizational or institutional affiliation of the creator"
+        }
+      },
+      "Person_Identifier": {
+        "ui:help": "Person identifier of contributor to this data package",
+        "items": {
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
   },
   "License": {
     "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
