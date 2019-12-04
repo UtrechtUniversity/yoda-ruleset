@@ -8,8 +8,52 @@ import genquery
 
 from util import *
 
-__all__ = ['rule_uu_collection_group_name']
+__all__ = ['rule_uu_collection_group_name',
+           'api_uu_collection_lock',
+           'api_uu_collection_unlock',
+           'api_uu_collection_submit',
+           'api_uu_collection_unsubmit',
+           'api_uu_collection_accept',
+           'api_uu_collection_reject']
 
+def lock(ctx, coll):
+    res = ctx.iiFolderLock(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+def unlock(ctx, coll):
+    res = ctx.iiFolderUnlock(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+def submit(ctx, coll):
+    res = ctx.iiFolderSubmit(coll, '', '', '')
+    if res['arguments'][2] != 'Success':
+        return api.Error(*res['arguments'][2:])
+    return res['arguments'][1]
+
+def unsubmit(ctx, coll):
+    res = ctx.iiFolderUnsubmit(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+def accept(ctx, coll):
+    res = ctx.iiFolderAccept(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+def reject(ctx, coll):
+    res = ctx.iiFolderReject(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+
+api_uu_collection_lock     = api.make()(lock)
+api_uu_collection_unlock   = api.make()(unlock)
+api_uu_collection_submit   = api.make()(submit)
+api_uu_collection_unsubmit = api.make()(unsubmit)
+api_uu_collection_accept   = api.make()(accept)
+api_uu_collection_reject   = api.make()(reject)
 
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
