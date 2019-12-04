@@ -103,7 +103,13 @@
   "Creator": {
     "items": {
       "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name"
+        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name",
+        "First_Name": {
+          "ui:help": "The first name of the person(s) who created (a version of) the data package"
+        },
+        "Last_Name": {
+          "ui:help": "The last name of the person(s) who created (a version of) the data package"
+        }
       },
       "Affiliation": {
         "items": {
@@ -111,8 +117,8 @@
         }
       },
       "Person_Identifier": {
-        "ui:help": "Person identifier of creator of the data package",
         "items": {
+          "ui:help": "Person identifier of creator of the data package",
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
@@ -126,7 +132,13 @@
   "Contributor": {
     "items": {
       "Name": {
-        "ui:help": "The name(s) of the persons who have contributed to this data package"
+        "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "First_Name": {
+          "ui:help": "The first name of the person(s) who has contributed to (a version of) the data package"
+        },
+        "Last_Name": {
+          "ui:help": "The last name of the person(s) who has contributed to (a version of) the data package"
+        }
       },
       "Contributor_Type": {
         "ui:help": "The type of contributor. List of values is derived from DataCite"
@@ -137,8 +149,8 @@
         }
       },
       "Person_Identifier": {
-        "ui:help": "Person identifier of contributor to this data package",
         "items": {
+          "ui:help": "Person identifier of contributor to this data package",
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
