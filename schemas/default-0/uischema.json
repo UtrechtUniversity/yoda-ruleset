@@ -50,7 +50,6 @@
   },
   "Related_Datapackage": {
     "items": {
-      "ui:help": "Free text field for adding (searchable) key words to your data package",
       "Relation_Type": {
         "ui:help": "Relation to this data package"
       },
