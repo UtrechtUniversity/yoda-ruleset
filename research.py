@@ -8,6 +8,7 @@ from util import *
 
 __all__ = ['api_uu_research_system_metadata']
 
+
 @api.make()
 def api_uu_research_system_metadata(ctx, coll):
     """Returns collection statistics as JSON."""

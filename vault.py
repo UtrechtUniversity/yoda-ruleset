@@ -102,27 +102,27 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     :param rule_args[0]: Path of a package in the vault.
     """
     # Retrieve provenance.
-    provenenanceString = ""
-    provenanceLog = provenance.get_provenance_log(callback, rule_args[0])
+    provenenance_txt = ""
+    provenance_log = provenance.get_provenance_log(callback, rule_args[0])
 
-    for item in provenanceLog:
-        dateTime = time.strftime('%Y/%m/%d %H:%M:%S',
+    for item in provenance_log:
+        date_time = time.strftime('%Y/%m/%d %H:%M:%S',
                                  time.localtime(int(item[0])))
         action = item[1].capitalize()
         actor = item[2]
-        provenenanceString += dateTime + " - " + action + " - " + actor + "\n"
+        provenenance_txt += date_time + " - " + action + " - " + actor + "\n"
 
     # Write provenance log.
     ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-    provenanceFile = rule_args[0] + "/Provenance.txt"
+    provenance_file = rule_args[0] + "/Provenance.txt"
     ret_val = callback.msiDataObjCreate(provenanceFile, ofFlags, 0)
 
-    fileHandle = ret_val['arguments'][2]
-    callback.msiDataObjWrite(fileHandle, provenenanceString, 0)
-    callback.msiDataObjClose(fileHandle, 0)
+    file_handle = ret_val['arguments'][2]
+    callback.msiDataObjWrite(file_handle, provenenance_txt, 0)
+    callback.msiDataObjClose(file_handle, 0)
 
     # Checksum provenance file.
-    callback.msiDataObjChksum(provenanceFile, "verifyChksum=", 0)
+    callback.msiDataObjChksum(provenance_file, "verifyChksum=", 0)
 
 
 def vault_collection_metadata(callback, coll):

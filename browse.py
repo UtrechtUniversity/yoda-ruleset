@@ -15,6 +15,7 @@ from util.query import Query
 
 __all__ = ['api_uu_browse_folder']
 
+
 @api.make()
 def api_uu_browse_folder(ctx,
                          coll='/',
@@ -62,7 +63,7 @@ def api_uu_browse_folder(ctx,
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
     qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit)
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
-                  offset=max(0, offset-qcoll.total_rows()), limit=limit - len(qcoll))
+                  offset=max(0, offset - qcoll.total_rows()), limit=limit - len(qcoll))
 
     colls = map(transform, list(qcoll))
     datas = map(transform, list(qdata))
