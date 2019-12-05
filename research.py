@@ -6,10 +6,10 @@ __license__   = 'GPLv3, see LICENSE'
 
 from util import *
 
-__all__ = ['rule_uu_research_system_metadata']
+__all__ = ['api_uu_research_system_metadata']
 
-
-def research_collection_metadata(callback, coll):
+@api.make()
+def api_uu_research_system_metadata(ctx, coll):
     """Returns collection statistics as JSON."""
 
     import math
@@ -24,15 +24,11 @@ def research_collection_metadata(callback, coll):
         s = round(size_bytes / p, 2)
         return '{} {}'.format(s, size_name[i])
 
-    data_count = collection.data_count(callback, coll)
-    collection_count = collection.collection_count(callback, coll)
-    size = collection.size(callback, coll)
+    data_count = collection.data_count(ctx, coll)
+    collection_count = collection.collection_count(ctx, coll)
+    size = collection.size(ctx, coll)
     size_readable = convert_size(size)
 
     result = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     return {"Package size": result}
-
-
-rule_uu_research_system_metadata = rule.make(inputs=[0], outputs=[1], transform=jsonutil.dump,
-                                             handler=rule.Output.STDOUT)(research_collection_metadata)
