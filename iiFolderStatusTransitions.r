@@ -5,25 +5,6 @@
 # \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# ---------------- Start of Yoda FrontOffice API ----------------
-
-# \brief Wrapper for iiActionLog to make it accessible conform standard to the front office.
-#
-# \param[in]  folder     folder name to be extended with required full qualification name
-# \param[out] result
-# \param[out] status
-# \param[out] statusInfo
-#
-iiFrontEndActionLog(*folder, *result, *status, *statusInfo) {
-	*status = 'Success';
-	*statusInfo = *folder;
-
-	iiActionLog(*folder, *size, *result);
-}
-
-#---------------- End of Yoda Front Office API ----------------
-
-
 # \brief iiFolderStatus
 #
 # \param[in]  folder	    Path of folder

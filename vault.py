@@ -12,6 +12,7 @@ import genquery
 import session_vars
 
 from util import *
+import provenance
 
 __all__ = ['api_uu_vault_preservable_formats_lists',
            'api_uu_vault_unpreservable_files',
@@ -95,29 +96,6 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
-def getProvenanceLog(callback, folder):
-    """Get the provenance log of a folder.
-
-    :param folder: Path of a folder in research or vault space.
-
-    :returns dict: Provenance log.
-    """
-    provenance_log = []
-
-    # Retrieve all provenance logs on a folder.
-    iter = genquery.row_iterator(
-        "order(META_COLL_ATTR_VALUE)",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (folder),
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-        log_item = jsonutil.parse(row[0])
-        provenance_log.append(log_item)
-
-    return provenance_log
-
-
 def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     """Writes the provenance log as a text file into the root of the vault package.
 
@@ -125,7 +103,7 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     """
     # Retrieve provenance.
     provenenanceString = ""
-    provenanceLog = getProvenanceLog(callback, rule_args[0])
+    provenanceLog = provenance.get_provenance_log(callback, rule_args[0])
 
     for item in provenanceLog:
         dateTime = time.strftime('%Y/%m/%d %H:%M:%S',
