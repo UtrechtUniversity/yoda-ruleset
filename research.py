@@ -50,6 +50,8 @@ def api_uu_research_collection_details(ctx, path):
     if space != pathutil.Space.RESEARCH:
         return {}
 
+    basename = pathutil.chop(path)[1]
+
     # Retrieve user type.
     member_type = meta_form.user_member_type(ctx, group, user.full_name(ctx))
 
@@ -69,7 +71,7 @@ def api_uu_research_collection_details(ctx, path):
     if collection.exists(ctx, pathutil.chop(path)[0] + "/" + vault_name):
         vault_path = vault_name
 
-    return {"group": group,
+    return {"basename": basename,
             "status": status,
             "member_type": member_type,
             "is_datamanager": is_datamanager,
