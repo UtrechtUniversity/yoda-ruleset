@@ -4,9 +4,12 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import meta_form
+
 from util import *
 
-__all__ = ['api_uu_research_system_metadata']
+__all__ = ['api_uu_research_system_metadata',
+           'api_uu_research_collection_details']
 
 
 @api.make()
@@ -33,3 +36,41 @@ def api_uu_research_system_metadata(ctx, coll):
     result = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     return {"Package size": result}
+
+
+@api.make()
+def api_uu_research_collection_details(ctx, path):
+    """Returns details of a research collection."""
+
+    if not collection.exists(ctx, path):
+        return api.Error('nonexistent', 'The given path does not exist')
+
+    # Check if collection is a research group.
+    space, _, group, _ = pathutil.info(path)
+    if space != pathutil.Space.RESEARCH:
+        return {}
+
+    # Retrieve user type.
+    member_type = meta_form.user_member_type(ctx, group, user.full_name(ctx))
+
+    # Retrieve research folder status.
+    status = meta_form.get_coll_status(ctx, path)
+
+    # Check if user is datamanager.
+    category = meta_form.group_category(ctx, group)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    # Retrieve lock count.
+    lock_count = meta_form.get_coll_lock_count(ctx, path)
+
+    # Check if vault is accessible.
+    vault_name = group.replace("research-", "vault-", 1)
+    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + vault_name):
+        vault_path = vault_name
+
+    return {"group": group,
+            "status": status,
+            "member_type": member_type,
+            "is_datamanager": is_datamanager,
+            "lock_count": lock_count,
+            "vault_path": vault_path}
