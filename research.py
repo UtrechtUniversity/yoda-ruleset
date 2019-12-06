@@ -64,6 +64,7 @@ def api_uu_research_collection_details(ctx, path):
     lock_count = meta_form.get_coll_lock_count(ctx, path)
 
     # Check if vault is accessible.
+    vault_path = ""
     vault_name = group.replace("research-", "vault-", 1)
     if collection.exists(ctx, pathutil.chop(path)[0] + "/" + vault_name):
         vault_path = vault_name
