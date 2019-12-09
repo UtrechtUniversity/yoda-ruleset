@@ -115,7 +115,7 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     # Write provenance log.
     ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
     provenance_file = rule_args[0] + "/Provenance.txt"
-    ret_val = callback.msiDataObjCreate(provenanceFile, ofFlags, 0)
+    ret_val = callback.msiDataObjCreate(provenance_file, ofFlags, 0)
 
     file_handle = ret_val['arguments'][2]
     callback.msiDataObjWrite(file_handle, provenenance_txt, 0)
