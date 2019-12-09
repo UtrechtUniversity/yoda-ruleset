@@ -543,7 +543,8 @@ iiRegisterEpicPID(*target, *url, *pid, *httpCode) {
 	*url = "https://*host/*subpath";
 
 	# Generate new EPIC PID
-	msiGenerateUUID(*pid);
+	*pid = "";
+	rule_uu_generate_uuid(*pid);
 
 	# Try to register EPIC PID
 	*httpCode = "-1";
