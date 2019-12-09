@@ -20,9 +20,9 @@ def api_uu_research_system_metadata(ctx, coll):
 
     def convert_size(size_bytes):
         if size_bytes == 0:
-            return "0B"
+            return "0 B"
 
-        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        size_name = ('B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB')
         i = int(math.floor(math.log(size_bytes, 1024)))
         p = math.pow(1024, i)
         s = round(size_bytes / p, 2)
