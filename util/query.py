@@ -9,6 +9,7 @@ from enum import Enum
 
 import genquery
 import irods_types
+# import log
 
 class Option(object):
     """iRODS QueryInp option flags - used internally.
@@ -32,11 +33,13 @@ class OutputType(Enum):
     Note that when using AS_DICT, operations on columns (MAX, COUNT, ORDER, etc.)
     become part of the column name in the result.
     """
-    AS_DICT = 0
-    AS_LIST = 1
+    AS_DICT  = 0
+    AS_LIST  = 1
+    AS_TUPLE = 2
 
-AS_DICT = OutputType.AS_DICT
-AS_LIST = OutputType.AS_LIST
+AS_DICT  = OutputType.AS_DICT
+AS_LIST  = OutputType.AS_LIST
+AS_TUPLE = OutputType.AS_TUPLE
 
 class Query(object):
     """Wrapper for genquery that supports options omitted in the built-in row_iterator.
@@ -44,10 +47,10 @@ class Query(object):
     :param ctx:            iRODS callback or ctx.
     :param columns:        a list of SELECT column names, or columns as a comma-separated string.
     :param condition:      (optional) where clause, same as row_iterator
+    :param output:         (optional) [default=AS_TUPLE] either AS_DICT/AS_LIST/AS_TUPLE, similar to row_iterator
     :param offset:         (optional) starting row (0-based), can be used for pagination
     :param limit:          (optional) maximum amount of results, can be used for pagination
     :param case_sensitive: (optional) set this to False to make the entire where-clause case insensitive
-    :param output:         (optional) [default=AS_DICT] either AS_DICT/AS_LIST, similar to row_iterator
     :param options:        (optional) other OR-ed options to pass to the query (see the Option type above)
 
     Benefits:
@@ -66,21 +69,35 @@ class Query(object):
       Use len(q) (where q is a Query) to get the amount of results
       *within* the specified offset/limit, if any.
 
+    Output types:
+
+      AS_LIST and AS_DICT behave the same as in row_iterator.
+      AS_TUPLE produces a tuple, similar to AS_LIST, with the exception that
+      for queries on single columns, each result is returned as a string
+      instead of a 1-element tuple.
+
     Examples:
 
         # Print all collections.
         for x in Query(callback, 'COLL_NAME'):
+            print('name: ' + x)
+
+        # The same, but more verbose:
+        for x in Query(callback, 'COLL_NAME', output=AS_DICT):
             print('name: {}'.format(x['COLL_NAME']))
 
         # ... or make it into a list
-        colls = [x[0] for x in Query(callback, 'COLL_NAME', output=AS_LIST)]
+        colls = list(Query(callback, 'COLL_NAME'))
+
+        # ... or get data object paths
+        datas = ['{}/{}'.format(x, y) for x, y in Query(callback, 'COLL_NAME, DATA_NAME')]
 
         # Print all data objects, ordered descending by data name, owned by a
         # username containing 'r' or 'R', in a collection under
         # (case-insensitive) '/tempzone/'.
         for x in Query(ctx, 'COLL_NAME, ORDER_DESC(DATA_NAME), DATA_OWNER_NAME',
                        "DATA_OWNER_NAME like '%r%' and COLL_NAME like '/tempzone/%'",
-                       case_sensitive=False, output=AS_LIST):
+                       case_sensitive=False):
             print('name: {}/{} - owned by {}'.format(*x))
     """
 
@@ -88,9 +105,9 @@ class Query(object):
                  ctx,
                  columns,
                  conditions='',
+                 output=AS_TUPLE,
                  offset=0,
                  limit=None,
-                 output=AS_DICT,
                  case_sensitive=True,
                  options=0):
 
@@ -103,9 +120,9 @@ class Query(object):
         # Boilerplate.
         self.columns    = columns
         self.conditions = conditions
+        self.output     = output
         self.offset     = offset
         self.limit      = limit
-        self.output     = output
         self.options    = options
 
         if not case_sensitive:
@@ -122,26 +139,32 @@ class Query(object):
         self._total = None
 
     def exec_if_not_yet_execed(self):
-        if self.gqi is None:
-            self.gqi = self.ctx.msiMakeGenQuery(','.join(self.columns),
-                                                self.conditions,
-                                                irods_types.GenQueryInp())['arguments'][2]
-            if self.offset > 0:
-                self.gqi.rowOffset = self.offset
-            else:
-                # If offset is 0, we can (relatively) cheaply let iRODS count rows.
-                # - with non-zero offset, the query must be executed twice if the
-                #   row count is needed (see total_rows()).
-                self.options |= Option.RETURN_TOTAL_ROW_COUNT
+        if self.gqi is not None:
+            return
 
-            if self.limit is not None and self.limit < genquery.MAX_SQL_ROWS - 1:
-                self.gqi.maxRows = self.limit
+        self.gqi = self.ctx.msiMakeGenQuery(', '.join(self.columns),
+                                            self.conditions,
+                                            irods_types.GenQueryInp())['arguments'][2]
+        if self.offset > 0:
+            self.gqi.rowOffset = self.offset
+        else:
+            # If offset is 0, we can (relatively) cheaply let iRODS count rows.
+            # - with non-zero offset, the query must be executed twice if the
+            #   row count is needed (see total_rows()).
+            self.options |= Option.RETURN_TOTAL_ROW_COUNT
 
-            self.gqi.options |= self.options
+        if self.limit is not None and self.limit < genquery.MAX_SQL_ROWS - 1:
+            # We try to limit the amount of rows we pull in, but ultimately this is not very effective:
+            # In order to close the query, 256 more rows will (if available) be fetched regardless.
+            self.gqi.maxRows = self.limit
 
-            self.gqo    = self.ctx.msiExecGenQuery(self.gqi, irods_types.GenQueryOut())['arguments'][1]
-            self.cti    = self.ctx.msiGetContInxFromGenQueryOut(self.gqo, 0)['arguments'][1]
-            self._total = None
+        self.gqi.options |= self.options
+
+        self.gqo    = self.ctx.msiExecGenQuery(self.gqi, irods_types.GenQueryOut())['arguments'][1]
+        self.cti    = self.ctx.msiGetContInxFromGenQueryOut(self.gqo, 0)['arguments'][1]
+        self._total = None
+
+        # log._write(self.ctx, str(self))
 
     def total_rows(self):
         """Returns the total amount of rows matching the query.
@@ -188,8 +211,10 @@ class Query(object):
                     row = [self.gqo.sqlResult[c].row(r) for c in range(len(self.columns))]
                     row_i += 1
 
-                    assert self.output in (AS_LIST, AS_DICT)
-                    if self.output == AS_LIST:
+                    assert self.output in (AS_TUPLE, AS_LIST, AS_DICT)
+                    if self.output == AS_TUPLE:
+                        yield row[0] if len(self.columns) == 1 else tuple(row)
+                    elif self.output == AS_LIST:
                         yield row
                     else:
                         yield OrderedDict(zip(self.columns, row))
@@ -239,6 +264,12 @@ class Query(object):
         for x in self:
             self._close()
             return x
+
+    def __str__(self):
+        return 'select {}{}{}{}'.format(', '.join(self.columns),
+                                        ' where '+self.conditions   if self.conditions else '',
+                                        ' limit '+str(self.limit)   if self.limit is not None else '',
+                                        ' offset '+str(self.offset) if self.offset else '')
 
     def __del__(self):
         """Auto-close query on Query destruction"""

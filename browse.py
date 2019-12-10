@@ -60,9 +60,10 @@ def api_uu_browse_folder(ctx,
         dcols = [x.replace('ORDER(', 'ORDER_DESC(') for x in dcols]
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll), offset=offset, limit=limit)
+    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+                  offset=offset, limit=limit, output=query.AS_DICT)
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
-                  offset=max(0, offset-qcoll.total_rows()), limit=limit - len(qcoll))
+                  offset=max(0, offset-qcoll.total_rows()), limit=limit - len(qcoll), output=query.AS_DICT)
 
     colls = map(transform, list(qcoll))
     datas = map(transform, list(qdata))
