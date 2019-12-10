@@ -119,82 +119,9 @@ iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
         uuChopPath(*path, *parent, *baseName);
         *kvp.basename = *baseName;
 
-        if (*path like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".*") {
-                # Retrieve collection details of research collection.
-                iiCollectionDetailsResearch(*path, *kvp);
-        } else if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
+        if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
                 # Retrieve collection details of vault collection.
                 iiCollectionDetailsVault(*path, *kvp);
-        }
-}
-
-# \brief Return a key value pair containing the details of a research collection
-#
-# \param[in]  path  path of research collection (COLL_NAME)
-# \param[out] kvp   key value pair with all required info on current collection (=*path)
-iiCollectionDetailsResearch(*path, *kvp) {
-        *kvp.userMetadata = "true";
-
-        # Retrieve user group name and user type.
-        *groupName = "";
-        rule_uu_collection_group_name(*path, *groupName);
-        *kvp.groupName = *groupName;
-
-        uuGroupGetMemberType(*groupName, uuClientFullName, *userType);
-        *kvp.userType = *userType;
-
-        # Check if user is datamanager.
-        uuGroupGetCategory(*groupName, *category, *subcategory);
-        uuGroupGetMemberType("datamanager-" ++ *category, uuClientFullName, *userTypeIfDatamanager);
-        if (*userTypeIfDatamanager == "normal" || *userTypeIfDatamanager == "manager") {
-                *kvp.isDatamanager = "yes";
-        } else {
-                *kvp.isDatamanager = "no";
-        }
-
-        iiCollectionMetadataKvpList(*path, UUORGMETADATAPREFIX, false, *metadataKvpList);
-        *folderStatus = FOLDER;
-        foreach(*metadataKvp in *metadataKvpList) {
-                if (*metadataKvp.attrName == IISTATUSATTRNAME) {
-                        *folderStatus = *metadataKvp.attrValue;
-                        break;
-                }
-        }
-        *kvp.folderStatus = *folderStatus;
-
-        *lockFound = "no";
-        *lockCount = 0;
-        foreach(*metadataKvp in *metadataKvpList) {
-                if (*metadataKvp.attrName == IILOCKATTRNAME) {
-                        *lockCount = *lockCount + 1;
-                        *rootCollection = *metadataKvp.attrValue;
-                        *kvp.lockRootCollection = *rootCollection;
-                        if (*rootCollection == *path) {
-                                *lockFound = "here";
-                        } else {
-                                *children = triml(*rootCollection, *path);
-                                if (*children == *rootCollection) {
-                                        *ancestors = triml(*path, *rootCollection);
-                                        if (*ancestors == *path) {
-                                                *lockFound = "outoftree";
-                                        } else {
-                                                *lockFound = "ancestor";
-                                        }
-                                } else {
-                                        *lockFound = "descendant";
-                                }
-                        }
-                }
-        }
-
-        *kvp.lockFound = *lockFound;
-        *kvp.lockCount = str(*lockCount);
-
-        # Check if vault is accesible.
-        uuChop(*groupName, *_, *baseName, "-", true);
-        *vaultName = IIVAULTPREFIX ++ *baseName;
-        foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = "/$rodsZoneClient/home/*vaultName") {
-                *kvp.vaultPath = *vaultName;
         }
 }
 

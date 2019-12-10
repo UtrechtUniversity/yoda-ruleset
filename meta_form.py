@@ -100,6 +100,20 @@ def get_coll_lock(ctx, path, org_metadata=None):
     return ret
 
 
+def get_coll_lock_count(ctx, path, org_metadata=None):
+    """Count locks on a collection."""
+
+    if org_metadata is None:
+        org_metadata = get_coll_org_metadata(ctx, path)
+
+    count = 0
+
+    for root in [v for k, v in org_metadata if k == constants.IILOCKATTRNAME]:
+        count += 1
+
+    return count
+
+
 def humanize_validation_error(e):
     """Transforms a jsonschema validation error such that it is readable by humans.
 

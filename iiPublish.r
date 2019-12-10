@@ -183,8 +183,12 @@ iiGetLastModifiedDateTime(*publicationState) {
 iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 	*dataCitePrefix = *publicationConfig.dataCitePrefix;
 	*yodaPrefix = *publicationConfig.yodaPrefix;
-	*length = int(*publicationConfig.randomIdLength);
-	msiGenerateRandomID(*length, *randomId);
+	*length = *publicationConfig.randomIdLength;
+
+	# Genereate random ID for DOI.
+	*randomId = "";
+	rule_uu_generate_random_id(*length, *randomId);
+
 	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomId";
 	*publicationState.randomId = *randomId;
 	*publicationState.yodaDOI = *yodaDOI;

@@ -2,11 +2,35 @@
   "links": {
     "ui:disabled": true
   },
+  "Title": {
+    "ui:help": "The title of your data package"
+  },
   "Description": {
+    "ui:help": "A description of your data package",
     "ui:widget": "textarea"
   },
   "Additional_Documentation": {
     "ui:widget": "textarea"
+  },
+  "Discipline": {
+    "items": {
+      "ui:help": "Categorize your research to a (sub)discipline"
+    }
+  },
+  "Version": {
+    "ui:help": "A version number for the data package"
+  },
+  "Language": {
+    "ui:help": "The language of the data package"
+  },
+  "Collected": {
+    "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "Start_Date": {
+      "ui:help": "Indicate when you've started collecting the data for this data package"
+    },
+    "End_Date": {
+      "ui:help": "Indicate when you've finished collecting the data for this data package"
+    }
   },
   "GeoLocation": {
     "items": {
@@ -15,7 +39,109 @@
       }
     }
   },
+  "Tag": {
+    "items": {
+      "ui:help": "Free text field for adding (searchable) key words to your data package"
+    }
+  },
+  "Related_Datapackage": {
+    "items": {
+      "Relation_Type": {
+        "ui:help": "Relation to this data package"
+      },
+      "Title": {
+        "ui:help": "Title of the related work"
+      },
+      "Persistent_Identifier": {
+        "ui:help": "Persistent identifier of the related work",
+        "Identifier_Scheme": {
+          "ui:help": "Type of Persistent identifier of the related work"
+        },
+        "Identifier": {
+          "ui:help": "The identifier as it can be resolved on the appropriate service"
+        }
+      }
+    }
+  },
+  "Funding_Reference": {
+    "items": {
+      "Funder_Name": {
+        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"
+      },
+      "Award_Number": {
+        "ui:help": "The award or grant number issued by the funding organisation"
+      }
+    }
+  },
   "Retention_Period": {
+    "ui:help": "The minimal number of years the data will be kept in the archive",
     "ui:widget": "updown"
+  },
+  "Retention_Information": {
+    "ui:help": "Provide the reason when you deviate from the minimum of 10 years retention of the data package"
+  },
+  "Data_Type": {
+    "ui:help": "What is the type of your data"
+  },
+  "Data_Classification": {
+    "ui:help": "How is your data classified with regards to information security policy"
+  },
+  "Embargo_End_Date": {
+    "ui:help": "If there is an embargo on the data package; when will it end?"
+  },
+  "Creator": {
+    "items": {
+      "Name": {
+        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name"
+      },
+      "Affiliation": {
+        "items": {
+          "ui:help": "The organizational or institutional affiliation of the creator"
+        }
+      },
+      "Person_Identifier": {
+        "items": {
+          "ui:help": "Person identifier of creator of the data package",
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "Contributor": {
+    "items": {
+      "Name": {
+        "ui:help": "The name(s) of the persons who have contributed to this data package"
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite"
+      },
+      "Affiliation": {
+        "items": {
+          "ui:help": "The organizational or institutional affiliation of the creator"
+        }
+      },
+      "Person_Identifier": {
+        "items": {
+          "ui:help": "Person identifier of contributor to this data package",
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "License": {
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+  },
+  "Data_Access_Restriction": {
+    "ui:help": "Once archived, how is your data package accessible to third parties?"
   }
 }
