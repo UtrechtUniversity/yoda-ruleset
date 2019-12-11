@@ -13,7 +13,8 @@ import irods_types
 from util import *
 from util.query import Query
 
-__all__ = ['api_uu_browse_folder']
+__all__ = ['api_uu_browse_folder',
+           'api_uu_search']
 
 
 @api.make()
@@ -78,3 +79,74 @@ def api_uu_browse_folder(ctx,
 
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
+
+
+@api.make()
+def api_uu_search(ctx,
+                  search_string,
+                  search_type='filename',
+                  sort_on='name',
+                  sort_order='asc',
+                  offset=0,
+                  limit=10):
+    """Gets paginated search results, including size/modify date/location information."""
+
+    def transform(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        if 'DATA_NAME' in x:
+            _, _, path, subpath = pathutil.info(x['COLL_NAME'])
+            if subpath != '':
+                path = path + "/" + subpath
+
+            return {'name':        "/{}/{}".format(path, x['DATA_NAME']),
+                    'type':        'data',
+                    'size':        int(x['DATA_SIZE']),
+                    'modify_time': int(x['DATA_MODIFY_TIME'])}
+
+        if 'COLL_NAME' in x:
+            _, _, path, subpath = pathutil.info(x['COLL_NAME'])
+            if subpath != '':
+                path = path + "/" + subpath
+
+            return {'name':        "/{}".format(path),
+                    'type':        'coll',
+                    'modify_time': int(x['COLL_MODIFY_TIME'])}
+
+    zone = user.zone(ctx)
+
+    if search_type == 'filename':
+        cols = ['ORDER(DATA_NAME)', 'COLL_NAME', 'MIN(DATA_CREATE_TIME)', 'MAX(DATA_MODIFY_TIME)', 'DATA_SIZE']
+        where = "COLL_NAME like '{}%%' AND DATA_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
+    elif search_type == 'folder':
+        cols = ['ORDER(COLL_NAME)', 'COLL_PARENT_NAME', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        where = "COLL_PARENT_NAME like '{}%%' AND COLL_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
+    elif search_type == 'metadata':
+        cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        where = "META_COLL_ATTR_UNITS like '{}%%' AND META_COLL_ATTR_VALUE like '%%{}%%' AND COLL_NAME like '{}%%'".format(
+                    constants.UUUSERMETADATAROOT + "_",search_string, "/" + zone + "/home"
+                )
+    elif search_type == 'status':
+        status = search_string.split(":")
+        status_value = status[1]
+        if status[0] == "research":
+            status_name = constants.IISTATUSATTRNAME
+        else:
+            status_name = constants.IIVAULTSTATUSATTRNAME
+
+        cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
+        where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
+                    status_name, status_value, "/" + zone + "/home"
+                )
+
+    if sort_order == 'desc':
+        cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
+
+    qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
+                  limit=int(limit), case_sensitive=False, output=query.AS_DICT)
+
+    datas = map(transform, list(qdata))
+
+    return OrderedDict([('total', qdata.total_rows()),
+                        ('items', datas)])
