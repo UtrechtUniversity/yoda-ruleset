@@ -114,6 +114,11 @@ def api_uu_search(ctx,
                     'type':        'coll',
                     'modify_time': int(x['COLL_MODIFY_TIME'])}
 
+    # Replace, %, _ and \ since iRODS does not handle those correctly.
+    search_string = search_string.replace("\\", "\\\\")
+    search_string = search_string.replace("%", "\%")
+    search_string = search_string.replace("_", "\_")
+
     zone = user.zone(ctx)
 
     if search_type == 'filename':
