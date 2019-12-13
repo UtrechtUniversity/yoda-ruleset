@@ -5,20 +5,6 @@
 # \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
 
-# ---------------- Start of Yoda FrontOffice API ----------------
-
-# \brief iiFOCollectionDetails return a json object containing the details of a collection
-# \param[in] path      path of collection (COLL_NAME)
-# \param[out] result   JSON object containing details of the Collection
-iiFrontCollectionDetails(*path, *result, *status, *statusInfo) {
-	msiString2KeyValPair("", *kvp);
-
-	iiCollectionDetails(*path, *kvp, *status, *statusInfo);
-	uuKvp2JSON(*kvp, *result);
-}
-
-#---------------- End of Yoda Front Office API ----------------
-
 
 # \brief orderclause	helper functions to determine order clause
 #			defaults to Ascending order
@@ -98,32 +84,6 @@ iiBrowse(*path, *collectionOrDataObject, *orderby, *ascdesc, *limit, *offset, *s
 
 }
 
-# \brief iiCollectionDetails return a key value pair  containing the details of a collection
-#
-# \param[in] path   path of collection (COLL_NAME)
-# \param[out] kvp   key value pair with all required info on current collection (=*path)
-iiCollectionDetails(*path, *kvp, *status, *statusInfo) {
-        *status = 'Success';
-        *statusInfo = '';
-
-        # First check if path exists and fail if not
-        if (!uuCollectionExists(*path)) {
-                # class USER_INPUT_PATH_ERR(UserInputException):
-                # code = -317000
-                # fail(-317000);
-                *status = 'ErrorPathNotExists';
-                *statusInfo = 'The indicated path does not exist';
-                succeed;
-        }
-
-        uuChopPath(*path, *parent, *baseName);
-        *kvp.basename = *baseName;
-
-        if (*path like regex "/[^/]+/home/" ++ IIVAULTPREFIX ++ ".*") {
-                # Retrieve collection details of vault collection.
-                iiCollectionDetailsVault(*path, *kvp);
-        }
-}
 
 # \brief Return a key value pair containing the details of a vault collection
 #
