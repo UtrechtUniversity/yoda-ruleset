@@ -7,7 +7,10 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from query import Query
+import query
 from enum import Enum
+import msi
 
 class Space(Enum):
     """Differentiates Yoda path types between research and vault spaces."""
@@ -32,6 +35,9 @@ def chop(path):
         x = path.split('/')
         return '/'.join(x[:-1]), x[-1]
 
+# Shorthands.
+dirname  = lambda x: chop(x)[0]  # chops last component off
+basename = lambda x: chop(x)[1]  # chops everything *but* the last component
 
 def info(path):
     """

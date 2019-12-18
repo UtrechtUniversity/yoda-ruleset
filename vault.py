@@ -8,7 +8,6 @@ import os
 import time
 import itertools
 
-import genquery
 import session_vars
 import provenance
 import meta_form

@@ -4,9 +4,13 @@
 __copyright__ = 'Copyright (c) 2016-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from enum import Enum
+
 # TODO: Naming convention (no capitals, no UU/II prefix)
 # TODO: dicts => enum.Enum
 # TODO: all attrnames => one enum.Enum
+
+IIGROUPPREFIX = "research-"
 
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = '/yoda'

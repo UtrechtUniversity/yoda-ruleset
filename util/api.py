@@ -3,6 +3,7 @@
 
 For example usage, see make() or rules_demo/test1.py
 """
+
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 

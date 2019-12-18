@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import os
 from datetime import datetime
 
-import genquery
 
 from util import *
 

@@ -11,7 +11,6 @@ import hashlib
 import base64
 import time
 
-import genquery
 import session_vars
 
 from util import *

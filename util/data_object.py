@@ -9,6 +9,8 @@ import pathutil
 import genquery
 import irods_types
 import constants
+from query import Query
+import query
 
 def exists(callback, path):
     """Check if a data object with the given path exists"""
@@ -91,3 +93,8 @@ def remove(ctx, path, force=True):
     msi.data_obj_unlink(ctx,
                         'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
                         irods_types.BytesBuf())
+
+def name_from_id(ctx, data_id):
+    x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
+    if x is not None:
+        return '/'.join(x)

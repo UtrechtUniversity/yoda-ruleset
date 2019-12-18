@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import genquery
 import itertools
+from query import Query
+import query
 
 def exists(callback, path):
     """Check if a collection with the given path exists"""
@@ -91,3 +93,6 @@ def data_objects(callback, path, recursive=False):
                                   genquery.AS_LIST, callback)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+
+def name_from_id(ctx, coll_id):
+    return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
