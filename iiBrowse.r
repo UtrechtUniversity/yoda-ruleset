@@ -46,3 +46,41 @@ iiListLocks(*path, *offset, *limit, *result, *status, *statusInfo) {
 	*kvp.returned = str(*returned);
 	uuKvp2JSON(*kvp, *result);
 }
+
+# \brief iiCollectionMetadataKvpList
+# \param[in] path
+
+iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *path
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_COLL_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_COLL_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_COLL_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
+
+# \brief iiDataObjectKvpList
+iiDataObjectMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	uuChopPath(*path, *collName, *dataName);
+	foreach(*row in SELECT META_DATA_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *collName
+		AND DATA_NAME = *dataName
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_DATA_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_DATA_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_DATA_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
