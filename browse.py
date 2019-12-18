@@ -23,7 +23,8 @@ def api_uu_browse_folder(ctx,
                          sort_on='name',
                          sort_order='asc',
                          offset=0,
-                         limit=10):
+                         limit=10,
+                         space=pathutil.Space.OTHER):
     """Gets paginated collection contents, including size/modify date information."""
 
     def transform(row):
@@ -61,9 +62,19 @@ def api_uu_browse_folder(ctx,
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
         dcols = [x.replace('ORDER(', 'ORDER_DESC(') for x in dcols]
 
+    zone = user.zone(ctx)
+
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
-                  offset=offset, limit=limit, output=query.AS_DICT)
+    if space == str(pathutil.Space.RESEARCH):
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+    elif space == str(pathutil.Space.VAULT):
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+    else:
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(qcoll), output=query.AS_DICT)
 

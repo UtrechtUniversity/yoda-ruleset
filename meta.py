@@ -9,6 +9,7 @@ import json
 import jsonschema
 import jsonavu
 import irods_types
+import genquery
 
 from enum import Enum
 from collections import OrderedDict

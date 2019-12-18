@@ -10,15 +10,19 @@ import itertools
 
 import genquery
 import session_vars
+import provenance
+import meta_form
+import meta
 
 from util import *
-import provenance
+
 
 __all__ = ['api_uu_vault_preservable_formats_lists',
            'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
            'rule_uu_vault_write_provenance_log',
-           'rule_uu_vault_system_metadata']
+           'api_uu_vault_system_metadata',
+           'api_uu_vault_collection_details']
 
 
 def preservable_formats_lists(ctx):
@@ -125,16 +129,17 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     callback.msiDataObjChksum(provenance_file, "verifyChksum=", 0)
 
 
-def vault_collection_metadata(callback, coll):
+@api.make()
+def api_uu_vault_system_metadata(callback, coll):
     """Returns collection statistics as JSON."""
 
     import math
 
     def convert_size(size_bytes):
         if size_bytes == 0:
-            return "0B"
+            return "0 B"
 
-        size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+        size_name = ('B', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB')
         i = int(math.floor(math.log(size_bytes, 1024)))
         p = math.pow(1024, i)
         s = round(size_bytes / p, 2)
@@ -215,5 +220,54 @@ def vault_collection_metadata(callback, coll):
     return system_metadata
 
 
-rule_uu_vault_system_metadata = rule.make(inputs=[0], outputs=[1], transform=jsonutil.dump,
-                                          handler=rule.Output.STDOUT)(vault_collection_metadata)
+@api.make()
+def api_uu_vault_collection_details(ctx, path):
+    """Returns details of a vault collection."""
+
+    if not collection.exists(ctx, path):
+        return api.Error('nonexistent', 'The given path does not exist')
+
+    # Check if collection is a research group.
+    space, _, group, _ = pathutil.info(path)
+    if space != pathutil.Space.VAULT:
+        return {}
+
+    basename = pathutil.chop(path)[1]
+
+    # Check if collection is vault package.
+    metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
+    if metadata_path is None:
+        return {}
+    else:
+        metadata= True
+
+    # Retrieve vault folder status.
+    status = meta_form.get_coll_vault_status(ctx, path)
+
+    # Check if collection has datamanager.
+    has_datamanager = True
+
+    # Check if user is datamanager.
+    category = meta_form.group_category(ctx, group)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    # Check if a vault action is pending.
+    vault_action_pending = False
+
+    # Check if research group has access.
+    research_group_access = True
+
+    # Check if research space is accessible.
+    research_path = ""
+    research_name = group.replace("vault-", "research-", 1)
+    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + research_name):
+        research_path = research_name
+
+    return {"basename": basename,
+            "status": status,
+            "metadata": metadata,
+            "has_datamanager": has_datamanager,
+            "is_datamanager": is_datamanager,
+            "vault_action_pending": vault_action_pending,
+            "research_group_access": research_group_access,
+            "research_path": research_path}
