@@ -28,3 +28,8 @@ __all__ = ['log',
 # Config items can be accessed directly as 'config.foo' by any module
 # that imports * from util.
 from config import config
+
+if config.environment == 'development':
+    import api
+    ping = api_uu_ping = api.make()(lambda ctx, x=42: x)
+    __all__ += ['api_uu_ping', 'ping']

@@ -12,24 +12,39 @@ from error import *
 
 import jsonutil
 import error
+from config import config
 import inspect
 import traceback
 from collections import OrderedDict
 
 class Result(object):
-    def __init__(self, data=None, status='ok', info=None):
+    def __init__(self, data=None, status='ok', info=None, debug_info=None):
         self.status      = status
         self.status_info = info
         self.data        = data
+        self.debug_info  = debug_info
 
     @staticmethod
     def ok(data=None):
         return Result('ok', info, data)
 
     def as_dict(self):
-        return OrderedDict([('status',      self.status),
-                            ('status_info', self.status_info),
-                            ('data',        self.data)])
+        if config.environment == 'development':
+            # Emit debug information in dev.
+            # This may contain stack traces, exception texts, timing info,
+            # etc., which should not be sent to users in production.
+            return OrderedDict([('status',      self.status),
+                                ('status_info', self.status_info),
+                                ('data',        self.data),
+                                ('debug_info',  self.debug_info)])
+        else:
+            return OrderedDict([('status',      self.status),
+                                ('status_info', self.status_info),
+                                ('data',        self.data)])
+
+    def __bool__(self):
+        return self.status == 'ok'
+    __nonzero__=__bool__
 
 
 class Error(Result, UUError):
@@ -42,7 +57,7 @@ class Error(Result, UUError):
         self.info = info
         self.debug_info = debug_info
 
-        Result.__init__(self, data, 'error_'+name, info)
+        Result.__init__(self, data, 'error_'+name, info, debug_info)
         UUError.__init__(self, 'error_'+name)
 
     def __str__(self):
@@ -61,10 +76,13 @@ def _api(f):
     automatically validated for required/optional arguments, based on f()'s
     signature.
 
-    f()'s returned vaule may be of any JSON-encodable type, and will be stored
+    f()'s returned value may be of any JSON-encodable type, and will be stored
     in the 'data' field of the returned JSON. If f() returns or raises an
     error, the 'status' and 'status_info' fields are populated (non-null)
     instead.
+
+    In development environments, the result may contain a 'debug_info' property
+    with additional information on errors, or timing information.
     """
     # Determine required and optional argument names from the function signature.
     a_pos, a_var, a_kw, a_defaults = inspect.getargspec(f)
@@ -86,22 +104,30 @@ def _api(f):
 
     def wrapper(ctx, inp):
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments."""
+
+        # Result shorthands.
+        def error_internal(debug_info=None):
+            return Error('internal', 'An internal error occurred', debug_info = debug_info)
+        def bad_request(debug_info=None):
+            return Error('badrequest', 'An internal error occurred', debug_info = debug_info)
+
         # Validate input string: is it a valid JSON object?
         try:
             data = jsonutil.parse(inp)
             if type(data) is not OrderedDict:
                 raise jsonutil.ParseError('Argument is not a JSON object')
-        except jsonutil.ParseError:
+        except jsonutil.ParseError as e:
             log._write(ctx, 'Error: API rule <{}> called with invalid JSON argument'
                             .format(f.__name__))
-            return Error('badrequest', 'An internal error occurred').as_dict()
+            return bad_request('JSON parse error: {}'.format(e)).as_dict()
 
         # Check that required arguments are present.
         for param in required:
             if param not in data:
                 log._write(ctx, 'Error: API rule <{}> called with missing <{}> argument'
                                 .format(f.__name__, param))
-                return Error('badrequest', 'An internal error occurred').as_dict()
+                return bad_request('Missing argument: {} (required: [{}]  optional: [{}])'
+                                   .format(param, ', '.join(required), ', '.join(optional))).as_dict()
 
         # Forbid arguments that are not in the function signature.
         if not allow_extra:
@@ -109,19 +135,26 @@ def _api(f):
                 if param not in required | optional:
                     log._write(ctx, 'Error: API rule <{}> called with unrecognized <{}> argument'
                                     .format(f.__name__, param))
-                    return Error('badrequest', 'An internal error occurred').as_dict()
+                    return bad_request('Unrecognized argument: {} (required: [{}]  optional: [{}])'
+                                       .format(param, ', '.join(required), ', '.join(optional))).as_dict()
 
         # Try to run the function with the supplied arguments,
         # catching any error it throws.
         try:
-            log._write(ctx, '-> {}()'.format(f.__name__))
+            # Time the request.
+            import time
+            t = time.time()
             result = f(ctx, **data)
+            t = time.time() - t
+
+            log._debug(ctx, '%4dms %s' % (int(t*1000), f.__name__))
+
             if type(result) is Error:
                 raise result # Allow api.Errors to be either raised or returned.
 
             elif not isinstance(result, Result):
                 # No error / explicit status info implies 'OK' status.
-                result = Result(result)
+                result = Result(result, debug_info = {'time': t})
 
             return result.as_dict()
         except Error as e:
@@ -135,7 +168,7 @@ def _api(f):
             # An uncaught error. Log a trace to aid debugging.
             log._write(ctx, 'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'
                             .format(f.__name__, traceback.format_exc()))
-            return Error('internal', 'An internal error occurred').as_dict()
+            return Error('internal', 'An internal error occurred', traceback.format_exc()).as_dict()
 
     return wrapper
 

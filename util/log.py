@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import user
 import rule
 import inspect
+from config import config
 
 def write(ctx, text):
     """Write a message to the log, including client name and originating rule/API name"""
@@ -21,3 +22,13 @@ def _write(ctx, text):
         ctx.writeLine('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [text]))
     else:
         ctx.writeLine('serverLog', text)
+
+def debug(ctx, text):
+    """Write a log message if in a development environment"""
+    if config.environment == 'development':
+        write(ctx, 'DEBUG: '+text)
+
+def _debug(ctx, text):
+    """Write a log message if in a development environment"""
+    if config.environment == 'development':
+        _write(ctx, 'DEBUG: '+text)

@@ -7,7 +7,21 @@ __license__   = 'GPLv3, see LICENSE'
 # Config class {{{
 
 class Config(object):
-    """Stores configuration info"""
+    """Stores configuration info, accessible through attributes (config.foo).
+
+    Valid options are determined at __init__ time.
+    Setting non-existent options raises an AttributeError.
+    Accessing non-existent options raises an AttributeError as well.
+
+    Example:
+
+      config = Config(foo = 'stuff')
+      config.foo = 'other stuff'
+
+      x = config.foo
+      y = config.bar  # AttributeError
+    """
+
     def __init__(self, **kwargs):
         """kwargs must contain all valid options and their default values"""
         self._items  = kwargs
@@ -66,10 +80,11 @@ config = Config(environment                = None,
 # }}}
 
 # Optionally include a site-local config file to override the above.
+# (note: this is done only once per agent)
 try:
     import os
     import re
-    # Look for a config file in the root of this repository
+    # Look for a config file in the root dir of this ruleset.
     cfgpath = os.path.dirname(__file__) + '/../rules_uu.cfg'
     with open(cfgpath) as f:
         for i, line in enumerate(f):
