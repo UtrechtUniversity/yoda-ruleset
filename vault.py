@@ -32,8 +32,8 @@ __all__ = ['api_uu_vault_submit',
 
 def submit(ctx, coll):
     res = ctx.iiVaultSubmit(coll, '', '')
-    if res['arguments'][2] != 'Success':
-        return api.Error(*res['arguments'][2:])
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
     return res['arguments'][1]
 
 
