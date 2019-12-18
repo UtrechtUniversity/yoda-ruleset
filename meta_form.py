@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+import folder
 import meta
 import schema as schema_
 import schema_transformation
@@ -40,34 +41,25 @@ def user_is_datamanager(ctx, category, user):
 # }}}
 
 
-def get_coll_org_metadata(ctx, path):
-    """Obtains a (k,v) list of all organisation metadata on a given collection"""
-
-    return [(k, v) for k, v
-            in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
-                                     .format(path, constants.UUORGMETADATAPREFIX),
-                                     genquery.AS_LIST, ctx)]
-
-
+# XXX currently unused.
 def get_coll_status(ctx, path, org_metadata=None):
     """Get the status of a research folder."""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(ctx, path)
+        org_metadata = folder.get_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
     if constants.IISTATUSATTRNAME in org_metadata:
         return org_metadata[constants.IISTATUSATTRNAME]
-    return constants.RESEARCH_PACKAGE_STATE['FOLDER']
+    return constants.research_package_state.FOLDER.value
 
 
 def get_coll_vault_status(ctx, path, org_metadata=None):
     """Get the status of a vault folder."""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(ctx, path)
+        org_metadata = folder.get_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -81,7 +73,7 @@ def get_coll_lock(ctx, path, org_metadata=None):
        path -> ((no|here|outoftree|ancestor|descendant), rootcoll)"""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(ctx, path)
+        org_metadata = folder.get_org_metadata(ctx, path)
 
     ret = ('no', None)
 
@@ -103,7 +95,7 @@ def get_coll_lock_count(ctx, path, org_metadata=None):
     """Count locks on a collection."""
 
     if org_metadata is None:
-        org_metadata = get_coll_org_metadata(ctx, path)
+        org_metadata = folder.get_org_metadata(ctx, path)
 
     count = 0
 
@@ -184,11 +176,10 @@ def api_uu_meta_form_load(ctx, coll):
 
     # Obtain org metadata for status and lock information.
     # (needed both for research and vault packages)
-    org_metadata = get_coll_org_metadata(ctx, coll)
+    org_metadata = folder.get_org_metadata(ctx, coll)
 
     if space is pathutil.Space.RESEARCH:
-        lock_type, _ = get_coll_lock(ctx, coll, org_metadata)
-        can_edit     = is_member and lock_type not in ['here', 'ancestor']
+        can_edit = is_member and not folder.is_locked(ctx, coll, org_metadata)
 
         # Analyze a possibly existing metadata JSON/XML file.
 
