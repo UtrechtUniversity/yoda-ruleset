@@ -66,7 +66,7 @@ def api_uu_browse_folder(ctx,
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
     if space == str(pathutil.Space.RESEARCH):
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/%vault-%'".format(coll, zone),
                       offset=offset, limit=limit, output=query.AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
