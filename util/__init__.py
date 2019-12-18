@@ -22,4 +22,9 @@ __all__ = ['log',
            'collection',
            'data_object',
            'user',
-           'query']
+           'query',
+           'config']
+
+# Config items can be accessed directly as 'config.foo' by any module
+# that imports * from util.
+from config import config

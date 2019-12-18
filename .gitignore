@@ -4,3 +4,4 @@
 *.re
 /rules_uu.py
 /rules-uu.re.debug
+/rules_uu.cfg

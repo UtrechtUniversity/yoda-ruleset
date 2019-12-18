@@ -1,0 +1,25 @@
+# Yoda ruleset configuration.
+# This file should be named "rules_uu.cfg" in the root of this ruleset package.
+#
+# All non-empty values must be quoted with single quotes (')
+# Special characters, including "'", must not be escaped.
+# A missing value (interpreted as None) usually means a feature is disabled.
+
+# Either 'production' or 'development'
+environment                = 'development'
+
+notifications_sender_email = 'noreply@yoda.test'
+notifications_sender_name  = 'Yoda system'
+notifications_reply_to     = 'noreply@yoda.test'
+
+smtp_server                =
+smtp_username              =
+smtp_password              =
+
+datacite_url               =
+datacite_username          =
+datacite_password          =
+
+eus_api_fqdn               =
+eus_api_port               =
+eus_api_secret             =
