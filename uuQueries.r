@@ -64,35 +64,6 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
 
-# \brief Return a key-value-pair of metadata associated with a collection.
-#
-# \param[in]  coll_id	Unique DataObject ID. Used because it is Unique
-# \param[in]  prefix	Only include metadata with this prefix. Use "" if all metadata should be returned
-# \param[in,out] kvp	key-value-pair to add the metadata to
-#
-uuCollectionMetadataKvp(*coll_id, *prefix, *kvp) {
-	*ContInxOld = 1;
-	msiMakeGenQuery("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE", "COLL_ID = '*coll_id'", *GenQInp);
-	if (*prefix != "") {
-		#| writeLine("stdout", "prefix is *prefix");
-		msiAddConditionToGenQuery("META_COLL_ATTR_NAME", " like ", "*prefix%%", *GenQInp);
-	}
-	msiExecGenQuery(*GenQInp, *GenQOut);
-	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
-	while(*ContInxOld > 0) {
-		foreach(*meta in *GenQOut) {
-			*name = *meta.META_COLL_ATTR_NAME;
-			*val = *meta.META_COLL_ATTR_VALUE;
-			msiAddKeyVal(*kvp, *name, *val);
-		}
-		*ContInxOld = *ContInxNew;
-		if(*ContInxOld > 0) {
-			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
-		}
-	}
-	msiCloseGenQuery(*GenQInp, *GenQOut);
-}
-
 # \brief uuPaginatedQuery	This is a rule to do arbitrary paginated queries
 #                               iRODS general queries do not have direct support for query offsets or limits which are needed
 #                               to do a paginated query. This rule works around this limitation. results are returned as a list
@@ -151,7 +122,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
                 succeed;
         }
 
-	
+
 	# FastForward to Rowset of GENQMAXROWS based on offset.
 	# GENQMAXROWS is defined as 256 in standard iRODS
 	# msiGetMoreRows will return rows in groups of 256 until no more results can be returned

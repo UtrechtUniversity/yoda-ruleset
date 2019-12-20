@@ -1278,3 +1278,19 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 	writeLine("serverLog", "iiUpdateLandingpage: landingpage updated for *vaultPackage");
 	*status = "OK";
 }
+
+iiCollectionMetadataKvpList(*path, *prefix, *strip, *lst) {
+	*lst = list();
+	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
+		WHERE COLL_NAME = *path
+		AND META_COLL_ATTR_NAME like '*prefix%') {
+		msiString2KeyValPair("", *kvp);
+		if (*strip) {
+			*kvp.attrName = triml(*row.META_COLL_ATTR_NAME, *prefix);
+		} else {
+			*kvp.attrName = *row.META_COLL_ATTR_NAME;
+		}
+		*kvp.attrValue = *row.META_COLL_ATTR_VALUE;
+		*lst = cons(*kvp, *lst);
+	}
+}
