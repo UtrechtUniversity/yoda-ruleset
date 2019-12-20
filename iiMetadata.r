@@ -155,3 +155,4 @@ iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize
 		}
 	}
 }
+}
