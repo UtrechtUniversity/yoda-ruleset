@@ -277,10 +277,39 @@ def api_uu_meta_form_load(ctx, coll):
 
     elif space is pathutil.Space.VAULT:
         status = get_coll_vault_status(ctx, coll, org_metadata)
-        meta_path = get_latest_vault_metadata_path(ctx, coll)
+        meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
-        # TODO
-        assert False
+        # Try to load the metadata file.
+        try:
+            metadata = jsonutil.read(ctx, meta_path)
+            current_schema_id = meta.metadata_get_schema_id(metadata)
+            if current_schema_id is None:
+                return api.Error('no_schema_id', 'Please check the structure of this file.',
+                                 'schema id missing')
+        except jsonutil.ParseError as e:
+            return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
+        except msi.Error as e:
+            return api.Error('internal', 'The metadata file could not be read.', e)
+
+        if current_schema_id == schema['$id']:
+            # Metadata matches active schema, see if it validates.
+            errors = [humanize_validation_error(x) for x
+                      in meta.get_json_metadata_errors(ctx,
+                                                       meta_path,
+                                                       metadata=metadata,
+                                                       schema=schema,
+                                                       ignore_required=True)]
+            if errors:
+                return api.Error('validation', 'The metadata file is not compliant with the schema.',
+                                 data={'errors': errors})
+        else:
+            # Schema ID does not match and there is no defined transformation.
+            # We have no way to parse this file.
+            log.write(ctx, 'Metadata file <{}> has untransformable schema <{}> (need {})'
+                           .format(meta_path, current_schema_id, schema['$id']))
+            return api.Error('bad_schema',
+                             'The metadata file is not compliant with the schema in this category and cannot be transformed. '
+                             + 'Please contact your datamanager.')
 
     return {k: v for k, v in locals().items() if k in output_keys}
 
