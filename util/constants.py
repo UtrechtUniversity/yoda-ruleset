@@ -78,12 +78,32 @@ VAULT_PACKAGE_STATE = {
 }
 """Vault package states."""
 
-RESEARCH_PACKAGE_STATE = {
-    'FOLDER':    '',
-    'LOCKED':    'LOCKED',
-    'SUBMITTED': 'SUBMITTED',
-    'ACCEPTED':  'ACCEPTED',
-    'REJECTED':  'REJECTED',
-    'SECURED':   'SECURED',
-}
-"""Research folder states."""
+class research_package_state(Enum):
+    """Research folder states."""
+
+    FOLDER    = ''
+    LOCKED    = 'LOCKED'
+    SUBMITTED = 'SUBMITTED'
+    ACCEPTED  = 'ACCEPTED'
+    REJECTED  = 'REJECTED'
+    SECURED   = 'SECURED'
+
+    def __str__(self):
+        return self.name
+
+folder_transitions = [(getattr(research_package_state, x),
+                       getattr(research_package_state, y))
+                       for x, y in [('FOLDER',    'LOCKED'),
+                                    ('FOLDER',    'SUBMITTED'),
+                                    ('LOCKED',    'FOLDER'),
+                                    ('LOCKED',    'SUBMITTED'),
+                                    ('SUBMITTED', 'FOLDER'),
+                                    ('SUBMITTED', 'ACCEPTED'),
+                                    ('SUBMITTED', 'REJECTED'),
+                                    ('REJECTED',  'LOCKED'),
+                                    ('REJECTED',  'FOLDER'),
+                                    ('REJECTED',  'SUBMITTED'),
+                                    ('ACCEPTED',  'SECURED'),
+                                    ('SECURED',   'LOCKED'),
+                                    ('SECURED',   'FOLDER'),
+                                    ('SECURED',   'SUBMITTED')]]

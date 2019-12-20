@@ -41,7 +41,6 @@ def user_is_datamanager(ctx, category, user):
 # }}}
 
 
-# XXX currently unused.
 def get_coll_status(ctx, path, org_metadata=None):
     """Get the status of a research folder."""
 
