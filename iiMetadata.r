@@ -27,6 +27,7 @@ iiValidateXml(*metadataXmlPath, *xsdPath, *invalid, *msg) {
                     #DEBUG writeLine("serverLog", "iiValidateXML: *metadataXmlPath - *statusStr");
                     *invalid = 1;
         }
+    }
 }
 
 # \brief Remove the User AVU's from the irods AVU store.
@@ -154,5 +155,4 @@ iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize
 			*metadataJsonSize = int(*row.DATA_SIZE);
 		}
 	}
-}
 }
