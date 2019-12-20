@@ -16,12 +16,55 @@ import meta
 from util import *
 
 
-__all__ = ['api_uu_vault_preservable_formats_lists',
+__all__ = ['api_uu_vault_submit',
+           'api_uu_vault_approve',
+           'api_uu_vault_cancel',
+           'api_uu_vault_depublish',
+           'api_uu_vault_republish',
+           'api_uu_vault_preservable_formats_lists',
            'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
            'rule_uu_vault_write_provenance_log',
            'api_uu_vault_system_metadata',
            'api_uu_vault_collection_details']
+
+
+def submit(ctx, coll):
+    res = ctx.iiVaultSubmit(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+    return res['arguments'][1]
+
+
+def approve(ctx, coll):
+    res = ctx.iiVaultApprove(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+
+def cancel(ctx, coll):
+    res = ctx.iiVaultCancel(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+
+def depublish(ctx, coll):
+    res = ctx.iiVaultDepublish(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+
+def republish(ctx, coll):
+    res = ctx.iiVaultRepublish(coll, '', '')
+    if res['arguments'][1] != 'Success':
+        return api.Error(*res['arguments'][1:])
+
+
+api_uu_vault_submit    = api.make()(submit)
+api_uu_vault_approve   = api.make()(approve)
+api_uu_vault_cancel    = api.make()(cancel)
+api_uu_vault_depublish = api.make()(depublish)
+api_uu_vault_republish = api.make()(republish)
 
 
 def preservable_formats_lists(ctx):
