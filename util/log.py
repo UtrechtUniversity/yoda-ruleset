@@ -26,9 +26,9 @@ def _write(ctx, text):
 def debug(ctx, text):
     """Write a log message if in a development environment"""
     if config.environment == 'development':
-        write(ctx, 'DEBUG: '+text)
+        write(ctx, 'DEBUG: {}'.format(text))
 
 def _debug(ctx, text):
     """Write a log message if in a development environment"""
     if config.environment == 'development':
-        _write(ctx, 'DEBUG: '+text)
+        _write(ctx, 'DEBUG: {}'.format(text))

@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 
-import genquery
 
 from util import *
 

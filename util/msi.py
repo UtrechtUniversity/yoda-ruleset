@@ -99,6 +99,7 @@ rm_coll,         RmCollError        = make('RmColl',        'Could not remove co
 check_access,    CheckAccessError   = make('CheckAccess',   'Could not check access')
 set_acl,         SetACLError        = make('SetACL',        'Could not set ACL')
 get_icat_time,   GetIcatTimeError   = make('GetIcatTime',   'Could not get Icat time')
+get_obj_type,    GetObjTypeError    = make('GetObjType',    'Could not get object type')
 
 string_2_key_val_pair, String2KeyValPairError = \
     make('String2KeyValPair', 'Could not create keyval pair')
@@ -108,6 +109,9 @@ set_key_value_pairs_to_obj, SetKeyValuePairsToObjError = \
 
 associate_key_value_pairs_to_obj, AssociateKeyValuePairsToObjError = \
     make('AssociateKeyValuePairsToObj', 'Could not associate metadata to object')
+
+add_avu, AddAvuError = make('AddAvu', 'Could not add metadata to object')
+rmw_avu, RmwAvuError = make('RmwAvu', 'Could not remove metadata to object')
 
 # Add new msis here as needed.
 

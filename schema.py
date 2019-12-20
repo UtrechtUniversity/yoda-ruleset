@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import genquery
 import re
 
 from util import *

@@ -7,9 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 from collections import OrderedDict
 from enum import Enum
 
-import genquery
 import irods_types
-# import log
+
+MAX_SQL_ROWS = 256
 
 class Option(object):
     """iRODS QueryInp option flags - used internally.
@@ -27,8 +27,9 @@ class Option(object):
 
 class OutputType(Enum):
     """
-    AS_DICT: result rows are dicts of (column_name => value)
-    AS_LIST: result rows are lists of cells (ordered by input column list)
+    AS_DICT:  result rows are dicts of (column_name => value)
+    AS_LIST:  result rows are lists of cells (ordered by input column list)
+    AS_TUPLE: result rows are tuples of cells, or a single string if only one column is selected
 
     Note that when using AS_DICT, operations on columns (MAX, COUNT, ORDER, etc.)
     become part of the column name in the result.
@@ -41,33 +42,23 @@ AS_DICT  = OutputType.AS_DICT
 AS_LIST  = OutputType.AS_LIST
 AS_TUPLE = OutputType.AS_TUPLE
 
-class Query(object):
-    """Wrapper for genquery that supports options omitted in the built-in row_iterator.
 
-    :param ctx:            iRODS callback or ctx.
+class Query(object):
+    """Generator-style genquery iterator.
+
+    :param callback:       iRODS callback
     :param columns:        a list of SELECT column names, or columns as a comma-separated string.
-    :param condition:      (optional) where clause, same as row_iterator
-    :param output:         (optional) [default=AS_TUPLE] either AS_DICT/AS_LIST/AS_TUPLE, similar to row_iterator
+    :param condition:      (optional) where clause, as a string
+    :param output:         (optional) [default=AS_TUPLE] either AS_DICT/AS_LIST/AS_TUPLE
     :param offset:         (optional) starting row (0-based), can be used for pagination
     :param limit:          (optional) maximum amount of results, can be used for pagination
     :param case_sensitive: (optional) set this to False to make the entire where-clause case insensitive
     :param options:        (optional) other OR-ed options to pass to the query (see the Option type above)
 
-    Benefits:
-
-    - Can count total rows without fetching them (needed for queries where
-      COUNT() on a single column doesn't suffice)
-    - Can pass an offset to skip fetching unneeded rows.
-    - Handles case-insensitive queries.
-    - Closes the query more efficiently when total row count is high
-
     Getting the total row count:
 
       Use q.total_rows() to get the total number of results matching the query
       (without taking offset/limit into account).
-
-      Use len(q) (where q is a Query) to get the amount of results
-      *within* the specified offset/limit, if any.
 
     Output types:
 
@@ -92,17 +83,18 @@ class Query(object):
         # ... or get data object paths
         datas = ['{}/{}'.format(x, y) for x, y in Query(callback, 'COLL_NAME, DATA_NAME')]
 
-        # Print all data objects, ordered descending by data name, owned by a
-        # username containing 'r' or 'R', in a collection under
-        # (case-insensitive) '/tempzone/'.
-        for x in Query(ctx, 'COLL_NAME, ORDER_DESC(DATA_NAME), DATA_OWNER_NAME',
+        # Print the first 200-299 of data objects ordered descending by data
+        # name, owned by a username containing 'r' or 'R', in a collection
+        # under (case-insensitive) '/tempzone/'.
+        for x in Query(callback, 'COLL_NAME, ORDER_DESC(DATA_NAME), DATA_OWNER_NAME',
                        "DATA_OWNER_NAME like '%r%' and COLL_NAME like '/tempzone/%'",
-                       case_sensitive=False):
+                       case_sensitive=False,
+                       offset=200, limit=100):
             print('name: {}/{} - owned by {}'.format(*x))
     """
 
     def __init__(self,
-                 ctx,
+                 callback,
                  columns,
                  conditions='',
                  output=AS_TUPLE,
@@ -111,11 +103,13 @@ class Query(object):
                  case_sensitive=True,
                  options=0):
 
-        self.ctx = ctx
+        self.callback = callback
 
         if type(columns) is str:
             # Convert to list for caller convenience.
             columns = [x.strip() for x in columns.split(',')]
+
+        assert type(columns) is list
 
         # Boilerplate.
         self.columns    = columns
@@ -125,26 +119,29 @@ class Query(object):
         self.limit      = limit
         self.options    = options
 
+        assert self.output in (AS_TUPLE, AS_LIST, AS_DICT)
+
         if not case_sensitive:
             # Uppercase the entire condition string. Should cause no problems,
             # since query keywords are case insensitive as well.
             self.options   |= Option.UPPER_CASE_WHERE
             self.conditions = self.conditions.upper()
 
-        self.gqi = None  # (genquery inp)
-        self.gqo = None  # (genquery out)
-        self.cti = None  # (continue index)
+        self.gqi = None  # genquery inp
+        self.gqo = None  # genquery out
+        self.cti = None  # continue index
 
         # Filled when calling total_rows() on the Query.
         self._total = None
 
     def exec_if_not_yet_execed(self):
+        """Query execution is delayed until the first result or total row count is requested."""
         if self.gqi is not None:
             return
 
-        self.gqi = self.ctx.msiMakeGenQuery(', '.join(self.columns),
-                                            self.conditions,
-                                            irods_types.GenQueryInp())['arguments'][2]
+        self.gqi = self.callback.msiMakeGenQuery(', '.join(self.columns),
+                                                 self.conditions,
+                                                 irods_types.GenQueryInp())['arguments'][2]
         if self.offset > 0:
             self.gqi.rowOffset = self.offset
         else:
@@ -153,18 +150,20 @@ class Query(object):
             #   row count is needed (see total_rows()).
             self.options |= Option.RETURN_TOTAL_ROW_COUNT
 
-        if self.limit is not None and self.limit < genquery.MAX_SQL_ROWS - 1:
-            # We try to limit the amount of rows we pull in, but ultimately this is not very effective:
-            # In order to close the query, 256 more rows will (if available) be fetched regardless.
+        if self.limit is not None and self.limit < MAX_SQL_ROWS - 1:
+            # We try to limit the amount of rows we pull in, however in order
+            # to close the query, 256 more rows will (if available) be fetched
+            # regardless.
             self.gqi.maxRows = self.limit
 
         self.gqi.options |= self.options
 
-        self.gqo    = self.ctx.msiExecGenQuery(self.gqi, irods_types.GenQueryOut())['arguments'][1]
-        self.cti    = self.ctx.msiGetContInxFromGenQueryOut(self.gqo, 0)['arguments'][1]
-        self._total = None
+        import log
+        log._debug(self.callback, self)
 
-        # log._write(self.ctx, str(self))
+        self.gqo    = self.callback.msiExecGenQuery(self.gqi, irods_types.GenQueryOut())['arguments'][1]
+        self.cti    = self.gqo.continueInx
+        self._total = None
 
     def total_rows(self):
         """Returns the total amount of rows matching the query.
@@ -186,23 +185,20 @@ class Query(object):
                 # So instead, we run the query twice manually. This should
                 # perform only slightly worse.
                 # [1]: https://github.com/irods/irods/blob/4.2.6/plugins/database/src/general_query.cpp#L2393
-                self._total = Query(self.ctx, self.columns, self.conditions, limit=0,
+                self._total = Query(self.callback, self.columns, self.conditions, limit=0,
                                     options=self.options|Option.RETURN_TOTAL_ROW_COUNT).total_rows()
 
         return self._total
-
-    def __len__(self):
-        """Get the amount of results in this query, within provided limit/offset"""
-        x = max(0, self.total_rows() - self.offset)
-        return x if self.limit is None else min(x, self.limit)
 
     def __iter__(self):
         self.exec_if_not_yet_execed()
 
         row_i = 0
 
+        # Iterate until all rows are fetched / the query is aborted.
         while True:
             try:
+                # Iterate over a set of rows.
                 for r in range(self.gqo.rowCnt):
                     if self.limit is not None and row_i >= self.limit:
                         self._close()
@@ -211,7 +207,6 @@ class Query(object):
                     row = [self.gqo.sqlResult[c].row(r) for c in range(len(self.columns))]
                     row_i += 1
 
-                    assert self.output in (AS_TUPLE, AS_LIST, AS_DICT)
                     if self.output == AS_TUPLE:
                         yield row[0] if len(self.columns) == 1 else tuple(row)
                     elif self.output == AS_LIST:
@@ -231,7 +226,7 @@ class Query(object):
 
     def _fetch(self):
         """Fetch the next batch of results"""
-        ret      = self.ctx.msiGetMoreRows(self.gqi, self.gqo, 0)
+        ret      = self.callback.msiGetMoreRows(self.gqi, self.gqo, 0)
         self.gqo = ret['arguments'][1]
         self.cti = ret['arguments'][2]
 
@@ -244,13 +239,11 @@ class Query(object):
         # Close the query using msiGetMoreRows instead.
         # This is less than ideal, because it may fetch 256 more rows
         # (gqi.maxRows is overwritten) resulting in unnecessary processing
-        # work. However there appears to be no other safe way to close the
-        # query.
+        # work. However there appears to be no other way to close the query.
 
         while self.cti > 0:
             # Close query immediately after getting the next batch.
-            # This avoids having to soak up all remaining results, which
-            # genquery.row_iterator() currently (4.2.6) appears to do.
+            # This avoids having to soak up all remaining results.
             self.gqi.options |= Option.AUTO_CLOSE
             self._fetch()
 
@@ -266,11 +259,11 @@ class Query(object):
             return x
 
     def __str__(self):
-        return 'select {}{}{}{}'.format(', '.join(self.columns),
-                                        ' where '+self.conditions   if self.conditions else '',
-                                        ' limit '+str(self.limit)   if self.limit is not None else '',
-                                        ' offset '+str(self.offset) if self.offset else '')
+        return 'Query(select {}{}{}{})'.format(', '.join(self.columns),
+                                               ' where '+self.conditions   if self.conditions else '',
+                                               ' limit '+str(self.limit)   if self.limit is not None else '',
+                                               ' offset '+str(self.offset) if self.offset else '')
 
     def __del__(self):
-        """Auto-close query on Query destruction"""
+        """Auto-close query on when Query goes out of scope."""
         self._close()

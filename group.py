@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import json
 import requests
 
-import genquery
 
 from util import *
 

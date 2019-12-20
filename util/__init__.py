@@ -17,12 +17,14 @@ __all__ = ['log',
            'rule',
            'api',
            'msi',
+           'policy',
            'pathutil',
            'constants',
            'collection',
            'data_object',
            'user',
            'query',
+           'genquery', # temporary
            'config']
 
 # Config items can be accessed directly as 'config.foo' by any module
@@ -30,6 +32,7 @@ __all__ = ['log',
 from config import config
 
 if config.environment == 'development':
+    import irods_type_info
     import api
     ping = api_uu_ping = api.make()(lambda ctx, x=42: x)
     __all__ += ['api_uu_ping', 'ping']

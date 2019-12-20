@@ -6,28 +6,55 @@ __license__   = 'GPLv3, see LICENSE'
 
 import session_vars
 import genquery
+from query import Query
+import query
+from collections import namedtuple
+
+# User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
+User = namedtuple('User', ['name', 'zone'])
+User.__str__ = lambda self: '{}#{}'.format(*self)
 
 def user_and_zone(ctx):
     client = session_vars.get_map(ctx.rei)['client_user']
-    return client['user_name'], client['irods_zone']
+    return User(client['user_name'], client['irods_zone'])
 
 def full_name(ctx):
     """Obtain client name and zone, formatted as a 'x#y' string"""
-    return '{}#{}'.format(*user_and_zone(ctx))
+    return str(user_and_zone(ctx))
 
 def name(ctx):
+    """Gets the name of the client user"""
     return session_vars.get_map(ctx.rei)['client_user']['user_name']
 
 def zone(ctx):
+    """Gets the zone of the client user"""
     return session_vars.get_map(ctx.rei)['client_user']['irods_zone']
 
-def user_type(ctx):
-    """Obtain user type."""
-    for row in genquery.row_iterator("USER_TYPE",
-                                     "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user_and_zone(ctx)),
-                                     genquery.AS_LIST, ctx):
-        return row[0]
-    return ''
+def from_str(ctx, s):
+    """Returns a (user,zone) tuple from a user[#zone] string.
+
+    If no zone is present in the string, the client's zone is used.
+    """
+    parts = s.split('#')
+    if len(parts) < 2 or len(parts[1]) == 0:
+        # Take zone from client zone when not present.
+        return User(parts[0], zone(ctx))
+    else:
+        return User(*parts)
+
+def user_type(ctx, user=None):
+    """Returns the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
+
+    If the user does not exist, None is returned.
+    """
+    if user is None:
+        user = user_and_zone(ctx)
+    elif type(user) is str:
+        user = from_str(ctx, user)
+
+    return Query(ctx, "USER_TYPE",
+                 "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
+
 
 # TODO: Remove. {{{
 def get_client_name_zone(rei):

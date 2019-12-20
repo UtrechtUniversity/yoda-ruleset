@@ -5,13 +5,10 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-import json
 import jsonschema
 import jsonavu
 import irods_types
-import genquery
 
-from enum import Enum
 from collections import OrderedDict
 
 from util import *

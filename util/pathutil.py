@@ -7,7 +7,10 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+from query import Query
+import query
 from enum import Enum
+import msi
 
 class Space(Enum):
     """Differentiates Yoda path types between research and vault spaces."""
@@ -18,6 +21,14 @@ class Space(Enum):
     def __repr__(self):
         return 'Space.' + self.name
 
+class ObjectType(Enum):
+    COLL = 0
+    DATA = 1
+
+    def __repr__(self):
+        return 'ObjectType.' + self.name
+    def __str__(self):
+        return '-d' if self is ObjectType.DATA else '-C'
 
 def chop(path):
     """Split off the rightmost path component of a path.
@@ -32,6 +43,9 @@ def chop(path):
         x = path.split('/')
         return '/'.join(x[:-1]), x[-1]
 
+# Shorthands.
+dirname  = lambda x: chop(x)[0]  # chops last component off
+basename = lambda x: chop(x)[1]  # chops everything *but* the last component
 
 def info(path):
     """
@@ -69,3 +83,26 @@ def info(path):
          or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
          or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
          or (Space.OTHER, '', '', ''))  # (matches '/' and empty paths)
+
+def object_type(ctx, path):
+    try:
+        t = msi.get_obj_type(ctx, path, '')['arguments'][1]
+    except Exception as e:
+        return
+    if t == '-d':
+        return ObjectType.DATA
+    if t == '-c':
+        return ObjectType.COLL
+
+def fs_object_from_id(ctx, obj_id):
+    """Return (path, ObjectType) for the given object id, or (None, None) if the ID does not exist."""
+
+    x = Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), query.AS_DICT).first() \
+     or Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), query.AS_DICT).first()
+
+    if x is None:  # obj does not exist.
+        return None, None
+    elif 'DATA_NAME' in x:
+        return '{}/{}'.format(*x.values()), ObjectType.DATA
+    else:
+        return x['COLL_NAME'], ObjectType.COLL

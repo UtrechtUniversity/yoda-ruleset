@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 from collections import OrderedDict
 
 import re
-import genquery
 import irods_types
 
 from util import *
@@ -77,10 +76,10 @@ def api_uu_browse_folder(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=query.AS_DICT)
 
-    qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
-                  offset=max(0, offset - qcoll.total_rows()), limit=limit - len(qcoll), output=query.AS_DICT)
-
     colls = map(transform, list(qcoll))
+
+    qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
+                  offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=query.AS_DICT)
     datas = map(transform, list(qdata))
 
     if len(colls) + len(datas) == 0:

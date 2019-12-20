@@ -14,7 +14,6 @@ import xmltodict
 import re
 
 import irods_types
-import genquery
 import session_vars
 
 from util import *
