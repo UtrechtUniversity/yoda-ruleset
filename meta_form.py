@@ -10,6 +10,7 @@ import folder
 import meta
 import schema as schema_
 import schema_transformation
+import irods_types
 
 from util import *
 
