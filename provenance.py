@@ -51,7 +51,7 @@ def get_provenance_log(ctx, coll):
 
     # Retrieve all provenance logs on a folder.
     iter = genquery.row_iterator(
-        "order(META_COLL_ATTR_VALUE)",
+        "order_desc(META_COLL_ATTR_VALUE)",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (coll),
         genquery.AS_LIST, ctx
     )
