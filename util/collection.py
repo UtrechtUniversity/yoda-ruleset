@@ -9,6 +9,7 @@ import itertools
 from query import Query
 import query
 
+
 def exists(callback, path):
     """Check if a collection with the given path exists"""
     return len(list(genquery.row_iterator(
@@ -62,9 +63,9 @@ def data_count(callback, path, recursive=True):
 def collection_count(callback, path):
     """Get a collection's collection count (the amount of collections within a collection)."""
     return sum(1 for _ in genquery.row_iterator(
-                     "COLL_ID",
-                     "COLL_NAME like '{}/%'".format(path),
-                     genquery.AS_LIST, callback))
+               "COLL_ID",
+               "COLL_NAME like '{}/%'".format(path),
+               genquery.AS_LIST, callback))
 
 
 def data_objects(callback, path, recursive=False):
@@ -93,6 +94,7 @@ def data_objects(callback, path, recursive=False):
                                   genquery.AS_LIST, callback)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+
 
 def name_from_id(ctx, coll_id):
     return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()

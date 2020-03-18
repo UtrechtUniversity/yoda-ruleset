@@ -153,7 +153,7 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
 
     for item in provenance_log:
         date_time = time.strftime('%Y/%m/%d %H:%M:%S',
-                                 time.localtime(int(item[0])))
+                                  time.localtime(int(item[0])))
         action = item[1].capitalize()
         actor = item[2]
         provenenance_txt += date_time + " - " + action + " - " + actor + "\n"
@@ -281,7 +281,7 @@ def api_uu_vault_collection_details(ctx, path):
     if metadata_path is None:
         return {}
     else:
-        metadata= True
+        metadata = True
 
     # Retrieve vault folder status.
     status = meta_form.get_coll_vault_status(ctx, path)

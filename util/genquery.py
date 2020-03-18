@@ -11,6 +11,7 @@ import query
 AS_LIST = query.AS_LIST
 AS_DICT = query.AS_DICT
 
+
 def row_iterator(columns,
                  conditions,
                  row_return,

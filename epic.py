@@ -16,4 +16,5 @@ def generate_uuid(ctx):
     randomuuid = str(uuid.uuid4())
     return randomuuid.upper()
 
+
 rule_uu_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)

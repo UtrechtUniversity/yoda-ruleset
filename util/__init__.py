@@ -24,7 +24,7 @@ __all__ = ['log',
            'data_object',
            'user',
            'query',
-           'genquery', # temporary
+           'genquery',  # temporary
            'config']
 
 # Config items can be accessed directly as 'config.foo' by any module

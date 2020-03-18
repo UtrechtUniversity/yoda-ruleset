@@ -5,8 +5,9 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from error import *
-from enum  import Enum
+from enum import Enum
 import json
+
 
 class Context(object):
     """Combined type of a callback and rei struct.
@@ -22,11 +23,13 @@ class Context(object):
         """Allow accessing the callback directly."""
         return getattr(self.callback, name)
 
+
 class Output(Enum):
     """Specifies rule output handlers."""
-    STORE      = 0 # store in output parameters
-    STDOUT     = 1 # write to stdout
-    STDOUT_BIN = 2 # write to stdout, without a trailing newline
+    STORE      = 0  # store in output parameters
+    STDOUT     = 1  # write to stdout
+    STDOUT_BIN = 2  # write to stdout, without a trailing newline
+
 
 def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE):
     """Creates a rule (with iRODS calling conventions) from a Python function.
@@ -101,7 +104,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
                         rule_args[i] = encode_val(x)
             elif handler is Output.STDOUT:
                 for x in result:
-                    callback.writeString('stdout', encode_val(x)+'\n')
+                    callback.writeString('stdout', encode_val(x) + '\n')
                     # XXX for debugging:
                     # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
             elif handler is Output.STDOUT_BIN:

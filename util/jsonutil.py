@@ -9,6 +9,7 @@ import error
 import json
 from collections import OrderedDict
 
+
 class ParseError(error.UUError):
     """Exception for unparsable JSON text.
 
@@ -25,7 +26,7 @@ def _fold(x, **alg):
     """
     f = alg.get(type(x).__name__, lambda y: y)
     if type(x) is OrderedDict:
-        return f(OrderedDict([(k,_fold(v, **alg)) for k,v in x.items()]))
+        return f(OrderedDict([(k, _fold(v, **alg)) for k, v in x.items()]))
     elif type(x) is list:
         return f([_fold(v, **alg) for v in x])
     else:
@@ -39,7 +40,7 @@ def _demote_strings(json_data):
     """
     return _fold(json_data,
                  unicode=lambda x: x.encode('utf-8'),
-                 OrderedDict=lambda x: OrderedDict([(k.encode('utf-8'), v) for k,v in x.items()]))
+                 OrderedDict=lambda x: OrderedDict([(k.encode('utf-8'), v) for k, v in x.items()]))
 
 
 def parse(text):
@@ -52,7 +53,7 @@ def parse(text):
 
 def dump(data, **options):
     """Dump an object to a JSON string."""
-    return json.dumps(data, **({'indent':4} if options == {} else options))
+    return json.dumps(data, **({'indent': 4} if options == {} else options))
 
 
 def read(callback, path):

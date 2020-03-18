@@ -142,8 +142,8 @@ def api_uu_search(ctx,
     elif search_type == 'metadata':
         cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_UNITS like '{}%%' AND META_COLL_ATTR_VALUE like '%%{}%%' AND COLL_NAME like '{}%%'".format(
-                    constants.UUUSERMETADATAROOT + "_",search_string, "/" + zone + "/home"
-                )
+                constants.UUUSERMETADATAROOT + "_", search_string, "/" + zone + "/home"
+        )
     elif search_type == 'status':
         status = search_string.split(":")
         status_value = status[1]
@@ -154,8 +154,8 @@ def api_uu_search(ctx,
 
         cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
-                    status_name, status_value, "/" + zone + "/home"
-                )
+                status_name, status_value, "/" + zone + "/home"
+        )
 
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]

@@ -11,6 +11,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import error
 
+
 class Error(error.UUError):
     """Error for microservice failure"""
 

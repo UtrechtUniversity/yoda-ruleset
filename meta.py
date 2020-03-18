@@ -26,10 +26,10 @@ def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
     return filter(lambda x: type(x) in (dict, OrderedDict)
-                            and 'rel'  in x
-                            and 'href' in x
-                            and type(x['rel'])  is str
-                            and type(x['href']) is str,
+                  and 'rel' in x
+                  and 'href' in x
+                  and type(x['rel']) is str
+                  and type(x['href']) is str,
                   metadata['links'])
 
 

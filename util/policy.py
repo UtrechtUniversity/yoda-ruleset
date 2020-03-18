@@ -11,6 +11,7 @@ from error import *
 import user
 import api
 
+
 class Permitted(object):
     """Policy function result, indicates ALLOWED action.
 
@@ -31,6 +32,7 @@ class NotPermitted(object):
     """
     def __init__(self, reason):
         self.reason = reason
+
     def __str__(self):
         return 'Action not permitted: ' + self.reason
 
@@ -42,7 +44,7 @@ class NotPermitted(object):
 # Shorthands, including fail/succeed terminology for results that
 # do not have anything to do with authorization.
 deny  = fail    = NotPermitted
-allow = succeed =    Permitted
+allow = succeed = Permitted
 
 
 def make_pep():

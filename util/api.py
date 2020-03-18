@@ -18,6 +18,7 @@ import inspect
 import traceback
 from collections import OrderedDict
 
+
 class Result(object):
     def __init__(self, data=None, status='ok', info=None, debug_info=None):
         self.status      = status
@@ -45,7 +46,7 @@ class Result(object):
 
     def __bool__(self):
         return self.status == 'ok'
-    __nonzero__=__bool__
+    __nonzero__ = __bool__
 
 
 class Error(Result, UUError):
@@ -58,8 +59,8 @@ class Error(Result, UUError):
         self.info = info
         self.debug_info = debug_info
 
-        Result.__init__(self, data, 'error_'+name, info, debug_info)
-        UUError.__init__(self, 'error_'+name)
+        Result.__init__(self, data, 'error_' + name, info, debug_info)
+        UUError.__init__(self, 'error_' + name)
 
     def __str__(self):
         return '{}: {}'.format(self.name, self.info)
@@ -87,10 +88,10 @@ def _api(f):
     """
     # Determine required and optional argument names from the function signature.
     a_pos, a_var, a_kw, a_defaults = inspect.getargspec(f)
-    a_pos = a_pos[1:] # ignore callback/context param.
+    a_pos = a_pos[1:]  # ignore callback/context param.
 
-    required = set(a_pos if a_defaults is None else a_pos[:-len(a_defaults) ])
-    optional = set([]    if a_defaults is None else a_pos[ -len(a_defaults):])
+    required = set(a_pos if a_defaults is None else a_pos[:-len(a_defaults)])
+    optional = set([] if a_defaults is None else a_pos[-len(a_defaults):])
 
     # If the function accepts **kwargs, we do not forbid extra arguments.
     allow_extra = a_kw is not None
@@ -108,9 +109,10 @@ def _api(f):
 
         # Result shorthands.
         def error_internal(debug_info=None):
-            return Error('internal', 'An internal error occurred', debug_info = debug_info)
+            return Error('internal', 'An internal error occurred', debug_info=debug_info)
+
         def bad_request(debug_info=None):
-            return Error('badrequest', 'An internal error occurred', debug_info = debug_info)
+            return Error('badrequest', 'An internal error occurred', debug_info=debug_info)
 
         # Validate input string: is it a valid JSON object?
         try:
@@ -148,14 +150,14 @@ def _api(f):
             result = f(ctx, **data)
             t = time.time() - t
 
-            log._debug(ctx, '%4dms %s' % (int(t*1000), f.__name__))
+            log._debug(ctx, '%4dms %s' % (int(t * 1000), f.__name__))
 
             if type(result) is Error:
-                raise result # Allow api.Errors to be either raised or returned.
+                raise result  # Allow api.Errors to be either raised or returned.
 
             elif not isinstance(result, Result):
                 # No error / explicit status info implies 'OK' status.
-                result = Result(result, debug_info = {'time': t})
+                result = Result(result, debug_info={'time': t})
 
             return result.as_dict()
         except Error as e:

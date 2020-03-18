@@ -11,6 +11,7 @@ import irods_types
 
 MAX_SQL_ROWS = 256
 
+
 class Option(object):
     """iRODS QueryInp option flags - used internally.
 
@@ -25,6 +26,7 @@ class Option(object):
     AUTO_CLOSE             = 0x100
     UPPER_CASE_WHERE       = 0x200
 
+
 class OutputType(Enum):
     """
     AS_DICT:  result rows are dicts of (column_name => value)
@@ -37,6 +39,7 @@ class OutputType(Enum):
     AS_DICT  = 0
     AS_LIST  = 1
     AS_TUPLE = 2
+
 
 AS_DICT  = OutputType.AS_DICT
 AS_LIST  = OutputType.AS_LIST
@@ -186,7 +189,7 @@ class Query(object):
                 # perform only slightly worse.
                 # [1]: https://github.com/irods/irods/blob/4.2.6/plugins/database/src/general_query.cpp#L2393
                 self._total = Query(self.callback, self.columns, self.conditions, limit=0,
-                                    options=self.options|Option.RETURN_TOTAL_ROW_COUNT).total_rows()
+                                    options=self.options | Option.RETURN_TOTAL_ROW_COUNT).total_rows()
 
         return self._total
 
@@ -260,9 +263,9 @@ class Query(object):
 
     def __str__(self):
         return 'Query(select {}{}{}{})'.format(', '.join(self.columns),
-                                               ' where '+self.conditions   if self.conditions else '',
-                                               ' limit '+str(self.limit)   if self.limit is not None else '',
-                                               ' offset '+str(self.offset) if self.offset else '')
+                                               ' where ' + self.conditions if self.conditions else '',
+                                               ' limit ' + str(self.limit) if self.limit is not None else '',
+                                               ' offset ' + str(self.offset) if self.offset else '')
 
     def __del__(self):
         """Auto-close query on when Query goes out of scope."""
