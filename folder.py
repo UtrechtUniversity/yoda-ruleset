@@ -123,7 +123,7 @@ def get_locks(ctx, coll, org_metadata=None):
 
     return [root for k, root in org_metadata
             if (k == constants.IILOCKATTRNAME
-                and (root.startswith(coll) or coll.startswith(root))])
+                and (root.startswith(coll) or coll.startswith(root)))]
 
 
 def has_locks(ctx, coll, org_metadata=None):
