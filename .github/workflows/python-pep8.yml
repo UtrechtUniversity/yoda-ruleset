@@ -23,4 +23,5 @@ jobs:
     - name: Lint with pycodestyle
       run: |
         pip install pycodestyle
-        pycodestyle *.py
+        pycodestyle *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605
+        pycodestyle util/*.py --ignore=E129,E221,E241,E402,E501,W503,W605
