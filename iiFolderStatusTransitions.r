@@ -479,7 +479,8 @@ iiFolderSecure(*folder) {
 	iiCopyFolderToVault(*folder, *target);
 	iiCopyUserMetadata(*folder, *target);
 	rule_uu_vault_copy_original_metadata_to_vault(*target);
-	iiCopyLicenseToVaultPackage(*folder, *target);
+	rule_uu_vault_write_license(*target);
+
 
 	if (*httpCode != "0") {
 		# save EPIC Persistent ID in metadata

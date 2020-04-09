@@ -24,6 +24,7 @@ __all__ = ['api_uu_vault_submit',
            'api_uu_vault_preservable_formats_lists',
            'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
+           'rule_uu_vault_write_license',
            'rule_uu_vault_write_provenance_log',
            'api_uu_vault_system_metadata',
            'api_uu_vault_collection_details']
@@ -140,6 +141,28 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     # Copy original metadata JSON.
     copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+
+
+def rule_uu_vault_write_license(rule_args, callback, rei):
+    """Writes the license as a text file into the root of the vault package.
+
+    :param rule_args[0]: Path of a package in the vault.
+    """
+
+    # Retrieve license text.
+    license_txt = "License {}".format(time.time())
+
+    # Write license file.
+    ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
+    license_file = rule_args[0] + "/License.txt"
+    ret_val = callback.msiDataObjCreate(license_file, ofFlags, 0)
+
+    file_handle = ret_val['arguments'][2]
+    callback.msiDataObjWrite(file_handle, license_txt, 0)
+    callback.msiDataObjClose(file_handle, 0)
+
+    # Checksum provenance file.
+    callback.msiDataObjChksum(license_file, "verifyChksum=", 0)
 
 
 def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
