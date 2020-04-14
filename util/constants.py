@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -26,6 +26,9 @@ UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
 
 UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
 """Metadata for calculated storage month."""
+
+IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
+"""iRODS path where all licenses will be stored."""
 
 IIJSONMETADATA = 'yoda-metadata.json'
 """Name of metadata JSON file."""

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -407,7 +407,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Write license file.
-    callback.rule_uu_vault_write_license(vault_pkg_path);
+    callback.rule_uu_vault_write_license(vault_pkg_path)
 
     # Log actions.
     callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')

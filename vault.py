@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -140,7 +140,7 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
 
     # Copy original metadata JSON.
     copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
-    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    callback.(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
 def rule_uu_vault_write_license(rule_args, callback, rei):
@@ -149,20 +149,37 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
     :param rule_args[0]: Path of a package in the vault.
     """
 
+    vault_pkg_coll = rule_args[0]
+    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+
+    # Retrieve license.
+    license = ""
+    license_key = "License"
+    license_unit = "{}_%".format(constants.UUUSERMETADATAROOT)
+
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_UNITS LIKE '{}'".format(vault_pkg_coll, license_key, license_unit),
+        genquery.AS_LIST, callback)
+
+    for row in iter:
+        license = row[0]
+
+    if license == "":
+        log.write(callback, "No license found in user metadata: {}" % (vault_pkg_coll))
+        return
+
     # Retrieve license text.
-    license_txt = "License {}".format(time.time())
+    license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
 
-    # Write license file.
-    ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-    license_file = rule_args[0] + "/License.txt"
-    ret_val = callback.msiDataObjCreate(license_file, ofFlags, 0)
+    if not data_object.exists(callback, license_txt):
+        log.write(callback, "License text not available for: {}" % (license))
+        return
 
-    file_handle = ret_val['arguments'][2]
-    callback.msiDataObjWrite(file_handle, license_txt, 0)
-    callback.msiDataObjClose(file_handle, 0)
-
-    # Checksum provenance file.
-    callback.msiDataObjChksum(license_file, "verifyChksum=", 0)
+    # Copy license file.
+    license_file = vault_pkg_coll + "/License.txt"
+    ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
+    ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
 
 
 def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
