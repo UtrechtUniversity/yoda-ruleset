@@ -266,7 +266,7 @@ def api_uu_meta_form_load(ctx, coll):
                                    'can_edit': can_edit})
 
     elif space is pathutil.Space.VAULT:
-        can_edit =  user_is_datamanager(ctx, category, user_full_name)
+        can_edit = user_is_datamanager(ctx, category, user_full_name)
         status = get_coll_vault_status(ctx, coll, org_metadata)
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
