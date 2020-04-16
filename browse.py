@@ -93,19 +93,18 @@ def api_uu_browse_folder(ctx,
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
 
-
-
 # Function to browse a folder and only look at the collections in it. No dataobjects.
 # Specifically for folder selection for copying data to research area from vault for instance.
 
+
 @api.make()
 def api_uu_browse_collections(ctx,
-                         coll='/',
-                         sort_on='name',
-                         sort_order='asc',
-                         offset=0,
-                         limit=10,
-                         space=pathutil.Space.OTHER):
+                              coll='/',
+                              sort_on='name',
+                              sort_order='asc',
+                              offset=0,
+                              limit=10,
+                              space=pathutil.Space.OTHER):
     """Gets paginated collection contents, including size/modify date information."""
 
     def transform(row):
@@ -156,10 +155,6 @@ def api_uu_browse_collections(ctx,
 
     colls = map(transform, list(qcoll))
 
-    #qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
-    #              offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=query.AS_DICT)
-    #datas = map(transform, list(qdata))
-
     if len(colls) == 0:
         # No results at all?
         # Make sure the collection actually exists.
@@ -169,8 +164,6 @@ def api_uu_browse_collections(ctx,
 
     return OrderedDict([('total', qcoll.total_rows()),
                         ('items', colls)])
-
-
 
 
 @api.make()
