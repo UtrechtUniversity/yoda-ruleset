@@ -96,6 +96,22 @@ def remove(ctx, path, force=True):
                         'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
                         irods_types.BytesBuf())
 
+def rename(ctx, path_org, path_target):
+    """Rename dat object from path_org to path_target.
+
+    :param path_org:    data object path origin
+    :param path_target: data object path for destination
+    :param force: applies "forceFlag"
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.data_obj_rename(ctx,
+                        path_org,
+                        path_target,
+                        '0',
+                        irods_types.BytesBuf())
+
 
 def name_from_id(ctx, data_id):
     x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()

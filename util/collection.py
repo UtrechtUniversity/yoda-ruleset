@@ -4,7 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import msi
 import genquery
+import irods_types
 import itertools
 from query import Query
 import query
@@ -94,6 +96,47 @@ def data_objects(callback, path, recursive=False):
                                   genquery.AS_LIST, callback)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+
+def create(ctx, path):
+    """Create new folder.
+
+    :param path: collection including new folder
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.coll_create(ctx,
+                    path,
+                    '',
+                    irods_types.BytesBuf())
+
+def remove(ctx, path):
+    """Delete a collection.
+
+    :param path: path to be deleted
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.rm_coll(ctx, 
+                path,
+                '',
+                irods_types.BytesBuf())
+
+def rename(ctx, path_org, path_target):
+    """Rename dat object from path_org to path_target.
+
+    :param path_org:    data object path origin
+    :param path_target: data object path for destination
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.data_obj_rename(ctx,
+                        path_org,
+                        path_target,
+                        '1',
+                        irods_types.BytesBuf())
 
 
 def name_from_id(ctx, coll_id):

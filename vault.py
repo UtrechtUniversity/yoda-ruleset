@@ -27,7 +27,8 @@ __all__ = ['api_uu_vault_submit',
            'rule_uu_vault_write_license',
            'rule_uu_vault_write_provenance_log',
            'api_uu_vault_system_metadata',
-           'api_uu_vault_collection_details']
+           'api_uu_vault_collection_details',
+           'api_uu_vault_copy_to_research']
 
 
 def submit(ctx, coll):
@@ -61,12 +62,90 @@ def republish(ctx, coll):
         return api.Error(*res['arguments'][1:])
 
 
+def vault_copy_to_research(ctx, coll_origin, coll_target):
+    zone = user.zone(ctx)
+
+    #return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage', data={"bla": "bla", "bla2":"bla2bla2"})
+
+    return {"status" : 'ok',
+            "status_info": 'From irods layer: This is not right!',
+            "org_target": coll_target,
+            "org_origin": coll_origin
+    }
+
+
+
+    # API error introduces post-error in requesting application
+    if coll_target == "/" + zone + "/home":
+        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage', {"bla": "bla", "bla2":"bla2bla2"})
+
+    # Check if target is a research folder. I.e. none-vault folder
+    parts = coll_target.split('/')    #/tempZone/home/research-
+    
+    group_name = parts[3]
+    if group_name.startswith('vault-'):
+        return api.Error('RequiredIsResearchArea','Please select a specific research folder for your datapackage')
+
+    # Check whether datapackage folder already present in target folder. 
+    # Get package name from origin path
+    parts = coll_origin.split('/')
+    new_package_collection = coll_target + '/' + parts[-1]
+
+    # Now check whether already exist 
+    if collection.exists(ctx, new_package_collection):
+        return api.Error('PackageAlreadyPresentInTarget','This datapackage is already present at the specified place')
+
+    # Does target path exist
+    if not collection.exists(ctx, coll_target):
+        return api.Error('TargetPathNotExists','The target you speficied does not exist')
+
+    user_full_name = user.full_name(ctx)
+
+    # Check if user has READ ACCESS to specific vault packatge in collection coll_origin. 
+
+    category = meta_form.group_category(ctx, group_name)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    if not is_datamanager:
+        # Check if research group has access by checking of research-group exists for this user. 
+        research_group_access = collection.exists('/' + parts[0] + '/' + parts[1] + '/' + parts[2] + '/')  
+
+        if not research_group_access:
+            return api.Error('NoPermissions', 'Insufficient rights to perform this action')
+     
+
+    # Check for possible locks on target collection
+    lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
+    if lock_count:
+        return api.Error('TargetCollectionLocked','The folder you selected is locked.');
+
+    # Check if user has write acces to research folder
+    # Only normal user has write access.
+    if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
+        return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder');
+
+
+    # Register to delayed rule queue
+    delay = 10
+    
+    callback.delayExec(
+        "<PLUSET>%ds</PLUSET>" % delay,
+        "iiCopyFolderToResearch('%s', '%s')" % (coll_origin, coll_target),
+        "")
+
+    # TODO: response nog veranderen
+    return {"status": "ok",
+            "target": coll_target,
+    	    "origin": coll_origin 
+    }
+
+
 api_uu_vault_submit    = api.make()(submit)
 api_uu_vault_approve   = api.make()(approve)
 api_uu_vault_cancel    = api.make()(cancel)
 api_uu_vault_depublish = api.make()(depublish)
 api_uu_vault_republish = api.make()(republish)
-
+api_uu_vault_copy_to_research = api.make()(vault_copy_to_research) 
 
 def preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
