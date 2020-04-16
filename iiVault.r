@@ -532,7 +532,7 @@ iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
         }
 
 	# Add copy action to delayed rule queue.
-	*status = "SUCCESS";
+	*status = "Success";
 	*statusInfo = "";
 	delay("<PLUSET>1s</PLUSET>") {
                 iiCopyFolderToResearch(*folder, *target);
