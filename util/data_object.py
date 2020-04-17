@@ -96,12 +96,12 @@ def remove(ctx, path, force=True):
                         'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
                         irods_types.BytesBuf())
 
-def rename(ctx, path_org, path_target):
-    """Rename dat object from path_org to path_target.
 
-    :param path_org:    data object path origin
-    :param path_target: data object path for destination
-    :param force: applies "forceFlag"
+def rename(ctx, path_org, path_target):
+    """Rename data object from path_org to path_target.
+
+    :param path_org: Data object original path
+    :param path_target: Data object new path
 
     This may raise a error.UUError if the file does not exist, or when the user
     does not have write permission.

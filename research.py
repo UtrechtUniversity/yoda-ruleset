@@ -171,15 +171,14 @@ def api_uu_research_folder_rename(ctx,
 def api_uu_research_folder_delete(ctx,
                                   coll,
                                   folder_name):
-
     coll_target = coll + '/' + folder_name
- 
-    # not in home - a groupname must be present ie at least 2!?
+
+    # Not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
         return {"proc_status": "nok",
                 "proc_status_info": "It is not possible to delete folder '" + folder_name + "' at this location"}
 
-    # Name should not contain '\\' or '/'
+    # Name should not contain '\\' or '/'.
     if '/' in folder_name or '\\' in folder_name:
         return {"proc_status": "nok",
                 "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
@@ -208,7 +207,7 @@ def api_uu_research_folder_delete(ctx,
                 "proc_status_info": "The selected folder to add a new folder to does not exist"}
 
     # Folder empty?
-    if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target)>0:
+    if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target) > 0:
         return {"proc_status": "nok",
                 "proc_status_info": "The selected folder is not empty and can therefore not be deleted. Please delete entire content first"}
 
@@ -235,7 +234,7 @@ def api_uu_research_file_rename(ctx,
 
     try:
         validate_filename(new_file_name)
-    except:
+    except Exception:
         return {"proc_status": "nok",
                 "proc_status_info": "This is not a valid file name. Please choose another name"}
 
@@ -376,7 +375,7 @@ def api_uu_research_revisions_search_on_filename(ctx,
             "DATA_ID",
             "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
             "AND META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-            "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  #*originalDataName
+            "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
             genquery.AS_DICT, ctx)
 
         revision_count = 0
@@ -392,9 +391,7 @@ def api_uu_research_revisions_search_on_filename(ctx,
             for row2 in iter2:
                 rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
 
-
             rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
-
             rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
 
         rev_data['revision_count'] = revision_count
@@ -414,7 +411,7 @@ def api_uu_research_revision_list(ctx, path):
     zone = user.zone(ctx)
 
     revisions = []
-    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path' 
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
     iter = genquery.row_iterator(
@@ -441,22 +438,22 @@ def api_uu_research_revision_list(ctx, path):
         meta_data["dezoned_coll_name"] = '/' + '/'.join(meta_data["org_original_coll_name"].split(os.path.sep)[3:])
 
         meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
-            time.localtime(int(meta_data["org_original_modify_time"])))
+                                                              time.localtime(int(meta_data["org_original_modify_time"])))
 
         revisions.append(meta_data)
 
     return {"revisions": revisions}
+
 
 @api.make()
 # "restore_no_overwrite"
 # "restore_overwrite" -> overwrite the file
 # "restore_next_to" -> revision is places next to the file it conficted with by adding
 #
-#{restore_no_overwrite, restore_overwrite, restore_next_to}
+# {restore_no_overwrite, restore_overwrite, restore_next_to}
 #   With "restore_no_overwrite" the front end tries to copy the selected revision in *target
 #    If the file already exist the user needs to decide what to do.
 #     Function exits with corresponding status so front end can take action
-
 def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_filename):
     """Copy selected revision to target collection with given name"""
     # New file name should not contain '\\' or '/'
@@ -473,7 +470,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
     if not collection.exists(ctx, coll_target):
         return {"proc_status": "nok",
                 "proc_status_info": "The target collection does not exist or is not accessible for you"}
-    
+
     user_full_name = user.full_name(ctx)
 
     # Target collection write access ?
@@ -489,10 +486,10 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
     # Read acces in org collection??
     # Find actual revision inf on revision_id
-    originalPathKey =  constants.UUORGMETADATAPREFIX + 'original_path'
-    original_path = ''
-    source_path = ''
-    coll_origin = ''
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+    original_path   = ''
+    source_path     = ''
+    coll_origin     = ''
     filename_origin = ''
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME, META_DATA_ATTR_VALUE",
@@ -505,7 +502,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         coll_origin = row[1]
         filename_origin = row[0]
         original_path = row[2]
- 
+
     origin_group_name = original_path.split('/')[3]
 
     if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
@@ -530,7 +527,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         return {"proc_status": "nok",
                 "proc_status_info": "Unkown requested action: " + overwrite}
 
-    # Allowd to restore revision 
+    # Allowd to restore revision
     # Start actual restoration of the revision
 
     try:
@@ -540,6 +537,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
 
     return {"proc_status": "ok"}
+
 
 @api.make()
 def api_uu_research_system_metadata(ctx, coll):
