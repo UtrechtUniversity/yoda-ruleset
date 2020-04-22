@@ -262,10 +262,10 @@ def ingest_metadata_staging(ctx, path):
     coll = pathutil.chop(path)[0]
 
     ret = msi.string_2_key_val_pair(ctx,
-                                   '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
-                                                   'cronjob_vault_ingest=',
-                                                   constants.CRONJOB_STATE['PENDING']),
-                                   irods_types.BytesBuf())
+                                    '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
+                                                    'cronjob_vault_ingest=',
+                                                    constants.CRONJOB_STATE['PENDING']),
+                                    irods_types.BytesBuf())
 
     msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
