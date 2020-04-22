@@ -261,13 +261,13 @@ def ingest_metadata_staging(ctx, path):
 
     coll = pathutil.chop(path)[0]
 
-    ret = string_2_key_val_pair(ctx,
-                                '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
-                                                'cronjob_vault_ingest=',
-                                                CRONJOB_STATE['PENDING']),
-                                irods_types.BytesBuf())
+    ret = msi.string_2_key_val_pair(ctx,
+                                   '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
+                                                   'cronjob_vault_ingest=',
+                                                   constants.CRONJOB_STATE['PENDING']),
+                                   irods_types.BytesBuf())
 
-    set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
+    msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
     # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
     ctx.iiAdminVaultIngest()
@@ -439,11 +439,11 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     if status == constants.VAULT_PACKAGE_STATE['PUBLISHED']:
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
-        s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + CRONJOB_STATE['PENDING']
+        s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + constants.CRONJOB_STATE['PENDING']
         try:
-            ret = string_2_key_val_pair(callback, s, irods_types.BytesBuf())
+            ret = msi.string_2_key_val_pair(callback, s, irods_types.BytesBuf())
             kvp = ret['arguments'][1]
-            associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
+            msi.associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
 
             callback.iiSetUpdatePublicationState(vault_pkg_path, irods_types.BytesBuf())
         except Exception:
