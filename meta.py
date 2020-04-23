@@ -151,7 +151,7 @@ def rule_uu_meta_validate(rule_args, callback, rei):
     try:
         errs = get_json_metadata_errors(callback, json_path)
     except error.UUError as e:
-        errs = {'message': str(e)}
+        errs = [{'message': str(e)}]
 
     if len(errs):
         rule_args[1] = '1'
@@ -352,7 +352,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         set_result('JsonPathInvalid', 'Vault path <{}> does not exist'.format(vault_pkg_path))
         return
 
-    actor = data_owner(callback, json_path)
+    actor = data_object.owner(callback, json_path)
     if actor is None:
         set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
         return

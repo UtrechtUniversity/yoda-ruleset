@@ -11,8 +11,9 @@ from error import *
 import user
 import api
 
-class Permitted(object):
-    """Policy function result, indicates ALLOWED action.
+
+class Succeed(object):
+    """Policy function result, indicates success.
 
     Evaluates to True in boolean context.
     """
@@ -24,8 +25,11 @@ class Permitted(object):
     __nonzero__ = __bool__
 
 
-class NotPermitted(object):
-    """Policy function result, indicates DISALLOWED action.
+class Fail(object):
+    """Policy function result, indicates failure.
+
+    As a result, the PEP-instrumented operation will be aborted, and
+    pep_x_except will fire.
 
     Evaluates to False in boolean context.
     """
@@ -38,40 +42,45 @@ class NotPermitted(object):
         return False
     __nonzero__ = __bool__
 
+# Functions to be used to instantiate the above result types.
+fail    = Fail
+succeed = Succeed
 
-# Shorthands, including fail/succeed terminology for results that
-# do not have anything to do with authorization.
-deny  = fail    = NotPermitted
-allow = succeed =    Permitted
+def all(*x):
+    for i in x:
+        if not i:
+            return i
+    return succeed()
 
 
-def make_pep():
-    """Turn a function into a PEP rule.
+def require():
+    """Turn a function into a PEP rule that fails (blocks associated action)
+       unless policy.succeed() is returned.
 
-    The function must return policy.(Not)Permitted (or .fail()/.succeed()) as a result.
+    The function must explicitly return policy.succeed() or .fail('reason') as a result.
     Any other return type will result in the PEP failing.
     """
     def deco(f):
-        @rule.make()
+        @rule.make(outputs=[])
         def r(ctx, *args):
             try:
                 result = f(ctx, *args)
             except api.Error as e:
-                log._write(ctx, '{} failed/denied due to unhandled API error: {}'.format(f.__name__, str(e)))
+                log._write(ctx, '{} failed due to unhandled API error: {}'.format(f.__name__, str(e)))
                 raise
             except Exception as e:
-                log._write(ctx, '{} failed/denied due to unhandled internal error: {}'.format(f.__name__, str(e)))
+                log._write(ctx, '{} failed due to unhandled internal error: {}'.format(f.__name__, str(e)))
                 raise
 
-            if isinstance(result, Permitted):
+            if isinstance(result, Succeed):
                 return  # succeed the rule (msi "succeed" has no effect here)
-            elif isinstance(result, NotPermitted):
+            elif isinstance(result, Fail):
                 log._write(ctx, '{} denied: {}'.format(f.__name__, str(result)))
                 ctx.msiOprDisallowed()
                 assert False  # Just in case.
 
-            # We need an unambiguous YES from the policy function.
-            # Default to disallowed.
+            # Require an unambiguous YES from the policy function.
+            # Default to fail.
             log._write(ctx, '{} denied: ambiguous policy result (internal error): {}'
                             .format(f.__name__, str(result)))
             ctx.msiOprDisallowed()

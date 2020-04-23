@@ -14,15 +14,13 @@
 # \param[in] resource			The resource where the original is written to
 # \param[in] rodsZone			Zone where the original can be found
 # \param[in] logicalPath		path of the original
-# \param[in] maxsize			Maximum file size of original
-# \param[in] filterlist			A list with like expressions to blacklist
 #
-uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *filterlist) {
+uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath) {
 	if (*logicalPath like "/" ++ *rodsZone ++ "/home/" ++ IIGROUPPREFIX ++ "*") {
 		uuChopPath(*logicalPath, *parent, *basename);
 
 		*ignore = false;
-		foreach(*filter in *filterlist) {
+		foreach(*filter in UUBLACKLIST) {
 			if (*basename like *filter) {
 				writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
 				*ignore = true;
@@ -34,7 +32,7 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath, *maxSize, *fi
 			succeed;
 		}
 
-		iiRevisionCreateAsynchronously(*resource, *logicalPath, *maxSize);
+		iiRevisionCreateAsynchronously(*resource, *logicalPath, UUMAXREVISIONSIZE);
 	}
 }
 

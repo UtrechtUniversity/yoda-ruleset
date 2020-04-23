@@ -11,6 +11,7 @@ from enum import Enum
 # TODO: all attrnames => one enum.Enum
 
 IIGROUPPREFIX = "research-"
+IIGRPPREFIX = "grp-"
 
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = '/yoda'
@@ -78,6 +79,22 @@ VAULT_PACKAGE_STATE = {
 }
 """Vault package states."""
 
+class vault_package_state(Enum):
+    """Research folder states."""
+
+    INCOMPLETE                = 'INCOMPLETE'
+    COMPLETE                  = 'COMPLETE'
+    UNPUBLISHED               = 'UNPUBLISHED'
+    SUBMITTED_FOR_PUBLICATION = 'SUBMITTED_FOR_PUBLICATION'
+    APPROVED_FOR_PUBLICATION  = 'APPROVED_FOR_PUBLICATION'
+    PUBLISHED                 = 'PUBLISHED'
+    PENDING_DEPUBLICATION     = 'PENDING_DEPUBLICATION'
+    DEPUBLISHED               = 'DEPUBLISHED'
+    PENDING_REPUBLICATION     = 'PENDING_REPUBLICATION'
+
+    def __str__(self):
+        return self.name
+
 class research_package_state(Enum):
     """Research folder states."""
 
@@ -91,19 +108,19 @@ class research_package_state(Enum):
     def __str__(self):
         return self.name
 
-folder_transitions = [(getattr(research_package_state, x),
-                       getattr(research_package_state, y))
-                       for x, y in [('FOLDER',    'LOCKED'),
-                                    ('FOLDER',    'SUBMITTED'),
-                                    ('LOCKED',    'FOLDER'),
+folder_transitions = [(research_package_state(x),
+                       research_package_state(y))
+                       for x, y in [('',          'LOCKED'),
+                                    ('',          'SUBMITTED'),
+                                    ('LOCKED',    ''),
                                     ('LOCKED',    'SUBMITTED'),
-                                    ('SUBMITTED', 'FOLDER'),
+                                    ('SUBMITTED', ''),
                                     ('SUBMITTED', 'ACCEPTED'),
                                     ('SUBMITTED', 'REJECTED'),
                                     ('REJECTED',  'LOCKED'),
-                                    ('REJECTED',  'FOLDER'),
+                                    ('REJECTED',  ''),
                                     ('REJECTED',  'SUBMITTED'),
                                     ('ACCEPTED',  'SECURED'),
                                     ('SECURED',   'LOCKED'),
-                                    ('SECURED',   'FOLDER'),
+                                    ('SECURED',   ''),
                                     ('SECURED',   'SUBMITTED')]]

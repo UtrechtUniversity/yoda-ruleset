@@ -6,8 +6,14 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 from util import *
+from util.query import Query
+import policies
+import meta
+import policies_datamanager
+import policies_folder_status
 
 __all__ = ['rule_uu_collection_group_name',
+           'api_uu_folder_get_locks',
            'api_uu_folder_lock',
            'api_uu_folder_unlock',
            'api_uu_folder_submit',
@@ -15,37 +21,73 @@ __all__ = ['rule_uu_collection_group_name',
            'api_uu_folder_accept',
            'api_uu_folder_reject']
 
-def lock(ctx, coll):
-    res = ctx.iiFolderLock(coll, '', '')
-    if res['arguments'][1] != 'Success':
+def set_status(ctx, coll, status):
+    """Change a folder's status.
+    Status changes are validated by policy (AVU modify preproc).
+    """
+    # Ideally we would pass in the current (expected) status as part of the
+    # request, and perform a metadata 'mod' operation instead of a 'set'.
+    # However no such msi exists.
+    # With 'mod' we can be sure that we are performing the correct state
+    # transition. Otherwise the original status in a transition can be
+    # different from the expected current status, resulting in e.g. a validated
+    # SECURED -> FOLDER transition, while the request was for a REJECTED ->
+    # FOLDER transition.
+    try:
+        if status.value == '':
+            avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%')
+        else:
+            avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, status.value)
+    except Exception as e:
+        x = policies_folder_status.can_set_folder_status_attr(ctx,
+                                                              user.user_and_zone(ctx),
+                                                              coll,
+                                                              status.value)
+        if x:
+            return api.Error('internal', 'Could not update folder status due to an internal error', str(e))
+        else:
+            return api.Error('not_allowed', x.reason)
+    return api.Result.ok()
+
+
+def set_status_as_datamanager(ctx, coll, status):
+    res = ctx.iiFolderDatamanagerAction(coll, status.value, '', '')
+    if res['arguments'][2] != 'Success':
         return api.Error(*res['arguments'][1:])
+
+
+def lock(ctx, coll):
+    return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
 def unlock(ctx, coll):
-    res = ctx.iiFolderUnlock(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    # Unlocking is implemented by clearing the folder status. Since this action
+    # can also represent other state changes than "unlock", we perform a sanity
+    # check to see if the folder is currently in the expected state.
+    current = get_status(ctx, coll)
+    if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
+        return api.Error('status_changed',
+                         'Insufficient permissions or the folder is currently not locked')
+
+    return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 def submit(ctx, coll):
-    res = ctx.iiFolderSubmit(coll, '', '', '')
-    if res['arguments'][2] != 'Success':
-        return api.Error(*res['arguments'][2:])
-    return res['arguments'][1]
+    return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 def unsubmit(ctx, coll):
-    res = ctx.iiFolderUnsubmit(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    # Sanity check. See 'unlock'.
+    if get_status(ctx, coll) is not constants.research_package_state.SUBMITTED:
+        return api.Error('status_changed', 'Folder cannot be unsubmitted because its status has changed.')
+
+    return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 def accept(ctx, coll):
-    res = ctx.iiFolderAccept(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
 def reject(ctx, coll):
-    res = ctx.iiFolderReject(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
+def secure(ctx, coll):
+    ctx.iiFolderSecure(coll)
 
 api_uu_folder_lock     = api.make()(lock)
 api_uu_folder_unlock   = api.make()(unlock)
@@ -53,6 +95,7 @@ api_uu_folder_submit   = api.make()(submit)
 api_uu_folder_unsubmit = api.make()(unsubmit)
 api_uu_folder_accept   = api.make()(accept)
 api_uu_folder_reject   = api.make()(reject)
+
 
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
@@ -97,25 +140,32 @@ def collection_group_name(callback, coll):
 
 rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
-def get_org_metadata(ctx, coll):
-    """Obtains a (k,v) list of all organisation metadata on a given collection"""
+def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
+    """Obtains a (k,v) list of all organisation metadata on a given collection or data object"""
+
+    typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
     return [(k, v) for k, v
-            in genquery.row_iterator("META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-                                     "COLL_NAME = '{}' AND META_COLL_ATTR_NAME like '{}%'"
-                                     .format(coll, constants.UUORGMETADATAPREFIX),
-                                     genquery.AS_LIST, ctx)]
+            in Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
+                     "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
+                     + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
+                        if object_type is pathutil.ObjectType.DATA
+                        else " AND COLL_NAME = '{}'".format(path)))]
 
 
-def get_locks(ctx, coll, org_metadata=None):
-    """Returns all locks on a collection."""
+def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
+    """Returns all locks on a collection or data object (includes locks on parents and children)."""
 
     if org_metadata is None:
-        org_metadata = get_org_metadata(ctx, coll)
+        org_metadata = get_org_metadata(ctx, path, object_type=object_type)
 
     return [root for k, root in org_metadata
             if  k == constants.IILOCKATTRNAME
-            and (root.startswith(coll) or coll.startswith(root))]
+            and (root.startswith(path) or path.startswith(root))]
+
+@api.make()
+def api_uu_folder_get_locks(ctx, coll):
+    return get_locks(ctx, coll)
 
 def has_locks(ctx, coll, org_metadata=None):
     """Check whether a lock exists on the given collection, its parents or children."""
@@ -131,3 +181,28 @@ def is_locked(ctx, coll, org_metadata=None):
 
     # Count only locks that exist on the coll itself or its parents.
     return len([x for x in locks if coll.startswith(x)]) > 0
+
+
+def is_data_locked(ctx, path, org_metadata=None):
+    """Check whether a lock exists on the given data object."""
+    locks = get_locks(ctx, path, org_metadata=org_metadata, object_type=pathutil.ObjectType.DATA)
+
+    return len(locks) > 0
+
+
+def get_status(ctx, path, org_metadata=None):
+    """Get the status of a research folder."""
+
+    if org_metadata is None:
+        org_metadata = get_org_metadata(ctx, path)
+
+    # Don't care about duplicate attr names here.
+    org_metadata = dict(org_metadata)
+    if constants.IISTATUSATTRNAME in org_metadata:
+        x = org_metadata[constants.IISTATUSATTRNAME]
+        try:
+            return constants.research_package_state(x)
+        except:
+            log.write(ctx, 'Invalid folder status <{}>'.format(x))
+
+    return constants.research_package_state.FOLDER

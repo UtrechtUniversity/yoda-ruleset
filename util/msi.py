@@ -110,8 +110,15 @@ set_key_value_pairs_to_obj, SetKeyValuePairsToObjError = \
 associate_key_value_pairs_to_obj, AssociateKeyValuePairsToObjError = \
     make('AssociateKeyValuePairsToObj', 'Could not associate metadata to object')
 
-add_avu, AddAvuError = make('AddAvu', 'Could not add metadata to object')
-rmw_avu, RmwAvuError = make('RmwAvu', 'Could not remove metadata to object')
+# :s/[A-Z]/_\L\0/g
+
+remove_key_value_pairs_from_obj, RemoveKeyValuePairsFromObjError = \
+        make('RemoveKeyValuePairsFromObj', 'Could not remove metadata from object')
+
+add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
+rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
+
+sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
 
 # Add new msis here as needed.
 

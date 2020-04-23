@@ -35,3 +35,5 @@ from vault                  import *
 from vault_xml_to_json      import *
 from datacite               import *
 from epic                   import *
+
+from policies               import *

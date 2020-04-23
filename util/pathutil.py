@@ -14,9 +14,10 @@ import msi
 
 class Space(Enum):
     """Differentiates Yoda path types between research and vault spaces."""
-    OTHER    = 0
-    RESEARCH = 1
-    VAULT    = 2
+    OTHER       = 0
+    RESEARCH    = 1
+    VAULT       = 2
+    DATAMANAGER = 3
 
     def __repr__(self):
         return 'Space.' + self.name
@@ -46,6 +47,7 @@ def chop(path):
 # Shorthands.
 dirname  = lambda x: chop(x)[0]  # chops last component off
 basename = lambda x: chop(x)[1]  # chops everything *but* the last component
+chopext  = lambda x: x.rsplit('.', 1)
 
 def info(path):
     """
@@ -58,13 +60,15 @@ def info(path):
 
     Examples:
 
-    /                           => Space.OTHER,    '',         '',           ''
-    /tempZone                   => Space.OTHER,    'tempZone', '',           ''
-    /tempZone/yoda/x            => Space.OTHER,    'tempZone', '',           'yoda/x'
-    /tempZone/home              => Space.OTHER,    'tempZone', '',           'home'
-    /tempZone/home/vault-x      => Space.VAULT,    'tempZone', 'vault-x',    ''
-    /tempZone/home/vault-x/y    => Space.VAULT,    'tempZone', 'vault-x',    'y'
-    /tempZone/home/research-x/y => Space.RESEARCH, 'tempZone', 'research-x', 'y'
+    /                              => Space.OTHER,       '',         '',              ''
+    /tempZone                      => Space.OTHER,       'tempZone', '',              ''
+    /tempZone/yoda/x               => Space.OTHER,       'tempZone', '',              'yoda/x'
+    /tempZone/home                 => Space.OTHER,       'tempZone', '',              'home'
+    /tempZone/home/rods            => Space.OTHER,       'tempZone', 'rods',          ''
+    /tempZone/home/vault-x         => Space.VAULT,       'tempZone', 'vault-x',       ''
+    /tempZone/home/vault-x/y       => Space.VAULT,       'tempZone', 'vault-x',       'y'
+    /tempZone/home/datamanager-x/y => Space.DATAMANAGER, 'tempZone', 'datamanager-x', 'y'
+    /tempZone/home/research-x/y/z  => Space.RESEARCH,    'tempZone', 'research-x',    'y/z'
     etc.
     """
 
@@ -78,10 +82,14 @@ def info(path):
         m = re.match(r, path)
         return m and result(space, m)
 
-    return (test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',    Space.VAULT)
-         or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$', Space.RESEARCH)
-         or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',          Space.OTHER)
-         or test('^/([^/]+)()(?:/(.+))?$',                     Space.OTHER)
+    from collections import namedtuple
+
+    return namedtuple('PathInfo', 'space zone group subpath'.split()) \
+          (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',       Space.VAULT)
+         or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
+         or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
+         or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
+         or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
          or (Space.OTHER, '', '', ''))  # (matches '/' and empty paths)
 
 def object_type(ctx, path):

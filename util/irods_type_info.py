@@ -14,6 +14,9 @@ def pyify(x):
 irods_types.c_string._pyify   = lambda self: str(self)
 irods_types.c_string.__repr__ = lambda self: repr(pyify(self))
 
+irods_types.char_array._pyify   = lambda self: str(self)
+irods_types.char_array.__repr__ = lambda self: repr(pyify(self))
+
 irods_types.int_array._pyify   = lambda self: list(self)
 irods_types.int_array.__repr__ = lambda self: repr(pyify(self))
 

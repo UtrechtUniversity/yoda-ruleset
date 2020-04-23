@@ -64,6 +64,9 @@ class Config(object):
 
 # Note: Must name all valid config items.
 config = Config(environment                = None,
+                resource_primary           = [],
+                resource_replica           = None,
+                max_revision_size          = 2 * 1000**3, # 2 GB (not 2 GiB)
                 notifications_sender_email = None,
                 notifications_sender_name  = None,
                 notifications_reply_to     = None,
@@ -96,7 +99,13 @@ try:
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
                 raise Exception('Configuration syntax error at {} line {}', cfgpath, i+1)
-            setattr(config, *m.groups())
+
+            # List-type values are separated by whitespace.
+            if isinstance(getattr(config, m.group(1)), list):
+                setattr(config, m.group(1), m.group(2).split())
+            else:
+                setattr(config, *m.groups())
+
 
 except IOError:
     # Ignore, config file is optional.
