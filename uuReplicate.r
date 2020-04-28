@@ -1,7 +1,8 @@
 # \file      uuReplicate.r
 # \brief     Replication functions.
 # \author    Ton Smeele
-# \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
+# \author    Chris Smeele
+# \copyright Copyright (c) 2015-2020, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Schedule replication of a data object.
@@ -18,31 +19,71 @@
 # \param[in] sourceResource    resource to be used as source
 # \param[in] targetResource    resource to be used as destination
 uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
-        delay("<PLUSET>1s</PLUSET><EF>1m DOUBLE UNTIL SUCCESS OR 10 TIMES</EF>") {
-		# Find object to replicate.
-                uuChopPath(*object, *parent, *basename);
-                *objectId = 0;
-	        *found = false;
+    # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
+    # Give rods 'own' access so that they can remove the AVU.
+    errorcode(msiSetACL("default", "own", "rods#$rodsZoneClient", *object));
 
-		foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER
-			WHERE DATA_NAME      = *basename
-			AND   COLL_NAME      = *parent
-			AND   DATA_RESC_HIER like '*sourceResource%'
-		       ) {
-			if (!*found) {
-			        *found = true;
-			        break;
-                        }
-	        }
+    msiString2KeyValPair("", *kv);
+    msiAddKeyVal(*kv, UUORGMETADATAPREFIX ++ "replication_scheduled", "*sourceResource,*targetResource");
+    msiSetKeyValuePairsToObj(*kv, *object, "-d");
+    #writeLine("serverLog", "uuReplicateAsynchronously: Replication scheduled for *object");
+}
 
-		# Skip replication if object does not exists (any more).
-	        if (!*found) {
-		        writeLine("serverLog", "uuReplicateAsynchronously: DataObject was not found.");
-		        succeed;
-	        }
+# Scheduled replication batch job.
+#
+# Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
+# The metadata value indicates the source and destination resource.
+#
+# XXX: This function cannot be ported to Python in 4.2.7:
+#      msiDataObjRepl causes a deadlock for files larger than
+#      transfer_buffer_size_for_parallel_transfer_in_megabytes (4) due to an iRODS PREP bug.
+#      https://github.com/irods/irods_rule_engine_plugin_python/issues/54
+#
+uuReplicateBatch() {
+    writeLine("serverLog", "Batch replication job started");
+    *count   = 0;
+    *countOk = 0;
 
-		# Replicate object to target resource.
-		*options = "rescName=*sourceResource++++destRescName=*targetResource";
-                msiDataObjRepl(*object, *options, *status);
+    *attr = UUORGMETADATAPREFIX ++ "replication_scheduled";
+    foreach (*row in SELECT COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE
+                     WHERE  META_DATA_ATTR_NAME = '*attr') {
+        *count = *count + 1;
+
+        # Perform scheduled replication for one data object.
+
+        *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
+        *rescs = *row."META_DATA_ATTR_VALUE";
+        *xs    = split(*rescs, ",");
+        if (size(*xs) == 2) {
+            *from = elem(*xs, 0);
+            *to   = elem(*xs, 1);
+            *opts = "rescName=*from++++destRescName=*to++++irodsAdmin=";
+            *status = errorcode(msiDataObjRepl(*path, *opts, *s));
+            if (*status == 0) {
+                *countOk = *countOk + 1;
+
+                # Remove replication_scheduled flag.
+                # rods should have been given own access via policy.
+
+                *kv.*attr = "*from,*to";
+                *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+                if (*status != 0) {
+                    # The object's ACLs may have changed.
+                    # Force the ACL and try one more time.
+                    errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+                    *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+
+                    if (*status != 0) {
+                        writeLine("serverLog", "Error: Scheduled replication of <*path>: could not remove schedule flag (*status)");
+                    }
+                }
+            } else {
+                writeLine("serverLog", "Error: Scheduled replication of <*path> failed (*status)");
+            }
+        } else {
+            writeLine("serverLog", "Error: Scheduled replication of <*path> skipped: bad meta value <*rescs>");
         }
+    }
+
+    writeLine("serverLog", "Batch replication job finished. *countOk/*count objects succesfully replicated.");
 }
