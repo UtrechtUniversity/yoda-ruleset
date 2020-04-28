@@ -63,9 +63,9 @@ uuReplicateBatch() {
                 # Even the sudo msi respects ACLs.
                 # Need to set write or own on the object if we don't have it already.
                 errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
-                *status = errorcode(msiSudoObjMetaRemove(*path, "-d", "",
-                                                         *attr,
-                                                         "*from,*to", "", ""));
+
+                *kv.*attr = "*from,*to";
+                *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
                 if (*status != 0) {
                     writeLine("serverLog", "Error: Scheduled replication of <*path>: could not remove schedule flag (*status)");
                 }
