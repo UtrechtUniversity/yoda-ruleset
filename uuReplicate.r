@@ -18,31 +18,9 @@
 # \param[in] sourceResource    resource to be used as source
 # \param[in] targetResource    resource to be used as destination
 uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
-        delay("<PLUSET>1s</PLUSET><EF>1m DOUBLE UNTIL SUCCESS OR 10 TIMES</EF>") {
-		# Find object to replicate.
-                uuChopPath(*object, *parent, *basename);
-                *objectId = 0;
-	        *found = false;
-
-		foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER
-			WHERE DATA_NAME      = *basename
-			AND   COLL_NAME      = *parent
-			AND   DATA_RESC_HIER like '*sourceResource%'
-		       ) {
-			if (!*found) {
-			        *found = true;
-			        break;
-                        }
-	        }
-
-		# Skip replication if object does not exists (any more).
-	        if (!*found) {
-		        writeLine("serverLog", "uuReplicateAsynchronously: DataObject was not found.");
-		        succeed;
-	        }
-
-		# Replicate object to target resource.
-		*options = "rescName=*sourceResource++++destRescName=*targetResource";
-                msiDataObjRepl(*object, *options, *status);
-        }
+    # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
+    msiString2KeyValPair("", *kv);
+    msiAddKeyVal(*kv, UUORGMETADATAPREFIX ++ "replication_scheduled", "*sourceResource,*targetResource");
+    msiAssociateKeyValuePairsToObj(*kv, *object, "-d");
+    #writeLine("serverLog", "uuReplicateAsynchronously: Replication scheduled for *object");
 }
