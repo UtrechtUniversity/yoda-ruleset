@@ -234,9 +234,6 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         log.write(callback, "No license found in user metadata: {}".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
-        log.write(callback, "Custom license for data package: {}".format(vault_pkg_coll))
-
-        # Remove license file.
         license_file = vault_pkg_coll + "/License.txt"
         if data_object.exists(callback, license_file):
             data_object.remove(callback, license_file)
