@@ -239,7 +239,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         # Remove license file.
         license_file = vault_pkg_coll + "/License.txt"
         if data_object.exists(callback, license_file):
-            msi.data_obj_unlink(callback, 'objPath={}{}'.format(license_file, '++++forceFlag='), irods_types.BytesBuf())
+            data_object.remove(callback, license_file)
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.
