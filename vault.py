@@ -230,20 +230,27 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         license = row[0]
 
     if license == "":
-        log.write(callback, "No license found in user metadata: {}" % (vault_pkg_coll))
-        return
+        # No license set in user metadata.
+        log.write(callback, "No license found in user metadata: {}".format(vault_pkg_coll))
+    elif license == "Custom":
+        # Custom license set in user metadata, no License.txt should exist in package.
+        log.write(callback, "Custom license for data package: {}".format(vault_pkg_coll))
 
-    # Retrieve license text.
-    license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
-
-    if not data_object.exists(callback, license_txt):
-        log.write(callback, "License text not available for: {}" % (license))
-        return
-
-    # Copy license file.
-    license_file = vault_pkg_coll + "/License.txt"
-    ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
-    ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
+        # Remove license file.
+        license_file = vault_pkg_coll + "/License.txt"
+        if data_object.exists(callback, license_file):
+            msi.data_obj_unlink(callback, 'objPath={}{}'.format(license_file, '++++forceFlag='), irods_types.BytesBuf())
+    else:
+        # License set in user metadata, a License.txt should exist in package.
+        # Check if license text exists.
+        license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
+        if data_object.exists(callback, license_txt):
+            # Copy license file.
+            license_file = vault_pkg_coll + "/License.txt"
+            ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
+            ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
+        else:
+            log.write(callback, "License text not available for: {}".format(license))
 
 
 def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
