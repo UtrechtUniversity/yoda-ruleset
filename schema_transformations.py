@@ -34,8 +34,6 @@ def _default0_default1(m):
     and last names, to comply with the OpenAIRE standard.
     """
 
-    # XXX (WIP)
-
     def fixup_name(n):
         """Split a name into a first and last name.
            This algo is error-prone, but acceptable.

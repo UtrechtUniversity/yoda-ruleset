@@ -5,10 +5,13 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import meta_form
+import folder
+
 import time
 import os
 import sys
 from pathvalidate import ValidationError, validate_filename, validate_filepath
+
 from util import *
 from collections import OrderedDict
 
@@ -583,7 +586,7 @@ def api_uu_research_collection_details(ctx, path):
     member_type = meta_form.user_member_type(ctx, group, user.full_name(ctx))
 
     # Retrieve research folder status.
-    status = meta_form.get_coll_status(ctx, path)
+    status = folder.get_status(ctx, path)
 
     # Check if user is datamanager.
     category = meta_form.group_category(ctx, group)
@@ -599,7 +602,7 @@ def api_uu_research_collection_details(ctx, path):
         vault_path = vault_name
 
     return {"basename": basename,
-            "status": status,
+            "status": status.value,
             "member_type": member_type,
             "is_datamanager": is_datamanager,
             "lock_count": lock_count,

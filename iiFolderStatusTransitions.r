@@ -30,45 +30,6 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 	uuGroupExists("datamanager-*category", *datamanagerExists);
 }
 
-# \brief Actions taken before status transition.
-#
-# \param[in] folder            Path of folder
-# \param[in] currentStatus     Current status of folder
-# \param[in] newStatus         New status of folder
-#
-iiPreFolderStatusTransition(*folder, *currentFolderStatus, *newFolderStatus) {
-	on (*currentFolderStatus != LOCKED &&
-	    (*newFolderStatus == LOCKED || *newFolderStatus == SUBMITTED)) {
-	        # Clear action log coming from SECURED state.
-	        # SECURED -> LOCKED and SECURED -> SUBMITTED
-	        if (*currentFolderStatus == SECURED) {
-                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
-                        iiRemoveAVUs(*folder, *actionLog);
-	        }
-
-		# Add locks to folder, descendants and ancestors
-		iiFolderLockChange(*folder, true, *status);
-		if (*status != 0) { fail; }
-	}
-	on (*newFolderStatus == FOLDER || *newFolderStatus == REJECTED ||
-	    *newFolderStatus == SECURED) {
-	        # Clear action log coming from SECURED state.
-	        # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
-	        if (*currentFolderStatus == SECURED) {
-                        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
-                        iiRemoveAVUs(*folder, *actionLog);
-	        }
-
-		# Remove locks from folder, descendants and ancestors
-		iiFolderLockChange(*folder, false, *status);
-		if (*status != 0) { fail; }
-	}
-	on (true) {
-		nop;
-	}
-
-}
-
 # \brief Processing after status had changed.
 #
 # \param[in] folder
@@ -132,175 +93,6 @@ iiScheduleCopyToVault() {
 	}
 }
 
-# \brief Lock a folder in the research space.
-#
-# \param[in]  folder        path of folder to lock
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderLock(*folder, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
-
-	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus != FOLDER && *currentFolderStatus != REJECTED && *currentFolderStatus != SECURED) {
-		*status = "WrongStatus";
-		*statusInfo = "Cannot lock folder as it is currently in *currentFolderStatus state";
-		succeed;
-	}
-	*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ LOCKED;
-	msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-	*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
-	if (*err < 0) {
-		iiFolderStatus(*folder, *currentFolderStatus);
-		*actor = uuClientFullName;
-                iiCanTransitionFolderStatus(*folder, *currentFolderStatus, LOCKED, *actor, *allowed, *reason);
-		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-		}
-	} else {
-		*status = "Success";
-		*statusInfo = "";
-	}
-}
-
-# \brief Unlock a folder in the research space.
-#
-# \param[in]  folder        path of folder to unlock
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderUnlock(*folder, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
-
-	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == LOCKED || *currentFolderStatus == SUBMITTED || *currentFolderStatus == REJECTED || *currentFolderStatus == SECURED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
-		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
-	} else {
-		*status = "WrongStatus";
-		if (*currentFolderStatus == FOLDER) {
-			*statusInfo = "Insufficient permissions or the folder is  currently not in a locked state.";
-		} else {
-			*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state.";
-		}
-		succeed;
-	}
-	if (*err < 0) {
-		*actor = uuClientFullName;
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, FOLDER, *actor, *allowed, *reason);
-		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-		}
-	} else {
-		*status = "Success";
-		*statusInfo = "";
-	}
-}
-
-# \brief iiFolderSubmit
-#
-# \param[in]  folder	    path of folder to submit to vault
-# \param[out] folderStatus  status of the folder after submission
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderSubmit(*folder, *folderStatus, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
-
-	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == FOLDER || *currentFolderStatus == SECURED ||
-	    *currentFolderStatus == REJECTED || *currentFolderStatus == LOCKED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ SUBMITTED;
-		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiSetKeyValuePairsToObj(*folderStatusKvp, *folder, "-C"), *msg);
-	} else {
-		*status = "WrongStatus";
-		*statusInfo = "Cannot unlock folder as it is currently in *currentFolderStatus state";
-		*folderStatus = *currentFolderStatus;
-		succeed;
-	}
-	if (*err < 0) {
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, SUBMITTED, uuClientFullName, *allowed, *reason);
-		if (!*allowed) {
-		      *status = "PermissionDenied";
-		      *statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-	 	}
-	} else {
-		*status = "Success";
-		*statusInfo = "";
-		iiFolderStatus(*folder, *folderStatus);
-	}
-}
-
-# \brief Unsubmit a folder submitted to the vault.
-#
-# \param[in]  folder        path of folder to unsubmit when set saving to vault
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderUnsubmit(*folder, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
-
-	iiFolderStatus(*folder, *currentFolderStatus);
-	if (*currentFolderStatus == SUBMITTED) {
-		*folderStatusStr = IISTATUSATTRNAME ++ "=" ++ *currentFolderStatus;
-		msiString2KeyValPair(*folderStatusStr, *folderStatusKvp);
-		*err = errormsg(msiRemoveKeyValuePairsFromObj(*folderStatusKvp, *folder, "-C"), *msg);
-	} else {
-		*status = "WrongStatus";
-		*statusInfo = "Folder cannot be unsubmitted because its state has changed.";
-		succeed;
-	}
-	if (*err < 0) {
-		iiCanTransitionFolderStatus(*folder, *currentFolderStatus, FOLDER, uuClientFullName, *allowed, *reason);
-		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-		}
-        } else {
-		*status = "Success";
-		*statusInfo = "";
-	}
-}
 
 # \brief iiFolderDatamanagerAction
 #
@@ -391,25 +183,6 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 		*status = "Success";
 		*statusInfo = "";
 	}
-}
-
-# \brief Accept a folder for the vault.
-#
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderAccept(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, ACCEPTED, *status, *statusInfo);
-}
-
-# \brief Reject a folder for the vault.
-#
-# \param[in] folder
-# \param[out] status        status of the action
-# \param[out] statusInfo    Informative message when action was not successfull
-#
-iiFolderReject(*folder, *status, *statusInfo) {
-	iiFolderDatamanagerAction(*folder, REJECTED, *status, *statusInfo);
 }
 
 # \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
@@ -611,7 +384,7 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 	msiString2KeyValPair("", *buffer);
 	msiAddKeyVal(*buffer, IILOCKATTRNAME, *rootCollection)
 	#DEBUG writeLine("ServerLog", "iiFolderLockChange: *buffer");
-	if (*lockIt) {
+	if (*lockIt == "lock") {
 		#DEBUG writeLine("serverLog", "iiFolderLockChange: recursive locking of *rootCollection");
 		*direction = "forward";
 		uuTreeWalk(*direction, *rootCollection, "iiAddMetadataToItem", *buffer, *error);
@@ -638,7 +411,7 @@ iiFolderLockChange(*rootCollection, *lockIt, *status){
 
 	}
 
-	*status = *error;
+	*status = "*error";
 }
 
 # \brief Return objectType string based on boolean itemIsCollection.

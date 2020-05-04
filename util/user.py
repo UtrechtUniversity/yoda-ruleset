@@ -47,6 +47,11 @@ def from_str(ctx, s):
     else:
         return User(*parts)
 
+def exists(ctx, user):
+    if type(user) is str:
+        user = from_str(ctx, user)
+
+    return Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
 
 def user_type(ctx, user=None):
     """Returns the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
@@ -59,8 +64,20 @@ def user_type(ctx, user=None):
         user = from_str(ctx, user)
 
     return Query(ctx, "USER_TYPE",
-                 "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
+                      "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
 
+def is_admin(ctx, user=None):
+    return user_type(ctx, user) == 'rodsadmin'
+
+def is_member_of(ctx, group, user=None):
+    if user is None:
+        user = user_and_zone(ctx)
+    elif type(user) is str:
+        user = from_str(ctx, user)
+
+    return Query(ctx, 'USER_GROUP_NAME',
+                      "USER_NAME = '{}' AND USER_ZONE = '{}' AND USER_GROUP_NAME = '{}'"
+                        .format(*list(user) + [group])).first() is not None
 
 # TODO: Remove. {{{
 def get_client_name_zone(rei):

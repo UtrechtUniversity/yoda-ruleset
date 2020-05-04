@@ -105,7 +105,7 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
             elif handler is Output.STDOUT:
                 for x in result:
                     callback.writeString('stdout', encode_val(x) + '\n')
-                    # XXX for debugging:
+                    # For debugging:
                     # log.write(callback, 'rule output (DEBUG): ' + encode_val(x))
             elif handler is Output.STDOUT_BIN:
                 for x in result:

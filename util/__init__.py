@@ -23,6 +23,9 @@ __all__ = ['log',
            'collection',
            'data_object',
            'user',
+           'group',
+           'avu',
+           'misc',
            'query',
            'genquery',  # temporary
            'config']

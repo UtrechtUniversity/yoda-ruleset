@@ -27,8 +27,8 @@ class Result(object):
         self.debug_info  = debug_info
 
     @staticmethod
-    def ok(data=None):
-        return Result('ok', info, data)
+    def ok(**xs):
+        return Result(**xs)
 
     def as_dict(self):
         if config.environment == 'development':
@@ -77,6 +77,7 @@ def _api(f):
     and translates it to function arguments for `f`. The JSON input is
     automatically validated for required/optional arguments, based on f()'s
     signature.
+    Ideally we would also do basic type checking, but this is not possible in Python2.
 
     f()'s returned value may be of any JSON-encodable type, and will be stored
     in the 'data' field of the returned JSON. If f() returns or raises an
@@ -95,14 +96,6 @@ def _api(f):
 
     # If the function accepts **kwargs, we do not forbid extra arguments.
     allow_extra = a_kw is not None
-
-    # XXX Debug {{{
-    # print('api-ify   {}'.format(f.__name__))
-    # print('spec:     {}'.format(inspect.getargspec(f)))
-    # print('required: {}'.format(required))
-    # print('optional: {}{}'.format(optional, ' + kwargs' if allow_extra else ''))
-    # print('defaults: {}'.format(a_defaults))
-    # }}}
 
     def wrapper(ctx, inp):
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments."""

@@ -13,6 +13,7 @@ from collections import OrderedDict
 
 from util import *
 import schema as schema_
+import vault
 
 __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_remove',
@@ -151,7 +152,7 @@ def rule_uu_meta_validate(rule_args, callback, rei):
     try:
         errs = get_json_metadata_errors(callback, json_path)
     except error.UUError as e:
-        errs = {'message': str(e)}
+        errs = [{'message': str(e)}]
 
     if len(errs):
         rule_args[1] = '1'
@@ -352,19 +353,19 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         set_result('JsonPathInvalid', 'Vault path <{}> does not exist'.format(vault_pkg_path))
         return
 
-    actor = data_owner(callback, json_path)
+    actor = data_object.owner(callback, json_path)
     if actor is None:
         set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
         return
     actor = actor[0]  # Discard zone name.
 
     # Make sure rods has access to the json file.
-    client_full_name = get_client_full_name(rei)
+    client_full_name = user.get_client_full_name(rei)
 
     try:
-        ret = check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
+        ret = msi.check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
-            set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
+            msi.set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError as e:
         set_result('AccessError', 'Couldn\'t grant access to json metadata file')
         return
@@ -372,7 +373,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Determine destination filename.
     # FIXME - TOCTOU: also exists in XML version
     #      -> should do this in a loop around msi.data_obj_copy instead.
-    ret = get_icat_time(callback, '', 'unix')
+    ret = msi.get_icat_time(callback, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
     json_name, json_ext = constants.IIJSONMETADATA.split('.', 1)
@@ -421,22 +422,21 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
-    if collection_empty(callback, stage_coll):
+    if collection.empty(callback, stage_coll):
         try:
             # We may or may not have delete access already.
-            set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
+            msi.set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
         except error.UUError as e:
             pass
         try:
-            rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
+            msi.rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
         except error.UUError as e:
             set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
             return
 
     # Update publication if package is published.
-    ret = callback.iiVaultStatus(vault_pkg_path, '')
-    status = ret['arguments'][1]
-    if status == constants.VAULT_PACKAGE_STATE['PUBLISHED']:
+    status = vault.get_coll_vault_status(callback, vault_pkg_path)
+    if status is constants.vault_package_state.PUBLISHED:
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
         s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + constants.CRONJOB_STATE['PENDING']

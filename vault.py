@@ -12,6 +12,7 @@ import session_vars
 import provenance
 import meta_form
 import meta
+import folder
 
 from util import *
 
@@ -95,7 +96,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.
-        research_group_access = collection.exists('/' + parts[0] + '/' + parts[1] + '/' + parts[2] + '/')
+        research_group_access = collection.exists(ctx, '/' + parts[0] + '/' + parts[1] + '/' + parts[2])
 
         if not research_group_access:
             return api.Error('NoPermissions', 'Insufficient rights to perform this action')
@@ -370,6 +371,23 @@ def api_uu_vault_system_metadata(callback, coll):
     return system_metadata
 
 
+def get_coll_vault_status(ctx, path, org_metadata=None):
+    """Get the status of a vault folder."""
+
+    if org_metadata is None:
+        org_metadata = folder.get_org_metadata(ctx, path)
+
+    # Don't care about duplicate attr names here.
+    org_metadata = dict(org_metadata)
+    if constants.IIVAULTSTATUSATTRNAME in org_metadata:
+        x = org_metadata[constants.IIVAULTSTATUSATTRNAME]
+        try:
+            return constants.vault_package_state(x)
+        except:
+            log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
+    return constants.vault_package_state.UNPUBLISHED
+
+
 @api.make()
 def api_uu_vault_collection_details(ctx, path):
     """Returns details of a vault collection."""
@@ -392,7 +410,7 @@ def api_uu_vault_collection_details(ctx, path):
         metadata = True
 
     # Retrieve vault folder status.
-    status = meta_form.get_coll_vault_status(ctx, path)
+    status = get_coll_vault_status(ctx, path).value
 
     # Check if collection has datamanager.
     has_datamanager = True

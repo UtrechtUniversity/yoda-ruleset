@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import folder
+import vault
 import meta
 import schema as schema_
 import schema_transformation
@@ -40,32 +41,6 @@ def user_is_datamanager(ctx, category, user):
 
 
 # }}}
-
-
-def get_coll_status(ctx, path, org_metadata=None):
-    """Get the status of a research folder."""
-
-    if org_metadata is None:
-        org_metadata = folder.get_org_metadata(ctx, path)
-
-    # Don't care about duplicate attr names here.
-    org_metadata = dict(org_metadata)
-    if constants.IISTATUSATTRNAME in org_metadata:
-        return org_metadata[constants.IISTATUSATTRNAME]
-    return constants.research_package_state.FOLDER.value
-
-
-def get_coll_vault_status(ctx, path, org_metadata=None):
-    """Get the status of a vault folder."""
-
-    if org_metadata is None:
-        org_metadata = folder.get_org_metadata(ctx, path)
-
-    # Don't care about duplicate attr names here.
-    org_metadata = dict(org_metadata)
-    if constants.IIVAULTSTATUSATTRNAME in org_metadata:
-        return org_metadata[constants.IIVAULTSTATUSATTRNAME]
-    return constants.VAULT_PACKAGE_STATE['UNPUBLISHED']
 
 
 def get_coll_lock(ctx, path, org_metadata=None):
@@ -266,8 +241,8 @@ def api_uu_meta_form_load(ctx, coll):
                                    'can_edit': can_edit})
 
     elif space is pathutil.Space.VAULT:
-        can_edit = user_is_datamanager(ctx, category, user_full_name)
-        status = get_coll_vault_status(ctx, coll, org_metadata)
+        can_edit  = user_is_datamanager(ctx, category, user_full_name)
+        status    = vault.get_coll_vault_status(ctx, coll, org_metadata).value
         meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
 
         # Try to load the metadata file.

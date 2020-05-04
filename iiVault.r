@@ -208,7 +208,7 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
 			*vaultStatus = IIVAULTSTATUSATTRNAME;
 			msiString2KeyValPair("*vaultStatus=" ++ INCOMPLETE, *kvp);
-			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
+			msiSetKeyValuePairsToObj(*kvp, *destPath, "-C");
 		}
 	} else {
 	    # Copy data object to vault and compute checksum.

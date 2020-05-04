@@ -7,49 +7,37 @@
 # \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \brief Restrict access to OS callouts
-#
-# \param[in]		cmd  name of executable
-#
-acPreProcForExecCmd(*cmd, *args, *addr, *hint) {
-	# rodsadmin is always permitted
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType == "rodsadmin") {
-		succeed;
-	}
+# Hook into Python. {{{
 
-	# permit local commands starting with "admin-", when the first argument is the current user
-	msiSubstr(*cmd, "0", "6", *prefix);
-	if (*prefix == "admin-" && *addr == "" && *hint == "") {
-		*name = uuClientFullName;
-		# Name is guaranteed to contain no quoting or escaping characters.
-		# See uuUserNameIsValid in uuGroupPolicyChecks.r
-		if (*args == *name || *args like "*name *") {
-			succeed;
-		}
-	}
+acPreprocForCollCreate         { cut; py_acPreprocForCollCreate }
+acPreprocForRmColl             { cut; py_acPreprocForRmColl }
+acPreprocForDataObjOpen        { cut; py_acPreprocForDataObjOpen }
+acDataDeletePolicy             { cut; py_acDataDeletePolicy }
+acPreProcForObjRename(*x, *y)  { cut; py_acPreProcForObjRename(*x, *y) }
+acPreProcForExecCmd(*cmd, *args, *addr, *hint) { cut; py_acPreProcForExecCmd(*cmd, *args, *addr, *hint) }
+acPostProcForObjRename(*src, *dst) { py_acPostProcForObjRename(*src, *dst) }
 
-	# permit all local commands starting with "scheduled-"
-	msiSubstr(*cmd, "0", "10", *prefix);
-	if (*args == "" && *addr == "" && *hint == "" &&
-	    *prefix == "scheduled-") {
-		succeed;
-	}
+# Matches any imeta (or equivalent) command *except* mod and cp.
+acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
+{ cut; py_acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) }
+acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
+{ py_acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) }
 
-	# permit access to users in group priv-execcmd-all
-	*accessAllowed = false;
-	foreach (*rows in SELECT USER_GROUP_NAME WHERE USER_NAME='$userNameClient'
-		             AND USER_ZONE='$rodsZoneClient') {
-		msiGetValByKey(*rows, "USER_GROUP_NAME", *group);
-		if (*group == "priv-execcmd-all") {
-			*accessAllowed = true;
-		}
-	}
-	if (*accessAllowed == false) {
-		cut;
-		msiOprDisallowed;
-	}
-}
+# Matches imeta mod
+acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit)
+{ cut; py_acPreProcForModifyAVUMetadata_mod(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit) }
+# acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit)
+# { py_acPostProcForModifyAVUMetadata_mod(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit) }
+
+# Matches imeta cp
+acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName)
+{ cut; py_acPreProcForModifyAVUMetadata_cp(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) }
+
+acPostProcForPut  { cut; py_acPostProcForPut }
+acPostProcForCopy { cut; py_acPostProcForCopy }
+
+# }}}
+
 
 # acCreateUserZoneCollections extended to also set inherit on the home coll
 # this is needed for groupcollections to allow users to share objects
@@ -111,50 +99,9 @@ acPostProcForDeleteUser {
 	writeLine("serverLog", "User *userName#*userZone is removed by *actor.")
 }
 
-# acPreProcForObjRename is fired before a data object is renamed or moved.
-# Disallows renaming or moving the data object if it is directly under home.
-acPreProcForObjRename(*src, *dst) {
-        ON($objPath like regex "/[^/]+/home/" ++ ".[^/]*") {
-                uuGetUserType(uuClientFullName, *userType);
-                if (*userType != "rodsadmin") {
-                        cut;
-                        msiOprDisallowed;
-                }
-        }
-}
-
-# \brief pep_resource_modified_post
-# \param[in,out] out This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
-pep_resource_modified_post(*instanceName, *context, *out) {
-        on(uuinlist(*instanceName, UUPRIMARYRESOURCES)) {
-                uuReplicateAsynchronously(*context.logical_path, *instanceName, UUREPLICATIONRESOURCE);
-
-                # The rules on metadata are run synchronously and could fail.
-		# Log errors, but continue with revisions.
-                *err = errormsg(uuResourceModifiedPostResearch(*instanceName, *context), *msg);
-                if (*err < 0) {
-                        writeLine("serverLog", "*err: *msg");
-                }
-                uuResourceModifiedPostRevision(*instanceName, *context.user_rods_zone, *context.logical_path, UUMAXREVISIONSIZE, UUBLACKLIST);
-        }
-        # See issue https://github.com/irods/irods/issues/3500.
-	# Workaround to avoid debug messages in irods 4.1.8
-        on(true) {nop;}
-}
-
-# \brief pep_resource_rename_post
-# \param[in,out] out This is a required parameter for Dynamic PEP's in 4.1.x releases. It is not used by this rule.
-pep_resource_rename_post(*instanceName, *context, *out, *newFileName) {
-        on(uuinlist(*instanceName, UUPRIMARYRESOURCES)) {
-                uuResourceRenamePostResearch(*instanceName, *context);
-        }
-        # See issue https://github.com/irods/irods/issues/3500.
-	# Workaround to avoid debug messages in irods 4.1.8
-        on(true) {nop;}
-}
-
 # Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
 pep_api_auth_request_pre(*instanceName, *comm, *request) {
+    # XXX: These attributes currently cannot be extracted in python.
     *proxy_user_name = *comm.proxy_user_name;
     *user_user_name = *comm.user_user_name;
     *client_addr = *comm.client_addr
