@@ -61,7 +61,7 @@ def can_coll_move(ctx, actor, src, dst):
 def can_data_create(ctx, actor, path):
     log.debug(ctx, 'check data create <{}>'.format(path))
 
-    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+    if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_locked(ctx, pathutil.dirname(path)):
             # Parent coll locked?
             if not user.is_admin(ctx, actor):
@@ -79,7 +79,7 @@ def can_data_write(ctx, actor, path):
     log.debug(ctx, 'check data write <{}>'.format(path))
 
     # Disallow writing to locked objects in research folders.
-    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+    if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
             return policy.fail('Data object is locked')
 
@@ -90,7 +90,7 @@ def can_data_delete(ctx, actor, path):
     if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_admin(ctx, actor):
         return policy.fail('Cannot delete or move data directly under /home')
 
-    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+    if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
             return policy.fail('Folder is locked')
 
@@ -297,7 +297,6 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
 # Policy for most AVU changes
 @policy.require()
 def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
-    log._debug(ctx, ('meta?', obj_type, obj_name, attr, value))  # XXX
 
     actor = user.user_and_zone(ctx)
 

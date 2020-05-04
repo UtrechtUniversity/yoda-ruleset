@@ -27,7 +27,7 @@ __all__ = ['log',
            'avu',
            'misc',
            'query',
-           'genquery', # temporary
+           'genquery',  # temporary
            'config']
 
 # Config items can be accessed directly as 'config.foo' by any module

@@ -12,6 +12,7 @@ import constants
 from query import Query
 import query
 
+
 def exists(callback, path):
     """Check if a data object with the given path exists"""
     return len(list(genquery.row_iterator(
@@ -81,6 +82,7 @@ def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     return ''.join(buf.buf[:buf.len])
 
+
 def remove(ctx, path, force=True):
     """Delete a data object.
 
@@ -93,6 +95,23 @@ def remove(ctx, path, force=True):
     msi.data_obj_unlink(ctx,
                         'objPath={}{}'.format(path, '++++forceFlag=' if force else ''),
                         irods_types.BytesBuf())
+
+
+def rename(ctx, path_org, path_target):
+    """Rename data object from path_org to path_target.
+
+    :param path_org: Data object original path
+    :param path_target: Data object new path
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.data_obj_rename(ctx,
+                        path_org,
+                        path_target,
+                        '0',
+                        irods_types.BytesBuf())
+
 
 def name_from_id(ctx, data_id):
     x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()

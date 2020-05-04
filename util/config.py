@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+
 # Config class {{{
 
 class Config(object):
@@ -51,8 +52,11 @@ class Config(object):
             raise AttributeError('Config item <{}> does not exist'.format(k))
 
     # Never dump config values, they may contain sensitive info.
-    def __str__(self):  return 'Config()'
-    def __repr__(self): return 'Config()'
+    def __str__(self):
+        return 'Config()'
+
+    def __repr__(self):
+        return 'Config()'
 
     # def __repr__(self):
     #     return 'Config(\n{})'.format(''.join('  {} = {},\n'.format(k,
@@ -60,6 +64,8 @@ class Config(object):
     #                     for k, v in self._items.items()))
 
 # }}}
+
+
 # Default config {{{
 
 # Note: Must name all valid config items.
@@ -98,14 +104,13 @@ try:
             # Interpret {k = 'v'} and {k =}
             m = re.match(r"""^([\w_]+)\s*=\s*(?:'(.*)')?$""", line)
             if not m:
-                raise Exception('Configuration syntax error at {} line {}', cfgpath, i+1)
+                raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
 
             # List-type values are separated by whitespace.
             if isinstance(getattr(config, m.group(1)), list):
                 setattr(config, m.group(1), m.group(2).split())
             else:
                 setattr(config, *m.groups())
-
 
 except IOError:
     # Ignore, config file is optional.

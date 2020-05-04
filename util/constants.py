@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -27,6 +27,9 @@ UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
 
 UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
 """Metadata for calculated storage month."""
+
+IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
+"""iRODS path where all licenses will be stored."""
 
 IIJSONMETADATA = 'yoda-metadata.json'
 """Name of metadata JSON file."""
@@ -66,22 +69,10 @@ CRONJOB_STATE = {
 }
 """Cronjob states."""
 
-VAULT_PACKAGE_STATE = {
-    'INCOMPLETE':                'INCOMPLETE',
-    'COMPLETE':                  'COMPLETE',
-    'UNPUBLISHED':               'UNPUBLISHED',
-    'SUBMITTED_FOR_PUBLICATION': 'SUBMITTED_FOR_PUBLICATION',
-    'APPROVED_FOR_PUBLICATION':  'APPROVED_FOR_PUBLICATION',
-    'PUBLISHED':                 'PUBLISHED',
-    'PENDING_DEPUBLICATION':     'PENDING_DEPUBLICATION',
-    'DEPUBLISHED':               'DEPUBLISHED',
-    'PENDING_REPUBLICATION':     'PENDING_REPUBLICATION',
-}
-"""Vault package states."""
-
 class vault_package_state(Enum):
-    """Research folder states."""
+    """Vault package states."""
 
+    # Values are as they appear in AVU values.
     INCOMPLETE                = 'INCOMPLETE'
     COMPLETE                  = 'COMPLETE'
     UNPUBLISHED               = 'UNPUBLISHED'
@@ -95,10 +86,12 @@ class vault_package_state(Enum):
     def __str__(self):
         return self.name
 
+
 class research_package_state(Enum):
     """Research folder states."""
 
-    FOLDER    = ''
+    # Values are as they appear in AVU values.
+    FOLDER    = ''  # (absence of status attribute)
     LOCKED    = 'LOCKED'
     SUBMITTED = 'SUBMITTED'
     ACCEPTED  = 'ACCEPTED'
@@ -108,6 +101,7 @@ class research_package_state(Enum):
     def __str__(self):
         return self.name
 
+# List of valid folder transitions (src, dst).
 folder_transitions = [(research_package_state(x),
                        research_package_state(y))
                        for x, y in [('',          'LOCKED'),

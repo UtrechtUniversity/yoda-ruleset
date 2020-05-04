@@ -35,6 +35,7 @@ class Fail(object):
     """
     def __init__(self, reason):
         self.reason = reason
+
     def __str__(self):
         return 'Action not permitted: ' + self.reason
 

@@ -11,6 +11,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import error
 
+
 class Error(error.UUError):
     """Error for microservice failure"""
 
@@ -94,6 +95,7 @@ data_obj_write,  DataObjWriteError  = make('DataObjWrite',  'Could not write dat
 data_obj_close,  DataObjCloseError  = make('DataObjClose',  'Could not close data object')
 data_obj_copy,   DataObjCopyError   = make('DataObjCopy',   'Could not copy data object')
 data_obj_unlink, DataObjUnlinkError = make('DataObjUnlink', 'Could not remove data object')
+data_obj_rename, DataObjRenameError = make('DataObjRename', 'Could not rename data object')
 coll_create,     CollCreateError    = make('CollCreate',    'Could not create collection')
 rm_coll,         RmCollError        = make('RmColl',        'Could not remove collection')
 check_access,    CheckAccessError   = make('CheckAccess',   'Could not check access')

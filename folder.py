@@ -70,8 +70,10 @@ def unlock(ctx, coll):
 
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
+
 def submit(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
+
 
 def unsubmit(ctx, coll):
     # Sanity check. See 'unlock'.
@@ -80,8 +82,10 @@ def unsubmit(ctx, coll):
 
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
+
 def accept(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
+
 
 def reject(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
@@ -165,6 +169,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 @api.make()
 def api_uu_folder_get_locks(ctx, coll):
+    """Return a list of locks on a collection"""
     return get_locks(ctx, coll)
 
 def has_locks(ctx, coll, org_metadata=None):

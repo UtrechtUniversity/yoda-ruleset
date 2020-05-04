@@ -360,11 +360,11 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 metadataXmlPath = ''
                 metadataXmlSize = 0
                 callback.iiGetLatestVaultMetadataXml(vault_collection, metadataXmlPath, metadataXmlSize)
-                data_name = metadataXmlPath.split('/')[-1]  
-                
+                data_name = metadataXmlPath.split('/')[-1]
+
                 if data_name != "":
                     transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
-        
+
         except Exception as e:
             log.write(callback, str(e))
             pass

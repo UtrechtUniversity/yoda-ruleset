@@ -13,6 +13,7 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_uu_browse_folder',
+           'api_uu_browse_collections',
            'api_uu_search']
 
 
@@ -92,6 +93,78 @@ def api_uu_browse_folder(ctx,
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
 
+# Function to browse a folder and only look at the collections in it. No dataobjects.
+# Specifically for folder selection for copying data to research area from vault for instance.
+
+
+@api.make()
+def api_uu_browse_collections(ctx,
+                              coll='/',
+                              sort_on='name',
+                              sort_order='asc',
+                              offset=0,
+                              limit=10,
+                              space=pathutil.Space.OTHER):
+    """Gets paginated collection contents, including size/modify date information."""
+
+    def transform(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        if 'DATA_NAME' in x:
+            return {'name':        x['DATA_NAME'],
+                    'type':        'data',
+                    'size':        int(x['DATA_SIZE']),
+                    'modify_time': int(x['DATA_MODIFY_TIME'])}
+        else:
+            return {'name':        x['COLL_NAME'].split('/')[-1],
+                    'type':        'coll',
+                    'modify_time': int(x['COLL_MODIFY_TIME'])}
+
+    if sort_on == 'modified':
+        # FIXME: Sorting on modify date is borked: There appears to be no
+        # reliable way to filter out replicas this way - multiple entries for
+        # the same file may be returned when replication takes place on a
+        # minute boundary, for example.
+        # We would want to take the max modify time *per* data name.
+        # (or not? replication may take place a long time after a modification,
+        #  resulting in a 'too new' date)
+        ccols = ['COLL_NAME', 'ORDER(COLL_MODIFY_TIME)']
+    elif sort_on == 'size':
+        ccols = ['COLL_NAME', 'COLL_MODIFY_TIME']
+    else:
+        ccols = ['ORDER(COLL_NAME)', 'COLL_MODIFY_TIME']
+
+    if sort_order == 'desc':
+        ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
+
+    zone = user.zone(ctx)
+
+    # We make offset/limit act on two queries at once, placing qdata right after qcoll.
+    if space == str(pathutil.Space.RESEARCH):
+        qcoll = Query(ctx, ccols,
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+    elif space == str(pathutil.Space.VAULT):
+        qcoll = Query(ctx, ccols,
+                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+    else:
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+
+    colls = map(transform, list(qcoll))
+
+    if len(colls) == 0:
+        # No results at all?
+        # Make sure the collection actually exists.
+        if not collection.exists(ctx, coll):
+            return api.Error('nonexistent', 'The given path does not exist')
+        # (checking this beforehand would waste a query in the most common situation)
+
+    return OrderedDict([('total', qcoll.total_rows()),
+                        ('items', colls)])
+
 
 @api.make()
 def api_uu_search(ctx,
@@ -142,8 +215,8 @@ def api_uu_search(ctx,
     elif search_type == 'metadata':
         cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_UNITS like '{}%%' AND META_COLL_ATTR_VALUE like '%%{}%%' AND COLL_NAME like '{}%%'".format(
-                    constants.UUUSERMETADATAROOT + "_",search_string, "/" + zone + "/home"
-                )
+                constants.UUUSERMETADATAROOT + "_", search_string, "/" + zone + "/home"
+        )
     elif search_type == 'status':
         status = search_string.split(":")
         status_value = status[1]
@@ -154,8 +227,8 @@ def api_uu_search(ctx,
 
         cols = ['ORDER(COLL_NAME)', 'MIN(COLL_CREATE_TIME)', 'MAX(COLL_MODIFY_TIME)']
         where = "META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_VALUE = '{}' AND COLL_NAME like '{}%%'".format(
-                    status_name, status_value, "/" + zone + "/home"
-                )
+                status_name, status_value, "/" + zone + "/home"
+        )
 
     if sort_order == 'desc':
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]

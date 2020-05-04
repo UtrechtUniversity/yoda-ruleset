@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -13,6 +13,7 @@ from collections import OrderedDict
 
 from util import *
 import schema as schema_
+import vault
 
 __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_remove',
@@ -26,10 +27,10 @@ def metadata_get_links(metadata):
     if 'links' not in metadata or type(metadata['links']) is not list:
         return []
     return filter(lambda x: type(x) in (dict, OrderedDict)
-                            and 'rel'  in x
-                            and 'href' in x
-                            and type(x['rel'])  is str
-                            and type(x['href']) is str,
+                  and 'rel' in x
+                  and 'href' in x
+                  and type(x['rel']) is str
+                  and type(x['href']) is str,
                   metadata['links'])
 
 
@@ -261,13 +262,13 @@ def ingest_metadata_staging(ctx, path):
 
     coll = pathutil.chop(path)[0]
 
-    ret = string_2_key_val_pair(ctx,
-                                '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
-                                                'cronjob_vault_ingest=',
-                                                CRONJOB_STATE['PENDING']),
-                                irods_types.BytesBuf())
+    ret = msi.string_2_key_val_pair(ctx,
+                                    '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
+                                                    'cronjob_vault_ingest=',
+                                                    constants.CRONJOB_STATE['PENDING']),
+                                    irods_types.BytesBuf())
 
-    set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
+    msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
     # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
     ctx.iiAdminVaultIngest()
@@ -359,12 +360,12 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     actor = actor[0]  # Discard zone name.
 
     # Make sure rods has access to the json file.
-    client_full_name = get_client_full_name(rei)
+    client_full_name = user.get_client_full_name(rei)
 
     try:
-        ret = check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
+        ret = msi.check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
-            set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
+            msi.set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError as e:
         set_result('AccessError', 'Couldn\'t grant access to json metadata file')
         return
@@ -372,7 +373,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Determine destination filename.
     # FIXME - TOCTOU: also exists in XML version
     #      -> should do this in a loop around msi.data_obj_copy instead.
-    ret = get_icat_time(callback, '', 'unix')
+    ret = msi.get_icat_time(callback, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
     json_name, json_ext = constants.IIJSONMETADATA.split('.', 1)
@@ -406,6 +407,9 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
         return
 
+    # Write license file.
+    callback.rule_uu_vault_write_license(vault_pkg_path)
+
     # Log actions.
     callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
     callback.rule_uu_vault_write_provenance_log(vault_pkg_path)
@@ -418,29 +422,28 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
-    if collection_empty(callback, stage_coll):
+    if collection.empty(callback, stage_coll):
         try:
             # We may or may not have delete access already.
-            set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
+            msi.set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
         except error.UUError as e:
             pass
         try:
-            rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
+            msi.rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
         except error.UUError as e:
             set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
             return
 
     # Update publication if package is published.
-    ret = callback.iiVaultStatus(vault_pkg_path, '')
-    status = ret['arguments'][1]
-    if status == constants.VAULT_PACKAGE_STATE['PUBLISHED']:
+    status = vault.get_coll_vault_status(callback, vault_pkg_path)
+    if status is constants.vault_package_state.PUBLISHED:
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
-        s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + CRONJOB_STATE['PENDING']
+        s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + constants.CRONJOB_STATE['PENDING']
         try:
-            ret = string_2_key_val_pair(callback, s, irods_types.BytesBuf())
+            ret = msi.string_2_key_val_pair(callback, s, irods_types.BytesBuf())
             kvp = ret['arguments'][1]
-            associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
+            msi.associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
 
             callback.iiSetUpdatePublicationState(vault_pkg_path, irods_types.BytesBuf())
         except Exception:

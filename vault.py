@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
@@ -25,9 +25,11 @@ __all__ = ['api_uu_vault_submit',
            'api_uu_vault_preservable_formats_lists',
            'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
+           'rule_uu_vault_write_license',
            'rule_uu_vault_write_provenance_log',
            'api_uu_vault_system_metadata',
-           'api_uu_vault_collection_details']
+           'api_uu_vault_collection_details',
+           'api_uu_vault_copy_to_research']
 
 
 def submit(ctx, coll):
@@ -61,11 +63,74 @@ def republish(ctx, coll):
         return api.Error(*res['arguments'][1:])
 
 
-api_uu_vault_submit    = api.make()(submit)
-api_uu_vault_approve   = api.make()(approve)
-api_uu_vault_cancel    = api.make()(cancel)
-api_uu_vault_depublish = api.make()(depublish)
-api_uu_vault_republish = api.make()(republish)
+def vault_copy_to_research(ctx, coll_origin, coll_target):
+    zone = user.zone(ctx)
+
+    # API error introduces post-error in requesting application.
+    if coll_target == "/" + zone + "/home":
+        return api.Error('HomeCollectionNotAllowed', 'Please select a specific research folder for your datapackage', {"bla": "bla", "bla2": "bla2bla2"})
+
+    # Check if target is a research folder. I.e. none-vault folder.
+    parts = coll_target.split('/')
+    group_name = parts[3]
+    if group_name.startswith('vault-'):
+        return api.Error('RequiredIsResearchArea', 'Please select a specific research folder for your datapackage')
+
+    # Check whether datapackage folder already present in target folder.
+    # Get package name from origin path
+    parts = coll_origin.split('/')
+    new_package_collection = coll_target + '/' + parts[-1]
+
+    # Now check whether target collection already exist.
+    if collection.exists(ctx, new_package_collection):
+        return api.Error('PackageAlreadyPresentInTarget', 'This datapackage is already present at the specified place')
+
+    # Check if target path exists.
+    if not collection.exists(ctx, coll_target):
+        return api.Error('TargetPathNotExists', 'The target you speficied does not exist')
+
+    # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
+    user_full_name = user.full_name(ctx)
+    category = meta_form.group_category(ctx, group_name)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    if not is_datamanager:
+        # Check if research group has access by checking of research-group exists for this user.
+        research_group_access = collection.exists(ctx, '/' + parts[0] + '/' + parts[1] + '/' + parts[2])
+
+        if not research_group_access:
+            return api.Error('NoPermissions', 'Insufficient rights to perform this action')
+
+    # Check for possible locks on target collection.
+    lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
+    if lock_count:
+        return api.Error('TargetCollectionLocked', 'The folder you selected is locked.')
+
+    # Check if user has write acces to research folder.
+    # Only normal user has write access.
+    if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
+        return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
+
+    # Register to delayed rule queue.
+    delay = 10
+
+    callback.delayExec(
+        "<PLUSET>%ds</PLUSET>" % delay,
+        "iiCopyFolderToResearch('%s', '%s')" % (coll_origin, coll_target),
+        "")
+
+    # TODO: response nog veranderen
+    return {"status": "ok",
+            "target": coll_target,
+            "origin": coll_origin}
+
+
+api_uu_vault_submit           = api.make()(submit)
+api_uu_vault_approve          = api.make()(approve)
+api_uu_vault_cancel           = api.make()(cancel)
+api_uu_vault_depublish        = api.make()(depublish)
+api_uu_vault_republish        = api.make()(republish)
+api_uu_vault_copy_to_research = api.make()(vault_copy_to_research)
 
 
 def preservable_formats_lists(ctx):
@@ -143,6 +208,49 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
+def rule_uu_vault_write_license(rule_args, callback, rei):
+    """Writes the license as a text file into the root of the vault package.
+
+    :param rule_args[0]: Path of a package in the vault.
+    """
+
+    vault_pkg_coll = rule_args[0]
+    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+
+    # Retrieve license.
+    license = ""
+    license_key = "License"
+    license_unit = "{}_%".format(constants.UUUSERMETADATAROOT)
+
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_UNITS LIKE '{}'".format(vault_pkg_coll, license_key, license_unit),
+        genquery.AS_LIST, callback)
+
+    for row in iter:
+        license = row[0]
+
+    if license == "":
+        # No license set in user metadata.
+        log.write(callback, "No license found in user metadata: {}".format(vault_pkg_coll))
+    elif license == "Custom":
+        # Custom license set in user metadata, no License.txt should exist in package.
+        license_file = vault_pkg_coll + "/License.txt"
+        if data_object.exists(callback, license_file):
+            data_object.remove(callback, license_file)
+    else:
+        # License set in user metadata, a License.txt should exist in package.
+        # Check if license text exists.
+        license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
+        if data_object.exists(callback, license_txt):
+            # Copy license file.
+            license_file = vault_pkg_coll + "/License.txt"
+            ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
+            ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
+        else:
+            log.write(callback, "License text not available for: {}".format(license))
+
+
 def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
     """Writes the provenance log as a text file into the root of the vault package.
 
@@ -154,7 +262,7 @@ def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
 
     for item in provenance_log:
         date_time = time.strftime('%Y/%m/%d %H:%M:%S',
-                                 time.localtime(int(item[0])))
+                                  time.localtime(int(item[0])))
         action = item[1].capitalize()
         actor = item[2]
         provenenance_txt += date_time + " - " + action + " - " + actor + "\n"

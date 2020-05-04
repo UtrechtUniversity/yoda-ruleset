@@ -19,19 +19,19 @@ acPostProcForObjRename(*src, *dst) { py_acPostProcForObjRename(*src, *dst) }
 
 # Matches any imeta (or equivalent) command *except* mod and cp.
 acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
-{ py_acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) }
+{ cut; py_acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) }
 acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit)
 { py_acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit) }
 
 # Matches imeta mod
 acPreProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit)
-{ py_acPreProcForModifyAVUMetadata_mod(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit) }
+{ cut; py_acPreProcForModifyAVUMetadata_mod(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit) }
 # acPostProcForModifyAVUMetadata(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit)
 # { py_acPostProcForModifyAVUMetadata_mod(*Option,*ItemType,*ItemName,*AName,*AValue,*AUnit,*NAName,*NAValue,*NAUnit) }
 
 # Matches imeta cp
 acPreProcForModifyAVUMetadata(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName)
-{ py_acPreProcForModifyAVUMetadata_cp(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) }
+{ cut; py_acPreProcForModifyAVUMetadata_cp(*Option,*SourceItemType,*TargetItemType,*SourceItemName,*TargetItemName) }
 
 acPostProcForPut  { cut; py_acPostProcForPut }
 acPostProcForCopy { cut; py_acPostProcForCopy }

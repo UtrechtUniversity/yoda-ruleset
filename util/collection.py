@@ -4,13 +4,16 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import msi
 import genquery
+import irods_types
 import itertools
 from query import Query
 import query
 
+
 def exists(callback, path):
-    """Check if a collection with the given path exists"""
+    """Check if a collection with the given path exists."""
     return len(list(genquery.row_iterator(
                "COLL_ID", "COLL_NAME = '{}'".format(path),
                genquery.AS_LIST, callback))) > 0
@@ -26,7 +29,7 @@ def owner(callback, path):
 
 
 def empty(callback, path):
-    """Check if a collection contains any data objects"""
+    """Check if a collection contains any data objects."""
     return (len(list(genquery.row_iterator(
                      "DATA_ID",
                      "COLL_NAME = '{}'".format(path),
@@ -62,9 +65,9 @@ def data_count(callback, path, recursive=True):
 def collection_count(callback, path):
     """Get a collection's collection count (the amount of collections within a collection)."""
     return sum(1 for _ in genquery.row_iterator(
-                     "COLL_ID",
-                     "COLL_NAME like '{}/%'".format(path),
-                     genquery.AS_LIST, callback))
+               "COLL_ID",
+               "COLL_NAME like '{}/%'".format(path),
+               genquery.AS_LIST, callback))
 
 
 def data_objects(callback, path, recursive=False):
@@ -93,6 +96,52 @@ def data_objects(callback, path, recursive=False):
                                   genquery.AS_LIST, callback)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+
+
+def create(ctx, path):
+    """Create new collection.
+
+
+    :param path: Path including new collection
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.coll_create(ctx,
+                    path,
+                    '',
+                    irods_types.BytesBuf())
+
+
+def remove(ctx, path):
+    """Delete a collection.
+
+    :param path: Path of collection to be deleted
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.rm_coll(ctx,
+                path,
+                '',
+                irods_types.BytesBuf())
+
+
+def rename(ctx, path_org, path_target):
+    """Rename collection from path_org to path_target.
+
+    :param path_org: Collection original path
+    :param path_target: Collection new path
+
+    This may raise a error.UUError if the file does not exist, or when the user
+    does not have write permission.
+    """
+    msi.data_obj_rename(ctx,
+                        path_org,
+                        path_target,
+                        '1',
+                        irods_types.BytesBuf())
+
 
 def name_from_id(ctx, coll_id):
     return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()

@@ -9,10 +9,12 @@ import rule
 import inspect
 from config import config
 
+
 def write(ctx, text):
     """Write a message to the log, including client name and originating rule/API name"""
     caller = inspect.stack()[1][3]
     _write(ctx, '{}: {}'.format(caller, text))
+
 
 def _write(ctx, text):
     """Write a message to the log, including the client name.
@@ -23,10 +25,12 @@ def _write(ctx, text):
     else:
         ctx.writeLine('serverLog', text)
 
+
 def debug(ctx, text):
     """Write a log message if in a development environment"""
     if config.environment == 'development':
         write(ctx, 'DEBUG: {}'.format(text))
+
 
 def _debug(ctx, text):
     """Write a log message if in a development environment"""
