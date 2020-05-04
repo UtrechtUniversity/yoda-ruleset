@@ -20,6 +20,9 @@
 # \param[in] targetResource    resource to be used as destination
 uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
+    # Give rods 'own' access so that they can remove the AVU.
+    errorcode(msiSetACL("default", "own", "rods#$rodsZoneClient", *object));
+
     msiString2KeyValPair("", *kv);
     msiAddKeyVal(*kv, UUORGMETADATAPREFIX ++ "replication_scheduled", "*sourceResource,*targetResource");
     msiSetKeyValuePairsToObj(*kv, *object, "-d");
@@ -34,6 +37,7 @@ uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
 # XXX: This function cannot be ported to Python in 4.2.7:
 #      msiDataObjRepl causes a deadlock for files larger than
 #      transfer_buffer_size_for_parallel_transfer_in_megabytes (4) due to an iRODS PREP bug.
+#      https://github.com/irods/irods_rule_engine_plugin_python/issues/54
 #
 uuReplicateBatch() {
     writeLine("serverLog", "Batch replication job started");
@@ -59,15 +63,19 @@ uuReplicateBatch() {
                 *countOk = *countOk + 1;
 
                 # Remove replication_scheduled flag.
-
-                # Even the sudo msi respects ACLs.
-                # Need to set write or own on the object if we don't have it already.
-                errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+                # rods should have been given own access via policy.
 
                 *kv.*attr = "*from,*to";
                 *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
                 if (*status != 0) {
-                    writeLine("serverLog", "Error: Scheduled replication of <*path>: could not remove schedule flag (*status)");
+                    # The object's ACLs may have changed.
+                    # Force the ACL and try one more time.
+                    errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+                    *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+
+                    if (*status != 0) {
+                        writeLine("serverLog", "Error: Scheduled replication of <*path>: could not remove schedule flag (*status)");
+                    }
                 }
             } else {
                 writeLine("serverLog", "Error: Scheduled replication of <*path> failed (*status)");
