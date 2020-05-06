@@ -20,7 +20,7 @@ def pre_status_transition(ctx, coll, current, new):
         # Clear action log coming from SECURED state.
         # SECURED -> LOCKED and SECURED -> SUBMITTED
         if current is constants.research_package_state.SECURED:
-            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX+'action_log')
+            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 
         # Add locks to folder, descendants and ancestors
         x = ctx.iiFolderLockChange(coll, 'lock', '')
@@ -33,7 +33,7 @@ def pre_status_transition(ctx, coll, current, new):
         # Clear action log coming from SECURED state.
         # SECURED -> FOLDER (backwards compatibility for v1.2 and older)
         if current is constants.research_package_state.SECURED:
-            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX+'action_log')
+            ctx.iiRemoveAVUs(coll, constants.UUORGMETADATAPREFIX + 'action_log')
 
         # Remove locks from folder, descendants and ancestors
         x = ctx.iiFolderLockChange(coll, 'unlock', '')

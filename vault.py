@@ -244,6 +244,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
         if data_object.exists(callback, license_txt):
             # Copy license file.
+            # TODO data_object.copy
             license_file = vault_pkg_coll + "/License.txt"
             ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
             ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
@@ -383,7 +384,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IIVAULTSTATUSATTRNAME]
         try:
             return constants.vault_package_state(x)
-        except:
+        except Exception as e:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
     return constants.vault_package_state.UNPUBLISHED
 

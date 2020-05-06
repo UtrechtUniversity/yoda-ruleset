@@ -21,6 +21,7 @@ __all__ = ['rule_uu_collection_group_name',
            'api_uu_folder_accept',
            'api_uu_folder_reject']
 
+
 def set_status(ctx, coll, status):
     """Change a folder's status.
     Status changes are validated by policy (AVU modify preproc).
@@ -59,6 +60,7 @@ def set_status_as_datamanager(ctx, coll, status):
 def lock(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
+
 def unlock(ctx, coll):
     # Unlocking is implemented by clearing the folder status. Since this action
     # can also represent other state changes than "unlock", we perform a sanity
@@ -90,8 +92,10 @@ def accept(ctx, coll):
 def reject(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
+
 def secure(ctx, coll):
     ctx.iiFolderSecure(coll)
+
 
 api_uu_folder_lock     = api.make()(lock)
 api_uu_folder_unlock   = api.make()(unlock)
@@ -144,6 +148,7 @@ def collection_group_name(callback, coll):
 
 rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
+
 def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
     """Obtains a (k,v) list of all organisation metadata on a given collection or data object"""
 
@@ -164,13 +169,15 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
         org_metadata = get_org_metadata(ctx, path, object_type=object_type)
 
     return [root for k, root in org_metadata
-            if  k == constants.IILOCKATTRNAME
+            if k == constants.IILOCKATTRNAME
             and (root.startswith(path) or path.startswith(root))]
+
 
 @api.make()
 def api_uu_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection"""
     return get_locks(ctx, coll)
+
 
 def has_locks(ctx, coll, org_metadata=None):
     """Check whether a lock exists on the given collection, its parents or children."""
@@ -207,7 +214,7 @@ def get_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IISTATUSATTRNAME]
         try:
             return constants.research_package_state(x)
-        except:
+        except Exception as e:
             log.write(ctx, 'Invalid folder status <{}>'.format(x))
 
     return constants.research_package_state.FOLDER

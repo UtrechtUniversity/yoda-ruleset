@@ -39,6 +39,7 @@ def can_coll_create(ctx, actor, coll):
 
     return policy.succeed()
 
+
 def can_coll_delete(ctx, actor, coll):
     """Disallow deleting collections in locked folders and collections containing locked folders."""
     log.debug(ctx, 'check coll delete <{}>'.format(coll))
@@ -52,11 +53,13 @@ def can_coll_delete(ctx, actor, coll):
 
     return policy.succeed()
 
+
 def can_coll_move(ctx, actor, src, dst):
     log.debug(ctx, 'check coll move <{}> -> <{}>'.format(src, dst))
 
     return policy.all(can_coll_delete(ctx, actor, src),
                       can_coll_create(ctx, actor, dst))
+
 
 def can_data_create(ctx, actor, path):
     log.debug(ctx, 'check data create <{}>'.format(path))
@@ -75,6 +78,7 @@ def can_data_create(ctx, actor, path):
 
     return policy.succeed()
 
+
 def can_data_write(ctx, actor, path):
     log.debug(ctx, 'check data write <{}>'.format(path))
 
@@ -84,6 +88,7 @@ def can_data_write(ctx, actor, path):
             return policy.fail('Data object is locked')
 
     return policy.succeed()
+
 
 def can_data_delete(ctx, actor, path):
 
@@ -96,14 +101,17 @@ def can_data_delete(ctx, actor, path):
 
     return policy.succeed()
 
+
 def can_data_copy(ctx, actor, src, dst):
     log.debug(ctx, 'check data copy <{}> -> <{}>'.format(src, dst))
     return can_data_create(ctx, actor, dst)
+
 
 def can_data_move(ctx, actor, src, dst):
     log.debug(ctx, 'check data move <{}> -> <{}>'.format(src, dst))
     return policy.all(can_data_delete(ctx, actor, src),
                       can_data_create(ctx, actor, dst))
+
 
 # }}}
 # Hooking pre peps to the above check functions {{{
@@ -125,12 +133,14 @@ def py_acPreprocForCollCreate(ctx):
     return can_coll_create(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
 
+
 @policy.require()
 def py_acPreprocForRmColl(ctx):
     log._debug(ctx, 'py_acPreprocForRmColl')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
     return can_coll_delete(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
+
 
 @policy.require()
 def py_acPreprocForDataObjOpen(ctx):
@@ -152,6 +162,7 @@ def py_acDataDeletePolicy(ctx):
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
             else ctx.msiDeleteDisallowed())
 
+
 @policy.require()
 def py_acPreProcForObjRename(ctx, src, dst):
     log._debug(ctx, 'py_acPreProcForObjRename')
@@ -167,6 +178,7 @@ def py_acPreProcForObjRename(ctx, src, dst):
 
     # if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
 
+
 @policy.require()
 def py_acPostProcForPut(ctx):
     log._debug(ctx, 'py_acPostProcForPut')
@@ -180,6 +192,7 @@ def py_acPostProcForPut(ctx):
 
     return x
 
+
 @policy.require()
 def py_acPostProcForCopy(ctx):
     # See py_acPostProcForPut.
@@ -192,6 +205,7 @@ def py_acPostProcForCopy(ctx):
         data_object.remove(ctx, path)
 
     return x
+
 
 # Disabled: caught by acPreprocForCollCreate
 # @policy.require()
@@ -227,6 +241,7 @@ def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
     # for overwriting there is still a PRE static PEP that applies - acPreprocForDataObjOpen.
     return can_data_create(ctx, user.user_and_zone(ctx),
                            str(data_obj_inp.objPath))
+
 
 @policy.require()
 def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_inp, open_stat):
@@ -270,6 +285,7 @@ def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):
     log._debug(ctx, 'pep_api_data_obj_trim_pre')
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
+
 
 @policy.require()
 def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate_inp):
@@ -333,7 +349,7 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
         ctx.iiPreVaultStatusTransition(obj_name, current.value, value)
         return policy.succeed()
 
-    elif obj_type == '-C' and space is pathutil.Space.RESEARCH and unit.startswith(constants.UUUSERMETADATAROOT+'_'):
+    elif obj_type == '-C' and space is pathutil.Space.RESEARCH and unit.startswith(constants.UUUSERMETADATAROOT + '_'):
         # Research package metadata, set when saving the metadata form.
         # Allow if object is not locked.
 
@@ -389,10 +405,10 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
     if attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.RESEARCH:
         status = constants.research_package_state.FOLDER if option in ['rm', 'rmw'] else value
-        ctx.iiPostFolderStatusTransition(obj_name, str(user.user_and_zone(ctx)), status);
+        ctx.iiPostFolderStatusTransition(obj_name, str(user.user_and_zone(ctx)), status)
 
     elif attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.VAULT:
-        ctx.iiPostVaultStatusTransition(obj_name, str(user.user_and_zone(ctx)), value);
+        ctx.iiPostVaultStatusTransition(obj_name, str(user.user_and_zone(ctx)), value)
 
 
 # }}}
@@ -414,7 +430,7 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
 
     # allow 'admin-*' scripts, iff first arg is the actor username&zone.
     if cmd.startswith('admin-'):
-        if args == str(actor) or args.startswith(str(actor)+' '):
+        if args == str(actor) or args.startswith(str(actor) + ' '):
             return policy.succeed()
         else:
             return policy.fail('Actor not given as first arg to admin- execcmd')
@@ -447,7 +463,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
         # "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.json"
         if ((info.space in (pathutil.Space.RESEARCH, pathutil.Space.DATAMANAGER)
                 and pathutil.basename(info.subpath) == constants.IIJSONMETADATA)
-         or (info.space is pathutil.Space.VAULT
+            or (info.space is pathutil.Space.VAULT
                 # Vault jsons have a [timestamp] in the file name.
                 and re.match(r'/{}\[[^/]+\]\.{}$'.format(*map(re.escape, pathutil.chopext(constants.IIJSONMETADATA))), info.subpath))):
 
@@ -458,7 +474,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     except Exception as e:
         # The rules on metadata are run synchronously and could fail.
         # Log errors, but continue with revisions.
-        log.write(ctx, 'rule_uu_meta_modified_post failed: '+str(e))
+        log.write(ctx, 'rule_uu_meta_modified_post failed: ' + str(e))
 
     ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
 
