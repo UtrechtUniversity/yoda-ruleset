@@ -43,9 +43,11 @@ class Fail(object):
         return False
     __nonzero__ = __bool__
 
+
 # Functions to be used to instantiate the above result types.
 fail    = Fail
 succeed = Succeed
+
 
 def all(*x):
     for i in x:

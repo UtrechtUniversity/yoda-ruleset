@@ -69,6 +69,7 @@ CRONJOB_STATE = {
 }
 """Cronjob states."""
 
+
 class vault_package_state(Enum):
     """Vault package states."""
 
@@ -101,20 +102,21 @@ class research_package_state(Enum):
     def __str__(self):
         return self.name
 
+
 # List of valid folder transitions (src, dst).
 folder_transitions = [(research_package_state(x),
                        research_package_state(y))
-                       for x, y in [('',          'LOCKED'),
-                                    ('',          'SUBMITTED'),
-                                    ('LOCKED',    ''),
-                                    ('LOCKED',    'SUBMITTED'),
-                                    ('SUBMITTED', ''),
-                                    ('SUBMITTED', 'ACCEPTED'),
-                                    ('SUBMITTED', 'REJECTED'),
-                                    ('REJECTED',  'LOCKED'),
-                                    ('REJECTED',  ''),
-                                    ('REJECTED',  'SUBMITTED'),
-                                    ('ACCEPTED',  'SECURED'),
-                                    ('SECURED',   'LOCKED'),
-                                    ('SECURED',   ''),
-                                    ('SECURED',   'SUBMITTED')]]
+                      for x, y in [('',          'LOCKED'),
+                                   ('',          'SUBMITTED'),
+                                   ('LOCKED',    ''),
+                                   ('LOCKED',    'SUBMITTED'),
+                                   ('SUBMITTED', ''),
+                                   ('SUBMITTED', 'ACCEPTED'),
+                                   ('SUBMITTED', 'REJECTED'),
+                                   ('REJECTED',  'LOCKED'),
+                                   ('REJECTED',  ''),
+                                   ('REJECTED',  'SUBMITTED'),
+                                   ('ACCEPTED',  'SECURED'),
+                                   ('SECURED',   'LOCKED'),
+                                   ('SECURED',   ''),
+                                   ('SECURED',   'SUBMITTED')]]

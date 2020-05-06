@@ -10,9 +10,11 @@ from query import Query
 import query
 from collections import namedtuple
 
+
 def exists(ctx, grp):
     return Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'"
                       .format(grp)).first() is not None
+
 
 def get_category(ctx, grp):
     ret = ctx.uuGroupGetCategory(grp, '', '')
