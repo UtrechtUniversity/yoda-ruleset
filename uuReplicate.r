@@ -44,7 +44,8 @@ uuReplicateBatch() {
     *count   = 0;
     *countOk = 0;
 
-    *attr = UUORGMETADATAPREFIX ++ "replication_scheduled";
+    *attr      = UUORGMETADATAPREFIX ++ "replication_scheduled";
+    *errorattr = UUORGMETADATAPREFIX ++ "replication_failed";
     foreach (*row in SELECT COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE
                      WHERE  META_DATA_ATTR_NAME = '*attr') {
         *count = *count + 1;
@@ -58,30 +59,44 @@ uuReplicateBatch() {
             *from = elem(*xs, 0);
             *to   = elem(*xs, 1);
             *opts = "rescName=*from++++destRescName=*to++++irodsAdmin=";
-            *status = errorcode(msiDataObjRepl(*path, *opts, *s));
-            if (*status == 0) {
+            *replstatus = errorcode(msiDataObjRepl(*path, *opts, *s));
+
+            *kv.*attr = "*from,*to";
+
+            # Remove replication_scheduled flag no matter if replication
+            # succeeded or not.
+            # rods should have been given own access via policy to allow AVU
+            # changes.
+
+            *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+            if (*rmstatus != 0) {
+                # The object's ACLs may have changed.
+                # Force the ACL and try one more time.
+                errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+                *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+
+                if (*rmstatus != 0) {
+                    writeLine("serverLog", "repl error: Scheduled replication of <*path>: could not remove schedule flag (*rmstatus)");
+                }
+            }
+
+            if (*replstatus == 0) {
                 *countOk = *countOk + 1;
 
-                # Remove replication_scheduled flag.
-                # rods should have been given own access via policy.
+                # Replication OK. Remove any existing error indication attribute.
+                # This may silently fail if no error AVU exists.
+                *errorkv.*errorattr = "true";
+                *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
 
-                *kv.*attr = "*from,*to";
-                *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
-                if (*status != 0) {
-                    # The object's ACLs may have changed.
-                    # Force the ACL and try one more time.
-                    errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
-                    *status = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
-
-                    if (*status != 0) {
-                        writeLine("serverLog", "Error: Scheduled replication of <*path>: could not remove schedule flag (*status)");
-                    }
-                }
             } else {
-                writeLine("serverLog", "Error: Scheduled replication of <*path> failed (*status)");
+                # Set error attribute
+
+                writeLine("serverLog", "repl error: Scheduled replication of <*path> failed (*replstatus)");
+                *errorkv.*errorattr = "true";
+                errorcode(msiSetKeyValuePairsToObj(*errorkv, *path, "-d"));
             }
         } else {
-            writeLine("serverLog", "Error: Scheduled replication of <*path> skipped: bad meta value <*rescs>");
+            writeLine("serverLog", "repl error: Scheduled replication of <*path> skipped: bad meta value <*rescs>");
         }
     }
 
