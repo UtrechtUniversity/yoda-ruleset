@@ -95,7 +95,7 @@ def copy(ctx, path_org, path_copy, force=True):
     """
     msi.data_obj_copy(ctx,
                       path_org,
-                      path_target,
+                      path_copy,
                       'verifyChksum={}'.format('++++forceFlag=' if force else ''),
                       irods_types.BytesBuf())
 
