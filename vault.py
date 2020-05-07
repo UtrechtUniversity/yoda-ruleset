@@ -244,10 +244,8 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
         if data_object.exists(callback, license_txt):
             # Copy license file.
-            # TODO data_object.copy
             license_file = vault_pkg_coll + "/License.txt"
-            ofFlags = 'forceFlag=++++verifyChksum='  # Checksum and file can already exist, so must be overwritten.
-            ret_val = callback.msiDataObjCopy(license_txt, license_file, ofFlags, 0)
+            data_object.copy(callback, license_txt, license_file)
         else:
             log.write(callback, "License text not available for: {}".format(license))
 
