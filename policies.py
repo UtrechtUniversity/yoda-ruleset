@@ -404,7 +404,7 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
     info = pathutil.info(obj_name)
 
     if attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.RESEARCH:
-        status = constants.research_package_state.FOLDER if option in ['rm', 'rmw'] else value
+        status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
         ctx.iiPostFolderStatusTransition(obj_name, str(user.user_and_zone(ctx)), status)
 
     elif attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.VAULT:
