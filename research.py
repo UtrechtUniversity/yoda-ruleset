@@ -482,8 +482,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
                 "proc_status_info": "You are not allowed to write in the selected collection"}
 
     # Target_coll locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
-    if lock_count:
+    if folder.is_locked(ctx, coll_target):
         return {"proc_status": "nok",
                 "proc_status_info": "The target collection is locked and therefore this revision cannot be written to the indicated collection"}
 
