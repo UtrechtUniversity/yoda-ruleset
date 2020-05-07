@@ -26,7 +26,6 @@ __all__ = ['api_uu_vault_submit',
            'api_uu_vault_unpreservable_files',
            'rule_uu_vault_copy_original_metadata_to_vault',
            'rule_uu_vault_write_license',
-           'rule_uu_vault_write_provenance_log',
            'api_uu_vault_system_metadata',
            'api_uu_vault_collection_details',
            'api_uu_vault_copy_to_research']
@@ -248,35 +247,6 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             data_object.copy(callback, license_txt, license_file)
         else:
             log.write(callback, "License text not available for: {}".format(license))
-
-
-def rule_uu_vault_write_provenance_log(rule_args, callback, rei):
-    """Writes the provenance log as a text file into the root of the vault package.
-
-    :param rule_args[0]: Path of a package in the vault.
-    """
-    # Retrieve provenance.
-    provenenance_txt = ""
-    provenance_log = provenance.get_provenance_log(callback, rule_args[0])
-
-    for item in provenance_log:
-        date_time = time.strftime('%Y/%m/%d %H:%M:%S',
-                                  time.localtime(int(item[0])))
-        action = item[1].capitalize()
-        actor = item[2]
-        provenenance_txt += date_time + " - " + action + " - " + actor + "\n"
-
-    # Write provenance log.
-    ofFlags = 'forceFlag='  # File already exists, so must be overwritten.
-    provenance_file = rule_args[0] + "/Provenance.txt"
-    ret_val = callback.msiDataObjCreate(provenance_file, ofFlags, 0)
-
-    file_handle = ret_val['arguments'][2]
-    callback.msiDataObjWrite(file_handle, provenenance_txt, 0)
-    callback.msiDataObjClose(file_handle, 0)
-
-    # Checksum provenance file.
-    callback.msiDataObjChksum(provenance_file, "verifyChksum=", 0)
 
 
 @api.make()

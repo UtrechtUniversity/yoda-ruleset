@@ -532,7 +532,6 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
     # Allowd to restore revision
     # Start actual restoration of the revision
-
     try:
         ofFlags = 'forceFlag='
         msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())

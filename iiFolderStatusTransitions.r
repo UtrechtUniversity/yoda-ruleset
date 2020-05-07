@@ -279,9 +279,8 @@ iiFolderSecure(*folder) {
 		*parent = *coll;
 	}
 
-	# Copy and write provenance log.
+	# Copy provenance log.
 	iiCopyActionLog(*folder, *target);
-	rule_uu_vault_write_provenance_log(*target);
 
 	# Set vault permissions for new vault package.
 	iiSetVaultPermissions(*folder, *target);

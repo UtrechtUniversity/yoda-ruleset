@@ -412,7 +412,6 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
 
     # Log actions.
     callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
-    callback.rule_uu_vault_write_provenance_log(vault_pkg_path)
 
     # Cleanup staging area.
     try:
