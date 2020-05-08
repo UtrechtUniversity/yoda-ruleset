@@ -231,7 +231,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "No license found in user metadata: {}".format(vault_pkg_coll))
+        log.write(callback, "rule_uu_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
@@ -245,8 +245,14 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
             data_object.copy(callback, license_txt, license_file)
+
+            # Fix ACLs.
+            try:
+                callback.iiCopyACLsFromParent(license_file, 'default')
+            except Exception as e:
+                log.write(callback, "rule_uu_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "License text not available for: {}".format(license))
+            log.write(callback, "rule_uu_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
@@ -255,7 +261,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             license_uri = data_object.read(callback, license_uri_file)
             avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri.strip())
         else:
-            log.write(callback, "License URI not available for: {}".format(license))
+            log.write(callback, "rule_uu_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
