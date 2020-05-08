@@ -221,14 +221,14 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                     continue
 
             else:  # Single value found for data
-                #log.write(callback, 'SINGLE VALUE FOR:')
-                #log.write(callback, elementName)
-                #log.write(callback, elementInfo)
+                # log.write(callback, 'SINGLE VALUE FOR:')
+                # log.write(callback, elementName)
+                # log.write(callback, elementInfo)
                 try:
                     if 'type' in elementInfo:
                         if elementInfo['type'] == 'array':
                             jsonDict[elementName] = [data]
-                        elif elementInfo['type'] == 'integer': #Solely Retention_Period at this moment
+                        elif elementInfo['type'] == 'integer':  # Solely Retention_Period at this moment
                             jsonDict[elementName] = int(data)
                     else:
                         jsonDict[elementName] = data
