@@ -248,6 +248,15 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         else:
             log.write(callback, "License text not available for: {}".format(license))
 
+        # Check if license URI exists.
+        license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
+        if data_object.exists(callback, license_uri_file):
+            # Set license URI.
+            license_uri = data_object.read(callback, license_uri_file)
+            avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri.strip())
+        else:
+            log.write(callback, "License URI not available for: {}".format(license))
+
 
 @api.make()
 def api_uu_vault_system_metadata(callback, coll):
