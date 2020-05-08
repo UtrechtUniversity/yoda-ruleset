@@ -465,8 +465,8 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
                 and pathutil.basename(info.subpath) == constants.IIJSONMETADATA)
             or (info.space is pathutil.Space.VAULT
                 # Vault jsons have a [timestamp] in the file name.
-                and re.match(r'/{}\[[^/]+\]\.{}$'.format(*map(re.escape, pathutil.chopext(constants.IIJSONMETADATA))), info.subpath))):
-
+                and re.match(r'{}\[[^/]+\]\.{}$'.format(*map(re.escape, pathutil.chopext(constants.IIJSONMETADATA))),
+                             pathutil.basename(info.subpath)))):
             # Path is a metadata file, ingest.
             log.write(ctx, 'metadata JSON <{}> modified by {}, ingesting'.format(path, username))
             ctx.rule_uu_meta_modified_post(path, username, zone)
