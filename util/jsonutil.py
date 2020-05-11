@@ -25,7 +25,7 @@ def _fold(x, **alg):
     Calls functions from 'alg', indexed by the type of value, to transform values recursively.
     """
     f = alg.get(type(x).__name__, lambda y: y)
-    if type(x) is OrderedDict:
+    if type(x) in [dict, OrderedDict]:
         return f(OrderedDict([(k, _fold(v, **alg)) for k, v in x.items()]))
     elif type(x) is list:
         return f([_fold(v, **alg) for v in x])
@@ -42,23 +42,46 @@ def _demote_strings(json_data):
                  unicode=lambda x: x.encode('utf-8'),
                  OrderedDict=lambda x: OrderedDict([(k.encode('utf-8'), v) for k, v in x.items()]))
 
+def _promote_strings(json_data):
+    """Transform UTF-8 encoded strings -> unicode recursively, for a given JSON structure.
+       Needed for handling unicode in JSON as long as we are still using Python2.
+       Both JSON string values and JSON object (dict) keys are transformed.
 
-def parse(text):
-    """Parse JSON into an OrderedDict. All strings are UTF-8 encoded."""
+       May raise UnicodeDecodeError if strings are not proper UTF-8.
+    """
+    return _fold(json_data,
+                 str=lambda x: x.decode('utf-8'),
+                 OrderedDict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]),
+                 dict       =lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]))
+
+
+def parse(text, want_bytes=True):
+    """Parse JSON into an OrderedDict.
+
+    All strings are UTF-8 encoded with Python2 in mind.
+    This behavior is disabled if want_bytes is False"""
     try:
-        return _demote_strings(json.loads(text, object_pairs_hook=OrderedDict))
+        x = json.loads(text, object_pairs_hook=OrderedDict)
+        return _demote_strings(x) if want_bytes else x
     except ValueError:
         raise ParseError('JSON file format error')
 
 
 def dump(data, **options):
     """Dump an object to a JSON string."""
-    return json.dumps(data, **({'indent': 4} if options == {} else options))
+    # json.dumps seems to not like mixed str/unicode input, so make sure
+    # everything is of the same type first.
+    data = _promote_strings(data)
+    return json.dumps(data,
+                      ensure_ascii=False,  # Don't unnecessarily use \u0000 escapes.
+                      encoding='utf-8',
+                      **({'indent': 4} if options == {} else options)) \
+               .encode('utf-8')  # turn unicode json string back into an encoded str
 
 
-def read(callback, path):
+def read(callback, path, **options):
     """Read an iRODS data object and parse it as JSON."""
-    return parse(data_object.read(callback, path))
+    return parse(data_object.read(callback, path), **options)
 
 
 def write(callback, path, data, **options):

@@ -23,7 +23,9 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
 
     # Landing page creation is part of the publication proces
     # Read user & system metadata from corresponding combi JSON file
-    dictJsonData = jsonutil.read(callback, combiJsonPath)
+    # (Python2) 'want_bytes=False': Do not encode embedded unicode strings as
+    #                               UTF-8, as that will trip up jinja2.
+    dictJsonData = jsonutil.read(callback, combiJsonPath, want_bytes=False)
 
     # Load the Jinja template.
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
