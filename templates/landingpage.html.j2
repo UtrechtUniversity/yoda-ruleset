@@ -50,10 +50,10 @@
             <div class="creators">
                 <div class="row">
                     <div class="col-sm-2">
-                        <label>Creator</label>
+                        <label>Creators</label>
                     </div>
                     <div class="col-sm-10">
-                        {% for creator in creators %} {{ creator.Name.First_Name }} {{ creator.Name.Last_Name }} &nbsp; {% endfor %}
+                        {% for creator in creators %} {{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }} &nbsp; {% endfor %}
                     </div>
                 </div>
 
@@ -78,7 +78,7 @@
                 <hr />
                 {%if data_access_restriction.startswith('Open') %}
                 <a class="btn btn-primary access-btn" target="_blank" href="{{ open_access_link }}">
-                            Acces datapackage
+                            View contents
                         </a>
                 {% endif %}
 
@@ -130,23 +130,24 @@
                     </div>
 
 
-                    {% for loc in covered_geolocation_place %}
-                      {% if loop.first %}
-                        <div class="group">
-                      {% endif %}
+                    {% set length = covered_geolocation_place|length %}
+                    {% for loc in coviered_geolocation_place if not ((length==1) and (loc=="")) %}
+                        {% if loop.first %}
+                          <div class="group">
+                        {% endif %}
                           
-                         <div class="row">
-                          <div class="col-sm-2">
-                            <label>Geolocation</label>
-                          </div>
-                          <div class="col-sm-10">
-                            <span>{{ loc }}</span>
-                          </div>
-                         </div>
+                           <div class="row">
+                            <div class="col-sm-2">
+                              <label>Geolocation</label>
+                            </div>
+                            <div class="col-sm-10">
+                              <span>{{ loc }}</span>
+                            </div>
+                           </div>
 
-                      {% if loop.last %}
-                        </div>
-                      {% endif %}
+                        {% if loop.last %}
+                          </div>
+                        {% endif %}
                     {% endfor %}
 
                     
@@ -309,7 +310,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ creator.Name.First_Name }} {{ creator.Name.Last_Name }}</span>
+                                <span>{{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -345,7 +346,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ contributor.Name.First_Name }} {{ contributor.Name.Last_Name }}</span>
+                                <span>{{ contributor.Name.Last_Name }}, {{ contributor.Name.First_Name }}</span>
                             </div>
                         </div>
 
