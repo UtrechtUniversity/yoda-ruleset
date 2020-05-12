@@ -130,8 +130,7 @@
                     </div>
 
 
-                    {% set length = covered_geolocation_place|length %}
-                    {% for loc in coviered_geolocation_place if not ((length==1) and (loc=="")) %}
+                    {% for loc in covered_geolocation_place if not ((covered_geolocation_place|length == 1) and (loc == "" or loc == None)) %}
                         {% if loop.first %}
                           <div class="group">
                         {% endif %}
