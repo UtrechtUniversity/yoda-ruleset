@@ -42,6 +42,7 @@ def _demote_strings(json_data):
                  unicode=lambda x: x.encode('utf-8'),
                  OrderedDict=lambda x: OrderedDict([(k.encode('utf-8'), v) for k, v in x.items()]))
 
+
 def _promote_strings(json_data):
     """Transform UTF-8 encoded strings -> unicode recursively, for a given JSON structure.
        Needed for handling unicode in JSON as long as we are still using Python2.
