@@ -36,21 +36,102 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath) {
 	}
 }
 
-# \brief  Asynchronous call to iiRevisionCreate.
-#         Schedule the creation of a revision as a delayed to avoid a slow down
-#         of the main process.
+# \brief  Asynchronous call to iiRevisionCreate via scheduled job.
 #
 # \param[in] resource   The resource where the original is written to
-# \param[in] path	The path of the added or modified file.
+# \param[in] path       The path of the added or modified file.
 # \param[in] maxSize    The maximum file size of original
 #
 iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
-	delay("<PLUSET>1s</PLUSET>") {
-		iiRevisionCreate(*resource, *path, *maxSize, *id);
-		if (*id != "") {
-			writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
-		}
-	}
+    # Mark data object for revision creation by setting 'org_revision_scheduled' metadata.
+    # Give rods 'own' access so that they can set&remove the AVU.
+    errorcode(msiSetACL("default", "own", "rods#$rodsZoneClient", *path));
+
+    msiString2KeyValPair("", *kv);
+    msiAddKeyVal(*kv, UUORGMETADATAPREFIX ++ "revision_scheduled", "*resource");
+    msiSetKeyValuePairsToObj(*kv, *path, "-d");
+    #writeLine("serverLog", "uuRevisionCreateAsynchronously: Revision creation scheduled for *path");
+}
+
+# Scheduled revision creation batch job.
+#
+# Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
+#
+# XXX: This function cannot be ported to Python in 4.2.7:
+#      msiDataObjCopy causes a deadlock for files of size
+#      maximum_size_for_single_buffer_in_megabytes (32) or larger due to an iRODS PREP bug.
+#      https://github.com/irods/irods_rule_engine_plugin_python/issues/54
+#
+uuRevisionBatch() {
+    writeLine("serverLog", "Batch revision job started");
+    *count        = 0;
+    *countOk      = 0;
+    *countIgnored = 0;
+
+    *attr      = UUORGMETADATAPREFIX ++ "revision_scheduled";
+    *errorattr = UUORGMETADATAPREFIX ++ "revision_failed";
+    foreach (*row in SELECT COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE
+                     WHERE  META_DATA_ATTR_NAME = '*attr') {
+        *count = *count + 1;
+
+        # Perform scheduled revision creation for one data object.
+
+        *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
+        *resc  = *row."META_DATA_ATTR_VALUE";
+        *size  = *row."DATA_SIZE";
+        *revstatus = errorcode(iiRevisionCreate(*resc, *path, UUMAXREVISIONSIZE, *id));
+
+        *kv.*attr = *resc;
+
+        # Remove revision_scheduled flag no matter if it succeeded or not.
+        # rods should have been given own access via policy to allow AVU
+        # changes.
+
+        *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+        if (*rmstatus != 0) {
+            # The object's ACLs may have changed.
+            # Force the ACL and try one more time.
+            errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+            *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+
+            if (*rmstatus != 0) {
+                writeLine("serverLog", "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)");
+            }
+        }
+
+        if (*revstatus == 0) {
+            if (*id != "") {
+                writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
+                *countOk = *countOk + 1;
+            } else {
+                *countIgnored = *countIgnored + 1;
+            }
+
+            # Revision creation OK. Remove any existing error indication attribute.
+            *c = *row."COLL_NAME";
+            *d = *row."DATA_NAME";
+            foreach (*x in SELECT DATA_NAME
+                           WHERE  COLL_NAME            = '*c'
+                             AND  DATA_NAME            = '*d'
+                             AND  META_DATA_ATTR_NAME  = '*errorattr'
+                             AND  META_DATA_ATTR_VALUE = 'true') {
+
+                # Only try to remove it if we know for sure it exists,
+                # otherwise we get useless errors in the log.
+                *errorkv.*errorattr = "true";
+                errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
+                break;
+            }
+        } else {
+            # Set error attribute
+
+            writeLine("serverLog", "revision error: Scheduled revision creation of <*path> failed (*revstatus)");
+            *errorkv.*errorattr = "true";
+            errorcode(msiSetKeyValuePairsToObj(*errorkv, *path, "-d"));
+        }
+    }
+
+    writeLine("serverLog", "Batch revision job finished. " ++ str(*countOk+*countIgnored) ++ "/*count successfully processed, of which *countOk resulted in new revisions");
 }
 
 # \brief Create a revision of a dataobject in a revision folder.
@@ -61,99 +142,110 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 # \param[out] id		object id of revision
 #
 iiRevisionCreate(*resource, *path, *maxSize, *id) {
-	*id = "";
-	uuChopPath(*path, *parent, *basename);
-	*objectId = 0;
-	*found = false;
-	foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER
-			WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_RESC_HIER like '*resource%') {
-		if (!*found) {
-			*found = true;
-			*dataId = *row.DATA_ID;
-			*modifyTime = *row.DATA_MODIFY_TIME;
-			*dataSize = *row.DATA_SIZE;
-			*collId = *row.COLL_ID;
-			*dataOwner = *row.DATA_OWNER_NAME;
-		}
-	}
+    *id = "";
+    uuChopPath(*path, *parent, *basename);
+    *objectId = 0;
+    *found = false;
+    foreach(*row in SELECT DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER
+            WHERE DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_RESC_HIER like '*resource%') {
+        if (!*found) {
+            *found = true;
+            *dataId = *row.DATA_ID;
+            *modifyTime = *row.DATA_MODIFY_TIME;
+            *dataSize = *row.DATA_SIZE;
+            *collId = *row.COLL_ID;
+            *dataOwner = *row.DATA_OWNER_NAME;
+        }
+    }
 
-	if (!*found) {
-		writeLine("serverLog", "iiRevisionCreate: DataObject was not found or path was collection");
-		succeed;
-	}
-
-
-	if (double(*dataSize)>*maxSize) {
-		writeLine("serverLog", "iiRevisionCreate: Files larger than *maxSize bytes cannot store revisions");
-		succeed;
-	}
+    if (!*found) {
+        writeLine("serverLog", "iiRevisionCreate: DataObject was not found or path was collection");
+        succeed;
+    }
 
 
-	foreach(*row in SELECT USER_NAME, USER_ZONE WHERE DATA_ID = *dataId AND USER_TYPE = "rodsgroup" AND DATA_ACCESS_NAME = "own") {
-	       *groupName = *row.USER_NAME;
-		*userZone = *row.USER_ZONE;
-	}
+    if (double(*dataSize)>*maxSize) {
+        writeLine("serverLog", "iiRevisionCreate: Files larger than *maxSize bytes cannot store revisions");
+        succeed;
+    }
 
-	# All revisions are stored in a group with the same name as the research group in a system collection
-	# When this collection is missing, no revisions will be created. When the group manager is used to
-	# create new research groups, the revision collection will be created as well.
-	*revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
-	*revisionStoreExists = false;
-	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *revisionStore) {
-	       	*revisionStoreExists = true;
-       	}
+    foreach(*row in SELECT USER_NAME, USER_ZONE WHERE DATA_ID = *dataId AND USER_TYPE = "rodsgroup" AND DATA_ACCESS_NAME = "own") {
+        *groupName = *row.USER_NAME;
+        *userZone = *row.USER_ZONE;
+    }
 
-	if (*revisionStoreExists) {
-		# generate a timestamp in iso8601 format to append to the filename of the revised file.
-		msiGetIcatTime(*timestamp, "icat");
-		*iso8601 = uuiso8601(*timestamp);
-		*revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
-		*revColl = *revisionStore ++ "/" ++ *collId;
-		if (!uuCollectionExists(*revColl)) {
-		    msiCollCreate(*revColl, 1, *msistatus);
-		}
-		*revPath = *revColl ++ "/" ++ *revFileName;
-		*err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
-		if (*err < 0) {
-			if (*err == -312000) {
-			# When a file is modified multiple times in a second, only the first modification can be stored as the revision name with timestamp will be the same
-			# iRODS returns timestamps in seconds only.
-			# -312000 OVERWRITE_WITHOUT_FORCE_FLAG
-				writeLine("serverLog", "iiRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
-				succeed;
-			} else if (*err == -814000) {
-			        # -814000 CAT_UNKNOWN_COLLECTION
-				writeLine("serverLog", "iiRevisionCreate: Could not access or create *revColl. Please check permissions");
-				succeed;
-			} else {
-				writeLine("serverLog", "iiRevisionCreate: failed for *path with errorCode *err");
-				succeed;
-			}
-		} else {
-			foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
-				*id = *row.DATA_ID;
-			}
+    # All revisions are stored in a group with the same name as the research group in a system collection
+    # When this collection is missing, no revisions will be created. When the group manager is used to
+    # create new research groups, the revision collection will be created as well.
+    *revisionStore = "/*userZone" ++ UUREVISIONCOLLECTION ++ "/*groupName";
 
-			# Add original metadata to revision data object.
-			msiString2KeyValPair("", *revkv);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
-			msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_filesize", *dataSize);
+    *revisionStoreExists = false;
+    foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *revisionStore) {
+        *revisionStoreExists = true;
+    }
 
-			msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
-		}
+    if (*revisionStoreExists) {
+        # Exists: Revisions are enabled.
 
-	} else {
-		writeLine("serverLog", "iiRevisionCreate: *revisionStore does not exists or is inaccessible for current client.");
-		succeed;
-	}
+        # Allow rodsadmin to create subcollections.
+        errorcode(msiSetACL("default", "admin:own", "rods#$rodsZoneClient", *revisionStore));
+
+        # generate a timestamp in iso8601 format to append to the filename of the revised file.
+        msiGetIcatTime(*timestamp, "icat");
+        *iso8601 = uuiso8601(*timestamp);
+        *revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
+        *revColl = *revisionStore ++ "/" ++ *collId;
+
+        if (uuCollectionExists(*revColl)) {
+            # Rods may not have own access yet.
+            errorcode(msiSetACL("default", "admin:own", "rods#$rodsZoneClient", *revColl));
+        } else {
+            msiCollCreate(*revColl, 1, *msistatus);
+            # Inheritance is enabled - ACLs are already good.
+            # (rods and the research group both have own)
+        }
+
+        *revPath = *revColl ++ "/" ++ *revFileName;
+        *err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
+        if (*err < 0) {
+            if (*err == -312000) {
+                # When a file is modified multiple times in a second, only the first modification can be stored as the revision name with timestamp will be the same
+                # iRODS returns timestamps in seconds only.
+                # -312000 OVERWRITE_WITHOUT_FORCE_FLAG
+                writeLine("serverLog", "iiRevisionCreate: *revPath already exists. This means that *basename was changed multiple times within the same second.");
+                succeed;
+            } else if (*err == -814000) {
+                # -814000 CAT_UNKNOWN_COLLECTION
+                writeLine("serverLog", "iiRevisionCreate: Could not access or create *revColl. Please check permissions");
+                succeed;
+            } else {
+                writeLine("serverLog", "iiRevisionCreate: failed for *path with errorCode *err");
+                succeed;
+            }
+        } else {
+            foreach(*row in SELECT DATA_ID WHERE DATA_NAME = *revFileName AND COLL_NAME = *revColl) {
+                *id = *row.DATA_ID;
+            }
+
+            # Add original metadata to revision data object.
+            msiString2KeyValPair("", *revkv);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_path", *path);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_name", *parent);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_name", *basename);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_owner_name", *dataOwner);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_data_id", *dataId);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_coll_id", *collId);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_group_name", *groupName);
+            msiAddKeyVal(*revkv, UUORGMETADATAPREFIX ++ "original_filesize", *dataSize);
+
+            msiAssociateKeyValuePairsToObj(*revkv, *revPath, "-d");
+        }
+    } else {
+        writeLine("serverLog", "iiRevisionCreate: *revisionStore does not exists or is inaccessible for current client.");
+        succeed;
+    }
 }
 
 
