@@ -84,10 +84,20 @@ uuReplicateBatch() {
                 *countOk = *countOk + 1;
 
                 # Replication OK. Remove any existing error indication attribute.
-                # This may silently fail if no error AVU exists.
-                *errorkv.*errorattr = "true";
-                *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
+                *c = *row."COLL_NAME";
+                *d = *row."DATA_NAME";
+                foreach (*x in SELECT DATA_NAME
+                               WHERE  COLL_NAME            = '*c'
+                                 AND  DATA_NAME            = '*d'
+                                 AND  META_DATA_ATTR_NAME  = '*errorattr'
+                                 AND  META_DATA_ATTR_VALUE = 'true') {
 
+                    # Only try to remove it if we know for sure it exists,
+                    # otherwise we get useless errors in the log.
+                    *errorkv.*errorattr = "true";
+                    errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
+                    break;
+                }
             } else {
                 # Set error attribute
 
