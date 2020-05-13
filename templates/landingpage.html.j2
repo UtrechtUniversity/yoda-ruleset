@@ -6,33 +6,33 @@
     <meta name="description" content="Data Publication platform of Utrecht University" />
     <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
-
     <style>
         .map {
             height: 450px;
             width: 600px;
         }
-        a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {
+
+        a.leaflet-control-zoom-in,
+        a.leaflet-control-zoom-out {
             text-decoration: none ! important;
         }
+
         .indented {
             padding-left: 10px;
         }
     </style>
-
 
     <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet" />
     </style>
     <link href="/static/css/uu.css?v=1559637767" rel="stylesheet" />
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
-
-
-    <!-- Make sure you put this AFTER Leaflet's CSS -->
-
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
     <script>
-        let bounds = [[1.0, 1.0], [1.0, 1.0]]; // initialization of coordinate pairs with arbitrary values. These will be overwritten 
+        let bounds = [
+            [1.0, 1.0],
+            [1.0, 1.0]
+        ]; // initialization of coordinate pairs with arbitrary values. These will be overwritten
     </script>
 </head>
 
@@ -49,11 +49,8 @@
         <main>
             <div class="creators">
                 <div class="row">
-                    <div class="col-sm-2">
-                        <label>Creators</label>
-                    </div>
-                    <div class="col-sm-10">
-                        {% for creator in creators %} {{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }} &nbsp; {% endfor %}
+                    <div class="col-sm-12">
+                        {% for creator in creators %} {{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }} {{ "&" if not loop.last }} {% endfor %}
                     </div>
                 </div>
 
@@ -69,11 +66,9 @@
                 <p class="description">{{ description }}</p>
                 <div class="tags">
                     <label>Tags</label>
-                    <span class="tag">
-                            {% for tag in tags %} &nbsp;
-                                {{ tag }}{{ ",&nbsp;" if not loop.last }}
-                            {% endfor %}
-                        </span>
+                    {% for tag in tags %}
+                    <span class="tag">{{ tag }}</span>
+                    {% endfor %}
                 </div>
                 <hr />
                 {%if data_access_restriction.startswith('Open') %}
@@ -117,7 +112,6 @@
                         </div>
                     </div>
 
-
                     <div class="group">
                         <div class="row">
                             <div class="col-sm-2">
@@ -129,38 +123,35 @@
                         </div>
                     </div>
 
-
                     {% for loc in covered_geolocation_place if not ((covered_geolocation_place|length == 1) and (loc == "" or loc == None)) %}
-                        {% if loop.first %}
-                          <div class="group">
+                    {% if loop.first %}
+                    <div class="group">
                         {% endif %}
-                          
-                           <div class="row">
+
+                        <div class="row">
                             <div class="col-sm-2">
-                              <label>Geolocation</label>
+                                <label>Geolocation</label>
                             </div>
                             <div class="col-sm-10">
-                              <span>{{ loc }}</span>
+                                <span>{{ loc }}</span>
                             </div>
-                           </div>
+                        </div>
 
                         {% if loop.last %}
-                          </div>
-                        {% endif %}
+                    </div>
+                    {% endif %}
                     {% endfor %}
 
-                    
-
-                        {% for loc in geolocations %}
-                          {% if loop.first %}
-                            <div class="group">
-                          {% endif %} 
-                            <div class="row">
-                                <div class="col-sm-2">
-                                    <label>Geolocation</label>
-                                </div>
-                                <div class="col-sm-10">
-                                    <span>
+                    {% for loc in geolocations %}
+                    {% if loop.first %}
+                    <div class="group">
+                        {% endif %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Geolocation</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>
                                         <div class='map' id='map{{ loop.index }}'></div>
                                                 <script>
 
@@ -184,28 +175,24 @@
 		else {
                     var rectangle = L.rectangle([[lat0, lon0],[lat1, lon1]]).addTo(mymap);
 		}
-
-
                                                 </script>
                                     </span>
-                                    <span>
-                                       {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} | {{ loc.Description_Spatial }} 
-                                    </span>
-                                </div>
+                                <span>
+                                {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} | {{ loc.Description_Spatial }}
+                                </span>
                             </div>
-                          {% if loop.last %}
-                            </div>
-                          {% endif %}
-                        
-                        {% endfor %}
+                        </div>
+                        {% if loop.last %}
+                    </div>
+                    {% endif %}
 
-                    
-                    
-                        {% for funder in funding_reference %}
-                         {% if funder.Funder_Name %}
-                          {% if loop.first %}
-                            <div class="group">
-                          {% endif %}
+                    {% endfor %}
+
+                    {% for funder in funding_reference %}
+                    {% if funder.Funder_Name %}
+                    {% if loop.first %}
+                    <div class="group">
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-sm-2">
@@ -224,12 +211,11 @@
                             </div>
                         </div>
 
-                          {% if loop.last %}
-                            </div>
-                          {% endif %}
-                         {% endif %}
-                        {% endfor %}
-                    
+                        {% if loop.last %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
 
                     <div class="group">
                         <div class="row">
@@ -260,12 +246,12 @@
                             </div>
                         </div>
                     </div>
-                    
-                        {% for pack in related_datapackages %}
-                         {% if pack.Relation_Type %}
-                          {% if loop.first %}
-                            <div class="group">
-                          {% endif %}
+
+                    {% for pack in related_datapackages %}
+                    {% if pack.Relation_Type %}
+                    {% if loop.first %}
+                    <div class="group">
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-sm-2">
@@ -296,12 +282,12 @@
                             </div>
                         </div>
 
-                          {% if loop.last %}
-                            </div>
-                          {% endif %}
-                         {% endif %}
-                        {% endfor %}
-                    
+                        {% if loop.last %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    {% endfor %}
+
                     <div class="group">
                         {% for creator in creators %}
                         <div class="row">
@@ -402,6 +388,7 @@
                         {% endif %}
                     </div>
                 </div>
+                <br />
             </section>
             <section class="questions">
                 <h2>Questions?</h2>
@@ -419,4 +406,5 @@
         </footer>
     </div>
 </body>
+
 </html>
