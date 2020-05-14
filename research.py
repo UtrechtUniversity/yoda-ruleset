@@ -529,13 +529,14 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         return {"proc_status": "nok",
                 "proc_status_info": "Unkown requested action: " + overwrite}
 
-    # Allowd to restore revision
+    # Allowed to restore revision
     # Start actual restoration of the revision
     try:
-        ofFlags = 'forceFlag='
+        # Workaround the PREP deadlock issue: Restrict threads to 1.
+        ofFlags = 'forceFlag=++++numThreads=1'
         msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
     except msi.Error as e:
-        raise api.Error('copy_failed', 'The metadata file could not be copied', str(e))
+        raise api.Error('copy_failed', 'The file could not be copied', str(e))
 
     return {"proc_status": "ok"}
 
