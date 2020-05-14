@@ -67,27 +67,6 @@ iiRemoveAVUs(*coll, *prefix) {
 	}
 }
 
-# \brief Ingest user metadata from XML preprocessed with an XSLT.
-#
-# \param[in] metadataxmlpath	path of metadataxml to ingest
-# \param[in] xslpath		path of XSL stylesheet
-#
-iiImportMetadataFromXML (*metadataxmlpath, *xslpath) {
-	#DEBUG writeLine("serverLog", "iiImportMetadataFromXML: calling msiXstlApply '*xslpath' '*metadataxmlpath'");
-	# apply xsl stylesheet to metadataxml
-	msiXsltApply(*xslpath, *metadataxmlpath, *buf);
-	#DEBUG writeBytesBuf("serverLog", *buf);
-
-	uuChopPath(*metadataxmlpath, *metadataxml_coll, *metadataxml_basename);
-	#DEBUG writeLine("serverLog", "iiImportMetdataFromXML: Calling msiLoadMetadataFromXml");
-	*err = errormsg(msiLoadMetadataFromXml(*metadataxml_coll, *buf), *msg);
-	if (*err < 0) {
-		writeLine("serverLog", "iiImportMetadataFromXML: *err - *msg ");
-	} else {
-		writeLine("serverLog", "iiImportMetadataFromXML: Succesfully loaded metadata from *metadataxmlpath");
-	}
-}
-
 # \brief Perform a vault ingest as rodsadmin.
 #
 iiAdminVaultIngest() {
