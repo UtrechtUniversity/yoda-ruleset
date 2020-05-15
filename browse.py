@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+
 from util import *
 from util.query import Query
 

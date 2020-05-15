@@ -23,12 +23,12 @@ jobs:
 
     - name: Lint with pycodestyle
       run: |
-        flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841
-        flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841
+        flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841 --statistics
+        flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841 --statistics
 
     - name: Sort python imports
       run: |
-        isort --recursive --diff . || true
+        isort --recursive --diff --skip __init__.py . || true
 
     - name: Check code for common misspellings
       run: |

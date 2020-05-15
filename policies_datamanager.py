@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 from util import *
 
-
 # __all__ = ['rule_uu_can_datamanager_acl_set']
+
 
 def can_datamanager_acl_set(ctx, obj, actor, other_name, recursive, access):
     x = ctx.iiCanDatamanagerAclSet(obj, actor, other_name, recursive, access, '', '')

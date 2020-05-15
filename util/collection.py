@@ -4,11 +4,11 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import msi
 import itertools
 
 import genquery
 import irods_types
+import msi
 from query import Query
 
 
