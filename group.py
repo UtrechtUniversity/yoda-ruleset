@@ -238,7 +238,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
 def rule_uu_group_provision_external_user(rule_args, callback, rei):
     """Provision external user."""
     status = 1
-    message = "An internal error occured."
+    message = "An internal error occurred."
 
     status = provisionExternalUser(callback, rule_args[0], rule_args[1], rule_args[2])
 

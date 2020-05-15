@@ -318,7 +318,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # (ingest_metadata_staging), with as an argument the path to a metadata
     # JSON in a staging area (a location in a datamanager home collection).
     #
-    # As user rods, we validate the metadata, and if succesful, copy it, timestamped, into the vault.
+    # As user rods, we validate the metadata, and if successful, copy it, timestamped, into the vault.
     # Necessary log & provenance info is recorded, and a publication update is triggered if necessary.
     # An AVU update is triggered via policy during the copy action.
 
