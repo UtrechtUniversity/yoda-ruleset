@@ -275,7 +275,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
     xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
 
-    # take category incuding version from declared namespace in xml
+    # take category including version from declared namespace in xml
     category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
     log.write(callback, category_version)
 
