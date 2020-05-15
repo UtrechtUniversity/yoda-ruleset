@@ -9,7 +9,6 @@ import genquery
 import irods_types
 import itertools
 from query import Query
-import query
 
 
 def exists(callback, path):

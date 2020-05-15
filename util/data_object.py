@@ -10,7 +10,6 @@ import genquery
 import irods_types
 import constants
 from query import Query
-import query
 
 
 def exists(callback, path):

@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import session_vars
 import genquery
 from query import Query
-import query
 from collections import namedtuple
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.

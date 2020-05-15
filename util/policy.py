@@ -6,9 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import rule
 import log
-from error import *
 
-import user
 import api
 
 

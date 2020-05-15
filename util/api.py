@@ -12,7 +12,6 @@ import log
 from error import *
 
 import jsonutil
-import error
 from config import config
 import inspect
 import traceback
