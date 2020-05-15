@@ -60,8 +60,8 @@ def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     sz = size(callback, path)
     if sz > max_size:
-        raise UUFileSizeException('data_object.read: file size limit exceeded ({} > {})'
-                                  .format(sz, max_size))
+        raise UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
+                              .format(sz, max_size))
 
     if sz == 0:
         # Don't bother reading an empty file.
