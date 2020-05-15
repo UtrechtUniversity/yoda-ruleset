@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import error
 import msi
 import pathutil
 import genquery
@@ -60,8 +61,8 @@ def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     sz = size(callback, path)
     if sz > max_size:
-        raise UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
-                              .format(sz, max_size))
+        raise error.UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
+                                    .format(sz, max_size))
 
     if sz == 0:
         # Don't bother reading an empty file.
