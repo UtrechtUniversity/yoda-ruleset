@@ -155,7 +155,7 @@ def rule_uu_meta_validate(rule_args, callback, rei):
 
     if len(errs):
         rule_args[1] = '1'
-        rule_args[2] = 'metadata validation failed:\n' + '\n'.join([e['message'] for e in errs])
+        rule_args[2] = 'metadata validation failed:\n' + '\n'.join([err['message'] for err in errs])
     else:
         rule_args[1] = '0'
         rule_args[2] = 'metadata validated'
