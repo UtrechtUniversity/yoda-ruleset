@@ -8,6 +8,6 @@ import msi
 import irods_types
 
 
-def kvpair(k, v):
+def kvpair(ctx, k, v):
     """Create a keyvalpair object, needed by certain msis."""
     return msi.string_2_key_val_pair(ctx, '{}={}'.format(k, v), irods_types.BytesBuf())['arguments'][1]
