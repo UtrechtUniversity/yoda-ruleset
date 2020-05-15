@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from enum import Enum
 import json
+from enum import Enum
 
 
 class Context(object):

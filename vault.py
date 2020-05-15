@@ -4,17 +4,15 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
 import os
 import time
-import itertools
 
-import session_vars
-import meta_form
-import meta
 import folder
-
+import meta
+import meta_form
+import session_vars
 from util import *
-
 
 __all__ = ['api_uu_vault_submit',
            'api_uu_vault_approve',

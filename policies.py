@@ -4,13 +4,12 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-
 import re
 import folder
-import vault
 import policies_folder_status
 import session_vars
+import vault
+from util import *
 
 
 # Policy check functions {{{

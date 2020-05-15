@@ -4,17 +4,14 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import meta_form
-import folder
-
-import time
 import os
-from pathvalidate import ValidationError, validate_filename, validate_filepath
+import time
 
-from util import *
-
+import folder
 import irods_types
-
+import meta_form
+from pathvalidate import ValidationError, validate_filename, validate_filepath
+from util import *
 from util.query import Query
 
 __all__ = ['api_uu_research_folder_add',

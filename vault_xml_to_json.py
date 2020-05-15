@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import xmltodict
-
 from util import *
 
 __all__ = ['rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']

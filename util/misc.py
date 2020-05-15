@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import msi
 import irods_types
+import msi
 
 
 def kvpair(ctx, k, v):

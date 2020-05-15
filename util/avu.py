@@ -5,12 +5,12 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
-import irods_types
+from collections import namedtuple
 
+import irods_types
 import msi
 import pathutil
 from query import Query
-from collections import namedtuple
 
 Avu = namedtuple('Avu', list('avu'))
 Avu.attr  = Avu.a

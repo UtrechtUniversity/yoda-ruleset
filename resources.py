@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
 
-
 from util import *
 
 __all__ = ['api_uu_resource_groups_dm',

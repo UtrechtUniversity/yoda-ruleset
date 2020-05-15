@@ -4,9 +4,10 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import inspect
+
 import user
 import rule
-import inspect
 from config import config
 
 

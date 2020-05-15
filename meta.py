@@ -5,14 +5,13 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-import jsonschema
-import irods_types
-
 from collections import OrderedDict
 
-from util import *
+import irods_types
+import jsonschema
 import schema as schema_
 import vault
+from util import *
 
 __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_remove',

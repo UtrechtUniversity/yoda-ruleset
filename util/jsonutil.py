@@ -4,10 +4,11 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import data_object
-import error
 import json
 from collections import OrderedDict
+
+import data_object
+import error
 
 
 class ParseError(error.UUError):

@@ -7,10 +7,11 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-from query import Query
-import query
 from enum import Enum
+
 import msi
+import query
+from query import Query
 
 
 class Space(Enum):

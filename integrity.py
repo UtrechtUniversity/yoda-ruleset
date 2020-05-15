@@ -4,15 +4,14 @@
 __copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import base64
+import hashlib
 import os.path
+import time
 from collections import namedtuple
 from enum import Enum
-import hashlib
-import base64
-import time
 
 import session_vars
-
 from util import *
 
 __all__ = ['rule_uu_integrity_check_vault']

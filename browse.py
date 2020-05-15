@@ -4,10 +4,8 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from collections import OrderedDict
-
 import re
-
+from collections import OrderedDict
 from util import *
 from util.query import Query
 

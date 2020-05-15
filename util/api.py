@@ -7,15 +7,15 @@ For example usage, see make() or rules_demo/test1.py
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import rule
-import log
-from error import *
-
-import jsonutil
-from config import config
 import inspect
 import traceback
 from collections import OrderedDict
+
+import jsonutil
+import log
+import rule
+from config import config
+from error import *
 
 
 class Result(object):

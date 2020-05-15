@@ -5,9 +5,8 @@ __copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+
 import requests
-
-
 from util import *
 
 __all__ = ['api_uu_group_data',

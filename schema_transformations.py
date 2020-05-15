@@ -4,11 +4,12 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import re
+
+import meta
+
 # No rules are exported by this module.
 __all__ = []
-
-import re
-import meta
 
 
 # Transformation functions {{{
