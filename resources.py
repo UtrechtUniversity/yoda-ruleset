@@ -67,7 +67,7 @@ def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
 
     # per month gather month/tier/storage information from metadata:
     # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
-    # metadata-attr-val = [category,tier,storage] ... only tier and storage required wihtin this code
+    # metadata-attr-val = [category,tier,storage] ... only tier and storage required within this code
     for counter in range(0, 11):
         referenceMonth = currentMonth - counter
         if referenceMonth < 1:
@@ -283,7 +283,7 @@ def getGroupsOnCategories(categories, callback):
 
 
 def getCategoriesDatamanager(datamanagerName, callback):
-    """Get all categories for curent datamanager."""
+    """Get all categories for current datamanager."""
     categories = []
 
     iter = genquery.row_iterator(

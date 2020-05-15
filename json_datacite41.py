@@ -229,7 +229,7 @@ def getCreators(dict):
 
 def getContributors(dict):
     """Get string in datacite format containing contributors,
-       including contact persons if these were added explicitely (GEO).
+       including contact persons if these were added explicitly (GEO).
     """
     contributors = ''
 

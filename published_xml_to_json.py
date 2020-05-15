@@ -33,7 +33,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 
     xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
 
-    # take category incuding version from declared namespace in xml
+    # take category including version from declared namespace in xml
     category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
 
     dictSchema = getActiveJsonSchemaAsDict(callback, rods_zone, category_version)

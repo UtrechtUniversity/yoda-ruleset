@@ -85,7 +85,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if target path exists.
     if not collection.exists(ctx, coll_target):
-        return api.Error('TargetPathNotExists', 'The target you speficied does not exist')
+        return api.Error('TargetPathNotExists', 'The target you specified does not exist')
 
     # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
     user_full_name = user.full_name(ctx)
@@ -104,7 +104,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
     if lock_count:
         return api.Error('TargetCollectionLocked', 'The folder you selected is locked.')
 
-    # Check if user has write acces to research folder.
+    # Check if user has write access to research folder.
     # Only normal user has write access.
     if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
