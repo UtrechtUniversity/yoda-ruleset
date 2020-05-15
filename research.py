@@ -9,13 +9,10 @@ import folder
 
 import time
 import os
-import sys
 from pathvalidate import ValidationError, validate_filename, validate_filepath
 
 from util import *
-from collections import OrderedDict
 
-import re
 import irods_types
 
 from util.query import Query

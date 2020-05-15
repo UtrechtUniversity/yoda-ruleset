@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 from collections import OrderedDict
 
 import re
-import irods_types
 
 from util import *
 from util.query import Query

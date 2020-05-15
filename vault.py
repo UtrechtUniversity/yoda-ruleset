@@ -9,7 +9,6 @@ import time
 import itertools
 
 import session_vars
-import provenance
 import meta_form
 import meta
 import folder

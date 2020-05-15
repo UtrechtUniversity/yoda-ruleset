@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 import jsonschema
-import jsonavu
 import irods_types
 
 from collections import OrderedDict

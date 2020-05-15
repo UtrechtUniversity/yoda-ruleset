@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import xmltodict
-from collections import OrderedDict
 
 from util import *
 

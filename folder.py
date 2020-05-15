@@ -7,9 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 from util import *
 from util.query import Query
-import policies
-import meta
-import policies_datamanager
 import policies_folder_status
 
 __all__ = ['rule_uu_collection_group_name',

@@ -6,9 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 from util import *
-from util.query import Query
-import policies
-import meta
 
 
 # __all__ = ['rule_uu_can_datamanager_acl_set']
