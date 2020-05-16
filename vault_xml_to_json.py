@@ -185,11 +185,11 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                 except KeyError as e:
                                     try:
                                         subPropertyValue = data['Properties'][subPropertyElement]
-                                        
+
                                         if subIsMultiple and not isinstance(subPropertyValue, list):
                                             newData[subElement] = [subPropertyValue]
                                         else:
-                                            newData[subElement] = subPropertyValue 
+                                            newData[subElement] = subPropertyValue
 
                                     except KeyError as e2:
                                         pass
