@@ -104,11 +104,16 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                                     newData[subElement] = listCompoundData[0]  # compoundDict # Single dict
 
                                         except KeyError as e:
-                                            if subIsMultiple and not isinstance(dataItem['Properties'][subPropertyElement], list):
-                                                newData[subElement] = [dataItem['Properties'][subPropertyElement]]
-                                            else:
-                                                newData[subElement] = dataItem['Properties'][subPropertyElement]
-                                            pass
+                                            try:
+                                                subPropertyValue = dataItem['Properties'][subPropertyElement]
+
+                                                if subIsMultiple and not isinstance(subPropertyValue, list):
+                                                    newData[subElement] = [subPropertyValue]
+                                                else:
+                                                    newData[subElement] = subPropertyValue
+
+                                            except KeyError as e2:
+                                                pass
 
                                     counter = counter + 1
 
@@ -128,14 +133,13 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                     # Als er sprake is van ['items'] +> dan is vanaf het hoogste niveau een structuur bekend van subproperties // compounds
                     if elementInfo['items']['yoda:structure'] == 'subproperties':
                         counter = 0
-
                         for subElement, subElementInfo in elementInfo['items']['properties'].items():  # keys(): #items()):
-
                             if counter == 0:  # MAIN PART of subproperty structure  ! in itself always a single value
                                 # Added these extra variables for clearer name purposes as there is a distinction between main/sub elements
                                 mainElement = subElement
                                 mainElementVal = data[subElement]
-                                newData[mainElement] = mainElementVal  # # MAINPART of subproperty structure IS ALWAYS SINGULAR!
+                                newData[mainElement] = mainElementVal  # MAINPART of subproperty structure IS ALWAYS SINGULAR!
+
                             else:  # SUB PART of subproperty structure - corresponding data is beneath <Properties> tag within XML
                                 subPropertyElement = subElement
 
@@ -179,15 +183,20 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                             newData[subElement] = listCompoundData[0]  # compoundDict # Single dict
 
                                 except KeyError as e:
-                                    if subIsMultiple and not isinstance(data['Properties'][subPropertyElement], list):
-                                        newData[subElement] = [data['Properties'][subPropertyElement]]
-                                    else:
-                                        newData[subElement] = data['Properties'][subPropertyElement]
-                                    pass
+                                    try:
+                                        subPropertyValue = data['Properties'][subPropertyElement]
+                                        
+                                        if subIsMultiple and not isinstance(subPropertyValue, list):
+                                            newData[subElement] = [subPropertyValue]
+                                        else:
+                                            newData[subElement] = subPropertyValue 
+
+                                    except KeyError as e2:
+                                        pass
 
                             counter = counter + 1
 
-                    # Add to element
+                    # Add all that was collected about the sub data to top level element
                     if fieldIsMultiple:
                         jsonDict[elementName] = [newData]
                     else:
