@@ -61,9 +61,15 @@ def transform_research_xml(callback, xml_path):
     try:
         xml_ns = xml_data['metadata']['@xmlns']
         schema_category = xml_ns.split('/')[-1]
+    except KeyError as e:
+        if e.args[0] != '@xmlns':
+            raise
+        # Previous default-0 compliant metadata XML had no schema indication.
+        # Set to default-0 for backwards compat.
+        xml_ns = 'https://yoda.uu.nl/schemas/default-0'
+        schema_category = xml_ns.split('/')[-1]
     except Exception as e:
-        print(e)
-        return 'ERROR', 'XML metadata file is malformed'
+        return api.Error('bad_xml', 'XML metadata file is malformed', debug_info=repr(e))
 
     try:
         json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
@@ -104,9 +110,7 @@ def transform_research_xml(callback, xml_path):
 
         jsonutil.write(callback, json_path, metadata)
     except Exception as e:
-        print(e)
-        return 'ERROR', 'XML could not be transformed'
-    return 'Success', ''
+        return api.Error('bad_xml', 'XML metadata file could not be transformed', debug_info=repr(e))
 
 
 @api.make()
