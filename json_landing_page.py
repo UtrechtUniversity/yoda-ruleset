@@ -42,13 +42,13 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     # Gather all metadata.
     title = dictJsonData['Title']
     description = dictJsonData['Description']
-    
+
     try:
         disciplines = dictJsonData['Discipline']  # niet verplicht
     except KeyError:
         disciplines = []
-   
-    try: 
+
+    try:
         version = dictJsonData['Version']
     except KeyError:
         version = ''
@@ -82,22 +82,21 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
     except KeyError:
         related_datapackages = []
-    
+
     try:
         creators = dictJsonData['Creator']
     except KeyError:
         creators = []
-    
+
     try:
         contributors = dictJsonData['Contributor']
     except KeyError:
         contributors = []
-    
+
     try:
         funding_reference = dictJsonData['Funding_Reference']
     except KeyError:
         funding_reference = []
-
 
     license = dictJsonData['License']
     data_access_restriction = dictJsonData['Data_Access_Restriction']
