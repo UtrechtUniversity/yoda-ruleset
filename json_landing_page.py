@@ -42,10 +42,26 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     # Gather all metadata.
     title = dictJsonData['Title']
     description = dictJsonData['Description']
-    disciplines = dictJsonData['Discipline']  # niet verplicht
-    version = dictJsonData['Version']
-    language = dictJsonData['Language']
-    collected = dictJsonData['Collected']
+    
+    try:
+        disciplines = dictJsonData['Discipline']  # niet verplicht
+    except KeyError:
+        disciplines = []
+   
+    try: 
+        version = dictJsonData['Version']
+    except KeyError:
+        version = ''
+
+    try:
+        language = dictJsonData['Language']
+    except KeyError:
+        language = ''
+
+    try:
+        collected = dictJsonData['Collected']
+    except KeyError:
+        collected = {}
 
     try:
         covered_geolocation_place = dictJsonData['Covered_Geolocation_Place']
@@ -57,15 +73,35 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     except KeyError:
         covered_period = []
 
-    tags = dictJsonData['Tag']  # not mandatory
-    related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
-    creators = dictJsonData['Creator']
-    contributors = dictJsonData['Contributor']
+    try:
+        tags = dictJsonData['Tag']  # not mandatory
+    except KeyError:
+        tags = []
+
+    try:
+        related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
+    except KeyError:
+        related_datapackages = []
+    
+    try:
+        creators = dictJsonData['Creator']
+    except KeyError:
+        creators = []
+    
+    try:
+        contributors = dictJsonData['Contributor']
+    except KeyError:
+        contributors = []
+    
+    try:
+        funding_reference = dictJsonData['Funding_Reference']
+    except KeyError:
+        funding_reference = []
+
+
     license = dictJsonData['License']
     data_access_restriction = dictJsonData['Data_Access_Restriction']
-    funding_reference = dictJsonData['Funding_Reference']
     data_classification = dictJsonData['Data_Classification']
-
     last_modified_date = dictJsonData['System']['Last_Modified_Date']
     persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
     publication_date = dictJsonData['System']['Publication_Date']

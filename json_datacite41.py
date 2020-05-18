@@ -96,7 +96,8 @@ def getDOI(dict):
 
 def getTitles(dict):
     try:
-        language = dict['Language'][0:2]
+        # language = dict['Language'][0:2]
+        language = 'ar'
         title = dict['Title']
         return '<titles><title xml:lang="' + language + '">' + title + '</title></titles>'
     except KeyError:
