@@ -4,12 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-
-from util import *
-from util.query import Query
-import policies
-import meta
 import folder
+import meta
+from util import *
 
 
 def pre_status_transition(ctx, coll, current, new):

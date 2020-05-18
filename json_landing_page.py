@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from jinja2 import Template
-import os
 from util import *
 
 __all__ = ['rule_uu_json_landing_page_create_json_landing_page']
@@ -21,7 +20,7 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     """
     rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
 
-    # Landing page creation is part of the publication proces
+    # Landing page creation is part of the publication process
     # Read user & system metadata from corresponding combi JSON file
     # (Python2) 'want_bytes=False': Do not encode embedded unicode strings as
     #                               UTF-8, as that will trip up jinja2.

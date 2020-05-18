@@ -4,11 +4,7 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import session_vars
-import genquery
 from query import Query
-import query
-from collections import namedtuple
 
 
 def exists(ctx, grp):

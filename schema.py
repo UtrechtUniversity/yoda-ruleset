@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
-from util import *
 import meta
+from util import *
 
 __all__ = []
 

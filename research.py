@@ -4,20 +4,14 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import meta_form
-import folder
-
-import time
 import os
-import sys
-from pathvalidate import ValidationError, validate_filename, validate_filepath
+import time
 
-from util import *
-from collections import OrderedDict
-
-import re
+import folder
 import irods_types
-
+import meta_form
+from pathvalidate import ValidationError, validate_filename, validate_filepath
+from util import *
 from util.query import Query
 
 __all__ = ['api_uu_research_folder_add',
@@ -451,7 +445,7 @@ def api_uu_research_revision_list(ctx, path):
 @api.make()
 # "restore_no_overwrite"
 # "restore_overwrite" -> overwrite the file
-# "restore_next_to" -> revision is places next to the file it conficted with by adding
+# "restore_next_to" -> revision is places next to the file it conflicted with by adding
 #
 # {restore_no_overwrite, restore_overwrite, restore_next_to}
 #   With "restore_no_overwrite" the front end tries to copy the selected revision in *target
@@ -469,14 +463,14 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         return {"proc_status": "nok",
                 "proc_status_info": "It is not allowed to store file in the vault"}
 
-    # Check existance of target_coll
+    # Check existence of target_coll
     if not collection.exists(ctx, coll_target):
         return {"proc_status": "nok",
                 "proc_status_info": "The target collection does not exist or is not accessible for you"}
 
     user_full_name = user.full_name(ctx)
 
-    # Target collection write access ?
+    # Target collection write access?
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return {"proc_status": "nok",
                 "proc_status_info": "You are not allowed to write in the selected collection"}
@@ -486,7 +480,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
         return {"proc_status": "nok",
                 "proc_status_info": "The target collection is locked and therefore this revision cannot be written to the indicated collection"}
 
-    # Read acces in org collection??
+    # Read access in org collection?
     # Find actual revision inf on revision_id
     originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
     original_path   = ''
@@ -527,7 +521,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
     else:
         return {"proc_status": "nok",
-                "proc_status_info": "Unkown requested action: " + overwrite}
+                "proc_status_info": "Unknown requested action: " + overwrite}
 
     # Allowed to restore revision
     # Start actual restoration of the revision

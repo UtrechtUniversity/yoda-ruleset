@@ -4,11 +4,11 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import session_vars
-import genquery
-from query import Query
-import query
 from collections import namedtuple
+
+import genquery
+import session_vars
+from query import Query
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])

@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import xmltodict
 import os
 
 from util import *
@@ -34,7 +33,7 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 
     xmlDataDict = getMetadataXmlAsDict(callback, publish_collection + "/" + xml_data_name)
 
-    # take category incuding version from declared namespace in xml
+    # take category including version from declared namespace in xml
     category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
 
     dictSchema = getActiveJsonSchemaAsDict(callback, rods_zone, category_version)
@@ -143,5 +142,5 @@ def rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformatio
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
+            "rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d', '%s', '%s', '%s')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")

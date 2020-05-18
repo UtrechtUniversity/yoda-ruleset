@@ -9,19 +9,17 @@ __all__ = ['rule_uu_batch_transform_vault_metadata',
            'api_uu_transform_metadata']
 
 import os
-import time
-import xmltodict
 import re
+import time
 
 import irods_types
-import session_vars
-
-from util import *
-
 import meta
 import schema
 import schema_transformations
+import session_vars
 import vault_xml_to_json
+import xmltodict
+from util import *
 
 
 def execute_transformation(callback, metadata_path, transform):

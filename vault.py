@@ -4,18 +4,15 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import itertools
 import os
 import time
-import itertools
 
-import session_vars
-import provenance
-import meta_form
-import meta
 import folder
-
+import meta
+import meta_form
+import session_vars
 from util import *
-
 
 __all__ = ['api_uu_vault_submit',
            'api_uu_vault_approve',
@@ -86,7 +83,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if target path exists.
     if not collection.exists(ctx, coll_target):
-        return api.Error('TargetPathNotExists', 'The target you speficied does not exist')
+        return api.Error('TargetPathNotExists', 'The target you specified does not exist')
 
     # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
     user_full_name = user.full_name(ctx)
@@ -105,7 +102,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
     if lock_count:
         return api.Error('TargetCollectionLocked', 'The folder you selected is locked.')
 
-    # Check if user has write acces to research folder.
+    # Check if user has write access to research folder.
     # Only normal user has write access.
     if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
@@ -257,9 +254,13 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
         if data_object.exists(callback, license_uri_file):
-            # Set license URI.
+            # Retrieve license URI.
             license_uri = data_object.read(callback, license_uri_file)
-            avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri.strip())
+            license_uri = license_uri.strip()
+            license_uri = license_uri.strip('\"')
+
+            # Set license URI.
+            avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
             log.write(callback, "rule_uu_vault_write_license: License URI not available for <{}>".format(license))
 

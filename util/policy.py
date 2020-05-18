@@ -4,12 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import rule
-import log
-from error import *
-
-import user
 import api
+import log
+import rule
 
 
 class Succeed(object):

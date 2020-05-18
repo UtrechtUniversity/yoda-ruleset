@@ -4,9 +4,6 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import os
-from collections import OrderedDict
-
 from util import *
 
 __all__ = ['rule_uu_json_datacite41_create_combi_metadata_json',
@@ -232,7 +229,7 @@ def getCreators(dict):
 
 def getContributors(dict):
     """Get string in datacite format containing contributors,
-       including contact persons if these were added explicitely (GEO).
+       including contact persons if these were added explicitly (GEO).
     """
     contributors = ''
 

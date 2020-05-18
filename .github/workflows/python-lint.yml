@@ -1,0 +1,40 @@
+name: Python Lint
+
+on: [push, pull_request]
+
+jobs:
+  python_lint:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    # Important: This sets up your GITHUB_WORKSPACE environment variable
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 2.7
+      uses: actions/setup-python@v1
+      with:
+        python-version: 2.7
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 isort codespell
+
+    - name: Lint with pycodestyle
+      run: |
+        flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841 --statistics
+        flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841 --statistics
+
+    - name: Sort python imports
+      run: |
+        isort --recursive --diff --skip __init__.py . || true
+
+    - name: Check code for common misspellings
+      run: |
+        codespell --skip="*.r,*.xsd,*.json" || true
+
+    - name: Check McCabe complexity
+      run: |
+        flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841 --max-complexity 10 || true
+        flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841 --max-complexity 10 || true

@@ -4,13 +4,13 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-
 import re
+
 import folder
-import vault
 import policies_folder_status
 import session_vars
+import vault
+from util import *
 
 
 # Policy check functions {{{
@@ -118,12 +118,12 @@ def can_data_move(ctx, actor, src, dst):
 
 # Ideally we would use only dynamic PEPs, as they are more consistent and
 # appear to be the preferred (by iRODS) way of implementing policies.
-# However dynamic API PEPs, in contrast with their appearantly equivalent
+# However dynamic API PEPs, in contrast with their apparently equivalent
 # static PEPs, are not triggered by MSIs and therefore cannot be relied upon.
 # So we again fall back to static PEPs, and add only a few dynamic PEPs where
 # they provide benefits that the static PEPs cannot provide.
 #
-# The actual static PEPs are currenly in the rule language part of the ruleset.
+# The actual static PEPs are currently in the rule language part of the ruleset.
 # Most of them 'cut' and call identically named Python functions in this file.
 
 @policy.require()
@@ -430,7 +430,7 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if not (hint == addr == ''):
         return policy.fail('Disallowed hint/addr in execcmd')
 
-    # allow 'admin-*' scripts, iff first arg is the actor username&zone.
+    # allow 'admin-*' scripts, if first arg is the actor username&zone.
     if cmd.startswith('admin-'):
         if args == str(actor) or args.startswith(str(actor) + ' '):
             return policy.succeed()

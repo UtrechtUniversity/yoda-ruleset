@@ -7,12 +7,11 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import folder
-import vault
+import irods_types
 import meta
 import schema as schema_
 import schema_transformation
-import irods_types
-
+import vault
 from util import *
 
 __all__ = ['api_uu_meta_form_load',

@@ -4,13 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-
+import policies_folder_status
 from util import *
 from util.query import Query
-import policies
-import meta
-import policies_datamanager
-import policies_folder_status
 
 __all__ = ['rule_uu_collection_group_name',
            'api_uu_folder_get_locks',

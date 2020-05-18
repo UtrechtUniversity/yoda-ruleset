@@ -4,9 +4,8 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from error import *
-from enum import Enum
 import json
+from enum import Enum
 
 
 class Context(object):
@@ -34,8 +33,8 @@ class Output(Enum):
 def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE):
     """Creates a rule (with iRODS calling conventions) from a Python function.
 
-    :param inputs:    Optional list of rule_args indicies to influence how parameters are passed to the function.
-    :param outputs:   Optional list of rule_args indicies to influence how return values are processed.
+    :param inputs:    Optional list of rule_args indices to influence how parameters are passed to the function.
+    :param outputs:   Optional list of rule_args indices to influence how return values are processed.
     :param transform: Optional function that will be called to transform each output value.
     :param handler:   Specifies how return values are handled.
 

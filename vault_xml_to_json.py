@@ -5,8 +5,6 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import xmltodict
-from collections import OrderedDict
-
 from util import *
 
 __all__ = ['rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
@@ -277,7 +275,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
     xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
 
-    # take category incuding version from declared namespace in xml
+    # take category including version from declared namespace in xml
     category_version = xmlDataDict['metadata']['@xmlns'].split('/')[-1]
     log.write(callback, category_version)
 

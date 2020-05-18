@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 
-
 from util import *
 
 __all__ = ['rule_uu_provenance_log_action',

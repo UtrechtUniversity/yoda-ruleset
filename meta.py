@@ -5,15 +5,13 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-import jsonschema
-import jsonavu
-import irods_types
-
 from collections import OrderedDict
 
-from util import *
+import irods_types
+import jsonschema
 import schema as schema_
 import vault
+from util import *
 
 __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_remove',
@@ -156,7 +154,7 @@ def rule_uu_meta_validate(rule_args, callback, rei):
 
     if len(errs):
         rule_args[1] = '1'
-        rule_args[2] = 'metadata validation failed:\n' + '\n'.join([e['message'] for e in errs])
+        rule_args[2] = 'metadata validation failed:\n' + '\n'.join([err['message'] for err in errs])
     else:
         rule_args[1] = '0'
         rule_args[2] = 'metadata validated'
@@ -319,7 +317,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # (ingest_metadata_staging), with as an argument the path to a metadata
     # JSON in a staging area (a location in a datamanager home collection).
     #
-    # As user rods, we validate the metadata, and if succesful, copy it, timestamped, into the vault.
+    # As user rods, we validate the metadata, and if successful, copy it, timestamped, into the vault.
     # Necessary log & provenance info is recorded, and a publication update is triggered if necessary.
     # An AVU update is triggered via policy during the copy action.
 
