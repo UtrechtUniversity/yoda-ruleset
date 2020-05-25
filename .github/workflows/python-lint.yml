@@ -1,25 +1,26 @@
-name: Python Lint
+name: Python
 
 on: [push, pull_request]
 
 jobs:
-  python_lint:
-
-    runs-on: ubuntu-latest
-
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [2.7]
     steps:
-    # Important: This sets up your GITHUB_WORKSPACE environment variable
-    - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
 
-    - name: Set up Python 2.7
-      uses: actions/setup-python@v1
-      with:
-        python-version: 2.7
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 isort codespell
+        python -m pip install flake8 isort codespell
 
     - name: Lint with pycodestyle
       run: |
