@@ -35,13 +35,12 @@ def send(ctx, to, actor, subject, body):
     log.write(ctx, '[EMAIL] Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 
     cfg = {k: getattr(config, v)
-           for k, v in
-               [('from',      'notifications_sender_email'),
-                ('from_name', 'notifications_sender_name'),
-                ('reply_to',  'notifications_reply_to'),
-                ('server',    'smtp_server'),
-                ('username',  'smtp_username'),
-                ('password',  'smtp_password')]}
+           for k, v in [('from',      'notifications_sender_email'),
+                        ('from_name', 'notifications_sender_name'),
+                        ('reply_to',  'notifications_reply_to'),
+                        ('server',    'smtp_server'),
+                        ('username',  'smtp_username'),
+                        ('password',  'smtp_password')]}
 
     try:
         # e.g. 'smtps://smtp.gmail.com:465' for SMTP over TLS, or
@@ -104,14 +103,14 @@ def _wrapper(ctx, to, actor, subject, body):
     return '0', ''
 
 
-@rule.make(inputs=range(4), outputs=range(4,6))
+@rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_uu_mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
                     to      = datamanager,
                     actor   = actor,
                     subject = '[Yoda] New package is published with DOI: {}'.format(doi),
-                    body    =
-"""Congratulations, your data has been published.
+                    body    = """
+Congratulations, your data has been published.
 
 Title: {}
 DOI:   {} (https://doi.org/{})
@@ -121,14 +120,14 @@ Yoda system
 """.format(title, doi, doi))
 
 
-@rule.make(inputs=range(4), outputs=range(4,6))
+@rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_uu_mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
                     to      = researcher,
                     actor   = actor,
                     subject = '[Yoda] Your package is published with DOI: {}'.format(doi),
-                    body    =
-"""Congratulations, your data has been published.
+                    body    = """
+Congratulations, your data has been published.
 
 Title: {}
 DOI:   {} (https://doi.org/{})
