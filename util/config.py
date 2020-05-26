@@ -36,9 +36,11 @@ class Config(object):
         if k.startswith('_'):
             return super(Config, self).__setattr__(k, v)
         if self._frozen:
-            raise Exception('No config changes possible')
+            print('Ruleset configuration error: No config changes possible to \'{}\''.format(k))
+            return
         if k not in self._items:
-            raise AttributeError('No such config option: \'{}\''.format(k))
+            print('Ruleset configuration error: No such config option: \'{}\''.format(k))
+            return
         # Set as config option.
         self._items[k] = v
 
@@ -107,7 +109,12 @@ try:
                 raise Exception('Configuration syntax error at {} line {}', cfgpath, i + 1)
 
             # List-type values are separated by whitespace.
-            if isinstance(getattr(config, m.group(1)), list):
+            try:
+                typ = type(getattr(config, m.group(1)))
+            except AttributeError as e:
+                typ = str
+
+            if issubclass(typ, list):
                 setattr(config, m.group(1), m.group(2).split())
             else:
                 setattr(config, *m.groups())
