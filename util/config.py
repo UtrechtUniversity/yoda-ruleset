@@ -74,7 +74,6 @@ class Config(object):
 config = Config(environment                = None,
                 resource_primary           = [],
                 resource_replica           = None,
-                max_revision_size          = 2 * 1000**3,  # 2 GB (not 2 GiB)
                 notifications_enabled      = False,
                 notifications_sender_email = None,
                 notifications_sender_name  = None,
