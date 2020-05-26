@@ -24,8 +24,8 @@ jobs:
 
       - name: Lint with pycodestyle
         run: |
-          flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841 --statistics
-          flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841 --statistics
+          flake8 *.py --exclude=__init__.py --statistics
+          flake8 util/*.py --exclude=__init__.py --statistics
 
       - name: Sort python imports
         run: |
@@ -37,5 +37,5 @@ jobs:
 
       - name: Check McCabe complexity
         run: |
-          flake8 *.py --exclude=__init__.py --ignore=E129,E221,E241,E402,E501,W503,W605,F403,F405,F841 --max-complexity 10 || true
-          flake8 util/*.py --exclude=__init__.py --ignore=E129,E221,E241,E251,E402,E501,W503,W605,E731,F403,F405,F841 --max-complexity 10 || true
+          flake8 *.py --exclude=__init__.py --max-complexity 10 || true
+          flake8 util/*.py --exclude=__init__.py --max-complexity 10 || true
