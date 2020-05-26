@@ -75,6 +75,7 @@ config = Config(environment                = None,
                 resource_primary           = [],
                 resource_replica           = None,
                 max_revision_size          = 2 * 1000**3,  # 2 GB (not 2 GiB)
+                notifications_enabled      = False,
                 notifications_sender_email = None,
                 notifications_sender_name  = None,
                 notifications_reply_to     = None,
@@ -116,6 +117,10 @@ try:
 
             if issubclass(typ, list):
                 setattr(config, m.group(1), m.group(2).split())
+            elif issubclass(typ, bool):
+                setattr(config, m.group(1), {'true': True, 'false': False}[m.group(2)])
+            elif issubclass(typ, int):
+                setattr(config, m.group(1), int(m.group(2)))
             else:
                 setattr(config, *m.groups())
 

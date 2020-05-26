@@ -22,6 +22,7 @@ from group                  import *
 from integrity              import *
 from json_datacite41        import *
 from json_landing_page      import *
+from mail                   import *
 from meta                   import *
 from meta_form              import *
 from provenance             import *

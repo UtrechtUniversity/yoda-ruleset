@@ -198,12 +198,6 @@ def api_uu_group_subcategories(ctx, category):
     return getSubcategories(ctx, category)
 
 
-def credentialsStoreGet(key):
-    """Retrieve config value from credentials store."""
-    config = json.loads(open('/var/lib/irods/.credentials_store/store_config.json').read())
-    return config[key]
-
-
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
     """Call External User Service API to add new user
 
@@ -211,9 +205,9 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     :param creatorUser: User creating the external user
     :param creatorZone: Zone of user creating the external user
     """
-    eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
-    eus_api_port = credentialsStoreGet("eus_api_port")
-    eus_api_secret = credentialsStoreGet("eus_api_secret")
+    eus_api_fqdn   = config.eus_api_fqdn
+    eus_api_port   = config.eus_api_port
+    eus_api_secret = config.eus_api_secret
 
     url = 'https://' + eus_api_fqdn + ':' + eus_api_port + '/api/user/add'
 
