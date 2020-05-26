@@ -55,8 +55,8 @@ def _default0_default1(m):
         return {'First_Name': '', 'Last_Name': n}
 
     for person in m['Creator']:
-         if 'Name' in person:
-             person['Name'] = fixup_name(person['Name'])
+        if 'Name' in person:
+            person['Name'] = fixup_name(person['Name'])
 
     if m.get('Contributor', False):
         for person in m['Contributor']:
