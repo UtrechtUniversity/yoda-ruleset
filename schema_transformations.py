@@ -54,13 +54,14 @@ def _default0_default1(m):
         # Neither? Parse as lastname.
         return {'First_Name': '', 'Last_Name': n}
 
-    persons = m['Creator']
-    if m.get('Contributor', False):
-        persons += m['Contributor']
+    for person in m['Creator']:
+         if 'Name' in person:
+             person['Name'] = fixup_name(person['Name'])
 
-    for person in persons:
-        if 'Name' in person:
-            person['Name'] = fixup_name(person['Name'])
+    if m.get('Contributor', False):
+        for person in m['Contributor']:
+            if 'Name' in person:
+                person['Name'] = fixup_name(person['Name'])
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-1/metadata.json')
 
