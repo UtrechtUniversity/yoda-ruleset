@@ -5,31 +5,6 @@
 # \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-
-# \brief Validate XML against XSD schema.
-#
-# \param[in] metadataXmlPath path of the metadata XML file that needs to be converted
-# \param[out] xsdPath        path of the vault XSD to use for validation
-# \param[out] err            Zero is valid XML, negative is microservice error, positive is invalid XML
-#
-iiValidateXml(*metadataXmlPath, *xsdPath, *invalid, *msg) {
-    *invalid = 0;
-    *err = errormsg(msiXmlDocSchemaValidate(*metadataXmlPath, *xsdPath, *statusBuf), *msg);
-    if (*err < 0) {
-            *invalid = 1;
-    } else {
-            # Output in status buffer means XML is not valid.
-            msiBytesBufToStr(*statusBuf, *statusStr);
-            *len = strlen(*statusStr);
-            if (*len == 0) {
-                    #DEBUG writeLine("serverLog", "iiValidateXML: *metadataXmlPath validates");
-            } else {
-                    #DEBUG writeLine("serverLog", "iiValidateXML: *metadataXmlPath - *statusStr");
-                    *invalid = 1;
-        }
-    }
-}
-
 # \brief Remove the User AVU's from the irods AVU store.
 #
 # \param[in] coll	    Collection to scrub of user metadata

@@ -6,26 +6,6 @@
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-## XXX: JSON refactor: No replacement for this yet.
-##
-## \brief Rename invalid XSD when added to a systemcollection
-##        to prevent breakage of the metadata form editor.
-##
-## \param[in] xmlpath         Path of XSD file added to a systemcollection
-## \param[in] xsdpath         Path to XSD to check against
-##
-#iiRenameInvalidXML(*xmlpath, *xsdpath) {
-#		*invalid = false;
-#		iiValidateXml(*xmlpath, *xsdpath, *err, *msg);
-#		if (*err != 0) {
-#			writeLine("serverLog", "iiRenameInvalidXML: *msg");
-#			writeLine("serverLog", "Renaming corrupt or invalid $objPath");
-#			msiGetIcatTime(*timestamp, "unix");
-#			*iso8601 = uuiso8601(*timestamp);
-#			msiDataObjRename(*xmlpath, *xmlpath ++ "_invalid_" ++ *iso8601, 0, *status_rename);
-#		}
-#}
-
 # \brief Check validity of requested folder status transition in a research area.
 #
 # \param[in] fromstatus    folder status before requested transition
