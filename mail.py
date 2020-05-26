@@ -8,7 +8,6 @@ import re
 import email
 from email.mime.text import MIMEText
 import smtplib
-import datetime
 
 from util import *
 
@@ -87,12 +86,12 @@ def send(ctx, to, actor, subject, body):
     try:
         smtp.sendmail(cfg['from'], [to], msg.as_string())
     except Exception as e:
-        log.write(ctx, '[EMAIL] Could not send mail: {}'.format(proto, host, port, e))
+        log.write(ctx, '[EMAIL] Could not send mail: {}'.format(e))
         return api.Error('internal', 'Mail configuration error')
 
     try:
         smtp.quit()
-    except:
+    except Exception as e:
         pass
 
 
