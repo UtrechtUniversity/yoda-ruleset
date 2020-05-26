@@ -54,7 +54,11 @@ def _default0_default1(m):
         # Neither? Parse as lastname.
         return {'First_Name': '', 'Last_Name': n}
 
-    for person in m['Creator'] + m['Contributor']:
+    persons = m['Creator']
+    if m.get('Contributor', False):
+        persons += m['Contributor']
+
+    for person in persons:
         if 'Name' in person:
             person['Name'] = fixup_name(person['Name'])
 
