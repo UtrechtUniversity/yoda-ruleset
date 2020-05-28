@@ -24,8 +24,7 @@ jobs:
 
       - name: Lint with pycodestyle
         run: |
-          flake8 *.py --exclude=__init__.py --statistics
-          flake8 util/*.py --exclude=__init__.py --statistics
+          flake8 *.py util/*.py --exclude=__init__.py --statistics
 
       - name: Sort python imports
         run: |
@@ -33,9 +32,8 @@ jobs:
 
       - name: Check code for common misspellings
         run: |
-          codespell --skip="*.r,*.xsd,*.json" || true
+          codespell -q 3 --skip="*.r,*.xsd,*.json" || true
 
       - name: Check McCabe complexity
         run: |
-          flake8 *.py --exclude=__init__.py --max-complexity 10 || true
-          flake8 util/*.py --exclude=__init__.py --max-complexity 10 || true
+          flake8 *.py util/*.py --exclude=__init__.py --max-complexity 10 || true
