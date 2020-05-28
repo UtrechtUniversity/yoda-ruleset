@@ -19,7 +19,6 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
     :param xml_data_name: Data name of metadata XML that requires transformation
     :param data_name_json: Name of data object to be created containing the
     """
-
     # This function simply transforms given data_name to a Json data object.
     # No further intelligence required further.
     # Perhaps handling within vault??
@@ -49,9 +48,10 @@ def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection,
 
 def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone, data_id, batch, pause, publicHost, yodaInstance, yodaPrefix):
     """Loop through all metadata xml data objects within '/tempZone/yoda/publication'.
-       If NO corresponding json is found in that collection,
-       the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
-       The resulting file must be copied to moai collection as well.
+
+    If NO corresponding json is found in that collection,
+    the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json.
+    The resulting file must be copied to moai collection as well.
 
     :param rods_zone: Zone name
     :param data_id: Data id to start searching from
@@ -64,7 +64,6 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
     :returns: integer -- Data_id to continue with in next batch.
                          If data_id =0, no more data objects were found. Batch is finished.
     """
-
     publication_collection = '/' + rods_zone + '/yoda/publication'
     iter = genquery.row_iterator(
         "ORDER(DATA_ID), DATA_NAME, COLL_ID",

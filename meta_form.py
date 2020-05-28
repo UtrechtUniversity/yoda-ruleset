@@ -44,8 +44,9 @@ def user_is_datamanager(ctx, category, user):
 
 def get_coll_lock(ctx, path, org_metadata=None):
     """Check for existence of locks on a collection.
-       path -> ((no|here|outoftree|ancestor|descendant), rootcoll)"""
 
+    path -> ((no|here|outoftree|ancestor|descendant), rootcoll)
+    """
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
@@ -67,7 +68,6 @@ def get_coll_lock(ctx, path, org_metadata=None):
 
 def get_coll_lock_count(ctx, path, org_metadata=None):
     """Count locks on a collection."""
-
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
@@ -80,7 +80,7 @@ def get_coll_lock_count(ctx, path, org_metadata=None):
 
 
 def humanize_validation_error(e):
-    """Transforms a jsonschema validation error such that it is readable by humans.
+    """Transform a jsonschema validation error such that it is readable by humans.
 
     :param e: a jsonschema.exceptions.ValidationError
     :returns: a supposedly human-readable description of the error
@@ -109,19 +109,19 @@ def humanize_validation_error(e):
 
 @api.make()
 def api_uu_meta_form_load(ctx, coll):
-    """Retrieve all information required to load a metadata form
-       in either the research or vault space.
+    """
+    Retrieve all information required to load a metadata form in either the research or vault space.
 
-       This produces a JSON struct on stdout. If no transformation is required
-       and no errors prevent loading the form, the JSON will contain the
-       schema, uischema and metadata.
+    This produces a JSON struct on stdout. If no transformation is required
+    and no errors prevent loading the form, the JSON will contain the
+    schema, uischema and metadata.
 
-       If a transformation is needed, this is indicated by the
-       'transformation_text' string being present in the output.
+    If a transformation is needed, this is indicated by the
+    'transformation_text' string being present in the output.
 
-       If errors prevent loading the form, or if errors make a transformation
-       impossible, this is indicated by the 'errors' array being present in the
-       output.
+    If errors prevent loading the form, or if errors make a transformation
+    impossible, this is indicated by the 'errors' array being present in the
+    output.
     """
     # The information that is returned to the caller, in dict form,
     # if everything is in order.
@@ -285,7 +285,6 @@ def api_uu_meta_form_load(ctx, coll):
 @api.make()
 def api_uu_meta_form_save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection."""
-
     log.write(ctx, 'save form for coll <{}>'.format(coll))
 
     json_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)

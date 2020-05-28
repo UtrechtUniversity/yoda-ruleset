@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions for listing collection information"""
+"""Functions for listing collection information."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -23,8 +23,7 @@ def api_uu_browse_folder(ctx,
                          offset=0,
                          limit=10,
                          space=pathutil.Space.OTHER):
-    """Gets paginated collection contents, including size/modify date information."""
-
+    """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
@@ -103,8 +102,7 @@ def api_uu_browse_collections(ctx,
                               offset=0,
                               limit=10,
                               space=pathutil.Space.OTHER):
-    """Gets paginated collection contents, including size/modify date information."""
-
+    """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
@@ -172,8 +170,7 @@ def api_uu_search(ctx,
                   sort_order='asc',
                   offset=0,
                   limit=10):
-    """Gets paginated search results, including size/modify date/location information."""
-
+    """Get paginated search results, including size/modify date/location information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}

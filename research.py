@@ -452,7 +452,7 @@ def api_uu_research_revision_list(ctx, path):
 #    If the file already exist the user needs to decide what to do.
 #     Function exits with corresponding status so front end can take action
 def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_filename):
-    """Copy selected revision to target collection with given name"""
+    """Copy selected revision to target collection with given name."""
     # New file name should not contain '\\' or '/'
     if '/' in new_filename or '\\' in new_filename:
         return {"proc_status": "nok",
@@ -537,8 +537,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
 @api.make()
 def api_uu_research_system_metadata(ctx, coll):
-    """Returns collection statistics as JSON."""
-
+    """Return collection statistics as JSON."""
     import math
 
     def convert_size(size_bytes):
@@ -563,8 +562,7 @@ def api_uu_research_system_metadata(ctx, coll):
 
 @api.make()
 def api_uu_research_collection_details(ctx, path):
-    """Returns details of a research collection."""
-
+    """Return details of a research collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 

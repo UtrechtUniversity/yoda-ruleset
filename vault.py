@@ -205,7 +205,7 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
 
 
 def rule_uu_vault_write_license(rule_args, callback, rei):
-    """Writes the license as a text file into the root of the vault package.
+    """Write the license as a text file into the root of the vault package.
 
     :param rule_args[0]: Path of a package in the vault.
     """
@@ -267,8 +267,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
 
 @api.make()
 def api_uu_vault_system_metadata(callback, coll):
-    """Returns collection statistics as JSON."""
-
+    """Return collection statistics as JSON."""
     import math
 
     def convert_size(size_bytes):
@@ -282,6 +281,7 @@ def api_uu_vault_system_metadata(callback, coll):
         return '{} {}'.format(s, size_name[i])
 
     system_metadata = {}
+
     # Package size.
     data_count = collection.data_count(callback, coll)
     collection_count = collection.collection_count(callback, coll)
@@ -358,7 +358,6 @@ def api_uu_vault_system_metadata(callback, coll):
 
 def get_coll_vault_status(ctx, path, org_metadata=None):
     """Get the status of a vault folder."""
-
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
@@ -375,8 +374,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 @api.make()
 def api_uu_vault_collection_details(ctx, path):
-    """Returns details of a vault collection."""
-
+    """Return details of a vault collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 

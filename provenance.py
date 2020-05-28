@@ -13,13 +13,14 @@ __all__ = ['rule_uu_provenance_log_action',
 
 
 def rule_uu_provenance_log_action(rule_args, callback, rei):
-    """Frontend function to add action log record to specific folder.
+    """
+    Frontend function to add action log record to specific folder.
 
-       :param actor: rodsaccount coming from yoda frontend
-       :param folder: folder the logging is linked to
-       :param action: the text that is logged
+    :param actor: rodsaccount coming from yoda frontend
+    :param folder: folder the logging is linked to
+    :param action: the text that is logged
 
-       :returns: string -- JSON object with status info
+    :returns: string -- JSON object with status info
     """
     actor, folder, action = rule_args[0:3]
 
@@ -40,7 +41,8 @@ def rule_uu_provenance_log_action(rule_args, callback, rei):
 
 
 def get_provenance_log(ctx, coll):
-    """Returns provenance log of a collection.
+    """
+    Return provenance log of a collection.
 
     :param coll: Path of a collection in research or vault space.
 
@@ -64,7 +66,8 @@ def get_provenance_log(ctx, coll):
 
 @api.make()
 def api_uu_provenance_log(ctx, coll):
-    """Returns formatted provenance log of a collection.
+    """
+    Return formatted provenance log of a collection.
 
     :param coll: Path of a collection in research or vault space.
 

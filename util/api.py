@@ -19,6 +19,8 @@ from error import *
 
 
 class Result(object):
+    """API result."""
+
     def __init__(self, data=None, status='ok', info=None, debug_info=None):
         self.status      = status
         self.status_info = info
@@ -98,7 +100,6 @@ def _api(f):
 
     def wrapper(ctx, inp):
         """A function that receives a JSON string and calls a wrapped function with unpacked arguments."""
-
         # Result shorthands.
         def error_internal(debug_info=None):
             return Error('internal', 'An internal error occurred', debug_info=debug_info)
@@ -192,7 +193,6 @@ def make():
         # this returns {"status": "ok", "status_info": null, "data": 42}
         # when called as api_uu_ping {"foo": 42}
     """
-
     def deco(f):
         # The "base" API function, that does handling of arguments and errors.
         base = _api(f)

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Policy check functions for folder status transitions"""
+"""Policy check functions for folder status transitions."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -10,7 +10,7 @@ from util import *
 
 
 def pre_status_transition(ctx, coll, current, new):
-    """Actions taken before status transition"""
+    """Action taken before status transition."""
     if current != constants.research_package_state.LOCKED \
         and new in [constants.research_package_state.LOCKED,
                     constants.research_package_state.SUBMITTED]:
@@ -41,7 +41,6 @@ def pre_status_transition(ctx, coll, current, new):
 
 
 def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
-
     if user.is_admin(ctx, actor):
         return policy.succeed()
 

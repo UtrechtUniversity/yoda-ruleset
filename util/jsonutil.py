@@ -12,7 +12,8 @@ import error
 
 
 class ParseError(error.UUError):
-    """Exception for unparsable JSON text.
+    """
+    Exception for unparsable JSON text.
 
     Python2's JSON lib raises ValueError on bad parses, which is ambiguous.
     Use this exception (together with the functions below) instead.
@@ -22,7 +23,9 @@ class ParseError(error.UUError):
 
 
 def _fold(x, **alg):
-    """Fold over a JSON structure.
+    """
+    Fold over a JSON structure.
+
     Calls functions from 'alg', indexed by the type of value, to transform values recursively.
     """
     f = alg.get(type(x).__name__, lambda y: y)
@@ -35,9 +38,11 @@ def _fold(x, **alg):
 
 
 def _demote_strings(json_data):
-    """Transform unicode -> UTF-8 encoded strings recursively, for a given JSON structure.
-       Needed for handling unicode in JSON as long as we are still using Python2.
-       Both JSON string values and JSON object (dict) keys are transformed.
+    """
+    Transform unicode -> UTF-8 encoded strings recursively, for a given JSON structure.
+
+    Needed for handling unicode in JSON as long as we are still using Python2.
+    Both JSON string values and JSON object (dict) keys are transformed.
     """
     return _fold(json_data,
                  unicode=lambda x: x.encode('utf-8'),
@@ -45,11 +50,13 @@ def _demote_strings(json_data):
 
 
 def _promote_strings(json_data):
-    """Transform UTF-8 encoded strings -> unicode recursively, for a given JSON structure.
-       Needed for handling unicode in JSON as long as we are still using Python2.
-       Both JSON string values and JSON object (dict) keys are transformed.
+    """
+    Transform UTF-8 encoded strings -> unicode recursively, for a given JSON structure.
 
-       May raise UnicodeDecodeError if strings are not proper UTF-8.
+    Needed for handling unicode in JSON as long as we are still using Python2.
+    Both JSON string values and JSON object (dict) keys are transformed.
+
+    May raise UnicodeDecodeError if strings are not proper UTF-8.
     """
     return _fold(json_data,
                  str=lambda x: x.decode('utf-8'),
@@ -58,10 +65,12 @@ def _promote_strings(json_data):
 
 
 def parse(text, want_bytes=True):
-    """Parse JSON into an OrderedDict.
+    """
+    Parse JSON into an OrderedDict.
 
     All strings are UTF-8 encoded with Python2 in mind.
-    This behavior is disabled if want_bytes is False"""
+    This behavior is disabled if want_bytes is False.
+    """
     try:
         x = json.loads(text, object_pairs_hook=OrderedDict)
         return _demote_strings(x) if want_bytes else x

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""iRODS microservice wrappers that provide primitive error handling
+"""iRODS microservice wrappers that provide primitive error handling.
 
 Microservices may fail and indicate failure in a number of different ways.
 With this module, we aim to unify microservice error handling by converting
@@ -13,7 +13,7 @@ import error
 
 
 class Error(error.UUError):
-    """Error for microservice failure"""
+    """Error for microservice failure."""
 
     def __init__(self, message, msi_status, msi_code, msi_args, src_exception):
         super(Error, self).__init__(message)
@@ -36,9 +36,7 @@ class Error(error.UUError):
 # Machinery for wrapping microservices and creating microservice-specific exceptions. {{{
 
 def make(name, error_text):
-    """Creates msi wrapper function and exception type as a tuple.
-       (see functions below)
-    """
+    """Create msi wrapper function and exception type as a tuple (see functions below)."""
     e = _make_exception(name, error_text)
     return (_wrap('msi' + name, e), e)
 
@@ -63,18 +61,18 @@ def _run(msi, exception, *args):
 
 def _wrap(msi, exception):
     """Wrap an MSI such that it throws an MSI-specific exception on failure.
-       The arguments to the wrapper are the same as that of the msi, only with
-       a callback in front.
 
-       e.g.:    callback.msiDataObjCreate(x, y, z)
-       becomes: data_obj_create(callback, x, y, z)
+    The arguments to the wrapper are the same as that of the msi, only with
+    a callback in front.
+
+    e.g.:    callback.msiDataObjCreate(x, y, z)
+    becomes: data_obj_create(callback, x, y, z)
     """
     return lambda callback, *args: _run(getattr(callback, msi), exception, *args)
 
 
 def _make_exception(name, message):
-    """Create a msi Error subtype for a specific microservice"""
-
+    """Create a msi Error subtype for a specific microservice."""
     t = type('{}Error'.format(name), (Error,), {})
     t.__init__ = lambda self, status, code, args, e = None: \
         super(t, self).__init__(message, status, code, args, e)

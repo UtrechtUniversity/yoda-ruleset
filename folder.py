@@ -20,6 +20,7 @@ __all__ = ['rule_uu_collection_group_name',
 
 def set_status(ctx, coll, status):
     """Change a folder's status.
+
     Status changes are validated by policy (AVU modify preproc).
     """
     # Ideally we would pass in the current (expected) status as part of the
@@ -48,19 +49,29 @@ def set_status(ctx, coll, status):
 
 
 def set_status_as_datamanager(ctx, coll, status):
+    """Change a folder's status as a datamanager."""
     res = ctx.iiFolderDatamanagerAction(coll, status.value, '', '')
     if res['arguments'][2] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
 def lock(ctx, coll):
+    """Lock a folder.
+
+    :param coll: Folder to lock.
+    """
     return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
 
 def unlock(ctx, coll):
-    # Unlocking is implemented by clearing the folder status. Since this action
-    # can also represent other state changes than "unlock", we perform a sanity
-    # check to see if the folder is currently in the expected state.
+    """Unlock a folder.
+
+    Unlocking is implemented by clearing the folder status. Since this action
+    can also represent other state changes than "unlock", we perform a sanity
+    check to see if the folder is currently in the expected state.
+
+    :param coll: Folder to unlock.
+    """
     current = get_status(ctx, coll)
     if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
         return api.Error('status_changed',
@@ -70,10 +81,18 @@ def unlock(ctx, coll):
 
 
 def submit(ctx, coll):
+    """Submit a folder.
+
+    :param coll: Folder to submit.
+    """
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
 def unsubmit(ctx, coll):
+    """Unsubmit a folder.
+
+    :param coll: Folder to unsubmit.
+    """
     # Sanity check. See 'unlock'.
     if get_status(ctx, coll) is not constants.research_package_state.SUBMITTED:
         return api.Error('status_changed', 'Folder cannot be unsubmitted because its status has changed.')
@@ -82,14 +101,26 @@ def unsubmit(ctx, coll):
 
 
 def accept(ctx, coll):
+    """Accept a folder.
+
+    :param coll: Folder to accept.
+    """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
 
 def reject(ctx, coll):
+    """Reject a folder.
+
+    :param coll: Folder to reject.
+    """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
 def secure(ctx, coll):
+    """Secure a folder.
+
+    :param coll: Folder to secure.
+    """
     ctx.iiFolderSecure(coll)
 
 
@@ -103,7 +134,6 @@ api_uu_folder_reject   = api.make()(reject)
 
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
-
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
@@ -146,8 +176,7 @@ rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_gr
 
 
 def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
-    """Obtains a (k,v) list of all organisation metadata on a given collection or data object"""
-
+    """Obtain a (k,v) list of all organisation metadata on a given collection or data object."""
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
     return [(k, v) for k, v
@@ -159,8 +188,7 @@ def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
 
 
 def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
-    """Returns all locks on a collection or data object (includes locks on parents and children)."""
-
+    """Return all locks on a collection or data object (includes locks on parents and children)."""
     if org_metadata is None:
         org_metadata = get_org_metadata(ctx, path, object_type=object_type)
 
@@ -171,7 +199,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 @api.make()
 def api_uu_folder_get_locks(ctx, coll):
-    """Return a list of locks on a collection"""
+    """Return a list of locks on a collection."""
     return get_locks(ctx, coll)
 
 
@@ -200,7 +228,6 @@ def is_data_locked(ctx, path, org_metadata=None):
 
 def get_status(ctx, path, org_metadata=None):
     """Get the status of a research folder."""
-
     if org_metadata is None:
         org_metadata = get_org_metadata(ctx, path)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Allows converting certain irods types to string representation for debugging purposes
+"""Allows converting certain irods types to string representation for debugging purposes.
 
 Importing this module (anywhere) adds stringifyability to some frequently-used
 irods_types types.
@@ -9,7 +9,7 @@ import irods_types
 
 
 def pyify(x):
-    # Turn irods type into equivalent python type, if possible.
+    """Turn irods type into equivalent python type, if possible."""
     return x._pyify() if '_pyify' in dir(x) else str(x)
 
 

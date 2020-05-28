@@ -14,7 +14,7 @@ from query import Query
 
 
 def exists(callback, path):
-    """Check if a data object with the given path exists"""
+    """Check if a data object with the given path exists."""
     return len(list(genquery.row_iterator(
                "DATA_ID",
                "COLL_NAME = '%s' AND DATA_NAME = '%s'" % pathutil.chop(path),
@@ -45,10 +45,11 @@ def size(callback, path):
 
 
 def write(callback, path, data):
-    """Write a string to an iRODS data object.
-       This will overwrite the data object if it exists.
     """
+    Write a string to an iRODS data object.
 
+    This will overwrite the data object if it exists.
+    """
     ret = msi.data_obj_create(callback, path, 'forceFlag=', 0)
     handle = ret['arguments'][2]
 
@@ -58,7 +59,6 @@ def write(callback, path, data):
 
 def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
     """Read an entire iRODS data object into a string."""
-
     sz = size(callback, path)
     if sz > max_size:
         raise error.UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
@@ -131,6 +131,10 @@ def rename(ctx, path_org, path_target):
 
 
 def name_from_id(ctx, data_id):
+    """Get data object name from data object id.
+
+    :param data_id Data object id
+    """
     x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
     if x is not None:
         return '/'.join(x)

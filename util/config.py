@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Yoda ruleset configuration"""
+"""Yoda ruleset configuration."""
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -24,12 +24,12 @@ class Config(object):
     """
 
     def __init__(self, **kwargs):
-        """kwargs must contain all valid options and their default values"""
+        """kwargs must contain all valid options and their default values."""
         self._items  = kwargs
         self._frozen = False
 
     def freeze(self):
-        """Prevents further config changes via setattr"""
+        """Prevent further config changes via setattr."""
         self._frozen = True
 
     def __setattr__(self, k, v):

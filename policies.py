@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""iRODS policy implementations"""
+"""iRODS policy implementations."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -27,7 +27,7 @@ from util import *
 # research folders when paths are locked.
 
 def can_coll_create(ctx, actor, coll):
-    """Disallow creating collections in locked folders"""
+    """Disallow creating collections in locked folders."""
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
     if pathutil.info(coll).space is not pathutil.Space.RESEARCH:
@@ -91,7 +91,6 @@ def can_data_write(ctx, actor, path):
 
 
 def can_data_delete(ctx, actor, path):
-
     if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_admin(ctx, actor):
         return policy.fail('Cannot delete or move data directly under /home')
 
@@ -418,7 +417,6 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
 @policy.require()
 def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
-
     actor = user.user_and_zone(ctx)
 
     # No restrictions for rodsadmin and priv group.

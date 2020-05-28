@@ -14,6 +14,7 @@ class Succeed(object):
 
     Evaluates to True in boolean context.
     """
+
     def __str__(self):
         return 'Action permitted'
 
@@ -30,6 +31,7 @@ class Fail(object):
 
     Evaluates to False in boolean context.
     """
+
     def __init__(self, reason):
         self.reason = reason
 
@@ -54,11 +56,10 @@ def all(*x):
 
 
 def require():
-    """Turn a function into a PEP rule that fails (blocks associated action)
-       unless policy.succeed() is returned.
+    """Turn a function into a PEP rule that fails unless policy.succeed() is returned.
 
     The function must explicitly return policy.succeed() or .fail('reason') as a result.
-    Any other return type will result in the PEP failing.
+    Any other return type will result in the PEP failing (blocks associated action).
     """
     def deco(f):
         @rule.make(outputs=[])

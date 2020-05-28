@@ -52,18 +52,19 @@ def get_json_metadata_errors(callback,
                              metadata=None,
                              schema=None,
                              ignore_required=False):
-    """Validate JSON metadata, and return a list of errors, if any.
-       The path to the JSON object must be provided, so that the active schema path
-       can be derived. Optionally, a pre-parsed JSON object may be provided in
-       'metadata'.
-
-       The checked schema is, by default, the active schema for the given metadata path,
-       however it can be overridden by providing a parsed JSON schema as an argument.
-
-       This will throw exceptions on missing metadata / schema files and invalid
-       JSON formats.
     """
+    Validate JSON metadata, and return a list of errors, if any.
 
+    The path to the JSON object must be provided, so that the active schema path
+    can be derived. Optionally, a pre-parsed JSON object may be provided in
+    'metadata'.
+
+    The checked schema is, by default, the active schema for the given metadata path,
+    however it can be overridden by providing a parsed JSON schema as an argument.
+
+    This will throw exceptions on missing metadata / schema files and invalid
+    JSON formats.
+    """
     if schema is None:
         schema = schema_.get_active_schema(callback, metadata_path)
 
@@ -79,7 +80,7 @@ def get_json_metadata_errors(callback,
         errors = filter(lambda e: e.validator not in ['required', 'dependencies'], errors)
 
     def transform_error(e):
-        """Turn a ValidationError into a data structure for the frontend"""
+        """Turn a ValidationError into a data structure for the frontend."""
         return {'message':     e.message,
                 'path':        list(e.path),
                 'schema_path': list(e.schema_path),
@@ -92,11 +93,12 @@ def is_json_metadata_valid(callback,
                            metadata_path,
                            metadata=None,
                            ignore_required=False):
-    """Check if json metadata contains no errors.
-       argument 'metadata' may contain a preparsed JSON document, otherwise it
-       is loaded from the provided path.
     """
+    Check if json metadata contains no errors.
 
+    Argument 'metadata' may contain a preparsed JSON document, otherwise it
+    is loaded from the provided path.
+    """
     try:
         return len(get_json_metadata_errors(callback,
                                             metadata_path,
@@ -108,10 +110,11 @@ def is_json_metadata_valid(callback,
 
 
 def get_collection_metadata_path(callback, coll):
-    """Check if a collection has a metadata file and provide its path, if any.
-       Both JSON and legacy XML are checked, JSON has precedence if it exists.
     """
+    Check if a collection has a metadata file and provide its path, if any.
 
+    Both JSON and legacy XML are checked, JSON has precedence if it exists.
+    """
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
                                                    constants.IIMETADATAXMLNAME]]:
         if data_object.exists(callback, path):
@@ -121,11 +124,12 @@ def get_collection_metadata_path(callback, coll):
 
 
 def get_latest_vault_metadata_path(callback, vault_pkg_coll):
-    """Get the latest vault metadata JSON file.
+    """
+    Get the latest vault metadata JSON file.
 
-       :param vault_pkg_coll: Vault package collection
+    :param vault_pkg_coll: Vault package collection
 
-       :returns: string -- Metadata JSON path
+    :returns: string -- Metadata JSON path
     """
     name = None
 
@@ -143,8 +147,7 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
 
 
 def rule_uu_meta_validate(rule_args, callback, rei):
-    """Validate JSON metadata file"""
-
+    """Validate JSON metadata file."""
     json_path = rule_args[0]
 
     try:
@@ -161,11 +164,13 @@ def rule_uu_meta_validate(rule_args, callback, rei):
 
 
 def collection_has_cloneable_metadata(callback, coll):
-    """Check if a collection has metadata, and validate it.
-       Returns the parent metadata_path on success, or False otherwise.
+    """
+    Check if a collection has metadata, and validate it.
 
-       This always ignores 'required' schema attributes, since metadata can
-       only be cloned in the research area.
+    Return the parent metadata_path on success, or False otherwise.
+
+    This always ignores 'required' schema attributes, since metadata can
+    only be cloned in the research area.
     """
     path = get_collection_metadata_path(callback, coll)
 
@@ -187,8 +192,7 @@ rule_uu_meta_collection_has_cloneable_metadata = (
 
 @api.make()
 def api_uu_meta_remove(ctx, coll):
-    """Remove a collection's metadata JSON and XML, if they exist"""
-
+    """Remove a collection's metadata JSON and XML, if they exist."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
@@ -203,10 +207,11 @@ def api_uu_meta_remove(ctx, coll):
 
 @api.make()
 def api_uu_meta_clone_file(ctx, target_coll):
-    """Clones a metadata file from a parent collection to a subcollection.
-       The destination collection (where the metadata is copied *to*) is given as an argument.
     """
+    Clone a metadata file from a parent collection to a subcollection.
 
+    The destination collection (where the metadata is copied *to*) is given as an argument.
+    """
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
     source_data = get_collection_metadata_path(ctx, source_coll)
 
@@ -228,8 +233,7 @@ def api_uu_meta_clone_file(ctx, target_coll):
 # Functions that deal with ingesting metadata into AVUs {{{
 
 def ingest_metadata_research(ctx, path):
-    """Validates JSON metadata (without requiredness) and ingests as AVUs in the research space."""
-
+    """Validate JSON metadata (without requiredness) and ingests as AVUs in the research space."""
     coll, data = pathutil.chop(path)
 
     try:
@@ -256,8 +260,7 @@ def ingest_metadata_research(ctx, path):
 
 
 def ingest_metadata_staging(ctx, path):
-    """Sets cronjob metadata flag and triggers vault ingest."""
-
+    """Set cronjob metadata flag and triggers vault ingest."""
     coll = pathutil.chop(path)[0]
 
     ret = msi.string_2_key_val_pair(ctx,
@@ -274,7 +277,6 @@ def ingest_metadata_staging(ctx, path):
 
 def ingest_metadata_vault(ctx, path):
     """Ingest (pre-validated) JSON metadata in the vault."""
-
     # The JSON metadata file has just landed in the vault, required validation /
     # logging / provenance has already taken place.
 
@@ -301,7 +303,6 @@ def ingest_metadata_vault(ctx, path):
 
 @rule.make()
 def rule_uu_meta_modified_post(ctx, path, user, zone):
-
     if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
@@ -312,7 +313,6 @@ def rule_uu_meta_modified_post(ctx, path, user, zone):
 
 def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     """Ingest changes to metadata into the vault."""
-
     # This rule is called via ExecCmd during a policy rule
     # (ingest_metadata_staging), with as an argument the path to a metadata
     # JSON in a staging area (a location in a datamanager home collection).

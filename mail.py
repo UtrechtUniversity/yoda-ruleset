@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Rules for sending e-mails"""
+"""Rules for sending e-mails."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 20202, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -16,7 +16,7 @@ __all__ = ['rule_uu_mail_new_package_published',
 
 
 def send(ctx, to, actor, subject, body):
-    """Sends an e-mail with specified recipient, subject and body.
+    """Send an e-mail with specified recipient, subject and body.
 
     The originating address and mail server credentials are taken from the
     ruleset configuration file.
@@ -95,7 +95,7 @@ def send(ctx, to, actor, subject, body):
 
 
 def _wrapper(ctx, to, actor, subject, body):
-    """Sends mail, returns status/statusinfo in rule-language style."""
+    """Send mail, returns status/statusinfo in rule-language style."""
     x = send(ctx, to, actor, subject, body)
 
     if type(x) is api.Error:

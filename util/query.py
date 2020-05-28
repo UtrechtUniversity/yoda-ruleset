@@ -29,6 +29,8 @@ class Option(object):
 
 class OutputType(Enum):
     """
+    Represents query output type.
+
     AS_DICT:  result rows are dicts of (column_name => value)
     AS_LIST:  result rows are lists of cells (ordered by input column list)
     AS_TUPLE: result rows are tuples of cells, or a single string if only one column is selected
@@ -36,6 +38,7 @@ class OutputType(Enum):
     Note that when using AS_DICT, operations on columns (MAX, COUNT, ORDER, etc.)
     become part of the column name in the result.
     """
+
     AS_DICT  = 0
     AS_LIST  = 1
     AS_TUPLE = 2
@@ -169,7 +172,7 @@ class Query(object):
         self._total = None
 
     def total_rows(self):
-        """Returns the total amount of rows matching the query.
+        """Return the total amount of rows matching the query.
 
         This includes rows that are omitted from the result due to limit/offset parameters.
         """
@@ -228,7 +231,7 @@ class Query(object):
             self._fetch()
 
     def _fetch(self):
-        """Fetch the next batch of results"""
+        """Fetch the next batch of results."""
         ret      = self.callback.msiGetMoreRows(self.gqi, self.gqo, 0)
         self.gqo = ret['arguments'][1]
         self.cti = ret['arguments'][2]

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions for statistics module - in essence a python extension directly related to uuResources.r"""
+"""Functions for statistics module - in essence a python extension directly related to uuResources.r."""
 
 __copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -20,7 +20,6 @@ __all__ = ['api_uu_resource_groups_dm',
 @api.make()
 def api_uu_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource."""
-
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -30,7 +29,6 @@ def api_uu_resource_tier(ctx, res_name):
 @api.make()
 def api_uu_resource_resource_and_tier_data(ctx):
     """Get all resources and their tier data."""
-
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -54,10 +52,11 @@ def api_uu_resource_resource_and_tier_data(ctx):
 
 
 def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
-    """Get json representation for storage data for a period of 12 months for a specific group.
+    """
+    Get json representation for storage data for a period of 12 months for a specific group.
 
-       Storage is per month and tier
-       Format is "month=12-tier=Standard": "222222222222"
+    Storage is per month and tier
+    Format is "month=12-tier=Standard": "222222222222"
     """
     groupName = rule_args[0]
     currentMonth = int(rule_args[1])  # this is the month that came from the frontend
@@ -95,7 +94,6 @@ def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
 @api.make()
 def api_uu_resource_monthly_stats(ctx):
     """Collect storage data for all categories."""
-
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -124,12 +122,15 @@ def api_uu_resource_groups_dm(ctx):
 
 @api.make()
 def api_uu_resource_monthly_category_stats_export_dm(ctx):
-    """Collect storage stats for all twelve months based upon categories a user is datamanager of:
-       - Category
-       - Subcategory
-       - Groupname
-       - Tier
-       - 12 columns, one per month, with used storage count in bytes
+    """
+    Collect storage stats for all twelve months based upon categories a user is datamanager of.
+
+    Statistics gathered:
+    - Category
+    - Subcategory
+    - Groupname
+    - Tier
+    - 12 columns, one per month, with used storage count in bytes
     """
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
@@ -176,9 +177,10 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
 
 
 def groupGetCategoryInfo(groupName, callback):
-    """Get category and subcategory for a group.
+    """
+    Get category and subcategory for a group.
 
-       Returns a dict with indices 'category' and 'subcategory'.
+    Returns a dict with indices 'category' and 'subcategory'.
     """
     category = ''
     subcategory = ''
@@ -202,10 +204,11 @@ def groupGetCategoryInfo(groupName, callback):
 
 
 def getMonthlyCategoryStorageStatistics(categories, callback):
-    """Collect storage stats of last month only.
+    """
+    Collect storage stats of last month only.
 
-       Storage is summed up for each category/tier combination.
-       Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+    Storage is summed up for each category/tier combination.
+    Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
@@ -319,9 +322,10 @@ def getCategories(callback):
 
 
 def get_tier_by_resource_name(ctx, res_name):
-    """Get Tiername, if present, for given resource.
+    """
+    Get Tiername, if present, for given resource.
 
-       If not present, fall back to default tier name.
+    If not present, fall back to default tier name.
     """
     tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 

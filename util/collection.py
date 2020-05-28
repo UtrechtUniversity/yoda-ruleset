@@ -79,7 +79,6 @@ def data_objects(callback, path, recursive=False):
 
     The returned paths are absolute paths (e.g. ['/tempZone/home/x/y.txt']).
     """
-
     # coll+data name -> path
     to_absolute = lambda row: '{}/{}'.format(*row)
 
@@ -100,7 +99,6 @@ def data_objects(callback, path, recursive=False):
 
 def create(ctx, path):
     """Create new collection.
-
 
     :param path: Path including new collection
 
@@ -144,4 +142,8 @@ def rename(ctx, path_org, path_target):
 
 
 def name_from_id(ctx, coll_id):
+    """Get collection name from collection id.
+
+    :param coll_id Collection id
+    """
     return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()

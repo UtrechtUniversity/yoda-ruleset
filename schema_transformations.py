@@ -25,6 +25,7 @@ __all__ = []
 def _default0_default1(m):
     """
     A Data type field is added to be used for publication purposes to DataCite.
+
     This makes it possible to specify the type of data that is being published.
     The default data type is Dataset.
 
@@ -34,10 +35,11 @@ def _default0_default1(m):
     Finally, the creator and contributor name fields have been split into first
     and last names, to comply with the OpenAIRE standard.
     """
-
     def fixup_name(n):
-        """Split a name into a first and last name.
-           This algo is error-prone, but acceptable.
+        """
+        Split a name into a first and last name.
+
+        This algo is error-prone, but acceptable.
         """
         n.strip()  # Trim whitespace, if any.
 
@@ -71,14 +73,14 @@ def _default0_default1(m):
 
 
 def get(src_id, dst_id):
-    """Get a transformation function that maps metadata from the given src schema id to the dst schema id.
+    """
+    Get a transformation function that maps metadata from the given src schema id to the dst schema id.
 
     :param src_id: The metadata's current schema id
     :param dst_id: The metadata's destination schema id
 
     :return: A transformation function, or None if no mapping exists for the given ids
     """
-
     transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1}}
 

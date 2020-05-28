@@ -106,10 +106,9 @@ def getCategories(callback):
 
 
 def getSubcategories(callback, category):
-    """
-       Get a list of all subcategories within a given group category.
+    """Get a list of all subcategories within a given group category.
 
-       :param category: Category to retrieve subcategories of
+    :param category: Category to retrieve subcategories of
     """
     categories = set()    # Unique subcategories.
     groupCategories = {}  # Group name => { category => .., subcategory => .. }
@@ -197,7 +196,7 @@ def api_uu_group_subcategories(ctx, category):
 
 
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
-    """Call External User Service API to add new user
+    """Call External User Service API to add new user.
 
     :param username: Username of external user
     :param creatorUser: User creating the external user

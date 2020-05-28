@@ -16,27 +16,28 @@ User.__str__ = lambda self: '{}#{}'.format(*self)
 
 
 def user_and_zone(ctx):
+    """Obtain client name and zone."""
     client = session_vars.get_map(ctx.rei)['client_user']
     return User(client['user_name'], client['irods_zone'])
 
 
 def full_name(ctx):
-    """Obtain client name and zone, formatted as a 'x#y' string"""
+    """Obtain client name and zone, formatted as a 'x#y' string."""
     return str(user_and_zone(ctx))
 
 
 def name(ctx):
-    """Gets the name of the client user"""
+    """Get the name of the client user."""
     return session_vars.get_map(ctx.rei)['client_user']['user_name']
 
 
 def zone(ctx):
-    """Gets the zone of the client user"""
+    """Get the zone of the client user."""
     return session_vars.get_map(ctx.rei)['client_user']['irods_zone']
 
 
 def from_str(ctx, s):
-    """Returns a (user,zone) tuple from a user[#zone] string.
+    """Return a (user,zone) tuple from a user[#zone] string.
 
     If no zone is present in the string, the client's zone is used.
     """
@@ -49,6 +50,7 @@ def from_str(ctx, s):
 
 
 def exists(ctx, user):
+    """Check if a user exists."""
     if type(user) is str:
         user = from_str(ctx, user)
 
@@ -56,7 +58,7 @@ def exists(ctx, user):
 
 
 def user_type(ctx, user=None):
-    """Returns the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
+    """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
     """
@@ -70,10 +72,12 @@ def user_type(ctx, user=None):
 
 
 def is_admin(ctx, user=None):
+    """Check if user is an admin."""
     return user_type(ctx, user) == 'rodsadmin'
 
 
 def is_member_of(ctx, group, user=None):
+    """Check if user is member of given group."""
     if user is None:
         user = user_and_zone(ctx)
     elif type(user) is str:
@@ -86,14 +90,14 @@ def is_member_of(ctx, group, user=None):
 
 # TODO: Remove. {{{
 def get_client_name_zone(rei):
-    """Obtain client name and zone, as a tuple"""
+    """Obtain client name and zone, as a tuple."""
     client = session_vars.get_map(rei)['client_user']
     return client['user_name'], client['irods_zone']
 
 
 # TODO: Replace calls (meta.py) with full_name.
 def get_client_full_name(rei):
-    """Obtain client name and zone, formatted as a 'x#y' string"""
+    """Obtain client name and zone, formatted as a 'x#y' string."""
     return '{}#{}'.format(*get_client_name_zone(rei))
 # }}}
 

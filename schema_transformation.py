@@ -24,7 +24,6 @@ from util import *
 
 def execute_transformation(callback, metadata_path, transform):
     """Transform a metadata file with the given transformation function."""
-
     coll, data = os.path.split(metadata_path)
 
     group_name = metadata_path.split('/')[3]
@@ -49,7 +48,8 @@ def execute_transformation(callback, metadata_path, transform):
 
 
 def transform_research_xml(callback, xml_path):
-    """Transform a yoda-metadata XML to JSON in the research area.
+    """
+    Transform a yoda-metadata XML to JSON in the research area.
 
     Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
     """
@@ -114,7 +114,6 @@ def transform_research_xml(callback, xml_path):
 @api.make()
 def api_uu_transform_metadata(ctx, coll):
     """Transform a yoda-metadata file in the given collection to the active schema."""
-
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
 
     if metadata_path is None:
@@ -146,8 +145,10 @@ def api_uu_transform_metadata(ctx, coll):
 
 
 def get(callback, metadata_path, metadata=None):
-    """Find a transformation that can be executed on the given metadata JSON.
-       Returns a transformation function on success, or None if no transformation was found.
+    """
+    Find a transformation that can be executed on the given metadata JSON.
+
+    Returns a transformation function on success, or None if no transformation was found.
     """
     try:
         src = schema.get_schema_id(callback, metadata_path, metadata=metadata)
@@ -168,8 +169,8 @@ def get(callback, metadata_path, metadata=None):
 
 # TODO: @rule.make
 def rule_uu_get_transformation_info(rule_args, callback, rei):
-    """Check if a yoda-metadata.json transformation is possible and if so,
-       retrieve transformation description.
+    """
+    Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
 
     :param rule_args[0]: JSON path
 
@@ -187,7 +188,8 @@ def rule_uu_get_transformation_info(rule_args, callback, rei):
 
 
 def copy_acls_from_parent(callback, path, recursive_flag):
-    """When inheritance is missing we need to copy ACLs when introducing new data in vault package.
+    """
+    When inheritance is missing we need to copy ACLs when introducing new data in vault package.
 
     :param path: Path of object that needs the permissions of parent
     :param recursive_flag: Either "default" for no recursion or "recursive"
@@ -219,7 +221,8 @@ def copy_acls_from_parent(callback, path, recursive_flag):
 
 # TODO: @rule.make
 def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
-    """Transform all metadata JSON files in the vault to the active schema.
+    """
+    Transform all metadata JSON files in the vault to the active schema.
 
     :param coll_id: First COLL_ID to check
     :param batch: Batch size, <= 256
@@ -277,10 +280,11 @@ def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
 
 
 def html(f):
-    """Get a human-readable HTML description of a transformation function.
-       The text is derived from the function's docstring.
     """
+    Get a human-readable HTML description of a transformation function.
 
+    The text is derived from the function's docstring.
+    """
     return '\n'.join(map(lambda paragraph:
                      '<p>{}</p>'.format(  # Trim whitespace.
                          re.sub('\s+', ' ', paragraph).strip()),

@@ -16,6 +16,7 @@ from query import Query
 
 class Space(Enum):
     """Differentiates Yoda path types between research and vault spaces."""
+
     OTHER       = 0
     RESEARCH    = 1
     VAULT       = 2
@@ -78,7 +79,6 @@ def info(path):
     /tempZone/home/research-x/y/z  => Space.RESEARCH,    'tempZone', 'research-x',    'y/z'
     etc.
     """
-
     # Turn empty match groups into empty strings.
     f      = lambda x:    '' if x is None else x
     g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
@@ -113,7 +113,6 @@ def object_type(ctx, path):
 
 def fs_object_from_id(ctx, obj_id):
     """Return (path, ObjectType) for the given object id, or (None, None) if the ID does not exist."""
-
     x = Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), query.AS_DICT).first() \
         or Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), query.AS_DICT).first()
 
