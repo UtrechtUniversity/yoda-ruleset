@@ -195,9 +195,12 @@ def api_uu_search(ctx,
                     'modify_time': int(x['COLL_MODIFY_TIME'])}
 
     # Replace, %, _ and \ since iRODS does not handle those correctly.
-    search_string = search_string.replace("\\", "\\\\")
-    search_string = search_string.replace("%", "\%")
-    search_string = search_string.replace("_", "\_")
+    # HdR this can only be done in a situation where search_type is NOT status!
+    # Status description must be kept in tact.
+    if not search_type == 'status':
+        search_string = search_string.replace("\\", "\\\\")
+        search_string = search_string.replace("%", "\%")
+        search_string = search_string.replace("_", "\_")
 
     zone = user.zone(ctx)
 
