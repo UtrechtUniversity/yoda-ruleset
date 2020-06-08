@@ -4,7 +4,7 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from jinja2 import Template
+import jinja2
 from util import *
 
 __all__ = ['rule_uu_json_landing_page_create_json_landing_page']
@@ -29,6 +29,11 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
     # Load the Jinja template.
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
     template = data_object.read(callback, landingpage_template_path)
+
+    # Enable autoescaping for all templates.
+    # NOTE: autoescape is no longer an extension starting in jinja 2.9 (2017).
+    Template = jinja2.Environment(autoescape=True,
+                                  extensions=['jinja2.ext.autoescape']).from_string
 
     # Pre work input for render process.
     # When empty landing page, take a short cut

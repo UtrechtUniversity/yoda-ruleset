@@ -6,21 +6,52 @@ __license__   = 'GPLv3, see LICENSE'
 
 from util import *
 
+import xml.etree.cElementTree as ET
+
 __all__ = ['rule_uu_json_datacite41_create_combi_metadata_json',
            'rule_uu_json_datacite41_create_data_cite_xml_on_json']
 
 
-def rule_uu_json_datacite41_create_combi_metadata_json(rule_args, callback, rei):
+def El(tag, *children, **attrs):
+    """Construct an XML element with the given attributes and children.
+
+    If a string is given as the only child, it is used as a textual element body instead.
+    """
+
+    if type(tag) is str:
+        tag = tag.decode('utf-8')
+
+    el = ET.Element(tag, attrs)
+
+    if len(children) == 1 and type(children[0]) in [str, unicode]:
+        text = children[0]
+        if type(text) is str:
+            text = text.decode('utf-8')
+        el.text = text
+    else:
+        el.extend(children)
+
+    return el
+
+
+@rule.make()
+def rule_uu_json_datacite41_create_combi_metadata_json(ctx,
+                                                       metadataJsonPath,
+                                                       combiJsonPath,
+                                                       lastModifiedDateTime,
+                                                       yodaDOI,
+                                                       publicationDate,
+                                                       openAccessLink,
+                                                       licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
     :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
                           other are system info parameters
     """
-    metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri = rule_args[0:7]
 
     # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = jsonutil.read(callback, metadataJsonPath)
+    metaDict = jsonutil.read(ctx, metadataJsonPath)
 
     # add System info
     metaDict['System'] = {
@@ -35,355 +66,239 @@ def rule_uu_json_datacite41_create_combi_metadata_json(rule_args, callback, rei)
     }
 
     # Write combined data to file at location combiJsonPath
-    jsonutil.write(callback, combiJsonPath, metaDict)
+    jsonutil.write(ctx, combiJsonPath, metaDict)
 
 
-def rule_uu_json_datacite41_create_data_cite_xml_on_json(rule_args, callback, rei):
-    """Based on content of *combiJsonPath, get DataciteXml as string.
+@rule.make(inputs=[0], outputs=[1])
+def rule_uu_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
+    """Based on content of combi json, get DataciteXml as string.
 
-    :param combiJsonPath: path to the combined Json file that holds both User and System metadata
+    :param combi_path: path to the combined Json file that holds both User and System metadata
 
     :returns: string -- Holds Datacite formatted metadata of Yoda
     """
-    combiJsonPath, receiveDataciteXml = rule_args[0:2]
 
-    # Get dict containing the wanted metadata
-    dict = jsonutil.read(callback, combiJsonPath)
+    combi = jsonutil.read(ctx, combi_path)
 
-    # Build datacite XML as string
-    xmlString = getHeader()
+    ET.register_namespace('', 'http://datacite.org/schema/kernel-4')
+    ET.register_namespace('yoda', 'https://yoda.uu.nl/schemas/default')
 
-    # Build datacite XML as string
-    xmlString += getDOI(dict)
+    # Build datacite XML
+    e = ET.fromstring(getHeader()+'</resource>')
 
-    xmlString += getTitles(dict)
-    xmlString += getDescriptions(dict)
-    xmlString += getPublisher(dict)
-    xmlString += getPublicationYear(dict)
-    xmlString += getSubjects(dict)
+    for f in [getDOI,
+              getTitles,
+              getDescriptions,
+              getPublisher,
+              getPublicationYear,
+              getSubjects,
+              getCreators,
+              getContributors,
+              getDates,
+              getVersion,
+              getRightsList,
+              getLanguage,
+              getResourceType,
+              getRelatedDataPackage,
+              getGeoLocations,
+              getFunders]:
+        try:
+            x = f(combi)
+        except KeyError, IndexError:
+            # Ignore absent fields.
+            continue
 
-    xmlString += getCreators(dict)
-    xmlString += getContributors(dict)
-    xmlString += getDates(dict)
-    xmlString += getVersion(dict)
-    xmlString += getRightsList(dict)
-    xmlString += getLanguage(dict)
-    xmlString += getResourceType(dict)
-    xmlString += getRelatedDataPackage(dict)
+        if isinstance(x, str):
+            if len(x):
+                e.append(ET.fromstring(unicode(x)))
+        elif x is not None:
+            e.append(x)
 
-    xmlString += getGeoLocations(dict)
-    xmlString += getFunders(dict)
-
-    # Close the XML.
-    xmlString += '</resource>'
-
-    rule_args[1] = xmlString
+    return ET.tostring(e, encoding='UTF-8')
 
 
 def getHeader():
     # TODO: all that is present before the yoda data  !! Hier moet de ID nog in
     return '''<?xml version="1.0" encoding="UTF-8"?><resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xmlns:yoda="https://yoda.uu.nl/schemas/default" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd">'''
 
-
-def getDOI(dict):
-    try:
-        doi = dict['System']['Persistent_Identifier_Datapackage']['Identifier']
-        return '<identifier identifierType="DOI">' + doi + '</identifier>'
-    except KeyError:
-        pass
-    return ''
+    # Note: xmlns:yoda is currently unused and pruned automatically.
+    #       Also, the url is invalid.
 
 
-def getTitles(dict):
-    try:
-        try:
-            language = dict['Language'][0:2]
-        except KeyError:
-            language = 'en'
-            pass
-
-        title = dict['Title']
-        return '<titles><title xml:lang="' + language + '">' + title + '</title></titles>'
-    except KeyError:
-        pass
-
-    return ''
+def getDOI(combi):
+    return El('identifier', combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
+              identifierType='DOI')
 
 
-def getDescriptions(dict):
-    try:
-        description = dict['Description']
-        return '<descriptions><description descriptionType="Abstract">' + description + '</description></descriptions>'
-    except KeyError:
-        pass
-
-    return ''
+def getTitles(combi):
+    return El('titles',
+              El('title', combi['Title'],
+                 **{'xml:lang': combi.get('Language', 'en')[0:2]}))
 
 
-def getPublisher(dict):
+def getDescriptions(combi):
+    return El('descriptions',
+              El('description', combi['Description'],
+                  descriptionType='Abstract'))
+
+
+def getPublisher(combi):
+    # FIXME (untouched from b057f496).
     return '<publisher>Utrecht University</publisher>'  # Hardcoded like in former XSLT
 
 
-def getPublicationYear(dict):
-    try:
-        publicationYear = dict['System']['Publication_Date'][0:4]
-        return '<publicationYear>' + publicationYear + '</publicationYear>'
-    except KeyError:
-        pass
-    return ''
+def getPublicationYear(combi):
+    return El('publicationYear', combi['System']['Publication_Date'][0:4])
 
 
-def getSubjects(dict):
+def getSubjects(combi):
     """Get string in DataCite format containing:
 
        1) standard objects like tags/disciplne
        2) free items, for now specifically for GEO schemas
     """
-    subjectDisciplines = ''
-    subjectTags = ''
-    subjectFree = ''
 
-    try:
-        for disc in dict['Discipline']:
-            if disc:
-                subjectDisciplines += '<subject subjectScheme="OECD FOS 2007">' + disc + '</subject>'
-    except (KeyError, TypeError):
-        pass
+    subjects = []  # :: [(scheme, value)]
 
-    try:
-        for tag in dict['Tag']:
-            if tag:
-                subjectTags += '<subject subjectScheme="Keyword">' + tag + '</subject>'
-    except KeyError:
-        pass
+    subjects += [('OECD FOS 2007', x) for x in combi.get('Discipline', [])]
+    subjects += [('Keyword', x)       for x in combi.get('Tag', [])]
 
     # Geo schemas have some specific fields that need to be added as subject.
     # Sort of freely usable fields
-    subject_fields = ["Main_Setting",
-                      "Process_Hazard",
-                      "Geological_Structure",
-                      "Geomorphical_Feature",
-                      "Material",
-                      "Apparatus",
-                      "Monitoring",
-                      "Software",
-                      "Measured_Property"]
+    subject_fields = ['Main_Setting',
+                      'Process_Hazard',
+                      'Geological_Structure',
+                      'Geomorphical_Feature',
+                      'Material',
+                      'Apparatus',
+                      'Monitoring',
+                      'Software',
+                      'Measured_Property']
 
+    # for each subject field that exists in the metadata...
     for field in subject_fields:
-        try:
-            for value in dict[field]:
-                if value:
-                    subjectFree += '<subject subjectScheme="' + field + '">' + value + '</subject>'
-        except KeyError:
-            continue  # Try next field in the list.
+        subjects += [(field, x) for x in combi.get(field, [])]
 
-    if subjectDisciplines or subjectTags or subjectFree:
-        return '<subjects>' + subjectDisciplines + subjectTags + subjectFree + '</subjects>'
+    # Create elements, prune empty / null values.
+    subjects = [El('subject', value, subjectScheme=scheme)
+                for scheme, value in subjects
+                if type(value) in (str,unicode) and len(value)]
 
-    return ''
+    if subjects:
+        return El('subjects', *subjects)
 
 
-def getFunders(dict):
-    fundingRefs = ''
-    try:
-        for funder in dict['Funding_Reference']:
-            fundingRefs += '<fundingReference><funderName>' + funder['Funder_Name'] + '</funderName><awardNumber>' + funder['Award_Number'] + '</awardNumber></fundingReference>'
-        return '<fundingReferences>' + fundingRefs + '</fundingReferences>'
-
-    except KeyError:
-        pass
-
-    return ''
+def getFunders(combi):
+    return El('fundingReferences',
+              *[El('fundingReference',
+                   El('funderName',  funder['Funder_Name']),
+                   El('awardNumber', funder['Award_Number']))
+                for funder in combi.get('Funding_Reference', [])])
 
 
-def getCreators(dict):
+def getCreators(combi):
     """Get string in DataCite format containing creator information."""
-    creators = ''
-    try:
-        for creator in dict['Creator']:
-            creators += '<creator>'
-            creators += '<creatorName>' + creator['Name']['First_Name'] + ' ' + creator['Name']['Last_Name'] + '</creatorName>'
 
-            # Possibly multiple person identifiers
-            nameIdentifiers = ''
-            try:
-                for dictId in creator['Person_Identifier']:
-                    nameIdentifiers += '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
-            except KeyError:
-                pass
+    creators = [El('creator',
+                   El('creatorName', '{} {}'.format(creator['Name']['First_Name'], creator['Name']['Last_Name'])),
+                   *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
+                       for pid in creator.get('Person_Identifier', [])]
+                   +[El('affiliation', x) for x in creator.get('Affiliation', [])])
+                for creator in combi.get('Creator', [])]
 
-            # Possibly multiple affiliations
-            affiliations = ''
-            try:
-                for aff in creator['Affiliation']:
-                    affiliations += '<affiliation>' + aff + '</affiliation>'
-            except KeyError:
-                pass
-
-            creators += nameIdentifiers
-            creators += affiliations
-            creators += '</creator>'
-
-        if creators:
-            return '<creators>' + creators + '</creators>'
-    except KeyError:
-        pass
-
-    return ''
+    if creators:
+        return El('creators', *creators)
 
 
-def getContributors(dict):
+def getContributors(combi):
     """Get string in datacite format containing contributors,
        including contact persons if these were added explicitly (GEO).
     """
-    contributors = ''
+    contribs = [El('contributor',
+                   El('contributorName', '{} {}'.format(person['Name']['First_Name'], person['Name']['Last_Name'])),
+                   *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
+                       for pid in person.get('Person_Identifier', [])]
+                   +[El('affiliation', x) for x in person.get('Affiliation', [])],
+                   contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))
 
-    try:
-        for yoda_contributor in ['Contributor', 'Contact']:  # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
-            for contributor in dict[yoda_contributor]:
-                if yoda_contributor == 'Contact':
-                    contributors += '<contributor contributorType="ContactPerson">'
-                else:
-                    contributors += '<contributor contributorType="' + contributor['Contributor_Type'] + '">'
+                # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
+                for typ in ['Contributor', 'Contact']
+                for person in combi.get(typ, [])]
 
-                contributors += '<contributorName>' + contributor['Name']['First_Name'] + ' ' + contributor['Name']['Last_Name'] + '</contributorName>'
-
-                # Possibly multiple person identifiers
-                nameIdentifiers = ''
-                try:
-                    for dictId in contributor['Person_Identifier']:
-                        nameIdentifiers += '<nameIdentifier nameIdentifierScheme="' + dictId['Name_Identifier_Scheme'] + '">' + dictId['Name_Identifier'] + '</nameIdentifier>'
-                except KeyError:
-                    pass
-
-                # Possibly multiple affiliations
-                affiliations = ''
-                try:
-                    for aff in contributor['Affiliation']:
-                        affiliations += '<affiliation>' + aff + '</affiliation>'
-                except KeyError:
-                    pass
-
-                contributors += nameIdentifiers
-                contributors += affiliations
-                contributors += '</contributor>'
-
-    except KeyError:
-        pass
-
-    if contributors:
-        return '<contributors>' + contributors + '</contributors>'
-    return ''
+    if contribs:
+        return El('contributors', *contribs)
 
 
-# /brief Get string in datacite format containing all date information
-def getDates(dict):
-    try:
-        dates = ''
-        dateModified = dict['System']['Last_Modified_Date']
-        dates += '<date dateType="Updated">' + dateModified + '</date>'
-    except KeyError:
-        pass
+def getDates(combi):
 
-    try:
-        dateEmbargoEnd = dict['Embargo_End_Date']
-        dates += '<date dateType="Available">' + dateEmbargoEnd + '</date>'
-    except KeyError:
-        pass
+    def get_span(d):
+        x = d.get('Start_Date')
+        y = d.get('End_Date')
+        if x is not None and y is not None:
+            return '{}/{}'.format(x, y)
 
-    try:
-        dateCollectStart = dict['Collected']['Start_Date']
-        dateCollectEnd = dict['Collected']['End_Date']
-
-        dates += '<date dateType="Collected">' + dateCollectStart + '/' + dateCollectEnd + '</date>'
-    except KeyError:
-        pass
+    dates = [El('date', dat, dateType=typ)
+             for typ, dat in [('Updated',   combi.get('System', {}).get('Last_Modified_Date')),
+                              ('Available', combi.get('Embargo_End_Date')),
+                              ('Collected', get_span(combi.get('Collected', {})))]
+             if dat is not None]
 
     if dates:
-        return '<dates>' + dates + '</dates>'
-
-    return ''
+        return El('dates', *dates)
 
 
-def getVersion(dict):
+def getVersion(combi):
     """Get string in DataCite format containing version info."""
-    try:
-        version = dict['Version']
-        return '<version>' + version + '</version>'
-    except KeyError:
-        return ''
+    return El('version', combi['Version'])
 
 
-def getRightsList(dict):
+def getRightsList(combi):
     """Get string in DataCite format containing rights related information."""
-    try:
-        # licenseURI = dict['System']['License_URI']
-        # rights = '<rights rightsURI="' + licenseURI + '"></rights>'
-        rights = ''
 
-        accessRestriction = dict['Data_Access_Restriction']
+    options = {'Open':       'info:eu-repo/semantics/openAccess',
+               'Restricted': 'info:eu-repo/semantics/restrictedAccess',
+               'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-        accessOptions = {'Open': 'info:eu-repo/semantics/openAccess', 'Restricted': 'info:eu-repo/semantics/restrictedAccess', 'Closed': 'info:eu-repo/semantics/closedAccess'}
-
-        rightsURI = ''
-        for option, uri in accessOptions.items():
-            if accessRestriction.startswith(option):
-                rightsURI = uri
-                break
-        rights += '<rights rightsURI="' + rightsURI + '"></rights>'
-        if rights:
-            return '<rightsList>' + rights + '</rightsList>'
-
-    except KeyError:
-        pass
-
-    return ''
+    return El('rightsList', El('rights',
+                               rightsURI=options[combi['Data_Access_Restriction'].split()[0]]))
 
 
-def getLanguage(dict):
+def getLanguage(combi):
     """Get string in DataCite format containing language."""
-    try:
-        language = dict['Language'][0:2]
-        return '<language>' + language + '</language>'
-    except KeyError:
-        pass
-    return ''
+    return El('language', combi['Language'][0:2])
 
 
-def getResourceType(dict):
+def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
-    yodaResourceToDatacite = {'Dataset': 'Research Data', 'DataPaper': 'Method Description', 'Software': 'Computer code'}
 
-    try:
-        resourceType = dict['Data_Type']
-        dataciteDescr = yodaResourceToDatacite[resourceType]
-    except KeyError:
-        resourceType = 'Text'
-        dataciteDescr = 'Other Document'  # Default value
+    typs =  {'Dataset': 'Research Data',
+             'DataPaper': 'Method Description',
+             'Software': 'Computer code'}
 
-    return '<resourceType resourceTypeGeneral="' + resourceType + '">' + dataciteDescr + '</resourceType>'
+    typ = combi.get('Data_Type', 'Text')
+    if typ not in typs:
+        typ = 'Text'
+
+    descr = {'Dataset': 'Research Data',
+             'DataPaper': 'Method Description',
+             'Software': 'Computer code'}\
+            .get(typ, 'Other Document')
+
+    return El('resourceType', descr, resourceTypeGeneral=typ)
 
 
-def getRelatedDataPackage(dict):
+def getRelatedDataPackage(combi):
     """Get string in DataCite format containing related datapackages."""
-    relatedIdentifiers = ''
 
-    try:
-        for relPackage in dict['Related_Datapackage']:
-            relType = relPackage['Relation_Type'].split(':')[0]
-            # title = relPackage['Title']
-            persistentSchema = relPackage['Persistent_Identifier']['Identifier_Scheme']
-            persistentID = relPackage['Persistent_Identifier']['Identifier']
-            relatedIdentifiers += '<relatedIdentifier relatedIdentifierType="' + persistentSchema + '" relationType="' + relType + '">' + persistentID + '</relatedIdentifier>'
-
-        if relatedIdentifiers:
-            return '<relatedIdentifiers>' + relatedIdentifiers + '</relatedIdentifiers>'
-        return ''
-    except KeyError:
-        return ''
+    related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
+                  relatedIdentifierType = rel['Persistent_Identifier']['Identifier_Scheme'],
+                  relationType          = rel['Relation_Type'].split(':')[0])
+               for rel in combi['Related_Datapackage']]
+    if related:
+        return El('relatedIdentifiers', *related)
 
 
-def getGeoLocations(dict):
+def getGeoLocations(combi):
     """Get string in datacite format containing the information of geo locations.
 
        There are two versions of this:
@@ -392,10 +307,11 @@ def getGeoLocations(dict):
        Both are mutually exclusive.
        I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
     """
-    geoLocations = ''
+
+    geoLocations = []
 
     try:
-        for geoloc in dict['GeoLocation']:
+        for geoloc in combi['GeoLocation']:
             temp_description_start = geoloc['Description_Temporal']['Start_Date']
             temp_description_end = geoloc['Description_Temporal']['End_Date']
             spatial_description = geoloc['Description_Spatial']
@@ -405,42 +321,40 @@ def getGeoLocations(dict):
             lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
             lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
 
-            geoPlace = ''
-            geoPoint = ''
-            geoBox = ''
+            geoPlace = None
+            geoPoint = None
+            geoBox   = None
 
             if spatial_description:
-                geoPlace = '<geoLocationPlace>' + spatial_description + '</geoLocationPlace>'
+                geoPlace = El('geoLocationPlace', spatial_description)
 
             if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
-                pointLong = '<pointLongitude>' + lon0 + '</pointLongitude>'
-                pointLat = '<pointLatitude>' + lat0 + '</pointLatitude>'
-                geoPoint = '<geoLocationPoint>' + pointLong + pointLat + ' </geoLocationPoint>'
+                geoPoint  = El('geoLocationPoint',
+                               El('pointLongitude', lon0),
+                               El('pointLatitude', lat0))
             else:
-                wbLon = '<westBoundLongitude>' + lon0 + '</westBoundLongitude>'
-                ebLon = '<eastBoundLongitude>' + lon1 + '</eastBoundLongitude>'
-                sbLat = '<southBoundLatitude>' + lat0 + '</southBoundLatitude>'
-                nbLat = '<northBoundLatitude>' + lat1 + '</northBoundLatitude>'
+                geoBox = El('geoLocationBox',
+                            El('westBoundLongitude', lon0),
+                            El('eastBoundLongitude', lon1),
+                            El('southBoundLatitude', lat0),
+                            El('northBoundLatitude', lat1))
 
-                geoBox = '<geoLocationBox>' + wbLon + ebLon + sbLat + nbLat + '</geoLocationBox>'
-
-        # Put it all together as one geoLocation elemenmt
-            geoLocations = geoLocations + '<geoLocation>' + geoPlace + geoPoint + geoBox + '</geoLocation>'
+            # Put it all together as one geoLocation elemenmt
+            geoLocations += [El('geoLocation', *[x for x in [geoPlace, geoPoint, geoBox] if x])]
 
         if len(geoLocations):
-            return '<geoLocations>' + geoLocations + '</geoLocations>'
+            return El('geoLocations', *geoLocations)
 
     except KeyError:
         pass
 
     try:
-        locationList = dict['Covered_Geolocation_Place']
+        locationList = combi['Covered_Geolocation_Place']
         for location in locationList:
             if location:
-                geoLocations += '<geoLocation><geoLocationPlace>' + location + '</geoLocationPlace></geoLocation>'
+                geoLocations += [El('geoLocation', El('geoLocationPlace', location))]
     except KeyError:
-        return ''
+        return
 
     if len(geoLocations):
-        return '<geoLocations>' + geoLocations + '</geoLocations>'
-    return ''
+        return El('geoLocations', *geoLocations)
