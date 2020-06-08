@@ -110,7 +110,7 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
     # Register to delayed rule queue.
     delay = 10
 
-    callback.delayExec(
+    ctx.delayExec(
         "<PLUSET>%ds</PLUSET>" % delay,
         "iiCopyFolderToResearch('%s', '%s')" % (coll_origin, coll_target),
         "")
