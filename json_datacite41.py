@@ -161,7 +161,7 @@ def getSubjects(combi):
     subjects = []  # :: [(scheme, value)]
 
     subjects += [('OECD FOS 2007', x) for x in combi.get('Discipline', [])]
-    subjects += [('Keyword', x)       for x in combi.get('Tag', [])]
+    subjects += [('Keyword', x) for x in combi.get('Tag', [])]
 
     # Geo schemas have some specific fields that need to be added as subject.
     # Sort of freely usable fields
@@ -203,7 +203,7 @@ def getCreators(combi):
                    El('creatorName', '{} {}'.format(creator['Name']['First_Name'], creator['Name']['Last_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
                        for pid in creator.get('Person_Identifier', [])]
-                   +[El('affiliation', x) for x in creator.get('Affiliation', [])])
+                   + [El('affiliation', x) for x in creator.get('Affiliation', [])])
                 for creator in combi.get('Creator', [])]
 
     if creators:
@@ -218,7 +218,7 @@ def getContributors(combi):
                    El('contributorName', '{} {}'.format(person['Name']['First_Name'], person['Name']['Last_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
                        for pid in person.get('Person_Identifier', [])]
-                   +[El('affiliation', x) for x in person.get('Affiliation', [])],
+                   + [El('affiliation', x) for x in person.get('Affiliation', [])],
                    contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))
 
                 # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
@@ -271,9 +271,9 @@ def getLanguage(combi):
 def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
 
-    typs =  {'Dataset':   'Research Data',
-             'DataPaper': 'Method Description',
-             'Software':  'Computer code'}
+    typs = {'Dataset':   'Research Data',
+            'DataPaper': 'Method Description',
+            'Software':  'Computer code'}
 
     typ = combi.get('Data_Type', 'Text')
     if typ not in typs:
@@ -282,7 +282,7 @@ def getResourceType(combi):
     descr = {'Dataset': 'Research Data',
              'DataPaper': 'Method Description',
              'Software': 'Computer code'}\
-            .get(typ, 'Other Document')
+        .get(typ, 'Other Document')
 
     return El('resourceType', descr, resourceTypeGeneral=typ)
 
