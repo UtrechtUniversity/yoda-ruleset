@@ -84,7 +84,7 @@ def rule_uu_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     ET.register_namespace('yoda', 'https://yoda.uu.nl/schemas/default')
 
     # Build datacite XML
-    e = ET.fromstring(getHeader()+'</resource>')
+    e = ET.fromstring(getHeader() + '</resource>')
 
     for f in [getDOI,
               getTitles,
@@ -182,7 +182,7 @@ def getSubjects(combi):
     # Create elements, prune empty / null values.
     subjects = [El('subject', value, subjectScheme=scheme)
                 for scheme, value in subjects
-                if type(value) in (str,unicode) and len(value)]
+                if type(value) in (str, unicode) and len(value)]
 
     if subjects:
         return El('subjects', *subjects)
@@ -271,9 +271,9 @@ def getLanguage(combi):
 def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
 
-    typs =  {'Dataset': 'Research Data',
+    typs =  {'Dataset':   'Research Data',
              'DataPaper': 'Method Description',
-             'Software': 'Computer code'}
+             'Software':  'Computer code'}
 
     typ = combi.get('Data_Type', 'Text')
     if typ not in typs:
