@@ -31,6 +31,9 @@ UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
 """iRODS path where all licenses will be stored."""
 
+IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
+"""iRODS path where the publication terms will be stored."""
+
 IIJSONMETADATA = 'yoda-metadata.json'
 """Name of metadata JSON file."""
 
