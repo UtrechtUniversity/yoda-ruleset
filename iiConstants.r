@@ -10,35 +10,17 @@
 # \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
 GENQMAXROWS = 256
 
-#\brief the length of the search string should be below 1075, as this hits the MAX_SQL_SIZE limit in iRODS.
-#       The search field is limited to 255 characters to be consistent with the metadata text field maxLength
-#       255 * 4 = 1020 bytes when all characters are 4 byte utf-8 encoded, like in chinese.
-#\constant IIMAXSEARCHSTRINGLENGTH
-IIMAXSEARCHSTRINGLENGTH = 1020;
-
 # \constant IIGROUPPREFIX
 IIGROUPPREFIX = "research-"
 
 # \constant IIVAULTPREFIX
 IIVAULTPREFIX = "vault-"
 
-# \constant IIGRPPREFIX
-IIGRPPREFIX = "grp-"
-
-# \constant IILICENSECOLLECTION
-IILICENSECOLLECTION = UUSYSTEMCOLLECTION ++ "/licenses"
-
 # \constant IITERMSCOLLECTION
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION ++ "/terms"
 
 # \constant IISCHEMACOLLECTION
 IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
-
-# \constant IITRANSFORMATIONCOLLECTION
-IITRANSFORMATIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/transformations"
-
-# \constant IIDEFAULTSCHEMANAME
-IIDEFAULTSCHEMANAME = "default"
 
 # \constant IIMETADATAJSONNAME Name of metadata JSON file
 IIJSONMETADATA = "yoda-metadata.json"
@@ -49,26 +31,8 @@ IIMETADATAXMLNAME = "yoda-metadata.xml"
 # \constant IIJSONNAME Name of the metadata JSON
 IIJSONNAME = "metadata.json"
 
-# \constant IIJSONNAME Name of the JSON UI schema
+# \constant IIJSONUINAME Name of the JSON UI schema
 IIJSONUINAME = "uischema.json"
-
-# \constant IIRESEARCHXSDNAME Name of the research XSD
-IIRESEARCHXSDNAME = "research.xsd"
-
-# \constant IIVAULTXSDNAME Name of the vault XSD
-IIVAULTXSDNAME = "vault.xsd"
-
-# \constant IIAVUXSLNAME Name of the AVU XSLT
-IIAVUXSLNAME = "avu.xsl"
-
-# \constant IIDATACITEXSLNAME Name of the datacite XSLT
-IIDATACITEXSLNAME = "datacite.xsl"
-
-# \constant IILANDINGPAGEXSLNAME Name of the landingpage XSLT
-IILANDINGPAGEXSLNAME = "landingpage.xsl"
-
-# \constant IIEMPTYLANDINGPAGEXSLNAME Name of the empty landingpage XSLT
-IIEMPTYLANDINGPAGEXSLNAME = "emptylandingpage.xsl"
 
 # \constant IIPUBLICATIONCOLLECTION
 IIPUBLICATIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/publication"
