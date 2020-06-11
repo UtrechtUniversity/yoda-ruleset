@@ -272,6 +272,10 @@ def ingest_metadata_staging(ctx, path):
     msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
     # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
+    #
+    # msiExecCmd is currently not usable from Python rule engine:
+    # https://github.com/irods/irods_rule_engine_plugin_python/issues/11
+    # msi.exec_cmd(ctx, "admin-vaultingest.sh", user.full_name(ctx), "", "", "", irods_types.ExecCmdOut())
     ctx.iiAdminVaultIngest()
 
 
