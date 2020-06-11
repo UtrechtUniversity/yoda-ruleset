@@ -25,7 +25,8 @@ __all__ = ['api_uu_vault_submit',
            'rule_uu_vault_write_license',
            'api_uu_vault_system_metadata',
            'api_uu_vault_collection_details',
-           'api_uu_vault_copy_to_research']
+           'api_uu_vault_copy_to_research',
+           'api_uu_vault_get_publication_terms']
 
 
 def submit(ctx, coll):
@@ -422,3 +423,28 @@ def api_uu_vault_collection_details(ctx, path):
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
             "research_path": research_path}
+
+
+@api.make()
+def api_uu_vault_get_publication_terms(ctx):
+    """Retrieve the publication terms."""
+    zone = user.zone(ctx)
+    terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)
+    terms = ""
+
+    iter = genquery.row_iterator(
+        "DATA_NAME, order_desc(DATA_MODIFY_TIME)",
+        "COLL_NAME = '{}'".format(terms_collection),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        terms = row[0]
+
+    if terms == "":
+        return api.Error('TermsNotFound', 'No Terms and Agreements found.')
+
+    try:
+        terms_file = "/{}{}/{}".format(zone, constants.IITERMSCOLLECTION, terms)
+        return data_object.read(ctx, terms_file)
+    except Exception:
+        return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
