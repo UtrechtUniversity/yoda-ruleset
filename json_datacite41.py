@@ -202,7 +202,8 @@ def getCreators(combi):
     creators = [El('creator',
                    El('creatorName', '{} {}'.format(creator['Name']['First_Name'], creator['Name']['Last_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in creator.get('Person_Identifier', [])]
+                       for pid in creator.get('Person_Identifier', [])
+                       if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
                    + [El('affiliation', x) for x in creator.get('Affiliation', [])])
                 for creator in combi.get('Creator', [])]
 
@@ -217,7 +218,8 @@ def getContributors(combi):
     contribs = [El('contributor',
                    El('contributorName', '{} {}'.format(person['Name']['First_Name'], person['Name']['Last_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in person.get('Person_Identifier', [])]
+                       for pid in creator.get('Person_Identifier', [])
+                       if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
                    + [El('affiliation', x) for x in person.get('Affiliation', [])],
                    contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))
 
