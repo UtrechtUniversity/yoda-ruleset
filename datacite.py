@@ -13,7 +13,8 @@ from util import *
 __all__ = ['rule_uu_generate_random_id',
            'rule_uu_register_doi_metadata',
            'rule_uu_register_doi_url',
-           'rule_uu_check_doi_availability']
+           'rule_uu_check_doi_availability',
+           'rule_uu_delete_doi_metadata']
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -30,7 +31,7 @@ def rule_uu_register_doi_metadata(ctx, payload):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
 
-    response = requests.post(url, auth=auth, data=payload, headers=headers)
+    response = requests.put(url, auth=auth, data=payload, headers=headers)
 
     return response.status_code
 
@@ -43,7 +44,7 @@ def rule_uu_register_doi_url(ctx, doi, url):
     payload = "doi={}\nurl={}".format(doi, url)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
 
-    response = requests.post(url, auth=auth, data=payload, headers=headers)
+    response = requests.put(url, auth=auth, data=payload, headers=headers)
 
     return response.status_code
 
@@ -54,6 +55,18 @@ def rule_uu_check_doi_availability(ctx, doi):
     url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
 
-    response = requests.post(url, auth=auth)
+    response = requests.get(url, auth=auth)
+
+    return response.status_code
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_uu_delete_doi_metadata(ctx, doi):
+    """Delete DOI metadata with DataCite."""
+    url = "{}/metadata/{}".format(config.datacite_url, doi)
+    auth = (config.datacite_username, config.datacite_password)
+    headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
+
+    response = requests.delete(url, auth=auth, headers=headers)
 
     return response.status_code

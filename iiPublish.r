@@ -235,7 +235,9 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
 
-	msiRemoveDataCiteMetadata(*yodaDOI, *httpCode);
+	*httpCode = "";
+	rule_uu_delete_doi_metadata(*yodaDOI, *httpCode);
+
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
@@ -574,6 +576,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 
 	*httpCode = ""
 	rule_uu_check_doi_availability(*yodaDOI, *httpCode)
+
 	if (*httpCode == "404") {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
