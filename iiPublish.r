@@ -571,7 +571,9 @@ iiSavePublicationState(*vaultPackage, *publicationState) {
 #
 iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
-	msiGetDataCiteDOI(*yodaDOI, *result, *httpCode);
+
+	*httpCode = ""
+	rule_uu_check_doi_availability(*yodaDOI, *httpCode)
 	if (*httpCode == "404") {
 		# DOI is available!
 		*publicationState.DOIAvailable = "yes";
@@ -582,7 +584,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 		*publicationState.status = "Retry";
 	} else if (*httpCode == "200" || *httpCode == "204") {
 		# DOI already in use.
-		writeLine("serverLog", "DOI *yodaDOI already in use.\n*result");
+		writeLine("serverLog", "DOI *yodaDOI already in use.");
 		*publicationState.DOIAvailable = "no";
 		*publicationState.status = "Retry";
 	}

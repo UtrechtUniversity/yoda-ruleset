@@ -12,7 +12,8 @@ from util import *
 
 __all__ = ['rule_uu_generate_random_id',
            'rule_uu_register_doi_metadata',
-           'rule_uu_register_doi_url']
+           'rule_uu_register_doi_url',
+           'rule_uu_check_doi_availability']
 
 
 @rule.make(inputs=[0], outputs=[1])
@@ -34,7 +35,7 @@ def rule_uu_register_doi_metadata(ctx, payload):
     return response.status_code
 
 
-@rule.make(inputs=[0,1], outputs=[2])
+@rule.make(inputs=[0, 1], outputs=[2])
 def rule_uu_register_doi_url(ctx, doi, url):
     """Register DOI url with DataCite."""
     url = "{}/doi".format(config.datacite_url)
@@ -43,5 +44,16 @@ def rule_uu_register_doi_url(ctx, doi, url):
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
 
     response = requests.post(url, auth=auth, data=payload, headers=headers)
+
+    return response.status_code
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_uu_check_doi_availability(ctx, doi):
+    """Check with DataCite if DOI is available."""
+    url = "{}/doi/{}".format(config.datacite_url, doi)
+    auth = (config.datacite_username, config.datacite_password)
+
+    response = requests.post(url, auth=auth)
 
     return response.status_code
