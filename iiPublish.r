@@ -210,9 +210,9 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiDataObjClose(*fd, *status);
 	msiBytesBufToStr(*buf, *dataCiteXml);
 
-        writeString('serverLog', *dataCiteXml);
+	*httpCode = "";
+	rule_uu_register_doi_metadata(*dataCiteXml, *httpCode);
 
-	msiRegisterDataCiteDOI(*dataCiteXml, *httpCode);
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
 		succeed;
@@ -263,8 +263,9 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 	*landingPageUrl = *publicationState.landingPageUrl;
 
-	*request = "doi=*yodaDOI\nurl=*landingPageUrl\n";
-	msiRegisterDataCiteDOI(*request, *httpCode);
+	*httpCode = "";
+	rule_uu_register_doi_url(*yodaDOI, *landingPageUrl, *httpCode);
+
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
 		*publicationState.DOIMinted = "yes";
