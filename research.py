@@ -38,7 +38,7 @@ def api_uu_research_folder_add(ctx,
                 "proc_status_info": "Please add a folder name"}
 
     try:
-        validate_filepath(coll_target)
+        validate_filepath(coll_target.decode('utf-8'))
     except ValidationError as e:
         return {"proc_status": "nok",
                 "proc_status_info": "This is not a correct folder name. Please choose another name for your folder"}
@@ -105,7 +105,7 @@ def api_uu_research_folder_rename(ctx,
                 "proc_status_info": "Please add a folder name"}
 
     try:
-        validate_filepath(coll_target)
+        validate_filepath(coll_target.decode('utf-8'))
     except ValidationError as e:
         return {"proc_status": "nok",
                 "proc_status_info": "This is not a correct folder name. Please choose another name for your folder"}
@@ -230,7 +230,7 @@ def api_uu_research_file_rename(ctx,
                 "proc_status_info": "Please add a file name"}
 
     try:
-        validate_filename(new_file_name)
+        validate_filename(new_file_name.decode('utf-8'))
     except Exception:
         return {"proc_status": "nok",
                 "proc_status_info": "This is not a valid file name. Please choose another name"}
