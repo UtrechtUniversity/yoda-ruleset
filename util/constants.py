@@ -28,6 +28,9 @@ UURESOURCETIERATTRNAME = UUORGMETADATAPREFIX + 'storage_tier'
 UUMETADATASTORAGEMONTH = UUORGMETADATAPREFIX + 'storage_data_month'
 """Metadata for calculated storage month."""
 
+UUPROVENANCELOG = UUORGMETADATAPREFIX + 'action_log'
+"""Provenance log item."""
+
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
 """iRODS path where all licenses will be stored."""
 

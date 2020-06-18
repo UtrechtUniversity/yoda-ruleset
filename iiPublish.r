@@ -847,7 +847,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	        iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
 
-		iiAddActionLogRecord("system", *vaultPackage, "publication updated");
+		rule_uu_provenance_log_action("system", *vaultPackage, "publication updated");
 	}
 }
 

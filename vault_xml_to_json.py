@@ -304,7 +304,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
     callback.msiDataObjClose(fileHandle, 0)
 
     # Add item to provenance log.
-    callback.iiAddActionLogRecord("system", vault_collection, "Transformed yoda-metadata.xml to yoda-metadata.json")
+    callback.rule_uu_provenance_log_action("system", vault_collection, "transformed yoda-metadata.xml to yoda-metadata.json")
 
     log.write(callback, "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
