@@ -1,43 +1,59 @@
 # -*- coding: utf-8 -*-
 """Functions for provenance handling."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
 import time
 
 from util import *
 
 __all__ = ['rule_uu_provenance_log_action',
+           'rule_uu_copy_provenance_log',
            'api_uu_provenance_log']
 
 
-def rule_uu_provenance_log_action(rule_args, callback, rei):
+@rule.make()
+def rule_uu_provenance_log_action(ctx, actor, coll, action):
     """
-    Frontend function to add action log record to specific folder.
+    Function to add action log record to provenance of specific folder.
 
-    :param actor: rodsaccount coming from yoda frontend
-    :param folder: folder the logging is linked to
-    :param action: the text that is logged
-
-    :returns: string -- JSON object with status info
+    :param actor: The actor of the action
+    :param coll: The collection the provenance log is linked to.
+    :param action: The action that is logged.
     """
-    actor, folder, action = rule_args[0:3]
+    try:
+        log_item = [str(int(time.time())), action, actor]
+        avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
+        log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+    except Exception:
+        log.write(ctx, "rule_uu_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
-    # actor to be reformatted to yoda user - name#zone
-    this_actor = actor.split(':')[0].replace('.', '#')
 
-    status = 'Success'
-    statusInfo = ''
+@rule.make()
+def rule_uu_copy_provenance_log(ctx, source, target):
+    """
+    Copy the provenance log of a collection to another collection.
 
-    def report(x):
-        # log.write(x)
-        callback.writeString("stdout", x)
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    try:
+        # Retrieve all provenance logs on source collection.
+        iter = genquery.row_iterator(
+            "order_desc(META_COLL_ATTR_VALUE)",
+            "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (source),
+            genquery.AS_LIST, ctx
+        )
 
-    callback.iiAddActionLogRecord(this_actor, folder, action)
+        # Set provenance logs on target collection.
+        for row in iter:
+            avu.associate_to_coll(ctx, target, constants.UUPROVENANCELOG, row[0])
 
-    report(jsonutil.dump({'status':     status,
-                          'statusInfo': statusInfo}))
+        log.write(ctx, "rule_uu_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
+    except Exception:
+        log.write(ctx, "rule_uu_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
 
 
 def get_provenance_log(ctx, coll):

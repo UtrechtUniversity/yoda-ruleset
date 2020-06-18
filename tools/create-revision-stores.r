@@ -30,16 +30,16 @@ createRevisionStores {
 			}
 
 			*count = 0;
-			# First process the main collection	
+			# First process the main collection
 			foreach(*row in SELECT COLL_NAME, DATA_NAME, DATA_RESC_NAME where COLL_NAME = *groupColl) {
 				*collName = *row.COLL_NAME;
 				*dataName = *row.DATA_NAME;
 				*resource = *row.DATA_RESC_NAME;
 				*path = "*collName/*dataName";
 
-				*skip = false;	
+				*skip = false;
 
-				foreach(*filter in UUBLACKLIST) {
+				foreach(*filter in UUBLOCKLIST) {
 					if (*dataName like *filter) {
 						writeLine("stdout", "Ignore *path for revision store. Filter *filter matches");
 						*skip = true;
@@ -64,7 +64,7 @@ createRevisionStores {
 
 					iiRevisionCreate(*resource, *path, UUMAXREVISIONSIZE, *id);
 					if (*id != "") {
-				        	writeLine("serverLog", "Revision created for *path with id: *id");	
+				        	writeLine("serverLog", "Revision created for *path with id: *id");
 					}
 
 					if (*objectReadPermission == 0) {
@@ -76,7 +76,7 @@ createRevisionStores {
 					*count = *count + 1;
 				}
 			}
-			# Then process the rest of the tree	
+			# Then process the rest of the tree
 			foreach(*row in SELECT COLL_NAME, DATA_NAME, DATA_RESC_NAME where COLL_NAME like "*groupColl/%") {
 				*collName = *row.COLL_NAME;
 				*dataName = *row.DATA_NAME;
@@ -85,7 +85,7 @@ createRevisionStores {
 
 				*skip = false;
 
-				foreach(*filter in UUBLACKLIST) {
+				foreach(*filter in UUBLOCKLIST) {
 					if (*dataName like *filter) {
 						writeLine("stdout", "Ignore *path for revision store. Filter *filter matches");
 						*skip = true;
@@ -106,9 +106,9 @@ createRevisionStores {
 
 					iiRevisionCreate(*resource, *path, UUMAXREVISIONSIZE, *id);
 					if (*id != "") {
-				        	writeLine("serverLog", "Revision created for *path with id: *id");	
+				        	writeLine("serverLog", "Revision created for *path with id: *id");
 					}
-					
+
 					if (*objectReadPermission == 0) {
 						writeLine("stdout", "Revoking read access to *path");
 						msiSetACL("default", "admin:null", uuClientFullName, *path);
@@ -118,7 +118,7 @@ createRevisionStores {
 					*count = *count + 1;
 				}
 			}
-			
+
 			writeLine("stdout", "*count revisions created");
 
 			# Remove the temporary read ACL
@@ -126,9 +126,9 @@ createRevisionStores {
 				writeLine("stdout", "Revoking read access to *groupColl");
 				msiSetACL("recursive", "admin:null", uuClientFullName, *groupColl);
 			}
-			
 
-					
+
+
 
 		}
 
