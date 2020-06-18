@@ -102,10 +102,11 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
         }
 
 	# *metadataJsonPath contains latest json
-	iiGetLatestVaultMetadataJson(*vaultPackage, *metadataJsonPath, *metadataJsonSize);
+	*metadataJsonPath = "";
+	rule_uu_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath):
 
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-        rule_uu_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
+	rule_uu_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
 
 	*publicationState.combiJsonPath = *combiJsonPath;
 }

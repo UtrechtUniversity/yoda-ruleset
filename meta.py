@@ -18,7 +18,8 @@ __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_clone_file',
            'rule_uu_meta_modified_post',
            'rule_uu_meta_datamanager_vault_ingest',
-           'rule_uu_meta_collection_has_cloneable_metadata']
+           'rule_uu_meta_collection_has_cloneable_metadata',
+           'rule_uu_get_latest_vault_metadata_path']
 
 
 def metadata_get_links(metadata):
@@ -123,7 +124,7 @@ def get_collection_metadata_path(callback, coll):
     return None
 
 
-def get_latest_vault_metadata_path(callback, vault_pkg_coll):
+def get_latest_vault_metadata_path(ctx, vault_pkg_coll):
     """
     Get the latest vault metadata JSON file.
 
@@ -136,7 +137,7 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
     iter = genquery.row_iterator(
         "DATA_NAME",
         "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(vault_pkg_coll),
-        genquery.AS_LIST, callback)
+        genquery.AS_LIST, ctx)
 
     for row in iter:
         data_name = row[0]
@@ -144,6 +145,12 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
             name = data_name
 
     return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
+
+
+rule_uu_get_latest_vault_metadata_path = (
+    rule.make(inputs=[0], outputs=[1],
+              transform=lambda x: x if type(x) is str else '')
+             (get_latest_vault_metadata_path))
 
 
 def rule_uu_meta_validate(rule_args, callback, rei):
