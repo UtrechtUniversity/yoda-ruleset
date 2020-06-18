@@ -164,7 +164,7 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
             temp = jsonutil.parse(attrValue)
             category = temp[0]
             tier = temp[1]
-            storage = int(temp[2])
+            storage = int(float(temp[2]))
 
             allStorage.append({'category': category,
                                'subcategory': subcategory,
