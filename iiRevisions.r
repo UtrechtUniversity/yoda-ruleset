@@ -20,7 +20,7 @@ uuResourceModifiedPostRevision(*resource, *rodsZone, *logicalPath) {
 		uuChopPath(*logicalPath, *parent, *basename);
 
 		*ignore = false;
-		foreach(*filter in UUBLACKLIST) {
+		foreach(*filter in UUBLOCKLIST) {
 			if (*basename like *filter) {
 				writeLine("serverLog", "uuResourceModifiedPostRevision: Ignore *basename for revision store. Filter *filter matches");
 				*ignore = true;
@@ -292,7 +292,7 @@ iiRevisionRemove(*revisionId) {
 #				If the file already exist the user needs to decide what to do.
 #				Function exits with corresponding status so front end can take action
 #				Options for user are:
-#                               - "restore_no_overwrite" 
+#                               - "restore_no_overwrite"
 #				- "restore_overwrite" -> overwrite the file
 #				- "restore_next_to" -> revision is places next to the file it conficted with by adding
 # \param[in] newFileName	Name as entered by user when chosing option 'restore_next_to'
