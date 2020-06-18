@@ -22,7 +22,7 @@ def rule_uu_provenance_log_action(ctx, actor, coll, action):
     :param coll: The collection the provenance log is linked to.
     :param action: The action that is logged.
     """
-    log = {str(int(time.time())), actor, action}
+    log = [str(int(time.time())), action, actor]
 
     avu.set_on_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log))
     log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
