@@ -277,7 +277,7 @@ iiCopyUserMetadata(*source, *destination) {
 
 }
 
-s
+
 # \brief Rule to grant read access to the vault package managed by a datamanger.
 #
 # \param[in] path
