@@ -31,6 +31,7 @@ def rule_uu_provenance_log_action(ctx, actor, coll, action):
         log.write(ctx, "rule_uu_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
+@rule.make()
 def rule_uu_copy_provenance_log(ctx, source, target):
     """
     Copy the provenance log of a collection to another collection.
@@ -48,11 +49,11 @@ def rule_uu_copy_provenance_log(ctx, source, target):
 
         # Set provenance logs on target collection.
         for row in iter:
-            avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, row[0])
+            avu.associate_to_coll(ctx, target, constants.UUPROVENANCELOG, row[0])
 
         log.write(ctx, "rule_uu_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
     except Exception:
-        log.write(ctx, "rule_uu_copy_provenance_log: failed to copy provenance log from <{}>".format(source, target))
+        log.write(ctx, "rule_uu_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
 
 
 def get_provenance_log(ctx, coll):
