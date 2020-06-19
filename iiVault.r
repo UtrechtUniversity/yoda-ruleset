@@ -277,23 +277,7 @@ iiCopyUserMetadata(*source, *destination) {
 
 }
 
-
-# \brief Copy the action log from the source to destination.
-#
-# \param[in] source
-# \param[in] destination
-#
-iiCopyActionLog(*source, *destination) {
-	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
-	       		WHERE META_COLL_ATTR_NAME = *actionLog
-		       	AND COLL_NAME = *source) {
-		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
-		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
-	}
-}
-
+s
 # \brief Rule to grant read access to the vault package managed by a datamanger.
 #
 # \param[in] path

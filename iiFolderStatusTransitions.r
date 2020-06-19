@@ -280,7 +280,7 @@ iiFolderSecure(*folder) {
 	}
 
 	# Copy provenance log.
-	iiCopyActionLog(*folder, *target);
+	rule_uu_copy_provenance_log(*folder, *target);
 
 	# Set vault permissions for new vault package.
 	iiSetVaultPermissions(*folder, *target);

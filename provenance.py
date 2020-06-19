@@ -10,6 +10,7 @@ import time
 from util import *
 
 __all__ = ['rule_uu_provenance_log_action',
+           'rule_uu_copy_provenance_log',
            'api_uu_provenance_log']
 
 
@@ -26,6 +27,29 @@ def rule_uu_provenance_log_action(ctx, actor, coll, action):
 
     avu.set_on_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log))
     log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+
+
+def rule_uu_copy_provenance_log(ctx, source, target):
+    """
+    Copy the provenance log of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    provenance_log = []
+
+    # Retrieve all provenance logs on source collection.
+    iter = genquery.row_iterator(
+        "order_desc(META_COLL_ATTR_VALUE)",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (source),
+        genquery.AS_LIST, ctx
+    )
+
+    # Set provenance logs on target collection.
+    for row in iter:
+        avu.set_on_coll(ctx, target, constants.UUPROVENANCELOG, log_item)
+
+    log.write(ctx, "rule_uu_copy_provenance_log: Copied provenance log from <{}> to <{}>)".format(source, target))
 
 
 def get_provenance_log(ctx, coll):
