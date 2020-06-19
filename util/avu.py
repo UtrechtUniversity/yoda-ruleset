@@ -38,6 +38,12 @@ def set_on_coll(ctx, coll, a, v):
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
 
 
+def associate_to_coll(ctx, coll, a, v):
+    """Associate key/value metadata on a collection."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+
+
 def rm_from_coll(ctx, coll, a, v):
     """Remove key/value metadata from a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())

@@ -23,10 +23,12 @@ def rule_uu_provenance_log_action(ctx, actor, coll, action):
     :param coll: The collection the provenance log is linked to.
     :param action: The action that is logged.
     """
-    log = [str(int(time.time())), action, actor]
-
-    avu.set_on_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log))
-    log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+    try:
+        log_item = [str(int(time.time())), action, actor]
+        avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
+        log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+    except Exception:
+        log.write(ctx, "rule_uu_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
 def rule_uu_copy_provenance_log(ctx, source, target):
@@ -36,20 +38,21 @@ def rule_uu_copy_provenance_log(ctx, source, target):
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
-    provenance_log = []
+    try:
+        # Retrieve all provenance logs on source collection.
+        iter = genquery.row_iterator(
+            "order_desc(META_COLL_ATTR_VALUE)",
+            "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (source),
+            genquery.AS_LIST, ctx
+        )
 
-    # Retrieve all provenance logs on source collection.
-    iter = genquery.row_iterator(
-        "order_desc(META_COLL_ATTR_VALUE)",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_action_log'" % (source),
-        genquery.AS_LIST, ctx
-    )
+        # Set provenance logs on target collection.
+        for row in iter:
+            avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, row[0])
 
-    # Set provenance logs on target collection.
-    for row in iter:
-        avu.set_on_coll(ctx, target, constants.UUPROVENANCELOG, log_item)
-
-    log.write(ctx, "rule_uu_copy_provenance_log: Copied provenance log from <{}> to <{}>)".format(source, target))
+        log.write(ctx, "rule_uu_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
+    except Exception:
+        log.write(ctx, "rule_uu_copy_provenance_log: failed to copy provenance log from <{}>".format(source, target))
 
 
 def get_provenance_log(ctx, coll):
