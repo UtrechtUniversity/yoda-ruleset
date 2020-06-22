@@ -250,7 +250,7 @@ iiFolderSecure(*folder) {
 
 	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
-	iiCopyUserMetadata(*folder, *target);
+	rule_uu_copy_user_metadata(*folder, *target);
 	rule_uu_vault_copy_original_metadata_to_vault(*target);
 	rule_uu_vault_write_license(*target);
 

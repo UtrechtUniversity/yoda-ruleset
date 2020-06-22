@@ -460,3 +460,28 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
             return
 
     set_result('Success', '')
+
+
+@rule.make()
+def rule_uu_copy_user_metadata(ctx, source, target):
+    """
+    Copy the user metadata of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    try:
+        # Retrieve all user metadata on source collection.
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}%'".format(source, constants.UUUSERMETADATAPREFIX),
+            genquery.AS_LIST, ctx
+        )
+
+        # Set user metadata on target collection.
+        for row in iter:
+            avu.associate_to_coll(ctx, target, row[0], row[1])
+
+        log.write(ctx, "rule_uu_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+    except Exception:
+        log.write(ctx, "rule_uu_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))
