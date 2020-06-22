@@ -19,7 +19,8 @@ __all__ = ['rule_uu_meta_validate',
            'rule_uu_meta_modified_post',
            'rule_uu_meta_datamanager_vault_ingest',
            'rule_uu_meta_collection_has_cloneable_metadata',
-           'rule_uu_get_latest_vault_metadata_path']
+           'rule_uu_get_latest_vault_metadata_path',
+           'rule_uu_copy_user_metadata']
 
 
 def metadata_get_links(metadata):
