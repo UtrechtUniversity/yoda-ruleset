@@ -7,6 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 
 from util import *
+import meta_form
+
 
 __all__ = ['api_uu_resource_groups_dm',
            'api_uu_resource_monthly_stats_dm',
@@ -14,7 +16,131 @@ __all__ = ['api_uu_resource_groups_dm',
            'api_uu_resource_monthly_stats',
            'api_uu_resource_resource_and_tier_data',
            'api_uu_resource_tier',
-           'rule_uu_resource_month_storage_per_tier_for_group']
+           'api_uu_resource_get_tiers',
+           'api_uu_resource_save_tier',
+           'api_uu_resource_user_get_type',
+           'api_uu_resource_user_research_groups',
+           'api_uu_resource_user_is_datamanager',
+           'api_uu_resource_full_year_group_data']
+
+
+@api.make()
+def api_uu_resource_save_tier(ctx, resource_name, tier_name):
+    # Example receive variables: uuGroupGetCategory(group, '', '')['arguments'][1]
+    if user.user_type(ctx) != 'rodsadmin':
+        return {'status': 'not_allowed',
+                'status_info': 'Insufficient permissions'}
+
+    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '') #  ['arguments'][2]!='0':
+
+    return {'status': res['arguments'][2],
+            'status_info': res['arguments'][3] }
+
+
+@api.make()
+def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
+    # Check permissions for this function
+    # Member of this group?
+    member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
+    if member_type not in ['reader', 'normal', 'manager']:
+	# If not member, possibly datamanager?
+    	category = meta_form.group_category(ctx, group_name)
+    	if not meta_form.user_is_datamanager(ctx, category, user.full_name(ctx)):
+             if user.user_type(ctx) != 'rodsadmin':    
+                 return api.Error('not_allowed', 'Insufficient permissions')
+
+    allStorage = []  # list of all month-tier combinations present including their storage size
+
+    # per month gather month/tier/storage information from metadata:
+    # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
+    # metadata-attr-val = [category,tier,storage] ... only tier and storage required within this code
+    for counter in range(0, 11):
+        referenceMonth = current_month - counter
+        if referenceMonth < 1:
+            referenceMonth = referenceMonth + 12
+
+        metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
+
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
+            "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + group_name + "'",
+            genquery.AS_LIST, ctx
+        )
+
+        for row in iter:
+            data = jsonutil.parse(row[0])
+
+            tierName = data[1]
+            data_size = data[2]  # no construction for summation required in this case
+
+            key = 'month=' + str(referenceMonth) + '-tier=' + tierName
+            allStorage.append({key: data_size})
+
+    return allStorage
+
+
+@api.make()
+def api_uu_resource_user_get_type(ctx):
+    return user.user_type(ctx)
+
+
+@api.make()
+def api_uu_resource_user_research_groups(ctx):
+    groups = []
+    user_name = user.name(ctx)
+    user_zone = user.zone(ctx)
+
+
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME",
+        "USER_NAME = '" + user_name + "' AND  USER_ZONE = '" + user_zone + "'",
+        genquery.AS_LIST, ctx
+    )
+
+
+    for row in iter:
+        if row[0].startswith('research-'):
+            groups.append(row[0])
+
+    groups.sort()
+    return groups
+
+
+@api.make()
+def api_uu_resource_user_is_datamanager(ctx):
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        group_name = row[0]
+        #return group_name
+        if group.exists(ctx, group_name) and user.is_member_of(ctx, group_name):
+            return 'yes'
+
+    return 'no'
+
+
+@api.make()
+def api_uu_resource_get_tiers(ctx):
+    if user.user_type(ctx) != 'rodsadmin':
+        return api.Error('not_allowed', 'Insufficient permissions')
+
+    tiers = [constants.UUDEFAULTRESOURCETIER]
+
+    iter = genquery.row_iterator(
+        "META_RESC_ATTR_VALUE",
+        "META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if not row[0]==constants.UUDEFAULTRESOURCETIER:
+            tiers.append(row[0])
+
+    return tiers
 
 
 @api.make()
@@ -51,46 +177,6 @@ def api_uu_resource_resource_and_tier_data(ctx):
     return resourceList
 
 
-def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
-    """
-    Get json representation for storage data for a period of 12 months for a specific group.
-
-    Storage is per month and tier
-    Format is "month=12-tier=Standard": "222222222222"
-    """
-    groupName = rule_args[0]
-    currentMonth = int(rule_args[1])  # this is the month that came from the frontend
-
-    allStorage = []  # list of all month-tier combinations present including their storage size
-
-    # per month gather month/tier/storage information from metadata:
-    # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
-    # metadata-attr-val = [category,tier,storage] ... only tier and storage required within this code
-    for counter in range(0, 11):
-        referenceMonth = currentMonth - counter
-        if referenceMonth < 1:
-            referenceMonth = referenceMonth + 12
-
-        metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, referenceMonth)
-
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-            genquery.AS_LIST, callback
-        )
-
-        for row in iter:
-            data = jsonutil.parse(row[0])
-
-            tierName = data[1]
-            data_size = data[2]  # no construction for summation required in this case
-
-            key = 'month=' + str(referenceMonth) + '-tier=' + tierName
-            allStorage.append({key: data_size})
-
-    rule_args[2] = jsonutil.dump(allStorage)
-
-
 @api.make()
 def api_uu_resource_monthly_stats(ctx):
     """Collect storage data for all categories."""
@@ -117,6 +203,7 @@ def api_uu_resource_groups_dm(ctx):
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
 
+    all_group = []
     return getGroupsOnCategories(categories, ctx)
 
 
@@ -266,20 +353,19 @@ def getGroupsOnCategories(categories, callback):
 
         for row in iter:
             groupName = row[0]
+            if groupName.startswith('research-'):
+                iter2 = genquery.row_iterator(
+                    "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
+                    "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
+                    genquery.AS_LIST, callback
+                )
 
-            iter2 = genquery.row_iterator(
-                "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-                "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-                genquery.AS_LIST, callback
-            )
-
-            data_size = 0
-            for row in iter2:
-                data = row[0]
-                temp = jsonutil.parse(data)
-                data_size = data_size + int(temp[2])  # no construction for summation required in this case
-
-            groups.append([groupName, data_size])
+                data_size = 0
+                for row in iter2:
+                    data = row[0]
+                    temp = jsonutil.parse(data)
+                    data_size = data_size + int(temp[2])  # no construction for summation required in this case
+                groups.append([groupName, data_size])
 
     return groups
 
@@ -303,8 +389,6 @@ def getCategoriesDatamanager(datamanagerName, callback):
     return categories
 
 
-# \brief
-#
 def getCategories(callback):
     """Get all categories currently present."""
     categories = []

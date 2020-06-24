@@ -12,200 +12,8 @@
 # A tier is added as metadata to a resources
 # A resources can only have 1 tier.
 
-# FRONT END FUNCTIONS TO BE CALLED FROM PHP WRAPPER
 
-# \brief Collect all groups current user is a member of. Read only groups count as well.
-#
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-#
-uuFrontEndGetUserGroupsForStatistics(*data, *status, *statusInfo)
-{
-	*status = 'Success';
-	*statusInfo = '';
-
-	# include read only groups as well
-	uuUserGetGroups(uuClientFullName, true, *allUserGroups);
-
-	uuList2JSON(*allUserGroups, *data);
-}
-
-
-# \brief Return an overview that covers a year of storage statistics on a group
-#        It returns a key value pair that is indexed with combination of month/tier data as a key
-#
-# \param[in]  *groupName	-Name of group storage statistics have to be gathered
-# \param[in]  *currentMonth	-Central month that defines the start of the monthly list
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-#
-uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *statusInfo)
-{
-	*status = 'Success';
-	*statusInfo = '';
-
-        *data = '';
-
-        uuGroupGetCategory(*groupName, *category, *subcategory);
-
-
-	uuGroupUserExists(*groupName, uuClientFullName, true, *membership);
-
-	if (!*membership) {
-                # Possibly datamanager of current group without actually being in the group
-                uuIsDatamanagerOfGroup(*groupName, *isDatamanager);
-                if (!*isDatamanager) {
-		    # check whether user is member of group
-		    *status = 'ERROR_NO_GROUP_MEMBER';
-		    *statusInfo = 'User is not a member of group ' ++ *groupName;
-		    succeed;
-                }
-	}
-
-        *data = ''
-        rule_uu_resource_month_storage_per_tier_for_group(*groupName, *currentMonth, *data);
-}
-
-
-# \brief List available resources and their tier & storage data
-#
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-#
-uuFrontEndListResourceTiers(*data, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-
-        *allResourceTiers = uuListResourceTiers(*result, *errorInfo);
-
-	uuList2JSON(*allResourceTiers, *data);
-}
-
-# \brief sets (creates/updates) tier as metadata for given resource
-#
-# \param[out] *data             -return actual requested data if applicable
-# \param[out] *status           -return status to frontend
-# \param[out] *statusInfo       -return specific information regarding *status
-# \param[in]  *resourceName
-# \param[in]  *tierName
-#
-uuFrontEndSetResourceTier(*resourceName, *tierName, *data, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        uuGetUserType(uuClientFullName, *userType);
-        if (*userType != "rodsadmin"){
-                *status = 'NoPermissions';
-                *statusInfo = 'Insufficient permissions';
-                succeed;
-        }
-
-        uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo);
-
-        *data = ''; # N/A for this situation
-
-        if (*result < 0) {
-		if (*result == -1) {
-        	        *status = 'NotExists';
-               		*statusInfo = 'Resource does not exist';
-        	}
-        	else {
-               		*status = 'UNRECOVERABLE';
-               		*statusInfo = *errorInfo; # use the info from within the function
-        	}
-	}
-}
-
-
-# \brief uuGetExportDMCategoryStorageFullYear()
-#
-# FrontEnd function for retrieving storage overview for a datamanager including all detail information for one full year:
-#  - Category
-#  - Subcategory
-#  - Groupname
-#  - Tier
-#  - 12 columns, one per month, with used storage count in bytes
-
-# \param[out] *result - JSON data with category overview
-# \param[out] *status -
-# \param[out] *statusInfo
-#
-uuGetExportDMCategoryStorageFullYear(*result, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-        *result = '[]';
-
-        rule_uu_resource_monthly_category_stats_export_dm(uuClientFullName, *result);
-}
-
-
-# \brief Front end function for retrieving storage overview for a datamanager
-#
-# \param[out] *isDatamanager {'yes', 'no'}
-# \param[out] *status
-# \param[out] *statusInfo
-#
-uuUserIsDatamanager(*isDatamanager, *status, *statusInfo)
-{
-        *status = 'Success';
-        *statusInfo = '';
-
-	*isDatamanager = 'no';
-
-        *user = uuClientFullName;
-        # Get categories with datamanager groups
-        foreach (
-                *row in
-                SELECT USER_NAME
-                WHERE  USER_TYPE            = 'rodsgroup'
-                        AND USER_NAME like 'datamanager-%%'
-        ) {
-                *datamanagerGroupName = *row.USER_NAME;
-                uuGroupUserExists(*datamanagerGroupName, *user, true, *membership)
-		if (*membership) {
-			*isDatamanager = 'yes';
-			succeed;
-                }
-        }
-}
-
-
-#------------------------------------------ End of front end functions
-#------------------------------------------ Start of supporting functions that probably exist already somewhere
-
-# \brief Check whether user is datamanager of groups category
-#
-# \param[in] *groupName
-# \param[out] *isDatamanager
-#
-uuIsDatamanagerOfGroup(*groupName, *isDatamanager)
-{
-        uuGroupGetCategory(*groupName, *category, *subcategory);
-        *isDatamanager = false;
-
-        writeLine("serverLog", "Category: " ++ *category ++ "for " ++ *groupName);
-
-        uuGroupUserExists('datamanager-' ++ *category, uuClientFullName, true, *membership)
-        if (*membership) {
-            *isDatamanager = true;
-        }
-}
-
-# \brief uuResourceExistst - check whether given resource actually exists ----- LEAVE UNCHANGED
+# \brief uuResourceExistst - check whether given resource actually exists
 #
 # \param[in] *resourceName
 # \param[out] *exists
@@ -229,13 +37,13 @@ uuResourceExists(*resourceName, *exists)
 #
 uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 {
-	*result = 0;
+	*result = 'ok';
 
 	# 1)First check whether resource actually exists
         uuResourceExists(*resourceName, *rescExists)
 
         if (!*rescExists) {
-                *result = -1; # Resource does not exist.
+                *result = '-1'; # Resource does not exist.
 		*errorInfo = 'Resource *resourceName does not exist';
                 succeed;
         }
@@ -255,7 +63,7 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
                 *err = msiAssociateKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
 
 		if (*err!=0 ) {
-			*result=-999;
+			*result='-999';
 			*errorInfo = 'Something went wrong adding tier metadata';
 			succeed;
 		}
@@ -264,7 +72,7 @@ uuSetResourceTier(*resourceName, *tierName, *result, *errorInfo)
 		*err = msiSetKeyValuePairsToObj( *kvpResc, *resourceName, "-R");
 
 		if (*err!=0 ) {
-                        *result=-999;
+                        *result='-999';
                         *errorInfo = 'Something went wrong updating tier metadata';
                         succeed;
                 }
@@ -479,6 +287,7 @@ uuStoreMonthlyStorageStatistics(*status, *statusInfo)
 	}
 }
 
+
 # \brief Returns the number of the month {'01',...'12'} that currently is the month reporting is about.
 #
 uuGetCurrentStatisticsMonth()
@@ -493,7 +302,6 @@ uuGetCurrentStatisticsMonth()
 	}
 	*strMonth;
 }
-
 
 
 # \brief Returns *kvp with resourceName as key and tierName as value.
@@ -520,6 +328,7 @@ uuKvpResourceAndTiers()
 
 	*kvp;
 }
+
 
 # \brief Get a list of all known categories where current user is datamanager of.
 #        Returns list of categories for this user as a datamanager.
@@ -563,6 +372,7 @@ uuListCategoriesDatamanager()
 	*listCategories;
 }
 
+
 # \brief Get a list of all known categories
 #
 uuListCategories()
@@ -576,6 +386,7 @@ uuListCategories()
         }
 	*listCategories;
 }
+
 
 # \brief List of groups.
 #
