@@ -26,15 +26,14 @@ __all__ = ['api_uu_resource_groups_dm',
 
 @api.make()
 def api_uu_resource_save_tier(ctx, resource_name, tier_name):
-    # Example receive variables: uuGroupGetCategory(group, '', '')['arguments'][1]
     if user.user_type(ctx) != 'rodsadmin':
         return {'status': 'not_allowed',
                 'status_info': 'Insufficient permissions'}
 
-    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '') #  ['arguments'][2]!='0':
+    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '')
 
     return {'status': res['arguments'][2],
-            'status_info': res['arguments'][3] }
+            'status_info': res['arguments'][3]}
 
 
 @api.make()
@@ -43,11 +42,10 @@ def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
     # Member of this group?
     member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
     if member_type not in ['reader', 'normal', 'manager']:
-	# If not member, possibly datamanager?
-    	category = meta_form.group_category(ctx, group_name)
-    	if not meta_form.user_is_datamanager(ctx, category, user.full_name(ctx)):
-             if user.user_type(ctx) != 'rodsadmin':    
-                 return api.Error('not_allowed', 'Insufficient permissions')
+        category = meta_form.group_category(ctx, group_name)
+        if not meta_form.user_is_datamanager(ctx, category, user.full_name(ctx)):
+            if user.user_type(ctx) != 'rodsadmin':
+                return api.Error('not_allowed', 'Insufficient permissions')
 
     allStorage = []  # list of all month-tier combinations present including their storage size
 
@@ -90,13 +88,11 @@ def api_uu_resource_user_research_groups(ctx):
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
-
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
         "USER_NAME = '" + user_name + "' AND  USER_ZONE = '" + user_zone + "'",
         genquery.AS_LIST, ctx
     )
-
 
     for row in iter:
         if row[0].startswith('research-'):
@@ -116,7 +112,6 @@ def api_uu_resource_user_is_datamanager(ctx):
 
     for row in iter:
         group_name = row[0]
-        #return group_name
         if group.exists(ctx, group_name) and user.is_member_of(ctx, group_name):
             return 'yes'
 
@@ -137,7 +132,7 @@ def api_uu_resource_get_tiers(ctx):
     )
 
     for row in iter:
-        if not row[0]==constants.UUDEFAULTRESOURCETIER:
+        if not row[0] == constants.UUDEFAULTRESOURCETIER:
             tiers.append(row[0])
 
     return tiers
