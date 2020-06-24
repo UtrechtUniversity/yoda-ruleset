@@ -72,7 +72,11 @@ def transform_research_xml(callback, xml_path):
     try:
         json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
         schem = jsonutil.read(callback, json_schema_path)
+    except error.UUFileNotExistError:
+        return api.Error('missing_schema',
+                         'Metadata schema for default-0 is needed for XML transformation. Please contact an administrator.')
 
+    try:
         # FIXME: This should get a dict instead of a json string.
         metadata = jsonutil.parse(vault_xml_to_json.transformYodaXmlDataToJson(callback, schem, xml_data))
         # FIXME: schema id should be inserted by the transformer instead.
