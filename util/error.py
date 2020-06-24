@@ -11,3 +11,7 @@ class UUError(Exception):
 
 class UUFileSizeError(UUError):
     """File size limit exceeded."""
+
+
+class UUFileNotExistError(UUError):
+    """File does not exist."""
