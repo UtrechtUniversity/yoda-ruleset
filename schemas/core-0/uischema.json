@@ -15,7 +15,7 @@
   "Creator": {
     "items": {
       "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name",
+        "ui:help": "The name of the person(s) who created (a version of) the data package.",
         "First_Name": {
           "ui:help": "The first name of the person(s) who created (a version of) the data package"
         },
