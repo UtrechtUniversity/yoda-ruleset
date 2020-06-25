@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with AVUs."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -36,6 +36,12 @@ def set_on_coll(ctx, coll, a, v):
     """Set key/value metadata on a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+
+
+def associate_to_coll(ctx, coll, a, v):
+    """Associate key/value metadata on a collection."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
 
 
 def rm_from_coll(ctx, coll, a, v):

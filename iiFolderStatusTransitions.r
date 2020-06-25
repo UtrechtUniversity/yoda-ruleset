@@ -38,7 +38,7 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 #
 iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == SUBMITTED) {
-		iiAddActionLogRecord(*actor, *folder, "submitted for vault");
+		rule_uu_provenance_log_action(*actor, *folder, "submitted for vault");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
@@ -48,9 +48,9 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
-			iiAddActionLogRecord(*actor, *folder, "accepted for vault");
+			rule_uu_provenance_log_action(*actor, *folder, "accepted for vault");
 		} else {
-			iiAddActionLogRecord("system", *folder, "accepted for vault");
+			rule_uu_provenance_log_action("system", *folder, "accepted for vault");
 		}
 
 		# Set cronjob state.
@@ -65,20 +65,20 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 			msi_json_arrayops(*actionLog, *log, "get", *size - 1);
 			msi_json_arrayops(*log, *log, "get", 1);
 			if (*log == "submitted for vault") {
-				iiAddActionLogRecord(*actor, *folder, "unsubmitted for vault");
+				rule_uu_provenance_log_action(*actor, *folder, "unsubmitted for vault");
 				succeed;
 			}
 		}
-		iiAddActionLogRecord(*actor, *folder, "unlocked");
+		rule_uu_provenance_log_action(*actor, *folder, "unlocked");
 	}
 	on (*newFolderStatus == LOCKED) {
-		iiAddActionLogRecord(*actor, *folder, "locked");
+		rule_uu_provenance_log_action(*actor, *folder, "locked");
 	}
 	on (*newFolderStatus == REJECTED) {
-		iiAddActionLogRecord(*actor, *folder, "rejected for vault");
+		rule_uu_provenance_log_action(*actor, *folder, "rejected for vault");
 	}
 	on (*newFolderStatus == SECURED) {
-		iiAddActionLogRecord("system", *folder, "secured in vault");
+		rule_uu_provenance_log_action("system", *folder, "secured in vault");
 	}
 	on (true) {
 		nop;
@@ -250,7 +250,7 @@ iiFolderSecure(*folder) {
 
 	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
-	iiCopyUserMetadata(*folder, *target);
+	rule_uu_copy_user_metadata(*folder, *target);
 	rule_uu_vault_copy_original_metadata_to_vault(*target);
 	rule_uu_vault_write_license(*target);
 
@@ -280,7 +280,7 @@ iiFolderSecure(*folder) {
 	}
 
 	# Copy provenance log.
-	iiCopyActionLog(*folder, *target);
+	rule_uu_copy_provenance_log(*folder, *target);
 
 	# Set vault permissions for new vault package.
 	iiSetVaultPermissions(*folder, *target);
@@ -337,24 +337,6 @@ iiSaveEpicPID(*target, *url, *pid) {
 	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 }
 
-# \brief iiAddActionLogRecord
-#
-# \param[in] actor
-# \param[in] folder
-# \param[in] action
-#
-iiAddActionLogRecord(*actor, *folder, *action) {
-	msiGetIcatTime(*timestamp, "icat");
-	writeLine("serverLog", "iiAddActionLogRecord: *actor has *action *folder");
-        *json_str = "[]";
-        *size = 0;
-        msi_json_arrayops(*json_str, *timestamp, "add", *size);
-        msi_json_arrayops(*json_str, *action, "add", *size);
-        msi_json_arrayops(*json_str, *actor, "add", *size);
-	msiString2KeyValPair("", *kvp);
-	msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "action_log", *json_str);
-	*status = errorcode(msiAssociateKeyValuePairsToObj(*kvp, *folder, "-C"));
-}
 
 # \brief iiActionLog
 #

@@ -18,7 +18,9 @@ __all__ = ['rule_uu_meta_validate',
            'api_uu_meta_clone_file',
            'rule_uu_meta_modified_post',
            'rule_uu_meta_datamanager_vault_ingest',
-           'rule_uu_meta_collection_has_cloneable_metadata']
+           'rule_uu_meta_collection_has_cloneable_metadata',
+           'rule_uu_get_latest_vault_metadata_path',
+           'rule_uu_copy_user_metadata']
 
 
 def metadata_get_links(metadata):
@@ -123,7 +125,7 @@ def get_collection_metadata_path(callback, coll):
     return None
 
 
-def get_latest_vault_metadata_path(callback, vault_pkg_coll):
+def get_latest_vault_metadata_path(ctx, vault_pkg_coll):
     """
     Get the latest vault metadata JSON file.
 
@@ -136,7 +138,7 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
     iter = genquery.row_iterator(
         "DATA_NAME",
         "COLL_NAME = '{}' AND DATA_NAME like 'yoda-metadata[%].json'".format(vault_pkg_coll),
-        genquery.AS_LIST, callback)
+        genquery.AS_LIST, ctx)
 
     for row in iter:
         data_name = row[0]
@@ -144,6 +146,12 @@ def get_latest_vault_metadata_path(callback, vault_pkg_coll):
             name = data_name
 
     return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
+
+
+rule_uu_get_latest_vault_metadata_path = (
+    rule.make(inputs=[0], outputs=[1],
+              transform=lambda x: x if type(x) is str else '')
+             (get_latest_vault_metadata_path))
 
 
 def rule_uu_meta_validate(rule_args, callback, rei):
@@ -413,7 +421,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     callback.rule_uu_vault_write_license(vault_pkg_path)
 
     # Log actions.
-    callback.iiAddActionLogRecord(actor, vault_pkg_path, 'modified metadata')
+    callback.rule_uu_provenance_log_action(actor, vault_pkg_path, 'modified metadata')
 
     # Cleanup staging area.
     try:
@@ -453,3 +461,28 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
             return
 
     set_result('Success', '')
+
+
+@rule.make()
+def rule_uu_copy_user_metadata(ctx, source, target):
+    """
+    Copy the user metadata of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    try:
+        # Retrieve all user metadata on source collection.
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}%'".format(source, constants.UUUSERMETADATAPREFIX),
+            genquery.AS_LIST, ctx
+        )
+
+        # Set user metadata on target collection.
+        for row in iter:
+            avu.associate_to_coll(ctx, target, row[0], row[1])
+
+        log.write(ctx, "rule_uu_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+    except Exception:
+        log.write(ctx, "rule_uu_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))

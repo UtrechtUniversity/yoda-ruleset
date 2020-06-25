@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for creating API rules.
 
-For example usage, see make() or rules_demo/test1.py
+For example usage, see make().
 """
 
 __copyright__ = 'Copyright (c) 2019, Utrecht University'

@@ -260,40 +260,6 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 }
 
 
-# \brief Copy user metadata from source to destination.
-#
-# \param[in] source
-# \param[in] destination
-#
-iiCopyUserMetadata(*source, *destination) {
-	*userMetadataPrefix = UUUSERMETADATAPREFIX ++ "%";
-	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
-			WHERE COLL_NAME = *source
-			AND META_COLL_ATTR_NAME like *userMetadataPrefix) {
-		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
-		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
-	}
-
-}
-
-
-# \brief Copy the action log from the source to destination.
-#
-# \param[in] source
-# \param[in] destination
-#
-iiCopyActionLog(*source, *destination) {
-	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-	foreach(*row in SELECT META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE
-	       		WHERE META_COLL_ATTR_NAME = *actionLog
-		       	AND COLL_NAME = *source) {
-		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, *row.META_COLL_ATTR_NAME, *row.META_COLL_ATTR_VALUE);
-		msiAssociateKeyValuePairsToObj(*kvp, *destination, "-C");
-	}
-}
-
 # \brief Rule to grant read access to the vault package managed by a datamanger.
 #
 # \param[in] path

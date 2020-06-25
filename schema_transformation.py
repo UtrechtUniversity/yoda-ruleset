@@ -41,7 +41,7 @@ def execute_transformation(callback, metadata_path, transform):
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
         jsonutil.write(callback, new_path, metadata)
         copy_acls_from_parent(callback, new_path, "default")
-        callback.iiAddActionLogRecord("system", coll, "updated metadata schema")
+        callback.rule_uu_provenance_log_action("system", coll, "updated metadata schema")
         log.write(callback, "Transformed %s" % (new_path))
     else:
         assert False
