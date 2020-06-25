@@ -58,7 +58,7 @@ uuReplicateBatch() {
         if (size(*xs) == 2) {
             *from = elem(*xs, 0);
             *to   = elem(*xs, 1);
-            *opts = "rescName=*from++++destRescName=*to++++irodsAdmin=";
+            *opts = "rescName=*from++++destRescName=*to++++irodsAdmin=++++verifyChksum=";
             *replstatus = errorcode(msiDataObjRepl(*path, *opts, *s));
 
             *kv.*attr = "*from,*to";
