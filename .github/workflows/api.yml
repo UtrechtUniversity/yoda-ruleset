@@ -1,6 +1,9 @@
 name: API
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - development
 
 jobs:
   build:
