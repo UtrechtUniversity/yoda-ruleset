@@ -17,11 +17,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip pip install -r requirements.txt
+
       - name: Generate OpenAPI documentation
         run: |
-          pwd
-          ls -la
           export PYTHONPATH="${PYTHONPATH}:."
-          echo $PYTHONPATH
           ln -s . rules_uu
           python tools/generate-openapi.py rules_uu
