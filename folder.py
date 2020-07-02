@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import policies_folder_status
@@ -55,16 +55,20 @@ def set_status_as_datamanager(ctx, coll, status):
         return api.Error(*res['arguments'][1:])
 
 
-def lock(ctx, coll):
-    """Lock a folder.
+@api.make()
+def api_uu_folder_lock(ctx, coll):
+    """
+    Lock a folder.
 
     :param coll: Folder to lock.
     """
     return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
 
-def unlock(ctx, coll):
-    """Unlock a folder.
+@api.make()
+def api_uu_folder_unlock(ctx, coll):
+    """
+    Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
     can also represent other state changes than "unlock", we perform a sanity
@@ -80,16 +84,20 @@ def unlock(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
-def submit(ctx, coll):
-    """Submit a folder.
+@api.make()
+def api_uu_folder_submit(ctx, coll):
+    """
+    Submit a folder.
 
     :param coll: Folder to submit.
     """
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
-def unsubmit(ctx, coll):
-    """Unsubmit a folder.
+@api.make()
+def api_uu_folder_unsubmit(ctx, coll):
+    """
+    Unsubmit a folder.
 
     :param coll: Folder to unsubmit.
     """
@@ -100,36 +108,34 @@ def unsubmit(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
-def accept(ctx, coll):
-    """Accept a folder.
+@api.make()
+def api_uu_folder_accept(ctx, coll):
+    """
+    Accept a folder.
 
     :param coll: Folder to accept.
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
 
-def reject(ctx, coll):
-    """Reject a folder.
+@api.make()
+def api_uu_folder_reject(ctx, coll):
+    """
+    Reject a folder.
 
     :param coll: Folder to reject.
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
-def secure(ctx, coll):
-    """Secure a folder.
+@api.make()
+def api_uu_folder_secure(ctx, coll):
+    """
+    Secure a folder.
 
     :param coll: Folder to secure.
     """
     ctx.iiFolderSecure(coll)
-
-
-api_uu_folder_lock     = api.make()(lock)
-api_uu_folder_unlock   = api.make()(unlock)
-api_uu_folder_submit   = api.make()(submit)
-api_uu_folder_unsubmit = api.make()(unsubmit)
-api_uu_folder_accept   = api.make()(accept)
-api_uu_folder_reject   = api.make()(reject)
 
 
 def collection_group_name(callback, coll):
