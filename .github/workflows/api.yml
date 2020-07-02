@@ -1,0 +1,27 @@
+name: API
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [2.7]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Generate OpenAPI documentation
+        run: |
+          pwd
+          ls -la
+          export PYTHONPATH="${PYTHONPATH}:."
+          echo $PYTHONPATH
+          ln -s . rules_uu
+          python tools/generate-openapi.py rules_uu
