@@ -23,6 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          python -m pip install openapi-spec-validator
           python -m pip install -r requirements.txt
 
       - name: Generate OpenAPI documentation
@@ -31,6 +32,10 @@ jobs:
           export PYTHONPATH="${PYTHONPATH}:."
           ln -s . rules_uu
           python tools/generate-openapi.py rules_uu > build/api.json
+
+      - name: Validate OpenAPI
+        run: |
+          openapi-spec-validator build/api.json
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
