@@ -93,7 +93,7 @@ try:
     # Import the ruleset.
     ruleset_mod = import_module(ruleset_name)
 except Exception as e:
-    print('Could not import ruleset <{}>: {}'.format(ruleset_name, e))
+    print('Could not import ruleset <{}>: {}'.format(ruleset_name, e), file=sys.stderr)
     raise
 
 
