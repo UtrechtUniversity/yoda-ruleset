@@ -22,7 +22,7 @@ def api_uu_browse_folder(ctx,
                          sort_order='asc',
                          offset=0,
                          limit=10,
-                         space=pathutil.Space.OTHER):
+                         space=pathutil.Space.OTHER.value):
     """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -101,7 +101,7 @@ def api_uu_browse_collections(ctx,
                               sort_order='asc',
                               offset=0,
                               limit=10,
-                              space=pathutil.Space.OTHER):
+                              space=pathutil.Space.OTHER.value):
     """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
