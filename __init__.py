@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """iRODS ruleset containing rules and policies useful for all Yoda environments."""
 
+__version__   = '1.6.1'
 __copyright__ = 'Copyright (c) 2015-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
