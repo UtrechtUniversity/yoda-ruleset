@@ -181,6 +181,9 @@ def gen_fn_spec(name, fn):
     doc = re.sub(r'^\s*:param.*?\n', '', doc, flags=re.M|re.S)
     doc = re.sub(r'^\s*:type.*?\n',  '', doc, flags=re.M|re.S)
 
+    # Only retrieve summary.
+    doc = re.sub(r'^\s*[\r\n].*', '', doc, flags=re.M|re.S)
+
     req = list(required)
     props = O(*[(name, { 'type':        paramdocs[name][0],
                          'description': paramdocs[name][1],

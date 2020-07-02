@@ -57,8 +57,7 @@ def set_status_as_datamanager(ctx, coll, status):
 
 @api.make()
 def api_uu_folder_lock(ctx, coll):
-    """
-    Lock a folder.
+    """Lock a folder.
 
     :param coll: Folder to lock.
     """
@@ -67,8 +66,7 @@ def api_uu_folder_lock(ctx, coll):
 
 @api.make()
 def api_uu_folder_unlock(ctx, coll):
-    """
-    Unlock a folder.
+    """Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
     can also represent other state changes than "unlock", we perform a sanity
@@ -86,8 +84,7 @@ def api_uu_folder_unlock(ctx, coll):
 
 @api.make()
 def api_uu_folder_submit(ctx, coll):
-    """
-    Submit a folder.
+    """Submit a folder.
 
     :param coll: Folder to submit.
     """
@@ -96,8 +93,7 @@ def api_uu_folder_submit(ctx, coll):
 
 @api.make()
 def api_uu_folder_unsubmit(ctx, coll):
-    """
-    Unsubmit a folder.
+    """Unsubmit a folder.
 
     :param coll: Folder to unsubmit.
     """
@@ -110,8 +106,7 @@ def api_uu_folder_unsubmit(ctx, coll):
 
 @api.make()
 def api_uu_folder_accept(ctx, coll):
-    """
-    Accept a folder.
+    """Accept a folder.
 
     :param coll: Folder to accept.
     """
@@ -120,8 +115,7 @@ def api_uu_folder_accept(ctx, coll):
 
 @api.make()
 def api_uu_folder_reject(ctx, coll):
-    """
-    Reject a folder.
+    """Reject a folder.
 
     :param coll: Folder to reject.
     """
@@ -130,8 +124,7 @@ def api_uu_folder_reject(ctx, coll):
 
 @api.make()
 def api_uu_folder_secure(ctx, coll):
-    """
-    Secure a folder.
+    """Secure a folder.
 
     :param coll: Folder to secure.
     """

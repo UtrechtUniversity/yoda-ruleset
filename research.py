@@ -28,8 +28,7 @@ __all__ = ['api_uu_research_folder_add',
 
 @api.make()
 def api_uu_research_folder_add(ctx, coll, new_folder_name):
-    """
-    Add a new folder to a research folder.
+    """Add a new folder to a research folder.
 
     :param coll: collection to create new folder in
     :param new_folder_name: name of the new folder
@@ -97,8 +96,7 @@ def api_uu_research_folder_add(ctx, coll, new_folder_name):
 
 @api.make()
 def api_uu_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
-    """
-    Rename an existing research folder.
+    """Rename an existing research folder.
 
     :param new_folder_name: new folder name
     :param coll: parent collection of folder
@@ -172,8 +170,7 @@ def api_uu_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
 @api.make()
 def api_uu_research_folder_delete(ctx, coll, folder_name):
-    """
-    Delete a research folder.
+    """Delete a research folder.
 
     :param coll: parent collection of folder to delete
     :param folder_name: name of folder to delete
@@ -231,8 +228,7 @@ def api_uu_research_folder_delete(ctx, coll, folder_name):
 
 @api.make()
 def api_uu_research_file_rename(ctx, new_file_name, coll, org_file_name):
-    """
-    Rename a file in a research folder.
+    """Rename a file in a research folder.
 
     :param new_file_name: new file name
     :param coll: parent collection of file
@@ -306,8 +302,7 @@ def api_uu_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 @api.make()
 def api_uu_research_file_delete(ctx, coll, file_name):
-    """
-    Delete a file in a research folder.
+    """Delete a file in a research folder.
 
     :param coll: parent collection of file to delete
     :param file_name: name of file to delete
@@ -553,8 +548,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
 @api.make()
 def api_uu_research_system_metadata(ctx, coll):
-    """
-    Return collection statistics as JSON.
+    """Return collection statistics as JSON.
 
     :param coll: research collection
     """

@@ -109,8 +109,7 @@ def humanize_validation_error(e):
 
 @api.make()
 def api_uu_meta_form_load(ctx, coll):
-    """
-    Retrieve all information required to load a metadata form in either the research or vault space.
+    """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
     and no errors prevent loading the form, the JSON will contain the

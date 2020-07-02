@@ -215,8 +215,7 @@ def api_uu_meta_remove(ctx, coll):
 
 @api.make()
 def api_uu_meta_clone_file(ctx, target_coll):
-    """
-    Clone a metadata file from a parent collection to a subcollection.
+    """Clone a metadata file from a parent collection to a subcollection.
 
     The destination collection (where the metadata is copied *to*) is given as an argument.
     """
