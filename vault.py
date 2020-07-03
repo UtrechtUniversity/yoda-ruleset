@@ -393,7 +393,8 @@ def api_uu_vault_collection_details(ctx, path):
     if space != pathutil.Space.VAULT:
         return {}
 
-    basename = pathutil.chop(path)[1]
+    dirname = pathutil.dirname(path)
+    basename = pathutil.basename(path)
 
     # Check if collection is vault package.
     metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
@@ -421,7 +422,7 @@ def api_uu_vault_collection_details(ctx, path):
     # Check if research space is accessible.
     research_path = ""
     research_name = group.replace("vault-", "research-", 1)
-    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + research_name):
+    if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
         research_path = research_name
 
     return {"basename": basename,
