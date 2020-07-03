@@ -145,8 +145,6 @@ spec = O(('openapi', '3.0.0'),
 
 def gen_fn_spec(name, fn):
     """Generate OpenAPI spec for one function (one path)"""
-
-    name = re.sub('^api_', '', name)
     mod  = fn.__module__.replace(ruleset_name+'.', '')
 
     print('{}/{}'.format(mod, name), file=sys.stderr)
@@ -258,6 +256,7 @@ for name, fn in api.fns:
         # Ignore weird undocumented inline definitions.
         continue
 
+    name = re.sub('^api_', '', name)
     spec['paths'].update([('/'+name, gen_fn_spec(name, fn))])
 
 print(json.dumps(spec))
