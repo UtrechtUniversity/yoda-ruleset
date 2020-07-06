@@ -25,9 +25,9 @@ def rule_uu_generate_random_id(ctx, length):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_register_doi_metadata(ctx, payload):
-    """Register DOI metadata with DataCite.."""
-    url = "{}/metadata".format(config.datacite_url)
+def rule_uu_register_doi_metadata(ctx, doi, payload):
+    """Register DOI metadata with DataCite."""
+    url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
 

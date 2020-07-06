@@ -212,7 +212,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiBytesBufToStr(*buf, *dataCiteXml);
 
 	*httpCode = "";
-	rule_uu_register_doi_metadata(*dataCiteXml, *httpCode);
+	rule_uu_register_doi_metadata(*publicationState.yodaDOI, *dataCiteXml, *httpCode);
 
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
