@@ -3,7 +3,7 @@
 #            for a research group.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2020, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -81,11 +81,8 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
-
+        *publicationDate = *publicationState.publicationDate;
         *subPath = triml(*vaultPackage, "/home/");
-        msiGetIcatTime(*now, "unix");
-        *publicationDate = uuiso8601date(*now);
-
         *combiJsonPath = "*tempColl/*randomId-combi.json";
 
 	#DEBUG writeString('serverLog', *combiJsonPath);
@@ -125,10 +122,7 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
-
-
-        msiGetIcatTime(*now, "unix");
-        *publicationDate = uuiso8601date(*now);
+        *publicationDate = *publicationState.publicationDate;
         *systemJsonPath = "*tempColl/*randomId-combi.json";
 
         *systemJsonData =
@@ -646,6 +640,10 @@ iiProcessPublication(*vaultPackage, *status) {
 		*publicationState.status = "Processing";
 	}
 
+	if (!iiHasKey(*publicationState, "publicationDate")) {
+		msiGetIcatTime(*now, "unix");
+		*publicationState.publicationDate = uuiso8601date(*now);
+	}
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
