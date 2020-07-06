@@ -33,7 +33,7 @@ __all__ = ['api_uu_vault_submit',
 def api_uu_vault_submit(ctx, coll):
     """Submit data package for publication.
 
-    :param coll: Collection of data package to submit.
+    :param coll: Collection of data package to submit
     """
     res = ctx.iiVaultSubmit(coll, '', '')
     if res['arguments'][1] != 'Success':
@@ -45,7 +45,7 @@ def api_uu_vault_submit(ctx, coll):
 def api_uu_vault_approve(ctx, coll):
     """Approve data package for publication.
 
-    :param coll: Collection of data package to approve.
+    :param coll: Collection of data package to approve
     """
     res = ctx.iiVaultApprove(coll, '', '')
     if res['arguments'][1] != 'Success':
@@ -56,7 +56,7 @@ def api_uu_vault_approve(ctx, coll):
 def api_uu_vault_cancel(ctx, coll):
     """Cancel submit of data package.
 
-    :param coll: Collection of data package to cancel submit    .
+    :param coll: Collection of data package to cancel submit
     """
     res = ctx.iiVaultCancel(coll, '', '')
     if res['arguments'][1] != 'Success':
@@ -67,7 +67,7 @@ def api_uu_vault_cancel(ctx, coll):
 def api_uu_vault_depublish(ctx, coll):
     """Depublish data package.
 
-    :param coll: Collection of data package to depublish.
+    :param coll: Collection of data package to depublish
     """
     res = ctx.iiVaultDepublish(coll, '', '')
     if res['arguments'][1] != 'Success':
@@ -78,7 +78,7 @@ def api_uu_vault_depublish(ctx, coll):
 def api_uu_vault_republish(ctx, coll):
     """Republish data package.
 
-    :param coll: Collection of data package to republish.
+    :param coll: Collection of data package to republish
     """
     res = ctx.iiVaultRepublish(coll, '', '')
     if res['arguments'][1] != 'Success':
@@ -89,8 +89,8 @@ def api_uu_vault_republish(ctx, coll):
 def api_uu_vault_copy_to_research(ctx, coll_origin, coll_target):
     """Copy data package from vault to research space.
 
-    :param coll_origin: Collection of data package to copy.
-    :param coll_target: Collection to copy data package to.
+    :param coll_origin: Collection of data package to copy
+    :param coll_target: Collection to copy data package to
     """
     zone = user.zone(ctx)
 
@@ -175,8 +175,8 @@ def api_uu_vault_preservable_formats_lists(ctx):
 def api_uu_vault_unpreservable_files(ctx, coll, list_name):
     """Retrieve the set of unpreservable file formats in a collection.
 
-    :param coll:      Collection of folder to check.
-    :param list_name: Name of preservable file format list.
+    :param coll:      Collection of folder to check
+    :param list_name: Name of preservable file format list
 
     :returns: Set of unpreservable file formats
     """
@@ -204,7 +204,7 @@ def api_uu_vault_unpreservable_files(ctx, coll, list_name):
 def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
-    :param rule_args[0]: Path of a new package in the vault.
+    :param rule_args[0]: Path of a new package in the vault
     """
     vault_package = rule_args[0]
     original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
@@ -217,7 +217,7 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
 def rule_uu_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args[0]: Path of a package in the vault.
+    :param rule_args[0]: Path of a package in the vault
     """
 
     vault_pkg_coll = rule_args[0]

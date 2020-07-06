@@ -59,7 +59,7 @@ def set_status_as_datamanager(ctx, coll, status):
 def api_uu_folder_lock(ctx, coll):
     """Lock a folder.
 
-    :param coll: Folder to lock.
+    :param coll: Folder to lock
     """
     return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
@@ -72,7 +72,7 @@ def api_uu_folder_unlock(ctx, coll):
     can also represent other state changes than "unlock", we perform a sanity
     check to see if the folder is currently in the expected state.
 
-    :param coll: Folder to unlock.
+    :param coll: Folder to unlock
     """
     current = get_status(ctx, coll)
     if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
@@ -86,7 +86,7 @@ def api_uu_folder_unlock(ctx, coll):
 def api_uu_folder_submit(ctx, coll):
     """Submit a folder.
 
-    :param coll: Folder to submit.
+    :param coll: Folder to submit
     """
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
@@ -95,7 +95,7 @@ def api_uu_folder_submit(ctx, coll):
 def api_uu_folder_unsubmit(ctx, coll):
     """Unsubmit a folder.
 
-    :param coll: Folder to unsubmit.
+    :param coll: Folder to unsubmit
     """
     # Sanity check. See 'unlock'.
     if get_status(ctx, coll) is not constants.research_package_state.SUBMITTED:
@@ -108,7 +108,7 @@ def api_uu_folder_unsubmit(ctx, coll):
 def api_uu_folder_accept(ctx, coll):
     """Accept a folder.
 
-    :param coll: Folder to accept.
+    :param coll: Folder to accept
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
@@ -117,7 +117,7 @@ def api_uu_folder_accept(ctx, coll):
 def api_uu_folder_reject(ctx, coll):
     """Reject a folder.
 
-    :param coll: Folder to reject.
+    :param coll: Folder to reject
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
@@ -126,7 +126,7 @@ def api_uu_folder_reject(ctx, coll):
 def api_uu_folder_secure(ctx, coll):
     """Secure a folder.
 
-    :param coll: Folder to secure.
+    :param coll: Folder to secure
     """
     ctx.iiFolderSecure(coll)
 
