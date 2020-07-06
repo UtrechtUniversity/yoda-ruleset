@@ -8,6 +8,8 @@ from datetime import datetime
 
 from util import *
 import meta_form
+import avu
+import datetime
 
 
 __all__ = ['api_uu_resource_groups_dm',
@@ -26,18 +28,48 @@ __all__ = ['api_uu_resource_groups_dm',
 
 @api.make()
 def api_uu_resource_save_tier(ctx, resource_name, tier_name):
+    """Save tier for given resource as metadata.
+    :param resource_name: Resource that the tier is equipped with
+    :param tier_name:     Name of the tier that is given to the resource
+    """
     if user.user_type(ctx) != 'rodsadmin':
         return {'status': 'not_allowed',
                 'status_info': 'Insufficient permissions'}
 
-    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '')
+    # resource exists?
+    if not resource_exists(ctx, resource_name):
+        return {'status': 'not_exists',
+                'status_info': 'Given resource name is not in use'}
+ 
+    # Check combination exists
+    meta_attr_name = constants.UURESOURCETIERATTRNAME
+    iter = genquery.row_iterator(
+        "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
+        "RESC_NAME='" + resource_name + "' AND META_RESC_ATTR_NAME='" + meta_attr_name + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # combination exists - use associate
+        avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
+        return {status: 'ok',
+            status_info: ''}
 
-    return {'status': res['arguments'][2],
-            'status_info': res['arguments'][3]}
+    avu.associate_to_resource(ctx, resource_name, meta_attr_name, tier_name)
+    return {status: 'ok',
+        status_info: ''}
+
+#    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '')
+#    return {'status': res['arguments'][2],
+#            'status_info': res['arguments'][3]}
 
 
 @api.make()
 def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
+    """Get a full year of monthly storage data starting from current month and look back one year.
+    :param group_name:    group that is searched for storage data
+    :param current_month: Month passed that is supposed to be the month to look back from
+    """
+
     # Check permissions for this function
     # Member of this group?
     member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
@@ -76,21 +108,25 @@ def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
 
     return allStorage
 
-
+# IS DEZE NOG NODIG????
 @api.make()
 def api_uu_resource_user_get_type(ctx):
+    """Get current user type
+    """
     return user.user_type(ctx)
 
 
 @api.make()
 def api_uu_resource_user_research_groups(ctx):
+    """Get the research groups a user is member of.
+    """
     groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
-        "USER_NAME = '" + user_name + "' AND  USER_ZONE = '" + user_zone + "'",
+        "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
         genquery.AS_LIST, ctx
     )
 
@@ -101,9 +137,10 @@ def api_uu_resource_user_research_groups(ctx):
     groups.sort()
     return groups
 
-
 @api.make()
-def api_uu_resource_user_is_datamanager(ctx):
+def api_uu_resource_user_is_datamanager(ctx, group_name):
+    """Check whether current user is datamanager of group.
+    """
     iter = genquery.row_iterator(
         "USER_NAME",
         "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
@@ -118,10 +155,15 @@ def api_uu_resource_user_is_datamanager(ctx):
     return 'no'
 
 
+## HIER MOET ONTDUBBELD WORDEN OF IS DIT ALTIJD DISTINCT????
 @api.make()
 def api_uu_resource_get_tiers(ctx):
+    """As rodsadmin het all tiers present.
+    """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
+
+    return get_all_tiers(ctx)
 
     tiers = [constants.UUDEFAULTRESOURCETIER]
 
@@ -141,6 +183,9 @@ def api_uu_resource_get_tiers(ctx):
 @api.make()
 def api_uu_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource."""
+    :param res_name: Resource that the tier is equipped with
+    """
+
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -149,7 +194,8 @@ def api_uu_resource_tier(ctx, res_name):
 
 @api.make()
 def api_uu_resource_resource_and_tier_data(ctx):
-    """Get all resources and their tier data."""
+    """List al resources and its tier data.
+    """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -174,7 +220,8 @@ def api_uu_resource_resource_and_tier_data(ctx):
 
 @api.make()
 def api_uu_resource_monthly_stats(ctx):
-    """Collect storage data for all categories."""
+    """As rodsadmin collect monthly statistics"""
+
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -195,6 +242,8 @@ def api_uu_resource_monthly_stats_dm(ctx):
 @api.make()
 def api_uu_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
+    """
+
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
 
@@ -214,6 +263,7 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
     - Tier
     - 12 columns, one per month, with used storage count in bytes
     """
+
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
     allStorage = []
@@ -333,7 +383,6 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
 
     return allStorage
 
-
 def getGroupsOnCategories(categories, callback):
     """Get all groups belonging to all given categories."""
     groups = []
@@ -420,3 +469,174 @@ def get_tier_by_resource_name(ctx, res_name):
         tier = row[3]
 
     return tier
+
+# \brief For all categories known store all found storage data for each group belonging to those category.
+#        Store as metadata on group level holding
+#        1) category of group on probe date - this can change
+#        2) tier
+#        3) actual calculated storage for the group
+#
+
+def store_monthly_storage_statistics(ctx):
+    zone = user.zone(ctx)
+
+    # Get storage month with leading 0
+    dt = datetime.datetime.today()
+    md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
+
+    # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE, USER_GROUP_NAME",
+        "META_USER_ATTR_NAME = '" + md_storage_month + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        avu.rm_from_group(ctx, row[1], md_storage_month, row[0])
+
+    # Get all categories
+    categories = []
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        categories.append(row[0])
+
+    # Get all tiers - Standard must be present 
+    tiers = get_all_tiers(ctx)
+
+    # List of resources and their corresponding tiers (for easy access further)
+    resource_tiers = []
+    for resource in get_resources(ctx): 
+        resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
+
+    # Steps to be taken per group
+    steps = ['research', 'vault']
+
+    # Loop through all categories
+    for category in categories:
+        groups = get_groups_on_category(ctx, category) 
+
+        for group in groups:
+            # Per group collect totals for category and tier
+
+            # Loop though all tiers and set storage to 0
+            tier_storage = []
+            for tier in tiers:
+                tier_storage[tier] = 0 
+
+            # per group handle research and vault 
+            for step in steps:
+                if step == 'research':
+                    path = '/' + zone + '/home/' + group
+                else:
+                    path = '/' + zone + '/home/vault/' + group.replace('research-','vault-', 1)
+
+                # Per group two statements are required to gather all data
+                # 1) data in folder itself
+                # 2) data in all subfolders of the folder
+
+                for folder in ['self', 'subfolders']:
+                    if folder == 'self':
+                        whereClause = "COLL_NAME = '" + path + "'"
+                    else:
+                        whereClause = "COLL_NAME like '" + path + "'"
+
+                    iter = genquery.row_iterator(
+                        "SUM(DATA_SIZE), RESC_NAME",
+                        whereClause,
+                        genquery.AS_LIST, ctx
+                    )
+                    for row in iter:
+                        # sum up for this tier
+                        the_tier = tiers[row[1]]
+                        tier_storage[the_tier] += int(row[0])
+
+
+            # 3) Revision erea
+            revision_path = '/' + zone + '/' + UUREVISIONCOLLECTION + '/' + group + '%'
+            whereClause = "COLL_NAME like '" + revision_path + "'
+            iter = genquery.row_iterator(
+                "SUM(DATA_SIZE), RESC_NAME",
+                whereClause,
+                genquery.AS_LIST, ctx
+            )
+            for row in iter:
+                # sum up for this tier
+                the_tier = tiers[row[1]]
+                tier_storage[the_tier] += int(row[0])
+
+            # Write total storages as metadata on current group for any tier
+            key = md_storage_month
+            # val = [category, tier, storage]
+            for tier in tiers:
+                val = jsonutil.dump([category, tier, tier_storage[tier]])
+                # write as metadata (kv-pair) to current group
+                avu.associate_to_group(ctx, group, key, val)
+
+    return 'BLABLA'
+
+
+
+# \brief uuResourceExistst - check whether given resource actually exists
+# \param[in] *resourceName
+def resource_exists(ctx, resource_name):
+    iter = genquery.row_iterator(
+        "RESC_ID, RESC_NAME",
+        "RESC_NAME = '{}'"
+        .format(resource_name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return True
+    
+    return False
+
+
+# \brief List of all tiers present
+def get_all_tiers(ctx):
+    tiers = [constants.UUDEFAULTRESOURCETIER]
+
+    iter = genquery.row_iterator(
+        "META_RESC_ATTR_VALUE",
+        "META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        if not row[0] == constants.UUDEFAULTRESOURCETIER:
+            if row[0] not in tiers:
+                tiers.append(row[0])
+
+    return tiers
+
+
+def get_groups_on_category(ctx, category):
+    groups = []
+    iter = genquery.row_iterator(
+        "META_RESC_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup'
+         AND  META_USER_ATTR_NAME  = 'category'
+         AND  META_USER_ATTR_VALUE = '*categoryName'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        groups.append(row[0])
+
+    return groups
+
+
+# Moet niet RESC_ID erbij???
+def get_resources(ctx):
+    resources = []
+    iter = genquery.row_iterator(
+        "RESC_NAME",
+        "",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        resources.append(row[0])
+
+    return resources
