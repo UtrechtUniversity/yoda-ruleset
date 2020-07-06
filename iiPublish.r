@@ -146,6 +146,41 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
 }
 
 
+# \brief Determine the time of publication as a datetime with UTC offset.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiGetPublicationDate(*publicationState) {
+        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+        *vaultPackage = *publicationState.vaultPackage;
+        *publicationState.publicationDate = "";
+
+        foreach(*row in SELECT order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE
+                                          WHERE META_COLL_ATTR_NAME = *actionLog
+                                          AND COLL_NAME = *vaultPackage) {
+            *logRecord = *row.META_COLL_ATTR_VALUE;
+            *action = "";
+            msi_json_arrayops(*logRecord, *action, "get", 1);
+            if (*action == "published") {
+                *publicationTimestamp = "";
+                msi_json_arrayops(*logRecord, *publicationTimestamp, "get", 0);
+                # iso8601 compliant datetime with UTC offset
+                *publicationDateTime = timestrf(datetime(int(*publicationTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
+                *publicationState.publicationDate = uuiso8601date(*publicationDateTime);
+                #DEBUG writeLine("serverLog", "iiGetPublicationDate: *publicationState.publicationDate");
+                break;
+            }
+        }
+
+        if(*publicationState.publicationDate == "" ) {
+            msiGetIcatTime(*now, "unix");
+            *publicationDate = uuiso8601date(*now);
+            *publicationState.publicationDate = *publicationDate;
+        }
+}
+
+
 # \brief Determine the time of last modification as a datetime with UTC offset.
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
@@ -641,8 +676,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	}
 
 	if (!iiHasKey(*publicationState, "publicationDate")) {
-		msiGetIcatTime(*now, "unix");
-		*publicationState.publicationDate = uuiso8601date(*now);
+        iiGetPublicationDate(*publicationState);
 	}
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
@@ -1036,6 +1070,9 @@ iiProcessRepublication(*vaultPackage, *status) {
 		*publicationState.status = "Processing";
 	}
 
+    if (!iiHasKey(*publicationState, "publicationDate")) {
+        iiGetPublicationDate(*publicationState);
+	}
 
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
@@ -1250,6 +1287,10 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 	if (*publicationState.status != "OK") {
 		*status = "NotAllowed";
 		succeed;
+	}
+
+    if (!iiHasKey(*publicationState, "publicationDate")) {
+        iiGetPublicationDate(*publicationState);
 	}
 
 	# Determine last modification time. Always run, no matter if retry.
