@@ -8,7 +8,7 @@ from datetime import datetime
 
 from util import *
 import meta_form
-import avu
+# import avu
 import datetime
 
 
@@ -23,7 +23,8 @@ __all__ = ['api_uu_resource_groups_dm',
            'api_uu_resource_user_get_type',
            'api_uu_resource_user_research_groups',
            'api_uu_resource_user_is_datamanager',
-           'api_uu_resource_full_year_group_data']
+           'api_uu_resource_full_year_group_data',
+           'rule_uu_resource_store_monthly_storage_statistics']
 
 
 @api.make()
@@ -470,14 +471,17 @@ def get_tier_by_resource_name(ctx, res_name):
 
     return tier
 
-# \brief For all categories known store all found storage data for each group belonging to those category.
-#        Store as metadata on group level holding
-#        1) category of group on probe date - this can change
-#        2) tier
-#        3) actual calculated storage for the group
-#
+@rule.make()
+def rule_uu_resource_store_monthly_storage_statistics(ctx):
+    """
+    For all categories known store all found storage data for each group belonging to those category.
+    Store as metadata on group level holding
+    1) category of group on probe date - this can change
+    2) tier
+    3) actual calculated storage for the group
 
-def store_monthly_storage_statistics(ctx):
+    """
+
     zone = user.zone(ctx)
 
     # Get storage month with leading 0
