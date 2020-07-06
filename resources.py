@@ -183,7 +183,7 @@ def api_uu_resource_get_tiers(ctx):
 
 @api.make()
 def api_uu_resource_tier(ctx, res_name):
-    """Get the tier belonging to the given resource."""
+    """Get the tier belonging to the given resource.
     :param res_name: Resource that the tier is equipped with
     """
 
@@ -243,7 +243,6 @@ def api_uu_resource_monthly_stats_dm(ctx):
 @api.make()
 def api_uu_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
-    """
 
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
@@ -471,6 +470,7 @@ def get_tier_by_resource_name(ctx, res_name):
 
     return tier
 
+
 @rule.make()
 def rule_uu_resource_store_monthly_storage_statistics(ctx):
     """
@@ -545,7 +545,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                     if folder == 'self':
                         whereClause = "COLL_NAME = '" + path + "'"
                     else:
-                        whereClause = "COLL_NAME like '" + path + "'"
+                        whereClause = "COLL_NAME like '" + path + "%'"
 
                     iter = genquery.row_iterator(
                         "SUM(DATA_SIZE), RESC_NAME",
@@ -559,8 +559,8 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
 
 
             # 3) Revision erea
-            revision_path = '/' + zone + '/' + UUREVISIONCOLLECTION + '/' + group + '%'
-            whereClause = "COLL_NAME like '" + revision_path + "'
+            revision_path = '/' + zone + '/' + UUREVISIONCOLLECTION + '/' + group
+            whereClause = "COLL_NAME like '" + revision_path + "%'"
             iter = genquery.row_iterator(
                 "SUM(DATA_SIZE), RESC_NAME",
                 whereClause,
@@ -580,7 +580,6 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                 avu.associate_to_group(ctx, group, key, val)
 
     return 'BLABLA'
-
 
 
 # \brief uuResourceExistst - check whether given resource actually exists
@@ -621,9 +620,9 @@ def get_groups_on_category(ctx, category):
     groups = []
     iter = genquery.row_iterator(
         "META_RESC_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup'
-         AND  META_USER_ATTR_NAME  = 'category'
-         AND  META_USER_ATTR_VALUE = '*categoryName'",
+        "USER_TYPE = 'rodsgroup' "
+        "AND  META_USER_ATTR_NAME  = 'category' "
+        "AND  META_USER_ATTR_VALUE = '" + category + "'",
         genquery.AS_LIST, ctx
     )
     for row in iter:

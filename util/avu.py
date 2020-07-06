@@ -93,4 +93,3 @@ def rmw_from_data(ctx, obj, a, v, u=''):
 def rmw_from_group(ctx, group, a, v, u=''):
     """Remove AVU from group with wildcards."""
     msi.rmw_avu(ctx, '-u', group, a, v, u)
-
