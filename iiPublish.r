@@ -853,6 +853,8 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
+			*mailStatus = "";
+			*message = "";
 			rule_uu_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
@@ -867,6 +869,8 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
+			*mailStatus = "";
+			*message = "";
 			rule_uu_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
