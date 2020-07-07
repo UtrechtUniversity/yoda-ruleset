@@ -9,7 +9,7 @@ from datetime import datetime
 from util import *
 import meta_form
 # import avu
-import datetime
+# import datetime
 
 
 __all__ = ['api_uu_resource_groups_dm',
@@ -41,7 +41,7 @@ def api_uu_resource_save_tier(ctx, resource_name, tier_name):
     if not resource_exists(ctx, resource_name):
         return {'status': 'not_exists',
                 'status_info': 'Given resource name is not in use'}
- 
+
     # Check combination exists
     meta_attr_name = constants.UURESOURCETIERATTRNAME
     iter = genquery.row_iterator(
@@ -52,12 +52,12 @@ def api_uu_resource_save_tier(ctx, resource_name, tier_name):
     for row in iter:
         # combination exists - use associate
         avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
-        return {status: 'ok',
-            status_info: ''}
+        return {'status': 'ok',
+                'status_info': ''}
 
     avu.associate_to_resource(ctx, resource_name, meta_attr_name, tier_name)
-    return {status: 'ok',
-        status_info: ''}
+    return {'status': 'ok',
+            'status_info': ''}
 
 #    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '')
 #    return {'status': res['arguments'][2],
@@ -109,6 +109,7 @@ def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
 
     return allStorage
 
+
 # IS DEZE NOG NODIG????
 @api.make()
 def api_uu_resource_user_get_type(ctx):
@@ -138,6 +139,7 @@ def api_uu_resource_user_research_groups(ctx):
     groups.sort()
     return groups
 
+
 @api.make()
 def api_uu_resource_user_is_datamanager(ctx, group_name):
     """Check whether current user is datamanager of group.
@@ -156,7 +158,7 @@ def api_uu_resource_user_is_datamanager(ctx, group_name):
     return 'no'
 
 
-## HIER MOET ONTDUBBELD WORDEN OF IS DIT ALTIJD DISTINCT????
+# HIER MOET ONTDUBBELD WORDEN OF IS DIT ALTIJD DISTINCT????
 @api.make()
 def api_uu_resource_get_tiers(ctx):
     """As rodsadmin het all tiers present.
@@ -383,6 +385,7 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
 
     return allStorage
 
+
 def getGroupsOnCategories(categories, callback):
     """Get all groups belonging to all given categories."""
     groups = []
@@ -507,12 +510,12 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
     for row in iter:
         categories.append(row[0])
 
-    # Get all tiers - Standard must be present 
+    # Get all tiers - Standard must be present
     tiers = get_all_tiers(ctx)
 
     # List of resources and their corresponding tiers (for easy access further)
     resource_tiers = []
-    for resource in get_resources(ctx): 
+    for resource in get_resources(ctx):
         resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
 
     # Steps to be taken per group
@@ -520,7 +523,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
 
     # Loop through all categories
     for category in categories:
-        groups = get_groups_on_category(ctx, category) 
+        groups = get_groups_on_category(ctx, category)
 
         for group in groups:
             # Per group collect totals for category and tier
@@ -528,14 +531,14 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
             # Loop though all tiers and set storage to 0
             tier_storage = []
             for tier in tiers:
-                tier_storage[tier] = 0 
+                tier_storage[tier] = 0
 
-            # per group handle research and vault 
+            # per group handle research and vault
             for step in steps:
                 if step == 'research':
                     path = '/' + zone + '/home/' + group
                 else:
-                    path = '/' + zone + '/home/vault/' + group.replace('research-','vault-', 1)
+                    path = '/' + zone + '/home/vault/' + group.replace('research-', 'vault-', 1)
 
                 # Per group two statements are required to gather all data
                 # 1) data in folder itself
@@ -556,7 +559,6 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                         # sum up for this tier
                         the_tier = tiers[row[1]]
                         tier_storage[the_tier] += int(row[0])
-
 
             # 3) Revision erea
             revision_path = '/' + zone + '/' + UUREVISIONCOLLECTION + '/' + group
@@ -594,7 +596,7 @@ def resource_exists(ctx, resource_name):
 
     for row in iter:
         return True
-    
+ 
     return False
 
 
