@@ -596,7 +596,7 @@ def resource_exists(ctx, resource_name):
 
     for row in iter:
         return True
- 
+
     return False
 
 
