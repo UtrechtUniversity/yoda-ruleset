@@ -155,6 +155,34 @@ def setStatus(callback, requestId, status):
     setMetadata(callback, requestId, "status", status)
 
 
+def getStatus(callback, requestId):
+    """Get the status of a data request
+
+       Arguments:
+       requestId -- Unique identifier of the data request.
+    """
+    # Construct filename and filepath
+    collName = '/tempZone/home/datarequests-research/' + requestId
+    fileName = 'datarequest.json'
+    filePath = collName + '/' + fileName
+
+    try:
+        rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                            ("COLL_NAME = '%s' AND " +
+                             "DATA_NAME = '%s' AND " +
+                             "META_DATA_ATTR_NAME = 'status'") % (collName,
+                                                                  fileName),
+                            AS_DICT,
+                            callback)
+        for row in rows:
+            requestStatus = row['META_DATA_ATTR_VALUE']
+    except Exception as e:
+        callback.writeString("serverLog", "Could not get data request status.")
+        return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
+
+    return requestStatus
+
+
 def setMetadata(callback, requestId, key, value):
     """Set an arbitrary metadata field on a data request
 
@@ -1460,6 +1488,10 @@ def uuSubmitDatarequest(rule_args, callback, rei):
 def uuGetDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(getDatarequest(callback,
                                                              rule_args[0])))
+
+
+def uuGetStatus(rule_args, callback, rei):
+    callback.writeString("stdout", getStatus(callback, rule_args[0]))
 
 
 def uuSubmitPreliminaryReview(rule_args, callback, rei):
