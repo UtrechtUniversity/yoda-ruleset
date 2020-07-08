@@ -8,8 +8,6 @@ from datetime import datetime
 
 from util import *
 import meta_form
-# import avu
-# import datetime
 
 
 __all__ = ['api_uu_resource_groups_dm',
@@ -95,7 +93,6 @@ def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
     return allStorage
 
 
-# IS DEZE NOG NODIG????
 @api.make()
 def api_uu_resource_user_get_type(ctx):
     """Get current user type
@@ -143,10 +140,9 @@ def api_uu_resource_user_is_datamanager(ctx):
     return 'no'
 
 
-# HIER MOET ONTDUBBELD WORDEN OF IS DIT ALTIJD DISTINCT????
 @api.make()
 def api_uu_resource_get_tiers(ctx):
-    """As rodsadmin het all tiers present.
+    """As rodsadmin get all tiers present.
     """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -213,20 +209,18 @@ def api_uu_resource_monthly_stats(ctx):
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
-    categories = getCategories(ctx)
+    categories = get_categories(ctx)
 
-    return getMonthlyCategoryStorageStatistics(categories, ctx)
+    return getMonthlyCategoryStorageStatistics(ctx, categories)
 
 
 @api.make()
 def api_uu_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
     datamanager = user.full_name(ctx)
-    categories = getCategoriesDatamanager(datamanager, ctx)
+    categories = get_categories_datamanager(ctx, datamanager)
 
-    log.write(ctx, categories)
-
-    return getMonthlyCategoryStorageStatistics(categories, ctx)
+    return getMonthlyCategoryStorageStatistics(ctx, categories)
 
 
 @api.make()
@@ -234,10 +228,9 @@ def api_uu_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
 
     datamanager = user.full_name(ctx)
-    categories = getCategoriesDatamanager(datamanager, ctx)
+    categories = get_categories_datamanager(ctx, datamanager)
 
-    all_group = []
-    return getGroupsOnCategories(categories, ctx)
+    return get_groups_on_categories(ctx, categories)
 
 
 @api.make()
@@ -254,7 +247,7 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
     """
 
     datamanager = user.full_name(ctx)
-    categories = getCategoriesDatamanager(datamanager, ctx)
+    categories = get_categories_datamanager(ctx, datamanager)
     allStorage = []
 
     # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
@@ -278,7 +271,7 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
             try:
                 subcategory = groupToSubcategory[groupName]
             except KeyError:
-                catInfo = groupGetCategoryInfo(groupName, ctx)
+                catInfo = get_group_category_info(ctx, groupName)
                 subcategory = catInfo['subcategory']
                 groupToSubcategory[groupName] = subcategory
 
@@ -297,10 +290,10 @@ def api_uu_resource_monthly_category_stats_export_dm(ctx):
     return allStorage
 
 
-def groupGetCategoryInfo(groupName, callback):
+def get_group_category_info(ctx, groupName):
     """
     Get category and subcategory for a group.
-
+    :param groupName: groupname to get cat/subcat info for
     Returns a dict with indices 'category' and 'subcategory'.
     """
     category = ''
@@ -309,7 +302,7 @@ def groupGetCategoryInfo(groupName, callback):
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_GROUP_NAME = '" + groupName + "' AND  META_USER_ATTR_NAME LIKE '%category'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -324,17 +317,16 @@ def groupGetCategoryInfo(groupName, callback):
     return {'category': category, 'subcategory': subcategory}
 
 
-def getMonthlyCategoryStorageStatistics(categories, callback):
+def getMonthlyCategoryStorageStatistics(ctx, categories):
     """
-    Collect storage stats of last month only.
+    Collect storage stats of last month for a list of categories.
 
     Storage is summed up for each category/tier combination.
     Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+    :param categories: list of categories to collect storage data for
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
-
-    log.write(callback, metadataName)
 
     storageDict = {}
 
@@ -342,15 +334,12 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
         iter = genquery.row_iterator(
             "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
             "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
-            genquery.AS_LIST, callback
+            genquery.AS_LIST, ctx
         )
-        # "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
-        # "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
         for row in iter:
             # hier wordt door alle groepen gezocht, geordend van een category.
             # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
             attrValue = row[0]
-            log.write(callback, row[0])
 
             temp = jsonutil.parse(attrValue)
             category = temp[0]
@@ -378,8 +367,10 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
     return allStorage
 
 
-def getGroupsOnCategories(categories, callback):
-    """Get all groups belonging to all given categories."""
+def get_groups_on_categories(ctx, categories):
+    """Get all groups belonging to all given categories.
+    :param categories: List of categories groups have to be found for
+    """
     groups = []
     metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
 
@@ -387,7 +378,7 @@ def getGroupsOnCategories(categories, callback):
         iter = genquery.row_iterator(
             "USER_NAME",
             "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
-            genquery.AS_LIST, callback
+            genquery.AS_LIST, ctx
         )
 
         for row in iter:
@@ -396,7 +387,7 @@ def getGroupsOnCategories(categories, callback):
                 iter2 = genquery.row_iterator(
                     "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
                     "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-                    genquery.AS_LIST, callback
+                    genquery.AS_LIST, ctx
                 )
 
                 data_size = 0
@@ -409,37 +400,26 @@ def getGroupsOnCategories(categories, callback):
     return groups
 
 
-def getCategoriesDatamanager(datamanagerName, callback):
-    """Get all categories for current datamanager."""
+def get_categories_datamanager(ctx, datamanagerName):
+    """Get all categories for current datamanager.
+    :param datamanagerName: Datamanager involved
+    """
     categories = []
 
     iter = genquery.row_iterator(
         "USER_NAME",
         "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
         # @TODO membership still has to be checked
         datamanagerGroupname = row[0]
-        temp = '-'.join(datamanagerGroupname.split('-')[1:])  # 'datamanager-initial' is groupname of datamanager, second part is category
-        categories.append(temp)
 
-    return categories
-
-
-def getCategories(callback):
-    """Get all categories currently present."""
-    categories = []
-
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-        categories.append(row[0])
+        if user.is_member_of(ctx, datamanagerGroupname):
+            # Example: 'datamanager-initial' is groupname of datamanager, second part is category
+            temp = '-'.join(datamanagerGroupname.split('-')[1:])
+            categories.append(temp)
 
     return categories
 
@@ -449,6 +429,7 @@ def get_tier_by_resource_name(ctx, res_name):
     Get Tiername, if present, for given resource.
 
     If not present, fall back to default tier name.
+    :param res_name: Name of the resource to get the tier name for
     """
     tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
@@ -516,8 +497,6 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
     # Loop through all categories
     for category in categories:
         groups = get_groups_on_category(ctx, category)
-        log.write(ctx, 'GROUPS: ')
-        log.write(ctx, groups)
 
         for group in groups:
             # Per group collect totals for category and tier
@@ -529,8 +508,6 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
 
             # per group handle research and vault
             for step in steps:
-                log.write(ctx, 'cat: ' + category)
-                log.write(ctx, group + '-' + step)
                 if step == 'research':
                     path = '/' + zone + '/home/' + group
                 else:
@@ -554,7 +531,6 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
 
                     for row in iter:
                         # sum up for this tier
-                        log.write(ctx, 'SUM for: ' + row[0])
                         the_tier = resource_tiers[row[1]]
                         tier_storage[the_tier] += int(row[0])
 
@@ -578,17 +554,14 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                 # constructed this way to be backwards compatible (not using json.dump)
                 val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
                 # write as metadata (kv-pair) to current group
-                log.write(ctx, 'KEY/VAL')
-                log.write(ctx, key)
-                log.write(ctx, val)
                 avu.associate_to_group(ctx, group, key, val)
 
-    return 'BLABLA'
+    return 'ok'
 
 
-# \brief uuResourceExistst - check whether given resource actually exists
-# \param[in] *resourceName
 def resource_exists(ctx, resource_name):
+    """ Check whether given resource actually exists
+    """
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME",
         "RESC_NAME = '{}'"
@@ -602,8 +575,8 @@ def resource_exists(ctx, resource_name):
     return False
 
 
-# \brief List of all tiers present
 def get_all_tiers(ctx):
+    """ List all tiers currently present including 'Standard' """
     tiers = [constants.UUDEFAULTRESOURCETIER]
 
     iter = genquery.row_iterator(
@@ -620,7 +593,23 @@ def get_all_tiers(ctx):
     return tiers
 
 
+def get_categories(ctx):
+    """ Get all categories currently present."""
+    categories = []
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        categories.append(row[0])
+
+    return categories
+
 def get_groups_on_category(ctx, category):
+    """ Get all groups for category """
     groups = []
     iter = genquery.row_iterator(
         "USER_NAME",
@@ -635,8 +624,8 @@ def get_groups_on_category(ctx, category):
     return groups
 
 
-# Moet niet RESC_ID erbij???
 def get_resources(ctx):
+    """ Get all resources """
     resources = []
     iter = genquery.row_iterator(
         "RESC_NAME",
