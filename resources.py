@@ -575,7 +575,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
             key = md_storage_month
             # val = [category, tier, storage]
             for tier in tiers:
-#                val = jsonutil.dump([category, tier, tier_storage[tier]])
+                # constructed this way to be backwards compatible (not using json.dump)
                 val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
                 # write as metadata (kv-pair) to current group
                 log.write(ctx, 'KEY/VAL')
