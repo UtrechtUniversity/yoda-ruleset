@@ -608,6 +608,7 @@ def get_categories(ctx):
 
     return categories
 
+
 def get_groups_on_category(ctx, category):
     """ Get all groups for category """
     groups = []
