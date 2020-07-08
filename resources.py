@@ -488,7 +488,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
     zone = user.zone(ctx)
 
     # Get storage month with leading 0
-    dt = datetime.datetime.today()
+    dt = datetime.today()
     md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
 
     # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
@@ -514,7 +514,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
     tiers = get_all_tiers(ctx)
 
     # List of resources and their corresponding tiers (for easy access further)
-    resource_tiers = []
+    resource_tiers = {}
     for resource in get_resources(ctx):
         resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
 
@@ -524,17 +524,21 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
     # Loop through all categories
     for category in categories:
         groups = get_groups_on_category(ctx, category)
+        log.write(ctx, 'GROUPS: ')
+        log.write(ctx, groups)
 
         for group in groups:
             # Per group collect totals for category and tier
 
             # Loop though all tiers and set storage to 0
-            tier_storage = []
+            tier_storage = {}
             for tier in tiers:
                 tier_storage[tier] = 0
 
             # per group handle research and vault
             for step in steps:
+                log.write(ctx, 'cat: ' + category)
+                log.write(ctx, group + '-' + step)
                 if step == 'research':
                     path = '/' + zone + '/home/' + group
                 else:
@@ -555,13 +559,15 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                         whereClause,
                         genquery.AS_LIST, ctx
                     )
+                    
                     for row in iter:
                         # sum up for this tier
-                        the_tier = tiers[row[1]]
+                        log.write(ctx, 'SUM for: ' + row[0])
+                        the_tier = resource_tiers[row[1]]
                         tier_storage[the_tier] += int(row[0])
 
             # 3) Revision erea
-            revision_path = '/' + zone + '/' + UUREVISIONCOLLECTION + '/' + group
+            revision_path = '/' + zone + '/' + constants.UUREVISIONCOLLECTION + '/' + group
             whereClause = "COLL_NAME like '" + revision_path + "%'"
             iter = genquery.row_iterator(
                 "SUM(DATA_SIZE), RESC_NAME",
@@ -570,7 +576,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
             )
             for row in iter:
                 # sum up for this tier
-                the_tier = tiers[row[1]]
+                the_tier = resource_tiers[row[1]]
                 tier_storage[the_tier] += int(row[0])
 
             # Write total storages as metadata on current group for any tier
@@ -579,6 +585,9 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
             for tier in tiers:
                 val = jsonutil.dump([category, tier, tier_storage[tier]])
                 # write as metadata (kv-pair) to current group
+                log.write(ctx, 'KEY/VAL')
+                log.write(ctx, key)
+                log.write(ctx, val)
                 avu.associate_to_group(ctx, group, key, val)
 
     return 'BLABLA'
@@ -621,7 +630,7 @@ def get_all_tiers(ctx):
 def get_groups_on_category(ctx, category):
     groups = []
     iter = genquery.row_iterator(
-        "META_RESC_ATTR_VALUE",
+        "USER_NAME",
         "USER_TYPE = 'rodsgroup' "
         "AND  META_USER_ATTR_NAME  = 'category' "
         "AND  META_USER_ATTR_VALUE = '" + category + "'",
