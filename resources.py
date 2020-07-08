@@ -42,26 +42,11 @@ def api_uu_resource_save_tier(ctx, resource_name, tier_name):
         return {'status': 'not_exists',
                 'status_info': 'Given resource name is not in use'}
 
-    # Check combination exists
     meta_attr_name = constants.UURESOURCETIERATTRNAME
-    iter = genquery.row_iterator(
-        "RESC_ID, RESC_NAME, META_RESC_ATTR_NAME, META_RESC_ATTR_VALUE",
-        "RESC_NAME='" + resource_name + "' AND META_RESC_ATTR_NAME='" + meta_attr_name + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        # combination exists - use associate
-        avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
-        return {'status': 'ok',
-                'status_info': ''}
 
-    avu.associate_to_resource(ctx, resource_name, meta_attr_name, tier_name)
+    avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
     return {'status': 'ok',
             'status_info': ''}
-
-#    res = ctx.uuSetResourceTier(resource_name, tier_name, '', '')
-#    return {'status': res['arguments'][2],
-#            'status_info': res['arguments'][3]}
 
 
 @api.make()
@@ -141,7 +126,7 @@ def api_uu_resource_user_research_groups(ctx):
 
 
 @api.make()
-def api_uu_resource_user_is_datamanager(ctx, group_name):
+def api_uu_resource_user_is_datamanager(ctx):
     """Check whether current user is datamanager of group.
     """
     iter = genquery.row_iterator(
@@ -238,6 +223,8 @@ def api_uu_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
+
+    log.write(ctx, categories)
 
     return getMonthlyCategoryStorageStatistics(categories, ctx)
 
@@ -346,6 +333,9 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
+
+    log.write(callback, metadataName)
+
     storageDict = {}
 
     for category in categories:
@@ -354,11 +344,13 @@ def getMonthlyCategoryStorageStatistics(categories, callback):
             "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
             genquery.AS_LIST, callback
         )
-
+        # "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
+        # "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
         for row in iter:
             # hier wordt door alle groepen gezocht, geordend van een category.
             # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
             attrValue = row[0]
+            log.write(callback, row[0])
 
             temp = jsonutil.parse(attrValue)
             category = temp[0]
@@ -430,8 +422,8 @@ def getCategoriesDatamanager(datamanagerName, callback):
     for row in iter:
         # @TODO membership still has to be checked
         datamanagerGroupname = row[0]
-        temp = datamanagerGroupname.split('-')  # 'datamanager-initial' is groupname of datamanager, second part is category
-        categories.append(temp[1])
+        temp = '-'.join(datamanagerGroupname.split('-')[1:])  # 'datamanager-initial' is groupname of datamanager, second part is category
+        categories.append(temp)
 
     return categories
 
@@ -583,7 +575,8 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
             key = md_storage_month
             # val = [category, tier, storage]
             for tier in tiers:
-                val = jsonutil.dump([category, tier, tier_storage[tier]])
+#                val = jsonutil.dump([category, tier, tier_storage[tier]])
+                val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
                 # write as metadata (kv-pair) to current group
                 log.write(ctx, 'KEY/VAL')
                 log.write(ctx, key)
