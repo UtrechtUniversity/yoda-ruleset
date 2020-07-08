@@ -559,7 +559,7 @@ def rule_uu_resource_store_monthly_storage_statistics(ctx):
                         whereClause,
                         genquery.AS_LIST, ctx
                     )
-                    
+
                     for row in iter:
                         # sum up for this tier
                         log.write(ctx, 'SUM for: ' + row[0])
