@@ -50,7 +50,7 @@
             <div class="creators">
                 <div class="row">
                     <div class="col-sm-12">
-                        {% for creator in creators %} {{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }} {{ "&" if not loop.last }} {% endfor %}
+                        {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
                     </div>
                 </div>
 
@@ -295,7 +295,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ creator.Name.Last_Name }}, {{ creator.Name.First_Name }}</span>
+                                <span>{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
                             </div>
                         </div>
                         <div class="row">
@@ -331,7 +331,7 @@
                                 <label>Name</label>
                             </div>
                             <div class="col-sm-10">
-                                <span>{{ contributor.Name.Last_Name }}, {{ contributor.Name.First_Name }}</span>
+                                <span>{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
 

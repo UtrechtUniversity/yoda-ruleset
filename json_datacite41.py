@@ -200,7 +200,7 @@ def getCreators(combi):
     """Get string in DataCite format containing creator information."""
 
     creators = [El('creator',
-                   El('creatorName', '{} {}'.format(creator['Name']['First_Name'], creator['Name']['Last_Name'])),
+                   El('creatorName', '{}, {}'.format(creator['Name']['Family_Name'], creator['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
                        for pid in creator.get('Person_Identifier', [])
                        if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
@@ -216,7 +216,7 @@ def getContributors(combi):
        including contact persons if these were added explicitly (GEO).
     """
     contribs = [El('contributor',
-                   El('contributorName', '{} {}'.format(person['Name']['First_Name'], person['Name']['Last_Name'])),
+                   El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
                        for pid in creator.get('Person_Identifier', [])
                        if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
