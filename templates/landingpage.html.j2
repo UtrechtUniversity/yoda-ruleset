@@ -271,6 +271,7 @@
                             </div>
                         </div>
 
+                        {% if pack.Persistent_Identifier is defined %}
                         <div class="row">
                             <div class="col-sm-2">
                                 <label class="indented">Persistent Identifier</label>
@@ -281,6 +282,7 @@
                                 </span>
                             </div>
                         </div>
+                        {% endif %}
 
                         {% if loop.last %}
                     </div>
