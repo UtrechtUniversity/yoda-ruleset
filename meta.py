@@ -268,8 +268,6 @@ def ingest_metadata_research(ctx, path):
 
 def ingest_metadata_staging(ctx, path):
     """Set cronjob metadata flag and triggers vault ingest."""
-    coll = pathutil.chop(path)[0]
-
     ret = msi.string_2_key_val_pair(ctx,
                                     '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
                                                     'cronjob_vault_ingest=',

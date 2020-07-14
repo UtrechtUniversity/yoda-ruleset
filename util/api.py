@@ -164,7 +164,7 @@ def _api(f):
             # An uncaught error. Log a trace to aid debugging.
             log._write(ctx, 'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'
                             .format(f.__name__, traceback.format_exc()))
-            return Error('internal', 'An internal error occurred', traceback.format_exc()).as_dict()
+            return error_internal(traceback.format_exc()).as_dict()
 
     return wrapper
 

@@ -83,21 +83,15 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
         try:
             # First make sure that no metadata json file exists already in the published collection .
             # If so, no transformation is required and the json file needs not be copied into the MOAI area.
-
-            jsonFound = False
             iter2 = genquery.row_iterator(
                 "ORDER(COLL_ID), COLL_NAME",
                 "DATA_NAME = '%s' AND COLL_ID = '%d'" % (data_name_json, coll_id),
                 genquery.AS_LIST, callback)
 
-            for row2 in iter2:
-                jsonFound = True
-                break
-
-                if not jsonFound:
-                    # At this moment only default schema is used. So not required to figure out which schema is necessary
-                    transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
-                    callback.iiCopyTransformedPublicationToMOAI(data_name_json, publication_collection, publicHost, yodaInstance, yodaPrefix)
+            if not next(iter2, False):
+                # At this moment only default schema is used. So not required to figure out which schema is necessary
+                transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
+                callback.iiCopyTransformedPublicationToMOAI(data_name_json, publication_collection, publicHost, yodaInstance, yodaPrefix)
         except Exception:
             pass
 

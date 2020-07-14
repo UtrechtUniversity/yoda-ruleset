@@ -74,7 +74,6 @@ def api_uu_folder_unlock(ctx, coll):
 
     :param coll: Folder to unlock
     """
-    current = get_status(ctx, coll)
     if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
         return api.Error('status_changed',
                          'Insufficient permissions or the folder is currently not locked')
