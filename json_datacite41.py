@@ -218,7 +218,7 @@ def getContributors(combi):
     contribs = [El('contributor',
                    El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in creator.get('Person_Identifier', [])
+                       for pid in person.get('Person_Identifier', [])
                        if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
                    + [El('affiliation', x) for x in person.get('Affiliation', [])],
                    contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))
