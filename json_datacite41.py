@@ -36,13 +36,13 @@ def El(tag, *children, **attrs):
 
 @rule.make()
 def rule_json_datacite41_create_combi_metadata_json(ctx,
-                                                       metadataJsonPath,
-                                                       combiJsonPath,
-                                                       lastModifiedDateTime,
-                                                       yodaDOI,
-                                                       publicationDate,
-                                                       openAccessLink,
-                                                       licenseUri):
+                                                    metadataJsonPath,
+                                                    combiJsonPath,
+                                                    lastModifiedDateTime,
+                                                    yodaDOI,
+                                                    publicationDate,
+                                                    openAccessLink,
+                                                    licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
