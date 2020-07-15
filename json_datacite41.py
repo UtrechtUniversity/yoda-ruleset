@@ -8,8 +8,8 @@ from util import *
 
 import xml.etree.cElementTree as ET
 
-__all__ = ['rule_uu_json_datacite41_create_combi_metadata_json',
-           'rule_uu_json_datacite41_create_data_cite_xml_on_json']
+__all__ = ['rule_json_datacite41_create_combi_metadata_json',
+           'rule_json_datacite41_create_data_cite_xml_on_json']
 
 
 def El(tag, *children, **attrs):
@@ -35,7 +35,7 @@ def El(tag, *children, **attrs):
 
 
 @rule.make()
-def rule_uu_json_datacite41_create_combi_metadata_json(ctx,
+def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                        metadataJsonPath,
                                                        combiJsonPath,
                                                        lastModifiedDateTime,
@@ -70,7 +70,7 @@ def rule_uu_json_datacite41_create_combi_metadata_json(ctx,
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
+def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.
 
     :param combi_path: path to the combined Json file that holds both User and System metadata

@@ -8,17 +8,17 @@ from datetime import datetime
 
 from util import *
 
-__all__ = ['api_uu_resource_groups_dm',
-           'api_uu_resource_monthly_stats_dm',
-           'api_uu_resource_monthly_category_stats_export_dm',
-           'api_uu_resource_monthly_stats',
-           'api_uu_resource_resource_and_tier_data',
-           'api_uu_resource_tier',
-           'rule_uu_resource_month_storage_per_tier_for_group']
+__all__ = ['api_resource_groups_dm',
+           'api_resource_monthly_stats_dm',
+           'api_resource_monthly_category_stats_export_dm',
+           'api_resource_monthly_stats',
+           'api_resource_resource_and_tier_data',
+           'api_resource_tier',
+           'rule_resource_month_storage_per_tier_for_group']
 
 
 @api.make()
-def api_uu_resource_tier(ctx, res_name):
+def api_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource."""
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -27,7 +27,7 @@ def api_uu_resource_tier(ctx, res_name):
 
 
 @api.make()
-def api_uu_resource_resource_and_tier_data(ctx):
+def api_resource_resource_and_tier_data(ctx):
     """Get all resources and their tier data."""
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -51,7 +51,7 @@ def api_uu_resource_resource_and_tier_data(ctx):
     return resourceList
 
 
-def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
+def rule_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
     """
     Get json representation for storage data for a period of 12 months for a specific group.
 
@@ -92,7 +92,7 @@ def rule_uu_resource_month_storage_per_tier_for_group(rule_args, callback, rei):
 
 
 @api.make()
-def api_uu_resource_monthly_stats(ctx):
+def api_resource_monthly_stats(ctx):
     """Collect storage data for all categories."""
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -103,7 +103,7 @@ def api_uu_resource_monthly_stats(ctx):
 
 
 @api.make()
-def api_uu_resource_monthly_stats_dm(ctx):
+def api_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
@@ -112,7 +112,7 @@ def api_uu_resource_monthly_stats_dm(ctx):
 
 
 @api.make()
-def api_uu_resource_groups_dm(ctx):
+def api_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
     datamanager = user.full_name(ctx)
     categories = getCategoriesDatamanager(datamanager, ctx)
@@ -121,7 +121,7 @@ def api_uu_resource_groups_dm(ctx):
 
 
 @api.make()
-def api_uu_resource_monthly_category_stats_export_dm(ctx):
+def api_resource_monthly_category_stats_export_dm(ctx):
     """
     Collect storage stats for all twelve months based upon categories a user is datamanager of.
 

@@ -8,7 +8,7 @@ import os
 
 from util import *
 
-__all__ = ['rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json']
+__all__ = ['rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json']
 
 
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
@@ -107,7 +107,7 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
     return data_id
 
 
-def rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
+def rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert published metadata XML that residedes in 'published' collection to JSON - batchwise.
 
     :param data_id: First DATA_ID to check - initial =0
@@ -135,5 +135,5 @@ def rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformatio
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d', '%s', '%s', '%s')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
+            "rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d', '%s', '%s', '%s')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")

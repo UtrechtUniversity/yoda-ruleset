@@ -8,14 +8,14 @@ import policies_folder_status
 from util import *
 from util.query import Query
 
-__all__ = ['rule_uu_collection_group_name',
-           'api_uu_folder_get_locks',
-           'api_uu_folder_lock',
-           'api_uu_folder_unlock',
-           'api_uu_folder_submit',
-           'api_uu_folder_unsubmit',
-           'api_uu_folder_accept',
-           'api_uu_folder_reject']
+__all__ = ['rule_collection_group_name',
+           'api_folder_get_locks',
+           'api_folder_lock',
+           'api_folder_unlock',
+           'api_folder_submit',
+           'api_folder_unsubmit',
+           'api_folder_accept',
+           'api_folder_reject']
 
 
 def set_status(ctx, coll, status):
@@ -56,7 +56,7 @@ def set_status_as_datamanager(ctx, coll, status):
 
 
 @api.make()
-def api_uu_folder_lock(ctx, coll):
+def api_folder_lock(ctx, coll):
     """Lock a folder.
 
     :param coll: Folder to lock
@@ -65,7 +65,7 @@ def api_uu_folder_lock(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_unlock(ctx, coll):
+def api_folder_unlock(ctx, coll):
     """Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
@@ -82,7 +82,7 @@ def api_uu_folder_unlock(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_submit(ctx, coll):
+def api_folder_submit(ctx, coll):
     """Submit a folder.
 
     :param coll: Folder to submit
@@ -91,7 +91,7 @@ def api_uu_folder_submit(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_unsubmit(ctx, coll):
+def api_folder_unsubmit(ctx, coll):
     """Unsubmit a folder.
 
     :param coll: Folder to unsubmit
@@ -104,7 +104,7 @@ def api_uu_folder_unsubmit(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_accept(ctx, coll):
+def api_folder_accept(ctx, coll):
     """Accept a folder.
 
     :param coll: Folder to accept
@@ -113,7 +113,7 @@ def api_uu_folder_accept(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_reject(ctx, coll):
+def api_folder_reject(ctx, coll):
     """Reject a folder.
 
     :param coll: Folder to reject
@@ -122,7 +122,7 @@ def api_uu_folder_reject(ctx, coll):
 
 
 @api.make()
-def api_uu_folder_secure(ctx, coll):
+def api_folder_secure(ctx, coll):
     """Secure a folder.
 
     :param coll: Folder to secure
@@ -170,7 +170,7 @@ def collection_group_name(callback, coll):
     return ""
 
 
-rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
+rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
 
 def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
@@ -196,7 +196,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 
 @api.make()
-def api_uu_folder_get_locks(ctx, coll):
+def api_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection."""
     return get_locks(ctx, coll)
 

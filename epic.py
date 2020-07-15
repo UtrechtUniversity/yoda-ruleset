@@ -8,7 +8,7 @@ import uuid
 
 from util import *
 
-__all__ = ['rule_uu_generate_uuid']
+__all__ = ['rule_generate_uuid']
 
 
 def generate_uuid(ctx):
@@ -17,4 +17,4 @@ def generate_uuid(ctx):
     return randomuuid.upper()
 
 
-rule_uu_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
+rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)

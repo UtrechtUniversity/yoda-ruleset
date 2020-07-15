@@ -14,8 +14,8 @@ import schema_transformation
 import vault
 from util import *
 
-__all__ = ['api_uu_meta_form_load',
-           'api_uu_meta_form_save']
+__all__ = ['api_meta_form_load',
+           'api_meta_form_save']
 
 
 # TODO: These belong in the group manager part of our rulesets. {{{
@@ -108,7 +108,7 @@ def humanize_validation_error(e):
 
 
 @api.make()
-def api_uu_meta_form_load(ctx, coll):
+def api_meta_form_load(ctx, coll):
     """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
@@ -284,7 +284,7 @@ def api_uu_meta_form_load(ctx, coll):
 
 
 @api.make()
-def api_uu_meta_form_save(ctx, coll, metadata):
+def api_meta_form_save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection.
 
     :param coll:     Collection to save metadata on

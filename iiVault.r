@@ -13,7 +13,7 @@
 #
 iiDetermineVaultTarget(*folder) {
 	*groupName = "";
-	*err = errorcode(rule_uu_collection_group_name(*folder, *groupName));
+	*err = errorcode(rule_collection_group_name(*folder, *groupName));
 	if (*err < 0) {
 		writeLine("stdout", "iiDetermineVaultTarget: Cannot determine which research group *folder belongs to");
 		fail;
@@ -70,7 +70,7 @@ iiCopyFolderToVault(*folder, *target) {
 #
 iiSetVaultPermissions(*folder, *target) {
 	*groupName = "";
-	*err = errorcode(rule_uu_collection_group_name(*folder, *groupName));
+	*err = errorcode(rule_collection_group_name(*folder, *groupName));
 	if (*err < 0) {
 		writeLine("stdout", "iiSetVaultPermissions: Cannot determine which research group *folder belongs to");
 		fail;

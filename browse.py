@@ -10,19 +10,19 @@ from collections import OrderedDict
 from util import *
 from util.query import Query
 
-__all__ = ['api_uu_browse_folder',
-           'api_uu_browse_collections',
-           'api_uu_search']
+__all__ = ['api_browse_folder',
+           'api_browse_collections',
+           'api_search']
 
 
 @api.make()
-def api_uu_browse_folder(ctx,
-                         coll='/',
-                         sort_on='name',
-                         sort_order='asc',
-                         offset=0,
-                         limit=10,
-                         space=pathutil.Space.OTHER.value):
+def api_browse_folder(ctx,
+                      coll='/',
+                      sort_on='name',
+                      sort_order='asc',
+                      offset=0,
+                      limit=10,
+                      space=pathutil.Space.OTHER.value):
     """Get paginated collection contents, including size/modify date information.
 
     :param coll:       Collection to get paginated contents of
@@ -100,13 +100,13 @@ def api_uu_browse_folder(ctx,
 
 
 @api.make()
-def api_uu_browse_collections(ctx,
-                              coll='/',
-                              sort_on='name',
-                              sort_order='asc',
-                              offset=0,
-                              limit=10,
-                              space=pathutil.Space.OTHER.value):
+def api_browse_collections(ctx,
+                           coll='/',
+                           sort_on='name',
+                           sort_order='asc',
+                           offset=0,
+                           limit=10,
+                           space=pathutil.Space.OTHER.value):
     """Get paginated collection contents, including size/modify date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
@@ -179,13 +179,13 @@ def api_uu_browse_collections(ctx,
 
 
 @api.make()
-def api_uu_search(ctx,
-                  search_string,
-                  search_type='filename',
-                  sort_on='name',
-                  sort_order='asc',
-                  offset=0,
-                  limit=10):
+def api_search(ctx,
+               search_string,
+               search_type='filename',
+               sort_on='name',
+               sort_order='asc',
+               offset=0,
+               limit=10):
     """Get paginated search results, including size/modify date/location information.
 
     :param search_string: String used to search

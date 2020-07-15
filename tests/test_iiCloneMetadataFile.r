@@ -1,5 +1,5 @@
 test_iiCloneMetadataFile {
-	rule_uu_meta_clone_file(*coll);
+	rule_meta_clone_file(*coll);
 }
 
 input *coll=""

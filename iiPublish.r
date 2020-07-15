@@ -56,7 +56,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
         # Create DataCiteXml based on content in *combiJsonPath
 	*receiveDataciteXml = '' ## initialize before handover to Python
 	# Based on content of *combiJsonPath, get DataciteXml as string
-	rule_uu_json_datacite41_create_data_cite_xml_on_json(*combiJsonPath, *receiveDataciteXml)
+	rule_json_datacite41_create_data_cite_xml_on_json(*combiJsonPath, *receiveDataciteXml)
 
         msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
         msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
@@ -100,10 +100,10 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 	# *metadataJsonPath contains latest json
 	*metadataJsonPath = "";
-	rule_uu_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
+	rule_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
 
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-	rule_uu_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
+	rule_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
 
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
@@ -217,7 +217,7 @@ iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 
 	# Genereate random ID for DOI.
 	*randomId = "";
-	rule_uu_generate_random_id(*length, *randomId);
+	rule_generate_random_id(*length, *randomId);
 
 	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomId";
 	*publicationState.randomId = *randomId;
@@ -241,7 +241,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiBytesBufToStr(*buf, *dataCiteXml);
 
 	*httpCode = "";
-	rule_uu_register_doi_metadata(*publicationState.yodaDOI, *dataCiteXml, *httpCode);
+	rule_register_doi_metadata(*publicationState.yodaDOI, *dataCiteXml, *httpCode);
 
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -266,7 +266,7 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
 
 	*httpCode = "";
-	rule_uu_delete_doi_metadata(*yodaDOI, *httpCode);
+	rule_delete_doi_metadata(*yodaDOI, *httpCode);
 
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -296,7 +296,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	*landingPageUrl = *publicationState.landingPageUrl;
 
 	*httpCode = "";
-	rule_uu_register_doi_url(*yodaDOI, *landingPageUrl, *httpCode);
+	rule_register_doi_url(*yodaDOI, *landingPageUrl, *httpCode);
 
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
@@ -364,7 +364,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 
         *receiveLandingPage = ''; ## initialize before handover to Python
         # Based on content of *combiJsonPath, get landingpage as string
-        rule_uu_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
+        rule_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
 
         writeString('serverLog', *receiveLandingPage);
 
@@ -605,7 +605,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 
 	*httpCode = ""
-	rule_uu_check_doi_availability(*yodaDOI, *httpCode)
+	rule_check_doi_availability(*yodaDOI, *httpCode)
 
 	if (*httpCode == "404") {
 		# DOI is available!
@@ -855,7 +855,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 			*mailStatus = "";
 			*message = "";
-			rule_uu_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
+			rule_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
 			}
@@ -871,7 +871,7 @@ iiProcessPublication(*vaultPackage, *status) {
 
 			*mailStatus = "";
 			*message = "";
-			rule_uu_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
+			rule_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
 			}
@@ -883,7 +883,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	        iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
 
-		rule_uu_provenance_log_action("system", *vaultPackage, "publication updated");
+		rule_provenance_log_action("system", *vaultPackage, "publication updated");
 	}
 }
 

@@ -37,4 +37,4 @@ from config import config
 
 if config.environment == 'development':
     import irods_type_info
-    ping = api_uu_ping = api.make()(lambda ctx, x=42: x)
+    ping = api_ping = api.make()(lambda ctx, x=42: x)

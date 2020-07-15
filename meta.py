@@ -13,14 +13,14 @@ import schema as schema_
 import vault
 from util import *
 
-__all__ = ['rule_uu_meta_validate',
-           'api_uu_meta_remove',
-           'api_uu_meta_clone_file',
-           'rule_uu_meta_modified_post',
-           'rule_uu_meta_datamanager_vault_ingest',
-           'rule_uu_meta_collection_has_cloneable_metadata',
-           'rule_uu_get_latest_vault_metadata_path',
-           'rule_uu_copy_user_metadata']
+__all__ = ['rule_meta_validate',
+           'api_meta_remove',
+           'api_meta_clone_file',
+           'rule_meta_modified_post',
+           'rule_meta_datamanager_vault_ingest',
+           'rule_meta_collection_has_cloneable_metadata',
+           'rule_get_latest_vault_metadata_path',
+           'rule_copy_user_metadata']
 
 
 def metadata_get_links(metadata):
@@ -148,13 +148,13 @@ def get_latest_vault_metadata_path(ctx, vault_pkg_coll):
     return None if name is None else '{}/{}'.format(vault_pkg_coll, name)
 
 
-rule_uu_get_latest_vault_metadata_path = (
+rule_get_latest_vault_metadata_path = (
     rule.make(inputs=[0], outputs=[1],
               transform=lambda x: x if type(x) is str else '')
              (get_latest_vault_metadata_path))
 
 
-def rule_uu_meta_validate(rule_args, callback, rei):
+def rule_meta_validate(rule_args, callback, rei):
     """Validate JSON metadata file."""
     json_path = rule_args[0]
 
@@ -192,14 +192,14 @@ def collection_has_cloneable_metadata(callback, coll):
     return False
 
 
-rule_uu_meta_collection_has_cloneable_metadata = (
+rule_meta_collection_has_cloneable_metadata = (
     rule.make(inputs=[0], outputs=[1],
               transform=lambda x: x if type(x) is str else '')
              (collection_has_cloneable_metadata))
 
 
 @api.make()
-def api_uu_meta_remove(ctx, coll):
+def api_meta_remove(ctx, coll):
     """Remove a collection's metadata JSON and XML, if they exist."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
@@ -214,7 +214,7 @@ def api_uu_meta_remove(ctx, coll):
 
 
 @api.make()
-def api_uu_meta_clone_file(ctx, target_coll):
+def api_meta_clone_file(ctx, target_coll):
     """Clone a metadata file from a parent collection to a subcollection.
 
     The destination collection (where the metadata is copied *to*) is given as an argument.
@@ -276,7 +276,7 @@ def ingest_metadata_staging(ctx, path):
 
     msi.set_key_value_pairs_to_obj(ctx, ret['arguments'][1], path, '-d')
 
-    # Note: Validation is triggered via ExecCmd in rule_uu_meta_datamanager_vault_ingest.
+    # Note: Validation is triggered via ExecCmd in rule_meta_datamanager_vault_ingest.
     #
     # msiExecCmd is currently not usable from Python rule engine:
     # https://github.com/irods/irods_rule_engine_plugin_python/issues/11
@@ -311,7 +311,7 @@ def ingest_metadata_vault(ctx, path):
 
 
 @rule.make()
-def rule_uu_meta_modified_post(ctx, path, user, zone):
+def rule_meta_modified_post(ctx, path, user, zone):
     if re.match('^/{}/home/datamanager-[^/]+/vault-[^/]+/.*'.format(zone), path):
         ingest_metadata_staging(ctx, path)
     elif re.match('^/{}/home/vault-[^/]+/.*'.format(zone), path):
@@ -320,7 +320,7 @@ def rule_uu_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_research(ctx, path)
 
 
-def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
+def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     """Ingest changes to metadata into the vault."""
     # This rule is called via ExecCmd during a policy rule
     # (ingest_metadata_staging), with as an argument the path to a metadata
@@ -340,7 +340,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     def set_result(msg_short, msg_long):
         rule_args[1:3] = msg_short, msg_long
         if msg_short != 'Success':
-            log.write(callback, 'rule_uu_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
+            log.write(callback, 'rule_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
         return
 
     # Parse path to JSON object.
@@ -393,7 +393,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Validate metadata.
     # FIXME - TOCTOU: also exists in XML version
     #      -> might fix by reading JSON only once, and validating and writing to vault from that.
-    ret = callback.rule_uu_meta_validate(json_path, '', '')
+    ret = callback.rule_meta_validate(json_path, '', '')
     invalid = ret['arguments'][1]
     if invalid == '1':
         set_result('FailedToValidateJSON', ret['arguments'][2])
@@ -415,10 +415,10 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Write license file.
-    callback.rule_uu_vault_write_license(vault_pkg_path)
+    callback.rule_vault_write_license(vault_pkg_path)
 
     # Log actions.
-    callback.rule_uu_provenance_log_action(actor, vault_pkg_path, 'modified metadata')
+    callback.rule_provenance_log_action(actor, vault_pkg_path, 'modified metadata')
 
     # Cleanup staging area.
     try:
@@ -461,7 +461,7 @@ def rule_uu_meta_datamanager_vault_ingest(rule_args, callback, rei):
 
 
 @rule.make()
-def rule_uu_copy_user_metadata(ctx, source, target):
+def rule_copy_user_metadata(ctx, source, target):
     """
     Copy the user metadata of a collection to another collection.
 
@@ -480,6 +480,6 @@ def rule_uu_copy_user_metadata(ctx, source, target):
         for row in iter:
             avu.associate_to_coll(ctx, target, row[0], row[1])
 
-        log.write(ctx, "rule_uu_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "rule_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
     except Exception:
-        log.write(ctx, "rule_uu_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))
+        log.write(ctx, "rule_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))

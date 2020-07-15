@@ -9,13 +9,13 @@ import time
 
 from util import *
 
-__all__ = ['rule_uu_provenance_log_action',
-           'rule_uu_copy_provenance_log',
-           'api_uu_provenance_log']
+__all__ = ['rule_provenance_log_action',
+           'rule_copy_provenance_log',
+           'api_provenance_log']
 
 
 @rule.make()
-def rule_uu_provenance_log_action(ctx, actor, coll, action):
+def rule_provenance_log_action(ctx, actor, coll, action):
     """
     Function to add action log record to provenance of specific folder.
 
@@ -26,13 +26,13 @@ def rule_uu_provenance_log_action(ctx, actor, coll, action):
     try:
         log_item = [str(int(time.time())), action, actor]
         avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
-        log.write(ctx, "rule_uu_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+        log.write(ctx, "rule_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
     except Exception:
-        log.write(ctx, "rule_uu_provenance_log_action: failed to log action <{}> to provenance".format(action))
+        log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
 @rule.make()
-def rule_uu_copy_provenance_log(ctx, source, target):
+def rule_copy_provenance_log(ctx, source, target):
     """
     Copy the provenance log of a collection to another collection.
 
@@ -51,9 +51,9 @@ def rule_uu_copy_provenance_log(ctx, source, target):
         for row in iter:
             avu.associate_to_coll(ctx, target, constants.UUPROVENANCELOG, row[0])
 
-        log.write(ctx, "rule_uu_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
+        log.write(ctx, "rule_copy_provenance_log: copied provenance log from <{}> to <{}>".format(source, target))
     except Exception:
-        log.write(ctx, "rule_uu_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
+        log.write(ctx, "rule_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
 
 
 def get_provenance_log(ctx, coll):
@@ -81,7 +81,7 @@ def get_provenance_log(ctx, coll):
 
 
 @api.make()
-def api_uu_provenance_log(ctx, coll):
+def api_provenance_log(ctx, coll):
     """Return formatted provenance log of a collection.
 
     :param coll: Path of a collection in research or vault space.

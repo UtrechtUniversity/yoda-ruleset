@@ -469,12 +469,12 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
                              pathutil.basename(info.subpath)))):
             # Path is a metadata file, ingest.
             log.write(ctx, 'metadata JSON <{}> modified by {}, ingesting'.format(path, username))
-            ctx.rule_uu_meta_modified_post(path, username, zone)
+            ctx.rule_meta_modified_post(path, username, zone)
 
     except Exception as e:
         # The rules on metadata are run synchronously and could fail.
         # Log errors, but continue with revisions.
-        log.write(ctx, 'rule_uu_meta_modified_post failed: ' + str(e))
+        log.write(ctx, 'rule_meta_modified_post failed: ' + str(e))
 
     ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
 

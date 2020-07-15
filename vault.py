@@ -14,23 +14,23 @@ import meta_form
 import session_vars
 from util import *
 
-__all__ = ['api_uu_vault_submit',
-           'api_uu_vault_approve',
-           'api_uu_vault_cancel',
-           'api_uu_vault_depublish',
-           'api_uu_vault_republish',
-           'api_uu_vault_preservable_formats_lists',
-           'api_uu_vault_unpreservable_files',
-           'rule_uu_vault_copy_original_metadata_to_vault',
-           'rule_uu_vault_write_license',
-           'api_uu_vault_system_metadata',
-           'api_uu_vault_collection_details',
-           'api_uu_vault_copy_to_research',
-           'api_uu_vault_get_publication_terms']
+__all__ = ['api_vault_submit',
+           'api_vault_approve',
+           'api_vault_cancel',
+           'api_vault_depublish',
+           'api_vault_republish',
+           'api_vault_preservable_formats_lists',
+           'api_vault_unpreservable_files',
+           'rule_vault_copy_original_metadata_to_vault',
+           'rule_vault_write_license',
+           'api_vault_system_metadata',
+           'api_vault_collection_details',
+           'api_vault_copy_to_research',
+           'api_vault_get_publication_terms']
 
 
 @api.make()
-def api_uu_vault_submit(ctx, coll):
+def api_vault_submit(ctx, coll):
     """Submit data package for publication.
 
     :param coll: Collection of data package to submit
@@ -42,7 +42,7 @@ def api_uu_vault_submit(ctx, coll):
 
 
 @api.make()
-def api_uu_vault_approve(ctx, coll):
+def api_vault_approve(ctx, coll):
     """Approve data package for publication.
 
     :param coll: Collection of data package to approve
@@ -53,7 +53,7 @@ def api_uu_vault_approve(ctx, coll):
 
 
 @api.make()
-def api_uu_vault_cancel(ctx, coll):
+def api_vault_cancel(ctx, coll):
     """Cancel submit of data package.
 
     :param coll: Collection of data package to cancel submit
@@ -64,7 +64,7 @@ def api_uu_vault_cancel(ctx, coll):
 
 
 @api.make()
-def api_uu_vault_depublish(ctx, coll):
+def api_vault_depublish(ctx, coll):
     """Depublish data package.
 
     :param coll: Collection of data package to depublish
@@ -75,7 +75,7 @@ def api_uu_vault_depublish(ctx, coll):
 
 
 @api.make()
-def api_uu_vault_republish(ctx, coll):
+def api_vault_republish(ctx, coll):
     """Republish data package.
 
     :param coll: Collection of data package to republish
@@ -86,7 +86,7 @@ def api_uu_vault_republish(ctx, coll):
 
 
 @api.make()
-def api_uu_vault_copy_to_research(ctx, coll_origin, coll_target):
+def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     """Copy data package from vault to research space.
 
     :param coll_origin: Collection of data package to copy
@@ -154,7 +154,7 @@ def api_uu_vault_copy_to_research(ctx, coll_origin, coll_target):
 
 
 @api.make()
-def api_uu_vault_preservable_formats_lists(ctx):
+def api_vault_preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
 
     :returns: dict -- Lists of preservable file formats {name => [ext...]}
@@ -172,7 +172,7 @@ def api_uu_vault_preservable_formats_lists(ctx):
 
 
 @api.make()
-def api_uu_vault_unpreservable_files(ctx, coll, list_name):
+def api_vault_unpreservable_files(ctx, coll, list_name):
     """Retrieve the set of unpreservable file formats in a collection.
 
     :param coll:      Collection of folder to check
@@ -201,7 +201,7 @@ def api_uu_vault_unpreservable_files(ctx, coll, list_name):
     return exts - preservable_formats
 
 
-def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
+def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
     :param rule_args[0]: Path of a new package in the vault
@@ -214,7 +214,7 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
-def rule_uu_vault_write_license(rule_args, callback, rei):
+def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
     :param rule_args[0]: Path of a package in the vault
@@ -238,7 +238,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "rule_uu_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(callback, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
@@ -257,9 +257,9 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             try:
                 callback.iiCopyACLsFromParent(license_file, 'default')
             except Exception as e:
-                log.write(callback, "rule_uu_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(callback, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "rule_uu_vault_write_license: License text not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
@@ -272,11 +272,11 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             # Set license URI.
             avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
-            log.write(callback, "rule_uu_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
-def api_uu_vault_system_metadata(callback, coll):
+def api_vault_system_metadata(callback, coll):
     """Return collection statistics as JSON."""
     import math
 
@@ -383,7 +383,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 
 @api.make()
-def api_uu_vault_collection_details(ctx, path):
+def api_vault_collection_details(ctx, path):
     """Return details of a vault collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
@@ -436,7 +436,7 @@ def api_uu_vault_collection_details(ctx, path):
 
 
 @api.make()
-def api_uu_vault_get_publication_terms(ctx):
+def api_vault_get_publication_terms(ctx):
     """Retrieve the publication terms."""
     zone = user.zone(ctx)
     terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)

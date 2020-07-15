@@ -7,7 +7,7 @@ check {
         *yodaInstance = *publicationConfig.yodaInstance;
         *yodaPrefix = *publicationConfig.yodaPrefix;
 
-        rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json("0", *batch, *pause, *delay, *publicHost, *yodaInstance, *yodaPrefix);
+        rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json("0", *batch, *pause, *delay, *publicHost, *yodaInstance, *yodaPrefix);
 }
 
 input *batch="256", *pause="0.5", *delay="60"

@@ -7,13 +7,13 @@ __license__   = 'GPLv3, see LICENSE'
 import requests
 from util import *
 
-__all__ = ['api_uu_group_data',
-           'api_uu_group_data_filtered',
-           'api_uu_group_categories',
-           'api_uu_group_subcategories',
-           'rule_uu_group_provision_external_user',
-           'rule_uu_group_remove_external_user',
-           'rule_uu_group_user_exists']
+__all__ = ['api_group_data',
+           'api_group_data_filtered',
+           'api_group_categories',
+           'api_group_subcategories',
+           'rule_group_provision_external_user',
+           'rule_group_remove_external_user',
+           'rule_group_user_exists']
 
 
 def getGroupData(callback):
@@ -146,13 +146,13 @@ def getSubcategories(callback, category):
 
 
 @api.make()
-def api_uu_group_data(ctx):
+def api_group_data(ctx):
     """Write group data for all users to stdout."""
     return getGroupData(ctx)
 
 
 @api.make()
-def api_uu_group_data_filtered(ctx, user_name, zone_name):
+def api_group_data_filtered(ctx, user_name, zone_name):
     """Write group data for a single user to stdout."""
     groups    = getGroupData(ctx)
     full_name = '{}#{}'.format(user_name, zone_name)
@@ -161,10 +161,10 @@ def api_uu_group_data_filtered(ctx, user_name, zone_name):
     return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
 
-def rule_uu_group_user_exists(rule_args, callback, rei):
+def rule_group_user_exists(rule_args, callback, rei):
     """Check if a user is a member of the given group.
 
-    rule_uu_group_user_exists(group, user, includeRo, membership)
+    rule_group_user_exists(group, user, includeRo, membership)
     If includeRo is true, membership of a group's read-only shadow group will be
     considered as well. Otherwise, the user must be a normal member or manager of
     the given group.
@@ -184,13 +184,13 @@ def rule_uu_group_user_exists(rule_args, callback, rei):
 
 
 @api.make()
-def api_uu_group_categories(ctx):
+def api_group_categories(ctx):
     """Write category list to stdout."""
     return getCategories(ctx)
 
 
 @api.make()
-def api_uu_group_subcategories(ctx, category):
+def api_group_subcategories(ctx, category):
     """Write subcategory list to stdout."""
     return getSubcategories(ctx, category)
 
@@ -225,7 +225,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     return response.status_code
 
 
-def rule_uu_group_provision_external_user(rule_args, callback, rei):
+def rule_group_provision_external_user(rule_args, callback, rei):
     """Provision external user."""
     status = 1
     message = "An internal error occurred."
@@ -282,6 +282,6 @@ def removeExternalUser(callback, username, userzone):
     return str(response.status_code)
 
 
-def rule_uu_group_remove_external_user(rule_args, callback, rei):
+def rule_group_remove_external_user(rule_args, callback, rei):
     """Remove external user."""
     log.write(callback, removeExternalUser(callback, rule_args[0], rule_args[1]))
