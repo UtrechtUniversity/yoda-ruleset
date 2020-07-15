@@ -10,7 +10,7 @@ run {
 	msiGetIcatTime(*timestamp, "human");
 	writeLine('stdout', '[' ++ *timestamp ++ '] Gathering storage statistics');
 
-        *result = rule_uu_resource_store_monthly_storage_statistics();
+        *result = rule_resource_store_monthly_storage_statistics();
 #	#uuStoreMonthlyStorageStatistics(*status, *statusInfo);
 
 #	writeLine('stdout', 'Status: ' ++ *status);

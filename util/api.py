@@ -181,17 +181,17 @@ def make():
 
     Synopsis:
 
-        __all__ = ['api_uu_ping']
+        __all__ = ['api_ping']
 
         @api.make()
-        def api_uu_ping(ctx, foo):
+        def api_ping(ctx, foo):
             if foo != 42:
                 return api.Error('not_allowed', 'Ping is not allowed')
             log.write(ctx, 'ping received')
             return foo
 
         # this returns {"status": "ok", "status_info": null, "data": 42}
-        # when called as api_uu_ping {"foo": 42}
+        # when called as api_ping {"foo": 42}
     """
     def deco(f):
         # The "base" API function, that does handling of arguments and errors.

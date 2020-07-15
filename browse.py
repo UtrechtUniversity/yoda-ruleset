@@ -10,19 +10,19 @@ from collections import OrderedDict
 from util import *
 from util.query import Query
 
-__all__ = ['api_uu_browse_folder',
-           'api_uu_browse_collections',
-           'api_uu_search']
+__all__ = ['api_browse_folder',
+           'api_browse_collections',
+           'api_search']
 
 
 @api.make()
-def api_uu_browse_folder(ctx,
-                         coll='/',
-                         sort_on='name',
-                         sort_order='asc',
-                         offset=0,
-                         limit=10,
-                         space=pathutil.Space.OTHER):
+def api_browse_folder(ctx,
+                      coll='/',
+                      sort_on='name',
+                      sort_order='asc',
+                      offset=0,
+                      limit=10,
+                      space=pathutil.Space.OTHER):
     """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -95,13 +95,13 @@ def api_uu_browse_folder(ctx,
 
 
 @api.make()
-def api_uu_browse_collections(ctx,
-                              coll='/',
-                              sort_on='name',
-                              sort_order='asc',
-                              offset=0,
-                              limit=10,
-                              space=pathutil.Space.OTHER):
+def api_browse_collections(ctx,
+                           coll='/',
+                           sort_on='name',
+                           sort_order='asc',
+                           offset=0,
+                           limit=10,
+                           space=pathutil.Space.OTHER):
     """Get paginated collection contents, including size/modify date information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -163,13 +163,13 @@ def api_uu_browse_collections(ctx,
 
 
 @api.make()
-def api_uu_search(ctx,
-                  search_string,
-                  search_type='filename',
-                  sort_on='name',
-                  sort_order='asc',
-                  offset=0,
-                  limit=10):
+def api_search(ctx,
+               search_string,
+               search_type='filename',
+               sort_on='name',
+               sort_order='asc',
+               offset=0,
+               limit=10):
     """Get paginated search results, including size/modify date/location information."""
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.

@@ -56,7 +56,7 @@ iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
 	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
 		*actor = uuClientFullName;
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action(*actionActor, *folder, "canceled publication");
+		rule_provenance_log_action(*actionActor, *folder, "canceled publication");
 	}
 	on (true) {
 		nop;
@@ -93,7 +93,7 @@ iiVaultRequestStatusTransition(*folder, *newVaultStatus, *status, *statusInfo) {
 
 	# Retrieve user group name and user type.
 	*actorGroup = "";
-	rule_uu_collection_group_name(*folder, *actorGroup);
+	rule_collection_group_name(*folder, *actorGroup);
 
 	uuGroupGetMemberType(*actorGroup, uuClientFullName, *userType);
 
@@ -249,7 +249,7 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action(*actionActor, *folder, "submitted for publication");
+		rule_provenance_log_action(*actionActor, *folder, "submitted for publication");
 
 		# Store actor of publication submission.
 		msiString2KeyValPair("", *kvp);
@@ -258,7 +258,7 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 	}
 	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action(*actionActor, *folder, "approved for publication");
+		rule_provenance_log_action(*actionActor, *folder, "approved for publication");
 
 		# Store actor of publication approval.
 		msiString2KeyValPair("", *kvp);
@@ -266,19 +266,19 @@ iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
 		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
 	}
 	on (*newVaultStatus == PUBLISHED) {
-		rule_uu_provenance_log_action("system", *folder, "published");
+		rule_provenance_log_action("system", *folder, "published");
 	}
 	on (*newVaultStatus == PENDING_DEPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action(*actionActor, *folder, "requested depublication");
+		rule_provenance_log_action(*actionActor, *folder, "requested depublication");
 	}
 	on (*newVaultStatus == DEPUBLISHED) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action("system", *folder, "depublished");
+		rule_provenance_log_action("system", *folder, "depublished");
 	}
 	on (*newVaultStatus == PENDING_REPUBLICATION) {
 	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_uu_provenance_log_action(*actionActor, *folder, "requested republication");
+		rule_provenance_log_action(*actionActor, *folder, "requested republication");
 	}
 	on (true) {
 		nop;

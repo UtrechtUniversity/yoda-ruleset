@@ -14,22 +14,20 @@ from pathvalidate import ValidationError, validate_filename, validate_filepath
 from util import *
 from util.query import Query
 
-__all__ = ['api_uu_research_folder_add',
-           'api_uu_research_folder_delete',
-           'api_uu_research_folder_rename',
-           'api_uu_research_file_rename',
-           'api_uu_research_file_delete',
-           'api_uu_research_revision_restore',
-           'api_uu_research_revisions_search_on_filename',
-           'api_uu_research_revision_list',
-           'api_uu_research_system_metadata',
-           'api_uu_research_collection_details']
+__all__ = ['api_research_folder_add',
+           'api_research_folder_delete',
+           'api_research_folder_rename',
+           'api_research_file_rename',
+           'api_research_file_delete',
+           'api_research_revision_restore',
+           'api_research_revisions_search_on_filename',
+           'api_research_revision_list',
+           'api_research_system_metadata',
+           'api_research_collection_details']
 
 
 @api.make()
-def api_uu_research_folder_add(ctx,
-                               coll,
-                               new_folder_name):
+def api_research_folder_add(ctx, coll, new_folder_name):
 
     coll_target = coll + '/' + new_folder_name
 
@@ -93,10 +91,7 @@ def api_uu_research_folder_add(ctx,
 
 
 @api.make()
-def api_uu_research_folder_rename(ctx,
-                                  new_folder_name,
-                                  coll,
-                                  org_folder_name):
+def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     coll_target = coll + '/' + new_folder_name
 
@@ -165,9 +160,7 @@ def api_uu_research_folder_rename(ctx,
 
 
 @api.make()
-def api_uu_research_folder_delete(ctx,
-                                  coll,
-                                  folder_name):
+def api_research_folder_delete(ctx, coll, folder_name):
     coll_target = coll + '/' + folder_name
 
     # Not in home - a groupname must be present ie at least 2!?
@@ -220,10 +213,7 @@ def api_uu_research_folder_delete(ctx,
 
 
 @api.make()
-def api_uu_research_file_rename(ctx,
-                                new_file_name,
-                                coll,
-                                org_file_name):
+def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
     if len(new_file_name) == 0:
         return {"proc_status": "nok",
@@ -292,9 +282,7 @@ def api_uu_research_file_rename(ctx,
 
 
 @api.make()
-def api_uu_research_file_delete(ctx,
-                                coll,
-                                file_name):
+def api_research_file_delete(ctx, coll, file_name):
 
     path_target = coll + '/' + file_name
 
@@ -338,11 +326,7 @@ def api_uu_research_file_delete(ctx,
 
 
 @api.make()
-def api_uu_research_revisions_search_on_filename(ctx,
-                                                 searchString,
-                                                 offset=0,
-                                                 limit=10):
-
+def api_research_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     zone = user.zone(ctx)
 
     revisions = []
@@ -400,7 +384,7 @@ def api_uu_research_revisions_search_on_filename(ctx,
 
 
 @api.make()
-def api_uu_research_revision_list(ctx, path):
+def api_research_revision_list(ctx, path):
 
     originalPathKey = ''
     startpath = ''
@@ -451,7 +435,7 @@ def api_uu_research_revision_list(ctx, path):
 #   With "restore_no_overwrite" the front end tries to copy the selected revision in *target
 #    If the file already exist the user needs to decide what to do.
 #     Function exits with corresponding status so front end can take action
-def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_filename):
+def api_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_filename):
     """Copy selected revision to target collection with given name."""
     # New file name should not contain '\\' or '/'
     if '/' in new_filename or '\\' in new_filename:
@@ -536,7 +520,7 @@ def api_uu_research_revision_restore(ctx, revision_id, overwrite, coll_target, n
 
 
 @api.make()
-def api_uu_research_system_metadata(ctx, coll):
+def api_research_system_metadata(ctx, coll):
     """Return collection statistics as JSON."""
     import math
 
@@ -561,7 +545,7 @@ def api_uu_research_system_metadata(ctx, coll):
 
 
 @api.make()
-def api_uu_research_collection_details(ctx, path):
+def api_research_collection_details(ctx, path):
     """Return details of a research collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')

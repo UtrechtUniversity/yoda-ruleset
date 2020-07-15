@@ -14,19 +14,19 @@ import meta_form
 import session_vars
 from util import *
 
-__all__ = ['api_uu_vault_submit',
-           'api_uu_vault_approve',
-           'api_uu_vault_cancel',
-           'api_uu_vault_depublish',
-           'api_uu_vault_republish',
-           'api_uu_vault_preservable_formats_lists',
-           'api_uu_vault_unpreservable_files',
-           'rule_uu_vault_copy_original_metadata_to_vault',
-           'rule_uu_vault_write_license',
-           'api_uu_vault_system_metadata',
-           'api_uu_vault_collection_details',
-           'api_uu_vault_copy_to_research',
-           'api_uu_vault_get_publication_terms']
+__all__ = ['api_vault_submit',
+           'api_vault_approve',
+           'api_vault_cancel',
+           'api_vault_depublish',
+           'api_vault_republish',
+           'api_vault_preservable_formats_lists',
+           'api_vault_unpreservable_files',
+           'rule_vault_copy_original_metadata_to_vault',
+           'rule_vault_write_license',
+           'api_vault_system_metadata',
+           'api_vault_collection_details',
+           'api_vault_copy_to_research',
+           'api_vault_get_publication_terms']
 
 
 def submit(ctx, coll):
@@ -122,12 +122,12 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
             "origin": coll_origin}
 
 
-api_uu_vault_submit           = api.make()(submit)
-api_uu_vault_approve          = api.make()(approve)
-api_uu_vault_cancel           = api.make()(cancel)
-api_uu_vault_depublish        = api.make()(depublish)
-api_uu_vault_republish        = api.make()(republish)
-api_uu_vault_copy_to_research = api.make()(vault_copy_to_research)
+api_vault_submit           = api.make()(submit)
+api_vault_approve          = api.make()(approve)
+api_vault_cancel           = api.make()(cancel)
+api_vault_depublish        = api.make()(depublish)
+api_vault_republish        = api.make()(republish)
+api_vault_copy_to_research = api.make()(vault_copy_to_research)
 
 
 def preservable_formats_lists(ctx):
@@ -177,13 +177,13 @@ def unpreservable_files(ctx, path, list_name):
 
 
 @api.make()
-def api_uu_vault_preservable_formats_lists(ctx):
+def api_vault_preservable_formats_lists(ctx):
     """Write preservable file formats lists to stdout."""
     return preservable_formats_lists(ctx)
 
 
 @api.make()
-def api_uu_vault_unpreservable_files(ctx, coll, list_name):
+def api_vault_unpreservable_files(ctx, coll, list_name):
     """Write unpreservable files in folder to stdout.
 
     :param coll:      Path of folder to check.
@@ -192,7 +192,7 @@ def api_uu_vault_unpreservable_files(ctx, coll, list_name):
     return list(unpreservable_files(ctx, coll, list_name))
 
 
-def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
+def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
     :param rule_args[0]: Path of a new package in the vault.
@@ -205,7 +205,7 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
-def rule_uu_vault_write_license(rule_args, callback, rei):
+def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
     :param rule_args[0]: Path of a package in the vault.
@@ -229,7 +229,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "rule_uu_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(callback, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
@@ -248,9 +248,9 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             try:
                 callback.iiCopyACLsFromParent(license_file, 'default')
             except Exception as e:
-                log.write(callback, "rule_uu_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(callback, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "rule_uu_vault_write_license: License text not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
@@ -263,11 +263,11 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             # Set license URI.
             avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
-            log.write(callback, "rule_uu_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
-def api_uu_vault_system_metadata(callback, coll):
+def api_vault_system_metadata(callback, coll):
     """Return collection statistics as JSON."""
     import math
 
@@ -374,7 +374,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 
 @api.make()
-def api_uu_vault_collection_details(ctx, path):
+def api_vault_collection_details(ctx, path):
     """Return details of a vault collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
@@ -426,7 +426,7 @@ def api_uu_vault_collection_details(ctx, path):
 
 
 @api.make()
-def api_uu_vault_get_publication_terms(ctx):
+def api_vault_get_publication_terms(ctx):
     """Retrieve the publication terms."""
     zone = user.zone(ctx)
     terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)

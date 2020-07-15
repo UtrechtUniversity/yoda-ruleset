@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import xmltodict
 from util import *
 
-__all__ = ['rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
+__all__ = ['rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
 
 
 def getMetadataXmlAsDict(callback, path):
@@ -304,7 +304,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
     callback.msiDataObjClose(fileHandle, 0)
 
     # Add item to provenance log.
-    callback.rule_uu_provenance_log_action("system", vault_collection, "transformed yoda-metadata.xml to yoda-metadata.json")
+    callback.rule_provenance_log_action("system", vault_collection, "transformed yoda-metadata.xml to yoda-metadata.json")
 
     log.write(callback, "[ADDED METADATA.JSON AFTER TRANSFORMATION] %s" % (json_file))
 
@@ -394,7 +394,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     return coll_id
 
 
-def rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
+def rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert vault metadata XML to JSON - batchwise.
 
     :param coll_id: First COLL_ID to check - initial =0
@@ -418,5 +418,5 @@ def rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_jso
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "rule_uu_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")

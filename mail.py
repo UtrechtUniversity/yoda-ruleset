@@ -11,8 +11,8 @@ import smtplib
 
 from util import *
 
-__all__ = ['rule_uu_mail_new_package_published',
-           'rule_uu_mail_your_package_published']
+__all__ = ['rule_mail_new_package_published',
+           'rule_mail_your_package_published']
 
 
 def send(ctx, to, actor, subject, body):
@@ -104,7 +104,7 @@ def _wrapper(ctx, to, actor, subject, body):
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
-def rule_uu_mail_new_package_published(ctx, datamanager, actor, title, doi):
+def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
                     to      = datamanager,
                     actor   = actor,
@@ -121,7 +121,7 @@ Yoda system
 
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
-def rule_uu_mail_your_package_published(ctx, researcher, actor, title, doi):
+def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
                     to      = researcher,
                     actor   = actor,

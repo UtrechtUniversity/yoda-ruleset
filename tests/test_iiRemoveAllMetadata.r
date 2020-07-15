@@ -4,7 +4,7 @@ test_iiRemoveAllMetadata {
 		*testPath = "/$rodsZoneClient/home/research-test/meta";
 	}
 
-	rule_uu_meta_remove(*testPath);
+	rule_meta_remove(*testPath);
 
 }
 

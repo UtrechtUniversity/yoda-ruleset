@@ -10,23 +10,23 @@ from util import *
 import meta_form
 
 
-__all__ = ['api_uu_resource_groups_dm',
-           'api_uu_resource_monthly_stats_dm',
-           'api_uu_resource_monthly_category_stats_export_dm',
-           'api_uu_resource_monthly_stats',
-           'api_uu_resource_resource_and_tier_data',
-           'api_uu_resource_tier',
-           'api_uu_resource_get_tiers',
-           'api_uu_resource_save_tier',
-           'api_uu_resource_user_get_type',
-           'api_uu_resource_user_research_groups',
-           'api_uu_resource_user_is_datamanager',
-           'api_uu_resource_full_year_group_data',
-           'rule_uu_resource_store_monthly_storage_statistics']
+__all__ = ['api_resource_groups_dm',
+           'api_resource_monthly_stats_dm',
+           'api_resource_monthly_category_stats_export_dm',
+           'api_resource_monthly_stats',
+           'api_resource_resource_and_tier_data',
+           'api_resource_tier',
+           'api_resource_get_tiers',
+           'api_resource_save_tier',
+           'api_resource_user_get_type',
+           'api_resource_user_research_groups',
+           'api_resource_user_is_datamanager',
+           'api_resource_full_year_group_data',
+           'rule_resource_store_monthly_storage_statistics']
 
 
 @api.make()
-def api_uu_resource_save_tier(ctx, resource_name, tier_name):
+def api_resource_save_tier(ctx, resource_name, tier_name):
     """Save tier for given resource as metadata.
     :param resource_name: Resource that the tier is equipped with
     :param tier_name:     Name of the tier that is given to the resource
@@ -48,7 +48,7 @@ def api_uu_resource_save_tier(ctx, resource_name, tier_name):
 
 
 @api.make()
-def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
+def api_resource_full_year_group_data(ctx, group_name, current_month):
     """Get a full year of monthly storage data starting from current month and look back one year.
     :param group_name:    group that is searched for storage data
     :param current_month: Month passed that is supposed to be the month to look back from
@@ -94,14 +94,14 @@ def api_uu_resource_full_year_group_data(ctx, group_name, current_month):
 
 
 @api.make()
-def api_uu_resource_user_get_type(ctx):
+def api_resource_user_get_type(ctx):
     """Get current user type
     """
     return user.user_type(ctx)
 
 
 @api.make()
-def api_uu_resource_user_research_groups(ctx):
+def api_resource_user_research_groups(ctx):
     """Get the research groups a user is member of.
     """
     groups = []
@@ -123,7 +123,7 @@ def api_uu_resource_user_research_groups(ctx):
 
 
 @api.make()
-def api_uu_resource_user_is_datamanager(ctx):
+def api_resource_user_is_datamanager(ctx):
     """Check whether current user is datamanager of group.
     """
     iter = genquery.row_iterator(
@@ -141,7 +141,7 @@ def api_uu_resource_user_is_datamanager(ctx):
 
 
 @api.make()
-def api_uu_resource_get_tiers(ctx):
+def api_resource_get_tiers(ctx):
     """As rodsadmin get all tiers present.
     """
     if user.user_type(ctx) != 'rodsadmin':
@@ -165,7 +165,7 @@ def api_uu_resource_get_tiers(ctx):
 
 
 @api.make()
-def api_uu_resource_tier(ctx, res_name):
+def api_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource.
     :param res_name: Resource that the tier is equipped with
     """
@@ -177,7 +177,7 @@ def api_uu_resource_tier(ctx, res_name):
 
 
 @api.make()
-def api_uu_resource_resource_and_tier_data(ctx):
+def api_resource_resource_and_tier_data(ctx):
     """List al resources and its tier data.
     """
     if user.user_type(ctx) != 'rodsadmin':
@@ -203,7 +203,7 @@ def api_uu_resource_resource_and_tier_data(ctx):
 
 
 @api.make()
-def api_uu_resource_monthly_stats(ctx):
+def api_resource_monthly_stats(ctx):
     """As rodsadmin collect monthly statistics"""
 
     if user.user_type(ctx) != 'rodsadmin':
@@ -215,7 +215,7 @@ def api_uu_resource_monthly_stats(ctx):
 
 
 @api.make()
-def api_uu_resource_monthly_stats_dm(ctx):
+def api_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
     datamanager = user.full_name(ctx)
     categories = get_categories_datamanager(ctx, datamanager)
@@ -224,7 +224,7 @@ def api_uu_resource_monthly_stats_dm(ctx):
 
 
 @api.make()
-def api_uu_resource_groups_dm(ctx):
+def api_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
 
     datamanager = user.full_name(ctx)
@@ -234,7 +234,7 @@ def api_uu_resource_groups_dm(ctx):
 
 
 @api.make()
-def api_uu_resource_monthly_category_stats_export_dm(ctx):
+def api_resource_monthly_category_stats_export_dm(ctx):
     """
     Collect storage stats for all twelve months based upon categories a user is datamanager of.
 
@@ -448,7 +448,7 @@ def get_tier_by_resource_name(ctx, res_name):
 
 
 @rule.make()
-def rule_uu_resource_store_monthly_storage_statistics(ctx):
+def rule_resource_store_monthly_storage_statistics(ctx):
     """
     For all categories known store all found storage data for each group belonging to those category.
     Store as metadata on group level holding

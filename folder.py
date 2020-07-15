@@ -8,14 +8,14 @@ import policies_folder_status
 from util import *
 from util.query import Query
 
-__all__ = ['rule_uu_collection_group_name',
-           'api_uu_folder_get_locks',
-           'api_uu_folder_lock',
-           'api_uu_folder_unlock',
-           'api_uu_folder_submit',
-           'api_uu_folder_unsubmit',
-           'api_uu_folder_accept',
-           'api_uu_folder_reject']
+__all__ = ['rule_collection_group_name',
+           'api_folder_get_locks',
+           'api_folder_lock',
+           'api_folder_unlock',
+           'api_folder_submit',
+           'api_folder_unsubmit',
+           'api_folder_accept',
+           'api_folder_reject']
 
 
 def set_status(ctx, coll, status):
@@ -124,12 +124,12 @@ def secure(ctx, coll):
     ctx.iiFolderSecure(coll)
 
 
-api_uu_folder_lock     = api.make()(lock)
-api_uu_folder_unlock   = api.make()(unlock)
-api_uu_folder_submit   = api.make()(submit)
-api_uu_folder_unsubmit = api.make()(unsubmit)
-api_uu_folder_accept   = api.make()(accept)
-api_uu_folder_reject   = api.make()(reject)
+api_folder_lock     = api.make()(lock)
+api_folder_unlock   = api.make()(unlock)
+api_folder_submit   = api.make()(submit)
+api_folder_unsubmit = api.make()(unsubmit)
+api_folder_accept   = api.make()(accept)
+api_folder_reject   = api.make()(reject)
 
 
 def collection_group_name(callback, coll):
@@ -172,7 +172,7 @@ def collection_group_name(callback, coll):
     return ""
 
 
-rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
+rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
 
 def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
@@ -198,7 +198,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 
 @api.make()
-def api_uu_folder_get_locks(ctx, coll):
+def api_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection."""
     return get_locks(ctx, coll)
 
