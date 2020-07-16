@@ -113,17 +113,17 @@
             "title": "Creator of datapackage",
             "yoda:structure": "compound",
             "required": [
-              "First_Name",
-              "Last_Name"
+              "Given_Name",
+              "Family_Name"
             ],
             "properties": {
-              "First_Name": {
+              "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "First Name"
               },
-              "Last_Name": {
+              "Family_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Last Name"
+                "title": "Family Name"
               }
             }
           },

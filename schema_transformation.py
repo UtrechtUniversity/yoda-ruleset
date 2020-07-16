@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-__all__ = ['rule_uu_batch_transform_vault_metadata',
-           'rule_uu_get_transformation_info',
-           'api_uu_transform_metadata']
+__all__ = ['rule_batch_transform_vault_metadata',
+           'rule_get_transformation_info',
+           'api_transform_metadata']
 
 import os
 import re
@@ -41,7 +41,7 @@ def execute_transformation(callback, metadata_path, transform):
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
         jsonutil.write(callback, new_path, metadata)
         copy_acls_from_parent(callback, new_path, "default")
-        callback.rule_uu_provenance_log_action("system", coll, "updated metadata schema")
+        callback.rule_provenance_log_action("system", coll, "updated metadata schema")
         log.write(callback, "Transformed %s" % (new_path))
     else:
         assert False
@@ -116,7 +116,7 @@ def transform_research_xml(callback, xml_path):
 
 
 @api.make()
-def api_uu_transform_metadata(ctx, coll):
+def api_transform_metadata(ctx, coll):
     """Transform a yoda-metadata file in the given collection to the active schema."""
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
 
@@ -172,7 +172,7 @@ def get(callback, metadata_path, metadata=None):
 
 
 # TODO: @rule.make
-def rule_uu_get_transformation_info(rule_args, callback, rei):
+def rule_get_transformation_info(rule_args, callback, rei):
     """
     Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
 
@@ -224,7 +224,7 @@ def copy_acls_from_parent(callback, path, recursive_flag):
 
 
 # TODO: @rule.make
-def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
+def rule_batch_transform_vault_metadata(rule_args, callback, rei):
     """
     Transform all metadata JSON files in the vault to the active schema.
 
@@ -279,7 +279,7 @@ def rule_uu_batch_transform_vault_metadata(rule_args, callback, rei):
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "rule_uu_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
+            "rule_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
 
 

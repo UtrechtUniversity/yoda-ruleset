@@ -6,7 +6,7 @@ use 5.12.0;
 # easy wrapper for irule/uu api calling convention calls.
 # with fancy output formatting if jq is installed.
 #
-# api> api_uu_ping {"foo": 42}
+# api> api_ping {"foo": 42}
 
 sub run {
     @_ or die "usage: $0 <api_name> [args_json={}]\n";

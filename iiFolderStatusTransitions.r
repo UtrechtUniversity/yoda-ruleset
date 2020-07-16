@@ -25,7 +25,7 @@ iiFolderStatus(*folder, *folderStatus) {
 #
 iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 	*groupName = "";
-	rule_uu_collection_group_name(*folder, *groupName);
+	rule_collection_group_name(*folder, *groupName);
 	uuGroupGetCategory(*groupName, *category, *subcategory);
 	uuGroupExists("datamanager-*category", *datamanagerExists);
 }
@@ -38,7 +38,7 @@ iiFolderDatamanagerExists(*folder, *datamanagerExists) {
 #
 iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == SUBMITTED) {
-		rule_uu_provenance_log_action(*actor, *folder, "submitted for vault");
+		rule_provenance_log_action(*actor, *folder, "submitted for vault");
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (!*datamanagerExists) {
 			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
@@ -48,9 +48,9 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 	on (*newFolderStatus == ACCEPTED) {
 		iiFolderDatamanagerExists(*folder, *datamanagerExists);
 		if (*datamanagerExists) {
-			rule_uu_provenance_log_action(*actor, *folder, "accepted for vault");
+			rule_provenance_log_action(*actor, *folder, "accepted for vault");
 		} else {
-			rule_uu_provenance_log_action("system", *folder, "accepted for vault");
+			rule_provenance_log_action("system", *folder, "accepted for vault");
 		}
 
 		# Set cronjob state.
@@ -65,20 +65,20 @@ iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
 			msi_json_arrayops(*actionLog, *log, "get", *size - 1);
 			msi_json_arrayops(*log, *log, "get", 1);
 			if (*log == "submitted for vault") {
-				rule_uu_provenance_log_action(*actor, *folder, "unsubmitted for vault");
+				rule_provenance_log_action(*actor, *folder, "unsubmitted for vault");
 				succeed;
 			}
 		}
-		rule_uu_provenance_log_action(*actor, *folder, "unlocked");
+		rule_provenance_log_action(*actor, *folder, "unlocked");
 	}
 	on (*newFolderStatus == LOCKED) {
-		rule_uu_provenance_log_action(*actor, *folder, "locked");
+		rule_provenance_log_action(*actor, *folder, "locked");
 	}
 	on (*newFolderStatus == REJECTED) {
-		rule_uu_provenance_log_action(*actor, *folder, "rejected for vault");
+		rule_provenance_log_action(*actor, *folder, "rejected for vault");
 	}
 	on (*newFolderStatus == SECURED) {
-		rule_uu_provenance_log_action("system", *folder, "secured in vault");
+		rule_provenance_log_action("system", *folder, "secured in vault");
 	}
 	on (true) {
 		nop;
@@ -107,7 +107,7 @@ iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 
 	# Check if folder is a research group.
 	*groupName = "";
-	*err = errorcode(rule_uu_collection_group_name(*folder, *groupName));
+	*err = errorcode(rule_collection_group_name(*folder, *groupName));
 	if (*err < 0) {
 		*status = "NoResearchGroup";
 		*statusInfo = "*folder is not accessible possibly due to insufficient rights or as it is not part of a research group. Therefore, the requested action can not be performed";
@@ -250,9 +250,9 @@ iiFolderSecure(*folder) {
 
 	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
-	rule_uu_copy_user_metadata(*folder, *target);
-	rule_uu_vault_copy_original_metadata_to_vault(*target);
-	rule_uu_vault_write_license(*target);
+	rule_copy_user_metadata(*folder, *target);
+	rule_vault_copy_original_metadata_to_vault(*target);
+	rule_vault_write_license(*target);
 
 
 	if (*httpCode != "0") {
@@ -280,7 +280,7 @@ iiFolderSecure(*folder) {
 	}
 
 	# Copy provenance log.
-	rule_uu_copy_provenance_log(*folder, *target);
+	rule_copy_provenance_log(*folder, *target);
 
 	# Set vault permissions for new vault package.
 	iiSetVaultPermissions(*folder, *target);
@@ -317,7 +317,7 @@ iiRegisterEpicPID(*target, *url, *pid, *httpCode) {
 
 	# Generate new EPIC PID
 	*pid = "";
-	rule_uu_generate_uuid(*pid);
+	rule_generate_uuid(*pid);
 
 	# Try to register EPIC PID
 	*httpCode = "-1";

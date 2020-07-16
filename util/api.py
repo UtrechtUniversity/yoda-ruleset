@@ -164,7 +164,7 @@ def _api(f):
             # An uncaught error. Log a trace to aid debugging.
             log._write(ctx, 'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'
                             .format(f.__name__, traceback.format_exc()))
-            return Error('internal', 'An internal error occurred', traceback.format_exc()).as_dict()
+            return error_internal(traceback.format_exc()).as_dict()
 
     return wrapper
 
@@ -181,17 +181,17 @@ def make():
 
     Synopsis:
 
-        __all__ = ['api_uu_ping']
+        __all__ = ['api_ping']
 
         @api.make()
-        def api_uu_ping(ctx, foo):
+        def api_ping(ctx, foo):
             if foo != 42:
                 return api.Error('not_allowed', 'Ping is not allowed')
             log.write(ctx, 'ping received')
             return foo
 
         # this returns {"status": "ok", "status_info": null, "data": 42}
-        # when called as api_uu_ping {"foo": 42}
+        # when called as api_ping {"foo": 42}
     """
     def deco(f):
         # The "base" API function, that does handling of arguments and errors.

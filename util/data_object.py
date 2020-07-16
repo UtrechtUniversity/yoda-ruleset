@@ -51,7 +51,7 @@ def write(callback, path, data):
     ret = msi.data_obj_create(callback, path, 'forceFlag=', 0)
     handle = ret['arguments'][2]
 
-    ret = msi.data_obj_write(callback, handle, data, 0)
+    msi.data_obj_write(callback, handle, data, 0)
     msi.data_obj_close(callback, handle, 0)
 
 

@@ -65,7 +65,7 @@ uuFrontEndGetYearStatisticsForGroup(*groupName, *currentMonth, *data, *status, *
 	}
 
         *data = ''
-        rule_uu_resource_month_storage_per_tier_for_group(*groupName, *currentMonth, *data);
+        rule_resource_month_storage_per_tier_for_group(*groupName, *currentMonth, *data);
 }
 
 
@@ -149,7 +149,7 @@ uuGetExportDMCategoryStorageFullYear(*result, *status, *statusInfo)
 
         *result = '[]';
 
-        rule_uu_resource_monthly_category_stats_export_dm(uuClientFullName, *result);
+        rule_resource_monthly_category_stats_export_dm(uuClientFullName, *result);
 }
 
 

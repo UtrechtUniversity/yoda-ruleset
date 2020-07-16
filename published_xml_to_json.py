@@ -8,7 +8,7 @@ import os
 
 from util import *
 
-__all__ = ['rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json']
+__all__ = ['rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json']
 
 
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
@@ -83,21 +83,15 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
         try:
             # First make sure that no metadata json file exists already in the published collection .
             # If so, no transformation is required and the json file needs not be copied into the MOAI area.
-
-            jsonFound = False
             iter2 = genquery.row_iterator(
                 "ORDER(COLL_ID), COLL_NAME",
                 "DATA_NAME = '%s' AND COLL_ID = '%d'" % (data_name_json, coll_id),
                 genquery.AS_LIST, callback)
 
-            for row2 in iter2:
-                jsonFound = True
-                break
-
-                if not jsonFound:
-                    # At this moment only default schema is used. So not required to figure out which schema is necessary
-                    transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
-                    callback.iiCopyTransformedPublicationToMOAI(data_name_json, publication_collection, publicHost, yodaInstance, yodaPrefix)
+            if not next(iter2, False):
+                # At this moment only default schema is used. So not required to figure out which schema is necessary
+                transformPublishedMetadataXmlToJson(callback, rods_zone, publication_collection, data_name_xml, data_name_json)
+                callback.iiCopyTransformedPublicationToMOAI(data_name_json, publication_collection, publicHost, yodaInstance, yodaPrefix)
         except Exception:
             pass
 
@@ -113,7 +107,7 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
     return data_id
 
 
-def rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
+def rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert published metadata XML that residedes in 'published' collection to JSON - batchwise.
 
     :param data_id: First DATA_ID to check - initial =0
@@ -141,5 +135,5 @@ def rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformatio
         # Check the next batch after a delay.
         callback.delayExec(
             "<PLUSET>%ds</PLUSET>" % delay,
-            "rule_uu_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d', '%s', '%s', '%s')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
+            "rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d', '%s', '%s', '%s')" % (data_id, batch, pause, delay, publicHost, yodaInstance, yodaPrefix),
             "")

@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import policies_folder_status
 from util import *
 from util.query import Query
 
-__all__ = ['rule_uu_collection_group_name',
-           'api_uu_folder_get_locks',
-           'api_uu_folder_lock',
-           'api_uu_folder_unlock',
-           'api_uu_folder_submit',
-           'api_uu_folder_unsubmit',
-           'api_uu_folder_accept',
-           'api_uu_folder_reject']
+__all__ = ['rule_collection_group_name',
+           'api_folder_get_locks',
+           'api_folder_lock',
+           'api_folder_unlock',
+           'api_folder_submit',
+           'api_folder_unsubmit',
+           'api_folder_accept',
+           'api_folder_reject']
 
 
 def set_status(ctx, coll, status):
@@ -55,24 +55,25 @@ def set_status_as_datamanager(ctx, coll, status):
         return api.Error(*res['arguments'][1:])
 
 
-def lock(ctx, coll):
+@api.make()
+def api_folder_lock(ctx, coll):
     """Lock a folder.
 
-    :param coll: Folder to lock.
+    :param coll: Folder to lock
     """
     return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
 
-def unlock(ctx, coll):
+@api.make()
+def api_folder_unlock(ctx, coll):
     """Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
     can also represent other state changes than "unlock", we perform a sanity
     check to see if the folder is currently in the expected state.
 
-    :param coll: Folder to unlock.
+    :param coll: Folder to unlock
     """
-    current = get_status(ctx, coll)
     if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
         return api.Error('status_changed',
                          'Insufficient permissions or the folder is currently not locked')
@@ -80,18 +81,20 @@ def unlock(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
-def submit(ctx, coll):
+@api.make()
+def api_folder_submit(ctx, coll):
     """Submit a folder.
 
-    :param coll: Folder to submit.
+    :param coll: Folder to submit
     """
     return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
-def unsubmit(ctx, coll):
+@api.make()
+def api_folder_unsubmit(ctx, coll):
     """Unsubmit a folder.
 
-    :param coll: Folder to unsubmit.
+    :param coll: Folder to unsubmit
     """
     # Sanity check. See 'unlock'.
     if get_status(ctx, coll) is not constants.research_package_state.SUBMITTED:
@@ -100,36 +103,31 @@ def unsubmit(ctx, coll):
     return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
-def accept(ctx, coll):
+@api.make()
+def api_folder_accept(ctx, coll):
     """Accept a folder.
 
-    :param coll: Folder to accept.
+    :param coll: Folder to accept
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
 
-def reject(ctx, coll):
+@api.make()
+def api_folder_reject(ctx, coll):
     """Reject a folder.
 
-    :param coll: Folder to reject.
+    :param coll: Folder to reject
     """
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
-def secure(ctx, coll):
+@api.make()
+def api_folder_secure(ctx, coll):
     """Secure a folder.
 
-    :param coll: Folder to secure.
+    :param coll: Folder to secure
     """
     ctx.iiFolderSecure(coll)
-
-
-api_uu_folder_lock     = api.make()(lock)
-api_uu_folder_unlock   = api.make()(unlock)
-api_uu_folder_submit   = api.make()(submit)
-api_uu_folder_unsubmit = api.make()(unsubmit)
-api_uu_folder_accept   = api.make()(accept)
-api_uu_folder_reject   = api.make()(reject)
 
 
 def collection_group_name(callback, coll):
@@ -172,7 +170,7 @@ def collection_group_name(callback, coll):
     return ""
 
 
-rule_uu_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
+rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
 
 def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
@@ -198,7 +196,7 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 
 
 @api.make()
-def api_uu_folder_get_locks(ctx, coll):
+def api_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection."""
     return get_locks(ctx, coll)
 

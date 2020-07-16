@@ -16,11 +16,11 @@
     "items": {
       "Name": {
         "ui:help": "The name of the person(s) who created (a version of) the data package.",
-        "First_Name": {
-          "ui:help": "The first name of the person(s) who created (a version of) the data package"
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
         },
-        "Last_Name": {
-          "ui:help": "The last name of the person(s) who created (a version of) the data package"
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who created (a version of) the data package"
         }
       },
       "Affiliation": {

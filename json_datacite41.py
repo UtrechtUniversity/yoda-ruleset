@@ -8,8 +8,8 @@ from util import *
 
 import xml.etree.cElementTree as ET
 
-__all__ = ['rule_uu_json_datacite41_create_combi_metadata_json',
-           'rule_uu_json_datacite41_create_data_cite_xml_on_json']
+__all__ = ['rule_json_datacite41_create_combi_metadata_json',
+           'rule_json_datacite41_create_data_cite_xml_on_json']
 
 
 def El(tag, *children, **attrs):
@@ -35,14 +35,14 @@ def El(tag, *children, **attrs):
 
 
 @rule.make()
-def rule_uu_json_datacite41_create_combi_metadata_json(ctx,
-                                                       metadataJsonPath,
-                                                       combiJsonPath,
-                                                       lastModifiedDateTime,
-                                                       yodaDOI,
-                                                       publicationDate,
-                                                       openAccessLink,
-                                                       licenseUri):
+def rule_json_datacite41_create_combi_metadata_json(ctx,
+                                                    metadataJsonPath,
+                                                    combiJsonPath,
+                                                    lastModifiedDateTime,
+                                                    yodaDOI,
+                                                    publicationDate,
+                                                    openAccessLink,
+                                                    licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
     :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
@@ -70,7 +70,7 @@ def rule_uu_json_datacite41_create_combi_metadata_json(ctx,
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
+def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.
 
     :param combi_path: path to the combined Json file that holds both User and System metadata
@@ -200,7 +200,7 @@ def getCreators(combi):
     """Get string in DataCite format containing creator information."""
 
     creators = [El('creator',
-                   El('creatorName', '{} {}'.format(creator['Name']['First_Name'], creator['Name']['Last_Name'])),
+                   El('creatorName', '{}, {}'.format(creator['Name']['Family_Name'], creator['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
                        for pid in creator.get('Person_Identifier', [])
                        if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
@@ -216,9 +216,9 @@ def getContributors(combi):
        including contact persons if these were added explicitly (GEO).
     """
     contribs = [El('contributor',
-                   El('contributorName', '{} {}'.format(person['Name']['First_Name'], person['Name']['Last_Name'])),
+                   El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in creator.get('Person_Identifier', [])
+                       for pid in person.get('Person_Identifier', [])
                        if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
                    + [El('affiliation', x) for x in person.get('Affiliation', [])],
                    contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))

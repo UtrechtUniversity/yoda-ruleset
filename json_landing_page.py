@@ -7,10 +7,10 @@ __license__   = 'GPLv3, see LICENSE'
 import jinja2
 from util import *
 
-__all__ = ['rule_uu_json_landing_page_create_json_landing_page']
+__all__ = ['rule_json_landing_page_create_json_landing_page']
 
 
-def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei):
+def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
     """Get the landing page of published YoDa metadata as a string.
 
     :param rodsZone: Zone name
@@ -116,7 +116,6 @@ def rule_uu_json_landing_page_create_json_landing_page(rule_args, callback, rei)
         geolocations = dictJsonData['GeoLocation']
     except KeyError:
         geolocations = {}
-        pass
 
     # Collection name  ILAB specific - part of default schemas
     try:

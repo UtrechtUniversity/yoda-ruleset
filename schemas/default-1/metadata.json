@@ -890,17 +890,17 @@
             "title": "Creator of datapackage",
             "yoda:structure": "compound",
             "required": [
-              "First_Name",
-              "Last_Name"
+              "Given_Name",
+              "Family_Name"
             ],
             "properties": {
-              "First_Name": {
+              "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "First Name"
               },
-              "Last_Name": {
+              "Family_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Last Name"
+                "title": "Family Name"
               }
             }
           },
@@ -954,18 +954,18 @@
             "title": "Contributor to datapackage",
             "yoda:structure": "compound",
             "properties": {
-              "First_Name": {
+              "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "First Name"
               },
-              "Last_Name": {
+              "Family_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Last Name"
+                "title": "Family Name"
               }
             },
             "dependencies": {
-              "First_Name": ["Last_Name"],
-              "Last_Name": ["First_Name"]
+              "Given_Name": ["Family_Name"],
+              "Family_Name": ["Given_Name"]
             }
           },
           "Contributor_Type": {
@@ -1007,7 +1007,7 @@
           }
         },
         "dependencies": {
-          "First_Name": ["Contributor_Type", "Affiliation"]
+          "Given_Name": ["Contributor_Type", "Affiliation"]
         }
       }
     },

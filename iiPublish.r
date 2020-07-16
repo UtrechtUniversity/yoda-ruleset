@@ -3,7 +3,7 @@
 #            for a research group.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2020, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -56,7 +56,7 @@ iiGenerateDataCiteXml(*publicationConfig, *publicationState) {
         # Create DataCiteXml based on content in *combiJsonPath
 	*receiveDataciteXml = '' ## initialize before handover to Python
 	# Based on content of *combiJsonPath, get DataciteXml as string
-	rule_uu_json_datacite41_create_data_cite_xml_on_json(*combiJsonPath, *receiveDataciteXml)
+	rule_json_datacite41_create_data_cite_xml_on_json(*combiJsonPath, *receiveDataciteXml)
 
         msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
         msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
@@ -81,11 +81,8 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
-
+        *publicationDate = *publicationState.publicationDate;
         *subPath = triml(*vaultPackage, "/home/");
-        msiGetIcatTime(*now, "unix");
-        *publicationDate = uuiso8601date(*now);
-
         *combiJsonPath = "*tempColl/*randomId-combi.json";
 
 	#DEBUG writeString('serverLog', *combiJsonPath);
@@ -103,10 +100,10 @@ iiGenerateCombiJson(*publicationConfig, *publicationState){
 
 	# *metadataJsonPath contains latest json
 	*metadataJsonPath = "";
-	rule_uu_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
+	rule_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
 
 	# Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-	rule_uu_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
+	rule_json_datacite41_create_combi_metadata_json(*metadataJsonPath, *combiJsonPath, *lastModifiedDateTime, *yodaDOI, *publicationDate, *openAccessLink, *licenseUri);
 
 	*publicationState.combiJsonPath = *combiJsonPath;
 }
@@ -125,10 +122,7 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
         *randomId = *publicationState.randomId;
         *yodaDOI = *publicationState.yodaDOI;
         *lastModifiedDateTime = *publicationState.lastModifiedDateTime;
-
-
-        msiGetIcatTime(*now, "unix");
-        *publicationDate = uuiso8601date(*now);
+        *publicationDate = *publicationState.publicationDate;
         *systemJsonPath = "*tempColl/*randomId-combi.json";
 
         *systemJsonData =
@@ -149,6 +143,41 @@ iiGenerateSystemJson(*publicationConfig, *publicationState) {
         msiDataObjClose(*fd, *status);
         #DEBUG writeLine("serverLog", "iiGenerateSystemJson: generated *systemJsonPath");
         *publicationState.combiJsonPath = *systemJsonPath;
+}
+
+
+# \brief Determine the time of publication as a datetime with UTC offset.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiGetPublicationDate(*publicationState) {
+        *actionLog = UUORGMETADATAPREFIX ++ "action_log";
+        *vaultPackage = *publicationState.vaultPackage;
+        *publicationState.publicationDate = "";
+
+        foreach(*row in SELECT order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE
+                                          WHERE META_COLL_ATTR_NAME = *actionLog
+                                          AND COLL_NAME = *vaultPackage) {
+            *logRecord = *row.META_COLL_ATTR_VALUE;
+            *action = "";
+            msi_json_arrayops(*logRecord, *action, "get", 1);
+            if (*action == "published") {
+                *publicationTimestamp = "";
+                msi_json_arrayops(*logRecord, *publicationTimestamp, "get", 0);
+                # iso8601 compliant datetime with UTC offset
+                *publicationDateTime = timestrf(datetime(int(*publicationTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
+                *publicationState.publicationDate = uuiso8601date(*publicationDateTime);
+                #DEBUG writeLine("serverLog", "iiGetPublicationDate: *publicationState.publicationDate");
+                break;
+            }
+        }
+
+        if(*publicationState.publicationDate == "" ) {
+            msiGetIcatTime(*now, "unix");
+            *publicationDate = uuiso8601date(*now);
+            *publicationState.publicationDate = *publicationDate;
+        }
 }
 
 
@@ -188,7 +217,7 @@ iiGeneratePreliminaryDOI(*publicationConfig, *publicationState) {
 
 	# Genereate random ID for DOI.
 	*randomId = "";
-	rule_uu_generate_random_id(*length, *randomId);
+	rule_generate_random_id(*length, *randomId);
 
 	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomId";
 	*publicationState.randomId = *randomId;
@@ -212,7 +241,7 @@ iiPostMetadataToDataCite(*publicationConfig, *publicationState){
 	msiBytesBufToStr(*buf, *dataCiteXml);
 
 	*httpCode = "";
-	rule_uu_register_doi_metadata(*dataCiteXml, *httpCode);
+	rule_register_doi_metadata(*publicationState.yodaDOI, *dataCiteXml, *httpCode);
 
 	if (*httpCode == "201") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -237,7 +266,7 @@ iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState){
 	*yodaDOI = *publicationState.yodaDOI;
 
 	*httpCode = "";
-	rule_uu_delete_doi_metadata(*yodaDOI, *httpCode);
+	rule_delete_doi_metadata(*yodaDOI, *httpCode);
 
 	if (*httpCode == "200") {
 		*publicationState.dataCiteMetadataPosted = "yes";
@@ -267,7 +296,7 @@ iiMintDOI(*publicationConfig, *publicationState) {
 	*landingPageUrl = *publicationState.landingPageUrl;
 
 	*httpCode = "";
-	rule_uu_register_doi_url(*yodaDOI, *landingPageUrl, *httpCode);
+	rule_register_doi_url(*yodaDOI, *landingPageUrl, *httpCode);
 
 	#DEBUG writeLine("serverLog", "iiMintDOI: *httpCode");
 	if (*httpCode == "201") {
@@ -335,7 +364,7 @@ iiGenerateLandingPage(*publicationConfig, *publicationState, *publish)
 
         *receiveLandingPage = ''; ## initialize before handover to Python
         # Based on content of *combiJsonPath, get landingpage as string
-        rule_uu_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
+        rule_json_landing_page_create_json_landing_page(*rodsZone, *template_name, *combiJsonPath, *receiveLandingPage);
 
         writeString('serverLog', *receiveLandingPage);
 
@@ -576,7 +605,7 @@ iiCheckDOIAvailability(*publicationConfig, *publicationState) {
 	*yodaDOI = *publicationState.yodaDOI;
 
 	*httpCode = ""
-	rule_uu_check_doi_availability(*yodaDOI, *httpCode)
+	rule_check_doi_availability(*yodaDOI, *httpCode)
 
 	if (*httpCode == "404") {
 		# DOI is available!
@@ -646,6 +675,9 @@ iiProcessPublication(*vaultPackage, *status) {
 		*publicationState.status = "Processing";
 	}
 
+	if (!iiHasKey(*publicationState, "publicationDate")) {
+        iiGetPublicationDate(*publicationState);
+	}
 
 	if (!iiHasKey(*publicationState, "yodaDOI")) {
 		# Generate Yoda DOI
@@ -821,7 +853,9 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
-			rule_uu_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
+			*mailStatus = "";
+			*message = "";
+			rule_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
 			}
@@ -835,7 +869,9 @@ iiProcessPublication(*vaultPackage, *status) {
 			        break;
 			}
 
-			rule_uu_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
+			*mailStatus = "";
+			*message = "";
+			rule_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
 			if (int(*mailStatus) != 0) {
 			    writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
 			}
@@ -847,7 +883,7 @@ iiProcessPublication(*vaultPackage, *status) {
 	        iiSavePublicationState(*vaultPackage, *publicationState);
 		*status = *publicationState.status;
 
-		rule_uu_provenance_log_action("system", *vaultPackage, "publication updated");
+		rule_provenance_log_action("system", *vaultPackage, "publication updated");
 	}
 }
 
@@ -1038,6 +1074,9 @@ iiProcessRepublication(*vaultPackage, *status) {
 		*publicationState.status = "Processing";
 	}
 
+    if (!iiHasKey(*publicationState, "publicationDate")) {
+        iiGetPublicationDate(*publicationState);
+	}
 
 	# Determine last modification time. Always run, no matter if retry.
 	iiGetLastModifiedDateTime(*publicationState);
@@ -1252,6 +1291,10 @@ iiUpdateLandingpage(*vaultPackage, *status) {
 	if (*publicationState.status != "OK") {
 		*status = "NotAllowed";
 		succeed;
+	}
+
+    if (!iiHasKey(*publicationState, "publicationDate")) {
+        iiGetPublicationDate(*publicationState);
 	}
 
 	# Determine last modification time. Always run, no matter if retry.

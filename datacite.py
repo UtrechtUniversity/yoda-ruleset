@@ -10,24 +10,24 @@ import string
 
 from util import *
 
-__all__ = ['rule_uu_generate_random_id',
-           'rule_uu_register_doi_metadata',
-           'rule_uu_register_doi_url',
-           'rule_uu_check_doi_availability',
-           'rule_uu_delete_doi_metadata']
+__all__ = ['rule_generate_random_id',
+           'rule_register_doi_metadata',
+           'rule_register_doi_url',
+           'rule_check_doi_availability',
+           'rule_delete_doi_metadata']
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_generate_random_id(ctx, length):
+def rule_generate_random_id(ctx, length):
     """Generate random ID for DOI."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for x in range(int(length)))
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_uu_register_doi_metadata(ctx, payload):
-    """Register DOI metadata with DataCite.."""
-    url = "{}/metadata".format(config.datacite_url)
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_register_doi_metadata(ctx, doi, payload):
+    """Register DOI metadata with DataCite."""
+    url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
 
@@ -37,9 +37,9 @@ def rule_uu_register_doi_metadata(ctx, payload):
 
 
 @rule.make(inputs=[0, 1], outputs=[2])
-def rule_uu_register_doi_url(ctx, doi, url):
+def rule_register_doi_url(ctx, doi, url):
     """Register DOI url with DataCite."""
-    url = "{}/doi".format(config.datacite_url)
+    url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
     payload = "doi={}\nurl={}".format(doi, url)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
@@ -50,7 +50,7 @@ def rule_uu_register_doi_url(ctx, doi, url):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_check_doi_availability(ctx, doi):
+def rule_check_doi_availability(ctx, doi):
     """Check with DataCite if DOI is available."""
     url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -61,7 +61,7 @@ def rule_uu_check_doi_availability(ctx, doi):
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_uu_delete_doi_metadata(ctx, doi):
+def rule_delete_doi_metadata(ctx, doi):
     """Delete DOI metadata with DataCite."""
     url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)

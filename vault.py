@@ -14,53 +14,84 @@ import meta_form
 import session_vars
 from util import *
 
-__all__ = ['api_uu_vault_submit',
-           'api_uu_vault_approve',
-           'api_uu_vault_cancel',
-           'api_uu_vault_depublish',
-           'api_uu_vault_republish',
-           'api_uu_vault_preservable_formats_lists',
-           'api_uu_vault_unpreservable_files',
-           'rule_uu_vault_copy_original_metadata_to_vault',
-           'rule_uu_vault_write_license',
-           'api_uu_vault_system_metadata',
-           'api_uu_vault_collection_details',
-           'api_uu_vault_copy_to_research',
-           'api_uu_vault_get_publication_terms']
+__all__ = ['api_vault_submit',
+           'api_vault_approve',
+           'api_vault_cancel',
+           'api_vault_depublish',
+           'api_vault_republish',
+           'api_vault_preservable_formats_lists',
+           'api_vault_unpreservable_files',
+           'rule_vault_copy_original_metadata_to_vault',
+           'rule_vault_write_license',
+           'api_vault_system_metadata',
+           'api_vault_collection_details',
+           'api_vault_copy_to_research',
+           'api_vault_get_publication_terms']
 
 
-def submit(ctx, coll):
+@api.make()
+def api_vault_submit(ctx, coll):
+    """Submit data package for publication.
+
+    :param coll: Collection of data package to submit
+    """
     res = ctx.iiVaultSubmit(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
     return res['arguments'][1]
 
 
-def approve(ctx, coll):
+@api.make()
+def api_vault_approve(ctx, coll):
+    """Approve data package for publication.
+
+    :param coll: Collection of data package to approve
+    """
     res = ctx.iiVaultApprove(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
-def cancel(ctx, coll):
+@api.make()
+def api_vault_cancel(ctx, coll):
+    """Cancel submit of data package.
+
+    :param coll: Collection of data package to cancel submit
+    """
     res = ctx.iiVaultCancel(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
-def depublish(ctx, coll):
+@api.make()
+def api_vault_depublish(ctx, coll):
+    """Depublish data package.
+
+    :param coll: Collection of data package to depublish
+    """
     res = ctx.iiVaultDepublish(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
-def republish(ctx, coll):
+@api.make()
+def api_vault_republish(ctx, coll):
+    """Republish data package.
+
+    :param coll: Collection of data package to republish
+    """
     res = ctx.iiVaultRepublish(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
-def vault_copy_to_research(ctx, coll_origin, coll_target):
+@api.make()
+def api_vault_copy_to_research(ctx, coll_origin, coll_target):
+    """Copy data package from vault to research space.
+
+    :param coll_origin: Collection of data package to copy
+    :param coll_target: Collection to copy data package to
+    """
     zone = user.zone(ctx)
 
     # API error introduces post-error in requesting application.
@@ -122,15 +153,8 @@ def vault_copy_to_research(ctx, coll_origin, coll_target):
             "origin": coll_origin}
 
 
-api_uu_vault_submit           = api.make()(submit)
-api_uu_vault_approve          = api.make()(approve)
-api_uu_vault_cancel           = api.make()(cancel)
-api_uu_vault_depublish        = api.make()(depublish)
-api_uu_vault_republish        = api.make()(republish)
-api_uu_vault_copy_to_research = api.make()(vault_copy_to_research)
-
-
-def preservable_formats_lists(ctx):
+@api.make()
+def api_vault_preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
 
     :returns: dict -- Lists of preservable file formats {name => [ext...]}
@@ -147,15 +171,16 @@ def preservable_formats_lists(ctx):
             jsonutil.read(ctx, x) for x in files}
 
 
-def unpreservable_files(ctx, path, list_name):
+@api.make()
+def api_vault_unpreservable_files(ctx, coll, list_name):
     """Retrieve the set of unpreservable file formats in a collection.
 
-    :param path: Path of folder to check.
+    :param coll:      Collection of folder to check
     :param list_name: Name of preservable file format list
 
     :returns: Set of unpreservable file formats
     """
-    zone = pathutil.info(path)[1]
+    zone = pathutil.info(coll)[1]
 
     # Retrieve JSON list of preservable file formats.
     list_data = jsonutil.read(ctx, '/{}/yoda/file_formats/{}.json'.format(zone, list_name))
@@ -163,7 +188,7 @@ def unpreservable_files(ctx, path, list_name):
 
     # Get basenames of all data objects within this collection.
     data_names = itertools.imap(lambda x: pathutil.chop(x)[1],
-                                collection.data_objects(ctx, path, recursive=True))
+                                collection.data_objects(ctx, coll, recursive=True))
 
     # If JSON is considered unpreservable, ignore yoda-metadata.json.
     data_names = itertools.ifilter(lambda x: x != constants.IIJSONMETADATA, data_names)
@@ -176,26 +201,10 @@ def unpreservable_files(ctx, path, list_name):
     return exts - preservable_formats
 
 
-@api.make()
-def api_uu_vault_preservable_formats_lists(ctx):
-    """Write preservable file formats lists to stdout."""
-    return preservable_formats_lists(ctx)
-
-
-@api.make()
-def api_uu_vault_unpreservable_files(ctx, coll, list_name):
-    """Write unpreservable files in folder to stdout.
-
-    :param coll:      Path of folder to check.
-    :param list_name: Name of preservable file format list.
-    """
-    return list(unpreservable_files(ctx, coll, list_name))
-
-
-def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
+def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
-    :param rule_args[0]: Path of a new package in the vault.
+    :param rule_args[0]: Path of a new package in the vault
     """
     vault_package = rule_args[0]
     original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
@@ -205,10 +214,10 @@ def rule_uu_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
 
-def rule_uu_vault_write_license(rule_args, callback, rei):
+def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args[0]: Path of a package in the vault.
+    :param rule_args[0]: Path of a package in the vault
     """
 
     vault_pkg_coll = rule_args[0]
@@ -229,7 +238,7 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "rule_uu_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(callback, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
@@ -248,9 +257,9 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             try:
                 callback.iiCopyACLsFromParent(license_file, 'default')
             except Exception as e:
-                log.write(callback, "rule_uu_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(callback, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "rule_uu_vault_write_license: License text not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
@@ -263,11 +272,11 @@ def rule_uu_vault_write_license(rule_args, callback, rei):
             # Set license URI.
             avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
-            log.write(callback, "rule_uu_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(callback, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
-def api_uu_vault_system_metadata(callback, coll):
+def api_vault_system_metadata(callback, coll):
     """Return collection statistics as JSON."""
     import math
 
@@ -374,7 +383,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 
 @api.make()
-def api_uu_vault_collection_details(ctx, path):
+def api_vault_collection_details(ctx, path):
     """Return details of a vault collection."""
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
@@ -384,7 +393,8 @@ def api_uu_vault_collection_details(ctx, path):
     if space != pathutil.Space.VAULT:
         return {}
 
-    basename = pathutil.chop(path)[1]
+    dirname = pathutil.dirname(path)
+    basename = pathutil.basename(path)
 
     # Check if collection is vault package.
     metadata_path = meta.get_latest_vault_metadata_path(ctx, path)
@@ -412,7 +422,7 @@ def api_uu_vault_collection_details(ctx, path):
     # Check if research space is accessible.
     research_path = ""
     research_name = group.replace("vault-", "research-", 1)
-    if collection.exists(ctx, pathutil.chop(path)[0] + "/" + research_name):
+    if collection.exists(ctx, pathutil.chop(dirname)[0] + "/" + research_name):
         research_path = research_name
 
     return {"basename": basename,
@@ -426,7 +436,7 @@ def api_uu_vault_collection_details(ctx, path):
 
 
 @api.make()
-def api_uu_vault_get_publication_terms(ctx):
+def api_vault_get_publication_terms(ctx):
     """Retrieve the publication terms."""
     zone = user.zone(ctx)
     terms_collection = "/{}{}".format(zone, constants.IITERMSCOLLECTION)
