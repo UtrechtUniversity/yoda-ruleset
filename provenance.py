@@ -31,6 +31,22 @@ def rule_provenance_log_action(ctx, actor, coll, action):
         log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
+def log_action(ctx, actor, coll, action):
+    """
+    Function to add action log record to provenance of specific folder.
+
+    :param actor: The actor of the action
+    :param coll: The collection the provenance log is linked to.
+    :param action: The action that is logged.
+    """
+    try:
+        log_item = [str(int(time.time())), action, actor]
+        avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
+        log.write(ctx, "rule_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+    except Exception:
+        log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
+
+
 @rule.make()
 def rule_copy_provenance_log(ctx, source, target):
     """

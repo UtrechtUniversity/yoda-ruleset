@@ -18,73 +18,6 @@ iiFolderStatus(*folder, *folderStatus) {
 	}
 }
 
-# \brief Check if a datamanager group exists for the category that the group of a folder belongs to.
-#
-# \param[in]  folder
-# \param[out] datamananagerExists
-#
-iiFolderDatamanagerExists(*folder, *datamanagerExists) {
-	*groupName = "";
-	rule_collection_group_name(*folder, *groupName);
-	uuGroupGetCategory(*groupName, *category, *subcategory);
-	uuGroupExists("datamanager-*category", *datamanagerExists);
-}
-
-# \brief Processing after status had changed.
-#
-# \param[in] folder
-# \param[in] actor
-# \param[in] newStatus
-#
-iiPostFolderStatusTransition(*folder, *actor, *newFolderStatus) {
-	on (*newFolderStatus == SUBMITTED) {
-		rule_provenance_log_action(*actor, *folder, "submitted for vault");
-		iiFolderDatamanagerExists(*folder, *datamanagerExists);
-		if (!*datamanagerExists) {
-			msiString2KeyValPair(IISTATUSATTRNAME ++ "=" ++ ACCEPTED, *kvp);
-			msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-		}
-	}
-	on (*newFolderStatus == ACCEPTED) {
-		iiFolderDatamanagerExists(*folder, *datamanagerExists);
-		if (*datamanagerExists) {
-			rule_provenance_log_action(*actor, *folder, "accepted for vault");
-		} else {
-			rule_provenance_log_action("system", *folder, "accepted for vault");
-		}
-
-		# Set cronjob state.
-		msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PENDING, *kvp);
-		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-		iiScheduleCopyToVault();
-	}
-	on (*newFolderStatus == FOLDER) {
-		iiActionLog(*folder, *size, *actionLog);
-		if (*size > 0) {
-			*log = "";
-			msi_json_arrayops(*actionLog, *log, "get", *size - 1);
-			msi_json_arrayops(*log, *log, "get", 1);
-			if (*log == "submitted for vault") {
-				rule_provenance_log_action(*actor, *folder, "unsubmitted for vault");
-				succeed;
-			}
-		}
-		rule_provenance_log_action(*actor, *folder, "unlocked");
-	}
-	on (*newFolderStatus == LOCKED) {
-		rule_provenance_log_action(*actor, *folder, "locked");
-	}
-	on (*newFolderStatus == REJECTED) {
-		rule_provenance_log_action(*actor, *folder, "rejected for vault");
-	}
-	on (*newFolderStatus == SECURED) {
-		rule_provenance_log_action("system", *folder, "secured in vault");
-	}
-	on (true) {
-		nop;
-	}
-}
-
 # \brief Schedule copy-to-vault (asynchronously).
 #
 iiScheduleCopyToVault() {
@@ -337,22 +270,6 @@ iiSaveEpicPID(*target, *url, *pid) {
 	msiSetKeyValuePairsToObj(*kvp, *target, "-C");
 }
 
-
-# \brief iiActionLog
-#
-# \param[in]  folder
-# \param[out] size
-# \param[out] result
-#
-iiActionLog(*folder, *size, *result) {
-	*actionLog = UUORGMETADATAPREFIX ++ "action_log";
-	*result = "[]";
-	*size = 0;
-	foreach(*row in SELECT order(META_COLL_ATTR_VALUE) WHERE META_COLL_ATTR_NAME = *actionLog AND COLL_NAME = *folder) {
-		*logRecord = *row.META_COLL_ATTR_VALUE;
-		msi_json_arrayops(*result, *logRecord, "add", *size);
-	}
-}
 
 # \brief iiFolderLockChange
 #

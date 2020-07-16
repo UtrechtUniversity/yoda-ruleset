@@ -4,7 +4,9 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import group
 import policies_folder_status
+import provenance
 from util import *
 from util.query import Query
 
@@ -239,3 +241,49 @@ def get_status(ctx, path, org_metadata=None):
             log.write(ctx, 'Invalid folder status <{}>'.format(x))
 
     return constants.research_package_state.FOLDER
+
+
+def datamanager_exists(ctx, coll):
+    group_name = collection_group_name(ctx, coll)
+    category = group.get_category(ctx, group_name)
+    return group.exists(ctx, "datamanager-" + category)
+
+
+def post_status_transition(ctx, path, actor, status):
+    log.write(ctx, 'post_status_transition: <{}> <{}> <{}>'.format(path, actor, status))
+
+    if status is constants.research_package_state.SUBMITTED:
+        provenance.log_action(ctx, actor, path, "submitted for vault")
+
+        # Set status to accepted if group has no datamanager.
+        if not datamanager_exists(ctx, path):
+            set_status(ctx, coll, constants.research_package_state.ACCEPTED)
+
+    elif status is constants.research_package_state.ACCEPTED:
+        # Actor is system if group has no datamanager.
+        if not datamanager_exists(ctx, path):
+            actor = "system"
+
+        provenance.log_action(ctx, actor, path, "accepted for vault")
+
+        # Set state to secure package in vault space.
+        attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
+        avu.set_on_coll(ctx, path, attribute, constants.CRONJOB_STATE['PENDING'])
+
+    elif status is constants.research_package_state.FOLDER:
+        # If previous action was submit and new status is FOLDER action is unsubmit.
+        provenance_log = provenance.get_provenance_log(ctx, path)
+        if provenance_log.keys()[-1][1] == "submitted for vault":
+            provenance.log_action(ctx, actor, path, "unsubmitted for vault")
+        else:
+            provenance.log_action(ctx, actor, path, "unlocked")
+
+    elif status is constants.research_package_state.LOCKED:
+        provenance.log_action(ctx, actor, path, "locked")
+
+    elif status is constants.research_package_state.REJECTED:
+        provenance.log_action(ctx, actor, path, "rejected for vault")
+
+    elif status is constants.research_package_state.SECURED:
+        actor = "system"
+        provenance.log_action(ctx, actor, path, "secured in vault")

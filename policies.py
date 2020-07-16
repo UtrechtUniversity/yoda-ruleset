@@ -398,7 +398,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
 
 # This PEP is called after a AVU is added (option = 'add'), set (option =
 # 'set') or removed (option = 'rm') in the research area or the vault. Post
-# conditions defined in iiFolderStatusTransitions.r and iiVaultTransitions.r
+# conditions defined in folder.py and iiVaultTransitions.r
 # are called here.
 @rule.make()
 def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
@@ -406,7 +406,7 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
     if attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.RESEARCH:
         status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
-        ctx.iiPostFolderStatusTransition(obj_name, str(user.user_and_zone(ctx)), status)
+        post_status_transition(obj_name, str(user.user_and_zone(ctx)), status)
 
     elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
         ctx.iiPostVaultStatusTransition(obj_name, str(user.user_and_zone(ctx)), value)
