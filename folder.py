@@ -244,13 +244,16 @@ def get_status(ctx, path, org_metadata=None):
 
 
 def datamanager_exists(ctx, coll):
+    """Check if a datamanager exists for a given collection."""
     group_name = collection_group_name(ctx, coll)
     category = group.get_category(ctx, group_name)
+
     return group.exists(ctx, "datamanager-" + category)
 
 
 def post_status_transition(ctx, path, actor, status):
-    log.write(ctx, 'post_status_transition: <{}> <{}> <{}>'.format(path, actor, status))
+    """Post folder status transition actions."""
+    status = constants.research_package_state(status)
 
     if status is constants.research_package_state.SUBMITTED:
         provenance.log_action(ctx, actor, path, "submitted for vault")
@@ -273,7 +276,7 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.
         provenance_log = provenance.get_provenance_log(ctx, path)
-        if provenance_log.keys()[-1][1] == "submitted for vault":
+        if provenance_log[-1][1] == "submitted for vault":
             provenance.log_action(ctx, actor, path, "unsubmitted for vault")
         else:
             provenance.log_action(ctx, actor, path, "unlocked")
