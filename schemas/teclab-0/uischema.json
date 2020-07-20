@@ -92,7 +92,13 @@
   "Creator": {
     "items": {
       "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package. Preferred format: Family Name, First Name"
+        "ui:help": "The name of the person(s) who created (a version of) the data package.",
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who created (a version of) the data package"
+        }
       },
       "Affiliation": {
         "items": {
@@ -115,7 +121,13 @@
   "Contributor": {
     "items": {
       "Name": {
-        "ui:help": "The name(s) of the persons who have contributed to this data package"
+        "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who has contributed to (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who has contributed to (a version of) the data package"
+        }
       },
       "Contributor_Type": {
         "ui:help": "The type of contributor. List of values is derived from DataCite"

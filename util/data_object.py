@@ -40,8 +40,6 @@ def size(callback, path):
 
     for row in iter:
         return int(row[0])
-    else:
-        return -1
 
 
 def write(callback, path, data):
@@ -53,13 +51,17 @@ def write(callback, path, data):
     ret = msi.data_obj_create(callback, path, 'forceFlag=', 0)
     handle = ret['arguments'][2]
 
-    ret = msi.data_obj_write(callback, handle, data, 0)
+    msi.data_obj_write(callback, handle, data, 0)
     msi.data_obj_close(callback, handle, 0)
 
 
 def read(callback, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
     """Read an entire iRODS data object into a string."""
     sz = size(callback, path)
+    if sz is None:
+        raise error.UUFileNotExistError('data_object.read: object does not exist ({})'
+                                        .format(path))
+
     if sz > max_size:
         raise error.UUFileSizeError('data_object.read: file size limit exceeded ({} > {})'
                                     .format(sz, max_size))

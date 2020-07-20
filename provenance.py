@@ -82,8 +82,7 @@ def get_provenance_log(ctx, coll):
 
 @api.make()
 def api_provenance_log(ctx, coll):
-    """
-    Return formatted provenance log of a collection.
+    """Return formatted provenance log of a collection.
 
     :param coll: Path of a collection in research or vault space.
 

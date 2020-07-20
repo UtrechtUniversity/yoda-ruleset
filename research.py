@@ -28,7 +28,11 @@ __all__ = ['api_research_folder_add',
 
 @api.make()
 def api_research_folder_add(ctx, coll, new_folder_name):
+    """Add a new folder to a research folder.
 
+    :param coll: collection to create new folder in
+    :param new_folder_name: name of the new folder
+    """
     coll_target = coll + '/' + new_folder_name
 
     if len(new_folder_name) == 0:
@@ -92,7 +96,12 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
 @api.make()
 def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
+    """Rename an existing research folder.
 
+    :param new_folder_name: new folder name
+    :param coll: parent collection of folder
+    :param org_folder_name: current name of the folder
+    """
     coll_target = coll + '/' + new_folder_name
 
     if len(new_folder_name) == 0:
@@ -161,6 +170,11 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
 @api.make()
 def api_research_folder_delete(ctx, coll, folder_name):
+    """Delete a research folder.
+
+    :param coll: parent collection of folder to delete
+    :param folder_name: name of folder to delete
+    """
     coll_target = coll + '/' + folder_name
 
     # Not in home - a groupname must be present ie at least 2!?
@@ -214,7 +228,12 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
 @api.make()
 def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
+    """Rename a file in a research folder.
 
+    :param new_file_name: new file name
+    :param coll: parent collection of file
+    :param org_file_name: current name of the file
+    """
     if len(new_file_name) == 0:
         return {"proc_status": "nok",
                 "proc_status_info": "Please add a file name"}
@@ -283,7 +302,11 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 @api.make()
 def api_research_file_delete(ctx, coll, file_name):
+    """Delete a file in a research folder.
 
+    :param coll: parent collection of file to delete
+    :param file_name: name of file to delete
+    """
     path_target = coll + '/' + file_name
 
     # not in home - a groupname must be present ie at least 2!?
@@ -327,6 +350,7 @@ def api_research_file_delete(ctx, coll, file_name):
 
 @api.make()
 def api_research_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
+    """Search revisions of a file in a research folder."""
     zone = user.zone(ctx)
 
     revisions = []
@@ -385,7 +409,7 @@ def api_research_revisions_search_on_filename(ctx, searchString, offset=0, limit
 
 @api.make()
 def api_research_revision_list(ctx, path):
-
+    """List revisions of a files in a research folder."""
     originalPathKey = ''
     startpath = ''
 
@@ -521,7 +545,10 @@ def api_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_
 
 @api.make()
 def api_research_system_metadata(ctx, coll):
-    """Return collection statistics as JSON."""
+    """Return collection statistics as JSON.
+
+    :param coll: research collection
+    """
     import math
 
     def convert_size(size_bytes):

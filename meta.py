@@ -19,7 +19,8 @@ __all__ = ['rule_meta_validate',
            'rule_meta_modified_post',
            'rule_meta_datamanager_vault_ingest',
            'rule_meta_collection_has_cloneable_metadata',
-           'rule_get_latest_vault_metadata_path']
+           'rule_get_latest_vault_metadata_path',
+           'rule_copy_user_metadata']
 
 
 def metadata_get_links(metadata):
@@ -214,8 +215,7 @@ def api_meta_remove(ctx, coll):
 
 @api.make()
 def api_meta_clone_file(ctx, target_coll):
-    """
-    Clone a metadata file from a parent collection to a subcollection.
+    """Clone a metadata file from a parent collection to a subcollection.
 
     The destination collection (where the metadata is copied *to*) is given as an argument.
     """
@@ -268,8 +268,6 @@ def ingest_metadata_research(ctx, path):
 
 def ingest_metadata_staging(ctx, path):
     """Set cronjob metadata flag and triggers vault ingest."""
-    coll = pathutil.chop(path)[0]
-
     ret = msi.string_2_key_val_pair(ctx,
                                     '{}{}{}'.format(constants.UUORGMETADATAPREFIX,
                                                     'cronjob_vault_ingest=',
@@ -460,3 +458,28 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
             return
 
     set_result('Success', '')
+
+
+@rule.make()
+def rule_copy_user_metadata(ctx, source, target):
+    """
+    Copy the user metadata of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    try:
+        # Retrieve all user metadata on source collection.
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}%'".format(source, constants.UUUSERMETADATAPREFIX),
+            genquery.AS_LIST, ctx
+        )
+
+        # Set user metadata on target collection.
+        for row in iter:
+            avu.associate_to_coll(ctx, target, row[0], row[1])
+
+        log.write(ctx, "rule_copy_user_metadata: copied user metadata from <{}> to <{}>".format(source, target))
+    except Exception:
+        log.write(ctx, "rule_copy_user_metadata: failed to copy user metadata from <{}> to <{}>".format(source, target))

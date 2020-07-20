@@ -24,10 +24,10 @@ def rule_generate_random_id(ctx, length):
     return ''.join(random.choice(characters) for x in range(int(length)))
 
 
-@rule.make(inputs=[0], outputs=[1])
-def rule_register_doi_metadata(ctx, payload):
-    """Register DOI metadata with DataCite.."""
-    url = "{}/metadata".format(config.datacite_url)
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_register_doi_metadata(ctx, doi, payload):
+    """Register DOI metadata with DataCite."""
+    url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
 
@@ -39,7 +39,7 @@ def rule_register_doi_metadata(ctx, payload):
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_register_doi_url(ctx, doi, url):
     """Register DOI url with DataCite."""
-    url = "{}/doi".format(config.datacite_url)
+    url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
     payload = "doi={}\nurl={}".format(doi, url)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}

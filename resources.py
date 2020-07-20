@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module - in essence a python extension directly related to uuResources.r."""
 
-__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime

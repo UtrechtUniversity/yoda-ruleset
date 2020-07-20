@@ -109,8 +109,7 @@ def humanize_validation_error(e):
 
 @api.make()
 def api_meta_form_load(ctx, coll):
-    """
-    Retrieve all information required to load a metadata form in either the research or vault space.
+    """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
     and no errors prevent loading the form, the JSON will contain the
@@ -122,6 +121,8 @@ def api_meta_form_load(ctx, coll):
     If errors prevent loading the form, or if errors make a transformation
     impossible, this is indicated by the 'errors' array being present in the
     output.
+
+    :param coll: Collection to retrieve all information required to load a metadata form from
     """
     # The information that is returned to the caller, in dict form,
     # if everything is in order.
@@ -284,7 +285,11 @@ def api_meta_form_load(ctx, coll):
 
 @api.make()
 def api_meta_form_save(ctx, coll, metadata):
-    """Validate and store JSON metadata for a given collection."""
+    """Validate and store JSON metadata for a given collection.
+
+    :param coll:     Collection to save metadata on
+    :param metadata: Metadata to save
+    """
     log.write(ctx, 'save form for coll <{}>'.format(coll))
 
     json_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)

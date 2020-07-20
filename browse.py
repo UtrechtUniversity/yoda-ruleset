@@ -22,8 +22,16 @@ def api_browse_folder(ctx,
                       sort_order='asc',
                       offset=0,
                       limit=10,
-                      space=pathutil.Space.OTHER):
-    """Get paginated collection contents, including size/modify date information."""
+                      space=pathutil.Space.OTHER.value):
+    """Get paginated collection contents, including size/modify date information.
+
+    :param coll:       Collection to get paginated contents of
+    :param sort_on:    Column to sort on ('name', 'modified' or size)
+    :param sort_order: Column sort order ('asc' or 'desc')
+    :param offset:     Offset to start browsing from
+    :param limit:      Limit number of results
+    :param space:      Space the collection is in
+    """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
@@ -90,9 +98,6 @@ def api_browse_folder(ctx,
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
 
-# Function to browse a folder and only look at the collections in it. No dataobjects.
-# Specifically for folder selection for copying data to research area from vault for instance.
-
 
 @api.make()
 def api_browse_collections(ctx,
@@ -101,8 +106,19 @@ def api_browse_collections(ctx,
                            sort_order='asc',
                            offset=0,
                            limit=10,
-                           space=pathutil.Space.OTHER):
-    """Get paginated collection contents, including size/modify date information."""
+                           space=pathutil.Space.OTHER.value):
+    """Get paginated collection contents, including size/modify date information.
+
+    This function browses a folder and only looks at the collections in it. No dataobjects.
+    Specifically for folder selection for copying data to research area from vault for instance.
+
+    :param coll:       Collection to get paginated contents of
+    :param sort_on:    Column to sort on ('name', 'modified' or size)
+    :param sort_order: Column sort order ('asc' or 'desc')
+    :param offset:     Offset to start browsing from
+    :param limit:      Limit number of results
+    :param space:      Space the collection is in
+    """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
@@ -170,7 +186,15 @@ def api_search(ctx,
                sort_order='asc',
                offset=0,
                limit=10):
-    """Get paginated search results, including size/modify date/location information."""
+    """Get paginated search results, including size/modify date/location information.
+
+    :param search_string: String used to search
+    :param search_type:   Search type ('filename', 'folder', 'metadata', 'status')
+    :param sort_on:       Column to sort on ('name', 'modified' or size)
+    :param sort_order:    Column sort order ('asc' or 'desc')
+    :param offset:        Offset to start browsing from
+    :param limit:         Limit number of results
+    """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}

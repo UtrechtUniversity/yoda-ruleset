@@ -116,7 +116,6 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
         geolocations = dictJsonData['GeoLocation']
     except KeyError:
         geolocations = {}
-        pass
 
     # Collection name  ILAB specific - part of default schemas
     try:

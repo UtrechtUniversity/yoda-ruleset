@@ -46,15 +46,15 @@ def _default0_default1(m):
         # Name contains comma? Parse as: last, first, first, first.
         ns = re.split(r'\s*,\s*', n, 1)
         if len(ns) == 2:
-            return {'First_Name': ns[1], 'Last_Name': ns[0]}
+            return {'Given_Name': ns[1], 'Family_Name': ns[0]}
 
         # Name contains whitespace? Parse as: first last last last.
         ns = re.split(r'\s+', n, 1)
         if len(ns) == 2:
-            return {'First_Name': ns[0], 'Last_Name': ns[1]}
+            return {'Given_Name': ns[0], 'Family_Name': ns[1]}
 
         # Neither? Parse as lastname.
-        return {'First_Name': '', 'Last_Name': n}
+        return {'Given_Name': '', 'Family_Name': n}
 
     for person in m['Creator']:
         if 'Name' in person:
