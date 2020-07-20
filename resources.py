@@ -28,6 +28,7 @@ __all__ = ['api_resource_groups_dm',
 @api.make()
 def api_resource_save_tier(ctx, resource_name, tier_name):
     """Save tier for given resource as metadata.
+
     :param resource_name: Resource that the tier is equipped with
     :param tier_name:     Name of the tier that is given to the resource
     """
@@ -50,6 +51,7 @@ def api_resource_save_tier(ctx, resource_name, tier_name):
 @api.make()
 def api_resource_full_year_group_data(ctx, group_name, current_month):
     """Get a full year of monthly storage data starting from current month and look back one year.
+
     :param group_name:    group that is searched for storage data
     :param current_month: Month passed that is supposed to be the month to look back from
     """
@@ -95,8 +97,7 @@ def api_resource_full_year_group_data(ctx, group_name, current_month):
 
 @api.make()
 def api_resource_user_get_type(ctx):
-    """Get current user type
-    """
+    """Get current user type"""
     return user.user_type(ctx)
 
 
@@ -124,8 +125,7 @@ def api_resource_user_research_groups(ctx):
 
 @api.make()
 def api_resource_user_is_datamanager(ctx):
-    """Check whether current user is datamanager of group.
-    """
+    """Check whether current user is datamanager of group."""
     iter = genquery.row_iterator(
         "USER_NAME",
         "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
@@ -142,8 +142,7 @@ def api_resource_user_is_datamanager(ctx):
 
 @api.make()
 def api_resource_get_tiers(ctx):
-    """As rodsadmin get all tiers present.
-    """
+    """As rodsadmin get all tiers present."""
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -167,6 +166,7 @@ def api_resource_get_tiers(ctx):
 @api.make()
 def api_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource.
+
     :param res_name: Resource that the tier is equipped with
     """
 
@@ -178,8 +178,7 @@ def api_resource_tier(ctx, res_name):
 
 @api.make()
 def api_resource_resource_and_tier_data(ctx):
-    """List al resources and its tier data.
-    """
+    """List al resources and its tier data."""
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -226,7 +225,6 @@ def api_resource_monthly_stats_dm(ctx):
 @api.make()
 def api_resource_groups_dm(ctx):
     """Get all groups for all categories a person is datamanager of."""
-
     datamanager = user.full_name(ctx)
     categories = get_categories_datamanager(ctx, datamanager)
 
@@ -235,8 +233,7 @@ def api_resource_groups_dm(ctx):
 
 @api.make()
 def api_resource_monthly_category_stats_export_dm(ctx):
-    """
-    Collect storage stats for all twelve months based upon categories a user is datamanager of.
+    """Collect storage stats for all twelve months based upon categories a user is datamanager of.
 
     Statistics gathered:
     - Category
@@ -291,9 +288,10 @@ def api_resource_monthly_category_stats_export_dm(ctx):
 
 
 def get_group_category_info(ctx, groupName):
-    """
-    Get category and subcategory for a group.
+    """Get category and subcategory for a group.
+
     :param groupName: groupname to get cat/subcat info for
+
     Returns a dict with indices 'category' and 'subcategory'.
     """
     category = ''
@@ -318,8 +316,7 @@ def get_group_category_info(ctx, groupName):
 
 
 def getMonthlyCategoryStorageStatistics(ctx, categories):
-    """
-    Collect storage stats of last month for a list of categories.
+    """Collect storage stats of last month for a list of categories.
 
     Storage is summed up for each category/tier combination.
     Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
@@ -369,6 +366,7 @@ def getMonthlyCategoryStorageStatistics(ctx, categories):
 
 def get_groups_on_categories(ctx, categories):
     """Get all groups belonging to all given categories.
+
     :param categories: List of categories groups have to be found for
     """
     groups = []
@@ -402,6 +400,7 @@ def get_groups_on_categories(ctx, categories):
 
 def get_categories_datamanager(ctx, datamanagerName):
     """Get all categories for current datamanager.
+
     :param datamanagerName: Datamanager involved
     """
     categories = []
@@ -425,8 +424,7 @@ def get_categories_datamanager(ctx, datamanagerName):
 
 
 def get_tier_by_resource_name(ctx, res_name):
-    """
-    Get Tiername, if present, for given resource.
+    """Get Tiername, if present, for given resource.
 
     If not present, fall back to default tier name.
     :param res_name: Name of the resource to get the tier name for
@@ -560,8 +558,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
 
 def resource_exists(ctx, resource_name):
-    """ Check whether given resource actually exists
-    """
+    """ Check whether given resource actually exists."""
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME",
         "RESC_NAME = '{}'"
@@ -576,7 +573,7 @@ def resource_exists(ctx, resource_name):
 
 
 def get_all_tiers(ctx):
-    """ List all tiers currently present including 'Standard' """
+    """List all tiers currently present including 'Standard'."""
     tiers = [constants.UUDEFAULTRESOURCETIER]
 
     iter = genquery.row_iterator(
