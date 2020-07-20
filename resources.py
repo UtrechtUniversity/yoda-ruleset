@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions for statistics module - in essence a python extension directly related to uuResources.r."""
+"""Functions for statistics module."""
 
 __copyright__ = 'Copyright (c) 2018-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -33,19 +33,14 @@ def api_resource_save_tier(ctx, resource_name, tier_name):
     :param tier_name:     Name of the tier that is given to the resource
     """
     if user.user_type(ctx) != 'rodsadmin':
-        return {'status': 'not_allowed',
-                'status_info': 'Insufficient permissions'}
+        return api.Error('not_allowed', 'Insufficient permissions')
 
-    # resource exists?
     if not resource_exists(ctx, resource_name):
-        return {'status': 'not_exists',
-                'status_info': 'Given resource name is not in use'}
+        return api.Error('not_exists', 'Given resource name is not in use')
 
     meta_attr_name = constants.UURESOURCETIERATTRNAME
 
     avu.set_on_resource(ctx, resource_name, meta_attr_name, tier_name)
-    return {'status': 'ok',
-            'status_info': ''}
 
 
 @api.make()
@@ -148,20 +143,6 @@ def api_resource_get_tiers(ctx):
 
     return get_all_tiers(ctx)
 
-    tiers = [constants.UUDEFAULTRESOURCETIER]
-
-    iter = genquery.row_iterator(
-        "META_RESC_ATTR_VALUE",
-        "META_RESC_ATTR_NAME = '" + constants.UURESOURCETIERATTRNAME + "'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        if not row[0] == constants.UUDEFAULTRESOURCETIER:
-            tiers.append(row[0])
-
-    return tiers
-
 
 @api.make()
 def api_resource_tier(ctx, res_name):
@@ -169,7 +150,6 @@ def api_resource_tier(ctx, res_name):
 
     :param res_name: Resource that the tier is equipped with
     """
-
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -204,7 +184,6 @@ def api_resource_resource_and_tier_data(ctx):
 @api.make()
 def api_resource_monthly_stats(ctx):
     """As rodsadmin collect monthly statistics"""
-
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
 
@@ -242,7 +221,6 @@ def api_resource_monthly_category_stats_export_dm(ctx):
     - Tier
     - 12 columns, one per month, with used storage count in bytes
     """
-
     datamanager = user.full_name(ctx)
     categories = get_categories_datamanager(ctx, datamanager)
     allStorage = []
@@ -412,7 +390,6 @@ def get_categories_datamanager(ctx, datamanagerName):
     )
 
     for row in iter:
-        # @TODO membership still has to be checked
         datamanagerGroupname = row[0]
 
         if user.is_member_of(ctx, datamanagerGroupname):
@@ -447,13 +424,12 @@ def get_tier_by_resource_name(ctx, res_name):
 
 @rule.make()
 def rule_resource_store_monthly_storage_statistics(ctx):
-    """
-    For all categories known store all found storage data for each group belonging to those category.
+    """For all categories known store all found storage data for each group belonging to those category.
+
     Store as metadata on group level holding
     1) category of group on probe date - this can change
     2) tier
     3) actual calculated storage for the group
-
     """
 
     zone = user.zone(ctx)
@@ -558,7 +534,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
 
 def resource_exists(ctx, resource_name):
-    """ Check whether given resource actually exists."""
+    """Check whether given resource actually exists."""
     iter = genquery.row_iterator(
         "RESC_ID, RESC_NAME",
         "RESC_NAME = '{}'"
@@ -623,7 +599,7 @@ def get_groups_on_category(ctx, category):
 
 
 def get_resources(ctx):
-    """ Get all resources """
+    """Get all resources."""
     resources = []
     iter = genquery.row_iterator(
         "RESC_NAME",
