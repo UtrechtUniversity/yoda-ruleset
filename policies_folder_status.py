@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
@@ -41,8 +41,10 @@ def pre_status_transition(ctx, coll, current, new):
 
 
 def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
-    if user.is_admin(ctx, actor):
-        return policy.succeed()
+    transition = (constants.research_package_state(status_from),
+                  constants.research_package_state(status_to))
+    if transition not in constants.folder_transitions:
+        return policy.fail('Illegal status transition')
 
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
