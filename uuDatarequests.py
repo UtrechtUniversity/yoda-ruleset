@@ -303,7 +303,8 @@ def submitDatarequest(callback, data, previousRequestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getDatarequest(callback, requestId):
+@api.make()
+def api_uuGetDatarequest(ctx, requestId):
     """Retrieve a data request.
 
        Arguments:
@@ -312,28 +313,24 @@ def getDatarequest(callback, requestId):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = user.full_name(ctx)
 
         isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        username,
+                                        ctx) == 'true'
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        username,
+                                        ctx) == 'true'
         isdmcmember =   groupUserMember("datarequests-research-data-management-committee",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
-        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+                                        username,
+                                        ctx) == 'true'
+        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
-            callback.writeString("serverLog", "User is not authorized to view this data request.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data request."}
+                ctx.writeString("serverLog", "User is not authorized to view this data request.")
+                return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename and filepath
@@ -350,20 +347,20 @@ def getDatarequest(callback, requestId):
                              "META_DATA_ATTR_NAME = 'status'") % (collName,
                                                                   fileName),
                             AS_DICT,
-                            callback)
+                            ctx)
         for row in rows:
             collName = row['COLL_NAME']
             dataSize = row['DATA_SIZE']
             requestStatus = row['META_DATA_ATTR_VALUE']
     except Exception as e:
-        callback.writeString("serverLog", "Could not get data request status and filesize. (Does a request with this requestID exist?")
+        ctx.writeString("serverLog", "Could not get data request status and filesize. (Does a request with this requestID exist?")
         return {"status": "FailedGetDatarequestInfo", "statusInfo": "Could not get data request status and filesize. (Does a request with this requestID exist?)"}
 
     # Get the contents of the datarequest JSON file
     try:
-        requestJSON = read_data_object(callback, filePath)
+        requestJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not get contents of datarequest JSON file.")
+        ctx.writeString("serverLog", "Could not get contents of datarequest JSON file.")
         return {"status": "FailedGetDatarequestContent", "statusInfo": "Could not get contents of datarequest JSON file."}
 
     return {'requestJSON': requestJSON,
@@ -1491,11 +1488,6 @@ def uuSubmitDatarequest(rule_args, callback, rei):
     callback.writeString("stdout", json.dumps(submitDatarequest(callback,
                                                                 rule_args[0], rule_args[1],
                                                                 rei)))
-
-
-def uuGetDatarequest(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getDatarequest(callback,
-                                                             rule_args[0])))
 
 
 def uuGetStatus(rule_args, callback, rei):
