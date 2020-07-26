@@ -11,6 +11,7 @@ from genquery import (row_iterator, AS_DICT)
 from smtplib import SMTP
 from email.mime.text import MIMEText
 
+from util import *
 
 def sendMail(to, subject, body):
     """Send an email using the specified parameters.
