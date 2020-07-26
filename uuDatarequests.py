@@ -13,6 +13,13 @@ from email.mime.text import MIMEText
 
 from util import *
 
+import session_vars
+
+__all__ = ['api_uuGetDatarequest',
+           'api_uuSubmitDatarequest',
+	   'uuIsRequestOwner',
+	   'uuIsReviewer']
+
 def sendMail(to, subject, body):
     """Send an email using the specified parameters.
 
