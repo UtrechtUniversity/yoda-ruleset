@@ -98,7 +98,7 @@ def post_status_transition(ctx, path, actor, status):
 
         # Set status to accepted if group has no datamanager.
         if not folder.datamanager_exists(ctx, path):
-            set_status(ctx, coll, constants.research_package_state.ACCEPTED)
+            folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
         # Actor is system if group has no datamanager.

@@ -99,7 +99,9 @@ class vault_package_state(Enum):
 # List of valid datapackage transitions (src, dst).
 datapackage_transitions = [(vault_package_state(x),
                             vault_package_state(y))
-                           for x, y in [('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
+                           for x, y in [('INCOMPLETE',                'UNPUBLISHED'),
+                                        ('UNPUBLISHED',               'INCOMPLETE'),
+                                        ('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
                                         ('COMPLETE',                  'SUBMITTED_FOR_PUBLICATION'),
                                         ('SUBMITTED_FOR_PUBLICATION', 'APPROVED_FOR_PUBLICATION'),
                                         ('SUBMITTED_FOR_PUBLICATION', 'UNPUBLISHED'),
