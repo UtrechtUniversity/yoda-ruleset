@@ -8,8 +8,8 @@ import re
 
 import folder
 import policies_folder_status
+import policies_datapackage_status
 import session_vars
-import vault
 from util import *
 
 
@@ -343,10 +343,11 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
         if not user.is_admin(ctx, actor):
             return policy.fail('No permission to change vault status')
 
-        current = vault.get_coll_vault_status(ctx, obj_name)
+        x = policies_datapackage_status.can_set_datapackage_status_attr(ctx, actor, obj_name, value)
+        if not x:
+            return x
 
-        ctx.iiPreVaultStatusTransition(obj_name, current.value, value)
-        return policy.succeed()
+        return policies_datapackage_status.pre_status_transition(ctx, obj_name, x[0], x[1])
 
     elif obj_type == '-C' and space is pathutil.Space.RESEARCH and unit.startswith(constants.UUUSERMETADATAROOT + '_'):
         # Research package metadata, set when saving the metadata form.

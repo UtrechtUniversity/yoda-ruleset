@@ -96,6 +96,20 @@ class vault_package_state(Enum):
         return self.name
 
 
+# List of valid datapackage transitions (src, dst).
+datapackage_transitions = [(vault_package_state(x),
+                            vault_package_state(y))
+                           for x, y in [('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
+                                        ('COMPLETE',                  'SUBMITTED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'APPROVED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'UNPUBLISHED'),
+                                        ('APPROVED_FOR_PUBLICATION',  'PUBLISHED'),
+                                        ('PUBLISHED',                 'PENDING_DEPUBLICATION'),
+                                        ('PENDING_DEPUBLICATION',     'DEPUBLISHED'),
+                                        ('DEPUBLISHED',               'PENDING_REPUBLICATION'),
+                                        ('PENDING_REPUBLICATION',     'PUBLISHED')]]
+
+
 class research_package_state(Enum):
     """Research folder states."""
 

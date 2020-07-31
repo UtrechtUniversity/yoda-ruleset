@@ -125,3 +125,14 @@ def api_provenance_log(ctx, coll):
         output.append([actor, action, date_time])
 
     return output
+
+
+def latest_action_actor(ctx, path):
+    """Return the actor of the latest provenance action.
+
+    :param path: Path of a collection in research or vault space.
+
+    :returns str: Actor of latest provenance action.
+    """
+    provenance_log = get_provenance_log(ctx, path)
+    return provenance_log[-1][2]
