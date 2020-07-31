@@ -46,22 +46,6 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
         }
 }
 
-# \brief Actions taken before vault status transition
-#
-# \param[in] folder            Path of vault folder
-# \param[in] currentStatus     Current status of vault folder
-# \param[in] newStatus         New status of vault folder
-#
-iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
-	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
-		*actor = uuClientFullName;
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "canceled publication");
-	}
-	on (true) {
-		nop;
-	}
-}
 
 # \brief Request vault status transition action
 #

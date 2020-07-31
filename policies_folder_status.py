@@ -83,3 +83,45 @@ def can_set_folder_status_attr(ctx, actor, coll, status):
         return x
     else:
         return (current, new)
+
+
+def post_status_transition(ctx, path, actor, status):
+    """Post folder status transition actions."""
+    status = constants.research_package_state(status)
+
+    if status is constants.research_package_state.SUBMITTED:
+        provenance.log_action(ctx, actor, path, "submitted for vault")
+
+        # Set status to accepted if group has no datamanager.
+        if not datamanager_exists(ctx, path):
+            set_status(ctx, coll, constants.research_package_state.ACCEPTED)
+
+    elif status is constants.research_package_state.ACCEPTED:
+        # Actor is system if group has no datamanager.
+        if not datamanager_exists(ctx, path):
+            actor = "system"
+
+        provenance.log_action(ctx, actor, path, "accepted for vault")
+
+        # Set state to secure package in vault space.
+        attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
+        avu.set_on_coll(ctx, path, attribute, constants.CRONJOB_STATE['PENDING'])
+        ctx.iiScheduleCopyToVault()
+
+    elif status is constants.research_package_state.FOLDER:
+        # If previous action was submit and new status is FOLDER action is unsubmit.
+        provenance_log = provenance.get_provenance_log(ctx, path)
+        if provenance_log[-1][1] == "submitted for vault":
+            provenance.log_action(ctx, actor, path, "unsubmitted for vault")
+        else:
+            provenance.log_action(ctx, actor, path, "unlocked")
+
+    elif status is constants.research_package_state.LOCKED:
+        provenance.log_action(ctx, actor, path, "locked")
+
+    elif status is constants.research_package_state.REJECTED:
+        provenance.log_action(ctx, actor, path, "rejected for vault")
+
+    elif status is constants.research_package_state.SECURED:
+        actor = "system"
+        provenance.log_action(ctx, actor, path, "secured in vault")
