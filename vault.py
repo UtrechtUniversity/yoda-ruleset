@@ -224,8 +224,10 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
    
     log.write(ctx, original_metadata)
     log.write(ctx, copied_metadata)
- 
-    msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
+
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+
+    #msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
 def rule_vault_write_license(rule_args, callback, rei):
@@ -513,6 +515,7 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
     # 1. Process this collection itself as a collection.
     # INGEST
     if error == 0:
+        # INGEST COLLECTION
         error = ingest_object(ctx, parent_coll, coll, True, target, origin)
 
     # 2. Process dataobjects located directly within the collection
@@ -523,7 +526,7 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
             genquery.AS_LIST, ctx
         )
         for row in iter:
-                # INGEST
+            # INGEST OBJECT
             error = ingest_object(ctx, folder, row[0], False, target, origin)
             if error:
                 break
@@ -557,17 +560,29 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     dest_path = destination
 
     if source_path != origin:
+        # log.write(ctx, 'markIncomplete=FALSE')
         markIncomplete = False
         # rewrite path to copy objects that are located underneath the toplevel collection
         source_length = len(source_path)
-        relative_path = source_path[len(origin) + 1, source_length]
+        relative_path = source_path[len(origin) + 1: source_length]
+        # log.write(ctx, 'relative path: ' + relative_path)
         dest_path = destination + '/' + relative_path
+        # log.write(ctx, 'dest_path: ' + dest_path)
     else:
+        # log.write(ctx,'markIncomplete=TRUE') 
         markIncomplete = True
 
     if item_is_collection:
         # CREATE COLLECTION
         try:
+            if parent == '/' + user.zone(ctx) + '/home':
+                # This is a special case. Dealing with the highest level and 2 collections have to be added
+                # 1. Add the basename for the research collection. Something like research-XXXXX[timestamp]
+                # So chop off /original
+                base_path = pathutil.chop(dest_path)[0]
+                log.write(ctx, 'First add BASE PATH: ' + pathutil.chop(dest_path)[0])
+                msi.coll_create(ctx, pathutil.chop(dest_path)[0], '', irods_types.BytesBuf())
+            log.write(ctx, 'coll_create ' + dest_path)
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
         except msi.Error as e:
             return 1
@@ -577,7 +592,11 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     else:
         # CREATE COPY OF DATA OBJECT
         try:
-            msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
+            #msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
+            log.write(ctx, 'msiDataObjCopy')
+            log.write(ctx, source_path)
+            log.write(ctx, dest_path)
+            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
         except msi.Error as e:
             return 1
 

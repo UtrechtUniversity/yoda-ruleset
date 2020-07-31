@@ -143,7 +143,6 @@ def rule_folder_secure(ctx, coll):
     
     log.write(ctx, 'Starting folder secure - ' + coll)
 
-
     return folder_secure(ctx, coll)
 
 
@@ -226,20 +225,11 @@ def folder_secure(ctx, coll):
                 log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
                 return '1'
 
-    log.write(ctx, 'BEFORE copy_folder_to_vault')
-
     # Copy all original info to vault
     vault.copy_folder_to_vault(ctx, coll, target)
-    log.write(ctx, "1")
-
     meta.copy_user_metadata(ctx, coll, target)
-    log.write(ctx, "2")
-
     vault.vault_copy_original_metadata_to_vault(ctx, target)
-    log.write(ctx, "3")
-
     vault.vault_write_license(ctx, target);
-    log.write(ctx, "4")
 
     if http_code != "0":
         # save EPIC Persistent ID in metadata
@@ -251,14 +241,8 @@ def folder_secure(ctx, coll):
     except msi.Error as e:
         log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
         return '1'
-
-    log.write(ctx, "5")
        
     parent, chopped_coll = pathutil.chop(coll)
-
-    log.write(ctx, parent)
-    log.write(ctx, chopped_coll)
-    log.write(ctx,  user.zone(ctx) + "/home")
 
     while parent != "/" + user.zone(ctx) + "/home":
         log.write(ctx, parent)
@@ -269,8 +253,6 @@ def folder_secure(ctx, coll):
             log.write(ctx, "Could not set ACL on " + parent)
         parent, chopped_coll = pathutil.chop(parent)
     
-    log.write(ctx, "6")
-
     avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
 
     try:
@@ -278,8 +260,6 @@ def folder_secure(ctx, coll):
     except msi.Error as e:
         log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
         return '1'
-
-    log.write(ctx, "7")
 
     parent, chopped_coll = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":
@@ -289,9 +269,6 @@ def folder_secure(ctx, coll):
             log.write(ctx, "Could not set ACL (admin:null) on " + parent)
 
         parent, chopped_coll = pathutil.chop(parent)
-
-    log.write(ctx, "8")
-
 
     # Copy provenance log.
     provenance.provenance_copy_log(ctx, coll, target)
@@ -325,7 +302,6 @@ def folder_secure(ctx, coll):
             return '1'
 
     # All went well
-    return '1'
     return '0' 
 
 
@@ -346,17 +322,6 @@ def determine_vault_target(ctx, folder):
     if len(datapackage_name)>235:
         datapackage_name = datapackage_name[0:235]
 
-#        uuChop(*groupName, *_, *baseName, "-", true);
-#        uuChopPath(*folder, *parent, *datapackageName);
-
-        # Make room for the timestamp and sequence number
-#        if (strlen(*datapackageName) > 235) {
-#                *datapackageName = substr(*datapackageName, 0, 235);
-#        }
-
-#        msiGetIcatTime(*timestamp, "unix");
-#        *timestamp = triml(*timestamp, "0");
-
     ret = msi.get_icat_time(ctx, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
@@ -371,8 +336,6 @@ def determine_vault_target(ctx, folder):
         target = target_base + "[" + str(i) + "]"
 
     return target
-
-
 
 
 def collection_group_name(callback, coll):
