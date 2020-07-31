@@ -7,8 +7,13 @@ __license__   = 'GPLv3, see LICENSE'
 import group
 import policies_folder_status
 import provenance
+import vault
+import epic
+import meta
 from util import *
 from util.query import Query
+import irods_types
+
 
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',
@@ -17,7 +22,8 @@ __all__ = ['rule_collection_group_name',
            'api_folder_submit',
            'api_folder_unsubmit',
            'api_folder_accept',
-           'api_folder_reject']
+           'api_folder_reject',
+           'rule_folder_secure']
 
 
 def set_status(ctx, coll, status):
@@ -123,13 +129,213 @@ def api_folder_reject(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
-@api.make()
-def api_folder_secure(ctx, coll):
-    """Secure a folder.
+@rule.make(inputs=[0], outputs=[1])
+# \brief iiFolderSecure   Secure a folder to the vault
+def rule_folder_secure(ctx, coll):
+    """ Rule entry to folder_secure: Secure a folder to the vault.
+        This function should only be called by a rodsadmin
+        and should not be called from the portal.
 
-    :param coll: Folder to secure
+       :param coll: Folder to secure
+
+       return 0 when no error occured
     """
-    ctx.iiFolderSecure(coll)
+
+    log.write(ctx, 'Starting folder secure - ' + coll)
+
+    return folder_secure(ctx, coll)
+
+
+def folder_secure(ctx, coll):
+    """ Secure a folder to the vault. This function should only be called by a rodsadmin
+        and should not be called from the portal.
+
+       :param coll: Folder to secure
+
+       returns '0' when nu error occured
+    """
+
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return '1'
+
+    # Check modify access on research folder.
+    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
+
+    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
+
+    # Set cronjob status
+    if modify_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
+        except msi.Error as e:
+            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
+            return '1'
+
+    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['PROCESSING'])
+
+    found = False
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYPARAMSNAME + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        target = row[0]
+        found = True
+
+    if found:
+        avu.rm_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
+
+    if modify_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
+        except msi.Error as e:
+            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+            return '1'
+
+    if not found:
+        target = determine_vault_target(ctx, coll)
+        if target == "":
+            log.write(ctx, "No vault target found")
+            return '1'
+
+    # Try to register EPIC PID
+    ret = epic.register_epic_pid(ctx, target)
+    url = ret['url']
+    pid = ret['pid']
+    http_code = ret['httpCode']
+
+    if (http_code != "0" and http_code != "200" and http_code != "201"):
+        # Always retry
+        log.write(ctx, "folder_secure:  returned httpCode: " + http_code)
+        if modify_access != b'\x01':
+            try:
+                msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
+            except msi.Error as e:
+                return '1'
+
+        avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
+        avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
+
+        if modify_access != b'\x01':
+            try:
+                msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
+            except msi.Error as e:
+                log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+                return '1'
+
+    # Copy all original info to vault
+    vault.copy_folder_to_vault(ctx, coll, target)
+    meta.copy_user_metadata(ctx, coll, target)
+    vault.vault_copy_original_metadata_to_vault(ctx, target)
+    vault.vault_write_license(ctx, target)
+
+    if http_code != "0":
+        # save EPIC Persistent ID in metadata
+        epic.save_epic_pid(ctx, target, url, pid)
+
+    # Set research folder status.
+    try:
+        msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
+    except msi.Error as e:
+        log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
+        return '1'
+
+    parent, chopped_coll = pathutil.chop(coll)
+
+    while parent != "/" + user.zone(ctx) + "/home":
+        log.write(ctx, parent)
+        try:
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
+            log.write(ctx, "SET ACL (admin:write) on " + parent)
+        except msi.Error as e:
+            log.write(ctx, "Could not set ACL on " + parent)
+        parent, chopped_coll = pathutil.chop(parent)
+
+    avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
+
+    try:
+        msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
+    except msi.Error as e:
+        log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+        return '1'
+
+    parent, chopped_coll = pathutil.chop(coll)
+    while parent != "/" + user.zone(ctx) + "/home":
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), parent)
+        except msi.Error as e:
+            log.write(ctx, "Could not set ACL (admin:null) on " + parent)
+
+        parent, chopped_coll = pathutil.chop(parent)
+
+    # Copy provenance log.
+    provenance.provenance_copy_log(ctx, coll, target)
+
+    # Set vault permissions for new vault package.
+    group = collection_group_name(ctx, coll)
+    if group == '':
+        log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
+        return '1'
+
+    vault.set_vault_permissions(ctx, group, coll, target)
+
+    # Set vault package status.
+    avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
+
+    # Set cronjob status.
+    if modify_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
+        except msi.Error as e:
+            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
+            return '1'
+
+    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'])
+
+    if modify_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
+        except msi.Error as e:
+            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+            return '1'
+
+    # All went well
+    return '0'
+
+
+def determine_vault_target(ctx, folder):
+    """ Determine vault target path for a folder """
+
+    group = collection_group_name(ctx, folder)
+    if group == '':
+        log.write(ctx, "Cannot determine which research group " + + " ibelongs to")
+        return ""
+
+    parts = group.split('-')
+    base_name = '-'.join(parts[1:])
+
+    parts = folder.split('/')
+    datapackage_name = parts[-1]
+
+    if len(datapackage_name) > 235:
+        datapackage_name = datapackage_name[0:235]
+
+    ret = msi.get_icat_time(ctx, '', 'unix')
+    timestamp = ret['arguments'][0].lstrip('0')
+
+    vault_group_name = constants.IIVAULTPREFIX + base_name
+
+    # Create target and ensure it does not exist already
+    i = 0
+    target_base = "/" + user.zone(ctx) + "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
+    target = target_base
+    while collection.exists(ctx, target):
+        i += 1
+        target = target_base + "[" + str(i) + "]"
+
+    return target
 
 
 def collection_group_name(callback, coll):

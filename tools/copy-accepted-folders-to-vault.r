@@ -1,3 +1,5 @@
+#!/usr/bin/irule -F
+
 copyToVault {
 	# Copy research folder to vault.
 	# This script is kept as dumb as possible.
@@ -14,7 +16,9 @@ copyToVault {
 		foreach(*row in *GenQOut) {
 			*folder = *row.COLL_NAME;
 			# When iiFolderSecure fails continue with the other folders.
-			if (errorcode(iiFolderSecure(*folder)) == 0) {
+                        *errorcode = '0';
+                        rule_folder_secure(*folder, *errorcode);
+			if (*errorcode == '0') {
 				*cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK;
 				msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
 				*err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *folder, "-C"), *msg);

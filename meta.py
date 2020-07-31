@@ -462,6 +462,10 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
 
 @rule.make()
 def rule_copy_user_metadata(ctx, source, target):
+    copy_user_metadata(ctx, source, target)
+
+
+def copy_user_metadata(ctx, source, target):
     """
     Copy the user metadata of a collection to another collection.
 

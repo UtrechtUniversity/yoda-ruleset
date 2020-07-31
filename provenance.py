@@ -55,6 +55,16 @@ def rule_copy_provenance_log(ctx, source, target):
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
+    provenance_copy_log(ctx, source, target)
+
+
+def provenance_copy_log(ctx, source, target):
+    """
+    Copy the provenance log of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
     try:
         # Retrieve all provenance logs on source collection.
         iter = genquery.row_iterator(

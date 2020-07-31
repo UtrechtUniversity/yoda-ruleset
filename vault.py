@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import itertools
 import os
 import time
-
+import irods_types
 import folder
 import meta
 import meta_form
@@ -207,11 +207,25 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     :param rule_args[0]: Path of a new package in the vault
     """
     vault_package = rule_args[0]
-    original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
+    vault_copy_original_metadata_to_vault(callback, vault_package)
+
+#    original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
+#
+#    # Copy original metadata JSON.
+#    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
+#    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+
+
+def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
+    original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
 
     # Copy original metadata JSON.
-    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
-    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
+    # ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+
+    # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
 def rule_vault_write_license(rule_args, callback, rei):
@@ -222,6 +236,18 @@ def rule_vault_write_license(rule_args, callback, rei):
 
     vault_pkg_coll = rule_args[0]
     zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    vault_write_license(vault_pkg_coll)
+
+
+def vault_write_license(callback, vault_pkg_coll):
+    """Write the license as a text file into the root of the vault package.
+
+    :param rule_args[0]: Path of a package in the vault
+    """
+
+#    vault_pkg_coll = rule_args[0]
+    # zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    zone = user.zone(callback)
 
     # Retrieve license.
     license = ""
@@ -458,3 +484,209 @@ def api_vault_get_publication_terms(ctx):
         return data_object.read(ctx, terms_file)
     except Exception:
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
+
+
+def copy_folder_to_vault(ctx, folder, target):
+    """Copy folder and all its contents to target in vault.
+       The data will reside onder folder '/original' within the vault.
+
+    """
+
+    destination = target + '/original'
+    origin = folder
+
+    # Origin is a never changing value to be able to designate a relative path within ingest_object
+    error = 0  # Initial error state. Should stay 0.
+    treewalk_and_ingest(ctx, folder, destination, origin, error)
+
+
+def treewalk_and_ingest(ctx, folder, target, origin, error):
+    """
+        folder - will change every time as it represents every folder that has to be copied to vault
+
+        target, origin - will not change during iterative processing
+
+        return error status (which should remain 0 for further processing in iterative manner)
+    """
+    parent_coll, coll = pathutil.chop(folder)
+
+    # 1. Process this collection itself as a collection.
+    # INGEST
+    if error == 0:
+        # INGEST COLLECTION
+        error = ingest_object(ctx, parent_coll, coll, True, target, origin)
+
+    # 2. Process dataobjects located directly within the collection
+    if error == 0:
+        iter = genquery.row_iterator(
+            "DATA_NAME",
+            "COLL_NAME = '" + folder + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            # INGEST OBJECT
+            error = ingest_object(ctx, folder, row[0], False, target, origin)
+            if error:
+                break
+
+    if error == 0:
+        # 3. Process the subfolders
+        # Loop through subfolders which have folder as parent folder
+        iter = genquery.row_iterator(
+            "COLL_NAME",
+            "COLL_PARENT_NAME = '" + folder + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            error = treewalk_and_ingest(ctx, row[0], target, origin, error)
+            if error:
+                break
+
+    return error
+
+
+def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
+    source_path = parent + "/" + item
+    read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
+
+    if read_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
+        except msi.Error as e:
+            return 1
+
+    dest_path = destination
+
+    if source_path != origin:
+        # log.write(ctx, 'markIncomplete=FALSE')
+        markIncomplete = False
+        # rewrite path to copy objects that are located underneath the toplevel collection
+        source_length = len(source_path)
+        relative_path = source_path[len(origin) + 1: source_length]
+        # log.write(ctx, 'relative path: ' + relative_path)
+        dest_path = destination + '/' + relative_path
+        # log.write(ctx, 'dest_path: ' + dest_path)
+    else:
+        # log.write(ctx,'markIncomplete=TRUE')
+        markIncomplete = True
+
+    if item_is_collection:
+        # CREATE COLLECTION
+        try:
+            if parent == '/' + user.zone(ctx) + '/home':
+                # This is a special case. Dealing with the highest level and 2 collections have to be added
+                # 1. Add the basename for the research collection. Something like research-XXXXX[timestamp]
+                # So chop off /original
+                base_path = pathutil.chop(dest_path)[0]
+                log.write(ctx, 'First add BASE PATH: ' + pathutil.chop(dest_path)[0])
+                msi.coll_create(ctx, pathutil.chop(dest_path)[0], '', irods_types.BytesBuf())
+            log.write(ctx, 'coll_create ' + dest_path)
+            msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
+        except msi.Error as e:
+            return 1
+
+        if markIncomplete:
+            avu.set_on_coll(ctx, dest_path, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
+    else:
+        # CREATE COPY OF DATA OBJECT
+        try:
+            # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
+            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
+        except msi.Error as e:
+            return 1
+
+    if read_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
+        except msi.Error as e:
+            return 1
+
+    return 0
+
+
+def set_vault_permissions(ctx, group_name, folder, target):
+    """ Set permissions in the vault as such that data can be copied to the vault """
+
+    parts = group_name.split('-')
+    base_name = '-'.join(parts[1:])
+
+    parts = folder.split('/')
+    datapackage_name = parts[-1]
+
+    vault_group_name = constants.IIVAULTPREFIX + base_name
+
+    # Check if noinherit is set
+    zone = user.zone(ctx)
+    vault_path = "/" + zone + "/home/" + vault_group_name
+
+    inherit = "0"
+    iter = genquery.row_iterator(
+        "COLL_INHERITANCE",
+        "COLL_NAME = '/" + vault_path + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # COLL_INHERITANCE can be empty which is interpreted as noinherit
+        inherit = row[0]
+    log.write(ctx, 'inherit = ' + inherit + ' on ' + vault_path)
+
+    if inherit == "1":
+        msi.set_acl(ctx, "recursive", "admin:noinherit", "", vault_path)
+        log.write("No inherit set on " + vault_path)
+        # Check if research group has read-only access
+        iter = genquery.row_iterator(
+            "USER_ID",
+            "USER_NAME = '" + group_name + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            group_id = row[0]
+
+        access_name = "null"
+        iter = genquery.row_iterator(
+            "COLL_ACCESS_NAME",
+            "COLL_ACCESS_USER_ID = '" + group_id + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            access_name = row[0]
+
+        if access_name != "read object":
+            # Grant the research group read-only acccess to the collection to enable browsing through the vault.
+            try:
+                msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
+                log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
+            except msi.Error as e:
+                log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
+
+    # Check if vault group has ownership
+    iter = genquery.row_iterator(
+        "USER_ID",
+        "USER_NAME = '" + vault_group_name + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_group_id = row[0]
+
+    vault_group_access_name = "null"
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_NAME",
+        "COLL_ACCESS_USER_ID = '" + vault_group_id + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_group_access_name = row[0]
+
+    # Ensure vault-groupName has ownership on vault package
+    if vault_group_access_name != "own":
+        msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target)
+
+    # Grant datamanager group read access to vault package.
+    category = group.get_category(ctx, group_name)
+    datamanager_group_name = "datamanager-" + category
+
+    if group.exists(ctx, datamanager_group_name):
+        msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
+
+    # Grant research group read access to vault package.
+    msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
