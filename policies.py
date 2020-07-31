@@ -7,8 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import folder
-import policies_folder_status
 import policies_datapackage_status
+import policies_folder_status
 import session_vars
 from util import *
 

@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-
 import xml.etree.cElementTree as ET
+
+from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
            'rule_json_datacite41_create_data_cite_xml_on_json']

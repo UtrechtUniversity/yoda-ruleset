@@ -7,8 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 import itertools
 import os
 import time
-import irods_types
+
 import folder
+import irods_types
 import meta
 import meta_form
 import session_vars

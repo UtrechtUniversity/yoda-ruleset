@@ -4,10 +4,10 @@
 __copyright__ = 'Copyright (c) 20202, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import email
-from email.mime.text import MIMEText
+import re
 import smtplib
+from email.mime.text import MIMEText
 
 from util import *
 

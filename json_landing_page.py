@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
+
 from util import *
 
 __all__ = ['rule_json_landing_page_create_json_landing_page']

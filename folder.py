@@ -4,16 +4,15 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import epic
 import group
+import irods_types
+import meta
 import policies_folder_status
 import provenance
 import vault
-import epic
-import meta
 from util import *
 from util.query import Query
-import irods_types
-
 
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',

@@ -5,8 +5,9 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__ = 'GPLv3, see LICENSE'
 
 import random
-import requests
 import string
+
+import requests
 
 from util import *
 
