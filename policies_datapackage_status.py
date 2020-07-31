@@ -40,3 +40,35 @@ def can_set_datapackage_status_attr(ctx, actor, coll, status):
         return x
     else:
         return (current, new)
+
+
+def post_status_transition(ctx, path, actor, status):
+    """Post folder status transition actions."""
+    status = constants.research_package_state(status)
+    actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]
+
+    if status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+        provenance.log_action(ctx, actor, path, "submitted for publication")
+
+        # Store actor of publication submission.
+        attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+        avu.set_on_coll(ctx, path, attribute, actor)
+
+    elif status is constants.vault_package_state.APPROVED_FOR_PUBLICATION:
+        provenance.log_action(ctx, actor, path, "approved for publication")
+
+        # Store actor of publication approval.
+        attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+        avu.set_on_coll(ctx, path, attribute, actor)
+
+    elif status is constants.vault_package_state.PUBLISHED:
+        provenance.log_action(ctx, "system", path, "published")
+
+    elif status is constants.vault_package_state.PENDING_DEPUBLICATION:
+        provenance.log_action(ctx, actor, path, "requested depublication")
+
+    elif status is constants.vault_package_state.DEPUBLISHED:
+        provenance.log_action(ctx, "system", path, "depublication")
+
+    elif status is constants.vault_package_state.PENDING_REPUBLICATION:
+        provenance.log_action(ctx, actor, path, "requested republication")

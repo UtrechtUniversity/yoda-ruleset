@@ -410,7 +410,7 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 
     elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
-        ctx.iiPostVaultStatusTransition(obj_name, str(user.user_and_zone(ctx)), value)
+        policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
 
 
 # }}}
