@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import folder
 import meta
+import provenance
 from util import *
 
 
@@ -66,7 +67,10 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
             return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
 
     elif status_to is constants.research_package_state.SECURED:
-        return policy.fail('Only a rodsadmin is allowed to secure a folder to the vault')
+        actor = user.user_and_zone(ctx)
+        if not user.is_admin(ctx, actor):
+            return policy.fail('Only a rodsadmin is allowed to secure a folder to the vault')
+
     return policy.succeed()
 
 
@@ -93,12 +97,12 @@ def post_status_transition(ctx, path, actor, status):
         provenance.log_action(ctx, actor, path, "submitted for vault")
 
         # Set status to accepted if group has no datamanager.
-        if not datamanager_exists(ctx, path):
+        if not folder.datamanager_exists(ctx, path):
             set_status(ctx, coll, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
         # Actor is system if group has no datamanager.
-        if not datamanager_exists(ctx, path):
+        if not folder.datamanager_exists(ctx, path):
             actor = "system"
 
         provenance.log_action(ctx, actor, path, "accepted for vault")

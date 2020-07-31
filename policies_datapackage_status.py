@@ -10,8 +10,8 @@ from util import *
 
 def pre_status_transition(ctx, coll, current, new):
     """Action taken before status transition."""
-    if status_from is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION \
-       and status_to is constants.vault_package_state.UNPUBLISHED:
+    if current is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION \
+       and new is constants.vault_package_state.UNPUBLISHED:
         action_actor = provenance.latest_action_actor(ctx, coll)
         provenance.log_action(ctx, action_actor, coll, "canceled publication")
 
