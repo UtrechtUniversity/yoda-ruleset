@@ -215,19 +215,17 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
 #    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
 #    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
+
 def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
 
     # Copy original metadata JSON.
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
     # ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
-   
-    log.write(ctx, original_metadata)
-    log.write(ctx, copied_metadata)
 
     ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
 
-    #msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
+    # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
 def rule_vault_write_license(rule_args, callback, rei):
@@ -503,7 +501,7 @@ def copy_folder_to_vault(ctx, folder, target):
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
-    """ 
+    """
         folder - will change every time as it represents every folder that has to be copied to vault
 
         target, origin - will not change during iterative processing
@@ -511,7 +509,7 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
         return error status (which should remain 0 for further processing in iterative manner)
     """
     parent_coll, coll = pathutil.chop(folder)
-    
+
     # 1. Process this collection itself as a collection.
     # INGEST
     if error == 0:
@@ -531,8 +529,8 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
             if error:
                 break
 
-    if error == 0: 
-        # 3. Process the subfolders 
+    if error == 0:
+        # 3. Process the subfolders
         # Loop through subfolders which have folder as parent folder
         iter = genquery.row_iterator(
             "COLL_NAME",
@@ -553,7 +551,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
 
     if read_access != b'\x01':
         try:
-           msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
+            msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
         except msi.Error as e:
             return 1
 
@@ -569,7 +567,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         dest_path = destination + '/' + relative_path
         # log.write(ctx, 'dest_path: ' + dest_path)
     else:
-        # log.write(ctx,'markIncomplete=TRUE') 
+        # log.write(ctx,'markIncomplete=TRUE')
         markIncomplete = True
 
     if item_is_collection:
@@ -592,10 +590,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     else:
         # CREATE COPY OF DATA OBJECT
         try:
-            #msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
-            log.write(ctx, 'msiDataObjCopy')
-            log.write(ctx, source_path)
-            log.write(ctx, dest_path)
+            # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
             ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
         except msi.Error as e:
             return 1
@@ -605,13 +600,13 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
         except msi.Error as e:
             return 1
- 
+
     return 0
 
 
 def set_vault_permissions(ctx, group_name, folder, target):
     """ Set permissions in the vault as such that data can be copied to the vault """
-    
+
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
 
@@ -622,7 +617,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Check if noinherit is set
     zone = user.zone(ctx)
-    vault_path =  "/" + zone + "/home/" + vault_group_name
+    vault_path = "/" + zone + "/home/" + vault_group_name
 
     inherit = "0"
     iter = genquery.row_iterator(
@@ -656,7 +651,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
         for row in iter:
             access_name = row[0]
 
-        if access_name != "read object": 
+        if access_name != "read object":
             # Grant the research group read-only acccess to the collection to enable browsing through the vault.
             try:
                 msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
@@ -684,7 +679,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Ensure vault-groupName has ownership on vault package
     if vault_group_access_name != "own":
-        msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target);
+        msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target)
 
     # Grant datamanager group read access to vault package.
     category = group.get_category(ctx, group_name)
@@ -695,4 +690,3 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Grant research group read access to vault package.
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
-

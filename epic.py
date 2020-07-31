@@ -21,7 +21,7 @@ rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
 
 
 def register_epic_pid(ctx, target):
-    """ create and try to register an EPIC PID 
+    """ create and try to register an EPIC PID
         param[in]  target
         param[out] url
         param[out] pid
@@ -30,14 +30,14 @@ def register_epic_pid(ctx, target):
 
     config = get_publication_config(ctx)
     host = config['davrodsVHost']
-    parts = target.split('/')  
-    subpath = '/'.join(parts[2:]) # only user part without /tempZone/home
+    parts = target.split('/')
+    subpath = '/'.join(parts[2:])  # only user part without /tempZone/home
     url = "https://" + host + "/" + subpath
 
     pid = generate_uuid(ctx)
 
     ret = msi.register_epic_pid(ctx, url, pid, '')
-    httpCode =  ret['arguments'][2]
+    httpCode = ret['arguments'][2]
 
     return {'url': ret['arguments'][0],
             'pid': ret['arguments'][1],
@@ -52,21 +52,21 @@ def save_epic_pid(ctx, target, url, pid):
 
 
 def get_publication_config(ctx):
-    """ Get all publication config keys and their values 
+    """ Get all publication config keys and their values
         Report any missing keys
     """
     zone = user.zone(ctx)
     system_coll = "/" + zone + constants.UUSYSTEMCOLLECTION
 
     attr2keys = {"public_host": "publicHost",
-            "public_vhost": "publicVHost",
-            "moai_host": "moaiHost",
-            "yoda_prefix": "yodaPrefix",
-            "datacite_prefix": "dataCitePrefix",
-            "random_id_length": "randomIdLength",
-            "yoda_instance": "yodaInstance",
-            "davrods_vhost": "davrodsVHost",
-            "davrods_anonymous_vhost": "davrodsAnonymousVHost"}
+                 "public_vhost": "publicVHost",
+                 "moai_host": "moaiHost",
+                 "yoda_prefix": "yodaPrefix",
+                 "datacite_prefix": "dataCitePrefix",
+                 "random_id_length": "randomIdLength",
+                 "yoda_instance": "yodaInstance",
+                 "davrods_vhost": "davrodsVHost",
+                 "davrods_anonymous_vhost": "davrodsAnonymousVHost"}
     configKeys = {}
     found_attrs = []
 
@@ -87,11 +87,11 @@ def get_publication_config(ctx):
         except KeyError:
             continue
 
-    # Any differences between 
+    # Any differences between
     if len(found_attrs) != len(attr2keys):
         # Difference between attrs wanted and found
         for key in attr2keys:
-            if not key in found_attrs:
+            if key not in found_attrs:
                 log.write(ctx, 'Missing config key ' + key)
-    
+
     return configKeys

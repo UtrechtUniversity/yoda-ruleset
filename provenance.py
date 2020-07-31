@@ -82,8 +82,6 @@ def provenance_copy_log(ctx, source, target):
         log.write(ctx, "rule_copy_provenance_log: failed to copy provenance log from <{}> to <{}>".format(source, target))
 
 
-
-
 def get_provenance_log(ctx, coll):
     """
     Return provenance log of a collection.

@@ -132,7 +132,7 @@ def api_folder_reject(ctx, coll):
 @rule.make(inputs=[0], outputs=[1])
 # \brief iiFolderSecure   Secure a folder to the vault
 def rule_folder_secure(ctx, coll):
-    """ Rule entry to folder_secure: Secure a folder to the vault. 
+    """ Rule entry to folder_secure: Secure a folder to the vault.
         This function should only be called by a rodsadmin
         and should not be called from the portal.
 
@@ -140,7 +140,7 @@ def rule_folder_secure(ctx, coll):
 
        return 0 when no error occured
     """
-    
+
     log.write(ctx, 'Starting folder secure - ' + coll)
 
     return folder_secure(ctx, coll)
@@ -148,7 +148,7 @@ def rule_folder_secure(ctx, coll):
 
 def folder_secure(ctx, coll):
     """ Secure a folder to the vault. This function should only be called by a rodsadmin
-        and should not be called from the portal. 
+        and should not be called from the portal.
 
        :param coll: Folder to secure
 
@@ -194,22 +194,22 @@ def folder_secure(ctx, coll):
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
-    if not found: 
+    if not found:
         target = determine_vault_target(ctx, coll)
         if target == "":
             log.write(ctx, "No vault target found")
             return '1'
-	
+
     # Try to register EPIC PID
     ret = epic.register_epic_pid(ctx, target)
     url = ret['url']
-    pid =  ret['pid']
-    http_code =  ret['httpCode']
-    
+    pid = ret['pid']
+    http_code = ret['httpCode']
+
     if (http_code != "0" and http_code != "200" and http_code != "201"):
         # Always retry
-        log.write(ctx, "folder_secure:  returned httpCode: " + http_code);
-	if modify_access != b'\x01':
+        log.write(ctx, "folder_secure:  returned httpCode: " + http_code)
+        if modify_access != b'\x01':
             try:
                 msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
             except msi.Error as e:
@@ -218,7 +218,7 @@ def folder_secure(ctx, coll):
         avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
         avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
 
-	if modify_access != b'\x01':
+        if modify_access != b'\x01':
             try:
                 msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
             except msi.Error as e:
@@ -229,7 +229,7 @@ def folder_secure(ctx, coll):
     vault.copy_folder_to_vault(ctx, coll, target)
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
-    vault.vault_write_license(ctx, target);
+    vault.vault_write_license(ctx, target)
 
     if http_code != "0":
         # save EPIC Persistent ID in metadata
@@ -241,7 +241,7 @@ def folder_secure(ctx, coll):
     except msi.Error as e:
         log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
         return '1'
-       
+
     parent, chopped_coll = pathutil.chop(coll)
 
     while parent != "/" + user.zone(ctx) + "/home":
@@ -252,7 +252,7 @@ def folder_secure(ctx, coll):
         except msi.Error as e:
             log.write(ctx, "Could not set ACL on " + parent)
         parent, chopped_coll = pathutil.chop(parent)
-    
+
     avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
 
     try:
@@ -302,7 +302,7 @@ def folder_secure(ctx, coll):
             return '1'
 
     # All went well
-    return '0' 
+    return '0'
 
 
 def determine_vault_target(ctx, folder):
@@ -319,7 +319,7 @@ def determine_vault_target(ctx, folder):
     parts = folder.split('/')
     datapackage_name = parts[-1]
 
-    if len(datapackage_name)>235:
+    if len(datapackage_name) > 235:
         datapackage_name = datapackage_name[0:235]
 
     ret = msi.get_icat_time(ctx, '', 'unix')
@@ -329,7 +329,7 @@ def determine_vault_target(ctx, folder):
 
     # Create target and ensure it does not exist already
     i = 0
-    target_base = "/" + user.zone(ctx)+ "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
+    target_base = "/" + user.zone(ctx) + "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
     target = target_base
     while collection.exists(ctx, target):
         i += 1
