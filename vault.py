@@ -792,8 +792,8 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 
 def send_datamanagers_publication_request_mail(ctx, coll):
     """
-        All involved datamanagers will receive an email notification regarding a publication 
-        request by a researcher
+    All involved datamanagers will receive an email notification regarding a publication
+    request by a researcher
     """
     # Find group
     coll_parts = coll.split('/')
@@ -887,7 +887,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 
     # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
     # Status UNPUBLISHED can be called by researcher and datamanager.
-    ##### HIER NOG FF NAAR KIJKEN
+    # HIER NOG FF NAAR KIJKEN
     if not is_datamanager:
         if new_vault_status in [constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, constants.vault_package_state.UNPUBLISHED]:
             actor_group_path = '/' + zone + '/home/' + actor_group
