@@ -47,6 +47,8 @@ def api_vault_submit(ctx, coll):
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
 
     if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
         return 'Success'
     else:
         return api.Error(ret[0], ret[1])
@@ -751,7 +753,10 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     # Set new status
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
+        log.write(ctx, 'Set New vault coll status:')
+        log.write(ctx, new_coll_status)
         if new_coll_status == constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+            log.write(ctx, 'SEND EMAIL TO DATAMANAGERS')
             send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
     except msi.Error as e:
