@@ -4,10 +4,12 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import mail
+import group
 import itertools
 import os
 import time
-
+import policies_datapackage_status
 import folder
 import irods_types
 import meta
@@ -24,6 +26,7 @@ __all__ = ['api_vault_submit',
            'api_vault_unpreservable_files',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
+           'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_copy_to_research',
@@ -36,9 +39,61 @@ def api_vault_submit(ctx, coll):
 
     :param coll: Collection of data package to submit
     """
+
+    #constants.vault_package_state.SUBMITTED_FOR_PUBLICATION
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
+
+    # return 'Success'
+
+    return api.Error(ret[0], ret[1])
+
+    ctx.iiAdminVaultActions()
+    
+
+
+    ###### MAIL the datamanagers concerned!
+
+
+    # OLD
+
     res = ctx.iiVaultSubmit(coll, '', '')
     if res['arguments'][1] != 'Success':
         return api.Error(*res['arguments'][1:])
+
+
+    # Now inform datamanager(s) concerned
+    # Find group
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+    group_parts = vault_group_name.split('-')
+    # create the research equivalent in order to get the category
+    group_name = 'research-' + '-'.join(group_parts[1:])
+    log.write(ctx, group_name)
+    # Find category
+    category = group.get_category(ctx, group_name)
+    log.write(ctx, category)
+    # Find the datamanagers of the category and inform them of data to be accepted to vault
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_GROUP_NAME = 'datamanager-" + category + "' "
+        "AND USER_ZONE = '" +  user.zone(ctx) + "' "
+        "AND USER_TYPE != 'rodsgroup'",
+        genquery.AS_LIST, ctx
+    )
+    submitter = user.name(ctx)
+    log.write(ctx, submitter)
+
+    for row in iter:
+        datamanager = row[0]
+        log.write(ctx, datamanager)
+        # coll split off zone / home
+        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
+        log.write(ctx, '/'.join(coll_parts[3:]))
+    log.write(ctx, 'After datamanager loop')
+
+#    return 'Success'
+
+
     return res['arguments'][1]
 
 
@@ -691,3 +746,284 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     # Grant research group read access to vault package.
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+
+# Example
+#@rule.make(inputs=range(4), outputs=range(4, 6))
+#def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
+
+
+@rule.make(inputs=range(3), outputs=range(3,5))
+def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+    """ rule interface for processing vault status transition request
+
+    param[in] folder
+    param[in] newFolderStatus
+    param[in] actor
+
+    return [status, statusInfo] "Success" if went ok
+
+    """
+    return vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+
+
+def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+    """ Processing vault status transition request
+
+    param[in] folder
+    param[in] newFolderStatus
+    param[in] actor
+
+    return [status, statusInfo] 
+    status = 'Success' if went ok
+
+    """
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return ['1', 'Insufficient permissions - should only be called by rodsadmin']
+
+    # check current status, perhaps transitioned already
+    current_coll_status = get_coll_vault_status(ctx, coll).value
+    if current_coll_status == new_coll_status:
+        return ['Success', '']
+
+    # Set new status
+    try:
+        avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
+        return ['Success', '']
+    except msi.Error as e:
+        current_coll_status = get_coll_vault_status(ctx, coll).value
+        # iiCanTransitionVaultStatus
+        is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_coll_status, new_coll_status)
+        if not is_legal:
+            return ['1', 'Illegal status transition']
+        else:
+            if new_coll_status == constants.vault_package_state.PUBLISHED:
+                # Special case is transition to PUBLISHED
+                # landing page and doi have to be present
+
+                # Landingpage URL.
+                landinpage_url = ""
+                iter = genquery.row_iterator(
+                    "META_COLL_ATTR_VALUE",
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
+                    genquery.AS_LIST, callback
+                )
+
+                for row in iter:
+                    if row[0] == "":
+                        return ['1', 'Landing page is missing']
+
+                # Persistent Identifier DOI.
+                iter = genquery.row_iterator(
+                    "META_COLL_ATTR_VALUE",
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+                    genquery.AS_LIST, callback
+                )
+
+                for row in iter:
+                    if row[0] == "":
+                        return ['1', 'DOI is missing']
+
+    return ['Success', '']
+
+"""
+# \brief Processing vault status transition request
+#
+# \param[in] folder
+# \param[in] newFolderStatus
+# \param[in] actor
+
+iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
+	*status = "Unknown";
+	*statusInfo = "An internal error has occurred";
+
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		writeLine("stdout", "iiVaultStatusTransition: Should only be called by a rodsadmin");
+		fail;
+	}
+
+	# Check if status isn't transitioned already.
+        *currentVaultStatus = "";
+        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
+                *currentVaultStatus = *row.META_COLL_ATTR_VALUE;
+        }
+        if (*currentVaultStatus == *newFolderStatus) {
+                 *status = "Success";
+                 *statusInfo = "";
+                succeed;
+        }
+
+	# Set new vault status.
+	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
+	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
+        
+	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
+	if (*err < 0) {
+		iiVaultStatus(*folder, *currentFolderStatus);
+		iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, *actor, *allowed, *reason);
+		if (!*allowed) {
+			*status = "PermissionDenied";
+			*statusInfo = *reason;
+		} else {
+			if (*err == -818000) {
+				*status = "PermissionDenied";
+				*statusInfo = "User is not permitted to modify folder status";
+			} else {
+				*status = "Unrecoverable";
+				*statusInfo = "*err - *msg";
+			}
+		}
+        } else {
+		*status = "Success";
+		*statusInfo = "";
+	}
+}
+"""
+
+
+
+def vault_request_status_transitions(ctx, coll, new_vault_status):
+    """  
+    Request vault status transition action
+
+    param[in] vault folder to be changed of status in publication cycle
+    param[in] newFolderStatus
+
+    Return [status, statusInfo] - status='' is success
+    """
+
+    log.write(ctx, new_vault_status)
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        if new_vault_status == constants.vault_package_state.PUBLISHED:
+            log.write(ctx, "Publication request - User is no rodsadmin")
+            return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
+        elif new_vault_status == constants.vault_package_state.DEPUBLISHED:
+            log.write(ctx, "depublication request - User is no rodsadmin")
+            return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
+
+    # Determine vault group and actor
+    # Find group
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+    log.write(ctx, "vault group name: " + vault_group_name)
+
+    group_parts = vault_group_name.split('-')
+    # create the research equivalent in order to get the category
+    group_name = 'research-' + '-'.join(group_parts[1:])
+    log.write(ctx, 'group name: ' + group_name)
+    # Find category
+    category = group.get_category(ctx, group_name)
+    log.write(ctx, "category: " + category)
+
+    zone = user.zone(ctx)
+
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+    log.write(ctx, "vault_group_name: " + vault_group_name)
+
+    # User/actor specific stuff
+    actor = user.full_name(ctx)
+    log.write(ctx, "actor: " + actor)
+
+    actor_group = folder.collection_group_name(ctx, coll)
+    log.write(ctx, "actor group: " + actor_group)
+    if actor_group == '':
+        log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
+        return ['1', '']
+
+    # is datamanager?
+#    category = group.get_category(ctx, group_name)
+#    log.write(ctx, "category: " + category)
+
+    is_datamanager = meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']
+    log.write(ctx, "is dm? " + str(is_datamanager))
+
+    actor_group_path = '/' + zone + '/home/' 
+
+    # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
+    # Status UNPUBLISHED can be called by researcher and datamanager.
+##### HIER NOG FF NAAR KIJKEN
+    if not is_datamanager:
+        if new_vault_status in [constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, constants.vault_package_state.UNPUBLISHED]:
+            actor_group_path = '/' + zone + '/home/' + actor_group
+    else:
+        actor_group_path = '/' + zone + '/home/datamanager-' + category
+
+    log.write(ctx, "actor group path: " + actor_group_path)
+
+
+#        if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        # Status UNPUBLISHED can be called by researcher and datamanager.
+#        } else  if (*newVaultStatus == UNPUBLISHED && !*isDatamanager) {
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        } else  if (*isDatamanager) {
+#                iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        }
+
+    # Retrieve collection id.
+    iter = genquery.row_iterator(
+        "COLL_ID",
+        "COLL_NAME = '" + coll +  "' ",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        coll_id = row[0]
+
+    log.write(ctx, "coll_id: " + coll_id)
+
+    # Check if vault package is currently pending for status transition.
+    # Except for status transition to PUBLISHED/DEPUBLISHED,
+    # because it is requested by the system before previous pending
+    # transition is removed.
+    if new_vault_status != constants.vault_package_state.PUBLISHED and  new_vault_status != constants.vault_package_state.DEPUBLISHED:
+        action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
+        iter = genquery.row_iterator(
+            "COLL_ID",
+            "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            # Don't accept request if a status transition is already pending.
+            return ['PermissionDenied', "Vault package is being processed, please wait until finished."]
+
+
+    # Check if status transition is allowed.
+    current_vault_status = get_coll_vault_status(ctx, coll).value
+
+    log.write(ctx, 'current vault status:  ' + current_vault_status)
+
+    is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_vault_status, new_vault_status)
+    if not is_legal:
+        return ['PermissionDenied', 'Illegal status transition']
+
+    log.write(ctx, "After IS LEGAL")
+
+    log.write(ctx, new_vault_status)
+    log.write(ctx, type(str(new_vault_status)))
+
+    log.write(ctx, constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id)
+    log.write(ctx, jsonutil.dump([coll, str(new_vault_status), actor]))
+
+    log.write(ctx, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id)
+    log.write(ctx, 'PENDING')
+
+
+    return ['BLABLA', 'ERROR BLABLA3']
+
+
+
+    # Add vault action request to actor group.
+    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
+    # opposite is: jsonutil.parse('["coll","status","actor"]')[0] => coll
+
+    # Add vault action status to actor group.
+    avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
+
+    return ['', '']
