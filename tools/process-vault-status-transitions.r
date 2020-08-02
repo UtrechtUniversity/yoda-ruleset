@@ -25,6 +25,13 @@ processVaultActions() {
 				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0));
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
+
+                                writeLine("stdout", *folder);
+                                writeLine("stdout", *action);
+                                writeLine("stdout", *actor);
+
+                                #succeed;
+
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 					writeLine("stdout", "Failed to process vault request on *collName");
 				} else { # skip processing this vault request
@@ -45,8 +52,16 @@ processVaultActions() {
 					if (*pending) {
 						# *err = errorcode(iiVaultProcessStatusTransition(*folder, *action, *actor, *status, *statusInfo));
                                                 writeLine("stdout", "BEFORE: *folder *action");
+                                                *status = '';
+                                                *statusInfo = '';
                                                 rule_vault_process_status_transitions(*folder, *action, *actor, *status, *statusInfo);
+                                                writeLine("stdout", "*status");
+                                                writeLine("stdout", "*statusInfo");
+                                                *status = 'Success';
+
                                                 writeLine("stdout", "AFTER: *folder *action");
+
+                                                succeed;
 						#if (*status != 'Success') {
 						#	writeLine("stdout", "iiVaultProcessStatusTransition: *err");
 						#	*status = "InternalError";

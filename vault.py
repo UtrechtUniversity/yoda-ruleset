@@ -40,59 +40,18 @@ def api_vault_submit(ctx, coll):
     :param coll: Collection of data package to submit
     """
 
-    #constants.vault_package_state.SUBMITTED_FOR_PUBLICATION
+#    res = ctx.iiVaultSubmit(coll, '', '')
+#    if res['arguments'][1] != 'Success':
+#        return api.Error(*res['arguments'][1:])
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
 
-    # return 'Success'
-
-    return api.Error(ret[0], ret[1])
+    if ret[0] == '':
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
     ctx.iiAdminVaultActions()
-    
-
-
-    ###### MAIL the datamanagers concerned!
-
-
-    # OLD
-
-    res = ctx.iiVaultSubmit(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
-
-
-    # Now inform datamanager(s) concerned
-    # Find group
-    coll_parts = coll.split('/')
-    vault_group_name = coll_parts[3]
-    group_parts = vault_group_name.split('-')
-    # create the research equivalent in order to get the category
-    group_name = 'research-' + '-'.join(group_parts[1:])
-    log.write(ctx, group_name)
-    # Find category
-    category = group.get_category(ctx, group_name)
-    log.write(ctx, category)
-    # Find the datamanagers of the category and inform them of data to be accepted to vault
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_GROUP_NAME = 'datamanager-" + category + "' "
-        "AND USER_ZONE = '" +  user.zone(ctx) + "' "
-        "AND USER_TYPE != 'rodsgroup'",
-        genquery.AS_LIST, ctx
-    )
-    submitter = user.name(ctx)
-    log.write(ctx, submitter)
-
-    for row in iter:
-        datamanager = row[0]
-        log.write(ctx, datamanager)
-        # coll split off zone / home
-        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
-        log.write(ctx, '/'.join(coll_parts[3:]))
-    log.write(ctx, 'After datamanager loop')
-
-#    return 'Success'
-
 
     return res['arguments'][1]
 
@@ -747,10 +706,6 @@ def set_vault_permissions(ctx, group_name, folder, target):
     # Grant research group read access to vault package.
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
 
-# Example
-#@rule.make(inputs=range(4), outputs=range(4, 6))
-#def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
-
 
 @rule.make(inputs=range(3), outputs=range(3,5))
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
@@ -763,7 +718,12 @@ def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     return [status, statusInfo] "Success" if went ok
 
     """
-    return vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+
+    #return 'Success'
+
+    vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+
+    return 'Success'
 
 
 def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
@@ -791,10 +751,11 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     # Set new status
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
+        if new_coll_status == constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+            send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
     except msi.Error as e:
         current_coll_status = get_coll_vault_status(ctx, coll).value
-        # iiCanTransitionVaultStatus
         is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_coll_status, new_coll_status)
         if not is_legal:
             return ['1', 'Illegal status transition']
@@ -828,61 +789,40 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 
     return ['Success', '']
 
-"""
-# \brief Processing vault status transition request
-#
-# \param[in] folder
-# \param[in] newFolderStatus
-# \param[in] actor
 
-iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error has occurred";
+def send_datamanagers_publication_request_mail(ctx, coll):
+   """
+       All involved datamanagers will receive an email notification regarding a publication 
+       request by a researcher
+   """
+    # Find group
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+    group_parts = vault_group_name.split('-')
+    # create the research equivalent in order to get the category
+    group_name = 'research-' + '-'.join(group_parts[1:])
+    log.write(ctx, group_name)
+    # Find category
+    category = group.get_category(ctx, group_name)
+    log.write(ctx, category)
+    # Find the datamanagers of the category and inform them of data to be accepted to vault
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_GROUP_NAME = 'datamanager-" + category + "' "
+        "AND USER_ZONE = '" +  user.zone(ctx) + "' "
+        "AND USER_TYPE != 'rodsgroup'",
+        genquery.AS_LIST, ctx
+    )
+    submitter = user.name(ctx)
+    log.write(ctx, submitter)
 
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin") {
-		writeLine("stdout", "iiVaultStatusTransition: Should only be called by a rodsadmin");
-		fail;
-	}
-
-	# Check if status isn't transitioned already.
-        *currentVaultStatus = "";
-        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = IIVAULTSTATUSATTRNAME) {
-                *currentVaultStatus = *row.META_COLL_ATTR_VALUE;
-        }
-        if (*currentVaultStatus == *newFolderStatus) {
-                 *status = "Success";
-                 *statusInfo = "";
-                succeed;
-        }
-
-	# Set new vault status.
-	*vaultStatusStr = IIVAULTSTATUSATTRNAME ++ "=" ++ *newFolderStatus;
-	msiString2KeyValPair(*vaultStatusStr, *vaultStatusKvp);
-        
-	*err = errormsg(msiSetKeyValuePairsToObj(*vaultStatusKvp, *folder, "-C"), *msg);
-	if (*err < 0) {
-		iiVaultStatus(*folder, *currentFolderStatus);
-		iiCanTransitionVaultStatus(*folder, *currentVaultStatus, *newFolderStatus, *actor, *allowed, *reason);
-		if (!*allowed) {
-			*status = "PermissionDenied";
-			*statusInfo = *reason;
-		} else {
-			if (*err == -818000) {
-				*status = "PermissionDenied";
-				*statusInfo = "User is not permitted to modify folder status";
-			} else {
-				*status = "Unrecoverable";
-				*statusInfo = "*err - *msg";
-			}
-		}
-        } else {
-		*status = "Success";
-		*statusInfo = "";
-	}
-}
-"""
-
+    for row in iter:
+        datamanager = row[0]
+        log.write(ctx, datamanager)
+        # coll split off zone / home
+        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
+        log.write(ctx, '/'.join(coll_parts[3:]))
+    log.write(ctx, 'After datamanager loop')
 
 
 def vault_request_status_transitions(ctx, coll, new_vault_status):
@@ -982,7 +922,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     # Except for status transition to PUBLISHED/DEPUBLISHED,
     # because it is requested by the system before previous pending
     # transition is removed.
-    if new_vault_status != constants.vault_package_state.PUBLISHED and  new_vault_status != constants.vault_package_state.DEPUBLISHED:
+    if new_vault_status != constants.vault_package_state.PUBLISHED and new_vault_status != constants.vault_package_state.DEPUBLISHED:
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",
@@ -1015,9 +955,6 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     log.write(ctx, 'PENDING')
 
 
-    return ['BLABLA', 'ERROR BLABLA3']
-
-
 
     # Add vault action request to actor group.
     avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
@@ -1025,5 +962,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 
     # Add vault action status to actor group.
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
+
+    log.write(ctx, 'After set avus')
 
     return ['', '']
