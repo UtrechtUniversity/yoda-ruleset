@@ -5,4 +5,4 @@ __copyright__ = ['Copyright (c) 2019, Maastricht University',
                  'Copyright (c) 2020, Utrecht University']
 __license__   = 'Apache License 2.0, see LICENSE'
 
-import avu_json
+from avu_json import *
