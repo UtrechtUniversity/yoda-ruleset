@@ -262,7 +262,7 @@ def ingest_metadata_research(ctx, path):
     # properties in the research area.
 
     # Replace all metadata under this namespace.
-    avi_json.set_json_to_obj(coll, '-C',
+    avu_json.set_json_to_obj(coll, '-C',
                              constants.UUUSERMETADATAROOT,
                              jsonutil.dump(metadata))
 
