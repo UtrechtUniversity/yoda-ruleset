@@ -186,26 +186,26 @@ def get_json_schema_from_irods_object(ctx, path):
 
     :return: JSON formatted schema
     """
-    ret_val = callback.msiGetObjType(path, "")
+    ret_val = ctx.msiGetObjType(path, "")
     type_file = ret_val['arguments'][1]
 
     if type_file != '-d':
-        callback.msiExit("-1101000", "Only files in iRODS can be used for JSON storage")
+        ctx.msiExit("-1101000", "Only files in iRODS can be used for JSON storage")
         return
 
     # Open iRODS file
-    ret_val = callback.msiDataObjOpen("objPath=" + path, 0)
+    ret_val = ctx.msiDataObjOpen("objPath=" + path, 0)
     file_desc = ret_val['arguments'][1]
 
     # Read iRODS file
-    ret_val = callback.msiDataObjRead(file_desc, 2 ** 31 - 1, irods_types.BytesBuf())
+    ret_val = ctx.msiDataObjRead(file_desc, 2 ** 31 - 1, irods_types.BytesBuf())
     read_buf = ret_val['arguments'][2]
 
     # Convert BytesBuffer to string
-    ret_val = callback.msiBytesBufToStr(read_buf, "")
+    ret_val = ctx.msiBytesBufToStr(read_buf, "")
     output_json = ret_val['arguments'][1]
 
     # Close iRODS file
-    callback.msiDataObjClose(file_desc, 0)
+    ctx.msiDataObjClose(file_desc, 0)
 
     return output_json
