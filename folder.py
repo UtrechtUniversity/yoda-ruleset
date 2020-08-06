@@ -131,12 +131,12 @@ def api_folder_reject(ctx, coll):
 @rule.make(inputs=[0], outputs=[1])
 def rule_folder_secure(ctx, coll):
     """Rule entry to folder_secure: Secure a folder to the vault.
-       This function should only be called by a rodsadmin
-       and should not be called from the portal.
+    This function should only be called by a rodsadmin
+    and should not be called from the portal.
 
-       :param coll: Folder to secure
+    :param coll: Folder to secure
 
-       return 0 when no error occured
+    :return: '0' when nu error occured
     """
     log.write(ctx, 'Starting folder secure - ' + coll)
 
@@ -144,12 +144,13 @@ def rule_folder_secure(ctx, coll):
 
 
 def folder_secure(ctx, coll):
-    """ Secure a folder to the vault. This function should only be called by a rodsadmin
-        and should not be called from the portal.
+    """Secure a folder to the vault.
+    This function should only be called by a rodsadmin
+    and should not be called from the portal.
 
-       :param coll: Folder to secure
+    :param coll: Folder to secure
 
-       returns '0' when nu error occured
+    :return: '0' when nu error occured
     """
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is no rodsadmin")
@@ -302,7 +303,7 @@ def folder_secure(ctx, coll):
 
 
 def determine_vault_target(ctx, folder):
-    """ Determine vault target path for a folder """
+    """Determine vault target path for a folder."""
 
     group = collection_group_name(ctx, folder)
     if group == '':
