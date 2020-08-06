@@ -199,7 +199,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     exts -= set([''])
 
     # Return any ext that is not in the preservable list.
-    return exts - preservable_formats
+    return list(exts - preservable_formats)
 
 
 def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):

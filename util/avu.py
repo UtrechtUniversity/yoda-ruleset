@@ -38,10 +38,28 @@ def set_on_coll(ctx, coll, a, v):
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
 
 
+def set_on_resource(ctx, resource, a, v):
+    """Set key/value metadata on a resource."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
+
+
 def associate_to_coll(ctx, coll, a, v):
     """Associate key/value metadata on a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], coll, '-C')
+
+
+def associate_to_group(ctx, group, a, v):
+    """Associate key/value metadata on a group."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], group, '-u')
+
+
+def associate_to_resource(ctx, resource, a, v):
+    """Associate key/value metadata on a group."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
 
 
 def rm_from_coll(ctx, coll, a, v):
@@ -56,6 +74,12 @@ def rm_from_data(ctx, coll, a, v):
     msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], coll, '-d')
 
 
+def rm_from_group(ctx, group, a, v):
+    """Remove key/value metadata from a group."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.remove_key_value_pairs_from_obj(ctx, x['arguments'][1], group, '-u')
+
+
 def rmw_from_coll(ctx, obj, a, v, u=''):
     """Remove AVU from collection with wildcards."""
     msi.rmw_avu(ctx, '-C', obj, a, v, u)
@@ -64,3 +88,8 @@ def rmw_from_coll(ctx, obj, a, v, u=''):
 def rmw_from_data(ctx, obj, a, v, u=''):
     """Remove AVU from data object with wildcards."""
     msi.rmw_avu(ctx, '-d', obj, a, v, u)
+
+
+def rmw_from_group(ctx, group, a, v, u=''):
+    """Remove AVU from group with wildcards."""
+    msi.rmw_avu(ctx, '-u', group, a, v, u)

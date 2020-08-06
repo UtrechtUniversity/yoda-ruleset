@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
+import avu_json
 import irods_types
 import jsonschema
 import schema as schema_
@@ -261,9 +262,9 @@ def ingest_metadata_research(ctx, path):
     # properties in the research area.
 
     # Replace all metadata under this namespace.
-    ctx.setJsonToObj(coll, '-C',
-                     constants.UUUSERMETADATAROOT,
-                     jsonutil.dump(metadata))
+    avu_json.set_json_to_obj(ctx, coll, '-C',
+                             constants.UUUSERMETADATAROOT,
+                             jsonutil.dump(metadata))
 
 
 def ingest_metadata_staging(ctx, path):
@@ -303,9 +304,9 @@ def ingest_metadata_vault(ctx, path):
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
 
     # Replace all metadata under this namespace.
-    ctx.setJsonToObj(coll, '-C',
-                     constants.UUUSERMETADATAROOT,
-                     jsonutil.dump(metadata))
+    avu_json.set_json_to_obj(ctx, coll, '-C',
+                             constants.UUUSERMETADATAROOT,
+                             jsonutil.dump(metadata))
 
 # }}}
 

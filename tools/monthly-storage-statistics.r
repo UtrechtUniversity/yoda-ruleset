@@ -10,10 +10,15 @@ run {
 	msiGetIcatTime(*timestamp, "human");
 	writeLine('stdout', '[' ++ *timestamp ++ '] Gathering storage statistics');
 
-	uuStoreMonthlyStorageStatistics(*status, *statusInfo);
+        *result = rule_resource_store_monthly_storage_statistics();
+#	#uuStoreMonthlyStorageStatistics(*status, *statusInfo);
 
-	writeLine('stdout', 'Status: ' ++ *status);
-	writeLine('stdout', 'Statusinfo: ' ++ *statusInfo);
+#	writeLine('stdout', 'Status: ' ++ *status);
+#	writeLine('stdout', 'Statusinfo: ' ++ *statusInfo);
+
+        writeLine('stdout', 'Status: Finished gathering storage statistics');
+        writeLine('stdout', *result);
+
 }
 input null
 output ruleExecOut

@@ -55,6 +55,11 @@ def api_research_folder_add(ctx, coll, new_folder_name):
         return {"proc_status": "nok",
                 "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
 
+    # Name should not be '.' or '..'
+    if new_folder_name == '.' or new_folder_name == '..':
+        return {"proc_status": "nok",
+                "proc_status_info": "It is not allowed to name the folder {}".format(new_folder_name)}
+
     # in vault?
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
@@ -128,6 +133,11 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     if '/' in new_folder_name or '\\' in new_folder_name:
         return {"proc_status": "nok",
                 "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
+
+    # Name should not be '.' or '..'
+    if new_folder_name == '.' or new_folder_name == '..':
+        return {"proc_status": "nok",
+                "proc_status_info": "It is not allowed to name the folder {}".format(new_folder_name)}
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
