@@ -370,7 +370,7 @@ def get_groups_on_categories(ctx, categories):
                 for row in iter2:
                     data = row[0]
                     temp = jsonutil.parse(data)
-                    data_size = data_size + int(temp[2])  # no construction for summation required in this case
+                    data_size = data_size + int(float(temp[2]))  # no construction for summation required in this case
                 groups.append([groupName, data_size])
 
     return groups
