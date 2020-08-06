@@ -653,7 +653,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
             access_name = row[0]
 
         if access_name != "read object":
-            # Grant the research group read-only acccess to the collection to enable browsing through the vault.
+            # Grant the research group read-only access to the collection to enable browsing through the vault.
             try:
                 msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
                 log.write(ctx, "Granted " + group_name + " read access to " + vault_path)

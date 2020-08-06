@@ -136,7 +136,7 @@ def rule_folder_secure(ctx, coll):
 
     :param coll: Folder to secure
 
-    :return: '0' when nu error occured
+    :return: '0' when nu error occurred
     """
     log.write(ctx, 'Starting folder secure - ' + coll)
 
@@ -150,7 +150,7 @@ def folder_secure(ctx, coll):
 
     :param coll: Folder to secure
 
-    :return: '0' when nu error occured
+    :return: '0' when nu error occurred
     """
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is no rodsadmin")
