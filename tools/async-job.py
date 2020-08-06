@@ -44,4 +44,4 @@ lock_or_die()
 
 import subprocess
 
-subprocess.call(['irule', rule_name+'()', 'null', 'ruleExecOut'])
+subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-irods_rule_language-instance', rule_name, 'null', 'ruleExecOut'])
