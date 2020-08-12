@@ -279,7 +279,9 @@ def folder_secure(ctx, coll):
     vault.set_vault_permissions(ctx, group, coll, target)
 
     # Set vault package status.
+    log.write(ctx, "BEFORE set vault package status to unpublished")
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
+    log.write(ctx, "After set vault package status to unpublished")
 
     # Set cronjob status.
     if modify_access != b'\x01':

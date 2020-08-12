@@ -22,19 +22,16 @@ def send(ctx, to, actor, subject, body):
     ruleset configuration file.
     """
 
-    log.write(ctx, body)
+    if not config.notifications_enabled:
+        log.write(ctx, '[EMAIL] Notifications are disabled')
+        return
 
+    if not user.is_admin(ctx):
+        return api.Error('not_allowed', 'Only rodsadmin can send mail')
 
-#    if not config.notifications_enabled:
-#        log.write(ctx, '[EMAIL] Notifications are disabled')
-#        return
-
-#    if not user.is_admin(ctx):
-#        return api.Error('not_allowed', 'Only rodsadmin can send mail')
-
-#    if '@' not in to:
-#        log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
-#        return  # Silently ignore obviously invalid destinations (mimic old behavior).
+    if '@' not in to:
+        log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
+        return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
     log.write(ctx, '[EMAIL] Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 
@@ -110,14 +107,14 @@ def _wrapper(ctx, to, actor, subject, body):
 # @rule.make(inputs=range(4), outputs=range(4, 6))
 def mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, collection):
     return _wrapper(ctx,
-                    to      = 'harm.apple@gmail.com',
+                    to      = datamanager,
                     actor   = submitter,
-                    subject = '[Yoda] Collection submitted for publication acceptance: {}'.format(collection),
+                    subject = '[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
                     body    = """
 Dear {},
-{} submitted a collection for you to be accepted for publication.
+{} submitted a datapackage to be accepted for publication.
 
-Collection: {}
+Datapackage: {}
 
 Best regards,
 Yoda system

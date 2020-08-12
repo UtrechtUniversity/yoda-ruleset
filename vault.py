@@ -631,10 +631,12 @@ def set_vault_permissions(ctx, group_name, folder, target):
     datapackage_name = parts[-1]
 
     vault_group_name = constants.IIVAULTPREFIX + base_name
+    log.write(ctx, 'vault_group_name: ' + vault_group_name)
 
     # Check if noinherit is set
     zone = user.zone(ctx)
     vault_path = "/" + zone + "/home/" + vault_group_name
+    log.write(ctx, 'vault path: ' + vault_path)
 
     inherit = "0"
     iter = genquery.row_iterator(
@@ -694,27 +696,37 @@ def set_vault_permissions(ctx, group_name, folder, target):
     for row in iter:
         vault_group_access_name = row[0]
 
+    log.write(ctx, 'vault_group_access_name: ' + vault_group_access_name)
+
     # Ensure vault-groupName has ownership on vault package
     if vault_group_access_name != "own":
+        log.write(ctx, 'before acl recursive admin:own')
         msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target)
+        log.write(ctx, 'before acl recursive admin:own')
 
     # Grant datamanager group read access to vault package.
     category = group.get_category(ctx, group_name)
     datamanager_group_name = "datamanager-" + category
 
+    log.write(ctx, 'datamanager group name')
+
     if group.exists(ctx, datamanager_group_name):
+        log.write(ctx, 'before acl recursive admin:read')
         msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
+        log.write(ctx, 'after acl recursive admin:own')
 
     # Grant research group read access to vault package.
+    log.write(ctx, 'before acl recursive admin:read')
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+    log.write(ctx, 'after acl recursive admin:read')
 
 
 @rule.make(inputs=range(3), outputs=range(3, 5))
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     """ rule interface for processing vault status transition request
 
-    param[in] folder
-    param[in] newFolderStatus
+    param[in] coll - vault collection to change status for
+    param[in] new_coll_status (which is a string datatype here!! no longer enumerate)
     param[in] actor
 
     return [status, statusInfo] "Success" if went ok
@@ -731,8 +743,8 @@ def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     """ Processing vault status transition request
 
-    param[in] folder
-    param[in] newFolderStatus
+    param[in] coll
+    param[in] new_coll_status
     param[in] actor
 
     return [status, statusInfo]
@@ -755,7 +767,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
         log.write(ctx, 'Set New vault coll status:')
         log.write(ctx, new_coll_status)
-        if new_coll_status == constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+        if new_coll_status == str(constants.vault_package_state.SUBMITTED_FOR_PUBLICATION):
             log.write(ctx, 'SEND EMAIL TO DATAMANAGERS')
             send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
@@ -765,7 +777,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
         if not is_legal:
             return ['1', 'Illegal status transition']
         else:
-            if new_coll_status == constants.vault_package_state.PUBLISHED:
+            if new_coll_status == str(constants.vault_package_state.PUBLISHED):
                 # Special case is transition to PUBLISHED
                 # landing page and doi have to be present
 
@@ -810,6 +822,17 @@ def send_datamanagers_publication_request_mail(ctx, coll):
     # Find category
     category = group.get_category(ctx, group_name)
     log.write(ctx, category)
+
+    # Get the submitter
+    submitter = 'Unknown'
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll), 
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        submitter = row[0].split('#')[0]
+
     # Find the datamanagers of the category and inform them of data to be accepted to vault
     iter = genquery.row_iterator(
         "USER_NAME",
@@ -818,8 +841,6 @@ def send_datamanagers_publication_request_mail(ctx, coll):
         "AND USER_TYPE != 'rodsgroup'",
         genquery.AS_LIST, ctx
     )
-    submitter = user.name(ctx)
-    log.write(ctx, submitter)
 
     for row in iter:
         datamanager = row[0]
