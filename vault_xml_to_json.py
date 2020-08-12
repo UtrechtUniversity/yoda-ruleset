@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import xmltodict
 from util import *
+import time
 
 __all__ = ['rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
 
@@ -280,7 +281,7 @@ def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group
 
     ret_val = callback.msiDataObjCreate(json_file, ofFlags, 0)
 
-    copyACLsFromParent(callback, json_file, "default")
+    callback.iiCopyACLsFromParent(json_file, "default")
 
     xmlDataDict = getMetadataXmlAsDict(callback, vault_collection + "/" + xml_data_name)
 
@@ -322,7 +323,6 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
     :returns: integer -- Collection id to continue with in next batch.
                          If collection_id=0, no more collections are found containing yoda-metadata.xml
     """
-    import time
 
     # Find all research and vault collections, ordered by COLL_ID.
     iter = genquery.row_iterator(
@@ -370,12 +370,14 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 
             if not jsonFound:
                 date_name = ''
-                metadataXmlPath = ''
-                metadataXmlSize = 0
-                callback.iiGetLatestVaultMetadataXml(vault_collection, metadataXmlPath, metadataXmlSize)
+                x = callback.iiGetLatestVaultMetadataXml(vault_collection, '', '')
+                metadataXmlPath = x['arguments'][1]
+
                 data_name = metadataXmlPath.split('/')[-1]
 
-                if data_name != "":
+                if data_name == "":
+                    log.write(callback, 'ERROR: Could not determine vault XML path for collection {}'.format(vault_collection))
+                else:
                     transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
 
         except Exception as e:
