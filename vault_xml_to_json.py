@@ -37,6 +37,15 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
     """
     jsonDict = {}
 
+    category_version = xmlData['metadata']['@xmlns'].split('/')[-1]
+
+    jsonDict['links'] = [
+        {
+            'rel': 'describedby',
+            'href': 'https://yoda.uu.nl/schemas/' + category_version + '/metadata.json'
+        }
+    ]
+
     for elementName in dictSchema['properties']:
         elementInfo = dictSchema['properties'][elementName]
 
