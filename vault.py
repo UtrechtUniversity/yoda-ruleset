@@ -827,7 +827,7 @@ def send_datamanagers_publication_request_mail(ctx, coll):
     submitter = 'Unknown'
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll), 
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll),
         genquery.AS_LIST, ctx
     )
     for row in iter:
