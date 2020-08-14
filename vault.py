@@ -641,7 +641,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
     inherit = "0"
     iter = genquery.row_iterator(
         "COLL_INHERITANCE",
-        "COLL_NAME = '/" + vault_path + "'",
+        "COLL_NAME = '" + vault_path + "'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -651,7 +651,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     if inherit == "1":
         msi.set_acl(ctx, "recursive", "admin:noinherit", "", vault_path)
-        log.write("No inherit set on " + vault_path)
+        log.write(ctx, "No inherit set on " + vault_path)
         # Check if research group has read-only access
         iter = genquery.row_iterator(
             "USER_ID",
@@ -708,12 +708,12 @@ def set_vault_permissions(ctx, group_name, folder, target):
     category = group.get_category(ctx, group_name)
     datamanager_group_name = "datamanager-" + category
 
-    log.write(ctx, 'datamanager group name')
+    log.write(ctx, 'datamanager group name' + datamanager_group_name)
 
     if group.exists(ctx, datamanager_group_name):
         log.write(ctx, 'before acl recursive admin:read')
         msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
-        log.write(ctx, 'after acl recursive admin:own')
+        log.write(ctx, 'after acl recursive admin:read')
 
     # Grant research group read access to vault package.
     log.write(ctx, 'before acl recursive admin:read')
