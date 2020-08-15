@@ -24,6 +24,108 @@ constants.vault_package_state.SUBMITTED_FOR_PUBLICATION
 
 """
 
+
+
+"""
+This is part of the transformation process. Perhaps in another script????
+Used in published_xml_to_json.py -> iiCheckPublishedMetadataXmlForTransformationToJsonBatch()
+
+# \brief Use secure copy to push publised json data object, that arose after transformation from xml->json, to MOAI area.
+#
+# \param[in] metadata_json     json metadata data object name to be copied to
+# \param[in] origin_publication_path
+# \param[in] publicHost
+# \param[in] yodaInstance
+# \param[in] yodaPrefix
+#
+iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *publicHost, *yodaInstance, *yodaPrefix) {
+        *argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*metadata_json";
+        *origin_json = '*origin_publication_path/*metadata_json';
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_json, 1, *cmdExecOut));
+        if (*err < 0) {
+                msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+                msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+                writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+                writeLine("serverLog", *stderr);
+                writeLine("serverLog", *stdout);
+        } else {
+                #*publicationState.oaiUploaded = "yes";
+                #DEBUG writeLine("serverLog", "iiCopyTransformedPublicationToMOAI: pushed *");
+        }
+}
+"""
+
+def generate_combi_json(ctx, publication_config, publication_state):
+    """
+    Join system metadata with the user metadata in yoda-metadata.json.
+
+    publication_config      Configuration is passed as key-value-pairs throughout publication process
+    publication_state       The state of the publication process is also kept in a key-value-pairs
+    """
+    temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
+    davrodsAnonymousVHost = publicationConfig["davrodsAnonymousVHost"]  ???????
+
+    vaultPackage = publication_state["vaultPackage"]
+    randomId = publication_state["randomId"]
+    combiJsonPath = temp_coll + "/" + randomId + "-combi.json"
+
+    yodaDOI = publication_state.yodaDOI"]
+    lastModifiedDateTime = publication_state["lastModifiedDateTime"]
+    publicationDate = publication_state["publicationDate"]
+        
+    openAccessLink = '';
+    if publication_state["accessRestriction"].startswith("Open"):
+        subPath = triml(vaultPackage, "/home/")
+        #writeLine("stdout", triml("This is a string.", "i"));
+        # Output: s is a string.
+        splitter = '/home/'
+        subPath = vaultPackge[len(splitter)+vaultPackage.find(splitter):]
+
+        openAccessLink = 'https://' + davrodsAnonymousVHost + "/" + subPath
+
+    licenseUri = ""
+    if "licenseUri" in publication_state:
+        licenseUri = publication_state["licenseUri"]
+
+    # metadataJsonPath contains latest json
+    metadataJsonPath = rule_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
+
+    # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
+    rule_json_datacite41_create_combi_metadata_json(metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri);
+
+    publication_state["combiJsonPath"] = combiJsonPath;
+
+
+##################
+def generate_system_json(ctx, publication_config, publication_state):
+    """
+    Overwrite combi metadata json with system-only metadata.
+
+    publication_config  Configuration is passed as key-value-pairs throughout publication process
+    publication_state   The state of the publication process is also kept in a key-value-pairs
+    """
+
+    temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
+###    davrodsAnonymousVHost = publicationConfig["davrodsAnonymousVHost"]  ???????
+
+    vaultPackage = publication_state["vaultPackage"]
+    randomId = publication_state["randomId"]
+    system_json_path = temp_coll + "/" + randomId + "-combi.json"
+
+    system_json_data = { "System": {
+         "Last_Modified_Date": publication_state["lastModifiedDateTime"],
+         "Persistent_Identifier_Datapackage": {
+              "Identifier_Scheme": "DOI",
+              "Identifier": publication_state["yodaDOI"],
+          },
+          "Publication_Date": publication_state["publicationDate"]
+        }
+    }
+
+    data_object.write(ctx, system_json_path, jsonutil.dump(system_json_data))
+
+
+##############################################
 def get_publication_state(ctx, vault_package):
     """
         The publication state is kept as metadata on the vaultPackage.
@@ -354,7 +456,134 @@ def generate_landing_page_url(ctx, publication_config, publication_state)
     
     return landingPageUrl
 
+################# 
+def generate_landing_page(ctx, publication_config, publication_state, publish):
+    """
+    Generate a dataCite compliant XML based up yoda-metadata.json
+    publication_config      Configuration is passed as key-value-pairs throughout publication process
+    publication_state       The state of the publication process is passed around as key-value-pairs
+    publish                 publication or depublication
+    """
 
+    combiJsonPath = publication_state["combiJsonPath"]
+    randomId = publication_state["randomId"]
+    vaultPackage = publication_state["vaultPackage"]
+
+    temp_coll, coll = pathutil.chop(combiJsonPath)
+    landing_page_path = temp_coll + "/" + randomId + ".html";
+
+    if publish == "publish":
+        template_name = 'landingpage.html.j2'
+    else:
+        template_name = 'emptylandingpage.html.j2';
+
+    landing_page_html = rule_json_landing_page_create_json_landing_page(user.zone(ctx), template_name, combiJsonPath)
+    log.write(ctx, landing_page_html)
+
+    data_object.write(ctx, landing_page_path, landing_page_html)
+
+    publication_state["landingPagePath"] = landing_page_path
+    publication_state["landingPageLen"] = str(len(landing_page_html))   ###J NIET MEER NODIG!!??
+
+
+##########################
+def generate_datacite_xml(ctx, publication_config, publication_state)
+# \brief Generate a dataCite compliant XML based up yoda-metadata.json
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
+#
+    combiJsonPath = publication_state["combiJsonPath"]
+
+    randomId = publication_state["randomId"]
+
+    vaultPackage = publication_state["vaultPackage"]
+#####
+#        uuChopPath(*combiJsonPath, *tempColl, *_);
+
+    temp_coll, coll = pathutil.chop(combiJsonPath)
+    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml";
+
+    ## WAAR ZIJN DEZE ZAKEN VOOR NODIG
+        *pathElems = split(*vaultPackage, "/");
+        *rodsZone = elem(*pathElems, 0);
+        *vaultGroup = elem(*pathElems, 2);
+        uuGetBaseGroup(*vaultGroup, *baseGroup);
+        uuGroupGetCategory(*baseGroup, *category, *subcategory);
+
+    # Based on content of *combiJsonPath, get DataciteXml as string
+    receiveDataciteXml = rule_json_datacite41_create_data_cite_xml_on_json(combiJsonPath)
+
+#        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
+#        msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
+#        msiDataObjClose(*fd, *status);
+
+    data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
+
+
+    publication_state["dataCiteXmlPath"] = datacite_xml_path
+    publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
+        #DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
+
+##########################################
+"""
+
+# \brief iiCopyLandingPage2PublicHost
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
+	*publicHost = *publicationConfig.publicHost;
+	*landingPagePath = *publicationState.landingPagePath;
+	*yodaInstance = *publicationConfig.yodaInstance;
+	*yodaPrefix = *publicationConfig.yodaPrefix;
+	*randomId =  *publicationState.randomId;
+	*publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
+	*argv = "*publicHost inbox /var/www/landingpages/*publicPath";
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
+	if (*err < 0) {
+		*publicationState.status = "Retry";
+ 		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+		writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
+		writeLine("serverLog", *stderr);
+		writeLine("serverLog", *stdout);
+	} else {
+		*publicationState.landingPageUploaded = "yes";
+		#DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
+	}
+}
+
+
+# \brief Use secure copy to push the combi XML to MOAI.
+#
+# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+#
+iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
+	*publicHost = *publicationConfig.publicHost;
+	*yodaInstance = *publicationConfig.yodaInstance;
+	*yodaPrefix = *publicationConfig.yodaPrefix;
+	*randomId = *publicationState.randomId;
+	*combiJsonPath = *publicationState.combiJsonPath;
+	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.json"
+	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiJsonPath, 1, *cmdExecOut));
+	if (*err < 0) {
+		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+		writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
+		writeLine("serverLog", *stderr);
+		writeLine("serverLog", *stdout);
+	} else {
+		*publicationState.oaiUploaded = "yes";
+		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiJsonPath");
+	}
+}
+
+
+
+"""
 
 ###############################
 def set_access_restrictions(ctx, vault_package, publication_state):
@@ -383,7 +612,26 @@ def set_access_restrictions(ctx, vault_package, publication_state):
         publication_state["anonymousAccess"] = "yes"
 
 
+def check_doi_availability(ctx, publication_config, publication_state):
+    """
+    Request DOI to check on availibity. We want a 404 as return code.
 
+    publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+    publicationState       The state of the publication process is also kept in a key-value-pair
+    """
+    yodaDOI = publicationState["yodaDOI"]
+
+    httpCode = rule_check_doi_availability(yodaDOI)
+
+    if httpCode == "404":
+        publication_state["DOIAvailable"] = "yes"
+    elif httpCode in ["401", "403", "500", "503", "504"]:
+        # request failed, worth a retry
+        publication_state["status"] = "Retry"
+    elif httpCode in ["200", "204"]:
+        # DOI already in use
+        publication_state["DOIAvailable"] = "no"
+        publication_state["status"] = "Retry"
 
 
 ###############################
