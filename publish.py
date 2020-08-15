@@ -63,23 +63,23 @@ def generate_combi_json(ctx, publication_config, publication_state):
     publication_state       The state of the publication process is also kept in a key-value-pairs
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
-    davrodsAnonymousVHost = publicationConfig["davrodsAnonymousVHost"]  ???????
+    davrodsAnonymousVHost = publicationConfig["davrodsAnonymousVHost"]
 
     vaultPackage = publication_state["vaultPackage"]
     randomId = publication_state["randomId"]
     combiJsonPath = temp_coll + "/" + randomId + "-combi.json"
 
-    yodaDOI = publication_state.yodaDOI"]
+    yodaDOI = publication_state["yodaDOI"]
     lastModifiedDateTime = publication_state["lastModifiedDateTime"]
     publicationDate = publication_state["publicationDate"]
         
     openAccessLink = '';
     if publication_state["accessRestriction"].startswith("Open"):
-        subPath = triml(vaultPackage, "/home/")
-        #writeLine("stdout", triml("This is a string.", "i"));
+        # subPath = triml(vaultPackage, "/home/")
+        # writeLine("stdout", triml("This is a string.", "i"));
         # Output: s is a string.
-        splitter = '/home/'
-        subPath = vaultPackge[len(splitter)+vaultPackage.find(splitter):]
+        split_string = '/home/'
+        subPath = vaultPackge[len(split_string)+vaultPackage.find(split_string):]
 
         openAccessLink = 'https://' + davrodsAnonymousVHost + "/" + subPath
 
@@ -88,7 +88,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
         licenseUri = publication_state["licenseUri"]
 
     # metadataJsonPath contains latest json
-    metadataJsonPath = rule_get_latest_vault_metadata_path(*vaultPackage, *metadataJsonPath);
+    metadataJsonPath = rule_get_latest_vault_metadata_path(vaultPackage)
 
     # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
     rule_json_datacite41_create_combi_metadata_json(metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri);
@@ -113,12 +113,12 @@ def generate_system_json(ctx, publication_config, publication_state):
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
     system_json_data = { "System": {
-         "Last_Modified_Date": publication_state["lastModifiedDateTime"],
-         "Persistent_Identifier_Datapackage": {
-              "Identifier_Scheme": "DOI",
-              "Identifier": publication_state["yodaDOI"],
-          },
-          "Publication_Date": publication_state["publicationDate"]
+        "Last_Modified_Date": publication_state["lastModifiedDateTime"],
+        "Persistent_Identifier_Datapackage": {
+            "Identifier_Scheme": "DOI",
+            "Identifier": publication_state["yodaDOI"],
+        },
+        "Publication_Date": publication_state["publicationDate"]
         }
     }
 
@@ -131,6 +131,7 @@ def get_publication_state(ctx, vault_package):
         The publication state is kept as metadata on the vaultPackage.
 
         vault_package               path to the package in the vault
+
         returns publication_state   key-value-pair containing the state
     """
     publication_state = {"status":"Unknown",
@@ -173,9 +174,9 @@ def get_publication_state(ctx, vault_package):
             license_uri = row[0]
 
         if license_uri != "":
-            publication_state["licenseUri" = license_uri
+            publication_state["licenseUri"] = license_uri
 
-    publication_state['vaultPackage'] = vault_package
+    publication_state["vaultPackage"] = vault_package
     return publication_state
 
 
@@ -187,7 +188,6 @@ def save_publication_state(ctx, vault_package, publication_state):
     param publication_state    dict containing all key/values regarding publication 
 
     """
-
     for key in publication_state.keys():
         publication_state[key] = publ_metadata[key]
         avu.set_on_coll(ctx, vault_package, UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
@@ -300,19 +300,17 @@ def generate_preliminary_DOI(ctx, publication_config):
     param publication_config      Configuration is passed as key-value-pairs throughout publication process
     
     """
-
-    dataCitePrefix = publicationConfig.dataCitePrefix;
-    yodaPrefix = publicationConfig.yodaPrefix;
+    dataCitePrefix = publication_config["dataCitePrefix"]
+    yodaPrefix = publication_config["yodaPrefix"]
 
     datacite.rule_generate_random_id(ctx, publication_config["randomIdLength"])
 
-	# Genereate random ID for DOI.
-	*randomId = "";
-	rule_generate_random_id(*length, *randomId);
+#	# Genereate random ID for DOI.
+#	*randomId = "";
+#	rule_generate_random_id(*length, *randomId);
 
-	*yodaDOI = "*dataCitePrefix/*yodaPrefix-*randomId";
-	*publicationState.randomId = *randomId;
-	*publicationState.yodaDOI = *yodaDOI;
+    publication_state["randomId"] = randomId
+    publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
 ##########################
@@ -331,7 +329,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state)
 #        uuChopPath(*combiJsonPath, *tempColl, *_);
 
     temp_coll, coll = pathutil.chop(combiJsonPath)
-    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml";
+    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
 
     ## WAAR ZIJN DEZE ZAKEN VOOR NODIG
         *pathElems = split(*vaultPackage, "/");
@@ -348,13 +346,10 @@ def generate_datacite_xml(ctx, publication_config, publication_state)
 #        msiDataObjClose(*fd, *status);
 
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)   
-
  
     publication_state["dataCiteXmlPath"] = datacite_xml_path 
     publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
         #DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
-}
-
 
 
 ########################
@@ -365,7 +360,7 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 
     dataCiteXmlPath = publication_state["dataCiteXmlPath"]
-    len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
+#    len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
     
     datacite_xml = data_object.read(callback, datacite_xml_path)
 
@@ -375,11 +370,12 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
         publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in ["401", "403", "500", "503", 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-         log.write(ctx, "post_metadata_to_datacite: httpCode " + httpCode + " received. Will be retried later")
+        log.write(ctx, "post_metadata_to_datacite: httpCode " + httpCode + " received. Will be retried later")
         publication_state["status"] = "Retry"
     else:
         log.write(ctx, "post_metadata_to_datacite: httpCode " + httpCode + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
+
 
 #############################
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
@@ -390,7 +386,7 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 #
     yodaDOI = publication_state["yodaDOI"]
 
-    httpCode = rule_delete_doi_metadata(ctx, yodaDOI);
+    httpCode = rule_delete_doi_metadata(ctx, yodaDOI)
 
     if httpCode == "200":
         publication_state["dataCiteMetadataPosted"] = "yes"
@@ -464,7 +460,6 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     publication_state       The state of the publication process is passed around as key-value-pairs
     publish                 publication or depublication
     """
-
     combiJsonPath = publication_state["combiJsonPath"]
     randomId = publication_state["randomId"]
     vaultPackage = publication_state["vaultPackage"]
@@ -475,7 +470,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     if publish == "publish":
         template_name = 'landingpage.html.j2'
     else:
-        template_name = 'emptylandingpage.html.j2';
+        template_name = 'emptylandingpage.html.j2'
 
     landing_page_html = rule_json_landing_page_create_json_landing_page(user.zone(ctx), template_name, combiJsonPath)
     log.write(ctx, landing_page_html)
@@ -483,7 +478,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     data_object.write(ctx, landing_page_path, landing_page_html)
 
     publication_state["landingPagePath"] = landing_page_path
-    publication_state["landingPageLen"] = str(len(landing_page_html))   ###J NIET MEER NODIG!!??
+#    publication_state["landingPageLen"] = str(len(landing_page_html))   ###J NIET MEER NODIG!!??
 
 
 ##########################
@@ -502,7 +497,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state)
 #        uuChopPath(*combiJsonPath, *tempColl, *_);
 
     temp_coll, coll = pathutil.chop(combiJsonPath)
-    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml";
+    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
 
     ## WAAR ZIJN DEZE ZAKEN VOOR NODIG
         *pathElems = split(*vaultPackage, "/");
@@ -520,10 +515,9 @@ def generate_datacite_xml(ctx, publication_config, publication_state)
 
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
-
     publication_state["dataCiteXmlPath"] = datacite_xml_path
     publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
-        #DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
+
 
 ##########################################
 """
@@ -593,7 +587,6 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     vaultPackage       Path to the package in the vault
     publicationState   The state of the publication process is also kept in a key-value-pairs
     """
-
     access_restriction = publication_state["accessRestriction"]
     access_level = "null"
 
@@ -1082,7 +1075,7 @@ def process_republication(ctx, vault_package):
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
-    ireturn publication_state["status"]
+    return publication_state["status"]
 
 
 
