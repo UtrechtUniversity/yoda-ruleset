@@ -20,9 +20,6 @@ __all__ = ['rule_generate_random_id',
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_generate_random_id(ctx, length):
-    """Generate random ID for DOI."""
-    # characters = string.ascii_uppercase + string.digits
-    # return ''.join(random.choice(characters) for x in range(int(length)))
     return generate_random_id(ctx, length)
 
 def generate_random_id(ctx, length):
@@ -30,9 +27,11 @@ def generate_random_id(ctx, length):
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for x in range(int(length)))
 
-
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_register_doi_metadata(ctx, doi, payload):
+    return register_doi_metadata(ctx, doi, payload)
+
+def register_doi_metadata(ctx, doi, payload):
     """Register DOI metadata with DataCite."""
     url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -45,6 +44,9 @@ def rule_register_doi_metadata(ctx, doi, payload):
 
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_register_doi_url(ctx, doi, url):
+    return register_doi_url(ctx, doi, url)
+
+def register_doi_url(ctx, doi, url):
     """Register DOI url with DataCite."""
     url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
@@ -73,6 +75,9 @@ def check_doi_availability(ctx, doi):
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_delete_doi_metadata(ctx, doi):
+    return delete_doi_metadata(ctx, doi)
+
+def delete_doi_metadata(ctx, doi):
     """Delete DOI metadata with DataCite."""
     url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)

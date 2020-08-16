@@ -9,28 +9,12 @@ from util import *
 import epic
 import datacite
 import json_datacite41
+import json_landing_page
 import meta
 import vault
+import provenance
 
 __all__ = ['rule_process_publication']
-
-
-
-"""
-notes:
-constants.vault_package_state.SUBMITTED_FOR_PUBLICATION
-'org_publication_lastModifiedDateTime'"
-
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'" % (coll),
-        genquery.AS_LIST, callback
-    )
-
-    for row in iter:
-
-
-"""
 
 
 
@@ -385,21 +369,23 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
 
-    dataCiteXmlPath = publication_state["dataCiteXmlPath"]
+    datacite_xml_path = publication_state["dataCiteXmlPath"]
 #    len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
     
-    datacite_xml = data_object.read(callback, datacite_xml_path)
+    datacite_xml = data_object.read(ctx, datacite_xml_path)
+    log.write(ctx, datacite_xml)
 
-    httpCode = rule_register_doi_metadata(publication_state["yodaDOI"], datacite_xml);
+    # httpCode = rule_register_doi_metadata(publication_state["yodaDOI"], datacite_xml);
+    httpCode = datacite.register_doi_metadata(ctx, publication_state["yodaDOI"], datacite_xml)
 
-    if httpCode == "201":
+    if httpCode == 201:
         publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in ["401", "403", "500", "503", 504]:
+    elif httpCode in [401, 403, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + httpCode + " received. Will be retried later")
+        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
         publication_state["status"] = "Retry"
     else:
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + httpCode + " received. Unrecoverable error.")
+        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
@@ -412,20 +398,20 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 #
     yodaDOI = publication_state["yodaDOI"]
 
-    httpCode = rule_delete_doi_metadata(ctx, yodaDOI)
+    httpCode = datacite.delete_doi_metadata(ctx, yodaDOI)
 
-    if httpCode == "200":
+    if httpCode == 200:
         publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in ["401", "403", "412", "500", "503", 504]:
+    elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + httpCode + " received. Will be retried later")
+        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
         publication_state["status"] = "Retry"
-    elif httpCode == "404":
+    elif httpCode == 404:
         # Invalid DOI
         log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
         publication_state["status"] = "Unrecoverable"
     else:
-        log.write(ctx, "remove metadata from datacite: httpCode " + httpCode + " received. Unrecoverable error.")
+        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
@@ -436,24 +422,23 @@ def mint_doi(ctx, publication_config, publication_state):
 
     publication_config      Configuration is passed as key-value-pairs throughout publication process
     publication_state       The state of the publication process is also kept in a key-value-pairs
-    returns status of publication ???
     """
     yodaDOI = publication_state["yodaDOI"]
     landingPageUrl = publication_state["landingPageUrl"]
 
-    httpCode = rule_register_doi_url(ctx, yodaDOI, landingPageUrl)
+    httpCode = datacite.register_doi_url(ctx, yodaDOI, landingPageUrl)
 
-    if httpCode == "201":
+    if httpCode == 201:
         publication_state["DOIMinted"] = "yes"
-    elif httpCode in ["401", "403", "412", "500", "503", 504]:
+    elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "mint_doi: httpCode " + httpCode + " received. Could be retried later")
+        log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Could be retried later")
         publication_state["status"] = "Retry"
-    elif httpCode == "400":
+    elif httpCode == 400:
         log.write(ctx, "mint_doi: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix")
         publication_state["status"] = "Unrecoverable" 
     else:
-        log.write(ctx, "mint_doi: httpCode " + httpCode + " received. Unrecoverable error.")
+        log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
@@ -498,7 +483,9 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     else:
         template_name = 'emptylandingpage.html.j2'
 
-    landing_page_html = rule_json_landing_page_create_json_landing_page(user.zone(ctx), template_name, combiJsonPath)
+    # landing_page_html = rule_json_landing_page_create_json_landing_page(user.zone(ctx), template_name, combiJsonPath)
+    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath)
+
     log.write(ctx, landing_page_html)
 
     data_object.write(ctx, landing_page_path, landing_page_html)
@@ -542,7 +529,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
     publication_state["dataCiteXmlPath"] = datacite_xml_path
-    publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
+    # publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
 
 
 ##########################################
@@ -642,12 +629,12 @@ def check_doi_availability(ctx, publication_config, publication_state):
 
     httpCode = datacite.check_doi_availability(ctx, yodaDOI)
 
-    if httpCode == "404":
+    if httpCode == 404:
         publication_state["DOIAvailable"] = "yes"
-    elif httpCode in ["401", "403", "500", "503", "504"]:
+    elif httpCode in [401, 403, 500, 503, 504]:
         # request failed, worth a retry
         publication_state["status"] = "Retry"
-    elif httpCode in ["200", "204"]:
+    elif httpCode in [200, 204]:
         # DOI already in use
         publication_state["DOIAvailable"] = "no"
         publication_state["status"] = "Retry"
@@ -800,39 +787,52 @@ def process_publication(ctx, vault_package):
 
     log.write(ctx, "SO FAR, SO GOOD7")
     log.write(ctx, publication_state)
-    return "SO FAR, SO GOOD7 "
-
-
-
+#    return "SO FAR, SO GOOD7 "
 
     # Send DataCite XML to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
-        #if not iiPostMetadataToDataCite(*publicationConfig, *publicationState):
-        #    publication_state["status"] = "Retry"
+        try:
+            post_metadata_to_datacite(ctx, publication_config, publication_state)
+        except msi.Error as e:
+            publication_state["status"] = "Retry"
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
+    log.write(ctx, "SO FAR, SO GOOD8")
+    log.write(ctx, publication_state)
+    # return "SO FAR, SO GOOD8 "
+
+
     # Create landing page
     if "landingPagePath" not in publication_state:
         # Create landing page
-        #if not iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"):
-        #    publication_state["status"] = "Unrecoverable"
+        try:
+            generate_landing_page(ctx, publication_config, publication_state, "publish")
+        except msi.Error as e:
+            publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Unrecoverable":
             return publication_state["status"]
 
+    log.write(ctx, "SO FAR, SO GOOD9")
+    log.write(ctx, publication_state)
+    return "SO FAR, SO GOOD9"
 
 
     # Create Landing page URL
         #DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPageUrl");
-    # iiGenerateLandingPageUrl(*publicationConfig, *publicationState);
+    generate_landing_page_url(ctx, publication_config, publication_state);
 
+    log.write(ctx, "SO FAR, SO GOOD10")
+    log.write(ctx, publication_state)
+    return "SO FAR, SO GOOD10"
 
-
+    """
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
 
@@ -843,7 +843,9 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
+    """
 
+    """
     # Use secure copy to push combi XML to MOAI server
     if "oaiUploaded" not in publication_state:
         #if not iiCopyMetadataToMOAI(*publicationConfig, *publicationState):
@@ -853,7 +855,7 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-
+    """
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
 
@@ -938,7 +940,7 @@ def process_publication(ctx, vault_package):
         # The publication was a success
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
-        rule_provenance_log_action("system", vault_package, "publication updated")
+        provenance.log_action("system", vault_package, "publication updated")
         
         return publication_state["status"]
 
