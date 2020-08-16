@@ -78,6 +78,7 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
 
     """
 
+
 def json_datacite41_create_combi_metadata_json(ctx,
                                                metadataJsonPath,
                                                combiJsonPath,
@@ -115,6 +116,7 @@ def json_datacite41_create_combi_metadata_json(ctx,
 @rule.make(inputs=[0], outputs=[1])
 def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     return json_datacite41_create_data_cite_xml_on_json(ctx, combi_path)
+
 
 def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.

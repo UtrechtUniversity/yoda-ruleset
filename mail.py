@@ -146,7 +146,7 @@ def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
     return mail_your_package_published(ctx, researcher, actor, title, doi)
 
 
-def mail_your_package_published(ctx, researcher, actor, title, doi): 
+def mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
                     to      = researcher,
                     actor   = actor,

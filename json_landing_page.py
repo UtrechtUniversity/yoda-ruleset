@@ -12,7 +12,7 @@ __all__ = ['rule_json_landing_page_create_json_landing_page']
 
 
 def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
-     """Get the landing page of published YoDa metadata as a string.
+    """ Get the landing page of published YoDa metadata as a string.
 
     :param rodsZone: Zone name
     :param template_name: Name of landingpage template
