@@ -238,20 +238,17 @@ def set_update_publication_state(ctx, vault_package, status):
         return "UnknownError"
 
 
-
 def get_publication_date(ctx, vault_package):
     """
     Determine the time of publication as a datetime with UTC offset.
     First try action_log. Then icat-time
 
-    param[in] vault_package 
+    param[in] vault_package
     return publicationdate in iso8601 format
     """
     from datetime import datetime
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
-    
-
 
     iter = genquery.row_iterator(
         "order_desc(META_COLL_ATTR_VALUE)",
@@ -265,16 +262,16 @@ def get_publication_date(ctx, vault_package):
             publication_timestamp = log_item_list[0]
 
             # HIer nog ISO8601 van maken!!
-            return publicationDateTime                      
-    # HdR not netjes!!!!        
+            return publicationDateTime
+    # HdR not netjes!!!!
     from datetime import datetime
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
-
 #         if(*publicationState.publicationDate == "" ) {
 #            msiGetIcatTime(*now, "unix");
 #            *publicationDate = uuiso8601date(*now);
+
 
 def get_last_modified_datetime(ctx, vault_package):
     """
@@ -296,14 +293,14 @@ def get_last_modified_datetime(ctx, vault_package):
         my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
-        #return log_item_list[0]
+        # return log_item_list[0]
 
 #	# iso8601 compliant datetime with UTC offset
 #	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
 #	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
 
 
-def generate_preliminary_DOI(ctx, publication_config, publication_state): 
+def generate_preliminary_DOI(ctx, publication_config, publication_state):
     """
     Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
@@ -324,20 +321,15 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-##########################
 def generate_datacite_xml(ctx, publication_config, publication_state):
 # \brief Generate a dataCite compliant XML based up yoda-metadata.json
-#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
-#
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
 
     vaultPackage = publication_state["vaultPackage"]
-#####
-#        uuChopPath(*combiJsonPath, *tempColl, *_);
 
     temp_coll, coll = pathutil.chop(combiJsonPath)
     datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
@@ -354,16 +346,14 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
 #        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
 #        msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
-#        msiDataObjClose(*fd, *status);
+#        msiDataObjClose(*fd, *status)
 
-    data_object.write(ctx, datacite_xml_path, receiveDataciteXml)   
- 
-    publication_state["dataCiteXmlPath"] = datacite_xml_path 
-    #publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
-        #DEBUG writeLine("serverLog", "iiGenerateDataCiteXml: Generated *dataCiteXmlPath");
+    data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
+
+    publication_state["dataCiteXmlPath"] = datacite_xml_path
+    # publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
 
 
-########################
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
 # \brief Upload dataCite XML to dataCite. This will register the DOI, without minting it.
 #
@@ -390,13 +380,11 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-#############################
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 # \brief Remove metadata XML from DataCite.
-#
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
-#
+
     yodaDOI = publication_state["yodaDOI"]
 
     httpCode = datacite.delete_doi_metadata(ctx, yodaDOI)
@@ -405,8 +393,7 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
         publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
-        publication_state["status"] = "Retry"
+        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")        publication_state["status"] = "Retry"
     elif httpCode == 404:
         # Invalid DOI
         log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
@@ -416,7 +403,6 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-###############################
 def mint_doi(ctx, publication_config, publication_state):
     """
     Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
@@ -437,13 +423,12 @@ def mint_doi(ctx, publication_config, publication_state):
         publication_state["status"] = "Retry"
     elif httpCode == 400:
         log.write(ctx, "mint_doi: 400 Bad Request - request body must be exactly two lines: DOI and URL; wrong domain, wrong prefix")
-        publication_state["status"] = "Unrecoverable" 
+        publication_state["status"] = "Unrecoverable"
     else:
         log.write(ctx, "mint_doi: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
-###############################
 def generate_landing_page_url(ctx, publication_config, publication_state):
     """
     Generate a URL for the landing page.
@@ -464,7 +449,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     
     return landingPageUrl
 
-################# 
+
 def generate_landing_page(ctx, publication_config, publication_state, publish):
     """
     Generate a dataCite compliant XML based up yoda-metadata.json
@@ -477,7 +462,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     vaultPackage = publication_state["vaultPackage"]
 
     temp_coll, coll = pathutil.chop(combiJsonPath)
-    landing_page_path = temp_coll + "/" + randomId + ".html";
+    landing_page_path = temp_coll + "/" + randomId + ".html"
 
     if publish == "publish":
         template_name = 'landingpage.html.j2'
@@ -495,19 +480,18 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
 #    publication_state["landingPageLen"] = str(len(landing_page_html))   ###J NIET MEER NODIG!!??
 
 
-##########################
 def generate_datacite_xml(ctx, publication_config, publication_state):
 # \brief Generate a dataCite compliant XML based up yoda-metadata.json
 #
 # \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
 # \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
-#
+
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
 
     vaultPackage = publication_state["vaultPackage"]
-#####
+
 #        uuChopPath(*combiJsonPath, *tempColl, *_);
 
     temp_coll, coll = pathutil.chop(combiJsonPath)
@@ -524,7 +508,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     receiveDataciteXml = json_datacite41.json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
 
 #        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
-#        msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
+#        msiDataObjWrite(*fd, *receiveDataciteXml, *len);  Get length back
 #        msiDataObjClose(*fd, *status);
 
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
@@ -533,7 +517,6 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     # publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
 
 
-##########################################
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     """
     Copy the resulting landing page to configured public host 
@@ -571,7 +554,7 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
     randomId =  publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
-    argv = publicHost + " " + inbox + " /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json" 
+    argv = publicHost + " " + inbox + " /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
     error = ""
     error_message = ""
     ctx.iiGenericSecureCopy(argv, combiJsonPath, error, error_message)
@@ -630,8 +613,6 @@ def check_doi_availability(ctx, publication_config, publication_state):
         publication_state["status"] = "Retry"
 
 
-###############################
-
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_publication(ctx, vault_package):
     """ rule interface for processing vault status transition request
@@ -669,11 +650,10 @@ def process_publication(ctx, vault_package):
     log.write(ctx, publication_config)
 
     # get state of all related to the publication
-    publication_state = get_publication_state(ctx, vault_package) 
+    publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
     log.write(ctx, status)
-
 
     log.write(ctx, "SO FAR, SO GOOD")
     #return "SO FAR, SO GOOD"
@@ -685,14 +665,12 @@ def process_publication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status # Deze wordt pas bewaard wanneer specifieke keys niet bestaan verderop.
 
-
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     log.write(ctx, "SO FAR, SO GOOD2")
 #    return "SO FAR, SO GOOD2 " + publication_state["publicationDate"]
-
 
     # DOI handling
     if "yodaDOI" not in publication_state:
@@ -716,14 +694,13 @@ def process_publication(ctx, vault_package):
     log.write(ctx, publication_state)
     # return "SO FAR, SO GOOD4 " + publication_state["lastModifiedDateTime"]
 
-
     # Generate Combi Json consisting of user and system metadata
-    if "combiJsonPath" not in publication_state: 
+    if "combiJsonPath" not in publication_state:
         try:
             generate_combi_json(ctx, publication_config, publication_state)
         except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
-               
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -732,8 +709,6 @@ def process_publication(ctx, vault_package):
     log.write(ctx, "SO FAR, SO GOOD5")
     log.write(ctx, publication_state)
 #    return "SO FAR, SO GOOD5 " 
-
-
 
     # Generate DataCite XML
     if "dataCiteXmlPath" not in publication_state:
@@ -750,8 +725,6 @@ def process_publication(ctx, vault_package):
     log.write(ctx, "SO FAR, SO GOOD6")
     log.write(ctx, publication_state)
 #    return "SO FAR, SO GOOD6 "
-
-
 
     # Check if DOI is in use
     if "DOIAvailable" not in publication_state:
@@ -783,7 +756,6 @@ def process_publication(ctx, vault_package):
     log.write(ctx, publication_state)
     # return "SO FAR, SO GOOD8 "
 
-
     # Create landing page
     if "landingPagePath" not in publication_state:
         # Create landing page
@@ -801,10 +773,9 @@ def process_publication(ctx, vault_package):
     log.write(ctx, publication_state)
     return "SO FAR, SO GOOD9"
 
-
     # Create Landing page URL
         #DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPageUrl");
-    generate_landing_page_url(ctx, publication_config, publication_state);
+    generate_landing_page_url(ctx, publication_config, publication_state)
 
     log.write(ctx, "SO FAR, SO GOOD10")
     log.write(ctx, publication_state)
@@ -825,7 +796,7 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
- 
+
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
         set_access_restrictions(ctx, vault_package, publication_state)
@@ -851,7 +822,7 @@ def process_publication(ctx, vault_package):
         # MAIL datamanager and researcher involved
         
         title = ""
-        title_key = UUUSERMETADATAPREFIX ++ "0_Title";
+        title_key = UUUSERMETADATAPREFIX ++ "0_Title"
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + title_key + "'",
@@ -898,7 +869,7 @@ def process_publication(ctx, vault_package):
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action("system", vault_package, "publication updated")
-        
+
         return publication_state["status"]
 
 
@@ -942,7 +913,7 @@ def process_depublication(ctx, vault_package):
     log.write(ctx, publication_config)
 
     # get state of all related to the publication
-    publication_state = get_publication_state(ctx, vault_package) 
+    publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
  
     if status == "OK":
@@ -961,12 +932,12 @@ def process_depublication(ctx, vault_package):
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
-    if "combiJsonPath" not in publication_state: 
+    if "combiJsonPath" not in publication_state:
         try:
             generate_system_json(ctx, publication_config, publication_state)
         except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
-               
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -1035,7 +1006,7 @@ def process_depublication(ctx, vault_package):
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
     # rule_provenance_log_action("system", *vaultPackage, "publication updated") ?????
-       
+
     return publication_state["status"]
 
 
@@ -1065,17 +1036,16 @@ def process_republication(ctx, vault_package):
         return 'Insufficient permissions - should only be called by rodsadmin'
 
     # check current status, perhaps transitioned already
-    current_coll_status = get_coll_vault_status(ctx, coll).value
-    return "NotAllowed"
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
     log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
 
     if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "InvalidPackageStatusForREPublication" + ": " + vault_status
 
+# HDR DIT NOG GOED MAKEN publication_config
     # get publication configuration
-    config = epic.get_publication_config(ctx)
-    return "Retry"
+#    config = epic.get_publication_config(ctx)
+#    return "Retry"
 
     publication_config = epic.get_publication_config(ctx)
 
@@ -1104,12 +1074,12 @@ def process_republication(ctx, vault_package):
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
-    if "combiJsonPath" not in publication_state: 
+    if "combiJsonPath" not in publication_state:
         try:
             generate_combi_json(ctx, publication_config, publication_state)
         except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
-               
+ 
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -1187,7 +1157,7 @@ def process_republication(ctx, vault_package):
 def get_collection_metadata(ctx, coll, prefix):
     """
     return a dict with all requested (prefixed) attributes and strip off prefix for the key names.
-    example key: org_publication_lastModifiedDateTime    
+    example key: org_publication_lastModifiedDateTime
 
     """
     coll_metadata = {}
@@ -1198,7 +1168,7 @@ def get_collection_metadata(ctx, coll, prefix):
     )
 
     for row in iter:
-        log.write(ctx, row[0][len(prefix):] + "=>" + row[1]) 
+        log.write(ctx, row[0][len(prefix):] + "=>" + row[1])
         coll_metadata[row[0][len(prefix):]] = row[1]
 
     return coll_metadata
