@@ -14,8 +14,9 @@ import meta
 import vault
 import provenance
 
-__all__ = ['rule_process_publication']
-
+__all__ = ['rule_process_publication',
+           'rule_process_depublication',
+           'rule_process_republication']
 
 
 """
@@ -201,7 +202,7 @@ def set_update_publication_state(ctx, vault_package, status):
 
     # check current status, perhaps transitioned already
     coll_status = get_coll_vault_status(ctx, coll).value
-    if coll_status not in [constants.vault_package_state.PUBLISHED, constants.vault_package_state.DEPUBLICATION,constants.vault_package_state.REPUBLICATION]:
+    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLICATION),str(constants.vault_package_state.REPUBLICATION)]:
         return "NotAllowed"
 
     # HDR - wordt hier helemaal niet gebruikt
@@ -645,11 +646,6 @@ def rule_process_publication(ctx, vault_package):
 
     return process_publication(ctx, vault_package)
 
-# Test thingie - 2 be deteled
-def change_pub_config(ctx, publication_config):
-    publication_config['davrodsVHost'] = "davrods:HARM DE RAAFF"
-    publication_config['moaiHost'] = "moai:HARM DE RAAFF"
-
 
 def process_publication(ctx, vault_package):
     publication_state = {}
@@ -671,13 +667,6 @@ def process_publication(ctx, vault_package):
     # get publication configuration
     publication_config = epic.get_publication_config(ctx)
     log.write(ctx, publication_config)
-    """
-#    change_pub_config(ctx, publication_config)
-
-    # return "Retry"
-
-    log.write(ctx, publication_config)
-    """
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package) 
@@ -913,9 +902,24 @@ def process_publication(ctx, vault_package):
         return publication_state["status"]
 
 
-"""
-# returns status
+@rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_process_depublication(ctx, vault_package):
+    """ rule interface for processing vault status transition request
+
+    param[in]  vault package
+
+    return [status, statusInfo] "Success" if went ok
+
+    """
+    log.write(ctx, "vault_package")
+    # return 'Success VPackage=' + vault_package
+
+    return process_depublication(ctx, vault_package)
+
+
 def process_depublication(ctx, vault_package):
+    status = "Unknown"
+
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is no rodsadmin")
@@ -926,36 +930,41 @@ def process_depublication(ctx, vault_package):
     if current_coll_status is not PENDING_DEPUBLICATION:
         return "NotAllowed"
 
+    # check current status, perhaps transitioned already
+    vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+    log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
+
+    if vault_status not in [str(constants.vault_package_state.PENDING_DEPUBLICATION)]:
+        return "InvalidPackageStatusForPublication" + ": " + vault_status
+
     # get publication configuration
-    config = epic.get_publication_config(ctx)
-    return "Retry"
+    publication_config = epic.get_publication_config(ctx)
+    log.write(ctx, publication_config)
 
     # get state of all related to the publication
-    publication_state = get_publication_state(ctx, vault_package)
+    publication_state = get_publication_state(ctx, vault_package) 
     status = publication_state['status']
-
-    return ""
-
-    # Reset state on first call
+ 
     if status == "OK":
-        set_update_publication_state(ctx, vault_package, status)
+        # reset on first call
+        set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
-        publication_state["accessRestriction"] = "Closed"
+        status = publication_state['status']
 
-    if publication_state["status"] in ["Unrecoverable", "Processing"]:
+    if status in ["Unrecoverable", "Processing"]:
         return ""
-    elif publication_state["status"] in ["Unknown", "Retry"]:
+    elif status in ["Unknown", "Retry"]:
         status = "Processing"
-        publication_state = status
+        publication_state['status'] = status
 
     # Determine last modification time. Always run, no matter if retry
-    publication_state["lastModifiedDateTime"] = get_last_modified_datetime()
-
+    publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state: 
-
-        if not iiGenerateSystemJson(*publicationConfig, *publicationState)) 
+        try:
+            generate_system_json(ctx, publication_config, publication_state)
+        except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
                
         save_publication_state(ctx, vault_package, publication_state)
@@ -972,11 +981,24 @@ def process_depublication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
+    # Remove metadata from DataCite
+    if "dataCiteMetadataPosted" not in publication_state:
+        try:
+            remove_metadata_from_datacite(ctx, publication_config, publication_state)
+        except msi.Error as e:
+            publication_state["status"] = "Retry"
+
+        save_publication_state(ctx, vault_package, publication_state)
+
+        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            return publication_state["status"]
 
     # Create landing page
     if "landingPagePath" not in publication_state:
         # Create landing page
-        if not iiGenerateLandingPage(*publicationConfig, *publicationState, "depublish"):
+        try:
+            generate_landing_page(ctx, publication_config, publication_state, "depublish")
+        except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -984,13 +1006,9 @@ def process_depublication(ctx, vault_package):
         if publication_state["status"] == "Unrecoverable":
             return publication_state["status"]
 
-
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-
-        if not iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState):
-             publication_state["status"] = "Retry"
-
+        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -998,46 +1016,47 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push combi XML to MOAI server
     if "oaiUploaded" not in publication_state:
-        if not iiCopyMetadataToMOAI(*publicationConfig, *publicationState):
-            publication_state["status"] = "Retry"
-
+        copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-
+ 
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
-
-        if not iiSetAccessRestriction(*vaultPackage, *publicationState):
-            publication_state["status"] = "Retry"
-
+        set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-
-        # The depublication was a success
-        avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
-        publication_state["status"] = "OK"
-        save_publication_state(ctx, vault_package, publication_state)
-        # rule_provenance_log_action("system", *vaultPackage, "publication updated") ?????
+    # The depublication was a success
+    avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
+    publication_state["status"] = "OK"
+    save_publication_state(ctx, vault_package, publication_state)
+    # rule_provenance_log_action("system", *vaultPackage, "publication updated") ?????
        
-        ctx.writeLine("serverLog", "iiProcessDepublication: All steps for depublication completed") 
-        return publication_state["status"]
-
-"""
+    return publication_state["status"]
 
 
-"""
-# \brief Routine to process a republication with sanity checks at every step.
-#
-# \param[in] vaultPackage       path to package in the vault to publish
-# \param[out] status		status of the publication
-#
+@rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_process_republication(ctx, vault_package):
+    """ rule interface for processing vault status transition request
+
+    param[in]  vault package
+
+    return [status, statusInfo] "Success" if went ok
+
+    """
+    log.write(ctx, "vault_package")
+    # return 'Success VPackage=' + vault_package
+
+    return process_republication(ctx, vault_package)
+
 
 def process_republication(ctx, vault_package):
+    """ Routine to process a republication with sanity checks at every step. """
+
     publication_state = {}
 
     # check permissions - rodsadmin only
@@ -1048,14 +1067,28 @@ def process_republication(ctx, vault_package):
     # check current status, perhaps transitioned already
     current_coll_status = get_coll_vault_status(ctx, coll).value
     return "NotAllowed"
+    vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+    log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
+
+    if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
+        return "InvalidPackageStatusForREPublication" + ": " + vault_status
 
     # get publication configuration
     config = epic.get_publication_config(ctx)
     return "Retry"
 
+    publication_config = epic.get_publication_config(ctx)
+
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package) 
     status = publication_state['status']
+    log.write(ctx, status)
+
+    if status == "OK":
+        # reset on first call
+        set_update_publication_state(ctx, vault_package)
+        publication_state = get_publication_state(ctx, vault_package)
+        status = publication_state['status']
 
     if status in ["Unrecoverable", "Processing"]:
         return ""
@@ -1063,17 +1096,18 @@ def process_republication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Publication date
     if "publicationDate" not in publication_state:
-        publication_state["publicationDate"] = get_publication_date(ctx)
+        publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     # Determine last modification time. Always run, no matter if retry
-    publication_state["lastModifiedDateTime"] = get_last_modified_datetime()
+    publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state: 
-
-        if not iiGenerateCombiJson(*publicationConfig, *publicationState))
-        
+        try:
+            generate_combi_json(ctx, publication_config, publication_state)
+        except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
                
         save_publication_state(ctx, vault_package, publication_state)
@@ -1083,7 +1117,9 @@ def process_republication(ctx, vault_package):
 
     # Generate DataCite XML
     if "dataCiteXmlPath" not in publication_state:
-        if not iiGenerateDataCiteXml(*publicationConfig, *publicationState))
+        try:
+            generate_datacite_xml(ctx, publication_config, publication_state)
+        except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1093,18 +1129,22 @@ def process_republication(ctx, vault_package):
 
     # Send DataCite XML to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
-        if not iiPostMetadataToDataCite(*publicationConfig, *publicationState):
+        try:
+            post_metadata_to_datacite(ctx, publication_config, publication_state)
+        except msi.Error as e:
             publication_state["status"] = "Retry"
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
-
     # Create landing page
     if "landingPagePath" not in publication_state:
         # Create landing page
-        if not iiGenerateLandingPage(*publicationConfig, *publicationState, "publish"):
+        try:
+            generate_landing_page(ctx, publication_config, publication_state, "publish")
+        except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1112,36 +1152,25 @@ def process_republication(ctx, vault_package):
         if publication_state["status"] == "Unrecoverable":
             return publication_state["status"]
 
-
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-
-        if not iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState):
-             publication_state["status"] = "Retry"
-
+        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-
 
     # Use secure copy to push combi XML to MOAI server
     if "oaiUploaded" not in publication_state:
-        if not iiCopyMetadataToMOAI(*publicationConfig, *publicationState):
-            publication_state["status"] = "Retry"
-
+        copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-
-
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
-        if not iiSetAccessRestriction(*vaultPackage, *publicationState):
-            publication_state["status"] = "Retry"
-
+        set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1154,7 +1183,6 @@ def process_republication(ctx, vault_package):
 
     return publication_state["status"]
 
-"""
 
 def get_collection_metadata(ctx, coll, prefix):
     """
