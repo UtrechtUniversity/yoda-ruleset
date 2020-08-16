@@ -15,12 +15,23 @@ processPublication() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiProcessPublication(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
-				} else {
-					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
-				}
+BLABLABLA - disrupt this script
+				# *err = errorcode(iiProcessPublication(*collName, *status));
+				# if (*err < 0) {
+				#	writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
+				# } else {
+				# 	writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
+				# }
+                                writeLine("stdout", "BEFORE: *folder *colName");
+                                *status = '';
+                                *statusInfo = '';
+                                rule_process_publication(*colName, *status, *statusInfo);
+                                writeLine("stdout", "*status");
+                                writeLine("stdout", "*statusInfo");
+                                *status = 'Success';
+
+                                succeed;
+
 			}
 		}
 

@@ -35,6 +35,9 @@ UUPROVENANCELOG = UUORGMETADATAPREFIX + 'action_log'
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
 """iRODS path where all licenses will be stored."""
 
+IIPUBLICATIONCOLLECTION = UUSYSTEMCOLLECTION + '/publication'
+"""iRODS path where publications will be stored. """
+
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
 """iRODS path where the publication terms will be stored."""
 
