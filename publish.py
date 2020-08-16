@@ -883,59 +883,51 @@ def process_publication(ctx, vault_package):
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
+        # MAIL datamanager and researcher involved
+        
+        title = ""
+        title_key = UUUSERMETADATAPREFIX ++ "0_Title";
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + title_key + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            title = row[0]
+
+        datamanager = ""
+        datamanager_key = UUORGMETADATAPREFIX ++ "publication_approval_actor"
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            user_name_and_zone = row[0]
+            datamanager = user.user_and_zone(user_name_and_zone)[0]
+
+        researcher_key = UUORGMETADATAPREFIX ++ "publication_submission_actor"
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            user_name_and_zone = row[0]
+            researcher = user.user_and_zone(user_name_and_zone)[0]
+        
+        doi = publication_state["yodaDOI"]
+
+        sender = user.full_name(ctx)
 
         # Send datamanager publication notification.
-        
+        # HOe hier error af te vangen???
+        mail.mail_new_package_published(ctx, datamanager, sender, title, doi)
+        # Datamanager notification failed: *message
+
         # Send researcher publication notification.
-
-        """
-
-
-                        msiString2KeyValPair(UUORGMETADATAPREFIX ++ "vault_status=" ++ PUBLISHED, *vaultStatusKvp);
-                        msiSetKeyValuePairsToObj(*vaultStatusKvp, *vaultPackage, "-C");
-
-                        # Retrieve package title for notifications.
-                        *title = "";
-                        *titleKey = UUUSERMETADATAPREFIX ++ "0_Title";
-                        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *titleKey) {
-                                *title = *row.META_COLL_ATTR_VALUE;
-                                break;
-                        }
-
-                        # Send datamanager publication notification.
-                        *datamanager = "";
-                        *actorKey = UUORGMETADATAPREFIX ++ "publication_approval_actor";
-                        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
-                                *userNameAndZone = *row.META_COLL_ATTR_VALUE;
-                                uuGetUserAndZone(*userNameAndZone, *datamanager, *zone);
-                                break;
-                        }
-
-                        *mailStatus = "";
-                        *message = "";
-                        rule_mail_new_package_published(*datamanager, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
-                        if (int(*mailStatus) != 0) {
-                            writeLine("serverLog", "iiProcessPublication: Datamanager notification failed: *message");
-                        }
-
-                        # Send researcher publication notification.
-                        *researcher = "";
-                        *actorKey = UUORGMETADATAPREFIX ++ "publication_submission_actor";
-                        foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *vaultPackage AND META_COLL_ATTR_NAME = *actorKey) {
-                                *userNameAndZone = *row.META_COLL_ATTR_VALUE;
-                                uuGetUserAndZone(*userNameAndZone, *researcher, *zone);
-                                break;
-                        }
-
-                        *mailStatus = "";
-                        *message = "";
-                        rule_mail_your_package_published(*researcher, uuClientFullName, *title, *publicationState.yodaDOI, *mailStatus, *message);
-                        if (int(*mailStatus) != 0) {
-                            writeLine("serverLog", "iiProcessPublication: Researcher notification failed: *message");
-                        }
-
-        """
-
+        mail.mail_your_package_published(ctx, researcher, sender, title, doi)
+        # "iiProcessPublication: Researcher notification failed: *message"
     else:
         # The publication was a success
         publication_state["status"] = "OK"

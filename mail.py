@@ -123,6 +123,9 @@ Yoda system
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
+    return mail_new_package_published(ctx, datamanager, actor, title, doi)
+
+def mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
                     to      = datamanager,
                     actor   = actor,
@@ -140,6 +143,10 @@ Yoda system
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
+    return mail_your_package_published(ctx, researcher, actor, title, doi)
+
+
+def mail_your_package_published(ctx, researcher, actor, title, doi): 
     return _wrapper(ctx,
                     to      = researcher,
                     actor   = actor,
