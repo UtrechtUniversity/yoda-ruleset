@@ -65,12 +65,9 @@ def generate_combi_json(ctx, publication_config, publication_state):
     yodaDOI = publication_state["yodaDOI"]
     lastModifiedDateTime = publication_state["lastModifiedDateTime"]
     publicationDate = publication_state["publicationDate"]
-        
-    openAccessLink = '';
+
+    openAccessLink = ''
     if publication_state["accessRestriction"].startswith("Open"):
-        # subPath = triml(vaultPackage, "/home/")
-        # writeLine("stdout", triml("This is a string.", "i"));
-        # Output: s is a string.
         split_string = '/home/'
         subPath = vaultPackage[len(split_string)+vaultPackage.find(split_string):]
 
@@ -84,12 +81,11 @@ def generate_combi_json(ctx, publication_config, publication_state):
     metadataJsonPath = meta.get_latest_vault_metadata_path(ctx, vaultPackage)
 
     # Combine content of current *metadataJsonPath with system info and creates a new file in *combiJsonPath:
-    json_datacite41.json_datacite41_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri);
+    json_datacite41.json_datacite41_create_combi_metadata_json(ctx, metadataJsonPath, combiJsonPath, lastModifiedDateTime, yodaDOI, publicationDate, openAccessLink, licenseUri)
 
-    publication_state["combiJsonPath"] = combiJsonPath;
+    publication_state["combiJsonPath"] = combiJsonPath
 
 
-##################
 def generate_system_json(ctx, publication_config, publication_state):
     """
     Overwrite combi metadata json with system-only metadata.
@@ -99,7 +95,6 @@ def generate_system_json(ctx, publication_config, publication_state):
     """
 
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
-###    davrodsAnonymousVHost = publicationConfig["davrodsAnonymousVHost"]  ???????
 
     vaultPackage = publication_state["vaultPackage"]
     randomId = publication_state["randomId"]
@@ -118,7 +113,6 @@ def generate_system_json(ctx, publication_config, publication_state):
     data_object.write(ctx, system_json_path, jsonutil.dump(system_json_data))
 
 
-##############################################
 def get_publication_state(ctx, vault_package):
     """
         The publication state is kept as metadata on the vaultPackage.
@@ -132,7 +126,6 @@ def get_publication_state(ctx, vault_package):
     }
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
     log.write(ctx, publ_metadata)
-
 
     # take over all actual values as saved earlier
     for key in publ_metadata.keys():
@@ -180,15 +173,14 @@ def save_publication_state(ctx, vault_package, publication_state):
     Save the publicationState key-value-pair to AVU's on the vaultPackage.
 
     param vault_package        path to the package in the vault
-    param publication_state    dict containing all key/values regarding publication 
-
+    param publication_state    dict containing all key/values regarding publication
     """
     for key in publication_state.keys():
         # publication_state[key] = publ_metadata[key]
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
-def set_update_publication_state(ctx, vault_package, status): 
+def set_update_publication_state(ctx, vault_package, status):
     """
     Routine to set publication state of vault package pending to update.
 
@@ -268,17 +260,12 @@ def get_publication_date(ctx, vault_package):
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
-#         if(*publicationState.publicationDate == "" ) {
-#            msiGetIcatTime(*now, "unix");
-#            *publicationDate = uuiso8601date(*now);
-
 
 def get_last_modified_datetime(ctx, vault_package):
     """
     Determine the time of last modification as a datetime with UTC offset.
     param[in] vault_package
     returns last modification datetime in iso8601 format
-
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
@@ -295,10 +282,6 @@ def get_last_modified_datetime(ctx, vault_package):
 
         # return log_item_list[0]
 
-#	# iso8601 compliant datetime with UTC offset
-#	*lastModifiedDateTime = timestrf(datetime(int(*lastModifiedTimestamp)), "%Y-%m-%dT%H:%M:%S%z");
-#	*publicationState.lastModifiedDateTime = *lastModifiedDateTime;
-
 
 def generate_preliminary_DOI(ctx, publication_config, publication_state):
     """
@@ -313,18 +296,12 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
 
     randomId = datacite.generate_random_id(ctx, publication_config["randomIdLength"])
 
-#	# Genereate random ID for DOI.
-#	*randomId = "";
-#	rule_generate_random_id(*length, *randomId);
-
     publication_state["randomId"] = randomId
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
 def generate_datacite_xml(ctx, publication_config, publication_state):
-# \brief Generate a dataCite compliant XML based up yoda-metadata.json
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
+    """ Generate a dataCite compliant XML based up yoda-metadata.json """
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
@@ -334,19 +311,8 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     temp_coll, coll = pathutil.chop(combiJsonPath)
     datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
 
-    ## WAAR ZIJN DEZE ZAKEN VOOR NODIG
-#        *pathElems = split(*vaultPackage, "/");
-#        *rodsZone = elem(*pathElems, 0);
-#        *vaultGroup = elem(*pathElems, 2);
-#        uuGetBaseGroup(*vaultGroup, *baseGroup);
-#        uuGroupGetCategory(*baseGroup, *category, *subcategory);
-
     # Based on content of *combiJsonPath, get DataciteXml as string
     receiveDataciteXml = json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
-
-#        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
-#        msiDataObjWrite(*fd, *receiveDataciteXml, *len);                       # Get length back
-#        msiDataObjClose(*fd, *status)
 
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
@@ -355,18 +321,18 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
 
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
-# \brief Upload dataCite XML to dataCite. This will register the DOI, without minting it.
-#
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+    """ Upload dataCite XML to dataCite. This will register the DOI, without minting it.
+
+    \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
+    \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+    """
 
     datacite_xml_path = publication_state["dataCiteXmlPath"]
-#    len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
+    # len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
     
     datacite_xml = data_object.read(ctx, datacite_xml_path)
     log.write(ctx, datacite_xml)
 
-    # httpCode = rule_register_doi_metadata(publication_state["yodaDOI"], datacite_xml);
     httpCode = datacite.register_doi_metadata(ctx, publication_state["yodaDOI"], datacite_xml)
 
     if httpCode == 201:
@@ -381,9 +347,7 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 
 
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
-# \brief Remove metadata XML from DataCite.
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+    """ Remove metadata XML from DataCite. """
 
     yodaDOI = publication_state["yodaDOI"]
 
@@ -477,14 +441,10 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     data_object.write(ctx, landing_page_path, landing_page_html)
 
     publication_state["landingPagePath"] = landing_page_path
-#    publication_state["landingPageLen"] = str(len(landing_page_html))   ###J NIET MEER NODIG!!??
 
 
 def generate_datacite_xml(ctx, publication_config, publication_state):
-# \brief Generate a dataCite compliant XML based up yoda-metadata.json
-#
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is passed around as key-value-pairs
+    """ Generate a dataCite compliant XML based up yoda-metadata.json """
 
     combiJsonPath = publication_state["combiJsonPath"]
 
@@ -492,34 +452,20 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
     vaultPackage = publication_state["vaultPackage"]
 
-#        uuChopPath(*combiJsonPath, *tempColl, *_);
-
     temp_coll, coll = pathutil.chop(combiJsonPath)
     datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
-
-    ## WAAR ZIJN DEZE ZAKEN VOOR NODIG
-#        *pathElems = split(*vaultPackage, "/");
-#        *rodsZone = elem(*pathElems, 0);
-#        *vaultGroup = elem(*pathElems, 2);
-#        uuGetBaseGroup(*vaultGroup, *baseGroup);
-#        uuGroupGetCategory(*baseGroup, *category, *subcategory);
 
     # Based on content of *combiJsonPath, get DataciteXml as string
     receiveDataciteXml = json_datacite41.json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
 
-#        msiDataObjCreate(*dataCiteXmlPath, "forceFlag=", *fd);
-#        msiDataObjWrite(*fd, *receiveDataciteXml, *len);  Get length back
-#        msiDataObjClose(*fd, *status);
-
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
     publication_state["dataCiteXmlPath"] = datacite_xml_path
-    # publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
 
 
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     """
-    Copy the resulting landing page to configured public host 
+    Copy the resulting landing page to configured public host
     publication_config   Current configuration
     publication_state    Current publication state
     """
