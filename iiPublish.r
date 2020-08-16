@@ -7,6 +7,38 @@
 # \license   GPLv3, see LICENSE.
 
 
+
+
+#\ Generic secure copy functionality
+# \param[in] argv         argument string for secure copy like "*publicHost inbox /var/www/landingpages/*publicPath";
+# \param[in] origin_path  local path of origin file
+# \param[out] err         return the error to calling function
+#
+iiGenericSecureCopy(*argv, *origin_path, *err) {
+        *publicHost = *publicationConfig.publicHost;
+        *landingPagePath = *publicationState.landingPagePath;
+        *yodaInstance = *publicationConfig.yodaInstance;
+        *yodaPrefix = *publicationConfig.yodaPrefix;
+        *randomId =  *publicationState.randomId;
+        *publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
+        *argv = "*publicHost inbox /var/www/landingpages/*publicPath";
+
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
+        if (*err < 0) {
+                msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+                msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+                writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
+                writeLine("serverLog", *stderr);
+                writeLine("serverLog", *stdout);
+        } else {
+                *publicationState.landingPageUploaded = "yes";
+                #DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
+        }
+}
+
+
+
+
 # \brief Use secure copy to push publised json data object, that arose after transformation from xml->json, to MOAI area.
 #
 # \param[in] metadata_json     json metadata data object name to be copied to

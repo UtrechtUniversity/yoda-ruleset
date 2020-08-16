@@ -533,66 +533,55 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
 
 ##########################################
-"""
+def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
+    """
+    Copy the resulting landing page to configured public host 
+    publication_config   Current configuration
+    publication_state    Current publication state
+    """
+    publicHost = publication_config["publicHost"]
+    landingPagePath = publication_state["landingPagePath"]
+    yodaInstance = publication_config["yodaInstance"]
+    yodaPrefix = publication_config["yodaPrefix"]
+    randomId =  publication_state["randomId"]
+    publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
 
-# \brief iiCopyLandingPage2PublicHost
-#
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
-#
-iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState) {
-	*publicHost = *publicationConfig.publicHost;
-	*landingPagePath = *publicationState.landingPagePath;
-	*yodaInstance = *publicationConfig.yodaInstance;
-	*yodaPrefix = *publicationConfig.yodaPrefix;
-	*randomId =  *publicationState.randomId;
-	*publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
-	*argv = "*publicHost inbox /var/www/landingpages/*publicPath";
-	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
-	if (*err < 0) {
-		*publicationState.status = "Retry";
- 		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
-		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-		writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
-		writeLine("serverLog", *stderr);
-		writeLine("serverLog", *stdout);
-	} else {
-		*publicationState.landingPageUploaded = "yes";
-		#DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
-	}
-}
+    argv = publicHost + " " + inbox + " /var/www/landingpages/" + publicPath
+    error = ""
+    error_message = ""
+    ctx.iiGenericSecureCopy(argv, landingPagePath, error, error_message)
+    if error == "":
+        publication_state["landingPageUploaded"] = "yes"
+    else:
+        publication_state["status"] = "Retry"
+        log.write(ctx, "copy_landingpage_to_public: " + error)
+        log.write(ctx, "copy_landingpage_to_public: " + error_message
 
 
-# \brief Use secure copy to push the combi XML to MOAI.
-#
-# \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-# \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
-#
-iiCopyMetadataToMOAI(*publicationConfig, *publicationState) {
-	*publicHost = *publicationConfig.publicHost;
-	*yodaInstance = *publicationConfig.yodaInstance;
-	*yodaPrefix = *publicationConfig.yodaPrefix;
-	*randomId = *publicationState.randomId;
-	*combiJsonPath = *publicationState.combiJsonPath;
-	*argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*randomId.json"
-	*err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *combiJsonPath, 1, *cmdExecOut));
-	if (*err < 0) {
-		msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
-		msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-		writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
-		writeLine("serverLog", *stderr);
-		writeLine("serverLog", *stdout);
-	} else {
-		*publicationState.oaiUploaded = "yes";
-		#DEBUG writeLine("serverLog", "iiCopyMetadataToMOAI: pushed *combiJsonPath");
-	}
-}
+def copy_metadata_to_moai(ctx, publication_config, publication_state):
+    """
+    Copy the metadata json file to configured moai
+    publication_config   Current configuration
+    publication_state    Current publication state
+    """
+    publicHost = publication_config["publicHost"]
+    yodaInstance = publication_config["yodaInstance"]
+    yodaPrefix = publication_config["yodaPrefix"]
+    randomId =  publication_state["randomId"]
+    combiJsonPath = publication_state["combiJsonPath"]
+
+    argv = publicHost + " " + inbox + " /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json" 
+    error = ""
+    error_message = ""
+    ctx.iiGenericSecureCopy(argv, combiJsonPath, error, error_message)
+    if error == "":
+        publication_state["oaiUploaded"] = "yes"
+    else:
+        publication_state["status"] = "Retry"
+        log.write(ctx, "copy_metadata_to_public: " + error)
+        log.write(ctx, "copy_metadata_to_public: " + error_message)
 
 
-
-"""
-
-###############################
 def set_access_restrictions(ctx, vault_package, publication_state):
     """
     Set access restriction for vault package.
@@ -832,36 +821,25 @@ def process_publication(ctx, vault_package):
     log.write(ctx, publication_state)
     return "SO FAR, SO GOOD10"
 
-    """
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-
-        #if not iiCopyLandingPage2PublicHost(*publicationConfig, *publicationState):
-        #     publication_state["status"] = "Retry"
-
+        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-    """
 
-    """
     # Use secure copy to push combi XML to MOAI server
     if "oaiUploaded" not in publication_state:
-        #if not iiCopyMetadataToMOAI(*publicationConfig, *publicationState):
-        #    publication_state["status"] = "Retry"
-
+        copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-    """
+ 
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
-
-        #if not iiSetAccessRestriction(*vaultPackage, *publicationState):
-        #    publication_state["status"] = "Retry"
-
+        set_access_restrictions(ctx, vault_package, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -869,9 +847,7 @@ def process_publication(ctx, vault_package):
 
     # Mint DOI with landing page URL.
     if "DOIMinted" not in publication_state:
-        #if not iiMintDOI(*publicationConfig, *publicationState):
-        #    publication_state["status"] = "Retry"
-
+        mint_doi(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
