@@ -123,9 +123,11 @@ def get_publication_state(ctx, vault_package):
 
         returns publication_state   key-value-pair containing the state
     """
-    publication_state = {"status": "Unknown",
-                         "accessRestriction": "Closed"
-                        }
+    publication_state = {
+        "status": "Unknown",
+        "accessRestriction": "Closed"
+    }
+
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
     log.write(ctx, publ_metadata)
 
@@ -767,7 +769,7 @@ def process_publication(ctx, vault_package):
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
         # MAIL datamanager and researcher involved
- 
+
         title = ""
         title_key = UUUSERMETADATAPREFIX ++ "0_Title"
         iter = genquery.row_iterator(
