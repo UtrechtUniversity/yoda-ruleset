@@ -180,7 +180,6 @@ def save_publication_state(ctx, vault_package, publication_state):
     param publication_state    dict containing all key/values regarding publication
     """
     for key in publication_state.keys():
-        # publication_state[key] = publ_metadata[key]
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
@@ -243,24 +242,21 @@ def get_publication_date(ctx, vault_package):
     return publicationdate in iso8601 format
     """
     from datetime import datetime
-    my_date = datetime.now()
-    return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
     iter = genquery.row_iterator(
-        "order_desc(META_COLL_ATTR_VALUE)",
+        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
         # row contains json encoded [str(int(time.time())), action, actor]
-        log_item_list = jsonutil.parse(row[0])
+        log_item_list = jsonutil.parse(row[1])
         if log_item_list[1] == "published":
-            publication_timestamp = log_item_list[0]
+            publication_timestamp = datetime.datetime.fromtimestamp(int(log_item_list[0]))
 
-            # HIer nog ISO8601 van maken!!
-            return publicationDateTime
-    # HdR not netjes!!!!
-    from datetime import datetime
+            # ISO8601-fy
+            return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+
     my_date = datetime.now()
     return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
@@ -278,13 +274,10 @@ def get_last_modified_datetime(ctx, vault_package):
     )
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
-        log.write(ctx, log_item_list)
 
-        import datetime
+        from datetime import datetime
         my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
-
-        # return log_item_list[0]
 
 
 def generate_preliminary_DOI(ctx, publication_config, publication_state):
@@ -360,7 +353,8 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
         publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")        publication_state["status"] = "Retry"
+        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        publication_state["status"] = "Retry"
     elif httpCode == 404:
         # Invalid DOI
         log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
@@ -488,7 +482,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     else:
         publication_state["status"] = "Retry"
         log.write(ctx, "copy_landingpage_to_public: " + error)
-        log.write(ctx, "copy_landingpage_to_public: " + error_message
+        log.write(ctx, "copy_landingpage_to_public: " + error_message)
 
 
 def copy_metadata_to_moai(ctx, publication_config, publication_state):
@@ -568,16 +562,14 @@ def rule_process_publication(ctx, vault_package):
 
     param[in]  vault package
 
-    return [status, statusInfo] "Success" if went ok
+    return [status] "OK" if went ok
 
     """
-    log.write(ctx, "vault_package")
-    # return 'Success VPackage=' + vault_package
-
     return process_publication(ctx, vault_package)
 
 
 def process_publication(ctx, vault_package):
+    """ Handling of publication of vault_package """
     publication_state = {}
 
     log.write(ctx, "PUBLICATION OF " + vault_package)
@@ -608,7 +600,7 @@ def process_publication(ctx, vault_package):
     #return "SO FAR, SO GOOD"
 
     # Publication status check and handling
-    if status in ["Unrecoverable"]:  # , "Processing"]: DEZE MOET ER WEER BIJ HDR
+    if status in ["Unrecoverable"]:  # , "Processing"]: DEZE MOET ER WEER BIJ HDR!!!!
         return "publication status: " + status
     elif status in ["Unknown", "Retry"]:
         status = "Processing"
@@ -723,7 +715,6 @@ def process_publication(ctx, vault_package):
     return "SO FAR, SO GOOD9"
 
     # Create Landing page URL
-        #DEBUG writeLine("serverLog", "iiProcessPublication: starting iiGenerateLandingPageUrl");
     generate_landing_page_url(ctx, publication_config, publication_state)
 
     log.write(ctx, "SO FAR, SO GOOD10")
@@ -769,7 +760,6 @@ def process_publication(ctx, vault_package):
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
         # MAIL datamanager and researcher involved
-
         title = ""
         title_key = UUUSERMETADATAPREFIX ++ "0_Title"
         iter = genquery.row_iterator(
@@ -828,12 +818,9 @@ def rule_process_depublication(ctx, vault_package):
 
     param[in]  vault package
 
-    return [status, statusInfo] "Success" if went ok
+    return [status] "OK" if went ok
 
     """
-    log.write(ctx, "vault_package")
-    # return 'Success VPackage=' + vault_package
-
     return process_depublication(ctx, vault_package)
 
 
@@ -872,7 +859,7 @@ def process_depublication(ctx, vault_package):
         status = publication_state['status']
 
     if status in ["Unrecoverable", "Processing"]:
-        return ""
+        return status
     elif status in ["Unknown", "Retry"]:
         status = "Processing"
         publication_state['status'] = status
@@ -887,15 +874,6 @@ def process_depublication(ctx, vault_package):
         except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
 
-        save_publication_state(ctx, vault_package, publication_state)
-
-        if publication_state["status"] in ["Unrecoverable", "Retry"]:
-            return publication_state["status"]
-
-    # Remove metadata from DataCite
-    if "dataCiteMetadataPosted" not in publication_state:
-        if not iiRemoveMetadataFromDataCite(*publicationConfig, *publicationState):
-            publication_state["status"] = "Retry"
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -965,12 +943,9 @@ def rule_process_republication(ctx, vault_package):
 
     param[in]  vault package
 
-    return [status, statusInfo] "Success" if went ok
+    return status "OK" if went ok
 
     """
-    log.write(ctx, "vault_package")
-    # return 'Success VPackage=' + vault_package
-
     return process_republication(ctx, vault_package)
 
 
@@ -991,11 +966,6 @@ def process_republication(ctx, vault_package):
     if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "InvalidPackageStatusForREPublication" + ": " + vault_status
 
-# HDR DIT NOG GOED MAKEN publication_config
-    # get publication configuration
-#    config = epic.get_publication_config(ctx)
-#    return "Retry"
-
     publication_config = epic.get_publication_config(ctx)
 
     # get state of all related to the publication
@@ -1010,7 +980,7 @@ def process_republication(ctx, vault_package):
         status = publication_state['status']
 
     if status in ["Unrecoverable", "Processing"]:
-        return ""
+        return status
     elif status in ["Unknown", "Retry"]:
         status = "Processing"
         publication_state['status'] = status
