@@ -313,7 +313,6 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
     publication_state["dataCiteXmlPath"] = datacite_xml_path
-    # publication_state["dataCiteXmlLen"] = str(len)   ###J NIET MEER NODIG!!??
 
 
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
@@ -440,26 +439,6 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     publication_state["landingPagePath"] = landing_page_path
 
 
-def generate_datacite_xml(ctx, publication_config, publication_state):
-    """ Generate a dataCite compliant XML based up yoda-metadata.json """
-
-    combiJsonPath = publication_state["combiJsonPath"]
-
-    randomId = publication_state["randomId"]
-
-    vaultPackage = publication_state["vaultPackage"]
-
-    temp_coll, coll = pathutil.chop(combiJsonPath)
-    datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
-
-    # Based on content of *combiJsonPath, get DataciteXml as string
-    receiveDataciteXml = json_datacite41.json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
-
-    data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
-
-    publication_state["dataCiteXmlPath"] = datacite_xml_path
-
-
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     """
     Copy the resulting landing page to configured public host
@@ -494,7 +473,7 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId =  publication_state["randomId"]
+    randomId = publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
     argv = publicHost + " " + inbox + " /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
@@ -595,16 +574,14 @@ def process_publication(ctx, vault_package):
     status = publication_state['status']
 
     log.write(ctx, status)
-
     log.write(ctx, "SO FAR, SO GOOD")
-    #return "SO FAR, SO GOOD"
 
     # Publication status check and handling
     if status in ["Unrecoverable"]:  # , "Processing"]: DEZE MOET ER WEER BIJ HDR!!!!
         return "publication status: " + status
     elif status in ["Unknown", "Retry"]:
         status = "Processing"
-        publication_state['status'] = status # Deze wordt pas bewaard wanneer specifieke keys niet bestaan verderop.
+        publication_state['status'] = status
 
     # Publication date
     if "publicationDate" not in publication_state:
@@ -761,7 +738,7 @@ def process_publication(ctx, vault_package):
 
         # MAIL datamanager and researcher involved
         title = ""
-        title_key = UUUSERMETADATAPREFIX ++ "0_Title"
+        title_key = constants.UUUSERMETADATAPREFIX + "0_Title"
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + title_key + "'",
@@ -771,7 +748,7 @@ def process_publication(ctx, vault_package):
             title = row[0]
 
         datamanager = ""
-        datamanager_key = UUORGMETADATAPREFIX ++ "publication_approval_actor"
+        datamanager_key = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
@@ -781,7 +758,7 @@ def process_publication(ctx, vault_package):
             user_name_and_zone = row[0]
             datamanager = user.user_and_zone(user_name_and_zone)[0]
 
-        researcher_key = UUORGMETADATAPREFIX ++ "publication_submission_actor"
+        researcher_key = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
