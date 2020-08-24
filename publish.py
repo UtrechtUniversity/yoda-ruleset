@@ -456,9 +456,6 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     publication_config   Current configuration
     publication_state    Current publication state
     """
-    publication_state["landingPageUploaded"] = "yes"
-    return ''
-
     publicHost = publication_config["publicHost"]
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
@@ -483,9 +480,6 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
     publication_config   Current configuration
     publication_state    Current publication state
     """
-    publication_state["oaiUploaded"] = "yes"
-    return ''
-
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
