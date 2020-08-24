@@ -48,6 +48,7 @@ iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *pu
 }
 """
 
+
 def generate_combi_json(ctx, publication_config, publication_state):
     """
     Join system metadata with the user metadata in yoda-metadata.json.
@@ -69,7 +70,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
     openAccessLink = ''
     if publication_state["accessRestriction"].startswith("Open"):
         split_string = '/home/'
-        subPath = vaultPackage[len(split_string)+vaultPackage.find(split_string):]
+        subPath = vaultPackage[len(split_string) + vaultPackage.find(split_string):]
 
         openAccessLink = 'https://' + davrodsAnonymousVHost + "/" + subPath
 
@@ -100,13 +101,14 @@ def generate_system_json(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
-    system_json_data = { "System": {
-        "Last_Modified_Date": publication_state["lastModifiedDateTime"],
-        "Persistent_Identifier_Datapackage": {
-            "Identifier_Scheme": "DOI",
-            "Identifier": publication_state["yodaDOI"],
-        },
-        "Publication_Date": publication_state["publicationDate"]
+    system_json_data = {"System": 
+        {"Last_Modified_Date": publication_state["lastModifiedDateTime"],
+         "Persistent_Identifier_Datapackage": 
+             {
+                "Identifier_Scheme": "DOI",
+                "Identifier": publication_state["yodaDOI"],
+             },
+         "Publication_Date": publication_state["publicationDate"]
         }
     }
 
@@ -121,9 +123,9 @@ def get_publication_state(ctx, vault_package):
 
         returns publication_state   key-value-pair containing the state
     """
-    publication_state = {"status":"Unknown",
-                         "accessRestriction":"Closed"
-    }
+    publication_state = {"status": "Unknown",
+                         "accessRestriction": "Closed"
+                        }
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
     log.write(ctx, publ_metadata)
 
@@ -194,7 +196,7 @@ def set_update_publication_state(ctx, vault_package, status):
 
     # check current status, perhaps transitioned already
     coll_status = get_coll_vault_status(ctx, coll).value
-    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLICATION),str(constants.vault_package_state.REPUBLICATION)]:
+    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLICATION), str(constants.vault_package_state.REPUBLICATION)]:
         return "NotAllowed"
 
     # HDR - wordt hier helemaal niet gebruikt
@@ -289,7 +291,6 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
 
     param publication_config      Configuration is passed as key-value-pairs throughout publication process
     param publication_state
-    
     """
     dataCitePrefix = publication_config["dataCitePrefix"]
     yodaPrefix = publication_config["yodaPrefix"]
@@ -329,7 +330,7 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 
     datacite_xml_path = publication_state["dataCiteXmlPath"]
     # len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
-    
+
     datacite_xml = data_object.read(ctx, datacite_xml_path)
     log.write(ctx, datacite_xml)
 
@@ -410,7 +411,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
     landingPageUrl = "https://" + publicVHost + "/" + publicPath
-    
+
     return landingPageUrl
 
 
@@ -473,7 +474,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId =  publication_state["randomId"]
+    randomId = publication_state["randomId"]
     publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
 
     argv = publicHost + " " + inbox + " /var/www/landingpages/" + publicPath
@@ -654,7 +655,7 @@ def process_publication(ctx, vault_package):
 
     log.write(ctx, "SO FAR, SO GOOD5")
     log.write(ctx, publication_state)
-#    return "SO FAR, SO GOOD5 " 
+#    return "SO FAR, SO GOOD5 "
 
     # Generate DataCite XML
     if "dataCiteXmlPath" not in publication_state:
@@ -766,7 +767,7 @@ def process_publication(ctx, vault_package):
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
 
         # MAIL datamanager and researcher involved
-        
+ 
         title = ""
         title_key = UUUSERMETADATAPREFIX ++ "0_Title"
         iter = genquery.row_iterator(
@@ -797,7 +798,7 @@ def process_publication(ctx, vault_package):
         for row in iter:
             user_name_and_zone = row[0]
             researcher = user.user_and_zone(user_name_and_zone)[0]
-        
+
         doi = publication_state["yodaDOI"]
 
         sender = user.full_name(ctx)
@@ -861,7 +862,7 @@ def process_depublication(ctx, vault_package):
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
- 
+
     if status == "OK":
         # reset on first call
         set_update_publication_state(ctx, vault_package)
@@ -938,7 +939,7 @@ def process_depublication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
- 
+
     # Set access restriction for vault package.
     if "anonymousAccess" not in publication_state:
         set_access_restrictions(ctx, vault_package, publication_state)
@@ -996,7 +997,7 @@ def process_republication(ctx, vault_package):
     publication_config = epic.get_publication_config(ctx)
 
     # get state of all related to the publication
-    publication_state = get_publication_state(ctx, vault_package) 
+    publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
     log.write(ctx, status)
 
@@ -1025,7 +1026,7 @@ def process_republication(ctx, vault_package):
             generate_combi_json(ctx, publication_config, publication_state)
         except msi.Error as e:
             publication_state["status"] = "Unrecoverable"
- 
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
