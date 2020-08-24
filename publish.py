@@ -181,15 +181,15 @@ def save_publication_state(ctx, vault_package, publication_state):
     param publication_state    dict containing all key/values regarding publication
     """
     for key in publication_state.keys():
+        log.write(ctx, key + " -> " + publication_state[key]) 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
-def set_update_publication_state(ctx, vault_package, status):
+def set_update_publication_state(ctx, vault_package):
     """
     Routine to set publication state of vault package pending to update.
 
     vaultPackage   path to package in the vault to update
-    returns status         status of the publication state update
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -197,8 +197,8 @@ def set_update_publication_state(ctx, vault_package, status):
         return 'Insufficient permissions - should only be called by rodsadmin'
 
     # check current status, perhaps transitioned already
-    coll_status = get_coll_vault_status(ctx, coll).value
-    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLICATION), str(constants.vault_package_state.REPUBLICATION)]:
+    coll_status = vault.get_coll_vault_status(ctx, vault_package).value
+    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
 
     # HDR - wordt hier helemaal niet gebruikt
@@ -230,9 +230,9 @@ def set_update_publication_state(ctx, vault_package, status):
     publication_state["anonymousAccess"] = ""
 
     # Save state
-    if not save_publication_state(ctx, vault_package, publication_state):
-        return "UnknownError"
+    save_publication_state(ctx, vault_package, publication_state)
 
+    return ""
 
 def get_publication_date(ctx, vault_package):
     """
@@ -749,15 +749,12 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-        return "SO FAR, SO GOOD15"
-
-
         return publication_state["status"]
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_depublication(ctx, vault_package):
-    """ rule interface for processing vault status transition request
+    """ rule interface for processing depublication of a vault_package
 
     param[in]  vault package
 
@@ -776,20 +773,12 @@ def process_depublication(ctx, vault_package):
         return 'Insufficient permissions - should only be called by rodsadmin'
 
     # check current status, perhaps transitioned already
-    current_coll_status = get_coll_vault_status(ctx, coll).value
-    if current_coll_status is not PENDING_DEPUBLICATION:
-        return "NotAllowed"
-
-    # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
-    log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
-
     if vault_status not in [str(constants.vault_package_state.PENDING_DEPUBLICATION)]:
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
     # get publication configuration
     publication_config = epic.get_publication_config(ctx)
-    log.write(ctx, publication_config)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
@@ -800,6 +789,8 @@ def process_depublication(ctx, vault_package):
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
         status = publication_state['status']
+    log.write(ctx, status)
+
 
     if status in ["Unrecoverable", "Processing"]:
         return status
@@ -882,7 +873,7 @@ def process_depublication(ctx, vault_package):
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_republication(ctx, vault_package):
-    """ rule interface for processing vault status transition request
+    """ rule interface for processing republication of a vault package
 
     param[in]  vault package
 
@@ -904,17 +895,14 @@ def process_republication(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
-    log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
-
     if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
-        return "InvalidPackageStatusForREPublication" + ": " + vault_status
+        return "InvalidPackageStatusForRePublication" + ": " + vault_status
 
     publication_config = epic.get_publication_config(ctx)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
-    log.write(ctx, status)
 
     if status == "OK":
         # reset on first call
