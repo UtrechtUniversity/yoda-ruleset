@@ -125,6 +125,7 @@ Yoda system
 def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
     return mail_new_package_published(ctx, datamanager, actor, title, doi)
 
+
 def mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
                     to      = datamanager,

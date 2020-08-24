@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions to publish dat0t and manage permissions of vault packages."""
+"""Functions to publish data and manage permissions of vault packages."""
 
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -101,14 +101,14 @@ def generate_system_json(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
-    system_json_data = {"System": 
-        {"Last_Modified_Date": publication_state["lastModifiedDateTime"],
-         "Persistent_Identifier_Datapackage": 
-             {
+    system_json_data = {
+        "System": {
+            "Last_Modified_Date": publication_state["lastModifiedDateTime"],
+            "Persistent_Identifier_Datapackage": {
                 "Identifier_Scheme": "DOI",
                 "Identifier": publication_state["yodaDOI"],
-             },
-         "Publication_Date": publication_state["publicationDate"]
+            },
+            "Publication_Date": publication_state["publicationDate"]
         }
     }
 
