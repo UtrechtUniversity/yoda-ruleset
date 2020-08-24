@@ -4,7 +4,7 @@ processPublicationTest() {
        *status = '';
        *statusInfo = '';
 
-       *colName = '/tempZone/home/vault-def1test4/research-def1test4[1597438785]';
+       *colName = '/tempZone/home/vault-def1test5/research-def1test5[1597443311]';
        rule_process_publication(*colName, *status, *statusInfo);
        writeLine("stdout", "Status *status");
        writeLine("stdout", "Status info *statusInfo");

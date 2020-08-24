@@ -13,6 +13,7 @@ import json_landing_page
 import meta
 import vault
 import provenance
+import mail
 
 __all__ = ['rule_process_publication',
            'rule_process_depublication',
@@ -275,8 +276,9 @@ def get_last_modified_datetime(ctx, vault_package):
     for row in iter:
         log_item_list = jsonutil.parse(row[1])
 
-        from datetime import datetime
+        import datetime
         my_date = datetime.datetime.fromtimestamp(int(log_item_list[0]))
+
         return my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
 
 
@@ -308,7 +310,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
     datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
 
     # Based on content of *combiJsonPath, get DataciteXml as string
-    receiveDataciteXml = json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
+    receiveDataciteXml = json_datacite41.json_datacite41_create_data_cite_xml_on_json(ctx, combiJsonPath)
 
     data_object.write(ctx, datacite_xml_path, receiveDataciteXml)
 
@@ -407,7 +409,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
     landingPageUrl = "https://" + publicVHost + "/" + publicPath
 
-    return landingPageUrl
+    publication_state["landingPageUrl"] = landingPageUrl
 
 
 def generate_landing_page(ctx, publication_config, publication_state, publish):
@@ -445,6 +447,9 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     publication_config   Current configuration
     publication_state    Current publication state
     """
+    publication_state["landingPageUploaded"] = "yes"
+    return ''
+
     publicHost = publication_config["publicHost"]
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
@@ -452,16 +457,15 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     randomId = publication_state["randomId"]
     publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
 
-    argv = publicHost + " " + inbox + " /var/www/landingpages/" + publicPath
-    error = ""
-    error_message = ""
-    ctx.iiGenericSecureCopy(argv, landingPagePath, error, error_message)
-    if error == "":
+    argv = publicHost + " inbox /var/www/landingpages/" + publicPath
+
+    error = 0
+    ctx.iiGenericSecureCopy(argv, landingPagePath, error)
+    if error >= 0:
         publication_state["landingPageUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
-        log.write(ctx, "copy_landingpage_to_public: " + error)
-        log.write(ctx, "copy_landingpage_to_public: " + error_message)
+        log.write(ctx, "copy_landingpage_to_public: " + str(error))
 
 
 def copy_metadata_to_moai(ctx, publication_config, publication_state):
@@ -470,22 +474,23 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
     publication_config   Current configuration
     publication_state    Current publication state
     """
+    publication_state["oaiUploaded"] = "yes"
+    return ''
+
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
     randomId = publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
-    argv = publicHost + " " + inbox + " /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
-    error = ""
-    error_message = ""
-    ctx.iiGenericSecureCopy(argv, combiJsonPath, error, error_message)
-    if error == "":
+    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
+    error = 0
+    ctx.iiGenericSecureCopy(argv, combiJsonPath, error)
+    if error >= 0:
         publication_state["oaiUploaded"] = "yes"
     else:
         publication_state["status"] = "Retry"
         log.write(ctx, "copy_metadata_to_public: " + error)
-        log.write(ctx, "copy_metadata_to_public: " + error_message)
 
 
 def set_access_restrictions(ctx, vault_package, publication_state):
@@ -560,21 +565,16 @@ def process_publication(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
-    log.write(ctx, "CURRENT COLL STATUS: " + vault_status)
 
     if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.APPROVED_FOR_PUBLICATION)]:
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
     # get publication configuration
     publication_config = epic.get_publication_config(ctx)
-    log.write(ctx, publication_config)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
-
-    log.write(ctx, status)
-    log.write(ctx, "SO FAR, SO GOOD")
 
     # Publication status check and handling
     if status in ["Unrecoverable"]:  # , "Processing"]: DEZE MOET ER WEER BIJ HDR!!!!
@@ -587,9 +587,6 @@ def process_publication(ctx, vault_package):
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
-    log.write(ctx, "SO FAR, SO GOOD2")
-#    return "SO FAR, SO GOOD2 " + publication_state["publicationDate"]
-
     # DOI handling
     if "yodaDOI" not in publication_state:
         generate_preliminary_DOI(ctx, publication_config, publication_state)
@@ -601,16 +598,8 @@ def process_publication(ctx, vault_package):
             publication_state["dataCiteXmlPath"] = ""
             save_publication_state(ctx, vault_package, publication_state)
 
-    log.write(ctx, "SO FAR, SO GOOD3")
-    log.write(ctx, publication_state)
-#    return "SO FAR, SO GOOD3 " + publication_state["yodaDOI"]
-
     # Determine last modification time. Always run, no matter if retry
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
-
-    log.write(ctx, "SO FAR, SO GOOD4")
-    log.write(ctx, publication_state)
-    # return "SO FAR, SO GOOD4 " + publication_state["lastModifiedDateTime"]
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
@@ -624,10 +613,6 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
-    log.write(ctx, "SO FAR, SO GOOD5")
-    log.write(ctx, publication_state)
-#    return "SO FAR, SO GOOD5 "
-
     # Generate DataCite XML
     if "dataCiteXmlPath" not in publication_state:
         try:
@@ -640,10 +625,6 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
-    log.write(ctx, "SO FAR, SO GOOD6")
-    log.write(ctx, publication_state)
-#    return "SO FAR, SO GOOD6 "
-
     # Check if DOI is in use
     if "DOIAvailable" not in publication_state:
         try:
@@ -653,10 +634,6 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
-
-    log.write(ctx, "SO FAR, SO GOOD7")
-    log.write(ctx, publication_state)
-#    return "SO FAR, SO GOOD7 "
 
     # Send DataCite XML to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
@@ -669,10 +646,6 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
-
-    log.write(ctx, "SO FAR, SO GOOD8")
-    log.write(ctx, publication_state)
-    # return "SO FAR, SO GOOD8 "
 
     # Create landing page
     if "landingPagePath" not in publication_state:
@@ -687,16 +660,8 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] == "Unrecoverable":
             return publication_state["status"]
 
-    log.write(ctx, "SO FAR, SO GOOD9")
-    log.write(ctx, publication_state)
-    return "SO FAR, SO GOOD9"
-
     # Create Landing page URL
     generate_landing_page_url(ctx, publication_config, publication_state)
-
-    log.write(ctx, "SO FAR, SO GOOD10")
-    log.write(ctx, publication_state)
-    return "SO FAR, SO GOOD10"
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
@@ -756,17 +721,17 @@ def process_publication(ctx, vault_package):
         )
         for row in iter:
             user_name_and_zone = row[0]
-            datamanager = user.user_and_zone(user_name_and_zone)[0]
+            datamanager = user.from_str(ctx, user_name_and_zone)[0]
 
         researcher_key = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
+            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + researcher_key + "'",
             genquery.AS_LIST, ctx
         )
         for row in iter:
             user_name_and_zone = row[0]
-            researcher = user.user_and_zone(user_name_and_zone)[0]
+            researcher = user.from_str(ctx, user_name_and_zone)[0]
 
         doi = publication_state["yodaDOI"]
 
@@ -775,16 +740,17 @@ def process_publication(ctx, vault_package):
         # Send datamanager publication notification.
         # HOe hier error af te vangen???
         mail.mail_new_package_published(ctx, datamanager, sender, title, doi)
-        # Datamanager notification failed: *message
 
         # Send researcher publication notification.
         mail.mail_your_package_published(ctx, researcher, sender, title, doi)
-        # "iiProcessPublication: Researcher notification failed: *message"
     else:
         # The publication was a success
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
-        provenance.log_action("system", vault_package, "publication updated")
+        provenance.log_action(ctx, "system", vault_package, "publication updated")
+
+        return "SO FAR, SO GOOD15"
+
 
         return publication_state["status"]
 
