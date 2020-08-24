@@ -180,9 +180,17 @@ def save_publication_state(ctx, vault_package, publication_state):
     param vault_package        path to the package in the vault
     param publication_state    dict containing all key/values regarding publication
     """
+    org_publication_state = get_publication_state(ctx, vault_package)
+
     for key in publication_state.keys():
-        log.write(ctx, key + " -> " + publication_state[key]) 
-        avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
+        log.write(ctx, key + " -> " + publication_state[key])
+
+        if publication_state[key] == "":
+            if key in org_publication_state:
+                # Delete key / val from the vault_package
+                avu.rm_from_coll(ctx, vault_package, key, org_publication_state[key]):
+        else:
+            avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
 def set_update_publication_state(ctx, vault_package):
@@ -233,6 +241,7 @@ def set_update_publication_state(ctx, vault_package):
     save_publication_state(ctx, vault_package, publication_state)
 
     return ""
+
 
 def get_publication_date(ctx, vault_package):
     """
@@ -790,7 +799,6 @@ def process_depublication(ctx, vault_package):
         publication_state = get_publication_state(ctx, vault_package)
         status = publication_state['status']
     log.write(ctx, status)
-
 
     if status in ["Unrecoverable", "Processing"]:
         return status
