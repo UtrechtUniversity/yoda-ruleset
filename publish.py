@@ -187,8 +187,8 @@ def save_publication_state(ctx, vault_package, publication_state):
 
         if publication_state[key] == "":
             if key in org_publication_state:
-                # Delete key / val from the vault_package
-                avu.rm_from_coll(ctx, vault_package, key, org_publication_state[key]):
+                # Delete key / val from the vault_package based upon origin data
+                avu.rm_from_coll(ctx, vault_package, key, org_publication_state[key])
         else:
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
