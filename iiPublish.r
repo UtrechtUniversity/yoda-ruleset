@@ -15,24 +15,13 @@
 # \param[out] err         return the error to calling function
 #
 iiGenericSecureCopy(*argv, *origin_path, *err) {
-        *publicHost = *publicationConfig.publicHost;
-        *landingPagePath = *publicationState.landingPagePath;
-        *yodaInstance = *publicationConfig.yodaInstance;
-        *yodaPrefix = *publicationConfig.yodaPrefix;
-        *randomId =  *publicationState.randomId;
-        *publicPath = "*yodaInstance/*yodaPrefix/*randomId.html";
-        *argv = "*publicHost inbox /var/www/landingpages/*publicPath";
-
-        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *landingPagePath, 1, *cmdExecOut));
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_path, 1, *cmdExecOut));
         if (*err < 0) {
                 msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
                 msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-                writeLine("serverLog", "iiCopyLandingPage2PublicHost: errorcode *err");
+                writeLine("serverLog", "iiGenericSecureCopy: errorcode *err");
                 writeLine("serverLog", *stderr);
                 writeLine("serverLog", *stdout);
-        } else {
-                *publicationState.landingPageUploaded = "yes";
-                #DEBUG writeLine("serverLog", "iiCopyLandingPage2PublicHost: pushed *publicPath");
         }
 }
 
