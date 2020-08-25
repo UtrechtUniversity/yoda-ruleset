@@ -215,7 +215,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
     exts -= set([''])
 
     # Return any ext that is not in the preservable list.
-    return exts - preservable_formats
+    return list(exts - preservable_formats)
 
 
 def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
@@ -671,7 +671,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
             access_name = row[0]
 
         if access_name != "read object":
-            # Grant the research group read-only acccess to the collection to enable browsing through the vault.
+            # Grant the research group read-only access to the collection to enable browsing through the vault.
             try:
                 msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
                 log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
