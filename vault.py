@@ -259,7 +259,7 @@ def rule_vault_write_license(rule_args, callback, rei):
 def vault_write_license(callback, vault_pkg_coll):
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args[0]: Path of a package in the vault
+    :param vault_pkg_coll: Path of a package in the vault
     """
 
 #    vault_pkg_coll = rule_args[0]
@@ -505,10 +505,12 @@ def api_vault_get_publication_terms(ctx):
 
 def copy_folder_to_vault(ctx, folder, target):
     """Copy folder and all its contents to target in vault.
-       The data will reside onder folder '/original' within the vault.
 
+    The data will reside onder folder '/original' within the vault.
+
+    :param folder: Path of a folder in the research space
+    :param target: Path of a package in the vault space
     """
-
     destination = target + '/original'
     origin = folder
 
@@ -575,16 +577,12 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     dest_path = destination
 
     if source_path != origin:
-        # log.write(ctx, 'markIncomplete=FALSE')
         markIncomplete = False
         # rewrite path to copy objects that are located underneath the toplevel collection
         source_length = len(source_path)
         relative_path = source_path[len(origin) + 1: source_length]
-        # log.write(ctx, 'relative path: ' + relative_path)
         dest_path = destination + '/' + relative_path
-        # log.write(ctx, 'dest_path: ' + dest_path)
     else:
-        # log.write(ctx,'markIncomplete=TRUE')
         markIncomplete = True
 
     if item_is_collection:
@@ -622,8 +620,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
 
 
 def set_vault_permissions(ctx, group_name, folder, target):
-    """ Set permissions in the vault as such that data can be copied to the vault """
-
+    """Set permissions in the vault as such that data can be copied to the vault."""
     parts = group_name.split('-')
     base_name = '-'.join(parts[1:])
 
@@ -723,35 +720,28 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
 @rule.make(inputs=range(3), outputs=range(3, 5))
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
-    """ rule interface for processing vault status transition request
+    """Rule interface for processing vault status transition request.
 
     param[in] coll - vault collection to change status for
     param[in] new_coll_status (which is a string datatype here!! no longer enumerate)
     param[in] actor
 
-    return [status, statusInfo] "Success" if went ok
-
+    :return: Dict with status and statusinfo.
     """
-
-    # return 'Success'
-
     vault_process_status_transitions(ctx, coll, new_coll_status, actor)
 
     return 'Success'
 
 
 def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
-    """ Processing vault status transition request
+    """Processing vault status transition request.
 
     param[in] coll
     param[in] new_coll_status
     param[in] actor
 
-    return [status, statusInfo]
-    status = 'Success' if went ok
-
+    :return: Dict with status and statusinfo
     """
-
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "User is no rodsadmin")
@@ -808,9 +798,9 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 
 
 def send_datamanagers_publication_request_mail(ctx, coll):
-    """
-    All involved datamanagers will receive an email notification regarding a publication
-    request by a researcher
+    """All involved datamanagers will receive an email notification regarding a publication request by a researcher.
+
+    :param coll: Vault package with publication request
     """
     # Find group
     coll_parts = coll.split('/')
@@ -852,15 +842,13 @@ def send_datamanagers_publication_request_mail(ctx, coll):
 
 
 def vault_request_status_transitions(ctx, coll, new_vault_status):
+    """Request vault status transition action.
+
+    :param coll: Vault package to be changed of status in publication cycle
+    :param new_vault_status: New vault status
+
+    :return: Dict with status and statusinfo
     """
-    Request vault status transition action
-
-    param[in] vault folder to be changed of status in publication cycle
-    param[in] newFolderStatus
-
-    Return [status, statusInfo] - status='' is success
-    """
-
     log.write(ctx, new_vault_status)
 
     # check permissions - rodsadmin only
