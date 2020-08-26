@@ -51,11 +51,10 @@ iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *pu
 
 
 def generate_combi_json(ctx, publication_config, publication_state):
-    """
-    Join system metadata with the user metadata in yoda-metadata.json.
+    """Join system metadata with the user metadata in yoda-metadata.json.
 
-    publication_config      Configuration is passed as key-value-pairs throughout publication process
-    publication_state       The state of the publication process is also kept in a key-value-pairs
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
     davrodsAnonymousVHost = publication_config["davrodsAnonymousVHost"]
@@ -89,13 +88,11 @@ def generate_combi_json(ctx, publication_config, publication_state):
 
 
 def generate_system_json(ctx, publication_config, publication_state):
-    """
-    Overwrite combi metadata json with system-only metadata.
+    """Overwrite combi metadata json with system-only metadata.
 
-    publication_config  Configuration is passed as key-value-pairs throughout publication process
-    publication_state   The state of the publication process is also kept in a key-value-pairs
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
-
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
 
     vaultPackage = publication_state["vaultPackage"]
@@ -117,12 +114,11 @@ def generate_system_json(ctx, publication_config, publication_state):
 
 
 def get_publication_state(ctx, vault_package):
-    """
-        The publication state is kept as metadata on the vaultPackage.
+    """The publication state is kept as metadata on the vault package.
 
-        vault_package               path to the package in the vault
+    :param vault_package: Path to the package in the vault
 
-        returns publication_state   key-value-pair containing the state
+    :returns: Dict with state of the publication process
     """
     publication_state = {
         "status": "Unknown",
@@ -130,13 +126,12 @@ def get_publication_state(ctx, vault_package):
     }
 
     publ_metadata = get_collection_metadata(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_')
-    log.write(ctx, publ_metadata)
 
-    # take over all actual values as saved earlier
+    # Take over all actual values as saved earlier.
     for key in publ_metadata.keys():
         publication_state[key] = publ_metadata[key]
 
-    # Handle access restriction
+    # Handle access restriction.
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "META_COLL_ATTR_NAME like '%Data_Access_Restriction' AND COLL_NAME = '" + vault_package + "'",
@@ -145,7 +140,7 @@ def get_publication_state(ctx, vault_package):
     for row in iter:
         publication_state["accessRestriction"] = row[0]
 
-    # Handle license
+    # Handle license.
     license = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
@@ -175,16 +170,14 @@ def get_publication_state(ctx, vault_package):
 
 def save_publication_state(ctx, vault_package, publication_state):
     """
-    Save the publicationState key-value-pair to AVU's on the vaultPackage.
+    Save the publication state key-value-pairs to AVU's on the vault package.
 
-    param vault_package        path to the package in the vault
-    param publication_state    dict containing all key/values regarding publication
+    :param vault_package:        Path to the package in the vault
+    :param publication_state:    Dict with state of the publication process
     """
     org_publication_state = get_publication_state(ctx, vault_package)
 
     for key in publication_state.keys():
-        log.write(ctx, key + " -> " + publication_state[key])
-
         if publication_state[key] == "":
             if key in org_publication_state:
                 # Delete key / val from the vault_package based upon origin data
@@ -194,10 +187,9 @@ def save_publication_state(ctx, vault_package, publication_state):
 
 
 def set_update_publication_state(ctx, vault_package):
-    """
-    Routine to set publication state of vault package pending to update.
+    """Routine to set publication state of vault package pending to update.
 
-    vaultPackage   path to package in the vault to update
+    :param vault_package: Path to the package in the vault
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -244,12 +236,13 @@ def set_update_publication_state(ctx, vault_package):
 
 
 def get_publication_date(ctx, vault_package):
-    """
-    Determine the time of publication as a datetime with UTC offset.
-    First try action_log. Then icat-time
+    """Determine the time of publication as a datetime with UTC offset.
 
-    param[in] vault_package
-    return publicationdate in iso8601 format
+    First try action_log. Then icat-time.
+
+    :param vault_package: Path to the package in the vault
+
+    :return: Publication date in ISO8601 format
     """
     from datetime import datetime
 
@@ -272,10 +265,11 @@ def get_publication_date(ctx, vault_package):
 
 
 def get_last_modified_datetime(ctx, vault_package):
-    """
-    Determine the time of last modification as a datetime with UTC offset.
-    param[in] vault_package
-    returns last modification datetime in iso8601 format
+    """Determine the time of last modification as a datetime with UTC offset.
+
+    :param vault_package: Path to the package in the vault
+
+    :return: Last modified date in ISO8601 format
     """
     iter = genquery.row_iterator(
         "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
@@ -292,11 +286,10 @@ def get_last_modified_datetime(ctx, vault_package):
 
 
 def generate_preliminary_DOI(ctx, publication_config, publication_state):
-    """
-    Generate a Preliminary DOI. Preliminary, because we check for collision later.
+    """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
-    param publication_config      Configuration is passed as key-value-pairs throughout publication process
-    param publication_state
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     dataCitePrefix = publication_config["dataCitePrefix"]
     yodaPrefix = publication_config["yodaPrefix"]
@@ -308,7 +301,7 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
 
 
 def generate_datacite_xml(ctx, publication_config, publication_state):
-    """ Generate a dataCite compliant XML based up yoda-metadata.json """
+    """Generate a DataCite compliant XML based up yoda-metadata.json."""
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
@@ -327,17 +320,15 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
 
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
-    """ Upload dataCite XML to dataCite. This will register the DOI, without minting it.
+    """Upload DataCite XML to DataCite. This will register the DOI, without minting it.
 
-    \param[in] publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-    \param[in,out] publicationState   The state of the publication process is also kept in a key-value-pairs
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
-
     datacite_xml_path = publication_state["dataCiteXmlPath"]
     # len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
 
     datacite_xml = data_object.read(ctx, datacite_xml_path)
-    log.write(ctx, datacite_xml)
 
     httpCode = datacite.register_doi_metadata(ctx, publication_state["yodaDOI"], datacite_xml)
 
@@ -353,8 +344,7 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 
 
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
-    """ Remove metadata XML from DataCite. """
-
+    """Remove metadata XML from DataCite."""
     yodaDOI = publication_state["yodaDOI"]
 
     httpCode = datacite.delete_doi_metadata(ctx, yodaDOI)
@@ -375,11 +365,10 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 
 
 def mint_doi(ctx, publication_config, publication_state):
-    """
-    Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
+    """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
-    publication_config      Configuration is passed as key-value-pairs throughout publication process
-    publication_state       The state of the publication process is also kept in a key-value-pairs
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
     landingPageUrl = publication_state["landingPageUrl"]
@@ -401,13 +390,12 @@ def mint_doi(ctx, publication_config, publication_state):
 
 
 def generate_landing_page_url(ctx, publication_config, publication_state):
-    """
-    Generate a URL for the landing page.
+    """Generate a URL for the landing page.
 
-    param[in] publication_config      Configuration is passed as key-value-pairs throughout publication process
-    param[in,out] publication_state   The state of the publication process is also kept in a key-value-pairs
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
 
-    returns landing page url
+    :return: Landing page URL
     """
     vaultPackage = publication_state["vaultPackage"]
     yodaDOI = publication_state["yodaDOI"]
@@ -422,11 +410,11 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
 
 
 def generate_landing_page(ctx, publication_config, publication_state, publish):
-    """
-    Generate a dataCite compliant XML based up yoda-metadata.json
-    publication_config      Configuration is passed as key-value-pairs throughout publication process
-    publication_state       The state of the publication process is passed around as key-value-pairs
-    publish                 publication or depublication
+    """Generate a dataCite compliant XML based up yoda-metadata.json.
+
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
+    :param publish:            Publication or depublication
     """
     combiJsonPath = publication_state["combiJsonPath"]
     randomId = publication_state["randomId"]
@@ -440,10 +428,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     else:
         template_name = 'emptylandingpage.html.j2'
 
-    # landing_page_html = rule_json_landing_page_create_json_landing_page(user.zone(ctx), template_name, combiJsonPath)
     landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath)
-
-    log.write(ctx, landing_page_html)
 
     data_object.write(ctx, landing_page_path, landing_page_html)
 
@@ -451,10 +436,10 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
 
 
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
-    """
-    Copy the resulting landing page to configured public host
-    publication_config   Current configuration
-    publication_state    Current publication state
+    """Copy the resulting landing page to configured public host.
+
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
     landingPagePath = publication_state["landingPagePath"]
@@ -475,10 +460,10 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
 
 
 def copy_metadata_to_moai(ctx, publication_config, publication_state):
-    """
-    Copy the metadata json file to configured moai
-    publication_config   Current configuration
-    publication_state    Current publication state
+    """Copy the metadata json file to configured MOAI.
+
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
@@ -497,11 +482,10 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
 
 
 def set_access_restrictions(ctx, vault_package, publication_state):
-    """
-    Set access restriction for vault package.
+    """Set access restriction for vault package.
 
-    vaultPackage       Path to the package in the vault
-    publicationState   The state of the publication process is also kept in a key-value-pairs
+    :param vault_package:      Path to the package in the vault
+    :param publication_state:  Dict with state of the publication process
     """
     access_restriction = publication_state["accessRestriction"]
     access_level = "null"
@@ -522,11 +506,10 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
 
 def check_doi_availability(ctx, publication_config, publication_state):
-    """
-    Request DOI to check on availibity. We want a 404 as return code.
+    """Request DOI to check on availibity. We want a 404 as return code.
 
-    publicationConfig      Configuration is passed as key-value-pairs throughout publication process
-    publicationState       The state of the publication process is also kept in a key-value-pair
+    :param publication_config: Dict with publication cnfiguration
+    :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
 
@@ -545,21 +528,20 @@ def check_doi_availability(ctx, publication_config, publication_state):
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_publication(ctx, vault_package):
-    """ rule interface for processing vault status transition request
+    """Rule interface for processing vault status transition request.
 
-    param[in]  vault package
+    :param vault_package: Path to the package in the vault
 
-    return [status] "OK" if went ok
-
+    :return: "OK" if all went ok
     """
     return process_publication(ctx, vault_package)
 
 
 def process_publication(ctx, vault_package):
-    """ Handling of publication of vault_package """
+    """Handling of publication of vault_package."""
     publication_state = {}
 
-    log.write(ctx, "PUBLICATION OF " + vault_package)
+    log.write(ctx, "process_publication: Process vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -757,12 +739,11 @@ def process_publication(ctx, vault_package):
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_depublication(ctx, vault_package):
-    """ rule interface for processing depublication of a vault_package
+    """Rule interface for processing depublication of a vault package.
 
-    param[in]  vault package
+    :param vault_package: Path to the package in the vault
 
-    return [status] "OK" if went ok
-
+    :return: "OK" if all went ok
     """
     return process_depublication(ctx, vault_package)
 
@@ -792,7 +773,6 @@ def process_depublication(ctx, vault_package):
         set_update_publication_state(ctx, vault_package)
         publication_state = get_publication_state(ctx, vault_package)
         status = publication_state['status']
-    log.write(ctx, status)
 
     if status in ["Unrecoverable", "Processing"]:
         return status
@@ -875,19 +855,17 @@ def process_depublication(ctx, vault_package):
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_republication(ctx, vault_package):
-    """ rule interface for processing republication of a vault package
+    """Rule interface for processing republication of a vault package.
 
-    param[in]  vault package
+    :param vault_package: Path to the package in the vault
 
-    return status "OK" if went ok
-
+    :return: "OK" if all went ok
     """
     return process_republication(ctx, vault_package)
 
 
 def process_republication(ctx, vault_package):
-    """ Routine to process a republication with sanity checks at every step. """
-
+    """Routine to process a republication with sanity checks at every step."""
     publication_state = {}
 
     # check permissions - rodsadmin only
@@ -1007,10 +985,9 @@ def process_republication(ctx, vault_package):
 
 
 def get_collection_metadata(ctx, coll, prefix):
-    """
-    return a dict with all requested (prefixed) attributes and strip off prefix for the key names.
-    example key: org_publication_lastModifiedDateTime
+    """Retrieve all collection metadata.
 
+    :return: Dict with all requested (prefixed) attributes and strip off prefix for the key names
     """
     coll_metadata = {}
     iter = genquery.row_iterator(
@@ -1020,7 +997,6 @@ def get_collection_metadata(ctx, coll, prefix):
     )
 
     for row in iter:
-        log.write(ctx, row[0][len(prefix):] + "=>" + row[1])
         coll_metadata[row[0][len(prefix):]] = row[1]
 
     return coll_metadata

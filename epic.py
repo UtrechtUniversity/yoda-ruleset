@@ -22,9 +22,9 @@ rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
 
 
 def register_epic_pid(ctx, target):
-    """create and try to register an EPIC PID.
+    """Create and try to register an EPIC PID.
 
-    :param target: Target to register EPIC PID on.
+    :param target: Target to register EPIC PID on
 
     :return: Dict with url, PID and http status.
     """
@@ -45,6 +45,11 @@ def register_epic_pid(ctx, target):
 
 
 def save_epic_pid(ctx, target, url, pid):
-    """Save persistent EPIC ID."""
+    """Save persistent EPIC ID.
+
+    :param target: Target to register EPIC PID on
+    :param url:    URL of EPIC PID
+    :param pid:    PID of EPIC PID
+    """
     avu.set_on_coll(ctx, target, constants.UUORGMETADATAPREFIX + "epic_url", url)
     avu.set_on_coll(ctx, target, constants.UUORGMETADATAPREFIX + "epic_pid", pid)
