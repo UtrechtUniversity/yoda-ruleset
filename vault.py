@@ -39,11 +39,6 @@ def api_vault_submit(ctx, coll):
 
     :param coll: Collection of data package to submit
     """
-
-#    res = ctx.iiVaultSubmit(coll, '', '')
-#    if res['arguments'][1] != 'Success':
-#        return api.Error(*res['arguments'][1:])
-
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
 
     if ret[0] == '':
@@ -53,10 +48,6 @@ def api_vault_submit(ctx, coll):
     else:
         return api.Error(ret[0], ret[1])
 
-    ctx.iiAdminVaultActions()
-
-    return res['arguments'][1]
-
 
 @api.make()
 def api_vault_approve(ctx, coll):
@@ -64,9 +55,14 @@ def api_vault_approve(ctx, coll):
 
     :param coll: Collection of data package to approve
     """
-    res = ctx.iiVaultApprove(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
@@ -75,9 +71,14 @@ def api_vault_cancel(ctx, coll):
 
     :param coll: Collection of data package to cancel submit
     """
-    res = ctx.iiVaultCancel(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
@@ -86,9 +87,14 @@ def api_vault_depublish(ctx, coll):
 
     :param coll: Collection of data package to depublish
     """
-    res = ctx.iiVaultDepublish(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
@@ -97,9 +103,14 @@ def api_vault_republish(ctx, coll):
 
     :param coll: Collection of data package to republish
     """
-    res = ctx.iiVaultRepublish(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
