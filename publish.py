@@ -201,7 +201,6 @@ def set_update_publication_state(ctx, vault_package):
     if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
 
-    # HDR - wordt hier helemaal niet gebruikt
     # get publication configuration
     config = publication.get_publication_config(ctx)
 
@@ -326,7 +325,6 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
     :param publication_state:  Dict with state of the publication process
     """
     datacite_xml_path = publication_state["dataCiteXmlPath"]
-    # len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
 
     datacite_xml = data_object.read(ctx, datacite_xml_path)
 
@@ -848,7 +846,6 @@ def process_depublication(ctx, vault_package):
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
-    # rule_provenance_log_action("system", *vaultPackage, "publication updated") ?????
 
     return publication_state["status"]
 
