@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 from util import *
-import epic
+import publication
 import datacite
 import json_datacite41
 import json_landing_page
@@ -201,9 +201,8 @@ def set_update_publication_state(ctx, vault_package):
     if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
 
-    # HDR - wordt hier helemaal niet gebruikt
     # get publication configuration
-    config = epic.get_publication_config(ctx)
+    config = publication.get_publication_config(ctx)
 
     publication_state = get_publication_state(ctx, vault_package)
     if publication_state["status"] != "OK":
@@ -326,7 +325,6 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
     :param publication_state:  Dict with state of the publication process
     """
     datacite_xml_path = publication_state["dataCiteXmlPath"]
-    # len = int(publication_state["dataCiteXmlLen"]) # HDR - deze is niet meer nodig ??
 
     datacite_xml = data_object.read(ctx, datacite_xml_path)
 
@@ -555,14 +553,14 @@ def process_publication(ctx, vault_package):
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
     # get publication configuration
-    publication_config = epic.get_publication_config(ctx)
+    publication_config = publication.get_publication_config(ctx)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
     status = publication_state['status']
 
     # Publication status check and handling
-    if status in ["Unrecoverable"]:  # , "Processing"]: DEZE MOET ER WEER BIJ HDR!!!!
+    if status in ["Unrecoverable", "Processing"]:
         return "publication status: " + status
     elif status in ["Unknown", "Retry"]:
         status = "Processing"
@@ -734,7 +732,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-        return publication_state["status"]
+    return publication_state["status"]
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
@@ -762,7 +760,7 @@ def process_depublication(ctx, vault_package):
         return "InvalidPackageStatusForPublication" + ": " + vault_status
 
     # get publication configuration
-    publication_config = epic.get_publication_config(ctx)
+    publication_config = publication.get_publication_config(ctx)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
@@ -848,7 +846,6 @@ def process_depublication(ctx, vault_package):
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
-    # rule_provenance_log_action("system", *vaultPackage, "publication updated") ?????
 
     return publication_state["status"]
 
@@ -878,7 +875,7 @@ def process_republication(ctx, vault_package):
     if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "InvalidPackageStatusForRePublication" + ": " + vault_status
 
-    publication_config = epic.get_publication_config(ctx)
+    publication_config = publication.get_publication_config(ctx)
 
     # get state of all related to the publication
     publication_state = get_publication_state(ctx, vault_package)
