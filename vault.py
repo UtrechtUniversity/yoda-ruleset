@@ -237,22 +237,13 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     vault_package = rule_args[0]
     vault_copy_original_metadata_to_vault(callback, vault_package)
 
-#    original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
-#
-#    # Copy original metadata JSON.
-#    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
-#    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
-
 
 def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
     original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
+    copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
-    # ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
-
     ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
-
     # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
@@ -272,9 +263,6 @@ def vault_write_license(callback, vault_pkg_coll):
 
     :param vault_pkg_coll: Path of a package in the vault
     """
-
-#    vault_pkg_coll = rule_args[0]
-    # zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
     zone = user.zone(callback)
 
     # Retrieve license.
@@ -817,14 +805,16 @@ def send_datamanagers_publication_request_mail(ctx, coll):
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
     group_parts = vault_group_name.split('-')
-    # create the research equivalent in order to get the category
+
+    # Create the research equivalent in order to get the category.
     group_name = 'research-' + '-'.join(group_parts[1:])
     log.write(ctx, group_name)
-    # Find category
+
+    # Find category.
     category = group.get_category(ctx, group_name)
     log.write(ctx, category)
 
-    # Get the submitter
+    # Get the submitter.
     submitter = 'Unknown'
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",

@@ -20,36 +20,6 @@ __all__ = ['rule_process_publication',
            'rule_process_republication']
 
 
-"""
-This is part of the transformation process. Perhaps in another script????
-Used in published_xml_to_json.py -> iiCheckPublishedMetadataXmlForTransformationToJsonBatch()
-
-# \brief Use secure copy to push publised json data object, that arose after transformation from xml->json, to MOAI area.
-#
-# \param[in] metadata_json     json metadata data object name to be copied to
-# \param[in] origin_publication_path
-# \param[in] publicHost
-# \param[in] yodaInstance
-# \param[in] yodaPrefix
-#
-iiCopyTransformedPublicationToMOAI(*metadata_json, *origin_publication_path, *publicHost, *yodaInstance, *yodaPrefix) {
-        *argv = "*publicHost inbox /var/www/moai/metadata/*yodaInstance/*yodaPrefix/*metadata_json";
-        *origin_json = '*origin_publication_path/*metadata_json';
-        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_json, 1, *cmdExecOut));
-        if (*err < 0) {
-                msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
-                msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
-                writeLine("serverLog", "iiCopyMetadataToMoai: errorcode *err");
-                writeLine("serverLog", *stderr);
-                writeLine("serverLog", *stdout);
-        } else {
-                #*publicationState.oaiUploaded = "yes";
-                #DEBUG writeLine("serverLog", "iiCopyTransformedPublicationToMOAI: pushed *");
-        }
-}
-"""
-
-
 def generate_combi_json(ctx, publication_config, publication_state):
     """Join system metadata with the user metadata in yoda-metadata.json.
 
@@ -169,8 +139,7 @@ def get_publication_state(ctx, vault_package):
 
 
 def save_publication_state(ctx, vault_package, publication_state):
-    """
-    Save the publication state key-value-pairs to AVU's on the vault package.
+    """Save the publication state key-value-pairs to AVU's on the vault package.
 
     :param vault_package:        Path to the package in the vault
     :param publication_state:    Dict with state of the publication process
@@ -731,6 +700,7 @@ def process_publication(ctx, vault_package):
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
+        log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
 
     return publication_state["status"]
 
@@ -748,6 +718,8 @@ def rule_process_depublication(ctx, vault_package):
 
 def process_depublication(ctx, vault_package):
     status = "Unknown"
+
+    log.write(ctx, "process_depublication: Process vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -846,6 +818,7 @@ def process_depublication(ctx, vault_package):
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
+    log.write(ctx, "process_depublication: All steps for depublication completed <{}>".format(vault_package))
 
     return publication_state["status"]
 
@@ -864,6 +837,8 @@ def rule_process_republication(ctx, vault_package):
 def process_republication(ctx, vault_package):
     """Routine to process a republication with sanity checks at every step."""
     publication_state = {}
+
+    log.write(ctx, "process_republication: Process vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -977,6 +952,7 @@ def process_republication(ctx, vault_package):
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
+    log.write(ctx, "process_republication: All steps for republication completed <{}>".format(vault_package))
 
     return publication_state["status"]
 
