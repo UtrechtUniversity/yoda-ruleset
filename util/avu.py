@@ -32,6 +32,13 @@ def of_data(ctx, path):
                                      "COLL_NAME = '{}', DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
+def of_group(ctx, group):
+    """Get (a,v,u) triplets for a given group."""
+    return itertools.imap(lambda x: Avu(*x),
+                          Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                     "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+
+
 def set_on_coll(ctx, coll, a, v):
     """Set key/value metadata on a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
