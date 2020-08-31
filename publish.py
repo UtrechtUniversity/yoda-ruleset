@@ -218,7 +218,7 @@ def get_publication_date(ctx, vault_package):
         # row contains json encoded [str(int(time.time())), action, actor]
         log_item_list = jsonutil.parse(row[1])
         if log_item_list[1] == "published":
-            publication_timestamp = datetime.datetime.fromtimestamp(int(log_item_list[0]))
+            publication_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
 
             # ISO8601-fy
             return publication_timestamp.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
