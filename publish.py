@@ -81,6 +81,8 @@ def generate_system_json(ctx, publication_config, publication_state):
     }
 
     data_object.write(ctx, system_json_path, jsonutil.dump(system_json_data))
+    publication_state["combiJsonPath"] = system_json_path
+
 
 
 def get_publication_state(ctx, vault_package):
@@ -144,17 +146,9 @@ def save_publication_state(ctx, vault_package, publication_state):
     :param vault_package:        Path to the package in the vault
     :param publication_state:    Dict with state of the publication process
     """
-    org_publication_state = get_publication_state(ctx, vault_package)
-
     for key in publication_state.keys():
         if publication_state[key] == "":
-            if key in org_publication_state:
-                # Delete key / val from the vault_package based upon origin data
-                try:
-                    avu.rm_from_coll(ctx, vault_package, key, org_publication_state[key])
-                except Exception:
-                    # Catch -819000 error, this happens if metadata was already removed.
-                    pass
+            ret_val = ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, "%", "%")
         else:
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 

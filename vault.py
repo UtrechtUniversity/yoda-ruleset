@@ -254,16 +254,15 @@ def rule_vault_write_license(rule_args, callback, rei):
     """
 
     vault_pkg_coll = rule_args[0]
-    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
-    vault_write_license(vault_pkg_coll)
+    vault_write_license(callback, vault_pkg_coll)
 
 
-def vault_write_license(callback, vault_pkg_coll):
+def vault_write_license(ctx, vault_pkg_coll):
     """Write the license as a text file into the root of the vault package.
 
     :param vault_pkg_coll: Path of a package in the vault
     """
-    zone = user.zone(callback)
+    zone = user.zone(ctx)
 
     # Retrieve license.
     license = ""
@@ -273,48 +272,48 @@ def vault_write_license(callback, vault_pkg_coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_UNITS LIKE '{}'".format(vault_pkg_coll, license_key, license_unit),
-        genquery.AS_LIST, callback)
+        genquery.AS_LIST, ctx)
 
     for row in iter:
         license = row[0]
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(ctx, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
-        if data_object.exists(callback, license_file):
-            data_object.remove(callback, license_file)
+        if data_object.exists(ctx, license_file):
+            data_object.remove(ctx, license_file)
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.
         license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
-        if data_object.exists(callback, license_txt):
+        if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            data_object.copy(callback, license_txt, license_file)
+            data_object.copy(ctx, license_txt, license_file)
 
             # Fix ACLs.
             try:
-                callback.iiCopyACLsFromParent(license_file, 'default')
+                ctx.iiCopyACLsFromParent(license_file, 'default')
             except Exception as e:
-                log.write(callback, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "rule_vault_write_license: License text not available for <{}>".format(license))
+            log.write(ctx, "rule_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
-        if data_object.exists(callback, license_uri_file):
+        if data_object.exists(ctx, license_uri_file):
             # Retrieve license URI.
-            license_uri = data_object.read(callback, license_uri_file)
+            license_uri = data_object.read(ctx, license_uri_file)
             license_uri = license_uri.strip()
             license_uri = license_uri.strip('\"')
 
             # Set license URI.
-            avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
+            avu.set_on_coll(ctx, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
-            log.write(callback, "rule_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(ctx, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
@@ -625,14 +624,11 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
     parts = folder.split('/')
     datapackage_name = parts[-1]
-
     vault_group_name = constants.IIVAULTPREFIX + base_name
-    log.write(ctx, 'vault_group_name: ' + vault_group_name)
 
     # Check if noinherit is set
     zone = user.zone(ctx)
     vault_path = "/" + zone + "/home/" + vault_group_name
-    log.write(ctx, 'vault path: ' + vault_path)
 
     inherit = "0"
     iter = genquery.row_iterator(
@@ -643,11 +639,10 @@ def set_vault_permissions(ctx, group_name, folder, target):
     for row in iter:
         # COLL_INHERITANCE can be empty which is interpreted as noinherit
         inherit = row[0]
-    log.write(ctx, 'inherit = ' + inherit + ' on ' + vault_path)
 
     if inherit == "1":
         msi.set_acl(ctx, "recursive", "admin:noinherit", "", vault_path)
-        log.write(ctx, "No inherit set on " + vault_path)
+
         # Check if research group has read-only access
         iter = genquery.row_iterator(
             "USER_ID",
@@ -692,29 +687,19 @@ def set_vault_permissions(ctx, group_name, folder, target):
     for row in iter:
         vault_group_access_name = row[0]
 
-    log.write(ctx, 'vault_group_access_name: ' + vault_group_access_name)
-
     # Ensure vault-groupName has ownership on vault package
     if vault_group_access_name != "own":
-        log.write(ctx, 'before acl recursive admin:own')
         msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target)
-        log.write(ctx, 'before acl recursive admin:own')
 
     # Grant datamanager group read access to vault package.
     category = group.get_category(ctx, group_name)
     datamanager_group_name = "datamanager-" + category
 
-    log.write(ctx, 'datamanager group name' + datamanager_group_name)
-
     if group.exists(ctx, datamanager_group_name):
-        log.write(ctx, 'before acl recursive admin:read')
         msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
-        log.write(ctx, 'after acl recursive admin:read')
 
     # Grant research group read access to vault package.
-    log.write(ctx, 'before acl recursive admin:read')
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
-    log.write(ctx, 'after acl recursive admin:read')
 
 
 @rule.make(inputs=range(3), outputs=range(3, 5))
@@ -754,10 +739,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     # Set new status
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
-        log.write(ctx, 'Set New vault coll status:')
-        log.write(ctx, new_coll_status)
         if new_coll_status == str(constants.vault_package_state.SUBMITTED_FOR_PUBLICATION):
-            log.write(ctx, 'SEND EMAIL TO DATAMANAGERS')
             send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
     except msi.Error as e:
@@ -808,11 +790,9 @@ def send_datamanagers_publication_request_mail(ctx, coll):
 
     # Create the research equivalent in order to get the category.
     group_name = 'research-' + '-'.join(group_parts[1:])
-    log.write(ctx, group_name)
 
     # Find category.
     category = group.get_category(ctx, group_name)
-    log.write(ctx, category)
 
     # Get the submitter.
     submitter = 'Unknown'
@@ -835,11 +815,8 @@ def send_datamanagers_publication_request_mail(ctx, coll):
 
     for row in iter:
         datamanager = row[0]
-        log.write(ctx, datamanager)
         # coll split off zone / home
         mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
-        log.write(ctx, '/'.join(coll_parts[3:]))
-    log.write(ctx, 'After datamanager loop')
 
 
 def vault_request_status_transitions(ctx, coll, new_vault_status):
@@ -850,8 +827,6 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 
     :return: Dict with status and statusinfo
     """
-    log.write(ctx, new_vault_status)
-
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         if new_vault_status == constants.vault_package_state.PUBLISHED:
@@ -865,38 +840,26 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     # Find group
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
-    log.write(ctx, "vault group name: " + vault_group_name)
 
     group_parts = vault_group_name.split('-')
     # create the research equivalent in order to get the category
     group_name = 'research-' + '-'.join(group_parts[1:])
-    log.write(ctx, 'group name: ' + group_name)
+
     # Find category
     category = group.get_category(ctx, group_name)
-    log.write(ctx, "category: " + category)
-
     zone = user.zone(ctx)
-
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
-    log.write(ctx, "vault_group_name: " + vault_group_name)
 
     # User/actor specific stuff
     actor = user.full_name(ctx)
-    log.write(ctx, "actor: " + actor)
 
     actor_group = folder.collection_group_name(ctx, coll)
-    log.write(ctx, "actor group: " + actor_group)
     if actor_group == '':
         log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
         return ['1', '']
 
-    # is datamanager?
-#    category = group.get_category(ctx, group_name)
-#    log.write(ctx, "category: " + category)
-
     is_datamanager = meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']
-    log.write(ctx, "is dm? " + str(is_datamanager))
 
     actor_group_path = '/' + zone + '/home/'
 
@@ -908,8 +871,6 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
             actor_group_path = '/' + zone + '/home/' + actor_group
     else:
         actor_group_path = '/' + zone + '/home/datamanager-' + category
-
-    log.write(ctx, "actor group path: " + actor_group_path)
 
 #        if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
 #                *actorGroupPath = "/*rodsZone/home/*actorGroup";
@@ -930,8 +891,6 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     for row in iter:
         coll_id = row[0]
 
-    log.write(ctx, "coll_id: " + coll_id)
-
     # Check if vault package is currently pending for status transition.
     # Except for status transition to PUBLISHED/DEPUBLISHED,
     # because it is requested by the system before previous pending
@@ -950,22 +909,9 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     # Check if status transition is allowed.
     current_vault_status = get_coll_vault_status(ctx, coll).value
 
-    log.write(ctx, 'current vault status:  ' + current_vault_status)
-
     is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_vault_status, new_vault_status)
     if not is_legal:
         return ['PermissionDenied', 'Illegal status transition']
-
-    log.write(ctx, "After IS LEGAL")
-
-    log.write(ctx, new_vault_status)
-    log.write(ctx, type(str(new_vault_status)))
-
-    log.write(ctx, constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id)
-    log.write(ctx, jsonutil.dump([coll, str(new_vault_status), actor]))
-
-    log.write(ctx, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id)
-    log.write(ctx, 'PENDING')
 
     # Add vault action request to actor group.
     avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
@@ -973,7 +919,5 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 
     # Add vault action status to actor group.
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
-
-    log.write(ctx, 'After set avus')
 
     return ['', '']

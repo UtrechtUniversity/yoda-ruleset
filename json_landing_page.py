@@ -29,7 +29,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     :param rodsZone: Zone name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
-    :param receiveLandingPage: output HTML landing page
+
+    :return: Output HTML landing page
     """
 
     # Landing page creation is part of the publication process
@@ -53,8 +54,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
         tm = Template(template)
         landing_page = tm.render(persistent_identifier_datapackage=persistent_identifier_datapackage)
-        rule_args[3] = landing_page
-        return
+        return landing_page
 
     # Gather all metadata.
     title = dictJsonData['Title']
