@@ -84,7 +84,6 @@ def generate_system_json(ctx, publication_config, publication_state):
     publication_state["combiJsonPath"] = system_json_path
 
 
-
 def get_publication_state(ctx, vault_package):
     """The publication state is kept as metadata on the vault package.
 
@@ -147,10 +146,8 @@ def save_publication_state(ctx, vault_package, publication_state):
     :param publication_state:    Dict with state of the publication process
     """
     for key in publication_state.keys():
-        if publication_state[key] == "":
-            ret_val = ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, "%", "%")
-        else:
-            avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
+        ret_val = ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, "%", "%")
+        avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
 
 
 def set_update_publication_state(ctx, vault_package):

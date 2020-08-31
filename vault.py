@@ -14,7 +14,6 @@ import folder
 import irods_types
 import meta
 import meta_form
-import session_vars
 from util import *
 
 __all__ = ['api_vault_submit',
