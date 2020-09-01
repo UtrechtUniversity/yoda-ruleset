@@ -31,8 +31,34 @@ def rule_provenance_log_action(ctx, actor, coll, action):
         log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
 
 
+def log_action(ctx, actor, coll, action):
+    """
+    Function to add action log record to provenance of specific folder.
+
+    :param actor: The actor of the action
+    :param coll: The collection the provenance log is linked to.
+    :param action: The action that is logged.
+    """
+    try:
+        log_item = [str(int(time.time())), action, actor]
+        avu.associate_to_coll(ctx, coll, constants.UUPROVENANCELOG, json.dumps(log_item))
+        log.write(ctx, "rule_provenance_log_action: <{}> has <{}> (<{}>)".format(actor, action, coll))
+    except Exception:
+        log.write(ctx, "rule_provenance_log_action: failed to log action <{}> to provenance".format(action))
+
+
 @rule.make()
 def rule_copy_provenance_log(ctx, source, target):
+    """
+    Copy the provenance log of a collection to another collection.
+
+    :param source: Path of source collection.
+    :param target: Path of target collection.
+    """
+    provenance_copy_log(ctx, source, target)
+
+
+def provenance_copy_log(ctx, source, target):
     """
     Copy the provenance log of a collection to another collection.
 
@@ -99,3 +125,14 @@ def api_provenance_log(ctx, coll):
         output.append([actor, action, date_time])
 
     return output
+
+
+def latest_action_actor(ctx, path):
+    """Return the actor of the latest provenance action.
+
+    :param path: Path of a collection in research or vault space.
+
+    :returns str: Actor of latest provenance action.
+    """
+    provenance_log = get_provenance_log(ctx, path)
+    return provenance_log[-1][2]

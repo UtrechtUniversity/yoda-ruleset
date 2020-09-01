@@ -54,6 +54,7 @@ def api_request(request, data):
 
     # Remove debug info from response body.
     body = response.json()
-    del body["debug_info"]
+    if "debug_info" in body:
+        del body["debug_info"]
 
     return (response.status_code, body)

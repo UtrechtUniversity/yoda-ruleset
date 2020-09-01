@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-
 import xml.etree.cElementTree as ET
+
+from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
            'rule_json_datacite41_create_data_cite_xml_on_json']
@@ -49,6 +49,50 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
     :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
                           other are system info parameters
     """
+    json_datacite41_create_combi_metadata_json(ctx,
+                                               metadataJsonPath,
+                                               combiJsonPath,
+                                               lastModifiedDateTime,
+                                               yodaDOI,
+                                               publicationDate,
+                                               openAccessLink,
+                                               licenseUri)
+    """
+    # get the data in the designated YoDa metadata.json and retrieve it as dict
+    metaDict = jsonutil.read(ctx, metadataJsonPath)
+
+    # add System info
+    metaDict['System'] = {
+        'Last_Modified_Date': lastModifiedDateTime,
+        'Persistent_Identifier_Datapackage': {
+            'Identifier_Scheme': 'DOI',
+            'Identifier': yodaDOI
+        },
+        'Publication_Date': publicationDate,
+        'Open_access_Link': openAccessLink,
+        'License_URI': licenseUri
+    }
+
+    # Write combined data to file at location combiJsonPath
+    jsonutil.write(ctx, combiJsonPath, metaDict)
+
+    """
+
+
+def json_datacite41_create_combi_metadata_json(ctx,
+                                               metadataJsonPath,
+                                               combiJsonPath,
+                                               lastModifiedDateTime,
+                                               yodaDOI,
+                                               publicationDate,
+                                               openAccessLink,
+                                               licenseUri):
+    """Frontend function to add system info to yoda-metadata in json format.
+
+    :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                          other are system info parameters
+    """
 
     # get the data in the designated YoDa metadata.json and retrieve it as dict
     metaDict = jsonutil.read(ctx, metadataJsonPath)
@@ -71,6 +115,10 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
+    return json_datacite41_create_data_cite_xml_on_json(ctx, combi_path)
+
+
+def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.
 
     :param combi_path: path to the combined Json file that holds both User and System metadata

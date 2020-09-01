@@ -46,22 +46,6 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
         }
 }
 
-# \brief Actions taken before vault status transition
-#
-# \param[in] folder            Path of vault folder
-# \param[in] currentStatus     Current status of vault folder
-# \param[in] newStatus         New status of vault folder
-#
-iiPreVaultStatusTransition(*folder, *currentVaultStatus, *newVaultStatus) {
-	on (*currentVaultStatus == SUBMITTED_FOR_PUBLICATION && *newVaultStatus == UNPUBLISHED) {
-		*actor = uuClientFullName;
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "canceled publication");
-	}
-	on (true) {
-		nop;
-	}
-}
 
 # \brief Request vault status transition action
 #
@@ -240,50 +224,6 @@ iiVaultProcessStatusTransition(*folder, *newFolderStatus, *actor, *status, *stat
 	}
 }
 
-# \brief Processing after vault status is changed
-#
-# \param[in] folder         Folder in vault for state transition
-# \param[in] actor          Actor of the status transition
-# \param[in] newVaultStatus New vault status
-#
-iiPostVaultStatusTransition(*folder, *actor, *newVaultStatus) {
-	on (*newVaultStatus == SUBMITTED_FOR_PUBLICATION) {
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "submitted for publication");
-
-		# Store actor of publication submission.
-		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_submission_actor", *actionActor);
-		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-	}
-	on (*newVaultStatus == APPROVED_FOR_PUBLICATION) {
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "approved for publication");
-
-		# Store actor of publication approval.
-		msiString2KeyValPair("", *kvp);
-		msiAddKeyVal(*kvp, UUORGMETADATAPREFIX ++ "publication_approval_actor", *actionActor);
-		msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-	}
-	on (*newVaultStatus == PUBLISHED) {
-		rule_provenance_log_action("system", *folder, "published");
-	}
-	on (*newVaultStatus == PENDING_DEPUBLICATION) {
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "requested depublication");
-	}
-	on (*newVaultStatus == DEPUBLISHED) {
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action("system", *folder, "depublished");
-	}
-	on (*newVaultStatus == PENDING_REPUBLICATION) {
-	        iiVaultGetActionActor(*folder, *actor, *actionActor);
-		rule_provenance_log_action(*actionActor, *folder, "requested republication");
-	}
-	on (true) {
-		nop;
-	}
-}
 
 # \brief Submit a folder in the vault for publication
 #

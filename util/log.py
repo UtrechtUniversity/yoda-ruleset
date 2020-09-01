@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import inspect
 
-import user
 import rule
+import user
 from config import config
 
 

@@ -101,6 +101,8 @@ set_acl,         SetACLError        = make('SetACL',        'Could not set ACL')
 get_icat_time,   GetIcatTimeError   = make('GetIcatTime',   'Could not get Icat time')
 get_obj_type,    GetObjTypeError    = make('GetObjType',    'Could not get object type')
 
+register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
+
 string_2_key_val_pair, String2KeyValPairError = \
     make('String2KeyValPair', 'Could not create keyval pair')
 

@@ -4,10 +4,10 @@
 __copyright__ = 'Copyright (c) 20202, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import email
-from email.mime.text import MIMEText
+import re
 import smtplib
+from email.mime.text import MIMEText
 
 from util import *
 
@@ -21,6 +21,7 @@ def send(ctx, to, actor, subject, body):
     The originating address and mail server credentials are taken from the
     ruleset configuration file.
     """
+
     if not config.notifications_enabled:
         log.write(ctx, '[EMAIL] Notifications are disabled')
         return
@@ -103,8 +104,29 @@ def _wrapper(ctx, to, actor, subject, body):
     return '0', ''
 
 
+# @rule.make(inputs=range(4), outputs=range(4, 6))
+def mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, collection):
+    return _wrapper(ctx,
+                    to      = datamanager,
+                    actor   = submitter,
+                    subject = '[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
+                    body    = """
+Dear {},
+{} submitted a datapackage to be accepted for publication.
+
+Datapackage: {}
+
+Best regards,
+Yoda system
+""".format(datamanager, submitter, collection))
+
+
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
+    return mail_new_package_published(ctx, datamanager, actor, title, doi)
+
+
+def mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
                     to      = datamanager,
                     actor   = actor,
@@ -122,6 +144,10 @@ Yoda system
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
+    return mail_your_package_published(ctx, researcher, actor, title, doi)
+
+
+def mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
                     to      = researcher,
                     actor   = actor,

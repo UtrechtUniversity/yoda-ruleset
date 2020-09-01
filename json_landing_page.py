@@ -5,13 +5,14 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
+
 from util import *
 
 __all__ = ['rule_json_landing_page_create_json_landing_page']
 
 
 def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
-    """Get the landing page of published YoDa metadata as a string.
+    """ Get the landing page of published YoDa metadata as a string.
 
     :param rodsZone: Zone name
     :param template_name: Name of landingpage template
@@ -19,6 +20,18 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
     :param receiveLandingPage: output HTML landing page
     """
     rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
+    rule_args[3] = json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath)
+
+
+def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath):
+    """Get the landing page of published YoDa metadata as a string.
+
+    :param rodsZone: Zone name
+    :param template_name: Name of landingpage template
+    :param combiJsonPath: path to Yoda metadata JSON
+
+    :return: Output HTML landing page
+    """
 
     # Landing page creation is part of the publication process
     # Read user & system metadata from corresponding combi JSON file
@@ -41,8 +54,7 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
         persistent_identifier_datapackage = dictJsonData['System']['Persistent_Identifier_Datapackage']
         tm = Template(template)
         landing_page = tm.render(persistent_identifier_datapackage=persistent_identifier_datapackage)
-        rule_args[3] = landing_page
-        return
+        return landing_page
 
     # Gather all metadata.
     title = dictJsonData['Title']
@@ -147,4 +159,4 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
         geolocations=geolocations,
         covered_geolocation_place=covered_geolocation_place)
 
-    rule_args[3] = landing_page
+    return landing_page

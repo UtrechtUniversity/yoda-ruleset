@@ -7,9 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import folder
+import policies_datapackage_status
 import policies_folder_status
 import session_vars
-import vault
 from util import *
 
 
@@ -343,10 +343,11 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
         if not user.is_admin(ctx, actor):
             return policy.fail('No permission to change vault status')
 
-        current = vault.get_coll_vault_status(ctx, obj_name)
+        x = policies_datapackage_status.can_set_datapackage_status_attr(ctx, actor, obj_name, value)
+        if not x:
+            return x
 
-        ctx.iiPreVaultStatusTransition(obj_name, current.value, value)
-        return policy.succeed()
+        return policies_datapackage_status.pre_status_transition(ctx, obj_name, x[0], x[1])
 
     elif obj_type == '-C' and space is pathutil.Space.RESEARCH and unit.startswith(constants.UUUSERMETADATAROOT + '_'):
         # Research package metadata, set when saving the metadata form.
@@ -398,7 +399,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
 
 # This PEP is called after a AVU is added (option = 'add'), set (option =
 # 'set') or removed (option = 'rm') in the research area or the vault. Post
-# conditions defined in iiFolderStatusTransitions.r and iiVaultTransitions.r
+# conditions defined in folder.py and iiVaultTransitions.r
 # are called here.
 @rule.make()
 def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
@@ -406,10 +407,10 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
     if attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.RESEARCH:
         status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
-        ctx.iiPostFolderStatusTransition(obj_name, str(user.user_and_zone(ctx)), status)
+        policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 
     elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
-        ctx.iiPostVaultStatusTransition(obj_name, str(user.user_and_zone(ctx)), value)
+        policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
 
 
 # }}}

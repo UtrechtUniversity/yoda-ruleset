@@ -48,31 +48,6 @@ iiAdminVaultIngest() {
 	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
 }
 
-# \brief iiLogicalPathFromPhysicalPath
-#
-# \param[in]  physicalPath
-# \param[out] logicalPath
-# \param[in]  zone
-#
-iiLogicalPathFromPhysicalPath(*physicalPath, *logicalPath, *zone) {
-	*lst = split(*physicalPath, "/");
-	# find the start of the part of the path that corresponds to the part identical to the logical_path. This starts at /home/
-	uuListIndexOf(*lst, "home", *idx);
-	if (*idx < 0) {
-		writeLine("serverLog","iiLogicalPathFromPhysicalPath: Could not find home in *physicalPath. This means this file came outside a user visible path and thus this rule should not have been invoked") ;
-		fail;
-	}
-	# skip to the part of the path starting from ../home/..
-	for( *el = 0; *el < *idx; *el = *el + 1) {
-		*lst = tl(*lst);
-	}
-	# Prepend with the zone and rejoin to a logical path
-	*lst	= cons(*zone, *lst);
-	uuJoin("/", *lst, *logicalPath);
-	*logicalPath = "/" ++ *logicalPath;
-	#DEBUG writeLine("serverLog", "iiLogicalPathFromPhysicalPath: *physicalPath => *logicalPath");
-}
-
 # \brief iiGetLatestVaultMetadataXml
 #
 # \param[in] vaultPackage

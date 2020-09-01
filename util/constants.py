@@ -12,6 +12,7 @@ from enum import Enum
 
 IIGROUPPREFIX = "research-"
 IIGRPPREFIX = "grp-"
+IIVAULTPREFIX = "vault-"
 
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = '/yoda'
@@ -33,6 +34,9 @@ UUPROVENANCELOG = UUORGMETADATAPREFIX + 'action_log'
 
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
 """iRODS path where all licenses will be stored."""
+
+IIPUBLICATIONCOLLECTION = UUSYSTEMCOLLECTION + '/publication'
+"""iRODS path where publications will be stored. """
 
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
 """iRODS path where the publication terms will be stored."""
@@ -65,6 +69,7 @@ UUORGMETADATAPREFIX = 'org_'
 IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
+IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
@@ -92,6 +97,22 @@ class vault_package_state(Enum):
 
     def __str__(self):
         return self.name
+
+
+# List of valid datapackage transitions (src, dst).
+datapackage_transitions = [(vault_package_state(x),
+                            vault_package_state(y))
+                           for x, y in [('INCOMPLETE',                'UNPUBLISHED'),
+                                        ('UNPUBLISHED',               'INCOMPLETE'),
+                                        ('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
+                                        ('COMPLETE',                  'SUBMITTED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'APPROVED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'UNPUBLISHED'),
+                                        ('APPROVED_FOR_PUBLICATION',  'PUBLISHED'),
+                                        ('PUBLISHED',                 'PENDING_DEPUBLICATION'),
+                                        ('PENDING_DEPUBLICATION',     'DEPUBLISHED'),
+                                        ('DEPUBLISHED',               'PENDING_REPUBLICATION'),
+                                        ('PENDING_REPUBLICATION',     'PUBLISHED')]]
 
 
 class research_package_state(Enum):
