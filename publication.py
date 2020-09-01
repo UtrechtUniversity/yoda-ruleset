@@ -67,7 +67,7 @@ def get_publication_config(ctx):
 def generate_combi_json(ctx, publication_config, publication_state):
     """Join system metadata with the user metadata in yoda-metadata.json.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
@@ -104,7 +104,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
 def generate_system_json(ctx, publication_config, publication_state):
     """Overwrite combi metadata json with system-only metadata.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
@@ -296,7 +296,7 @@ def get_last_modified_datetime(ctx, vault_package):
 def generate_preliminary_DOI(ctx, publication_config, publication_state):
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     dataCitePrefix = publication_config["dataCitePrefix"]
@@ -330,7 +330,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
     """Upload DataCite XML to DataCite. This will register the DOI, without minting it.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     datacite_xml_path = publication_state["dataCiteXmlPath"]
@@ -374,7 +374,7 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 def mint_doi(ctx, publication_config, publication_state):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
@@ -399,7 +399,7 @@ def mint_doi(ctx, publication_config, publication_state):
 def generate_landing_page_url(ctx, publication_config, publication_state):
     """Generate a URL for the landing page.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
 
     :return: Landing page URL
@@ -419,7 +419,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
 def generate_landing_page(ctx, publication_config, publication_state, publish):
     """Generate a dataCite compliant XML based up yoda-metadata.json.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     :param publish:            Publication or depublication
     """
@@ -445,7 +445,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     """Copy the resulting landing page to configured public host.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
@@ -469,7 +469,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
 def copy_metadata_to_moai(ctx, publication_config, publication_state):
     """Copy the metadata json file to configured MOAI.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
@@ -515,7 +515,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 def check_doi_availability(ctx, publication_config, publication_state):
     """Request DOI to check on availibity. We want a 404 as return code.
 
-    :param publication_config: Dict with publication cnfiguration
+    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
@@ -730,7 +730,6 @@ def process_publication(ctx, vault_package):
         sender = user.full_name(ctx)
 
         # Send datamanager publication notification.
-        # HOe hier error af te vangen???
         mail.mail_new_package_published(ctx, datamanager, sender, title, doi)
 
         # Send researcher publication notification.
