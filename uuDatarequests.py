@@ -17,8 +17,8 @@ import session_vars
 
 __all__ = ['api_uuGetDatarequest',
            'api_uuSubmitDatarequest',
-	   'uuIsRequestOwner',
-	   'uuIsReviewer']
+           'uuIsRequestOwner',
+           'uuIsReviewer']
 
 def sendMail(to, subject, body):
     """Send an email using the specified parameters.
