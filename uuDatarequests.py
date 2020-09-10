@@ -218,7 +218,8 @@ def setMetadata(ctx, requestId, key, value):
     ctx.adminDatarequestActions()
 
 
-def submitDatarequest(callback, data, previousRequestId, rei):
+@api.make()
+def api_uuSubmitDatarequest(ctx, data, previousRequestId):
     """Persist a data request to disk.
 
        Arguments:
@@ -249,8 +250,7 @@ def submitDatarequest(callback, data, previousRequestId, rei):
         setMetadata(ctx, requestId, "previous_request_id", previousRequestId)
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    rule_args = [filePath, "-d", "root", data]
-    setJsonToObj(rule_args, callback, rei)
+    avu_json.set_json_to_obj(ctx, filePath, "-d", "root", data)
 
     # Set permissions for certain groups on the subcollection
     try:
@@ -300,8 +300,6 @@ def submitDatarequest(callback, data, previousRequestId, rei):
     for bodMemberEmail in bodMemberEmails:
         if not bodMemberEmail == "rods":
             sendMail(bodMemberEmail, "[bodmember] YOUth data request %s: submitted" % requestId, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
-
-    return {'status': 0, 'statusInfo': "OK"}
 
 
 @api.make()
