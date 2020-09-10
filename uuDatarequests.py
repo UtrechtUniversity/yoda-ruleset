@@ -312,18 +312,19 @@ def api_uuGetDatarequest(ctx, requestId):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        username = user.full_name(ctx)
+        full_name = user.full_name(ctx)
+        name = user.name(ctx)
 
         isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        username,
+                                        full_name,
                                         ctx) == 'true'
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        username,
+                                        full_name,
                                         ctx) == 'true'
         isdmcmember =   groupUserMember("datarequests-research-data-management-committee",
-                                        username,
+                                        full_name,
                                         ctx) == 'true'
-        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
+        isrequestowner = isRequestOwner(ctx, requestId, name)['isRequestOwner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 ctx.writeString("serverLog", "User is not authorized to view this data request.")
