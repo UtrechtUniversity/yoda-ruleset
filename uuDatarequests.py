@@ -47,7 +47,7 @@ def sendMail(to, subject, body):
     s.quit()
 
 
-def getGroupData(callback):
+def getGroupData(ctx):
     """Return groups and related data.
 
        Copied from irods-ruleset-uu/uuGroup.py.
@@ -55,13 +55,13 @@ def getGroupData(callback):
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
-    ret_val = callback.msiMakeGenQuery(
+    ret_val = ctx.msiMakeGenQuery(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
     while True:
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
@@ -92,17 +92,17 @@ def getGroupData(callback):
         # Continue with this query.
         if result.continueInx == 0:
             break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        ret_val = ctx.msiGetMoreRows(query, result, 0)
+    ctx.msiCloseGenQuery(query, result)
 
     # Second query: obtain list of groups with memberships.
-    ret_val = callback.msiMakeGenQuery(
+    ret_val = ctx.msiMakeGenQuery(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
 
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
     while True:
         result = ret_val["arguments"][1]
         for row in range(result.rowCnt):
@@ -134,37 +134,37 @@ def getGroupData(callback):
         # Continue with this query.
         if result.continueInx == 0:
             break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        ret_val = ctx.msiGetMoreRows(query, result, 0)
+    ctx.msiCloseGenQuery(query, result)
 
     return groups.values()
 
 
-def groupUserMember(group, user, callback):
+def groupUserMember(group, user, ctx):
     """Check if a user is a member of the given group.
 
        Arguments:
        group -- Name of group
        user  -- Name of user
     """
-    groups = getGroupData(callback)
+    groups = getGroupData(ctx)
     groups = list(filter(lambda grp: group == grp["name"] and
                          user in grp["members"], groups))
 
     return "true" if len(groups) == 1 else "false"
 
 
-def setStatus(callback, requestId, status):
+def setStatus(ctx, requestId, status):
     """Set the status of a data request
 
        Arguments:
        requestId -- Unique identifier of the data request.
        status    -- The status to which the data request should be set.
     """
-    setMetadata(callback, requestId, "status", status)
+    setMetadata(ctx, requestId, "status", status)
 
 
-def getStatus(callback, requestId):
+def getStatus(ctx, requestId):
     """Get the status of a data request
 
        Arguments:
@@ -182,17 +182,17 @@ def getStatus(callback, requestId):
                              "META_DATA_ATTR_NAME = 'status'") % (collName,
                                                                   fileName),
                             AS_DICT,
-                            callback)
+                            ctx)
         for row in rows:
             requestStatus = row['META_DATA_ATTR_VALUE']
     except Exception as e:
-        callback.writeString("serverLog", "Could not get data request status.")
+        ctx.writeString("serverLog", "Could not get data request status.")
         return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
 
     return requestStatus
 
 
-def setMetadata(callback, requestId, key, value):
+def setMetadata(ctx, requestId, key, value):
     """Set an arbitrary metadata field on a data request
 
        Arguments:
@@ -203,19 +203,19 @@ def setMetadata(callback, requestId, key, value):
 
     # Construct path to the collection of the datarequest
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
     requestColl = ("/" + clientZone + "/home/datarequests-research/" +
                    requestId)
 
     # Add delayed rule to update datarequest status
     responseStatus = ""
     responseStatusInfo = ""
-    callback.requestDatarequestMetadataChange(requestColl, key,
+    ctx.requestDatarequestMetadataChange(requestColl, key,
                                               value, 0, responseStatus,
                                               responseStatusInfo)
 
     # Trigger the processing of delayed rules
-    callback.adminDatarequestActions()
+    ctx.adminDatarequestActions()
 
 
 def submitDatarequest(callback, data, previousRequestId, rei):
@@ -231,22 +231,22 @@ def submitDatarequest(callback, data, previousRequestId, rei):
 
     # Create collection
     try:
-        coll_create(callback, collPath, '1', irods_types.BytesBuf())
+        coll_create(ctx, collPath, '1', irods_types.BytesBuf())
     except UUException as e:
-        callback.writeString("serverLog", "Could not create collection path.")
+        ctx.writeString("serverLog", "Could not create collection path.")
         return {"status": "FailedCreateCollectionPath", "statusInfo": "Could not create collection path."}
 
     # Write data request data to disk
     try:
         filePath = collPath + '/' + 'datarequest.json'
-        write_data_object(callback, filePath, data)
+        write_data_object(ctx, filePath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write data request to disk.")
+        ctx.writeString("serverLog", "Could not write data request to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data request to disk."}
 
     # Set the previous request ID as metadata if defined
     if previousRequestId:
-        setMetadata(callback, requestId, "previous_request_id", previousRequestId)
+        setMetadata(ctx, requestId, "previous_request_id", previousRequestId)
 
     # Set the proposal fields as AVUs on the proposal JSON file
     rule_args = [filePath, "-d", "root", data]
@@ -254,15 +254,15 @@ def submitDatarequest(callback, data, previousRequestId, rei):
 
     # Set permissions for certain groups on the subcollection
     try:
-        set_acl(callback, "recursive", "write", "datarequests-research-datamanagers", collPath)
-        set_acl(callback, "recursive", "write", "datarequests-research-data-management-committee", collPath)
-        set_acl(callback, "recursive", "write", "datarequests-research-board-of-directors", collPath)
+        set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", collPath)
+        set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", collPath)
+        set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", collPath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not set permissions on subcollection.")
+        ctx.writeString("serverLog", "Could not set permissions on subcollection.")
         return {"status": "PermissionsError", "statusInfo": "Could not set permissions on subcollection."}
 
     # Set the status metadata field to "submitted"
-    setStatus(callback, requestId, "submitted")
+    setStatus(ctx, requestId, "submitted")
 
     # Get parameters needed for sending emails
     researcherName = ""
@@ -277,7 +277,7 @@ def submitDatarequest(callback, data, previousRequestId, rei):
                          "DATA_NAME = '%s'") % (collPath,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -291,7 +291,7 @@ def submitDatarequest(callback, data, previousRequestId, rei):
             researcherDepartment = value
         elif name == "title":
             proposalTitle = value
-    bodMemberEmails = json.loads(callback.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+    bodMemberEmails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
                                                                   bodMemberEmails)['arguments'][1])
 
     # Send email to researcher and data manager notifying them of the
@@ -369,7 +369,7 @@ def api_uuGetDatarequest(ctx, requestId):
             'statusInfo': "OK"}
 
 
-def submitPreliminaryReview(callback, data, requestId, rei):
+def submitPreliminaryReview(ctx, data, requestId, rei):
     """Persist a preliminary review to disk.
 
        Arguments:
@@ -387,10 +387,10 @@ def submitPreliminaryReview(callback, data, requestId, rei):
                                         ['arguments'][0],
                                         callback)
         if not isBoardMember == 'true':
-            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
             return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -404,18 +404,18 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     # Write preliminary review data to disk
     try:
         preliminaryReviewPath = collPath + '/preliminary_review_' + clientName + '.json'
-        write_data_object(callback, preliminaryReviewPath, data)
+        write_data_object(ctx, preliminaryReviewPath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write preliminary review data to disk.")
+        ctx.writeString("serverLog", "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
     try:
-        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
-        set_acl(callback, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
-        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", preliminaryReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminaryReviewPath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the preliminary review (accepted/rejected)
@@ -423,13 +423,13 @@ def submitPreliminaryReview(callback, data, requestId, rei):
 
     # Update the status of the data request
     if preliminaryReview == "Accepted for data manager review":
-        setStatus(callback, requestId, "accepted_for_dm_review")
+        setStatus(ctx, requestId, "accepted_for_dm_review")
     elif preliminaryReview == "Rejected":
-        setStatus(callback, requestId, "preliminary_reject")
+        setStatus(ctx, requestId, "preliminary_reject")
     elif preliminaryReview == "Rejected (resubmit)":
-        setStatus(callback, requestId, "preliminary_reject_submit")
+        setStatus(ctx, requestId, "preliminary_reject_submit")
     else:
-        callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get parameters needed for sending emails
@@ -441,7 +441,7 @@ def submitPreliminaryReview(callback, data, requestId, rei):
                          "DATA_NAME = '%s'") % (collPath,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -449,7 +449,7 @@ def submitPreliminaryReview(callback, data, requestId, rei):
             researcherName = value
         elif name == "email":
             researcherEmail = value
-    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
@@ -462,13 +462,13 @@ def submitPreliminaryReview(callback, data, requestId, rei):
     elif preliminaryReview == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0]))
     else:
-        callback.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getPreliminaryReview(callback, requestId):
+def getPreliminaryReview(ctx, requestId):
     """Retrieve a preliminary review.
 
        Arguments:
@@ -489,10 +489,10 @@ def getPreliminaryReview(callback, requestId):
                                         callback) == 'true'
         isreviewer = isReviewer(callback, requestId, username)['isReviewer']
         if not (isboardmember or isdatamanager or isreviewer):
-            callback.writeString("serverLog", "User is not authorized to view this preliminary review.")
+            ctx.writeString("serverLog", "User is not authorized to view this preliminary review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -505,7 +505,7 @@ def getPreliminaryReview(callback, requestId):
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (collName, fileName),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         collName = row['COLL_NAME']
         dataName = row['DATA_NAME']
@@ -516,15 +516,15 @@ def getPreliminaryReview(callback, requestId):
 
     # Get the contents of the review JSON file
     try:
-        preliminaryReviewJSON = read_data_object(callback, filePath)
+        preliminaryReviewJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not get preliminary review data.")
+        ctx.writeString("serverLog", "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
     return {'preliminaryReviewJSON': preliminaryReviewJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitDatamanagerReview(callback, data, requestId, rei):
+def submitDatamanagerReview(ctx, data, requestId, rei):
     """Persist a preliminary review to disk.
 
        Arguments:
@@ -540,10 +540,10 @@ def submitDatamanagerReview(callback, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isDatamanager:
-            callback.writeString("serverLog", "User is not a data manager.")
+            ctx.writeString("serverLog", "User is not a data manager.")
             return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -557,18 +557,18 @@ def submitDatamanagerReview(callback, data, requestId, rei):
     # Write data manager review data to disk
     try:
         datamanagerReviewPath = collPath + '/datamanager_review_' + clientName + '.json'
-        write_data_object(callback, datamanagerReviewPath, data)
+        write_data_object(ctx, datamanagerReviewPath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write data manager review data to disk.")
+        ctx.writeString("serverLog", "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
     # Give read permission on the data manager review to data managers and Board of Directors members
     try:
-        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", datamanagerReviewPath)
-        set_acl(callback, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
-        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", datamanagerReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanagerReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanagerReviewPath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the data manager review (accepted/rejected)
@@ -576,13 +576,13 @@ def submitDatamanagerReview(callback, data, requestId, rei):
 
     # Update the status of the data request
     if datamanagerReview == "Accepted":
-        setStatus(callback, requestId, "dm_accepted")
+        setStatus(ctx, requestId, "dm_accepted")
     elif datamanagerReview == "Rejected":
-        setStatus(callback, requestId, "dm_rejected")
+        setStatus(ctx, requestId, "dm_rejected")
     elif datamanagerReview == "Rejected (resubmit)":
-        setStatus(callback, requestId, "dm_rejected_resubmit")
+        setStatus(ctx, requestId, "dm_rejected_resubmit")
     else:
-        callback.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
     # Get parameters needed for sending emails
@@ -594,7 +594,7 @@ def submitDatamanagerReview(callback, data, requestId, rei):
                          "DATA_NAME = '%s'") % (collPath,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -602,7 +602,7 @@ def submitDatamanagerReview(callback, data, requestId, rei):
             researcherName = value
         elif name == "email":
             researcherEmail = value
-    bodMemberEmails = json.loads(callback.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+    bodMemberEmails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
                                                                   bodMemberEmails)['arguments'][1])
 
     # Send emails to:
@@ -621,13 +621,13 @@ def submitDatamanagerReview(callback, data, requestId, rei):
             if not bodMemberEmail == "rods":
                 sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected (resubmit) by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected (resubmission allowed) by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
     else:
-        callback.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getDatamanagerReview(callback, requestId):
+def getDatamanagerReview(ctx, requestId):
     """Retrieve a data manager review.
 
        Arguments:
@@ -649,10 +649,10 @@ def getDatamanagerReview(callback, requestId):
         isreviewer = isReviewer(callback, requestId, username)['isReviewer']
 
         if not (isboardmember or isdatamanager or isreviewer):
-            callback.writeString("serverLog", "User is not authorized to view this data manager review.")
+            ctx.writeString("serverLog", "User is not authorized to view this data manager review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data manager review."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -665,7 +665,7 @@ def getDatamanagerReview(callback, requestId):
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (collName, fileName),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         collName = row['COLL_NAME']
         dataName = row['DATA_NAME']
@@ -676,15 +676,15 @@ def getDatamanagerReview(callback, requestId):
 
     # Get the contents of the data manager review JSON file
     try:
-        datamanagerReviewJSON = read_data_object(callback, filePath)
+        datamanagerReviewJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not get data manager review data.")
+        ctx.writeString("serverLog", "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
     return {'datamanagerReviewJSON': datamanagerReviewJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def isRequestOwner(callback, requestId, currentUserName):
+def isRequestOwner(ctx, requestId, currentUserName):
     """Check if the invoking user is also the owner of a given data request.
 
        Arguments:
@@ -698,7 +698,7 @@ def isRequestOwner(callback, requestId, currentUserName):
 
     # Construct path to the collection of the datarequest
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
     collPath = ("/" + clientZone + "/home/datarequests-research/" +
                 requestId)
 
@@ -706,7 +706,7 @@ def isRequestOwner(callback, requestId, currentUserName):
     rows = row_iterator(["DATA_OWNER_NAME"],
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
                         + "'%s'" % collPath),
-                        AS_DICT, callback)
+                        AS_DICT, ctx)
 
     # Extract username from query results
     requestOwnerUserName = []
@@ -726,14 +726,14 @@ def isRequestOwner(callback, requestId, currentUserName):
         # Return data
         return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
     elif len(requestOwnerUserName) > 1:
-        callback.writeString("serverLog", "More than 1 owner of data request found. Something is very wrong.")
+        ctx.writeString("serverLog", "More than 1 owner of data request found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
     elif len(requestOwnerUserName) == 0:
-        callback.writeString("serverLog", "No data request owner found. The current user most likely does not have read permission on the data request.")
+        ctx.writeString("serverLog", "No data request owner found. The current user most likely does not have read permission on the data request.")
         return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
 
 
-def isReviewer(callback, requestId, currentUsername):
+def isReviewer(ctx, requestId, currentUsername):
     """Check if the invoking user is assigned as reviewer to the given data request.
 
        Arguments:
@@ -761,7 +761,7 @@ def isReviewer(callback, requestId, currentUsername):
                          "META_DATA_ATTR_NAME = 'assignedForReview'") % (collName,
                                                                          fileName),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
@@ -772,7 +772,7 @@ def isReviewer(callback, requestId, currentUsername):
     return {"isReviewer": isReviewer, "status": 0, "statusInfo": "OK"}
 
 
-def submitAssignment(callback, data, requestId, rei):
+def submitAssignment(ctx, data, requestId, rei):
     """Persist an assignment to disk.
 
        Arguments:
@@ -790,10 +790,10 @@ def submitAssignment(callback, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isBoardMember:
-            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -807,18 +807,18 @@ def submitAssignment(callback, data, requestId, rei):
     # Write assignment data to disk
     try:
         assignmentPath = collPath + '/assignment_' + clientName + '.json'
-        write_data_object(callback, assignmentPath, data)
+        write_data_object(ctx, assignmentPath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write assignment data to disk.")
+        ctx.writeString("serverLog", "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
 
     # Give read permission on the assignment to data managers and Board of Directors members
     try:
-        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", assignmentPath)
-        set_acl(callback, "default", "read", "datarequests-research-datamanagers", assignmentPath)
-        set_acl(callback, "default", "read", "datarequests-research-data-management-committee", assignmentPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignmentPath)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignmentPath)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignmentPath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the assignment file.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
 
     # Get the outcome of the assignment (accepted/rejected)
@@ -829,14 +829,14 @@ def submitAssignment(callback, data, requestId, rei):
 
     # Update the status of the data request
     if decision == "Accepted for DMC review":
-        assignRequest(callback, assignees, requestId)
-        setStatus(callback, requestId, "assigned")
+        assignRequest(ctx, assignees, requestId)
+        setStatus(ctx, requestId, "assigned")
     elif decision == "Rejected":
-        setStatus(callback, requestId, "rejected_after_data_manager_review")
+        setStatus(ctx, requestId, "rejected_after_data_manager_review")
     elif decision == "Rejected (resubmit)":
-        setStatus(callback, requestId, "rejected_resubmit_after_data_manager_review")
+        setStatus(ctx, requestId, "rejected_resubmit_after_data_manager_review")
     else:
-        callback.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get email parameters
@@ -849,7 +849,7 @@ def submitAssignment(callback, data, requestId, rei):
                          "DATA_NAME = '%s'") % (requestColl,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -863,7 +863,7 @@ def submitAssignment(callback, data, requestId, rei):
     # Send emails to the researcher (and to the assignees if the data request has been accepted for DMC review)
     if decision == "Accepted for DMC review":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: assigned" % requestId, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-        callback.writeString("serverLog", assignees)
+        ctx.writeString("serverLog", assignees)
         for assigneeEmail in json.loads(assignees):
             sendMail(assigneeEmail, "[assignee] YOUth data request %s: assigned" % requestId, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (requestId, proposalTitle, requestId))
     elif decision == "Rejected":
@@ -871,13 +871,13 @@ def submitAssignment(callback, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId))
     else:
-        callback.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
+        ctx.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def assignRequest(callback, assignees, requestId):
+def assignRequest(ctx, assignees, requestId):
     """Assign a data request to one or more DMC members for review.
 
        Arguments:
@@ -901,7 +901,7 @@ def assignRequest(callback, assignees, requestId):
         if not isDatamanager:
             raise Exception
     except Exception as e:
-        callback.writeString("serverLog", "User is not a data manager.")
+        ctx.writeString("serverLog", "User is not a data manager.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
     # Construct data request collection path
@@ -914,13 +914,13 @@ def assignRequest(callback, assignees, requestId):
                         ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
                         "META_DATA_ATTR_NAME = 'status'")
                         % (requestColl, 'datarequest.json'),
-                        AS_DICT, callback)
+                        AS_DICT, ctx)
 
     for row in rows:
         requestStatus = row['META_DATA_ATTR_VALUE']
 
     if not (requestStatus == "dm_accepted" or requestStatus == "dm_rejected"):
-        callback.writeString("serverLog", "Proposal is already assigned.")
+        ctx.writeString("serverLog", "Proposal is already assigned.")
         return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
 
     # Assign the data request by adding a delayed rule that sets one or more
@@ -928,7 +928,7 @@ def assignRequest(callback, assignees, requestId):
     # attributes is determined by the number of assignees) ...
     status = ""
     statusInfo = ""
-    callback.requestDatarequestMetadataChange(requestColl,
+    ctx.requestDatarequestMetadataChange(requestColl,
                                               "assignedForReview",
                                               assignees,
                                               str(len(
@@ -936,12 +936,12 @@ def assignRequest(callback, assignees, requestId):
                                               status, statusInfo)
 
     # ... and triggering the processing of delayed rules
-    callback.adminDatarequestActions()
+    ctx.adminDatarequestActions()
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getAssignment(callback, requestId):
+def getAssignment(ctx, requestId):
     """Retrieve assignment.
 
        Arguments:
@@ -957,7 +957,7 @@ def getAssignment(callback, requestId):
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (collName, fileName),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         collName = row['COLL_NAME']
         dataName = row['DATA_NAME']
@@ -968,15 +968,15 @@ def getAssignment(callback, requestId):
 
     # Get the contents of the assignment JSON file
     try:
-        assignmentJSON = read_data_object(callback, filePath)
+        assignmentJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not get assignment data.")
+        ctx.writeString("serverLog", "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
     return {'assignmentJSON': assignmentJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitReview(callback, data, requestId, rei):
+def submitReview(ctx, data, requestId, rei):
     """Persist a data request review to disk.
 
        Arguments:
@@ -992,13 +992,13 @@ def submitReview(callback, data, requestId, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+        isreviewer = isReviewer(ctx, requestId, username)['isReviewer']
 
         if not isreviewer:
-            callback.writeString("serverLog", "User is assigned as a reviewer to this data request.")
+            ctx.writeString("serverLog", "User is assigned as a reviewer to this data request.")
             return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+        ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
 
@@ -1008,10 +1008,10 @@ def submitReview(callback, data, requestId, rei):
     username = callback.uuClientNameWrapper(name)['arguments'][0]
 
     try:
-        if not isReviewer(callback, requestId, username)['isReviewer']:
+        if not isReviewer(ctx, requestId, username)['isReviewer']:
             raise UUException
     except UUException as e:
-        callback.writeString("serverLog", "User is not assigned as a reviewer to this request.")
+        ctx.writeString("serverLog", "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
     # Construct path to collection of review
@@ -1025,16 +1025,16 @@ def submitReview(callback, data, requestId, rei):
     # Write review data to disk
     try:
         reviewPath = collPath + '/review_' + clientName + '.json'
-        write_data_object(callback, reviewPath, data)
+        write_data_object(ctx, reviewPath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write review data to disk.")
+        ctx.writeString("serverLog", "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
 
     # Give read permission on the review to Board of Director members
     try:
-        set_acl(callback, "default", "read", "datarequests-research-board-of-directors", reviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", reviewPath)
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the review file to the Board of Directors.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
 
     # Remove the assignedForReview attribute of this user by first fetching
@@ -1043,16 +1043,16 @@ def submitReview(callback, data, requestId, rei):
     fileName = 'datarequest.json'
     reviewers = []
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
 
-    ret_val = callback.msiMakeGenQuery(
+    ret_val = ctx.msiMakeGenQuery(
         "META_DATA_ATTR_VALUE",
         (("COLL_NAME = '%s' AND DATA_NAME = 'datarequest.json' AND " +
          "META_DATA_ATTR_NAME = 'assignedForReview'") %
          (collName)).format(clientZone),
         irods_types.GenQueryInp())
     query = ret_val["arguments"][2]
-    ret_val = callback.msiExecGenQuery(query, irods_types.GenQueryOut())
+    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
 
     while True:
         result = ret_val["arguments"][1]
@@ -1061,8 +1061,8 @@ def submitReview(callback, data, requestId, rei):
 
         if result.continueInx == 0:
             break
-        ret_val = callback.msiGetMoreRows(query, result, 0)
-    callback.msiCloseGenQuery(query, result)
+        ret_val = ctx.msiGetMoreRows(query, result, 0)
+    ctx.msiCloseGenQuery(query, result)
 
     # ... then removing the current reviewer from the list
     reviewers.remove(clientName)
@@ -1070,19 +1070,19 @@ def submitReview(callback, data, requestId, rei):
     # ... and then updating the assignedForReview attributes
     status = ""
     statusInfo = ""
-    callback.requestDatarequestMetadataChange(collName,
+    ctx.requestDatarequestMetadataChange(collName,
                                               "assignedForReview",
                                               json.dumps(reviewers),
                                               str(len(
                                                   reviewers)),
                                               status, statusInfo)
-    callback.adminDatarequestActions()
+    ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
     # 'reviewed' and send an email to the board of directors members
     # informing them that the proposal is ready to be evaluated by them.
     if len(reviewers) < 1:
-        setStatus(callback, requestId, "reviewed")
+        setStatus(ctx, requestId, "reviewed")
 
         # Get parameters needed for sending emails
         researcherName = ""
@@ -1093,7 +1093,7 @@ def submitReview(callback, data, requestId, rei):
                              "DATA_NAME = '%s'") % (collPath,
                                                     'datarequest.json'),
                             AS_DICT,
-                            callback)
+                            ctx)
         for row in rows:
             name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
@@ -1102,7 +1102,7 @@ def submitReview(callback, data, requestId, rei):
             elif name == "email":
                 researcherEmail = value
 
-        bodmemberEmails = json.loads(callback.uuGroupGetMembersAsJson(
+        bodmemberEmails = json.loads(ctx.uuGroupGetMembersAsJson(
                                          'datarequests-research-board-of-directors',
                                          bodmemberEmails)['arguments'][1])
 
@@ -1116,7 +1116,7 @@ def submitReview(callback, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getReviews(callback, requestId):
+def getReviews(ctx, requestId):
     """Retrieve a data request review.
 
        Arguments:
@@ -1132,10 +1132,10 @@ def getReviews(callback, requestId):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isboardmember:
-            callback.writeString("serverLog", "User is not authorized to view this review.")
+            ctx.writeString("serverLog", "User is not authorized to view this review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -1148,13 +1148,13 @@ def getReviews(callback, requestId):
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (collName, fileName),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         filePath = collName + '/' + row['DATA_NAME']
         try:
-            reviewsJSON.append(json.loads(read_data_object(callback, filePath)))
+            reviewsJSON.append(json.loads(read_data_object(ctx, filePath)))
         except UUException as e:
-            callback.writeString("serverLog", "Could not get review data.")
+            ctx.writeString("serverLog", "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
     # Convert array with review data to JSON
@@ -1163,7 +1163,7 @@ def getReviews(callback, requestId):
     return {'reviewsJSON': reviewsJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitEvaluation(callback, data, requestId, rei):
+def submitEvaluation(ctx, data, requestId, rei):
     """Persist an evaluation to disk.
 
        Arguments:
@@ -1179,10 +1179,10 @@ def submitEvaluation(callback, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isBoardMember:
-            callback.writeString("serverLog", "User is not a member of the Board of Directors.")
+            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -1196,9 +1196,9 @@ def submitEvaluation(callback, data, requestId, rei):
     # Write evaluation data to disk
     try:
         evaluationPath = collPath + '/evaluation_' + clientName + '.json'
-        write_data_object(callback, evaluationPath, data)
+        write_data_object(ctx, evaluationPath, data)
     except UUException as e:
-        callback.writeString("serverLog", "Could not write evaluation data to disk.")
+        ctx.writeString("serverLog", "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
 
     # Get outcome of evaluation
@@ -1206,13 +1206,13 @@ def submitEvaluation(callback, data, requestId, rei):
 
     # Update the status of the data request
     if decision == "Approved":
-        setStatus(callback, requestId, "approved")
+        setStatus(ctx, requestId, "approved")
     elif decision == "Rejected":
-        setStatus(callback, requestId, "rejected")
+        setStatus(ctx, requestId, "rejected")
     elif decision == "Rejected (resubmit)":
-        setStatus(callback, requestId, "rejected_resubmit")
+        setStatus(ctx, requestId, "rejected_resubmit")
     else:
-        callback.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
+        ctx.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     # Get parameters needed for sending emails
@@ -1224,7 +1224,7 @@ def submitEvaluation(callback, data, requestId, rei):
                          "DATA_NAME = '%s'") % (collPath,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -1232,7 +1232,7 @@ def submitEvaluation(callback, data, requestId, rei):
             researcherName = value
         elif name == "email":
             researcherEmail = value
-    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
@@ -1246,13 +1246,13 @@ def submitEvaluation(callback, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0], requestId))
     else:
-        callback.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
+        ctx.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def DTAGrantReadPermissions(callback, requestId, username, rei):
+def DTAGrantReadPermissions(ctx, requestId, username, rei):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
        Arguments:
@@ -1271,15 +1271,15 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
                                         callback) == 'true'
 
         if not isdatamanager:
-            callback.writeString("serverLog", "User is not authorized to grant read permissions on the DTA.")
+            ctx.writeString("serverLog", "User is not authorized to grant read permissions on the DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
     collPath = ("/" + clientZone + "/home/datarequests-research/" +
                 requestId)
 
@@ -1287,7 +1287,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
     rows = row_iterator(["DATA_OWNER_NAME"],
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
                         + "'%s'" % collPath),
-                        AS_DICT, callback)
+                        AS_DICT, ctx)
 
     # Extract username from query results
     requestOwnerUsername = []
@@ -1297,15 +1297,15 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
     if len(requestOwnerUsername) != 1:
-        callback.writeString("serverLog", "Not exactly 1 owner found. Something is very wrong.")
+        ctx.writeString("serverLog", "Not exactly 1 owner found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "Not exactly 1 owner found. Something is very wrong."}
 
     requestOwnerUsername = requestOwnerUsername[0]
 
     try:
-        set_acl(callback, "default", "read", requestOwnerUsername, collPath + "/dta.pdf")
+        set_acl(ctx, "default", "read", requestOwnerUsername, collPath + "/dta.pdf")
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the DTA to the data request owner.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Get parameters needed for sending emails
@@ -1316,7 +1316,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
                          "DATA_NAME = '%s'") % (collPath,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -1332,7 +1332,7 @@ def DTAGrantReadPermissions(callback, requestId, username, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDTAReady(callback, requestId, currentUserName):
+def requestDTAReady(ctx, requestId, currentUserName):
     """Set the status of a submitted datarequest to "DTA ready".
 
        Arguments:
@@ -1350,18 +1350,18 @@ def requestDTAReady(callback, requestId, currentUserName):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isDatamanager:
-            callback.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            ctx.writeString("serverLog", "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(callback, requestId, "dta_ready")
+    setStatus(ctx, requestId, "dta_ready")
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def signedDTAGrantReadPermissions(callback, requestId, username, rei):
+def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
     """Grant read permissions on the signed DTA to the datamanagers group.
 
        Arguments:
@@ -1374,41 +1374,41 @@ def signedDTAGrantReadPermissions(callback, requestId, username, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
 
         if not isrequestowner:
-            callback.writeString("serverLog", "User is not authorized to grant read permissions on the signed DTA.")
+            ctx.writeString("serverLog", "User is not authorized to grant read permissions on the signed DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the signed DTA."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
     zoneName = ""
-    clientZone = callback.uuClientZone(zoneName)['arguments'][0]
+    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
     collPath = ("/" + clientZone + "/home/datarequests-research/" +
                 requestId)
 
     try:
-        set_acl(callback, "default", "read", "datarequests-research-datamanagers", collPath + "/signed_dta.pdf")
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", collPath + "/signed_dta.pdf")
     except UUException as e:
-        callback.writeString("serverLog", "Could not grant read permissions on the signed DTA to the data managers group.")
+        ctx.writeString("serverLog", "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
     # Get parameters needed for sending emails
     datamanagerEmails = ""
-    datamanagerEmails = json.loads(callback.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
 
     # Send an email to the data manager informing them that the DTA has been
     # signed by the researcher
     for datamanagerEmail in datamanagerEmails:
         if not datamanagerEmail == "rods":
-            sendMail(datamanagerEmail, "[data manager] YOUth data request %s: DTA signed" % requestId, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+            sendMail(ctx, datamanagerEmail, "[data manager] YOUth data request %s: DTA signed" % requestId, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDTASigned(callback, requestId, currentUserName):
+def requestDTASigned(ctx, requestId, currentUserName):
     """Set the status of a data request to "DTA signed".
 
        Arguments:
@@ -1421,21 +1421,21 @@ def requestDTASigned(callback, requestId, currentUserName):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(callback, requestId, username)['isRequestOwner']
+        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
 
         if not isrequestowner:
-            callback.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            ctx.writeString("serverLog", "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(callback, requestId, "dta_signed")
+    setStatus(ctx, requestId, "dta_signed")
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDataReady(callback, requestId, currentUserName):
+def requestDataReady(ctx, requestId, currentUserName):
     """Set the status of a submitted datarequest to "Data ready".
 
        Arguments:
@@ -1453,13 +1453,13 @@ def requestDataReady(callback, requestId, currentUserName):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isdatamanager:
-            callback.writeString("serverLog", "User is not authorized to mark the data as ready.")
+            ctx.writeString("serverLog", "User is not authorized to mark the data as ready.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
     except Exception as e:
-        callback.writeString("serverLog", "Something went wrong during permission checking.")
+        ctx.writeString("serverLog", "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(callback, requestId, "data_ready")
+    setStatus(ctx, requestId, "data_ready")
 
     # Get parameters needed for sending emails
     researcherName = ""
@@ -1469,7 +1469,7 @@ def requestDataReady(callback, requestId, currentUserName):
                          "DATA_NAME = '%s'") % (requestId,
                                                 'datarequest.json'),
                         AS_DICT,
-                        callback)
+                        ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -1480,7 +1480,7 @@ def requestDataReady(callback, requestId, currentUserName):
 
     # Send email to researcher notifying him of of the submission of his
     # request
-    sendMail(researcherEmail, "[researcher] YOUth data request %s: Data ready" % requestId, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcherName)
+    sendMail(ctx, researcherEmail, "[researcher] YOUth data request %s: Data ready" % requestId, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcherName)
 
     return {'status': 0, 'statusInfo': "OK"}
 
@@ -1495,86 +1495,86 @@ def uuGetStatus(rule_args, callback, rei):
     callback.writeString("stdout", getStatus(callback, rule_args[0]))
 
 
-def uuSubmitPreliminaryReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitPreliminaryReview(callback, rule_args[0], rule_args[1], rei)))
+def uuSubmitPreliminaryReview(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(submitPreliminaryReview(ctx, rule_args[0], rule_args[1], rei)))
 
 
-def uuGetPreliminaryReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getPreliminaryReview(callback, rule_args[0])))
+def uuGetPreliminaryReview(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(getPreliminaryReview(ctx, rule_args[0])))
 
 
-def uuSubmitDatamanagerReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitDatamanagerReview(callback, rule_args[0], rule_args[1], rei)))
+def uuSubmitDatamanagerReview(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(submitDatamanagerReview(ctx, rule_args[0], rule_args[1], rei)))
 
 
-def uuGetDatamanagerReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getDatamanagerReview(callback, rule_args[0])))
+def uuGetDatamanagerReview(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(getDatamanagerReview(ctx, rule_args[0])))
 
 
-def uuIsRequestOwner(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(isRequestOwner(callback,
+def uuIsRequestOwner(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(isRequestOwner(ctx,
                                               rule_args[0], rule_args[1])))
 
 
-def uuIsReviewer(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(isReviewer(callback, rule_args[0],
+def uuIsReviewer(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(isReviewer(ctx, rule_args[0],
                                                          rule_args[1])))
 
 
-def uuSubmitAssignment(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitAssignment(callback, rule_args[0], rule_args[1], rei)))
+def uuSubmitAssignment(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(submitAssignment(ctx, rule_args[0], rule_args[1], rei)))
 
 
-def uuAssignRequest(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(assignRequest(callback,
+def uuAssignRequest(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(assignRequest(ctx,
                                                             rule_args[0],
                                                             rule_args[1])))
 
 
-def uuGetAssignment(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getAssignment(callback, rule_args[0])))
+def uuGetAssignment(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(getAssignment(ctx, rule_args[0])))
 
 
-def uuSubmitReview(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitReview(callback,
+def uuSubmitReview(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(submitReview(ctx,
                                                            rule_args[0],
                                                            rule_args[1], rei)))
 
 
-def uuGetReviews(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(getReviews(callback,
+def uuGetReviews(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(getReviews(ctx,
                                                         rule_args[0])))
 
 
-def uuSubmitEvaluation(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitEvaluation(callback,
+def uuSubmitEvaluation(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(submitEvaluation(ctx,
                                                                rule_args[0],
                                                                rule_args[1],
                                                                rei)))
 
 
-def uuDTAGrantReadPermissions(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(DTAGrantReadPermissions(callback,
+def uuDTAGrantReadPermissions(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(DTAGrantReadPermissions(ctx,
                                               rule_args[0], rule_args[1],
                                               rei)))
 
 
-def uuRequestDTAReady(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(requestDTAReady(callback,
+def uuRequestDTAReady(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(requestDTAReady(ctx,
                                               rule_args[0], rule_args[1])))
 
 
-def uuSignedDTAGrantReadPermissions(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(
-                                              callback, rule_args[0],
+def uuSignedDTAGrantReadPermissions(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(
+                                              ctx, rule_args[0],
                                               rule_args[1], rei)))
 
 
-def uuRequestDTASigned(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(requestDTASigned(callback,
+def uuRequestDTASigned(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(requestDTASigned(ctx,
                                               rule_args[0], rule_args[1])))
 
 
-def uuRequestDataReady(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(requestDataReady(callback,
+def uuRequestDataReady(rule_args, ctx, rei):
+    ctx.writeString("stdout", json.dumps(requestDataReady(ctx,
                                               rule_args[0], rule_args[1])))
