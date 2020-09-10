@@ -12,6 +12,7 @@ from smtplib import SMTP
 from email.mime.text import MIMEText
 
 from util import *
+import avu_json
 
 import session_vars
 
