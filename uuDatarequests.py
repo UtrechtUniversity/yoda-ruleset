@@ -186,7 +186,7 @@ def getStatus(ctx, requestId):
         for row in rows:
             requestStatus = row['META_DATA_ATTR_VALUE']
     except Exception as e:
-        ctx.writeString("serverLog", "Could not get data request status.")
+        log.write(ctx, "Could not get data request status.")
         return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
 
     return requestStatus
@@ -234,7 +234,7 @@ def api_uuSubmitDatarequest(ctx, data, previousRequestId):
     try:
         coll_create(ctx, collPath, '1', irods_types.BytesBuf())
     except UUException as e:
-        ctx.writeString("serverLog", "Could not create collection path.")
+        log.write(ctx, "Could not create collection path.")
         return {"status": "FailedCreateCollectionPath", "statusInfo": "Could not create collection path."}
 
     # Write data request data to disk
@@ -242,7 +242,7 @@ def api_uuSubmitDatarequest(ctx, data, previousRequestId):
         filePath = collPath + '/' + 'datarequest.json'
         write_data_object(ctx, filePath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write data request to disk.")
+        log.write(ctx, "Could not write data request to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data request to disk."}
 
     # Set the previous request ID as metadata if defined
@@ -258,7 +258,7 @@ def api_uuSubmitDatarequest(ctx, data, previousRequestId):
         set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", collPath)
         set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", collPath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not set permissions on subcollection.")
+        log.write(ctx, "Could not set permissions on subcollection.")
         return {"status": "PermissionsError", "statusInfo": "Could not set permissions on subcollection."}
 
     # Set the status metadata field to "submitted"
@@ -327,10 +327,10 @@ def api_uuGetDatarequest(ctx, requestId):
         isrequestowner = isRequestOwner(ctx, requestId, name)['isRequestOwner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
-                ctx.writeString("serverLog", "User is not authorized to view this data request.")
+                log.write(ctx, "User is not authorized to view this data request.")
                 return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data request."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename and filepath
@@ -353,14 +353,14 @@ def api_uuGetDatarequest(ctx, requestId):
             dataSize = row['DATA_SIZE']
             requestStatus = row['META_DATA_ATTR_VALUE']
     except Exception as e:
-        ctx.writeString("serverLog", "Could not get data request status and filesize. (Does a request with this requestID exist?")
+        log.write(ctx, "Could not get data request status and filesize. (Does a request with this requestID exist?")
         return {"status": "FailedGetDatarequestInfo", "statusInfo": "Could not get data request status and filesize. (Does a request with this requestID exist?)"}
 
     # Get the contents of the datarequest JSON file
     try:
         requestJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not get contents of datarequest JSON file.")
+        log.write(ctx, "Could not get contents of datarequest JSON file.")
         return {"status": "FailedGetDatarequestContent", "statusInfo": "Could not get contents of datarequest JSON file."}
 
     return {'requestJSON': requestJSON,
@@ -386,10 +386,10 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
                                         ['arguments'][0],
                                         callback)
         if not isBoardMember == 'true':
-            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
+            log.write(ctx, "User is not a member of the Board of Directors.")
             return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -405,7 +405,7 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
         preliminaryReviewPath = collPath + '/preliminary_review_' + clientName + '.json'
         write_data_object(ctx, preliminaryReviewPath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write preliminary review data to disk.")
+        log.write(ctx, "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
@@ -414,7 +414,7 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminaryReviewPath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the preliminary review (accepted/rejected)
@@ -428,7 +428,7 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
     elif preliminaryReview == "Rejected (resubmit)":
         setStatus(ctx, requestId, "preliminary_reject_submit")
     else:
-        ctx.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get parameters needed for sending emails
@@ -461,7 +461,7 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
     elif preliminaryReview == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0]))
     else:
-        ctx.writeString("serverLog", "Invalid value for preliminary_review in preliminary review JSON data.")
+        log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
@@ -488,10 +488,10 @@ def getPreliminaryReview(ctx, requestId):
                                         callback) == 'true'
         isreviewer = isReviewer(callback, requestId, username)['isReviewer']
         if not (isboardmember or isdatamanager or isreviewer):
-            ctx.writeString("serverLog", "User is not authorized to view this preliminary review.")
+            log.write(ctx, "User is not authorized to view this preliminary review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -517,7 +517,7 @@ def getPreliminaryReview(ctx, requestId):
     try:
         preliminaryReviewJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not get preliminary review data.")
+        log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
     return {'preliminaryReviewJSON': preliminaryReviewJSON, 'status': 0, 'statusInfo': "OK"}
@@ -539,10 +539,10 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isDatamanager:
-            ctx.writeString("serverLog", "User is not a data manager.")
+            log.write(ctx, "User is not a data manager.")
             return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -558,7 +558,7 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
         datamanagerReviewPath = collPath + '/datamanager_review_' + clientName + '.json'
         write_data_object(ctx, datamanagerReviewPath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write data manager review data to disk.")
+        log.write(ctx, "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
     # Give read permission on the data manager review to data managers and Board of Directors members
@@ -567,7 +567,7 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanagerReviewPath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the preliminary review file.")
+        log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the data manager review (accepted/rejected)
@@ -581,7 +581,7 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
     elif datamanagerReview == "Rejected (resubmit)":
         setStatus(ctx, requestId, "dm_rejected_resubmit")
     else:
-        ctx.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
+        log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
     # Get parameters needed for sending emails
@@ -620,7 +620,7 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
             if not bodMemberEmail == "rods":
                 sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected (resubmit) by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected (resubmission allowed) by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
     else:
-        ctx.writeString("serverLog", "Invalid value for datamanager_review in data manager review JSON data.")
+        log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
@@ -648,10 +648,10 @@ def getDatamanagerReview(ctx, requestId):
         isreviewer = isReviewer(callback, requestId, username)['isReviewer']
 
         if not (isboardmember or isdatamanager or isreviewer):
-            ctx.writeString("serverLog", "User is not authorized to view this data manager review.")
+            log.write(ctx, "User is not authorized to view this data manager review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data manager review."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -677,7 +677,7 @@ def getDatamanagerReview(ctx, requestId):
     try:
         datamanagerReviewJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not get data manager review data.")
+        log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
     return {'datamanagerReviewJSON': datamanagerReviewJSON, 'status': 0, 'statusInfo': "OK"}
@@ -725,10 +725,10 @@ def isRequestOwner(ctx, requestId, currentUserName):
         # Return data
         return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
     elif len(requestOwnerUserName) > 1:
-        ctx.writeString("serverLog", "More than 1 owner of data request found. Something is very wrong.")
+        log.write(ctx, "More than 1 owner of data request found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
     elif len(requestOwnerUserName) == 0:
-        ctx.writeString("serverLog", "No data request owner found. The current user most likely does not have read permission on the data request.")
+        log.write(ctx, "No data request owner found. The current user most likely does not have read permission on the data request.")
         return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
 
 
@@ -789,10 +789,10 @@ def submitAssignment(ctx, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isBoardMember:
-            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
+            log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -808,7 +808,7 @@ def submitAssignment(ctx, data, requestId, rei):
         assignmentPath = collPath + '/assignment_' + clientName + '.json'
         write_data_object(ctx, assignmentPath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write assignment data to disk.")
+        log.write(ctx, "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
 
     # Give read permission on the assignment to data managers and Board of Directors members
@@ -817,7 +817,7 @@ def submitAssignment(ctx, data, requestId, rei):
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignmentPath)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignmentPath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the assignment file.")
+        log.write(ctx, "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
 
     # Get the outcome of the assignment (accepted/rejected)
@@ -835,7 +835,7 @@ def submitAssignment(ctx, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         setStatus(ctx, requestId, "rejected_resubmit_after_data_manager_review")
     else:
-        ctx.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
+        log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get email parameters
@@ -862,7 +862,7 @@ def submitAssignment(ctx, data, requestId, rei):
     # Send emails to the researcher (and to the assignees if the data request has been accepted for DMC review)
     if decision == "Accepted for DMC review":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: assigned" % requestId, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-        ctx.writeString("serverLog", assignees)
+        log.write(ctx, assignees)
         for assigneeEmail in json.loads(assignees):
             sendMail(assigneeEmail, "[assignee] YOUth data request %s: assigned" % requestId, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (requestId, proposalTitle, requestId))
     elif decision == "Rejected":
@@ -870,7 +870,7 @@ def submitAssignment(ctx, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId))
     else:
-        ctx.writeString("serverLog", "Invalid value for 'decision' key in datamanager review JSON data.")
+        log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
@@ -900,7 +900,7 @@ def assignRequest(ctx, assignees, requestId):
         if not isDatamanager:
             raise Exception
     except Exception as e:
-        ctx.writeString("serverLog", "User is not a data manager.")
+        log.write(ctx, "User is not a data manager.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
     # Construct data request collection path
@@ -919,7 +919,7 @@ def assignRequest(ctx, assignees, requestId):
         requestStatus = row['META_DATA_ATTR_VALUE']
 
     if not (requestStatus == "dm_accepted" or requestStatus == "dm_rejected"):
-        ctx.writeString("serverLog", "Proposal is already assigned.")
+        log.write(ctx, "Proposal is already assigned.")
         return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
 
     # Assign the data request by adding a delayed rule that sets one or more
@@ -969,7 +969,7 @@ def getAssignment(ctx, requestId):
     try:
         assignmentJSON = read_data_object(ctx, filePath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not get assignment data.")
+        log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
     return {'assignmentJSON': assignmentJSON, 'status': 0, 'statusInfo': "OK"}
@@ -994,10 +994,10 @@ def submitReview(ctx, data, requestId, rei):
         isreviewer = isReviewer(ctx, requestId, username)['isReviewer']
 
         if not isreviewer:
-            ctx.writeString("serverLog", "User is assigned as a reviewer to this data request.")
+            log.write(ctx, "User is assigned as a reviewer to this data request.")
             return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
     except Exception as e:
-        ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
+        log.write(ctx, "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
 
@@ -1010,7 +1010,7 @@ def submitReview(ctx, data, requestId, rei):
         if not isReviewer(ctx, requestId, username)['isReviewer']:
             raise UUException
     except UUException as e:
-        ctx.writeString("serverLog", "User is not assigned as a reviewer to this request.")
+        log.write(ctx, "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
     # Construct path to collection of review
@@ -1026,14 +1026,14 @@ def submitReview(ctx, data, requestId, rei):
         reviewPath = collPath + '/review_' + clientName + '.json'
         write_data_object(ctx, reviewPath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write review data to disk.")
+        log.write(ctx, "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
 
     # Give read permission on the review to Board of Director members
     try:
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", reviewPath)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the review file to the Board of Directors.")
+        log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
 
     # Remove the assignedForReview attribute of this user by first fetching
@@ -1131,10 +1131,10 @@ def getReviews(ctx, requestId):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isboardmember:
-            ctx.writeString("serverLog", "User is not authorized to view this review.")
+            log.write(ctx, "User is not authorized to view this review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
@@ -1153,7 +1153,7 @@ def getReviews(ctx, requestId):
         try:
             reviewsJSON.append(json.loads(read_data_object(ctx, filePath)))
         except UUException as e:
-            ctx.writeString("serverLog", "Could not get review data.")
+            log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
     # Convert array with review data to JSON
@@ -1178,10 +1178,10 @@ def submitEvaluation(ctx, data, requestId, rei):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isBoardMember:
-            ctx.writeString("serverLog", "User is not a member of the Board of Directors.")
+            log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
@@ -1197,7 +1197,7 @@ def submitEvaluation(ctx, data, requestId, rei):
         evaluationPath = collPath + '/evaluation_' + clientName + '.json'
         write_data_object(ctx, evaluationPath, data)
     except UUException as e:
-        ctx.writeString("serverLog", "Could not write evaluation data to disk.")
+        log.write(ctx, "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
 
     # Get outcome of evaluation
@@ -1211,7 +1211,7 @@ def submitEvaluation(ctx, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         setStatus(ctx, requestId, "rejected_resubmit")
     else:
-        ctx.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
+        log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     # Get parameters needed for sending emails
@@ -1245,7 +1245,7 @@ def submitEvaluation(ctx, data, requestId, rei):
     elif decision == "Rejected (resubmit)":
         sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0], requestId))
     else:
-        ctx.writeString("serverLog", "Invalid value for 'evaluation' key in evaluation JSON data.")
+        log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     return {'status': 0, 'statusInfo': "OK"}
@@ -1270,10 +1270,10 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
                                         callback) == 'true'
 
         if not isdatamanager:
-            ctx.writeString("serverLog", "User is not authorized to grant read permissions on the DTA.")
+            log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
@@ -1296,7 +1296,7 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
     if len(requestOwnerUsername) != 1:
-        ctx.writeString("serverLog", "Not exactly 1 owner found. Something is very wrong.")
+        log.write(ctx, "Not exactly 1 owner found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "Not exactly 1 owner found. Something is very wrong."}
 
     requestOwnerUsername = requestOwnerUsername[0]
@@ -1304,7 +1304,7 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
     try:
         set_acl(ctx, "default", "read", requestOwnerUsername, collPath + "/dta.pdf")
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the DTA to the data request owner.")
+        log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Get parameters needed for sending emails
@@ -1349,10 +1349,10 @@ def requestDTAReady(ctx, requestId, currentUserName):
                                         ['arguments'][0],
                                         callback) == "true"
         if not isDatamanager:
-            ctx.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            log.write(ctx, "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(ctx, requestId, "dta_ready")
@@ -1376,10 +1376,10 @@ def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
         isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
 
         if not isrequestowner:
-            ctx.writeString("serverLog", "User is not authorized to grant read permissions on the signed DTA.")
+            log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the signed DTA."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
@@ -1391,7 +1391,7 @@ def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
     try:
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", collPath + "/signed_dta.pdf")
     except UUException as e:
-        ctx.writeString("serverLog", "Could not grant read permissions on the signed DTA to the data managers group.")
+        log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
     # Get parameters needed for sending emails
@@ -1423,10 +1423,10 @@ def requestDTASigned(ctx, requestId, currentUserName):
         isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
 
         if not isrequestowner:
-            ctx.writeString("serverLog", "User is not authorized to change the status of this data request.")
+            log.write(ctx, "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(ctx, requestId, "dta_signed")
@@ -1452,10 +1452,10 @@ def requestDataReady(ctx, requestId, currentUserName):
                                         ['arguments'][0],
                                         callback) == 'true'
         if not isdatamanager:
-            ctx.writeString("serverLog", "User is not authorized to mark the data as ready.")
+            log.write(ctx, "User is not authorized to mark the data as ready.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
     except Exception as e:
-        ctx.writeString("serverLog", "Something went wrong during permission checking.")
+        log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     setStatus(ctx, requestId, "data_ready")
