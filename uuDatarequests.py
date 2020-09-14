@@ -55,87 +55,68 @@ def getGroupData(ctx):
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
-    ret_val = ctx.msiMakeGenQuery(
-        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+    iter = genquery.row_iterator(
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE", 
         "USER_TYPE = 'rodsgroup'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, ctx)
 
-    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            name = result.sqlResult[0].row(row)
-            attr = result.sqlResult[1].row(row)
-            value = result.sqlResult[2].row(row)
+    for row in iter:
+        name = row[0]
+        attr = row[1]
+        value = row[2]
 
-            # Create/update group with this information.
-            try:
-                group = groups[name]
-            except Exception:
-                group = {
-                    "name": name,
-                    "managers": [],
-                    "members": [],
-                    "read": []
-                }
-                groups[name] = group
-            if attr in ["data_classification", "category", "subcategory"]:
-                group[attr] = value
-            elif attr == "description":
-                # Deal with legacy use of '.' for empty description metadata.
-                # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
-                group[attr] = '' if value == '.' else value
-            elif attr == "manager":
-                group["managers"].append(value)
+        # Create/update group with this information.
+        try:
+            group = groups[name]
+        except Exception:
+            group = {
+                "name": name,
+                "managers": [],
+                "members": [],
+                "read": []
+            }
+            groups[name] = group
 
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-        ret_val = ctx.msiGetMoreRows(query, result, 0)
-    ctx.msiCloseGenQuery(query, result)
+        if attr in ["data_classification", "category", "subcategory"]:
+            group[attr] = value
+        elif attr == "description":
+            # Deal with legacy use of '.' for empty description metadata.
+            # See uuGroupGetDescription() in uuGroup.r for correct behavior of the old query interface.
+            group[attr] = '' if value == '.' else value
+        elif attr == "manager":
+            group["managers"].append(value)
 
     # Second query: obtain list of groups with memberships.
-    ret_val = ctx.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
+        genquery.AS_LIST, ctx)
 
-    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            name = result.sqlResult[0].row(row)
-            user = result.sqlResult[1].row(row)
-            zone = result.sqlResult[2].row(row)
+    for row in iter:
+        name = row[0]
+        user = row[1]
+        zone = row[2]
 
-            if name != user and name != "rodsadmin" and name != "public":
-                user = user + "#" + zone
-                if name.startswith("read-"):
-                    # Match read-* group with research-* or initial-* group.
-                    name = name[5:]
+        if name != user and name != "rodsadmin" and name != "public":
+            user = user + "#" + zone
+            if name.startswith("read-"):
+                # Match read-* group with research-* or initial-* group.
+                name = name[5:]
+                try:
+                    # Attempt to add to read list of research group.
+                    group = groups["research-" + name]
+                    group["read"].append(user)
+                except Exception:
                     try:
-                        # Attempt to add to read list of research group.
-                        group = groups["research-" + name]
+                        # Attempt to add to read list of initial group.
+                        group = groups["initial-" + name]
                         group["read"].append(user)
                     except Exception:
-                        try:
-                            # Attempt to add to read list of initial group.
-                            group = groups["initial-" + name]
-                            group["read"].append(user)
-                        except Exception:
-                            pass
-                elif not name.startswith("vault-"):
-                    # Ardinary group.
-                    group = groups[name]
-                    group["members"].append(user)
-
-        # Continue with this query.
-        if result.continueInx == 0:
-            break
-        ret_val = ctx.msiGetMoreRows(query, result, 0)
-    ctx.msiCloseGenQuery(query, result)
+                        pass
+            elif not name.startswith("vault-"):
+                # Ardinary group.
+                group = groups[name]
+                group["members"].append(user)
 
     return groups.values()
 
