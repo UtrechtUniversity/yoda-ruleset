@@ -345,8 +345,7 @@ def api_datarequest_get(ctx, requestId):
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
 
     return {'requestJSON': requestJSON,
-            'requestStatus': requestStatus, 'status': 0,
-            'statusInfo': "OK"}
+            'requestStatus': requestStatus}
 
 
 def submitPreliminaryReview(ctx, data, requestId, rei):
