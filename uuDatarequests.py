@@ -216,7 +216,7 @@ def api_datarequest_submit(ctx, data, previousRequestId):
         coll_create(ctx, collPath, '1', irods_types.BytesBuf())
     except UUException as e:
         log.write(ctx, "Could not create collection path.")
-        return {"status": "FailedCreateCollectionPath", "statusInfo": "Could not create collection path."}
+        return api.Error("create_collection_fail", "Could not create collection path.")
 
     # Write data request data to disk
     try:
@@ -224,7 +224,7 @@ def api_datarequest_submit(ctx, data, previousRequestId):
         write_data_object(ctx, filePath, data)
     except UUException as e:
         log.write(ctx, "Could not write data request to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write data request to disk."}
+        return api.Error("write_error", "Could not write datarequest to disk.")
 
     # Set the previous request ID as metadata if defined
     if previousRequestId:
@@ -240,7 +240,7 @@ def api_datarequest_submit(ctx, data, previousRequestId):
         set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", collPath)
     except UUException as e:
         log.write(ctx, "Could not set permissions on subcollection.")
-        return {"status": "PermissionsError", "statusInfo": "Could not set permissions on subcollection."}
+        return api.Error("permission_error", "Could not set permissions on subcollection.")
 
     # Set the status metadata field to "submitted"
     setStatus(ctx, requestId, "submitted")
@@ -309,10 +309,10 @@ def api_datarequest_get(ctx, requestId):
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
-                return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data request."}
+                return api.Error("permission_error", "User is not authorized to view this data request.")
     except Exception as e:
         log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+        return api.Error("permission_error", "Something went wrong during permission checking.")
 
     # Construct filename and filepath
     collName = '/tempZone/home/datarequests-research/' + requestId
@@ -335,14 +335,14 @@ def api_datarequest_get(ctx, requestId):
             requestStatus = row['META_DATA_ATTR_VALUE']
     except Exception as e:
         log.write(ctx, "Could not get data request status and filesize. (Does a request with this requestID exist?")
-        return {"status": "FailedGetDatarequestInfo", "statusInfo": "Could not get data request status and filesize. (Does a request with this requestID exist?)"}
+        return api.Error("failed_get_datarequest_info", "Could not get data request status and filesize. (Does a request with this requestID exist?)")
 
     # Get the contents of the datarequest JSON file
     try:
         requestJSON = read_data_object(ctx, filePath)
     except UUException as e:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
-        return {"status": "FailedGetDatarequestContent", "statusInfo": "Could not get contents of datarequest JSON file."}
+        return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
 
     return {'requestJSON': requestJSON,
             'requestStatus': requestStatus, 'status': 0,
