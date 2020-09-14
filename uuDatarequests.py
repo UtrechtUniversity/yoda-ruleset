@@ -16,8 +16,8 @@ import avu_json
 
 import session_vars
 
-__all__ = ['api_uuGetDatarequest',
-           'api_uuSubmitDatarequest',
+__all__ = ['api_datarequest_get',
+           'api_datarequest_submit',
            'uuIsRequestOwner',
            'uuIsReviewer']
 
@@ -200,7 +200,7 @@ def setMetadata(ctx, requestId, key, value):
 
 
 @api.make()
-def api_uuSubmitDatarequest(ctx, data, previousRequestId):
+def api_datarequest_submit(ctx, data, previousRequestId):
     """Persist a data request to disk.
 
        Arguments:
@@ -284,7 +284,7 @@ def api_uuSubmitDatarequest(ctx, data, previousRequestId):
 
 
 @api.make()
-def api_uuGetDatarequest(ctx, requestId):
+def api_datarequest_get(ctx, requestId):
     """Retrieve a data request.
 
        Arguments:
