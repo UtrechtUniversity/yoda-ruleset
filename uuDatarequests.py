@@ -1025,24 +1025,16 @@ def submitReview(ctx, data, requestId, rei):
     zoneName = ""
     clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
 
-    ret_val = ctx.msiMakeGenQuery(
+    iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         (("COLL_NAME = '%s' AND DATA_NAME = 'datarequest.json' AND " +
          "META_DATA_ATTR_NAME = 'assignedForReview'") %
-         (collName)).format(clientZone),
-        irods_types.GenQueryInp())
-    query = ret_val["arguments"][2]
-    ret_val = ctx.msiExecGenQuery(query, irods_types.GenQueryOut())
+         (collName)),
+        genquery.AS_LIST, ctx)
 
-    while True:
-        result = ret_val["arguments"][1]
-        for row in range(result.rowCnt):
-            reviewers.append(result.sqlResult[0].row(row))
-
-        if result.continueInx == 0:
-            break
-        ret_val = ctx.msiGetMoreRows(query, result, 0)
-    ctx.msiCloseGenQuery(query, result)
+    for row in iter:
+        reviewer = row[0]
+        reviewers.append(reviewer)
 
     # ... then removing the current reviewer from the list
     reviewers.remove(clientName)
