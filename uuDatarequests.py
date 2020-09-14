@@ -1457,12 +1457,6 @@ def requestDataReady(ctx, requestId, currentUserName):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def uuSubmitDatarequest(rule_args, callback, rei):
-    callback.writeString("stdout", json.dumps(submitDatarequest(callback,
-                                                                rule_args[0], rule_args[1],
-                                                                rei)))
-
-
 def uuGetStatus(rule_args, callback, rei):
     callback.writeString("stdout", getStatus(callback, rule_args[0]))
 
