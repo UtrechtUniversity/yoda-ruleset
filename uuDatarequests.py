@@ -214,7 +214,7 @@ def api_datarequest_submit(ctx, data, previousRequestId):
 
     # Create collection
     try:
-        coll_create(ctx, collPath, '1', irods_types.BytesBuf())
+        collection.create(ctx, collPath)
     except UUException as e:
         log.write(ctx, "Could not create collection path.")
         return api.Error("create_collection_fail", "Could not create collection path.")
@@ -222,7 +222,7 @@ def api_datarequest_submit(ctx, data, previousRequestId):
     # Write data request data to disk
     try:
         filePath = collPath + '/' + 'datarequest.json'
-        write_data_object(ctx, filePath, data)
+        data_object.write(ctx, filePath, data)
     except UUException as e:
         log.write(ctx, "Could not write data request to disk.")
         return api.Error("write_error", "Could not write datarequest to disk.")
@@ -384,7 +384,7 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
     # Write preliminary review data to disk
     try:
         preliminaryReviewPath = collPath + '/preliminary_review_' + clientName + '.json'
-        write_data_object(ctx, preliminaryReviewPath, data)
+        data_object.write(ctx, preliminaryReviewPath, data)
     except UUException as e:
         log.write(ctx, "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
@@ -537,7 +537,7 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
     # Write data manager review data to disk
     try:
         datamanagerReviewPath = collPath + '/datamanager_review_' + clientName + '.json'
-        write_data_object(ctx, datamanagerReviewPath, data)
+        data_object.write(ctx, datamanagerReviewPath, data)
     except UUException as e:
         log.write(ctx, "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
@@ -787,7 +787,7 @@ def submitAssignment(ctx, data, requestId, rei):
     # Write assignment data to disk
     try:
         assignmentPath = collPath + '/assignment_' + clientName + '.json'
-        write_data_object(ctx, assignmentPath, data)
+        data_object.write(ctx, assignmentPath, data)
     except UUException as e:
         log.write(ctx, "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
@@ -1005,7 +1005,7 @@ def submitReview(ctx, data, requestId, rei):
     # Write review data to disk
     try:
         reviewPath = collPath + '/review_' + clientName + '.json'
-        write_data_object(ctx, reviewPath, data)
+        data_object.write(ctx, reviewPath, data)
     except UUException as e:
         log.write(ctx, "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
@@ -1168,7 +1168,7 @@ def submitEvaluation(ctx, data, requestId, rei):
     # Write evaluation data to disk
     try:
         evaluationPath = collPath + '/evaluation_' + clientName + '.json'
-        write_data_object(ctx, evaluationPath, data)
+        data_object.write(ctx, evaluationPath, data)
     except UUException as e:
         log.write(ctx, "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
