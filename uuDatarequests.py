@@ -22,7 +22,7 @@ __all__ = ['api_datarequest_get',
            'uuIsRequestOwner',
            'uuIsReviewer']
 
-def sendMail(to, subject, body):
+def send_mail(to, subject, body):
     """Send an email using the specified parameters.
 
        Arguments:
@@ -48,7 +48,7 @@ def sendMail(to, subject, body):
     s.quit()
 
 
-def getGroupData(ctx):
+def get_group_data(ctx):
     """Return groups and related data.
 
        Copied from irods-ruleset-uu/uuGroup.py.
@@ -122,141 +122,141 @@ def getGroupData(ctx):
     return groups.values()
 
 
-def groupUserMember(group, user, ctx):
+def group_user_member(group, user, ctx):
     """Check if a user is a member of the given group.
 
        Arguments:
        group -- Name of group
        user  -- Name of user
     """
-    groups = getGroupData(ctx)
+    groups = get_group_data(ctx)
     groups = list(filter(lambda grp: group == grp["name"] and
                          user in grp["members"], groups))
 
     return "true" if len(groups) == 1 else "false"
 
 
-def setStatus(ctx, requestId, status):
+def set_status(ctx, request_id, status):
     """Set the status of a data request
 
        Arguments:
-       requestId -- Unique identifier of the data request.
+       request_id -- Unique identifier of the data request.
        status    -- The status to which the data request should be set.
     """
-    setMetadata(ctx, requestId, "status", status)
+    set_metadata(ctx, request_id, "status", status)
 
 
-def getStatus(ctx, requestId):
+def get_status(ctx, request_id):
     """Get the status of a data request
 
        Arguments:
-       requestId -- Unique identifier of the data request.
+       request_id -- Unique identifier of the data request.
     """
     # Construct filename and filepath
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'datarequest.json'
-    filePath = collName + '/' + fileName
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'datarequest.json'
+    file_path = coll_name + '/' + file_name
 
     try:
         rows = row_iterator(["META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
                              "DATA_NAME = '%s' AND " +
-                             "META_DATA_ATTR_NAME = 'status'") % (collName,
-                                                                  fileName),
+                             "META_DATA_ATTR_NAME = 'status'") % (coll_name,
+                                                                  file_name),
                             AS_DICT,
                             ctx)
         for row in rows:
-            requestStatus = row['META_DATA_ATTR_VALUE']
+            request_status = row['META_DATA_ATTR_VALUE']
     except Exception as e:
         log.write(ctx, "Could not get data request status.")
         return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
 
-    return requestStatus
+    return request_status
 
 
-def setMetadata(ctx, requestId, key, value):
+def set_metadata(ctx, request_id, key, value):
     """Set an arbitrary metadata field on a data request
 
        Arguments:
-       requestId -- Unique identifier of the data request.
-       key       -- Key of the metdata field
-       value     -- Value of the meta field
+       request_id -- Unique identifier of the data request.
+       key        -- Key of the metdata field
+       value      -- Value of the meta field
     """
 
-    # Construct path to the collection of the datarequest
-    zoneName = ""
-    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
-    requestColl = ("/" + clientZone + "/home/datarequests-research/" +
-                   requestId)
+    # Construct path to the collection of the data request
+    zone_name = ""
+    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    request_coll = ("/" + client_zone + "/home/datarequests-research/" +
+                    request_id)
 
-    # Add delayed rule to update datarequest status
-    responseStatus = ""
-    responseStatusInfo = ""
-    ctx.requestDatarequestMetadataChange(requestColl, key,
-                                              value, 0, responseStatus,
-                                              responseStatusInfo)
+    # Add delayed rule to update data request status
+    response_status = ""
+    response_status_info = ""
+    ctx.requestDatarequestMetadataChange(request_coll, key,
+                                         value, 0, response_status,
+                                         response_status_info)
 
     # Trigger the processing of delayed rules
     ctx.adminDatarequestActions()
 
 
 @api.make()
-def api_datarequest_submit(ctx, data, previousRequestId):
+def api_datarequest_submit(ctx, data, previous_request_id):
     """Persist a data request to disk.
 
        Arguments:
        data -- JSON-formatted contents of the data request.
     """
-    zonePath = '/tempZone/home/datarequests-research/'
-    timestamp = datetime.now()
-    requestId = str(timestamp.strftime('%s'))
-    collPath = zonePath + requestId
+    zone_path  = '/tempZone/home/datarequests-research/'
+    timestamp  = datetime.now()
+    request_id = str(timestamp.strftime('%s'))
+    coll_path  = zone_path + request_id
 
     # Create collection
     try:
-        collection.create(ctx, collPath)
+        collection.create(ctx, coll_path)
     except UUException as e:
         log.write(ctx, "Could not create collection path.")
         return api.Error("create_collection_fail", "Could not create collection path.")
 
     # Write data request data to disk
     try:
-        filePath = collPath + '/' + 'datarequest.json'
-        data_object.write(ctx, filePath, data)
+        file_path = coll_path + '/' + 'datarequest.json'
+        data_object.write(ctx, file_path, data)
     except UUException as e:
         log.write(ctx, "Could not write data request to disk.")
         return api.Error("write_error", "Could not write datarequest to disk.")
 
     # Set the previous request ID as metadata if defined
-    if previousRequestId:
-        setMetadata(ctx, requestId, "previous_request_id", previousRequestId)
+    if previous_request_id:
+        set_metadata(ctx, request_id, "previous_request_id", previous_request_id)
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    avu_json.set_json_to_obj(ctx, filePath, "-d", "root", data)
+    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
 
     # Set permissions for certain groups on the subcollection
     try:
-        set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", collPath)
-        set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", collPath)
-        set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", collPath)
+        set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", coll_path)
+        set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", coll_path)
+        set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", coll_path)
     except UUException as e:
         log.write(ctx, "Could not set permissions on subcollection.")
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
     # Set the status metadata field to "submitted"
-    setStatus(ctx, requestId, "submitted")
+    set_status(ctx, request_id, "submitted")
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
-    researcherInstitute = ""
-    researcherDepartment = ""
-    proposalTitle = ""
-    submissionDate = timestamp.strftime('%c')
-    bodMemberEmails = ""
+    researcher_name = ""
+    researcher_email = ""
+    researcher_institute = ""
+    researcher_department = ""
+    proposal_title = ""
+    submission_date = timestamp.strftime('%c')
+    bod_member_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (collPath,
+                         "DATA_NAME = '%s'") % (coll_path,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -264,32 +264,32 @@ def api_datarequest_submit(ctx, data, previousRequestId):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
+            researcher_email = value
         elif name == "institution":
-            researcherInstitute = value
+            researcher_institute = value
         elif name == "department":
-            researcherDepartment = value
+            researcher_department = value
         elif name == "title":
-            proposalTitle = value
-    bodMemberEmails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
-                                                                  bodMemberEmails)['arguments'][1])
+            proposal_title = value
+    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+                                                               bod_member_emails)['arguments'][1])
 
     # Send email to researcher and data manager notifying them of the
     # submission of this data request
-    sendMail(researcherEmail, "[researcher] YOUth data request %s: submitted" % requestId, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-    for bodMemberEmail in bodMemberEmails:
-        if not bodMemberEmail == "rods":
-            sendMail(bodMemberEmail, "[bodmember] YOUth data request %s: submitted" % requestId, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcherName, researcherEmail, researcherInstitute, researcherDepartment, submissionDate, requestId, proposalTitle, requestId))
+    send_mail(researcher_email, "[researcher] YOUth data request %s: submitted" % request_id, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+    for bod_member_email in bod_member_emails:
+        if not bod_member_email == "rods":
+            send_mail(bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
 @api.make()
-def api_datarequest_get(ctx, requestId):
+def api_datarequest_get(ctx, request_id):
     """Retrieve a data request.
 
        Arguments:
-       requestId -- Unique identifier of the data request.
+       request_id -- Unique identifier of the data request.
     """
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -297,16 +297,16 @@ def api_datarequest_get(ctx, requestId):
         full_name = user.full_name(ctx)
         name = user.name(ctx)
 
-        isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        full_name,
-                                        ctx) == 'true'
-        isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        full_name,
-                                        ctx) == 'true'
-        isdmcmember =   groupUserMember("datarequests-research-data-management-committee",
-                                        full_name,
-                                        ctx) == 'true'
-        isrequestowner = isRequestOwner(ctx, requestId, name)['isRequestOwner']
+        isboardmember = group_user_member("datarequests-research-board-of-directors",
+                                          full_name,
+                                          ctx) == 'true'
+        isdatamanager = group_user_member("datarequests-research-datamanagers",
+                                          full_name,
+                                          ctx) == 'true'
+        isdmcmember   = group_user_member("datarequests-research-data-management-committee",
+                                          full_name,
+                                          ctx) == 'true'
+        isrequestowner = isRequestOwner(ctx, request_id, name)['isRequestOwner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
@@ -316,9 +316,9 @@ def api_datarequest_get(ctx, requestId):
         return api.Error("permission_error", "Something went wrong during permission checking.")
 
     # Construct filename and filepath
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'datarequest.json'
-    filePath = collName + '/' + fileName
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'datarequest.json'
+    file_path = coll_name + '/' + file_name
 
     try:
         # Get the size of the datarequest JSON file and the request's status
@@ -326,21 +326,21 @@ def api_datarequest_get(ctx, requestId):
         rows = row_iterator(["DATA_SIZE", "COLL_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
                              "DATA_NAME = '%s' AND " +
-                             "META_DATA_ATTR_NAME = 'status'") % (collName,
-                                                                  fileName),
+                             "META_DATA_ATTR_NAME = 'status'") % (coll_name,
+                                                                  file_name),
                             AS_DICT,
                             ctx)
         for row in rows:
-            collName = row['COLL_NAME']
-            dataSize = row['DATA_SIZE']
-            requestStatus = row['META_DATA_ATTR_VALUE']
+            coll_name = row['COLL_NAME']
+            data_size = row['DATA_SIZE']
+            request_status = row['META_DATA_ATTR_VALUE']
     except Exception as e:
         log.write(ctx, "Could not get data request status and filesize. (Does a request with this requestID exist?")
         return api.Error("failed_get_datarequest_info", "Could not get data request status and filesize. (Does a request with this requestID exist?)")
 
     # Get the contents of the datarequest JSON file
     try:
-        requestJSON = read_data_object(ctx, filePath)
+        requestJSON = read_data_object(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
@@ -349,16 +349,16 @@ def api_datarequest_get(ctx, requestId):
             'requestStatus': requestStatus}
 
 
-def submitPreliminaryReview(ctx, data, requestId, rei):
+def submitPreliminaryReview(ctx, data, request_id, rei):
     """Persist a preliminary review to disk.
 
        Arguments:
        data       -- JSON-formatted contents of the preliminary review
-       proposalId -- Unique identifier of the research proposal
+       request_id -- Unique identifier of the research proposal
     """
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
-    isBoardMember = False
+    is_board_member = False
     name = ""
 
     try:
@@ -374,8 +374,8 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    zonePath = '/tempZone/home/datarequests-research/'
-    collPath = zonePath + requestId
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
 
     # Get username
     name = ""
@@ -383,42 +383,42 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
 
     # Write preliminary review data to disk
     try:
-        preliminaryReviewPath = collPath + '/preliminary_review_' + clientName + '.json'
-        data_object.write(ctx, preliminaryReviewPath, data)
+        preliminary_review_path = coll_path + '/preliminary_review_' + client_name + '.json'
+        data_object.write(ctx, preliminary_review_path, data)
     except UUException as e:
         log.write(ctx, "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminaryReviewPath)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminaryReviewPath)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminaryReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminary_review_path)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminary_review_path)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminary_review_path)
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the preliminary review (accepted/rejected)
-    preliminaryReview = json.loads(data)['preliminary_review']
+    preliminary_review = json.loads(data)['preliminary_review']
 
     # Update the status of the data request
-    if preliminaryReview == "Accepted for data manager review":
-        setStatus(ctx, requestId, "accepted_for_dm_review")
-    elif preliminaryReview == "Rejected":
-        setStatus(ctx, requestId, "preliminary_reject")
-    elif preliminaryReview == "Rejected (resubmit)":
-        setStatus(ctx, requestId, "preliminary_reject_submit")
+    if preliminary_review == "Accepted for data manager review":
+        set_status(ctx, request_id, "accepted_for_dm_review")
+    elif preliminary_review == "Rejected":
+        set_status(ctx, request_id, "preliminary_reject")
+    elif preliminary_review == "Rejected (resubmit)":
+        set_status(ctx, request_id, "preliminary_reject_submit")
     else:
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
-    datamanagerEmails = ""
+    researcher_name = ""
+    researcher_email = ""
+    datamanager_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (collPath,
+                         "DATA_NAME = '%s'") % (coll_path,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -426,21 +426,21 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
-    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+            researcher_email = value
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
-    if preliminaryReview == "Accepted for data manager review":
-        for datamanagerEmail in datamanagerEmails:
-            if not datamanagerEmail == "rods":
-                sendMail(datamanagerEmail, "[data manager] YOUth data request %s: accepted for data manager review" % requestId, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
-    elif preliminaryReview == "Rejected":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], datamanagerEmails[0]))
-    elif preliminaryReview == "Rejected (resubmit)":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0]))
+    if preliminary_review == "Accepted for data manager review":
+        for datamanager_email in datamanager_emails:
+            if not datamanager_email == "rods":
+                send_mail(datamanager_email, "[data manager] YOUth data request %s: accepted for data manager review" % request_id, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
+    elif preliminary_review == "Rejected":
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], datamanager_emails[0]))
+    elif preliminary_review == "Rejected (resubmit)":
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected (resubmit)" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], request_id, datamanager_emails[0]))
     else:
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -448,11 +448,11 @@ def submitPreliminaryReview(ctx, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getPreliminaryReview(ctx, requestId):
+def getPreliminaryReview(ctx, request_id):
     """Retrieve a preliminary review.
 
        Arguments:
-       requestId -- Unique identifier of the preliminary review
+       request_id -- Unique identifier of the preliminary review
     """
     # Check if user is authorized. If not, return PermissionError
     try:
@@ -476,35 +476,35 @@ def getPreliminaryReview(ctx, requestId):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'preliminary_review_bodmember.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'preliminary_review_bodmember.json'
 
     # Get the size of the preliminary review JSON file and the review's status
     results = []
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (collName, fileName),
+                         "DATA_NAME like '%s'") % (coll_name, file_name),
                         AS_DICT,
                         ctx)
     for row in rows:
-        collName = row['COLL_NAME']
-        dataName = row['DATA_NAME']
-        dataSize = row['DATA_SIZE']
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
+        data_size = row['DATA_SIZE']
 
     # Construct path to file
-    filePath = collName + '/' + dataName
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the review JSON file
     try:
-        preliminaryReviewJSON = read_data_object(ctx, filePath)
+        preliminary_review_json = read_data_object(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
-    return {'preliminaryReviewJSON': preliminaryReviewJSON, 'status': 0, 'statusInfo': "OK"}
+    return {'preliminaryReviewJSON': preliminary_review_json, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitDatamanagerReview(ctx, data, requestId, rei):
+def submitDatamanagerReview(ctx, data, request_id, rei):
     """Persist a preliminary review to disk.
 
        Arguments:
@@ -527,8 +527,8 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    zonePath = '/tempZone/home/datarequests-research/'
-    collPath = zonePath + requestId
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
 
     # Get username
     name = ""
@@ -536,42 +536,42 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
 
     # Write data manager review data to disk
     try:
-        datamanagerReviewPath = collPath + '/datamanager_review_' + clientName + '.json'
-        data_object.write(ctx, datamanagerReviewPath, data)
+        datamanager_review_path = coll_path + '/datamanager_review_' + client_name + '.json'
+        data_object.write(ctx, datamanager_review_path, data)
     except UUException as e:
         log.write(ctx, "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
     # Give read permission on the data manager review to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanagerReviewPath)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanagerReviewPath)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanagerReviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanager_review_path)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanager_review_path)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanager_review_path)
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the data manager review (accepted/rejected)
-    datamanagerReview = json.loads(data)['datamanager_review']
+    datamanager_review = json.loads(data)['datamanager_review']
 
     # Update the status of the data request
-    if datamanagerReview == "Accepted":
-        setStatus(ctx, requestId, "dm_accepted")
-    elif datamanagerReview == "Rejected":
-        setStatus(ctx, requestId, "dm_rejected")
-    elif datamanagerReview == "Rejected (resubmit)":
-        setStatus(ctx, requestId, "dm_rejected_resubmit")
+    if datamanager_review == "Accepted":
+        set_status(ctx, request_id, "dm_accepted")
+    elif datamanager_review == "Rejected":
+        set_status(ctx, request_id, "dm_rejected")
+    elif datamanager_review == "Rejected (resubmit)":
+        set_status(ctx, request_id, "dm_rejected_resubmit")
     else:
         log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
-    bodMemberEmails = ""
+    researcher_name = ""
+    researcher_email = ""
+    bod_member_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (collPath,
+                         "DATA_NAME = '%s'") % (coll_path,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -579,27 +579,27 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
-    bodMemberEmails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
-                                                                  bodMemberEmails)['arguments'][1])
+            researcher_email = value
+    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
+                                                                  bod_member_emails)['arguments'][1])
 
     # Send emails to:
     # - the researcher: progress update
     # - the board of directors: call to action
-    if datamanagerReview == "Accepted":
-        for bodMemberEmail in bodMemberEmails:
-            if not bodMemberEmail == "rods":
-                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: accepted by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been accepted by the data manager.\n\nYou are now asked to assign the data request for review to one or more DMC members. To do so, please navigate to the assignment form using this link: https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
-    elif datamanagerReview == "Rejected":
-        for bodMemberEmail in bodMemberEmails:
-            if not bodMemberEmail == "rods":
-                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
-    elif datamanagerReview == "Rejected (resubmit)":
-        for bodMemberEmail in bodMemberEmails:
-            if not bodMemberEmail == "rods":
-                sendMail(bodMemberEmail, "[bod member] YOUth data request %s: rejected (resubmit) by data manager" % requestId, "Dear executive board delegate,\n\nData request %s has been rejected (resubmission allowed) by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (requestId, json.loads(data)['datamanager_remarks'], requestId))
+    if datamanager_review == "Accepted":
+        for bod_member_email in bod_member_emails:
+            if not bod_member_email == "rods":
+                send_mail(bod_member_email, "[bod member] YOUth data request %s: accepted by data manager" % request_id, "Dear executive board delegate,\n\nData request %s has been accepted by the data manager.\n\nYou are now asked to assign the data request for review to one or more DMC members. To do so, please navigate to the assignment form using this link: https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
+    elif datamanager_review == "Rejected":
+        for bod_member_email in bod_member_emails:
+            if not bod_member_email == "rods":
+                send_mail(bod_member_email, "[bod member] YOUth data request %s: rejected by data manager" % request_id, "Dear executive board delegate,\n\nData request %s has been rejected by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (request_id, json.loads(data)['datamanager_remarks'], request_id))
+    elif datamanager_review == "Rejected (resubmit)":
+        for bod_member_email in bod_member_emails:
+            if not bod_member_email == "rods":
+                send_mail(bod_member_email, "[bod member] YOUth data request %s: rejected (resubmit) by data manager" % request_id, "Dear executive board delegate,\n\nData request %s has been rejected (resubmission allowed) by the data manager for the following reason(s):\n\n%s\n\nThe data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/%s.\n\nWith kind regards,\nYOUth" % (request_id, json.loads(data)['datamanager_remarks'], request_id))
     else:
         log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
@@ -607,11 +607,11 @@ def submitDatamanagerReview(ctx, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getDatamanagerReview(ctx, requestId):
+def getDatamanagerReview(ctx, request_id):
     """Retrieve a data manager review.
 
        Arguments:
-       requestId -- Unique identifier of the data manager review
+       request_id -- Unique identifier of the data manager review
     """
     # Check if user is authorized. If not, return PermissionError
     try:
@@ -636,123 +636,123 @@ def getDatamanagerReview(ctx, requestId):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'datamanager_review_datamanager.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'datamanager_review_datamanager.json'
 
     # Get the size of the data manager review JSON file and the review's status
     results = []
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (collName, fileName),
+                         "DATA_NAME like '%s'") % (coll_name, file_name),
                         AS_DICT,
                         ctx)
     for row in rows:
-        collName = row['COLL_NAME']
-        dataName = row['DATA_NAME']
-        dataSize = row['DATA_SIZE']
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
+        data_size = row['DATA_SIZE']
 
     # Construct path to file
-    filePath = collName + '/' + dataName
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the data manager review JSON file
     try:
-        datamanagerReviewJSON = read_data_object(ctx, filePath)
+        datamanager_review_json = read_data_object(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
-    return {'datamanagerReviewJSON': datamanagerReviewJSON, 'status': 0, 'statusInfo': "OK"}
+    return {'datamanagerReviewJSON': datamanager_review_json, 'status': 0, 'statusInfo': "OK"}
 
 
-def isRequestOwner(ctx, requestId, currentUserName):
+def isRequestOwner(ctx, request_id, current_user_name):
     """Check if the invoking user is also the owner of a given data request.
 
        Arguments:
-       requestId       -- Unique identifier of the data request.
-       currentUserName -- Username of the user whose ownership is checked.
+       request_id       -- Unique identifier of the data request.
+       current_user_name -- Username of the user whose ownership is checked.
 
        Return:
        dict -- A JSON dict specifying whether the user owns the data request.
     """
-    isRequestOwner = True
+    is_request_owner = True
 
     # Construct path to the collection of the datarequest
-    zoneName = ""
-    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
-    collPath = ("/" + clientZone + "/home/datarequests-research/" +
-                requestId)
+    zone_name = ""
+    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    coll_path = ("/" + client_zone + "/home/datarequests-research/" +
+                request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
-                        + "'%s'" % collPath),
+                        + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
     # Extract username from query results
-    requestOwnerUserName = []
+    request_owner_user_name = []
     for row in rows:
-        requestOwnerUserName.append(row["DATA_OWNER_NAME"])
+        request_owner_user_name.append(row["DATA_OWNER_NAME"])
 
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
-    if len(requestOwnerUserName) == 1:
+    if len(request_owner_user_name) == 1:
         # We only have 1 owner. Set requestOwnerUserName to this owner
-        requestOwnerUserName = requestOwnerUserName[0]
+        request_owner_user_name = request_owner_user_name[0]
 
         # Compare the request owner username to the username of the current
         # user to determine ownership
-        isRequestOwner = requestOwnerUserName == currentUserName
+        is_request_owner = request_owner_user_name == current_user_name
 
         # Return data
-        return {'isRequestOwner': isRequestOwner, 'status': 0, 'statusInfo': "OK"}
-    elif len(requestOwnerUserName) > 1:
+        return {'isRequestOwner': is_request_owner, 'status': 0, 'statusInfo': "OK"}
+    elif len(request_owner_user_name) > 1:
         log.write(ctx, "More than 1 owner of data request found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
-    elif len(requestOwnerUserName) == 0:
+    elif len(request_wner_user_name) == 0:
         log.write(ctx, "No data request owner found. The current user most likely does not have read permission on the data request.")
         return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
 
 
-def isReviewer(ctx, requestId, currentUsername):
+def isReviewer(ctx, request_id, current_username):
     """Check if the invoking user is assigned as reviewer to the given data request.
 
        Arguments:
-       requestId       -- Unique identifier of the data request.
-       currentUserName -- Username of the user that is to be checked.
+       request_id       -- Unique identifier of the data request.
+       current_user_name -- Username of the user that is to be checked.
 
        Return:
        dict -- A JSON dict specifying whether the user is assigned as reviewer to the data request.
     """
-    isReviewer = False
+    is_reviewer = False
 
     # Reviewers are stored in one or more assignedForReview attributes on
     # the data request, so our first step is to query the metadata of our
     # data request file for these attributes
 
     # Declare variables needed for retrieving the list of reviewers
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'datarequest.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'datarequest.json'
     reviewers = []
 
     # Retrieve list of reviewers
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME = '%s' AND " +
-                         "META_DATA_ATTR_NAME = 'assignedForReview'") % (collName,
-                                                                         fileName),
+                         "META_DATA_ATTR_NAME = 'assignedForReview'") % (coll_name,
+                                                                         file_name),
                         AS_DICT,
                         ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
     # Check if the reviewers list contains the current user
-    isReviewer = currentUsername in reviewers
+    is_reviewer = current_username in reviewers
 
     # Return the isReviewer boolean
-    return {"isReviewer": isReviewer, "status": 0, "statusInfo": "OK"}
+    return {"isReviewer": is_reviewer, "status": 0, "statusInfo": "OK"}
 
 
-def submitAssignment(ctx, data, requestId, rei):
+def submitAssignment(ctx, data, request_id, rei):
     """Persist an assignment to disk.
 
        Arguments:
@@ -761,7 +761,7 @@ def submitAssignment(ctx, data, requestId, rei):
     """
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
-    isBoardMember = False
+    is_board_member = False
     name = ""
 
     try:
@@ -777,8 +777,8 @@ def submitAssignment(ctx, data, requestId, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    zonePath = '/tempZone/home/datarequests-research/'
-    collPath = zonePath + requestId
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
 
     # Get username
     name = ""
@@ -786,17 +786,17 @@ def submitAssignment(ctx, data, requestId, rei):
 
     # Write assignment data to disk
     try:
-        assignmentPath = collPath + '/assignment_' + clientName + '.json'
-        data_object.write(ctx, assignmentPath, data)
+        assignment_path = coll_path + '/assignment_' + client_name + '.json'
+        data_object.write(ctx, assignment_path, data)
     except UUException as e:
         log.write(ctx, "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
 
     # Give read permission on the assignment to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignmentPath)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignmentPath)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignmentPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignment_path)
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignment_path)
+        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignment_path)
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
@@ -809,24 +809,24 @@ def submitAssignment(ctx, data, requestId, rei):
 
     # Update the status of the data request
     if decision == "Accepted for DMC review":
-        assignRequest(ctx, assignees, requestId)
-        setStatus(ctx, requestId, "assigned")
+        assign_request(ctx, assignees, request_id)
+        set_status(ctx, request_id, "assigned")
     elif decision == "Rejected":
-        setStatus(ctx, requestId, "rejected_after_data_manager_review")
+        set_status(ctx, request_id, "rejected_after_data_manager_review")
     elif decision == "Rejected (resubmit)":
-        setStatus(ctx, requestId, "rejected_resubmit_after_data_manager_review")
+        set_status(ctx, request_id, "rejected_resubmit_after_data_manager_review")
     else:
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get email parameters
-    requestColl = ('/tempZone/home/datarequests-research/' + requestId)
-    researcherName = ""
-    researcherEmail = ""
-    proposalTitle = ""
+    request_coll = ('/tempZone/home/datarequests-research/' + request_id)
+    researcher_name = ""
+    researcher_email = ""
+    proposal_title = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (requestColl,
+                         "DATA_NAME = '%s'") % (request_coll,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -834,22 +834,22 @@ def submitAssignment(ctx, data, requestId, rei):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
+            researcher_email = value
         elif name == "title":
-            proposalTitle = value
+            proposal_title = value
 
     # Send emails to the researcher (and to the assignees if the data request has been accepted for DMC review)
     if decision == "Accepted for DMC review":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: assigned" % requestId, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: assigned" % request_id, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
         log.write(ctx, assignees)
-        for assigneeEmail in json.loads(assignees):
-            sendMail(assigneeEmail, "[assignee] YOUth data request %s: assigned" % requestId, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (requestId, proposalTitle, requestId))
+        for assignee_email in json.loads(assignees):
+            send_mail(assignee_email, "[assignee] YOUth data request %s: assigned" % request_id, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (request_id, proposal_title, request_id))
     elif decision == "Rejected":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher']))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher']))
     elif decision == "Rejected (resubmit)":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected (resubmit)" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], request_id))
     else:
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
@@ -857,19 +857,19 @@ def submitAssignment(ctx, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def assignRequest(ctx, assignees, requestId):
+def assignRequest(ctx, assignees, request_id):
     """Assign a data request to one or more DMC members for review.
 
        Arguments:
        assignees -- JSON-formatted array of DMC members.
-       requestId -- Unique identifier of the data request
+       request_id -- Unique identifier of the data request
 
        Return:
        dict -- A JSON dict with status info for the front office.
     """
     # Check if user is a data manager. If not, do not the user to assign the
     # request
-    isDatamanager = False
+    is_datamanager = False
     name = ""
 
     try:
@@ -878,14 +878,14 @@ def assignRequest(ctx, assignees, requestId):
                                         ['arguments'][0],
                                         callback)
 
-        if not isDatamanager:
+        if not is_datamanager:
             raise Exception
     except Exception as e:
         log.write(ctx, "User is not a data manager.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
     # Construct data request collection path
-    requestColl = ('/tempZone/home/datarequests-research/' + requestId)
+    requestColl = ('/tempZone/home/datarequests-research/' + request_id)
 
     # Check if data request has already been assigned. If true, set status
     # code to failure and do not perform requested assignment
@@ -907,13 +907,13 @@ def assignRequest(ctx, assignees, requestId):
     # "assignedForReview" attributes on the datarequest (the number of
     # attributes is determined by the number of assignees) ...
     status = ""
-    statusInfo = ""
+    status_info = ""
     ctx.requestDatarequestMetadataChange(requestColl,
                                               "assignedForReview",
                                               assignees,
                                               str(len(
-                                                  json.loads(assignees))),
-                                              status, statusInfo)
+                                                  json.loads(assignees))),\
+                                              status, status_info)
 
     # ... and triggering the processing of delayed rules
     ctx.adminDatarequestActions()
@@ -921,34 +921,34 @@ def assignRequest(ctx, assignees, requestId):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getAssignment(ctx, requestId):
+def getAssignment(ctx, request_id):
     """Retrieve assignment.
 
        Arguments:
-       requestId -- Unique identifier of the assignment
+       request_id -- Unique identifier of the assignment
     """
     # Construct filename
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'assignment_bodmember.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'assignment_bodmember.json'
 
     # Get the size of the assignment JSON file and the review's status
     results = []
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (collName, fileName),
+                         "DATA_NAME like '%s'") % (coll_name, file_name),
                         AS_DICT,
                         ctx)
     for row in rows:
-        collName = row['COLL_NAME']
-        dataName = row['DATA_NAME']
-        dataSize = row['DATA_SIZE']
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
+        data_size = row['DATA_SIZE']
 
     # Construct path to file
-    filePath = collName + '/' + dataName
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the assignment JSON file
     try:
-        assignmentJSON = read_data_object(ctx, filePath)
+        assignmentJSON = read_data_object(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
@@ -956,7 +956,7 @@ def getAssignment(ctx, requestId):
     return {'assignmentJSON': assignmentJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitReview(ctx, data, requestId, rei):
+def submitReview(ctx, data, request_id, rei):
     """Persist a data request review to disk.
 
        Arguments:
@@ -972,7 +972,7 @@ def submitReview(ctx, data, requestId, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isreviewer = isReviewer(ctx, requestId, username)['isReviewer']
+        isreviewer = isReviewer(ctx, request_id, username)['isReviewer']
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
@@ -988,15 +988,15 @@ def submitReview(ctx, data, requestId, rei):
     username = callback.uuClientNameWrapper(name)['arguments'][0]
 
     try:
-        if not isReviewer(ctx, requestId, username)['isReviewer']:
+        if not isReviewer(ctx, request_id, username)['isReviewer']:
             raise UUException
     except UUException as e:
         log.write(ctx, "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
     # Construct path to collection of review
-    zonePath = '/tempZone/home/datarequests-research/'
-    collPath = zonePath + requestId
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
 
     # Get username
     name = ""
@@ -1004,32 +1004,32 @@ def submitReview(ctx, data, requestId, rei):
 
     # Write review data to disk
     try:
-        reviewPath = collPath + '/review_' + clientName + '.json'
-        data_object.write(ctx, reviewPath, data)
+        review_path = coll_path + '/review_' + client_name + '.json'
+        data_object.write(ctx, review_path, data)
     except UUException as e:
         log.write(ctx, "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
 
     # Give read permission on the review to Board of Director members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", reviewPath)
+        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
 
     # Remove the assignedForReview attribute of this user by first fetching
     # the list of reviewers ...
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'datarequest.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'datarequest.json'
     reviewers = []
-    zoneName = ""
-    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
+    zone_name = ""
+    clientZone = ctx.uuClientZone(zone_name)['arguments'][0]
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         (("COLL_NAME = '%s' AND DATA_NAME = 'datarequest.json' AND " +
          "META_DATA_ATTR_NAME = 'assignedForReview'") %
-         (collName)),
+         (coll_name)),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -1037,32 +1037,32 @@ def submitReview(ctx, data, requestId, rei):
         reviewers.append(reviewer)
 
     # ... then removing the current reviewer from the list
-    reviewers.remove(clientName)
+    reviewers.remove(client_name)
 
     # ... and then updating the assignedForReview attributes
     status = ""
-    statusInfo = ""
-    ctx.requestDatarequestMetadataChange(collName,
+    status_info = ""
+    ctx.requestDatarequestMetadataChange(coll_name,
                                               "assignedForReview",
                                               json.dumps(reviewers),
                                               str(len(
                                                   reviewers)),
-                                              status, statusInfo)
+                                              status, status_info)
     ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
     # 'reviewed' and send an email to the board of directors members
     # informing them that the proposal is ready to be evaluated by them.
     if len(reviewers) < 1:
-        setStatus(ctx, requestId, "reviewed")
+        set_status(ctx, request_id, "reviewed")
 
         # Get parameters needed for sending emails
-        researcherName = ""
-        researcherEmail = ""
-        bodmemberEmails = ""
+        researcher_name = ""
+        researcher_email = ""
+        bod_member_emails = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
-                             "DATA_NAME = '%s'") % (collPath,
+                             "DATA_NAME = '%s'") % (coll_path,
                                                     'datarequest.json'),
                             AS_DICT,
                             ctx)
@@ -1070,29 +1070,29 @@ def submitReview(ctx, data, requestId, rei):
             name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
             if name == "name":
-                researcherName = value
+                researcher_name = value
             elif name == "email":
-                researcherEmail = value
+                researcher_email = value
 
-        bodmemberEmails = json.loads(ctx.uuGroupGetMembersAsJson(
+        bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
                                          'datarequests-research-board-of-directors',
-                                         bodmemberEmails)['arguments'][1])
+                                         bod_member_emails)['arguments'][1])
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: reviewed" % requestId, "Dear %s,\n\nYour data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-        for bodmemberEmail in bodmemberEmails:
-            if not bodmemberEmail == "rods":
-                sendMail(bodmemberEmail, "[bod member] YOUth data request %s: reviewed" % requestId, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: reviewed" % request_id, "Dear %s,\n\nYour data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+        for bodmember_email in bod_member_emails:
+            if not bodmember_email == "rods":
+                send_mail(bodmember_email, "[bod member] YOUth data request %s: reviewed" % request_id, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getReviews(ctx, requestId):
+def getReviews(ctx, request_id):
     """Retrieve a data request review.
 
        Arguments:
-       requestId -- Unique identifier of the data request
+       request_id -- Unique identifier of the data request
     """
     # Check if user is authorized. If not, return PermissionError
     try:
@@ -1111,20 +1111,20 @@ def getReviews(ctx, requestId):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    collName = '/tempZone/home/datarequests-research/' + requestId
-    fileName = 'review_%.json'
+    coll_name = '/tempZone/home/datarequests-research/' + request_id
+    file_name = 'review_%.json'
 
     # Get the review JSON files
     reviewsJSON = []
     rows = row_iterator(["DATA_NAME"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (collName, fileName),
+                         "DATA_NAME like '%s'") % (coll_name, file_name),
                         AS_DICT,
                         ctx)
     for row in rows:
-        filePath = collName + '/' + row['DATA_NAME']
+        file_path = coll_name + '/' + row['DATA_NAME']
         try:
-            reviewsJSON.append(json.loads(read_data_object(ctx, filePath)))
+            reviewsJSON.append(json.loads(read_data_object(ctx, file_path)))
         except UUException as e:
             log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
@@ -1135,7 +1135,7 @@ def getReviews(ctx, requestId):
     return {'reviewsJSON': reviewsJSON, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitEvaluation(ctx, data, requestId, rei):
+def submitEvaluation(ctx, data, request_id, rei):
     """Persist an evaluation to disk.
 
        Arguments:
@@ -1158,8 +1158,8 @@ def submitEvaluation(ctx, data, requestId, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    zonePath = '/tempZone/home/datarequests-research/'
-    collPath = zonePath + requestId
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
 
     # Get username
     name = ""
@@ -1167,8 +1167,8 @@ def submitEvaluation(ctx, data, requestId, rei):
 
     # Write evaluation data to disk
     try:
-        evaluationPath = collPath + '/evaluation_' + clientName + '.json'
-        data_object.write(ctx, evaluationPath, data)
+        evaluation_path = coll_path + '/evaluation_' + client_name + '.json'
+        data_object.write(ctx, evaluation_path, data)
     except UUException as e:
         log.write(ctx, "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
@@ -1178,22 +1178,22 @@ def submitEvaluation(ctx, data, requestId, rei):
 
     # Update the status of the data request
     if decision == "Approved":
-        setStatus(ctx, requestId, "approved")
+        set_status(ctx, request_id, "approved")
     elif decision == "Rejected":
-        setStatus(ctx, requestId, "rejected")
+        set_status(ctx, request_id, "rejected")
     elif decision == "Rejected (resubmit)":
-        setStatus(ctx, requestId, "rejected_resubmit")
+        set_status(ctx, request_id, "rejected_resubmit")
     else:
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
-    datamanagerEmails = ""
+    researcher_name = ""
+    researcher_email = ""
+    datamanager_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (collPath,
+                         "DATA_NAME = '%s'") % (coll_path,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -1201,22 +1201,22 @@ def submitEvaluation(ctx, data, requestId, rei):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
-    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+            researcher_email = value
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
     if decision == "Approved":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: approved" % requestId, "Dear %s,\n\nCongratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
-        for datamanagerEmail in datamanagerEmails:
-            if not datamanagerEmail == "rods":
-                sendMail(datamanagerEmail, "[data manager] YOUth data request %s: approved" % requestId, "Dear data manager,\n\nData request %s has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.\n\nThe following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: approved" % request_id, "Dear %s,\n\nCongratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+        for datamanager_email in datamanager_emails:
+            if not datamanager_email == "rods":
+                send_mail(datamanager_email, "[data manager] YOUth data request %s: approved" % request_id, "Dear data manager,\n\nData request %s has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.\n\nThe following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
     elif decision == "Rejected":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], datamanagerEmails[0], requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], datamanager_emails[0], request_id))
     elif decision == "Rejected (resubmit)":
-        sendMail(researcherEmail, "[researcher] YOUth data request %s: rejected (resubmit)" % requestId, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcherName, json.loads(data)['feedback_for_researcher'], requestId, datamanagerEmails[0], requestId))
+        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected (resubmit)" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], request_id, datamanager_emails[0], request_id))
     else:
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
@@ -1224,7 +1224,7 @@ def submitEvaluation(ctx, data, requestId, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def DTAGrantReadPermissions(ctx, requestId, username, rei):
+def DTAGrantReadPermissions(ctx, request_id, username, rei):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
        Arguments:
@@ -1242,7 +1242,7 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
                                         ['arguments'][0],
                                         callback) == 'true'
 
-        if not isdatamanager:
+        if not is_datamanager:
             log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
     except Exception as e:
@@ -1250,42 +1250,42 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    zoneName = ""
-    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
-    collPath = ("/" + clientZone + "/home/datarequests-research/" +
-                requestId)
+    zone_name = ""
+    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    coll_path = ("/" + client_zone + "/home/datarequests-research/" +
+                 request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
-                        + "'%s'" % collPath),
+                        + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
     # Extract username from query results
-    requestOwnerUsername = []
+    request_owner_username = []
     for row in rows:
-        requestOwnerUsername.append(row["DATA_OWNER_NAME"])
+        request_owner_username.append(row["DATA_OWNER_NAME"])
 
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
-    if len(requestOwnerUsername) != 1:
+    if len(request_owner_username) != 1:
         log.write(ctx, "Not exactly 1 owner found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "Not exactly 1 owner found. Something is very wrong."}
 
-    requestOwnerUsername = requestOwnerUsername[0]
+    request_owner_username = request_owner_username[0]
 
     try:
-        set_acl(ctx, "default", "read", requestOwnerUsername, collPath + "/dta.pdf")
+        set_acl(ctx, "default", "read", request_owner_username, coll_path + "/dta.pdf")
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
+    researcher_name = ""
+    researcher_email = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (collPath,
+                         "DATA_NAME = '%s'") % (coll_path,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -1293,27 +1293,27 @@ def DTAGrantReadPermissions(ctx, requestId, username, rei):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
+            researcher_email = value
 
     # Send an email to the researcher informing them that the DTA of their
     # data request is ready for them to sign and upload
-    sendMail(researcherEmail, "[researcher] YOUth data request %s: DTA ready" % requestId, "Dear %s,\n\nThe YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.\n\nWith kind regards,\nYOUth" % (researcherName, requestId))
+    send_mail(researcher_email, "[researcher] YOUth data request %s: DTA ready" % request_id, "Dear %s,\n\nThe YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDTAReady(ctx, requestId, currentUserName):
+def requestDTAReady(ctx, request_id, current_user_name):
     """Set the status of a submitted datarequest to "DTA ready".
 
        Arguments:
-       requestId       -- Unique identifier of the datarequest.
-       currentUserName -- Username of the user whose ownership is checked.
+       request_id        -- Unique identifier of the datarequest.
+       current_user_name -- Username of the user whose ownership is checked.
     """
     # Check if the user requesting the status transition is a data manager.
     # If not, do not allow status transition
-    isDatamanager = False
+    is_datamanager = False
     name = ""
 
     try:
@@ -1328,16 +1328,16 @@ def requestDTAReady(ctx, requestId, currentUserName):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(ctx, requestId, "dta_ready")
+    set_status(ctx, request_id, "dta_ready")
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
+def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
     """Grant read permissions on the signed DTA to the datamanagers group.
 
        Arguments:
-       requestId -- Unique identifier of the datarequest.
+       request_id -- Unique identifier of the datarequest.
        username  --
     """
     # Check if user is allowed to view to proposal. If not, return
@@ -1346,7 +1346,7 @@ def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
+        isrequestowner = isRequestOwner(ctx, request_id, username)['isRequestOwner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
@@ -1356,36 +1356,36 @@ def signedDTAGrantReadPermissions(ctx, requestId, username, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    zoneName = ""
-    clientZone = ctx.uuClientZone(zoneName)['arguments'][0]
-    collPath = ("/" + clientZone + "/home/datarequests-research/" +
-                requestId)
+    zone_name   = ""
+    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    coll_path   = ("/" + client_zone + "/home/datarequests-research/" +
+                   request_id)
 
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", collPath + "/signed_dta.pdf")
+        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/signed_dta.pdf")
     except UUException as e:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
     # Get parameters needed for sending emails
-    datamanagerEmails = ""
-    datamanagerEmails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanagerEmails)['arguments'][1])
+    datamanager_emails = ""
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
 
     # Send an email to the data manager informing them that the DTA has been
     # signed by the researcher
-    for datamanagerEmail in datamanagerEmails:
-        if not datamanagerEmail == "rods":
-            sendMail(ctx, datamanagerEmail, "[data manager] YOUth data request %s: DTA signed" % requestId, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (requestId, requestId))
+    for datamanager_email in datamanager_emails:
+        if not datamanager_email == "rods":
+            send_mail(ctx, datamanager_email, "[data manager] YOUth data request %s: DTA signed" % request_id, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDTASigned(ctx, requestId, currentUserName):
+def requestDTASigned(ctx, request_id, current_user_name, rei):
     """Set the status of a data request to "DTA signed".
 
        Arguments:
-       requestId       -- Unique identifier of the datarequest.
-       currentUserName -- Username of the user whose role is checked.
+       request_id        -- Unique identifier of the datarequest.
+       current_user_name -- Username of the user whose role is checked.
     """
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1393,7 +1393,7 @@ def requestDTASigned(ctx, requestId, currentUserName):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(ctx, requestId, username)['isRequestOwner']
+        isrequestowner = isRequestOwner(ctx, request_id, username)['isRequestOwner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to change the status of this data request.")
@@ -1402,17 +1402,17 @@ def requestDTASigned(ctx, requestId, currentUserName):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(ctx, requestId, "dta_signed")
+    set_status(ctx, request_id, "dta_signed")
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def requestDataReady(ctx, requestId, currentUserName):
+def requestDataReady(ctx, request_id, current_user_name):
     """Set the status of a submitted datarequest to "Data ready".
 
        Arguments:
-       requestId       -- Unique identifier of the datarequest.
-       currentUserName -- Username of the user whose ownership is checked.
+       request_id        -- Unique identifier of the datarequest.
+       current_user_name -- Username of the user whose ownership is checked.
     """
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1431,14 +1431,14 @@ def requestDataReady(ctx, requestId, currentUserName):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    setStatus(ctx, requestId, "data_ready")
+    set_status(ctx, request_id, "data_ready")
 
     # Get parameters needed for sending emails
-    researcherName = ""
-    researcherEmail = ""
+    researcher_name = ""
+    researcher_email = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (requestId,
+                         "DATA_NAME = '%s'") % (request_id,
                                                 'datarequest.json'),
                         AS_DICT,
                         ctx)
@@ -1446,19 +1446,19 @@ def requestDataReady(ctx, requestId, currentUserName):
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
         if name == "name":
-            researcherName = value
+            researcher_name = value
         elif name == "email":
-            researcherEmail = value
+            researcher_email = value
 
     # Send email to researcher notifying him of of the submission of his
     # request
-    sendMail(ctx, researcherEmail, "[researcher] YOUth data request %s: Data ready" % requestId, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcherName)
+    send_mail(ctx, researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def uuGetStatus(rule_args, callback, rei):
-    callback.writeString("stdout", getStatus(callback, rule_args[0]))
+def uuGetStatus(rule_args, ctx, rei):
+    ctx.writeString("stdout", get_status(ctx, rule_args[0]))
 
 
 def uuSubmitPreliminaryReview(rule_args, ctx, rei):
