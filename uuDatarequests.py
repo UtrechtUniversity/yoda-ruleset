@@ -10,6 +10,7 @@ from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
 from smtplib import SMTP
 from email.mime.text import MIMEText
+import json
 
 from util import *
 import avu_json
