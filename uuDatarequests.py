@@ -343,7 +343,7 @@ def api_datarequest_get(ctx, request_id):
 
     # Get the contents of the datarequest JSON file
     try:
-        request_json = read_data_object(ctx, file_path)
+        request_json = data_object.read(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
@@ -498,7 +498,7 @@ def getPreliminaryReview(ctx, request_id):
 
     # Get the contents of the review JSON file
     try:
-        preliminary_review_json = read_data_object(ctx, file_path)
+        preliminary_review_json = data_object.read(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
@@ -658,7 +658,7 @@ def getDatamanagerReview(ctx, request_id):
 
     # Get the contents of the data manager review JSON file
     try:
-        datamanager_review_json = read_data_object(ctx, file_path)
+        datamanager_review_json = data_object.read(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
@@ -950,7 +950,7 @@ def getAssignment(ctx, request_id):
 
     # Get the contents of the assignment JSON file
     try:
-        assignmentJSON = read_data_object(ctx, file_path)
+        assignmentJSON = data_object.read(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
@@ -1126,7 +1126,7 @@ def getReviews(ctx, request_id):
     for row in rows:
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
-            reviewsJSON.append(json.loads(read_data_object(ctx, file_path)))
+            reviewsJSON.append(json.loads(data_object.read(ctx, file_path)))
         except UUException as e:
             log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
