@@ -309,7 +309,7 @@ def api_datarequest_get(ctx, request_id):
         isdmcmember   = group_user_member("datarequests-research-data-management-committee",
                                           full_name,
                                           ctx) == 'true'
-        isrequestowner = isRequestOwner(ctx, request_id, name)['isRequestOwner']
+        isrequestowner = is_request_owner(ctx, request_id, name)['isRequestOwner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
@@ -343,13 +343,12 @@ def api_datarequest_get(ctx, request_id):
 
     # Get the contents of the datarequest JSON file
     try:
-        requestJSON = read_data_object(ctx, file_path)
+        request_json = read_data_object(ctx, file_path)
     except UUException as e:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
 
-    return {'requestJSON': requestJSON,
-            'requestStatus': requestStatus}
+    return {'requestJSON': request_json, 'requestStatus': request_status}
 
 
 def submitPreliminaryReview(ctx, data, request_id, rei):
@@ -667,7 +666,7 @@ def getDatamanagerReview(ctx, request_id):
     return {'datamanagerReviewJSON': datamanager_review_json, 'status': 0, 'statusInfo': "OK"}
 
 
-def isRequestOwner(ctx, request_id, current_user_name):
+def is_request_owner(ctx, request_id, current_user_name):
     """Check if the invoking user is also the owner of a given data request.
 
        Arguments:
@@ -711,7 +710,7 @@ def isRequestOwner(ctx, request_id, current_user_name):
     elif len(request_owner_user_name) > 1:
         log.write(ctx, "More than 1 owner of data request found. Something is very wrong.")
         return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
-    elif len(request_wner_user_name) == 0:
+    elif len(request_owner_user_name) == 0:
         log.write(ctx, "No data request owner found. The current user most likely does not have read permission on the data request.")
         return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
 
