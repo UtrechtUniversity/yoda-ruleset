@@ -207,7 +207,6 @@ def api_group_user_exists(ctx, groupname, username, includeRo):
     """
     groups = getGroupData(ctx)
     if '#' not in username:
-        import session_vars
         username = username + "#" + user.zone(ctx)
 
     if includeRo == False:
