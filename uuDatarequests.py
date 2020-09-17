@@ -291,6 +291,9 @@ def api_datarequest_get(ctx, request_id):
        Arguments:
        request_id -- Unique identifier of the data request.
     """
+    # Convert request_id to string if it isn't already
+    request_id = str(request_id)
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
