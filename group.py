@@ -209,7 +209,7 @@ def api_group_user_exists(ctx, groupname, username, includeRo):
     if '#' not in username:
         username = username + "#" + user.zone(ctx)
 
-    if includeRo == False:
+    if includeRo is False:
         groups = list(filter(lambda group: groupname == group["name"] and username in group["members"], groups))
     else:
         groups = list(filter(lambda group: groupname == group["name"] and (username in group["read"] or username in group["members"]), groups))
