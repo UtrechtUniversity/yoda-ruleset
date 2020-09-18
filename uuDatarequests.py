@@ -19,7 +19,7 @@ import session_vars
 
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
-           'uuIsRequestOwner',
+           'api_datarequest_is_owner',
            'uuIsReviewer']
 
 def send_mail(to, subject, body):
@@ -309,7 +309,7 @@ def api_datarequest_get(ctx, request_id):
         isdmcmember   = group_user_member("datarequests-research-data-management-committee",
                                           full_name,
                                           ctx) == 'true'
-        isrequestowner = is_request_owner(ctx, request_id, name)['isRequestOwner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, name)['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
@@ -666,18 +666,27 @@ def getDatamanagerReview(ctx, request_id):
     return {'datamanagerReviewJSON': datamanager_review_json, 'status': 0, 'statusInfo': "OK"}
 
 
-def is_request_owner(ctx, request_id, current_user_name):
-    """Check if the invoking user is also the owner of a given data request.
+@api.make()
+def api_datarequest_is_owner(ctx, request_id, user_name):
+    result = datarequest_is_owner(ctx, request_id, user_name)
+
+    if not (result['status'] == 0):
+        return api.Error("error", "Something went wrong in determining datarequest ownership")
+
+    return result['owner']
+
+
+def datarequest_is_owner(ctx, request_id, user_name):
+    """Check if the invoking user is also the owner of a given data request
 
        Arguments:
-       request_id       -- Unique identifier of the data request.
-       current_user_name -- Username of the user whose ownership is checked.
+       request_id -- Unique identifier of the data request
+       user_name  -- Username of the user whose ownership is checked
 
        Return:
-       dict -- A JSON dict specifying whether the user owns the data request.
+       dict       -- status: 0 == lookup success, 1 == lookup fail
+                     owner: True/False
     """
-    is_request_owner = True
-
     # Construct path to the collection of the datarequest
     zone_name = ""
     client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
@@ -695,24 +704,20 @@ def is_request_owner(ctx, request_id, current_user_name):
     for row in rows:
         request_owner_user_name.append(row["DATA_OWNER_NAME"])
 
-    # Check if exactly 1 owner was found. If not, wipe
-    # requestOwnerUserName list and set error status code
+    # Check if exactly 1 owner was found
     if len(request_owner_user_name) == 1:
-        # We only have 1 owner. Set requestOwnerUserName to this owner
+        # We only have 1 owner. Set request_owner_user_name to this owner
         request_owner_user_name = request_owner_user_name[0]
 
         # Compare the request owner username to the username of the current
         # user to determine ownership
-        is_request_owner = request_owner_user_name == current_user_name
+        is_request_owner = request_owner_user_name == user_name
 
         # Return data
-        return {'isRequestOwner': is_request_owner, 'status': 0, 'statusInfo': "OK"}
-    elif len(request_owner_user_name) > 1:
-        log.write(ctx, "More than 1 owner of data request found. Something is very wrong.")
-        return {"status": "MoreThanOneOwner", "statusInfo": "More than 1 owner of data request found. Something is very wrong."}
-    elif len(request_owner_user_name) == 0:
-        log.write(ctx, "No data request owner found. The current user most likely does not have read permission on the data request.")
-        return {"isRequestOwner": False, "status": "PermissionError", "statusInfo": "No data request owner found. The current user most likely does not have read permission on the data request."}
+        return {'owner': is_request_owner, 'status': 0}
+   # If not exactly 1 owner was found, something went quite wrong. Return error
+    else:
+        return {'owner': None, 'status': 1}
 
 
 def isReviewer(ctx, request_id, current_username):
@@ -1348,7 +1353,7 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(ctx, request_id, username)['isRequestOwner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
@@ -1395,7 +1400,7 @@ def requestDTASigned(ctx, request_id, current_user_name, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isrequestowner = isRequestOwner(ctx, request_id, username)['isRequestOwner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to change the status of this data request.")
@@ -1477,11 +1482,6 @@ def uuSubmitDatamanagerReview(rule_args, ctx, rei):
 
 def uuGetDatamanagerReview(rule_args, ctx, rei):
     ctx.writeString("stdout", json.dumps(getDatamanagerReview(ctx, rule_args[0])))
-
-
-def uuIsRequestOwner(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(isRequestOwner(ctx,
-                                              rule_args[0], rule_args[1])))
 
 
 def uuIsReviewer(rule_args, ctx, rei):
