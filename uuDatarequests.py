@@ -20,7 +20,7 @@ import session_vars
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
            'api_datarequest_is_owner',
-           'uuIsReviewer']
+           'api_datarequest_is_reviewer']
 
 def send_mail(to, subject, body):
     """Send an email using the specified parameters.
@@ -469,7 +469,7 @@ def getPreliminaryReview(ctx, request_id):
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
                                         callback) == 'true'
-        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this preliminary review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
@@ -628,7 +628,7 @@ def getDatamanagerReview(ctx, request_id):
                                         callback.uuClientFullNameWrapper(name)
                                         ['arguments'][0],
                                         callback) == 'true'
-        isreviewer = isReviewer(callback, requestId, username)['isReviewer']
+        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this data manager review.")
@@ -720,18 +720,24 @@ def datarequest_is_owner(ctx, request_id, user_name):
         return {'owner': None, 'status': 1}
 
 
-def isReviewer(ctx, request_id, current_username):
-    """Check if the invoking user is assigned as reviewer to the given data request.
+@api.make()
+def api_datarequest_is_reviewer(ctx, request_id, user_name):
+    result = datarequest_is_reviewer(ctx, request_id, user_name)
+
+    return result['reviewer']
+
+
+def datarequest_is_reviewer(ctx, request_id, user_name):
+    """Check if a user is assigned as reviewer to a data request
 
        Arguments:
-       request_id       -- Unique identifier of the data request.
-       current_user_name -- Username of the user that is to be checked.
+       request_id -- Unique identifier of the data request
+       user_name  -- Username of the user that is to be checked
 
        Return:
-       dict -- A JSON dict specifying whether the user is assigned as reviewer to the data request.
+       dict       -- A JSON dict specifying whether the user is assigned as
+                     reviewer to the data request
     """
-    is_reviewer = False
-
     # Reviewers are stored in one or more assignedForReview attributes on
     # the data request, so our first step is to query the metadata of our
     # data request file for these attributes
@@ -755,8 +761,8 @@ def isReviewer(ctx, request_id, current_username):
     # Check if the reviewers list contains the current user
     is_reviewer = current_username in reviewers
 
-    # Return the isReviewer boolean
-    return {"isReviewer": is_reviewer, "status": 0, "statusInfo": "OK"}
+    # Return the is_reviewer boolean
+    return is_reviewer
 
 
 def submitAssignment(ctx, data, request_id, rei):
@@ -979,7 +985,7 @@ def submitReview(ctx, data, request_id, rei):
         name = ""
         username = callback.uuClientNameWrapper(name)['arguments'][0]
 
-        isreviewer = isReviewer(ctx, request_id, username)['isReviewer']
+        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
@@ -995,7 +1001,7 @@ def submitReview(ctx, data, request_id, rei):
     username = callback.uuClientNameWrapper(name)['arguments'][0]
 
     try:
-        if not isReviewer(ctx, request_id, username)['isReviewer']:
+        if not datarequest_is_reviewer(ctx, request_id, username)['reviewer']:
             raise UUException
     except UUException as e:
         log.write(ctx, "User is not assigned as a reviewer to this request.")
@@ -1482,11 +1488,6 @@ def uuSubmitDatamanagerReview(rule_args, ctx, rei):
 
 def uuGetDatamanagerReview(rule_args, ctx, rei):
     ctx.writeString("stdout", json.dumps(getDatamanagerReview(ctx, rule_args[0])))
-
-
-def uuIsReviewer(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(isReviewer(ctx, rule_args[0],
-                                                         rule_args[1])))
 
 
 def uuSubmitAssignment(rule_args, ctx, rei):
