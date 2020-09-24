@@ -57,7 +57,7 @@ def get_group_data(ctx):
 
     # First query: obtain a list of groups with group attributes.
     iter = genquery.row_iterator(
-        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE", 
+        "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
         genquery.AS_LIST, ctx)
 
@@ -184,8 +184,7 @@ def set_metadata(ctx, request_id, key, value):
     """
 
     # Construct path to the collection of the data request
-    zone_name = ""
-    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    client_zone = user.zone(ctx)
     request_coll = ("/" + client_zone + "/home/datarequests-research/" +
                     request_id)
 
@@ -688,8 +687,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
                      owner: True/False
     """
     # Construct path to the collection of the datarequest
-    zone_name = ""
-    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    client_zone = user.zone(ctx)
     coll_path = ("/" + client_zone + "/home/datarequests-research/" +
                 request_id)
 
@@ -983,7 +981,7 @@ def submitReview(ctx, data, request_id, rei):
     # not allow submission of the review
     try:
         name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = ctx.uuClientNameWrapper(name)['arguments'][0]
 
         isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
 
@@ -998,7 +996,7 @@ def submitReview(ctx, data, request_id, rei):
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     name = ""
-    username = callback.uuClientNameWrapper(name)['arguments'][0]
+    username = ctx.uuClientNameWrapper(name)['arguments'][0]
 
     try:
         if not datarequest_is_reviewer(ctx, request_id, username)['reviewer']:
@@ -1013,7 +1011,7 @@ def submitReview(ctx, data, request_id, rei):
 
     # Get username
     name = ""
-    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+    clientName = ctx.uuClientNameWrapper(name)['arguments'][0]
 
     # Write review data to disk
     try:
@@ -1035,8 +1033,7 @@ def submitReview(ctx, data, request_id, rei):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'datarequest.json'
     reviewers = []
-    zone_name = ""
-    clientZone = ctx.uuClientZone(zone_name)['arguments'][0]
+    client_zone = user.zone(ctx)
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
@@ -1263,8 +1260,7 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    zone_name = ""
-    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    client_zone = user.zone(ctx)
     coll_path = ("/" + client_zone + "/home/datarequests-research/" +
                  request_id)
 
@@ -1369,8 +1365,7 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    zone_name   = ""
-    client_zone = ctx.uuClientZone(zone_name)['arguments'][0]
+    client_zone = user.zone(ctx)
     coll_path   = ("/" + client_zone + "/home/datarequests-research/" +
                    request_id)
 
