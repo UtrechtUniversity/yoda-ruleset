@@ -54,7 +54,7 @@ def get_group_data(ctx):
     groups = {}
 
     # First query: obtain a list of groups with group attributes.
-    iter = genquery.row_iterator(
+    iter = row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
         genquery.AS_LIST, ctx)
@@ -86,7 +86,7 @@ def get_group_data(ctx):
             group["managers"].append(value)
 
     # Second query: obtain list of groups with memberships.
-    iter = genquery.row_iterator(
+    iter = row_iterator(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
         genquery.AS_LIST, ctx)
