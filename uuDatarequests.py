@@ -5,7 +5,6 @@
 # \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-import irods_types
 from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
 from smtplib import SMTP
@@ -15,12 +14,11 @@ import json
 from util import *
 import avu_json
 
-import session_vars
-
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
            'api_datarequest_is_owner',
            'api_datarequest_is_reviewer']
+
 
 def send_mail(to, subject, body):
     """Send an email using the specified parameters.
@@ -167,7 +165,7 @@ def get_status(ctx, request_id):
                             ctx)
         for row in rows:
             request_status = row['META_DATA_ATTR_VALUE']
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Could not get data request status.")
         return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
 
@@ -206,15 +204,15 @@ def api_datarequest_submit(ctx, data, previous_request_id):
        Arguments:
        data -- JSON-formatted contents of the data request.
     """
-    zone_path  = '/tempZone/home/datarequests-research/'
-    timestamp  = datetime.now()
+    zone_path = '/tempZone/home/datarequests-research/'
+    timestamp = datetime.now()
     request_id = str(timestamp.strftime('%s'))
-    coll_path  = zone_path + request_id
+    coll_path = zone_path + request_id
 
     # Create collection
     try:
         collection.create(ctx, coll_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not create collection path.")
         return api.Error("create_collection_fail", "Could not create collection path.")
 
@@ -222,7 +220,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     try:
         file_path = coll_path + '/' + 'datarequest.json'
         data_object.write(ctx, file_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write data request to disk.")
         return api.Error("write_error", "Could not write datarequest to disk.")
 
@@ -238,7 +236,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", coll_path)
         set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", coll_path)
         set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", coll_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not set permissions on subcollection.")
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
@@ -300,20 +298,17 @@ def api_datarequest_get(ctx, request_id):
         name = user.name(ctx)
 
         isboardmember = group_user_member("datarequests-research-board-of-directors",
-                                          full_name,
-                                          ctx) == 'true'
+                                          full_name, ctx) == 'true'
         isdatamanager = group_user_member("datarequests-research-datamanagers",
-                                          full_name,
-                                          ctx) == 'true'
-        isdmcmember   = group_user_member("datarequests-research-data-management-committee",
-                                          full_name,
-                                          ctx) == 'true'
+                                          full_name, ctx) == 'true'
+        isdmcmember = group_user_member("datarequests-research-data-management-committee",
+                                        full_name, ctx) == 'true'
         isrequestowner = datarequest_is_owner(ctx, request_id, name)['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
                 return api.Error("permission_error", "User is not authorized to view this data request.")
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return api.Error("permission_error", "Something went wrong during permission checking.")
 
@@ -324,7 +319,6 @@ def api_datarequest_get(ctx, request_id):
 
     try:
         # Get the size of the datarequest JSON file and the request's status
-        results = []
         rows = row_iterator(["DATA_SIZE", "COLL_NAME", "META_DATA_ATTR_VALUE"],
                             ("COLL_NAME = '%s' AND " +
                              "DATA_NAME = '%s' AND " +
@@ -334,16 +328,15 @@ def api_datarequest_get(ctx, request_id):
                             ctx)
         for row in rows:
             coll_name = row['COLL_NAME']
-            data_size = row['DATA_SIZE']
             request_status = row['META_DATA_ATTR_VALUE']
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Could not get data request status and filesize. (Does a request with this requestID exist?")
         return api.Error("failed_get_datarequest_info", "Could not get data request status and filesize. (Does a request with this requestID exist?)")
 
     # Get the contents of the datarequest JSON file
     try:
         request_json = data_object.read(ctx, file_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
 
@@ -360,17 +353,15 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
     is_board_member = False
-    name = ""
 
     try:
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback)
+                                        user.full_name(ctx), ctx)
+
         if not isBoardMember == 'true':
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -379,14 +370,13 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
     coll_path = zone_path + request_id
 
     # Get username
-    name = ""
-    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+    client_name = user.name(ctx)
 
     # Write preliminary review data to disk
     try:
         preliminary_review_path = coll_path + '/preliminary_review_' + client_name + '.json'
         data_object.write(ctx, preliminary_review_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
@@ -395,7 +385,7 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminary_review_path)
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminary_review_path)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminary_review_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
@@ -457,22 +447,18 @@ def getPreliminaryReview(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = user.name(ctx)
+        full_name = user.full_name(ctx)
 
         isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        full_name, ctx) == 'true'
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        full_name, ctx) == 'true'
         isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this preliminary review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -481,7 +467,6 @@ def getPreliminaryReview(ctx, request_id):
     file_name = 'preliminary_review_bodmember.json'
 
     # Get the size of the preliminary review JSON file and the review's status
-    results = []
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (coll_name, file_name),
@@ -498,7 +483,7 @@ def getPreliminaryReview(ctx, request_id):
     # Get the contents of the review JSON file
     try:
         preliminary_review_json = data_object.read(ctx, file_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
@@ -515,15 +500,12 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
-        name = ""
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        user.full_name(ctx), ctx) == 'true'
         if not isDatamanager:
             log.write(ctx, "User is not a data manager.")
             return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -533,13 +515,13 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
 
     # Get username
     name = ""
-    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+    client_name = user.name(ctx)
 
     # Write data manager review data to disk
     try:
         datamanager_review_path = coll_path + '/datamanager_review_' + client_name + '.json'
         data_object.write(ctx, datamanager_review_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
@@ -548,7 +530,7 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanager_review_path)
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanager_review_path)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanager_review_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
@@ -584,7 +566,7 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
         elif name == "email":
             researcher_email = value
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
-                                                                  bod_member_emails)['arguments'][1])
+                                                               bod_member_emails)['arguments'][1])
 
     # Send emails to:
     # - the researcher: progress update
@@ -616,23 +598,19 @@ def getDatamanagerReview(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = user.name(ctx)
+        full_name = user.full_name(ctx)
 
         isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        full_name, ctx) == 'true'
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        full_name, ctx) == 'true'
         isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this data manager review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data manager review."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -641,7 +619,6 @@ def getDatamanagerReview(ctx, request_id):
     file_name = 'datamanager_review_datamanager.json'
 
     # Get the size of the data manager review JSON file and the review's status
-    results = []
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (coll_name, file_name),
@@ -658,7 +635,7 @@ def getDatamanagerReview(ctx, request_id):
     # Get the contents of the data manager review JSON file
     try:
         datamanager_review_json = data_object.read(ctx, file_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
@@ -688,13 +665,11 @@ def datarequest_is_owner(ctx, request_id, user_name):
     """
     # Construct path to the collection of the datarequest
     client_zone = user.zone(ctx)
-    coll_path = ("/" + client_zone + "/home/datarequests-research/" +
-                request_id)
+    coll_path = ("/" + client_zone + "/home/datarequests-research/" + request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
-                        + "'%s'" % coll_path),
+                        ("DATA_NAME = 'datarequest.json' and COLL_NAME like " + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
     # Extract username from query results
@@ -713,7 +688,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
         # Return data
         return {'owner': is_request_owner, 'status': 0}
-   # If not exactly 1 owner was found, something went quite wrong. Return error
+    # If not exactly 1 owner was found, something went quite wrong. Return error
     else:
         return {'owner': None, 'status': 1}
 
@@ -777,13 +752,12 @@ def submitAssignment(ctx, data, request_id, rei):
 
     try:
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == "true"
+                                        user.full_name(ctx),
+                                        ctx) == "true"
         if not isBoardMember:
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -793,13 +767,13 @@ def submitAssignment(ctx, data, request_id, rei):
 
     # Get username
     name = ""
-    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+    client_name = user.name(ctx)
 
     # Write assignment data to disk
     try:
         assignment_path = coll_path + '/assignment_' + client_name + '.json'
         data_object.write(ctx, assignment_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
 
@@ -808,7 +782,7 @@ def submitAssignment(ctx, data, request_id, rei):
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignment_path)
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignment_path)
         set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignment_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
 
@@ -885,13 +859,11 @@ def assignRequest(ctx, assignees, request_id):
 
     try:
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback)
+                                        user.full_name(ctx), ctx)
 
         if not is_datamanager:
             raise Exception
-    except Exception as e:
+    except Exception:
         log.write(ctx, "User is not a data manager.")
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
@@ -900,7 +872,6 @@ def assignRequest(ctx, assignees, request_id):
 
     # Check if data request has already been assigned. If true, set status
     # code to failure and do not perform requested assignment
-    results = []
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
                         "META_DATA_ATTR_NAME = 'status'")
@@ -943,8 +914,7 @@ def getAssignment(ctx, request_id):
     file_name = 'assignment_bodmember.json'
 
     # Get the size of the assignment JSON file and the review's status
-    results = []
-    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+    rows = row_iterator(["DATA_NAME", "COLL_NAME"],
                         ("COLL_NAME = '%s' AND " +
                          "DATA_NAME like '%s'") % (coll_name, file_name),
                         AS_DICT,
@@ -952,7 +922,6 @@ def getAssignment(ctx, request_id):
     for row in rows:
         coll_name = row['COLL_NAME']
         data_name = row['DATA_NAME']
-        data_size = row['DATA_SIZE']
 
     # Construct path to file
     file_path = coll_name + '/' + data_name
@@ -960,7 +929,7 @@ def getAssignment(ctx, request_id):
     # Get the contents of the assignment JSON file
     try:
         assignmentJSON = data_object.read(ctx, file_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
@@ -980,28 +949,24 @@ def submitReview(ctx, data, request_id, rei):
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
-        name = ""
-        username = ctx.uuClientNameWrapper(name)['arguments'][0]
-
+        username = user.name(ctx)
         isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
             return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
-    name = ""
-    username = ctx.uuClientNameWrapper(name)['arguments'][0]
+    username = user.name(ctx)
 
     try:
         if not datarequest_is_reviewer(ctx, request_id, username)['reviewer']:
             raise UUException
-    except UUException as e:
+    except UUException:
         log.write(ctx, "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
@@ -1010,21 +975,20 @@ def submitReview(ctx, data, request_id, rei):
     coll_path = zone_path + request_id
 
     # Get username
-    name = ""
-    clientName = ctx.uuClientNameWrapper(name)['arguments'][0]
+    client_name = user.name(ctx)
 
     # Write review data to disk
     try:
         review_path = coll_path + '/review_' + client_name + '.json'
         data_object.write(ctx, review_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
 
     # Give read permission on the review to Board of Director members
     try:
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
 
@@ -1106,17 +1070,14 @@ def getReviews(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = user.name(ctx)
 
         isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        user.full_name(ctx), ctx) == 'true'
         if not isboardmember:
             log.write(ctx, "User is not authorized to view this review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1135,7 +1096,7 @@ def getReviews(ctx, request_id):
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
             reviewsJSON.append(json.loads(data_object.read(ctx, file_path)))
-        except UUException as e:
+        except UUException:
             log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
@@ -1157,13 +1118,11 @@ def submitEvaluation(ctx, data, request_id, rei):
     try:
         name = ""
         isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == "true"
+                                        user.full_name(ctx), ctx) == "true"
         if not isBoardMember:
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1173,13 +1132,13 @@ def submitEvaluation(ctx, data, request_id, rei):
 
     # Get username
     name = ""
-    clientName = callback.uuClientNameWrapper(name)['arguments'][0]
+    client_name = user.name(ctx)
 
     # Write evaluation data to disk
     try:
         evaluation_path = coll_path + '/evaluation_' + client_name + '.json'
         data_object.write(ctx, evaluation_path, data)
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
 
@@ -1244,18 +1203,15 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
+        username = user.name(ctx)
 
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        user.full_name(ctx), ctx) == 'true'
 
         if not is_datamanager:
             log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1266,8 +1222,7 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = 'datarequest.json' and COLL_NAME like "
-                        + "'%s'" % coll_path),
+                        ("DATA_NAME = 'datarequest.json' and COLL_NAME like " + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
     # Extract username from query results
@@ -1285,7 +1240,7 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
 
     try:
         set_acl(ctx, "default", "read", request_owner_username, coll_path + "/dta.pdf")
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
@@ -1327,13 +1282,11 @@ def requestDTAReady(ctx, request_id, current_user_name):
 
     try:
         isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == "true"
+                                        user.full_name(ctx), ctx) == "true"
         if not isDatamanager:
             log.write(ctx, "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1352,26 +1305,23 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
-
+        username = user.name(ctx)
         isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the signed DTA."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
     client_zone = user.zone(ctx)
-    coll_path   = ("/" + client_zone + "/home/datarequests-research/" +
-                   request_id)
+    coll_path = ("/" + client_zone + "/home/datarequests-research/" + request_id)
 
     try:
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/signed_dta.pdf")
-    except UUException as e:
+    except UUException:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
@@ -1398,15 +1348,13 @@ def requestDTASigned(ctx, request_id, current_user_name, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
-
+        username = user.name(ctx)
         isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1425,17 +1373,12 @@ def requestDataReady(ctx, request_id, current_user_name):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        name = ""
-        username = callback.uuClientNameWrapper(name)['arguments'][0]
-
         isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        callback.uuClientFullNameWrapper(name)
-                                        ['arguments'][0],
-                                        callback) == 'true'
+                                        user.full_name(ctx), ctx) == 'true'
         if not isdatamanager:
             log.write(ctx, "User is not authorized to mark the data as ready.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
-    except Exception as e:
+    except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
@@ -1490,9 +1433,7 @@ def uuSubmitAssignment(rule_args, ctx, rei):
 
 
 def uuAssignRequest(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(assignRequest(ctx,
-                                                            rule_args[0],
-                                                            rule_args[1])))
+    ctx.writeString("stdout", json.dumps(assignRequest(ctx, rule_args[0], rule_args[1])))
 
 
 def uuGetAssignment(rule_args, ctx, rei):
@@ -1500,45 +1441,32 @@ def uuGetAssignment(rule_args, ctx, rei):
 
 
 def uuSubmitReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitReview(ctx,
-                                                           rule_args[0],
-                                                           rule_args[1], rei)))
+    ctx.writeString("stdout", json.dumps(submitReview(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuGetReviews(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(getReviews(ctx,
-                                                        rule_args[0])))
+    ctx.writeString("stdout", json.dumps(getReviews(ctx, rule_args[0])))
 
 
 def uuSubmitEvaluation(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitEvaluation(ctx,
-                                                               rule_args[0],
-                                                               rule_args[1],
-                                                               rei)))
+    ctx.writeString("stdout", json.dumps(submitEvaluation(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuDTAGrantReadPermissions(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(DTAGrantReadPermissions(ctx,
-                                              rule_args[0], rule_args[1],
-                                              rei)))
+    ctx.writeString("stdout", json.dumps(DTAGrantReadPermissions(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuRequestDTAReady(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDTAReady(ctx,
-                                              rule_args[0], rule_args[1])))
+    ctx.writeString("stdout", json.dumps(requestDTAReady(ctx, rule_args[0], rule_args[1])))
 
 
 def uuSignedDTAGrantReadPermissions(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(
-                                              ctx, rule_args[0],
-                                              rule_args[1], rei)))
+    ctx.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuRequestDTASigned(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDTASigned(ctx,
-                                              rule_args[0], rule_args[1])))
+    ctx.writeString("stdout", json.dumps(requestDTASigned(ctx, rule_args[0], rule_args[1])))
 
 
 def uuRequestDataReady(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDataReady(ctx,
-                                              rule_args[0], rule_args[1])))
+    ctx.writeString("stdout", json.dumps(requestDataReady(ctx, rule_args[0], rule_args[1])))
