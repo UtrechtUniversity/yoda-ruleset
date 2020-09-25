@@ -505,6 +505,11 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
+    # Check if status is appropriate for the submission of the data manager review
+    if not get_status(ctx, request_id) == 'accepted_for_dm_review':
+        log.write(ctx, "Current status of data request does not permit this operation.")
+        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
+
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
@@ -745,6 +750,11 @@ def submitAssignment(ctx, data, request_id, rei):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
+    # Check if status is appropriate for assignment
+    if not get_status(ctx, request_id) in ['dm_accepted', 'dm_rejected', 'dm_rejected_resubmit']:
+        log.write(ctx, "Current status of data request does not permit this operation.")
+        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
+
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
@@ -937,6 +947,11 @@ def submitReview(ctx, data, request_id, rei):
         log.write(ctx, "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
+    # Check if status is appropriate for submission of the review
+    if not get_status(ctx, request_id) == 'assigned':
+        log.write(ctx, "Current status of data request does not permit this operation.")
+        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
+
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     try:
@@ -1100,6 +1115,11 @@ def submitEvaluation(ctx, data, request_id, rei):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+
+    # Check if status is appropriate for submission of the evaluation
+    if not get_status(ctx, request_id) == 'reviewed':
+        log.write(ctx, "Current status of data request does not permit this operation.")
+        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
