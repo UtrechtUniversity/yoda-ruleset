@@ -233,10 +233,10 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Set permissions for certain groups on the subcollection
     try:
-        set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", coll_path)
-        set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", coll_path)
-        set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", coll_path)
-    except UUException:
+        msi.set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", coll_path)
+        msi.set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", coll_path)
+        msi.set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", coll_path)
+    except Exception:
         log.write(ctx, "Could not set permissions on subcollection.")
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
@@ -373,10 +373,10 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminary_review_path)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminary_review_path)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminary_review_path)
-    except UUException:
+        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminary_review_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminary_review_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminary_review_path)
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
@@ -513,10 +513,10 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
 
     # Give read permission on the data manager review to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanager_review_path)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanager_review_path)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanager_review_path)
-    except UUException:
+        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanager_review_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanager_review_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanager_review_path)
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
@@ -753,10 +753,10 @@ def submitAssignment(ctx, data, request_id, rei):
 
     # Give read permission on the assignment to data managers and Board of Directors members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignment_path)
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignment_path)
-        set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignment_path)
-    except UUException:
+        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignment_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignment_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignment_path)
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
 
@@ -956,7 +956,7 @@ def submitReview(ctx, data, request_id, rei):
 
     # Give read permission on the review to Board of Director members
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
+        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
@@ -1201,7 +1201,7 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
     request_owner_username = request_owner_username[0]
 
     try:
-        set_acl(ctx, "default", "read", request_owner_username, coll_path + "/dta.pdf")
+        msi.set_acl(ctx, "default", "read", request_owner_username, coll_path + "/dta.pdf")
     except Exception:
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
@@ -1278,7 +1278,7 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
     coll_path = ("/" + client_zone + "/home/datarequests-research/" + request_id)
 
     try:
-        set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/signed_dta.pdf")
+        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/signed_dta.pdf")
     except Exception:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
