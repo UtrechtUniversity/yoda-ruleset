@@ -212,7 +212,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     # Create collection
     try:
         collection.create(ctx, coll_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not create collection path.")
         return api.Error("create_collection_fail", "Could not create collection path.")
 
@@ -220,7 +220,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     try:
         file_path = coll_path + '/' + 'datarequest.json'
         data_object.write(ctx, file_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write data request to disk.")
         return api.Error("write_error", "Could not write datarequest to disk.")
 
@@ -330,7 +330,7 @@ def api_datarequest_get(ctx, request_id):
     # Get the contents of the datarequest JSON file
     try:
         request_json = data_object.read(ctx, file_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not get contents of datarequest JSON file.")
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
 
@@ -367,7 +367,7 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
     try:
         preliminary_review_path = coll_path + '/preliminary_review_' + client_name + '.json'
         data_object.write(ctx, preliminary_review_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write preliminary review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
 
@@ -470,7 +470,7 @@ def getPreliminaryReview(ctx, request_id):
     # Get the contents of the review JSON file
     try:
         preliminary_review_json = data_object.read(ctx, file_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
@@ -507,7 +507,7 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
     try:
         datamanager_review_path = coll_path + '/datamanager_review_' + client_name + '.json'
         data_object.write(ctx, datamanager_review_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write data manager review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
 
@@ -616,7 +616,7 @@ def getDatamanagerReview(ctx, request_id):
     # Get the contents of the data manager review JSON file
     try:
         datamanager_review_json = data_object.read(ctx, file_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
@@ -747,7 +747,7 @@ def submitAssignment(ctx, data, request_id, rei):
     try:
         assignment_path = coll_path + '/assignment_' + client_name + '.json'
         data_object.write(ctx, assignment_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write assignment data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
 
@@ -899,7 +899,7 @@ def getAssignment(ctx, request_id):
     # Get the contents of the assignment JSON file
     try:
         assignmentJSON = data_object.read(ctx, file_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
@@ -935,7 +935,7 @@ def submitReview(ctx, data, request_id, rei):
 
         if not isreviewer:
             raise Exception
-    except UUException:
+    except Exception:
         log.write(ctx, "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
@@ -950,14 +950,14 @@ def submitReview(ctx, data, request_id, rei):
     try:
         review_path = coll_path + '/review_' + client_name + '.json'
         data_object.write(ctx, review_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write review data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
 
     # Give read permission on the review to Board of Director members
     try:
         set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
 
@@ -1063,7 +1063,7 @@ def getReviews(ctx, request_id):
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
             reviewsJSON.append(json.loads(data_object.read(ctx, file_path)))
-        except UUException:
+        except Exception:
             log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
@@ -1103,7 +1103,7 @@ def submitEvaluation(ctx, data, request_id, rei):
     try:
         evaluation_path = coll_path + '/evaluation_' + client_name + '.json'
         data_object.write(ctx, evaluation_path, data)
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not write evaluation data to disk.")
         return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
 
@@ -1202,7 +1202,7 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
 
     try:
         set_acl(ctx, "default", "read", request_owner_username, coll_path + "/dta.pdf")
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
@@ -1279,7 +1279,7 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
 
     try:
         set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/signed_dta.pdf")
-    except UUException:
+    except Exception:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
