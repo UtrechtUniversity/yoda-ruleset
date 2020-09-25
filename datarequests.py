@@ -1,9 +1,11 @@
-# \file      uuDatarequest.py
-# \brief     Functions to handle data requests.
-# \author    Jelmer Zondergeld
-# \author    Lazlo Westerhof
-# \copyright Copyright (c) 2019 Utrecht University. All rights reserved.
-# \license   GPLv3, see LICENSE.
+# -*- coding: utf-8 -*-
+"""Functions to handle data requests."""
+
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
+__author__    =  ('Lazlo Westerhof'
+              + ', Jelmer Zondergeld')
 
 from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
