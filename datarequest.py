@@ -19,7 +19,8 @@ __all__ = ['api_datarequest_get',
            'api_datarequest_is_owner',
            'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
-           'api_datarequest_preliminary_review_get']
+           'api_datarequest_preliminary_review_get',
+           'api_datarequest_datamanager_review_submit']
 
 
 def send_mail(ctx, to, subject, body):
@@ -464,13 +465,17 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     return {'preliminaryReviewJSON': preliminary_review_json, 'status': 0, 'statusInfo': "OK"}
 
 
-def submitDatamanagerReview(ctx, data, request_id, rei):
+@api.make()
+def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     """Persist a preliminary review to disk.
 
        Arguments:
        data       -- JSON-formatted contents of the preliminary review
        proposalId -- Unique identifier of the research proposal
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
@@ -1355,10 +1360,6 @@ def requestDataReady(ctx, request_id, current_user_name):
 
 def uuGetStatus(rule_args, ctx, rei):
     ctx.writeString("stdout", get_status(ctx, rule_args[0]))
-
-
-def uuSubmitDatamanagerReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitDatamanagerReview(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuGetDatamanagerReview(rule_args, ctx, rei):
