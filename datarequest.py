@@ -462,7 +462,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
         log.write(ctx, "Could not get preliminary review data.")
         return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
-    return {'preliminaryReviewJSON': preliminary_review_json, 'status': 0, 'statusInfo': "OK"}
+    return preliminary_review_json
 
 
 @api.make()
