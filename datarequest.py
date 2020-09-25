@@ -425,6 +425,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
        Arguments:
        request_id -- Unique identifier of the preliminary review
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is authorized. If not, return PermissionError
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
