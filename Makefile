@@ -3,7 +3,7 @@
 # \author    Lazlo Westerhof
 # \author    Paul Frederiks
 # \author    Chris Smeele
-# \copyright Copyright (c) 2015-2019, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2020, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 #
 # Please note the following:
