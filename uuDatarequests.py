@@ -17,10 +17,12 @@ import avu_json
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
            'api_datarequest_is_owner',
-           'api_datarequest_is_reviewer']
+           'api_datarequest_is_reviewer',
+           'api_datarequest_preliminary_review_submit',
+           'api_datarequest_preliminary_review_get']
 
 
-def send_mail(to, subject, body):
+def send_mail(ctx, to, subject, body):
     """Send an email using the specified parameters.
 
        Arguments:
@@ -337,7 +339,8 @@ def api_datarequest_get(ctx, request_id):
     return {'requestJSON': request_json, 'requestStatus': request_status}
 
 
-def submitPreliminaryReview(ctx, data, request_id, rei):
+@api.make()
+def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     """Persist a preliminary review to disk.
 
        Arguments:
@@ -430,7 +433,8 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getPreliminaryReview(ctx, request_id):
+@api.make()
+def api_datarequest_preliminary_review_get(ctx, request_id):
     """Retrieve a preliminary review.
 
        Arguments:
