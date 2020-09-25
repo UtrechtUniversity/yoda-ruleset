@@ -145,12 +145,11 @@ def get_status(ctx, request_id):
 
     try:
         rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            ("COLL_NAME = '%s' AND " +
-                             "DATA_NAME = '%s' AND " +
-                             "META_DATA_ATTR_NAME = 'status'") % (coll_name,
-                                                                  file_name),
-                            AS_DICT,
-                            ctx)
+                            ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
+                             + "META_DATA_ATTR_NAME = 'status'") % (coll_name,
+                                                                    file_name),
+                            AS_DICT, ctx)
+
         for row in rows:
             request_status = row['META_DATA_ATTR_VALUE']
     except Exception:
@@ -171,8 +170,8 @@ def set_metadata(ctx, request_id, key, value):
 
     # Construct path to the collection of the data request
     client_zone = user.zone(ctx)
-    request_coll = ("/" + client_zone + "/home/datarequests-research/" +
-                    request_id)
+    request_coll = ("/" + client_zone + "/home/datarequests-research/"
+                    + request_id)
 
     # Add delayed rule to update data request status
     response_status = ""
@@ -240,11 +239,9 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     submission_date = timestamp.strftime('%c')
     bod_member_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (coll_path,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_path
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -288,8 +285,8 @@ def api_datarequest_get(ctx, request_id):
         isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
-                log.write(ctx, "User is not authorized to view this data request.")
-                return api.Error("permission_error", "User is not authorized to view this data request.")
+            log.write(ctx, "User is not authorized to view this data request.")
+            return api.Error("permission_error", "User is not authorized to view this data request.")
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return api.Error("permission_error", "Something went wrong during permission checking.")
@@ -302,12 +299,10 @@ def api_datarequest_get(ctx, request_id):
     try:
         # Get the size of the datarequest JSON file and the request's status
         rows = row_iterator(["DATA_SIZE", "COLL_NAME", "META_DATA_ATTR_VALUE"],
-                            ("COLL_NAME = '%s' AND " +
-                             "DATA_NAME = '%s' AND " +
-                             "META_DATA_ATTR_NAME = 'status'") % (coll_name,
-                                                                  file_name),
-                            AS_DICT,
-                            ctx)
+                            "COLL_NAME = '%s'" % coll_name
+                            + " AND DATA_NAME = '%s'" % file_name
+                            + " AND META_DATA_ATTR_NAME = 'status'",
+                            AS_DICT, ctx)
         for row in rows:
             coll_name = row['COLL_NAME']
             request_status = row['META_DATA_ATTR_VALUE']
@@ -393,11 +388,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     researcher_email = ""
     datamanager_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (coll_path,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_path
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -450,10 +443,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Get the size of the preliminary review JSON file and the review's status
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (coll_name, file_name),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
     for row in rows:
         coll_name = row['COLL_NAME']
         data_name = row['DATA_NAME']
@@ -539,11 +531,9 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
     researcher_email = ""
     bod_member_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (coll_path,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_path
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -601,10 +591,9 @@ def getDatamanagerReview(ctx, request_id):
 
     # Get the size of the data manager review JSON file and the review's status
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (coll_name, file_name),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
     for row in rows:
         coll_name = row['COLL_NAME']
         data_name = row['DATA_NAME']
@@ -701,12 +690,10 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
 
     # Retrieve list of reviewers
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s' AND " +
-                         "META_DATA_ATTR_NAME = 'assignedForReview'") % (coll_name,
-                                                                         file_name),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME = '%s' AND " % file_name
+                        + "META_DATA_ATTR_NAME = 'assignedForReview'",
+                        AS_DICT, ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
@@ -789,11 +776,9 @@ def submitAssignment(ctx, data, request_id, rei):
     researcher_email = ""
     proposal_title = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (request_coll,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % request_coll
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -848,9 +833,9 @@ def assignRequest(ctx, assignees, request_id):
     # Check if data request has already been assigned. If true, set status
     # code to failure and do not perform requested assignment
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' and DATA_NAME = '%s' and " +
-                        "META_DATA_ATTR_NAME = 'status'")
-                        % (requestColl, 'datarequest.json'),
+                        "COLL_NAME = '%s' AND " % requestColl
+                        + "DATA_NAME = 'datarequest.json' AND "
+                        + "META_DATA_ATTR_NAME = 'status'",
                         AS_DICT, ctx)
 
     for row in rows:
@@ -889,10 +874,9 @@ def getAssignment(ctx, request_id):
 
     # Get the size of the assignment JSON file and the review's status
     rows = row_iterator(["DATA_NAME", "COLL_NAME"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (coll_name, file_name),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
     for row in rows:
         coll_name = row['COLL_NAME']
         data_name = row['DATA_NAME']
@@ -979,9 +963,9 @@ def submitReview(ctx, data, request_id, rei):
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        (("COLL_NAME = '%s' AND DATA_NAME = 'datarequest.json' AND " +
-         "META_DATA_ATTR_NAME = 'assignedForReview'") %
-         (coll_name)),
+        "COLL_NAME = '%s' AND " % coll_name
+        + "DATA_NAME = 'datarequest.json' AND "
+        + "META_DATA_ATTR_NAME = 'assignedForReview'",
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -1012,11 +996,9 @@ def submitReview(ctx, data, request_id, rei):
         researcher_email = ""
         bod_member_emails = ""
         rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                            ("COLL_NAME = '%s' AND " +
-                             "DATA_NAME = '%s'") % (coll_path,
-                                                    'datarequest.json'),
-                            AS_DICT,
-                            ctx)
+                            "COLL_NAME = '%s' AND " % coll_path
+                            + "DATA_NAME = 'datarequest.json'",
+                            AS_DICT, ctx)
         for row in rows:
             name = row["META_DATA_ATTR_NAME"]
             value = row["META_DATA_ATTR_VALUE"]
@@ -1063,10 +1045,9 @@ def getReviews(ctx, request_id):
     # Get the review JSON files
     reviewsJSON = []
     rows = row_iterator(["DATA_NAME"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME like '%s'") % (coll_name, file_name),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
     for row in rows:
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
@@ -1139,11 +1120,9 @@ def submitEvaluation(ctx, data, request_id, rei):
     researcher_email = ""
     datamanager_emails = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (coll_path,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_path
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -1192,8 +1171,8 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
 
     # Construct path to the collection of the datarequest
     client_zone = user.zone(ctx)
-    coll_path = ("/" + client_zone + "/home/datarequests-research/" +
-                 request_id)
+    coll_path = ("/" + client_zone + "/home/datarequests-research/"
+                 + request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
@@ -1223,11 +1202,9 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
     researcher_name = ""
     researcher_email = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (coll_path,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % coll_path
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
@@ -1358,11 +1335,9 @@ def requestDataReady(ctx, request_id, current_user_name):
     researcher_name = ""
     researcher_email = ""
     rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND " +
-                         "DATA_NAME = '%s'") % (request_id,
-                                                'datarequest.json'),
-                        AS_DICT,
-                        ctx)
+                        "COLL_NAME = '%s' AND " % request_id
+                        + "DATA_NAME = 'datarequest.json'",
+                        AS_DICT, ctx)
     for row in rows:
         name = row["META_DATA_ATTR_NAME"]
         value = row["META_DATA_ATTR_VALUE"]
