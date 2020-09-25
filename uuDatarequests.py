@@ -120,20 +120,20 @@ def get_group_data(ctx):
     return groups.values()
 
 
-def group_user_member(group, user, ctx):
-    """Check if a user is a member of the given group.
-
-       Arguments:
-       group -- Name of group
-       user  -- Name of user
-    """
-    groups = get_group_data(ctx)
-    groups = list(filter(lambda grp: group == grp["name"] and
-                         user in grp["members"], groups))
-
-    return "true" if len(groups) == 1 else "false"
-
-
+#def group_user_member(group, user, ctx):
+#    """Check if a user is a member of the given group.
+#
+#       Arguments:
+#       group -- Name of group
+#       user  -- Name of user
+#    """
+#    groups = get_group_data(ctx)
+#    groups = list(filter(lambda grp: group == grp["name"] and
+#                         user in grp["members"], groups))
+#
+#    return "true" if len(groups) == 1 else "false"
+#
+#
 def set_status(ctx, request_id, status):
     """Set the status of a data request
 
@@ -294,16 +294,10 @@ def api_datarequest_get(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        full_name = user.full_name(ctx)
-        name = user.name(ctx)
-
-        isboardmember = group_user_member("datarequests-research-board-of-directors",
-                                          full_name, ctx) == 'true'
-        isdatamanager = group_user_member("datarequests-research-datamanagers",
-                                          full_name, ctx) == 'true'
-        isdmcmember = group_user_member("datarequests-research-data-management-committee",
-                                        full_name, ctx) == 'true'
-        isrequestowner = datarequest_is_owner(ctx, request_id, name)['owner']
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isdmcmember   = user.is_member_of(ctx, "datarequests-research-data-management-committee")
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
                 log.write(ctx, "User is not authorized to view this data request.")
@@ -352,13 +346,10 @@ def submitPreliminaryReview(ctx, data, request_id, rei):
     """
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
-    is_board_member = False
-
     try:
-        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        user.full_name(ctx), ctx)
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
 
-        if not isBoardMember == 'true':
+        if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
     except Exception:
@@ -447,14 +438,10 @@ def getPreliminaryReview(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        username = user.name(ctx)
-        full_name = user.full_name(ctx)
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
 
-        isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        full_name, ctx) == 'true'
-        isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        full_name, ctx) == 'true'
-        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this preliminary review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
@@ -500,9 +487,9 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
-        isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        user.full_name(ctx), ctx) == 'true'
-        if not isDatamanager:
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+
+        if not isdatamanager:
             log.write(ctx, "User is not a data manager.")
             return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
     except Exception:
@@ -514,7 +501,6 @@ def submitDatamanagerReview(ctx, data, request_id, rei):
     coll_path = zone_path + request_id
 
     # Get username
-    name = ""
     client_name = user.name(ctx)
 
     # Write data manager review data to disk
@@ -598,14 +584,9 @@ def getDatamanagerReview(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        username = user.name(ctx)
-        full_name = user.full_name(ctx)
-
-        isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        full_name, ctx) == 'true'
-        isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        full_name, ctx) == 'true'
-        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this data manager review.")
@@ -695,9 +676,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
 @api.make()
 def api_datarequest_is_reviewer(ctx, request_id, user_name):
-    result = datarequest_is_reviewer(ctx, request_id, user_name)
-
-    return result['reviewer']
+    return datarequest_is_reviewer(ctx, request_id, user_name)
 
 
 def datarequest_is_reviewer(ctx, request_id, user_name):
@@ -732,7 +711,7 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
     # Check if the reviewers list contains the current user
-    is_reviewer = current_username in reviewers
+    is_reviewer = user_name in reviewers
 
     # Return the is_reviewer boolean
     return is_reviewer
@@ -747,14 +726,10 @@ def submitAssignment(ctx, data, request_id, rei):
     """
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
-    is_board_member = False
-    name = ""
-
     try:
-        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        user.full_name(ctx),
-                                        ctx) == "true"
-        if not isBoardMember:
+        isboardmember = user.is_member_of("datarequests-research-board-of-directors")
+
+        if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception:
@@ -766,7 +741,6 @@ def submitAssignment(ctx, data, request_id, rei):
     coll_path = zone_path + request_id
 
     # Get username
-    name = ""
     client_name = user.name(ctx)
 
     # Write assignment data to disk
@@ -854,14 +828,10 @@ def assignRequest(ctx, assignees, request_id):
     """
     # Check if user is a data manager. If not, do not the user to assign the
     # request
-    is_datamanager = False
-    name = ""
-
     try:
-        isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        user.full_name(ctx), ctx)
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
 
-        if not is_datamanager:
+        if not isdatamanager:
             raise Exception
     except Exception:
         log.write(ctx, "User is not a data manager.")
@@ -949,8 +919,7 @@ def submitReview(ctx, data, request_id, rei):
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
-        username = user.name(ctx)
-        isreviewer = datarequest_is_reviewer(ctx, request_id, username)['reviewer']
+        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
@@ -961,11 +930,11 @@ def submitReview(ctx, data, request_id, rei):
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
-    username = user.name(ctx)
-
     try:
-        if not datarequest_is_reviewer(ctx, request_id, username)['reviewer']:
-            raise UUException
+        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+
+        if not isreviewer:
+            raise Exception
     except UUException:
         log.write(ctx, "User is not assigned as a reviewer to this request.")
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
@@ -1070,10 +1039,8 @@ def getReviews(ctx, request_id):
     """
     # Check if user is authorized. If not, return PermissionError
     try:
-        username = user.name(ctx)
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
 
-        isboardmember = groupUserMember("datarequests-research-board-of-directors",
-                                        user.full_name(ctx), ctx) == 'true'
         if not isboardmember:
             log.write(ctx, "User is not authorized to view this review.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
@@ -1116,10 +1083,9 @@ def submitEvaluation(ctx, data, request_id, rei):
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
     try:
-        name = ""
-        isBoardMember = groupUserMember("datarequests-research-board-of-directors",
-                                        user.full_name(ctx), ctx) == "true"
-        if not isBoardMember:
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+
+        if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
             return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
     except Exception:
@@ -1131,7 +1097,6 @@ def submitEvaluation(ctx, data, request_id, rei):
     coll_path = zone_path + request_id
 
     # Get username
-    name = ""
     client_name = user.name(ctx)
 
     # Write evaluation data to disk
@@ -1203,12 +1168,9 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        username = user.name(ctx)
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
 
-        isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        user.full_name(ctx), ctx) == 'true'
-
-        if not is_datamanager:
+        if not isdatamanager:
             log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
     except Exception:
@@ -1277,13 +1239,10 @@ def requestDTAReady(ctx, request_id, current_user_name):
     """
     # Check if the user requesting the status transition is a data manager.
     # If not, do not allow status transition
-    is_datamanager = False
-    name = ""
-
     try:
-        isDatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        user.full_name(ctx), ctx) == "true"
-        if not isDatamanager:
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+
+        if not isdatamanager:
             log.write(ctx, "User is not authorized to change the status of this data request.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
     except Exception:
@@ -1305,8 +1264,7 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        username = user.name(ctx)
-        isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
@@ -1348,8 +1306,7 @@ def requestDTASigned(ctx, request_id, current_user_name, rei):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        username = user.name(ctx)
-        isrequestowner = datarequest_is_owner(ctx, request_id, username)['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to change the status of this data request.")
@@ -1373,8 +1330,8 @@ def requestDataReady(ctx, request_id, current_user_name):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isdatamanager = groupUserMember("datarequests-research-datamanagers",
-                                        user.full_name(ctx), ctx) == 'true'
+        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+
         if not isdatamanager:
             log.write(ctx, "User is not authorized to mark the data as ready.")
             return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
