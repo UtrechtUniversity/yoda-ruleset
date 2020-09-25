@@ -359,6 +359,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
+    # Check if status is appropriate for the submission of the preliminary review
+    if not get_status(ctx, request_id) == "submitted":
+        log.write(ctx, "Current status of data request does not permit this operation.")
+        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
+
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
