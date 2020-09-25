@@ -3,9 +3,7 @@
 
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
-
-__author__    =  ('Lazlo Westerhof'
-              + ', Jelmer Zondergeld')
+__author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
@@ -124,20 +122,6 @@ def get_group_data(ctx):
     return groups.values()
 
 
-#def group_user_member(group, user, ctx):
-#    """Check if a user is a member of the given group.
-#
-#       Arguments:
-#       group -- Name of group
-#       user  -- Name of user
-#    """
-#    groups = get_group_data(ctx)
-#    groups = list(filter(lambda grp: group == grp["name"] and
-#                         user in grp["members"], groups))
-#
-#    return "true" if len(groups) == 1 else "false"
-#
-#
 def set_status(ctx, request_id, status):
     """Set the status of a data request
 
@@ -882,11 +866,10 @@ def assignRequest(ctx, assignees, request_id):
     status = ""
     status_info = ""
     ctx.requestDatarequestMetadataChange(requestColl,
-                                              "assignedForReview",
-                                              assignees,
-                                              str(len(
-                                                  json.loads(assignees))),\
-                                              status, status_info)
+                                         "assignedForReview",
+                                         assignees,
+                                         str(len(json.loads(assignees))),
+                                         status, status_info)
 
     # ... and triggering the processing of delayed rules
     ctx.adminDatarequestActions()
@@ -1012,11 +995,10 @@ def submitReview(ctx, data, request_id, rei):
     status = ""
     status_info = ""
     ctx.requestDatarequestMetadataChange(coll_name,
-                                              "assignedForReview",
-                                              json.dumps(reviewers),
-                                              str(len(
-                                                  reviewers)),
-                                              status, status_info)
+                                         "assignedForReview",
+                                         json.dumps(reviewers),
+                                         str(len(reviewers)),
+                                         status, status_info)
     ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
@@ -1044,8 +1026,8 @@ def submitReview(ctx, data, request_id, rei):
                 researcher_email = value
 
         bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
-                                         'datarequests-research-board-of-directors',
-                                         bod_member_emails)['arguments'][1])
+                                       'datarequests-research-board-of-directors',
+                                       bod_member_emails)['arguments'][1])
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
