@@ -1357,14 +1357,6 @@ def uuGetStatus(rule_args, ctx, rei):
     ctx.writeString("stdout", get_status(ctx, rule_args[0]))
 
 
-def uuSubmitPreliminaryReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitPreliminaryReview(ctx, rule_args[0], rule_args[1], rei)))
-
-
-def uuGetPreliminaryReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(getPreliminaryReview(ctx, rule_args[0])))
-
-
 def uuSubmitDatamanagerReview(rule_args, ctx, rei):
     ctx.writeString("stdout", json.dumps(submitDatamanagerReview(ctx, rule_args[0], rule_args[1], rei)))
 
