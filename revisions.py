@@ -4,17 +4,14 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import os
+# import os
 import time
 
 import folder
-import irods_types
+# import irods_types
 import meta_form
-import meta
-import vault
 
 from util import *
-from util.query import Query
 
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
@@ -32,7 +29,7 @@ def rule_revisions_clup(rule_args, callback, rei):
 
 
 # @rule.make(inputs=range(3), outputs=range(3,4))
-@rule.make(inputs=range(3), outputs=range(3,4))
+@rule.make(inputs=range(3), outputs=range(3, 4))
 def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
     log.write(ctx, "Dit is2: " + path)
     log.write(ctx, bucketcase)
@@ -56,12 +53,12 @@ def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
     buckets = revision_bucket_list(ctx, bucketcase)
     log.write(ctx, buckets)
 
-    # step through entire revision store and per item apply the bucket strategy 
+    # step through entire revision store and per item apply the bucket strategy
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "'"
-        " AND COLL_NAME like '" + revision_store + "%'" 
-        " AND META_DATA_ATTR_VALUE = '/tempZone/home/research-process3/yoda-metadata.json'" ,
+        " AND COLL_NAME like '" + revision_store + "%'"
+        " AND META_DATA_ATTR_VALUE = '/tempZone/home/research-process3/yoda-metadata.json'",
         genquery.AS_LIST, ctx
     )
 
@@ -104,19 +101,18 @@ def revision_remove(ctx, revision_id):
         log.write(ctx, 'FOUND TO BE DELETED: ' + revision_id)
         # revision is found
         try:
-            revision_path =  row[0] + '/' + row[1]
+            revision_path = row[0] + '/' + row[1]
             log.write(ctx,  revision_path)
             msi.data_obj_unlink(ctx, revision_path,  irods_types.BytesBuf())
-            #msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
-            log.write(ctx,"revision_remove('" + revision_id + "'): Successfully deleted " + revision_path + " from revision store.")
+            log.write(ctx, "revision_remove('" + revision_id + "'): Successfully deleted " + revision_path + " from revision store.")
             return True
         except msi.Error as e:
-            log.write(ctx,"revision_remove('" + revision_id + "'): Error when deleting.")
+            log.write(ctx, "revision_remove('" + revision_id + "'): Error when deleting.")
             return False
 
         # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
-    log.write(ctx,"revision_remove('" + revision_id + "'): Revision ID not found or permission denied.")
+    log.write(ctx, "revision_remove('" + revision_id + "'): Revision ID not found or permission denied.")
     return False
 
 
@@ -129,7 +125,7 @@ def revision_remove(ctx, revision_id):
 
 # iRODS timestamps are in seconds since epoch (1970-01-01 00:00 UTC). Express minutes, hours, days and weeks in seconds
 def rev_minutes(minutes):
-    return minutes*60
+    return minutes * 60
 
 
 def rev_hours(hours):
@@ -137,7 +133,7 @@ def rev_hours(hours):
 
 
 def rev_days(days):
-    return days * rev_hours(24) 
+    return days * rev_hours(24)
 
 
 def rev_weeks(weeks):
@@ -190,6 +186,7 @@ def revision_bucket_list(ctx, case):
             [rev_weeks(16), 2, 0]
         ]
 
+## DOET DEZE NOG MEE????
 def revision_strategy(ctx, path, end_of_calender_day, bucketlist):
     """  returns list of revisions to be deleted """
     if end_of_calender_day == 0:
@@ -211,7 +208,7 @@ def get_revision_list(ctx, path):
         "DATA_ID, order_desc(DATA_ID)",
         "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "original_path" + "'  "
         " AND META_DATA_ATTR_VALUE = '" + path + "' "
-        " AND COLL_NAME like '" + revision_store + "%'", 
+        " AND COLL_NAME like '" + revision_store + "%'",
         genquery.AS_LIST, ctx
     )
 
@@ -220,7 +217,7 @@ def get_revision_list(ctx, path):
         modify_time = 0
         iter2 = genquery.row_iterator(
             "META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "original_modify_time" + "' " 
+            "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + "original_modify_time" + "' "
             "AND DATA_ID = '" + row[0] + "'",
             genquery.AS_LIST, ctx
         )
@@ -230,13 +227,11 @@ def get_revision_list(ctx, path):
         log.write(ctx, 'candidates')
         log.write(ctx, [row[0], modify_time])
         candidates.append([row[0], modify_time])
-    return candidates 
+
+    return candidates
 
 
-# meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
-#                                              time.localtime(int(meta_data["org_original_modify_time"])))
-
-def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound): # path, case, initial_upper_time_bound):
+def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
     """ get the candidates for deletion based on the active strategy case """
 
     deletion_candidates = []
@@ -244,10 +239,10 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound): 
     # set initial upper time boundary
     t2 = initial_upper_time_bound
 
-    # First 
+    # First
     # bucket_index = 0
     # List of bucket index with per bucket a list of its revisions within that bucket
-    # [[data_ids0],[data_ids1]] 
+    # [[data_ids0],[data_ids1]]
     bucket_revisions = []
 
     for bucket in buckets:
@@ -266,7 +261,7 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound): 
             log.write(ctx, t2)
             log.write(ctx, t1)
             log.write(ctx, revision[1])
-            log.write(ctx, str(revision[1]) + ' <= ' + str(t1) + ' AND ' + str(revision[1]) + ' > ' + str(t2) )
+            log.write(ctx, str(revision[1]) + ' <= ' + str(t1) + ' AND ' + str(revision[1]) + ' > ' + str(t2))
             if revision[1] <= t1 and revision[1] > t2:
                 # Link the bucket and the revision together so its clear which revisions belong into which bucket
                 # print (bucket_index)
@@ -302,9 +297,9 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound): 
             else:
                 while count < nr_to_be_removed:
                     # startpunt is nu
-                    print (len(rev_list) + (bucket_start_index)- count)
-                    print(rev_list[len(rev_list) + (bucket_start_index)- count])
-                    deletion_candidates.append(rev_list[len(rev_list) + (bucket_start_index)- count])
+                    print (len(rev_list) + (bucket_start_index) - count)
+                    print(rev_list[len(rev_list) + (bucket_start_index) - count])
+                    deletion_candidates.append(rev_list[len(rev_list) + (bucket_start_index) - count])
                     count += 1
 
         bucket_counter += 1  # To keep conciding with strategy list
@@ -325,36 +320,13 @@ def calculate_end_of_calendar_day(ctx):
     time_string = time.strftime('%Y/%m/%d 23:59:59', time.localtime(int(timestamp)))
     log.write(ctx, time_string)
 
-    # return 1000
+    import datetime
 
-    import datetime 
- 
-    # Add one second to get to precisely the new day 
+    # Add one second to get to precisely the new day
     log.write(ctx, datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())
     log.write(ctx, str(1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())))
 
-#    return 100000
     return (1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple()))
-
-
-    """
-    return end_of_calendar_day
-                msiGetIcatTime(*timestamp, "unix"); # Get current Timestamp
-                *bdY = timestrf(datetime(double(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).
-
-                *endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); # Append the last second of the day and convert to datetime
-                *endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s"); # Generate string of unix timestamp of the last second of the day
-                *endOfCalendarDay =  double(*endofcalendarday_str) + 1.0; # Convert to double and add 1 second to get 00:00 of the next day
-
-    # Dit genereert de timestamp voor een vault-datapackqt [123456]
-    ret = msi.get_icat_time(ctx, '', 'unix')
-    timestamp = ret['arguments'][0].lstrip('0')
-
-    # Maakt dit het duideljker??
-        meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
-                                                              time.localtime(int(meta_data["org_original_modify_time"])))
-
-    """
 
 
 @api.make()
@@ -550,4 +522,3 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
         raise api.Error('copy_failed', 'The file could not be copied', str(e))
 
     return {"proc_status": "ok"}
-
