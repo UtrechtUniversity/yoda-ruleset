@@ -16,28 +16,19 @@ from util import *
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
-           'rule_revisions_clup',
-           'rule_revisions_clup2']
+           'rule_revisions_clean_up']
 
 
-def rule_revisions_clup(rule_args, callback, rei):
-    """Write the license as a text file into the root of the vault package.
-
-    :param rule_args[0]: Path of a package in the vault
+@rule.make(inputs=range(2), outputs=range(2, 3))
+def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     """
-    return 'BLA'
-
-
-# @rule.make(inputs=range(3), outputs=range(3,4))
-@rule.make(inputs=range(3), outputs=range(3, 4))
-def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
-    log.write(ctx, "Dit is2: " + path)
-    log.write(ctx, bucketcase)
-    log.write(ctx, endOfCalendarDay)
+    Step through entire revision store and apply the chosen bucket strategy
+    :param bucketcase       multiple ways of cleaning up revisions can be chosen.
+    :parem endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+    """
 
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
-    log.write(ctx, revision_store)
 
     if user.user_type(ctx) == 'rodsadmin':
         msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
@@ -45,9 +36,7 @@ def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
 
     end_of_calender_day = int(endOfCalendarDay)
     if end_of_calender_day == 0:
-        # ad
         end_of_calendar_day = calculate_end_of_calendar_day(ctx)
-        log.write(ctx, str(end_of_calender_day))
 
     # get definition of buckets
     buckets = revision_bucket_list(ctx, bucketcase)
@@ -57,14 +46,12 @@ def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         "META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "'"
-        " AND COLL_NAME like '" + revision_store + "%'"
-        " AND META_DATA_ATTR_VALUE = '/tempZone/home/research-process3/yoda-metadata.json'",
+        " AND COLL_NAME like '" + revision_store + "%'",
         genquery.AS_LIST, ctx
     )
 
     for row in iter:
         original_path = row[0]
-        log.write(ctx, 'original_path: ' + original_path)
         # Get all related revisions
         revisions = get_revision_list(ctx, original_path)
 
@@ -75,17 +62,17 @@ def rule_revisions_clup2(ctx, path, bucketcase, endOfCalendarDay):
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
-            revision_remove(ctx, revision_id)
+            if not revision_remove(ctx, revision_id):
+                return 'Something went wrong cleaning up revision store'
 
-    log.write(ctx, 'KLAAR')
-    return 'OK'
+    return 'Successfully cleaned up the revision store'
 
 
 def revision_remove(ctx, revision_id):
-    """ \brief Remove a revision from the revision store.
+    """ Remove a revision from the revision store.
     Called by revision-cleanup.r cronjob.
 
-    param[in] revisionId       DATA_ID of the revision to remove
+    :param revisionId       DATA_ID of the revision to remove
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -98,32 +85,21 @@ def revision_remove(ctx, revision_id):
     )
 
     for row in iter:
-        log.write(ctx, 'FOUND TO BE DELETED: ' + revision_id)
         # revision is found
         try:
             revision_path = row[0] + '/' + row[1]
-            log.write(ctx,  revision_path)
-            msi.data_obj_unlink(ctx, revision_path,  irods_types.BytesBuf())
+            # log.write(ctx,  revision_path)
+            msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
             log.write(ctx, "revision_remove('" + revision_id + "'): Successfully deleted " + revision_path + " from revision store.")
             return True
         except msi.Error as e:
             log.write(ctx, "revision_remove('" + revision_id + "'): Error when deleting.")
             return False
 
-        # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
-
     log.write(ctx, "revision_remove('" + revision_id + "'): Revision ID not found or permission denied.")
     return False
 
-
-# ret = msi.get_icat_time(ctx, '', 'unix')
-# timestamp = ret['arguments'][0].lstrip('0')
-#
-# Maakt dit het duideljker??
-# meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
-#                                                              time.localtime(int(meta_data["org_original_modify_time"])))
-
-# iRODS timestamps are in seconds since epoch (1970-01-01 00:00 UTC). Express minutes, hours, days and weeks in seconds
+""" Helper functions for easy time conversion eventually in seconds """
 def rev_minutes(minutes):
     return minutes * 60
 
@@ -147,7 +123,7 @@ def revision_bucket_list(ctx, case):
     The third integer represents the starting index when revisions need to remove. 0 is the newest, -1 the oldest
     revision after the current original (which should always be kept) , 1 the revision after that, etc.
 
-    # \param[in] case  Select a bucketlist based on a string
+    :param case  Select a bucketlist based on a string
 
     """
     if case == 'A':
@@ -187,19 +163,10 @@ def revision_bucket_list(ctx, case):
         ]
 
 
-# DOET DEZE NOG MEE????
-def revision_strategy(ctx, path, end_of_calender_day, bucketlist):
-    """  returns list of revisions to be deleted """
-    if end_of_calender_day == 0:
-        end_of_calendar_day = calculate_end_of_calendar_day(ctx)
-    revisions = get_revision_list(ctx, path)
-    # revisions_to_be_deleted_
-
-
 def get_revision_list(ctx, path):
     """
-    returns list of all revisions [dataId, timestamp of modification] in descending order where org_original_path=path
-    path  path of original
+    Returns list of all revisions [dataId, timestamp of modification] in descending order where org_original_path=path
+    :param path  path of original
     """
     candidates = []
     zone = user.zone(ctx)
@@ -225,15 +192,18 @@ def get_revision_list(ctx, path):
         for row2 in iter2:
             # value = 0
             modify_time = int(row2[0])
-        log.write(ctx, 'candidates')
-        log.write(ctx, [row[0], modify_time])
         candidates.append([row[0], modify_time])
 
     return candidates
 
 
 def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
-    """ get the candidates for deletion based on the active strategy case """
+    """ Get the candidates for deletion based on the active strategy case 
+
+    :param buckets 
+    :param revisions
+    :param intial_upper_time_bound
+    """
 
     deletion_candidates = []
 
@@ -241,7 +211,6 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
     t2 = initial_upper_time_bound
 
     # First
-    # bucket_index = 0
     # List of bucket index with per bucket a list of its revisions within that bucket
     # [[data_ids0],[data_ids1]]
     bucket_revisions = []
@@ -251,28 +220,13 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
         t1 = t2
         t2 = t1 - bucket[0]
 
-        log.write(ctx, 'BOUND SET')
-        log.write(ctx, bucket[0])
-        log.write(ctx, t1)
-        log.write(ctx, t2)
-
         revision_list = []
         for revision in revisions:
-            log.write(ctx, 'bound COMPARISON')
-            log.write(ctx, t2)
-            log.write(ctx, t1)
-            log.write(ctx, revision[1])
-            log.write(ctx, str(revision[1]) + ' <= ' + str(t1) + ' AND ' + str(revision[1]) + ' > ' + str(t2))
             if revision[1] <= t1 and revision[1] > t2:
                 # Link the bucket and the revision together so its clear which revisions belong into which bucket
-                # print (bucket_index)
-                # print (revision)
-                log.write(ctx, 'BINGO')
-
                 revision_list.append(revision[0])  # append data-id
-        # print(revision_list)
+        # Link the collected data_ids (revision_ids) to the corresponding bucket
         bucket_revisions.append(revision_list)
-        # bucket_index += 1
 
     log.write(ctx, '+++++ BUCKET REV LIST++++')
     log.write(ctx, bucket_revisions)
@@ -292,14 +246,10 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
             if bucket_start_index >= 0:
                 while count < nr_to_be_removed:
                     # Add revision to list of removal
-                    # print (rev_list[bucket_start_index + count])
                     deletion_candidates.append(rev_list[bucket_start_index + count])
                     count += 1
             else:
                 while count < nr_to_be_removed:
-                    # startpunt is nu
-                    print (len(rev_list) + (bucket_start_index) - count)
-                    print(rev_list[len(rev_list) + (bucket_start_index) - count])
                     deletion_candidates.append(rev_list[len(rev_list) + (bucket_start_index) - count])
                     count += 1
 
@@ -324,8 +274,8 @@ def calculate_end_of_calendar_day(ctx):
     import datetime
 
     # Add one second to get to precisely the new day
-    log.write(ctx, datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())
-    log.write(ctx, str(1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())))
+    # log.write(ctx, datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())
+    # log.write(ctx, str(1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())))
 
     return (1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple()))
 
