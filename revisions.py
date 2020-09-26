@@ -186,7 +186,8 @@ def revision_bucket_list(ctx, case):
             [rev_weeks(16), 2, 0]
         ]
 
-## DOET DEZE NOG MEE????
+
+# DOET DEZE NOG MEE????
 def revision_strategy(ctx, path, end_of_calender_day, bucketlist):
     """  returns list of revisions to be deleted """
     if end_of_calender_day == 0:
