@@ -101,6 +101,8 @@ def revision_remove(ctx, revision_id):
 
 
 """ Helper functions for easy time conversion eventually in seconds """
+
+
 def rev_minutes(minutes):
     return minutes * 60
 
