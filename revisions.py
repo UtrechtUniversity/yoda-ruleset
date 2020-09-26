@@ -99,6 +99,7 @@ def revision_remove(ctx, revision_id):
     log.write(ctx, "revision_remove('" + revision_id + "'): Revision ID not found or permission denied.")
     return False
 
+
 """ Helper functions for easy time conversion eventually in seconds """
 def rev_minutes(minutes):
     return minutes * 60
@@ -198,9 +199,9 @@ def get_revision_list(ctx, path):
 
 
 def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
-    """ Get the candidates for deletion based on the active strategy case 
+    """ Get the candidates for deletion based on the active strategy case
 
-    :param buckets 
+    :param buckets
     :param revisions
     :param intial_upper_time_bound
     """
