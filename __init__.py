@@ -40,3 +40,4 @@ from epic                   import *
 from publication            import *
 
 from policies               import *
+from revisions              import *

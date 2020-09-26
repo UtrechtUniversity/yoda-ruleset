@@ -1,4 +1,22 @@
 cleanup {
+        writeLine("stdout", 'STRT');
+
+        *bla = 'blaHARAM'
+        *bucketcase = "B";
+        *endOfCalendarDay = "0";
+        *status = "";
+        rule_revisions_clup2(*bla, *bucketcase, *endOfCalendarDay, *status);
+        writeLine("stdout", 'AFTER');
+        succeed;
+
+
+        *error = '';
+        *path = 'revision_pad2';
+        # rule_process_publication(*collName, *status, *statusInfo);
+        *bucketcase = "A";
+        *endOfCalendarDay = 0;
+        rule_revisions_clean_up(*path, *bucketcase, *endOfCalendarDay, *error);
+        succeed;
 
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType == 'rodsadmin') {
@@ -12,7 +30,8 @@ cleanup {
 
 	*bucketlist = iiRevisionBucketList(*bucketcase);
 
-	 *ContInxOld = 1;
+        # ZOEK paden met attributen: org_original_path LIKE '/tempZone/yoda/revisions%'
+	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("META_DATA_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "original_path", *GenQInp);
 	msiAddConditionToGenQuery("COLL_NAME", "like", "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION ++ "%", *GenQInp);
