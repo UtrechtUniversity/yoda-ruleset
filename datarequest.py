@@ -13,6 +13,7 @@ import json
 
 from util import *
 import avu_json
+import mail
 
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
