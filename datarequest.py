@@ -23,7 +23,7 @@ __all__ = ['api_datarequest_get',
            'api_datarequest_datamanager_review_submit']
 
 
-def send_mail(ctx, to, subject, body):
+def send_mail(to, subject, body):
     """Send an email using the specified parameters.
 
        Arguments:
@@ -264,7 +264,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     send_mail(researcher_email, "[researcher] YOUth data request %s: submitted" % request_id, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
     for bod_member_email in bod_member_emails:
         if not bod_member_email == "rods":
-            send_mail(bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
+            (bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
 @api.make()
