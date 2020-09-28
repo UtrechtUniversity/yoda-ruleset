@@ -13,6 +13,7 @@ import json
 
 from util import *
 import avu_json
+import mail
 
 __all__ = ['api_datarequest_get',
            'api_datarequest_submit',
@@ -23,7 +24,7 @@ __all__ = ['api_datarequest_get',
            'api_datarequest_datamanager_review_submit']
 
 
-def send_mail(ctx, to, subject, body):
+def send_mail(to, subject, body):
     """Send an email using the specified parameters.
 
        Arguments:
@@ -261,10 +262,10 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Send email to researcher and data manager notifying them of the
     # submission of this data request
-    send_mail(researcher_email, "[researcher] YOUth data request %s: submitted" % request_id, "Dear %s,\n\nYour data request has been submitted.\n\nYou will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+    mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id)
     for bod_member_email in bod_member_emails:
         if not bod_member_email == "rods":
-            send_mail(bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
+            (bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
 @api.make()
@@ -1359,6 +1360,24 @@ def requestDataReady(ctx, request_id, current_user_name):
     send_mail(ctx, researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
     return {'status': 0, 'statusInfo': "OK"}
+
+
+def mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = '[researcher] YOUth data request {}: submitted'.format(request_id),
+                     body    = """
+Dear {},
+
+Your data request has been submitted.
+You will be notified by email of the status of your request.
+You may also log into Yoda to view the status and other information about your data request.
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, request_id))
 
 
 def uuGetStatus(rule_args, ctx, rei):
