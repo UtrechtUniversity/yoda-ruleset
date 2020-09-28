@@ -419,7 +419,8 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
             return constants.vault_package_state(x)
         except Exception as e:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
-    return constants.vault_package_state.UNPUBLISHED
+
+    return constants.vault_package_state.EMPTY
 
 
 @api.make()

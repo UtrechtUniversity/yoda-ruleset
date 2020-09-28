@@ -85,8 +85,8 @@ class vault_package_state(Enum):
     """Vault package states."""
 
     # Values are as they appear in AVU values.
+    EMPTY                     = ''  # (absence of status attribute)
     INCOMPLETE                = 'INCOMPLETE'
-    COMPLETE                  = 'COMPLETE'
     UNPUBLISHED               = 'UNPUBLISHED'
     SUBMITTED_FOR_PUBLICATION = 'SUBMITTED_FOR_PUBLICATION'
     APPROVED_FOR_PUBLICATION  = 'APPROVED_FOR_PUBLICATION'
@@ -102,10 +102,10 @@ class vault_package_state(Enum):
 # List of valid datapackage transitions (src, dst).
 datapackage_transitions = [(vault_package_state(x),
                             vault_package_state(y))
-                           for x, y in [('INCOMPLETE',                'UNPUBLISHED'),
-                                        ('UNPUBLISHED',               'INCOMPLETE'),
+                           for x, y in [('',                          'INCOMPLETE'),
+                                        ('',                          'UNPUBLISHED'),
+                                        ('INCOMPLETE',                'UNPUBLISHED'),
                                         ('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
-                                        ('COMPLETE',                  'SUBMITTED_FOR_PUBLICATION'),
                                         ('SUBMITTED_FOR_PUBLICATION', 'APPROVED_FOR_PUBLICATION'),
                                         ('SUBMITTED_FOR_PUBLICATION', 'UNPUBLISHED'),
                                         ('APPROVED_FOR_PUBLICATION',  'PUBLISHED'),
