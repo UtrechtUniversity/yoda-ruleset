@@ -4,8 +4,6 @@ copyToVault {
 	# Copy research folder to vault.
 	# This script is kept as dumb as possible.
 	# All processing and error handling is done by rule_folder_secure
-
-        writeLine("stdout", "WE ARE IN copy-accepted-folders-to-vault");
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault", *GenQInp);
