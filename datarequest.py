@@ -330,6 +330,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
        data       -- JSON-formatted contents of the preliminary review
        request_id -- Unique identifier of the research proposal
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
     try:
