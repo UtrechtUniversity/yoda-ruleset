@@ -201,7 +201,7 @@ def folder_secure(ctx, coll):
 
         # Create vault target and set status to INCOMPLETE.
         msi.coll_create(ctx, target, '', irods_types.BytesBuf())
-        avu.set_on_coll(ctx, dest_path, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
+        avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
     # Try to register EPIC PID
     ret = epic.register_epic_pid(ctx, target)
