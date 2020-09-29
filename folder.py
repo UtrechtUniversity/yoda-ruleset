@@ -139,8 +139,6 @@ def rule_folder_secure(ctx, coll):
 
     :return: '0' when nu error occurred
     """
-    log.write(ctx, 'Starting folder secure - ' + coll)
-
     return folder_secure(ctx, coll)
 
 
@@ -153,8 +151,10 @@ def folder_secure(ctx, coll):
 
     :return: '0' when nu error occurred
     """
+    log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
+
     if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "User is no rodsadmin")
+        log.write(ctx, "folder_secure: User is no rodsadmin")
         return '1'
 
     # Check modify access on research folder.
@@ -195,7 +195,7 @@ def folder_secure(ctx, coll):
     if not found:
         target = determine_vault_target(ctx, coll)
         if target == "":
-            log.write(ctx, "No vault target found")
+            log.write(ctx, "folder_secure: No vault target found")
             return '1'
 
     # Try to register EPIC PID
@@ -205,8 +205,8 @@ def folder_secure(ctx, coll):
     http_code = ret['httpCode']
 
     if (http_code != "0" and http_code != "200" and http_code != "201"):
-        # Always retry
-        log.write(ctx, "folder_secure:  returned httpCode: " + http_code)
+        # Something went wrong while registering EPIC PID, set cronjob state to retry.
+        log.write(ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
         if modify_access != b'\x01':
             try:
                 msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
@@ -233,62 +233,22 @@ def folder_secure(ctx, coll):
         # save EPIC Persistent ID in metadata
         epic.save_epic_pid(ctx, target, url, pid)
 
-    # Set research folder status.
-    try:
-        msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
-    except msi.Error as e:
-        log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
-        return '1'
-
-    parent, chopped_coll = pathutil.chop(coll)
-
-    while parent != "/" + user.zone(ctx) + "/home":
-        log.write(ctx, parent)
-        try:
-            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
-            log.write(ctx, "SET ACL (admin:write) on " + parent)
-        except msi.Error as e:
-            log.write(ctx, "Could not set ACL on " + parent)
-        parent, chopped_coll = pathutil.chop(parent)
-
-    avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
-
-    try:
-        msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
-    except msi.Error as e:
-        log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-        return '1'
-
-    parent, chopped_coll = pathutil.chop(coll)
-    while parent != "/" + user.zone(ctx) + "/home":
-        try:
-            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), parent)
-        except msi.Error as e:
-            log.write(ctx, "Could not set ACL (admin:null) on " + parent)
-
-        parent, chopped_coll = pathutil.chop(parent)
-
-    # Copy provenance log.
+    # Copy provenance log from research folder to vault package.
     provenance.provenance_copy_log(ctx, coll, target)
 
     # Set vault permissions for new vault package.
     group = collection_group_name(ctx, coll)
     if group == '':
-        log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
+        log.write(ctx, "folder_secure: Cannot determine which research group <{}> belongs to".format(coll))
         return '1'
 
     vault.set_vault_permissions(ctx, group, coll, target)
 
-    # Set vault package status.
-    log.write(ctx, "BEFORE set vault package status to unpublished")
-    avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
-    log.write(ctx, "After set vault package status to unpublished")
-
-    # Set cronjob status.
+    # Set cronjob status to OK.
     if modify_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-        except msi.Error as e:
+        except msi.Error:
             log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
             return '1'
 
@@ -297,9 +257,44 @@ def folder_secure(ctx, coll):
     if modify_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-        except msi.Error as e:
+        except msi.Error:
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
+
+    # Vault package is ready, set vault package state to UNPUBLISHED.
+    avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
+
+    # Everything is done, set research folder state to SECURED.
+    try:
+        msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
+    except msi.Error:
+        log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
+        return '1'
+
+    parent, chopped_coll = pathutil.chop(coll)
+    while parent != "/" + user.zone(ctx) + "/home":
+        try:
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
+        except msi.Error:
+            log.write(ctx, "Could not set ACL on " + parent)
+        parent, chopped_coll = pathutil.chop(parent)
+
+    avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
+
+    try:
+        msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
+    except msi.Error:
+        log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+        return '1'
+
+    parent, chopped_coll = pathutil.chop(coll)
+    while parent != "/" + user.zone(ctx) + "/home":
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), parent)
+        except msi.Error:
+            log.write(ctx, "Could not set ACL (admin:null) on " + parent)
+
+        parent, chopped_coll = pathutil.chop(parent)
 
     # All went well
     return '0'
