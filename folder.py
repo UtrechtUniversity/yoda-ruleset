@@ -192,11 +192,16 @@ def folder_secure(ctx, coll):
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
+    # Determine vault target if it does not exist.
     if not found:
         target = determine_vault_target(ctx, coll)
         if target == "":
             log.write(ctx, "folder_secure: No vault target found")
             return '1'
+
+        # Create vault target and set status to INCOMPLETE.
+        msi.coll_create(ctx, target, '', irods_types.BytesBuf())
+        avu.set_on_coll(ctx, dest_path, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
     # Try to register EPIC PID
     ret = epic.register_epic_pid(ctx, target)
@@ -322,7 +327,7 @@ def determine_vault_target(ctx, folder):
 
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
-    # Create target and ensure it does not exist already
+    # Ensure vault target does not exist.
     i = 0
     target_base = "/" + user.zone(ctx) + "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
     target = target_base
