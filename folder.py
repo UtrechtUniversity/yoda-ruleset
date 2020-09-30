@@ -203,43 +203,44 @@ def folder_secure(ctx, coll):
         msi.coll_create(ctx, target, '', irods_types.BytesBuf())
         avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
-    # Try to register EPIC PID
-    ret = epic.register_epic_pid(ctx, target)
-    url = ret['url']
-    pid = ret['pid']
-    http_code = ret['httpCode']
-
-    if (http_code != "0" and http_code != "200" and http_code != "201"):
-        # Something went wrong while registering EPIC PID, set cronjob state to retry.
-        log.write(ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
-        if modify_access != b'\x01':
-            try:
-                msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-            except msi.Error as e:
-                return '1'
-
-        avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
-        avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
-
-        if modify_access != b'\x01':
-            try:
-                msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-            except msi.Error as e:
-                log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-                return '1'
-
     # Copy all original info to vault
     vault.copy_folder_to_vault(ctx, coll, target)
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
     vault.vault_write_license(ctx, target)
 
-    if http_code != "0":
-        # save EPIC Persistent ID in metadata
-        epic.save_epic_pid(ctx, target, url, pid)
-
     # Copy provenance log from research folder to vault package.
     provenance.provenance_copy_log(ctx, coll, target)
+
+    # Try to register EPIC PID if enabled.
+    if config.epic_pid_enabled:
+        ret = epic.register_epic_pid(ctx, target)
+        url = ret['url']
+        pid = ret['pid']
+        http_code = ret['httpCode']
+
+        if (http_code != "0" and http_code != "200" and http_code != "201"):
+            # Something went wrong while registering EPIC PID, set cronjob state to retry.
+            log.write(ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
+            if modify_access != b'\x01':
+                try:
+                    msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
+                except msi.Error as e:
+                    return '1'
+
+            avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
+            avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
+
+            if modify_access != b'\x01':
+                try:
+                    msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
+                except msi.Error as e:
+                    log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
+                    return '1'
+
+        if http_code != "0":
+            # save EPIC Persistent ID in metadata
+            epic.save_epic_pid(ctx, target, url, pid)
 
     # Set vault permissions for new vault package.
     group = collection_group_name(ctx, coll)
