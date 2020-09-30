@@ -586,13 +586,6 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     if item_is_collection:
         # CREATE COLLECTION
         try:
-            if parent == '/' + user.zone(ctx) + '/home':
-                # This is a special case. Dealing with the highest level and 2 collections have to be added
-                # 1. Add the basename for the research collection. Something like research-XXXXX[timestamp]
-                # So chop off /original
-                base_path = pathutil.chop(dest_path)[0]
-                log.write(ctx, 'First add BASE PATH: ' + pathutil.chop(dest_path)[0])
-                msi.coll_create(ctx, pathutil.chop(dest_path)[0], '', irods_types.BytesBuf())
             log.write(ctx, 'coll_create ' + dest_path)
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
         except msi.Error as e:
