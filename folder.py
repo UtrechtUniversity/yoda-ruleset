@@ -206,8 +206,8 @@ def folder_secure(ctx, coll):
     # Copy all original info to vault
     try:
         vault.copy_folder_to_vault(ctx, coll, target)
-    except:
-        log.write(ctx, "folder_secure: Error copying folder to vault")
+    except Exception as e:
+        log.write(ctx, e)
         return '1'
 
     meta.copy_user_metadata(ctx, coll, target)
