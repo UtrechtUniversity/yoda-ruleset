@@ -119,46 +119,6 @@ def test_meta_form_load():
     assert http_status == 200
 
 
-def test_folder_lock():
-    http_status, body = api_request(
-        "folder_lock",
-        {"coll": "/tempZone/home/research-initial1"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": None}
-
-
-def test_folder_unlock():
-    http_status, body = api_request(
-        "folder_unlock",
-        {"coll": "/tempZone/home/research-initial1"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": None}
-
-
-def test_folder_submit():
-    http_status, body = api_request(
-        "folder_submit",
-        {"coll": "/tempZone/home/research-initial1"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": None}
-
-
-def test_folder_accept():
-    http_status, body = api_request(
-        "folder_accept",
-        {"coll": "/tempZone/home/research-initial1"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": None}
-
-
 def test_research_collection_details():
     http_status, body = api_request(
         "research_collection_details",
