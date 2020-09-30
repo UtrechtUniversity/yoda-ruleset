@@ -8,7 +8,6 @@ import os
 import time
 
 import folder
-# import irods_types
 import meta_form
 
 from util import *
@@ -27,7 +26,6 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     :param bucketcase       multiple ways of cleaning up revisions can be chosen.
     :parem endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
     """
-
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
 
@@ -101,25 +99,6 @@ def revision_remove(ctx, revision_id):
     return False
 
 
-""" Helper functions for easy time conversion eventually in seconds """
-
-
-def rev_minutes(minutes):
-    return minutes * 60
-
-
-def rev_hours(hours):
-    return hours * rev_minutes(60)
-
-
-def rev_days(days):
-    return days * rev_hours(24)
-
-
-def rev_weeks(weeks):
-    return weeks * rev_days(7)
-
-
 def revision_bucket_list(ctx, case):
     """ Returns a bucket list definition containing timebox of a bucket, max number of entries and start index.
     The first integer represents a time offset
@@ -130,40 +109,45 @@ def revision_bucket_list(ctx, case):
     :param case  Select a bucketlist based on a string
 
     """
+    # Time to second conversion
+    HOURS = 3600
+    DAYS = 86400
+    WEEKS = 604800
+
     if case == 'A':
         return [
-            [rev_hours(6), 1, 1],
-            [rev_hours(12), 1, 0],
-            [rev_hours(18), 1, 0],
-            [rev_days(1), 1, 0],
-            [rev_days(2), 1, 0],
-            [rev_days(3), 1, 0],
-            [rev_days(4), 1, 0],
-            [rev_days(6), 1, 0],
-            [rev_days(5), 1, 0],
-            [rev_weeks(1), 1, 0],
-            [rev_weeks(2), 1, 0],
-            [rev_weeks(3), 1, 0],
-            [rev_weeks(4), 1, 0],
-            [rev_weeks(8), 1, 0],
-            [rev_weeks(12), 1, 0],
-            [rev_weeks(16), 1, 0]
+            [HOURS * 6, 1, 1],
+            [HOURS * 12, 1, 0],
+            [HOURS * 18, 1, 0],
+            [DAYS * 1, 1, 0],
+            [DAYS * 2, 1, 0],
+            [DAYS * 3, 1, 0],
+            [DAYS * 4, 1, 0],
+            [DAYS * 5, 1, 0],
+            [DAYS * 6, 1, 0],
+            [WEEKS * 1, 1, 0],
+            [WEEKS * 2, 1, 0],
+            [WEEKS * 3, 1, 0],
+            [WEEKS * 4, 1, 0],
+            [WEEKS * 8, 1, 0],
+            [WEEKS * 12, 1, 0],
+            [WEEKS * 16, 1, 0]
         ]
     elif case == 'Simple':
         return [
-            [rev_weeks(16), 16, 0],
+            [WEEKS * 16, 16, 0],
         ]
     else:
         # case B, default case
         return [
-            [rev_hours(12), 2, 1],
-            [rev_days(1), 2, 1],
-            [rev_days(3), 2, 0],
-            [rev_days(5), 2, 0],
-            [rev_weeks(1), 2, 1],
-            [rev_weeks(3), 2, 0],
-            [rev_weeks(8), 2, 0],
-            [rev_weeks(16), 2, 0]
+            [HOURS * 12, 2, 1],
+            [DAYS * 1, 2, 1],
+            [DAYS * 3, 2, 0],
+            [DAYS * 5, 2, 0],
+            [WEEKS * 1, 2, 1],
+            [WEEKS * 3, 2, 0],
+            [WEEKS * 8, 2, 0],
+            [WEEKS * 16, 2, 0]
         ]
 
 
@@ -265,20 +249,12 @@ def calculate_end_of_calendar_day(ctx):
     returns end of calendar day - Timestamp of the end of the current day
 
     """
-    ret = msi.get_icat_time(ctx, '', 'unix')
-    timestamp = int(ret['arguments'][0].lstrip('0'))
-
-    # time.mktime() method is inverse function of time.localtime() method
-    time_string = time.strftime('%Y/%m/%d 23:59:59', time.localtime(int(timestamp)))
-    log.write(ctx, time_string)
-
     import datetime
+    # Get datetime of tomorrow.
+    tomorrow = datetime.date.today() + datetime.timedelta(1)
 
-    # Add one second to get to precisely the new day
-    # log.write(ctx, datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())
-    # log.write(ctx, str(1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple())))
-
-    return (1 + time.mktime(datetime.datetime.strptime(time_string, "%Y/%m/%d %H:%M:%S").timetuple()))
+    # Convert tomorrow to unix timestamp.
+    return int(tomorrow.strftime("%s"))
 
 
 @api.make()
