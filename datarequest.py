@@ -21,7 +21,13 @@ __all__ = ['api_datarequest_get',
            'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
            'api_datarequest_preliminary_review_get',
-           'api_datarequest_datamanager_review_submit']
+           'api_datarequest_datamanager_review_submit',
+           'api_datarequest_datamanager_review_get',
+           'api_datarequest_assignment_submit',
+           'api_datarequest_assignment_get',
+           'api_datarequest_review_submit',
+           'api_datarequest_reviews_get',
+           'api_datarequest_evaluation_submit']
 
 
 def send_mail(to, subject, body):
@@ -578,12 +584,16 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getDatamanagerReview(ctx, request_id):
+@api.make()
+def api_datarequest_datamanager_review_get(ctx, request_id):
     """Retrieve a data manager review.
 
        Arguments:
        request_id -- Unique identifier of the data manager review
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is authorized. If not, return PermissionError
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
@@ -621,7 +631,7 @@ def getDatamanagerReview(ctx, request_id):
         log.write(ctx, "Could not get data manager review data.")
         return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
-    return {'datamanagerReviewJSON': datamanager_review_json, 'status': 0, 'statusInfo': "OK"}
+    return datamanager_review_json
 
 
 @api.make()
@@ -691,6 +701,9 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
        dict       -- A JSON dict specifying whether the user is assigned as
                      reviewer to the data request
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Reviewers are stored in one or more assignedForReview attributes on
     # the data request, so our first step is to query the metadata of our
     # data request file for these attributes
@@ -716,17 +729,21 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
     return is_reviewer
 
 
-def submitAssignment(ctx, data, request_id, rei):
+@api.make()
+def api_datarequest_assignment_submit(ctx, data, request_id):
     """Persist an assignment to disk.
 
        Arguments:
        data       -- JSON-formatted contents of the assignment
-       proposalId -- Unique identifier of the research proposal
+       request_id -- Unique identifier of the data request
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
     try:
-        isboardmember = user.is_member_of("datarequests-research-board-of-directors")
+        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
 
         if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
@@ -815,10 +832,8 @@ def submitAssignment(ctx, data, request_id, rei):
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
-    return {'status': 0, 'statusInfo': "OK"}
 
-
-def assignRequest(ctx, assignees, request_id):
+def assign_request(ctx, assignees, request_id):
     """Assign a data request to one or more DMC members for review.
 
        Arguments:
@@ -831,9 +846,9 @@ def assignRequest(ctx, assignees, request_id):
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isbodmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
 
-        if not isdatamanager:
+        if not isbodmember:
             raise Exception
     except Exception:
         log.write(ctx, "User is not a data manager.")
@@ -874,12 +889,16 @@ def assignRequest(ctx, assignees, request_id):
     return {'status': 0, 'statusInfo': "OK"}
 
 
-def getAssignment(ctx, request_id):
+@api.make()
+def api_datarequest_assignment_get(ctx, request_id):
     """Retrieve assignment.
 
        Arguments:
        request_id -- Unique identifier of the assignment
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'assignment_bodmember.json'
@@ -898,15 +917,16 @@ def getAssignment(ctx, request_id):
 
     # Get the contents of the assignment JSON file
     try:
-        assignmentJSON = data_object.read(ctx, file_path)
+        assignment_json = data_object.read(ctx, file_path)
     except Exception:
         log.write(ctx, "Could not get assignment data.")
         return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
-    return {'assignmentJSON': assignmentJSON, 'status': 0, 'statusInfo': "OK"}
+    return assignment_json
 
 
-def submitReview(ctx, data, request_id, rei):
+@api.make()
+def api_datarequest_review_submit(ctx, data, request_id):
     """Persist a data request review to disk.
 
        Arguments:
@@ -916,6 +936,9 @@ def submitReview(ctx, data, request_id, rei):
        Return:
        dict -- A JSON dict with status info for the front office.
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
@@ -1030,15 +1053,17 @@ def submitReview(ctx, data, request_id, rei):
             if not bodmember_email == "rods":
                 send_mail(bodmember_email, "[bod member] YOUth data request %s: reviewed" % request_id, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
 
-    return {'status': 0, 'statusInfo': "OK"}
 
-
-def getReviews(ctx, request_id):
+@api.make()
+def api_datarequest_reviews_get(ctx, request_id):
     """Retrieve a data request review.
 
        Arguments:
        request_id -- Unique identifier of the data request
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is authorized. If not, return PermissionError
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
@@ -1055,7 +1080,7 @@ def getReviews(ctx, request_id):
     file_name = 'review_%.json'
 
     # Get the review JSON files
-    reviewsJSON = []
+    reviews = []
     rows = row_iterator(["DATA_NAME"],
                         "COLL_NAME = '%s' AND " % coll_name
                         + "DATA_NAME like '%s'" % file_name,
@@ -1063,24 +1088,25 @@ def getReviews(ctx, request_id):
     for row in rows:
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
-            reviewsJSON.append(json.loads(data_object.read(ctx, file_path)))
+            reviews.append(json.loads(data_object.read(ctx, file_path)))
         except Exception:
             log.write(ctx, "Could not get review data.")
             return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
-    # Convert array with review data to JSON
-    reviewsJSON = json.dumps(reviewsJSON)
-
-    return {'reviewsJSON': reviewsJSON, 'status': 0, 'statusInfo': "OK"}
+    return json.dumps(reviews)
 
 
-def submitEvaluation(ctx, data, request_id, rei):
+@api.make()
+def api_datarequest_evaluation_submit(ctx, data, request_id):
     """Persist an evaluation to disk.
 
        Arguments:
        data       -- JSON-formatted contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
     try:
@@ -1158,8 +1184,6 @@ def submitEvaluation(ctx, data, request_id, rei):
     else:
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
-
-    return {'status': 0, 'statusInfo': "OK"}
 
 
 def DTAGrantReadPermissions(ctx, request_id, username, rei):
@@ -1385,34 +1409,6 @@ YOUth
 
 def uuGetStatus(rule_args, ctx, rei):
     ctx.writeString("stdout", get_status(ctx, rule_args[0]))
-
-
-def uuGetDatamanagerReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(getDatamanagerReview(ctx, rule_args[0])))
-
-
-def uuSubmitAssignment(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitAssignment(ctx, rule_args[0], rule_args[1], rei)))
-
-
-def uuAssignRequest(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(assignRequest(ctx, rule_args[0], rule_args[1])))
-
-
-def uuGetAssignment(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(getAssignment(ctx, rule_args[0])))
-
-
-def uuSubmitReview(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitReview(ctx, rule_args[0], rule_args[1], rei)))
-
-
-def uuGetReviews(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(getReviews(ctx, rule_args[0])))
-
-
-def uuSubmitEvaluation(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(submitEvaluation(ctx, rule_args[0], rule_args[1], rei)))
 
 
 def uuDTAGrantReadPermissions(rule_args, ctx, rei):
