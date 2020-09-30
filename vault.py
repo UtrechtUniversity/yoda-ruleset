@@ -520,7 +520,6 @@ def copy_folder_to_vault(ctx, folder, target):
         raise Exception('copy_folder_to_vault: Error copying folder to vault')
 
 
-
 def treewalk_and_ingest(ctx, folder, target, origin, error):
     """
         folder - will change every time as it represents every folder that has to be copied to vault
