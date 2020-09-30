@@ -4,7 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-# import os
+import os
 import time
 
 import folder
@@ -12,6 +12,7 @@ import folder
 import meta_form
 
 from util import *
+from util.query import Query
 
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
@@ -193,7 +194,6 @@ def get_revision_list(ctx, path):
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
-            # value = 0
             modify_time = int(row2[0])
         candidates.append([row[0], modify_time])
 
@@ -210,16 +210,14 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
 
     deletion_candidates = []
 
-    # set initial upper time boundary
+    # Set initial upper bound
     t2 = initial_upper_time_bound
 
-    # First
     # List of bucket index with per bucket a list of its revisions within that bucket
     # [[data_ids0],[data_ids1]]
     bucket_revisions = []
 
     for bucket in buckets:
-        # log.write(ctx, bucket_index)
         t1 = t2
         t2 = t1 - bucket[0]
 
