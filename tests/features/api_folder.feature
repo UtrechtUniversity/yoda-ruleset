@@ -1,4 +1,4 @@
-Feature: Folder
+Feature: Folder API
 
     Examples:
         | folder                           |
