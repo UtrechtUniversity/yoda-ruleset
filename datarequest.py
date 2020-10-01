@@ -425,8 +425,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 @api.make()
 def api_datarequest_preliminary_review_get(ctx, request_id):
@@ -580,8 +578,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     else:
         log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
-
-    return {'status': 0, 'statusInfo': "OK"}
 
 
 @api.make()
@@ -885,8 +881,6 @@ def assign_request(ctx, assignees, request_id):
 
     # ... and triggering the processing of delayed rules
     ctx.adminDatarequestActions()
-
-    return {'status': 0, 'statusInfo': "OK"}
 
 
 @api.make()
