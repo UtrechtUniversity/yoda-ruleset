@@ -1362,7 +1362,3 @@ The following link will take you directly to your data request: https://portal.y
 With kind regards,
 YOUth
 """.format(researcher_name, request_id))
-
-
-def uuGetStatus(rule_args, ctx, rei):
-    ctx.writeString("stdout", get_status(ctx, rule_args[0]))
