@@ -34,39 +34,6 @@ def test_research_file_delete():
     assert body == {"status": "ok", "status_info": None, "data": {"proc_status_info": "", "proc_status": "ok"}}
 
 
-def test_research_folder_add():
-    http_status, body = api_request(
-        "research_folder_add",
-        {"coll": "/tempZone/home/research-initial1",
-         "new_folder_name": "test"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": {"proc_status_info": "", "proc_status": "ok"}}
-
-
-def test_research_folder_rename():
-    http_status, body = api_request(
-        "research_folder_rename",
-        {"new_folder_name": "test_renamed",
-         "coll": "/tempZone/home/research-initial1",
-         "org_folder_name": "test"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": {"proc_status_info": "", "proc_status": "ok"}}
-
-
-def test_research_folder_delete():
-    response = api_request(
-        "research_folder_delete",
-        {"coll": "/tempZone/home/research-initial1",
-         "folder_name": "test_renamed"}
-    )
-
-    assert response == (200, {"status": "ok", "status_info": None, "data": {"proc_status_info": "", "proc_status": "ok"}})
-
-
 def test_browse_folder():
     http_status, body = api_request(
         "browse_folder",
@@ -117,13 +84,3 @@ def test_meta_form_load():
     )
 
     assert http_status == 200
-
-
-def test_research_collection_details():
-    http_status, body = api_request(
-        "research_collection_details",
-        {"path": "/tempZone/home/research-initial1"}
-    )
-
-    assert http_status == 200
-    assert body == {"status": "ok", "status_info": None, "data": {"status": "ACCEPTED", "vault_path": "vault-initial1", "lock_count": 1, "basename": "research-initial1", "member_type": "manager", "is_datamanager": True}}

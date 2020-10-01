@@ -508,13 +508,16 @@ def copy_folder_to_vault(ctx, folder, target):
 
     :param folder: Path of a folder in the research space
     :param target: Path of a package in the vault space
+
+    Raises exception when treewalk_and_ingest did not finish correctly
     """
     destination = target + '/original'
     origin = folder
 
     # Origin is a never changing value to be able to designate a relative path within ingest_object
     error = 0  # Initial error state. Should stay 0.
-    treewalk_and_ingest(ctx, folder, destination, origin, error)
+    if treewalk_and_ingest(ctx, folder, destination, origin, error):
+        raise Exception('copy_folder_to_vault: Error copying folder to vault')
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
