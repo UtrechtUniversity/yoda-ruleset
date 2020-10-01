@@ -41,6 +41,34 @@ def api_response(folder, collection):
         {"coll": collection, "folder_name": folder}
     )
 
+@given('the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"', target_fixture="api_response")
+def api_response(file, copy, collection):
+    return api_request(
+        "research_file_copy",
+        {"coll": collection, "file": file, "copy": copy}
+    )
+
+@given('the Yoda research file rename API is queried with "<file>", "<file_renamed>" and "<collection>"', target_fixture="api_response")
+def api_response(file, file_renamed, collection):
+    return  api_request(
+        "research_file_rename",
+        {"new_file_name": file_renamed, "coll": collection, "org_file_name": file}
+    )
+
+@given('the Yoda research file delete API is queried with "<file>" and "<collection>"', target_fixture="api_response")
+def api_response(file, collection):
+    return  api_request(
+        "research_file_delete",
+        {"coll": collection, "file_name": file}
+    )
+
+@given('the Yoda research system metadata API is queried with "<collection>"', target_fixture="api_response")
+def api_response(collection):
+    return api_request(
+        "research_system_metadata",
+        {"coll": collection}
+    )
+
 @given('the Yoda research collection details API is queried with "<collection>"', target_fixture="api_response")
 def api_response(collection):
     return api_request(
@@ -54,8 +82,7 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@then('folder "<folder>" exists in "<collection>"')
-def api_response_contents(folder, collection):
+def object_exists(object, collection):
     http_status, body = api_request(
         "browse_folder",
         {"coll": collection}
@@ -63,27 +90,34 @@ def api_response_contents(folder, collection):
 
     assert http_status == 200
 
-    # Check if folder is in browse results of collection.
+    # Check if object exists in collection.
     found = False
     for item in body['data']['items']:
-        if item["name"] == folder:
+        if item["name"] == object:
             found = True
 
-    assert found
+    return found
+
+@then('folder "<folder>" exists in "<collection>"')
+def api_response_contents(folder, collection):
+    assert object_exists(folder, collection)
 
 @then('folder "<folder>" does not exists in "<collection>"')
 def api_response_contents(folder, collection):
-    http_status, body = api_request(
-        "browse_folder",
-        {"coll": collection}
-    )
+    assert not object_exists(folder, collection)
 
-    assert http_status == 200
+@then('file "<file>" exists in "<collection>"')
+def api_response_contents(file, collection):
+    assert object_exists(file, collection)
 
-    # Check if folder is not in browse results of collection.
-    found = True
-    for item in body['data']['items']:
-        if item["name"] == folder:
-            found = False
+@then('file "<copy>" exists in "<collection>"')
+def api_response_contents(copy, collection):
+    assert object_exists(copy, collection)
 
-    assert found
+@then('file "<file_renamed>" exists in "<collection>"')
+def api_response_contents(file_renamed, collection):
+    assert object_exists(file_renamed, collection)
+
+@then('file "<file>" does not exist in "<collection>"')
+def api_response_contents(file, collection):
+    assert not object_exists(file, collection)
