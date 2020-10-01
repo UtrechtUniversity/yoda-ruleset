@@ -443,7 +443,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this preliminary review.")
@@ -597,7 +597,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this data manager review.")
@@ -685,16 +685,15 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
 
 @api.make()
-def api_datarequest_is_reviewer(ctx, request_id, user_name):
-    return datarequest_is_reviewer(ctx, request_id, user_name)
+def api_datarequest_is_reviewer(ctx, request_id):
+    return datarequest_is_reviewer(ctx, request_id)
 
 
-def datarequest_is_reviewer(ctx, request_id, user_name):
+def datarequest_is_reviewer(ctx, request_id):
     """Check if a user is assigned as reviewer to a data request
 
        Arguments:
        request_id -- Unique identifier of the data request
-       user_name  -- Username of the user that is to be checked
 
        Return:
        dict       -- A JSON dict specifying whether the user is assigned as
@@ -702,6 +701,9 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Get username
+    username = user.name(ctx)
 
     # Reviewers are stored in one or more assignedForReview attributes on
     # the data request, so our first step is to query the metadata of our
@@ -722,7 +724,7 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
     # Check if the reviewers list contains the current user
-    is_reviewer = user_name in reviewers
+    is_reviewer = username in reviewers
 
     # Return the is_reviewer boolean
     return is_reviewer
@@ -939,7 +941,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
@@ -956,7 +958,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not isreviewer:
             raise Exception
