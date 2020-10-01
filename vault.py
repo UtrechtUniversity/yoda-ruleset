@@ -419,7 +419,8 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
             return constants.vault_package_state(x)
         except Exception as e:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
-    return constants.vault_package_state.UNPUBLISHED
+
+    return constants.vault_package_state.EMPTY
 
 
 @api.make()
@@ -507,13 +508,16 @@ def copy_folder_to_vault(ctx, folder, target):
 
     :param folder: Path of a folder in the research space
     :param target: Path of a package in the vault space
+
+    Raises exception when treewalk_and_ingest did not finish correctly
     """
     destination = target + '/original'
     origin = folder
 
     # Origin is a never changing value to be able to designate a relative path within ingest_object
     error = 0  # Initial error state. Should stay 0.
-    treewalk_and_ingest(ctx, folder, destination, origin, error)
+    if treewalk_and_ingest(ctx, folder, destination, origin, error):
+        raise Exception('copy_folder_to_vault: Error copying folder to vault')
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
@@ -585,13 +589,6 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     if item_is_collection:
         # CREATE COLLECTION
         try:
-            if parent == '/' + user.zone(ctx) + '/home':
-                # This is a special case. Dealing with the highest level and 2 collections have to be added
-                # 1. Add the basename for the research collection. Something like research-XXXXX[timestamp]
-                # So chop off /original
-                base_path = pathutil.chop(dest_path)[0]
-                log.write(ctx, 'First add BASE PATH: ' + pathutil.chop(dest_path)[0])
-                msi.coll_create(ctx, pathutil.chop(dest_path)[0], '', irods_types.BytesBuf())
             log.write(ctx, 'coll_create ' + dest_path)
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
         except msi.Error as e:

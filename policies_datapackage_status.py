@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import meta
 import provenance
 import vault
 from util import *
@@ -24,6 +25,14 @@ def can_transition_datapackage_status(ctx, actor, coll, status_from, status_to):
                   constants.vault_package_state(status_to))
     if transition not in constants.datapackage_transitions:
         return policy.fail('Illegal status transition')
+
+    if status_to is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+        meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
+        if meta_path is None:
+            return policy.fail('Metadata missing, unable to submit this data package for publication.')
+
+        if not meta.is_json_metadata_valid(ctx, meta_path):
+            return policy.fail('Metadata is not valid, please open the metadata form for more information')
 
     return policy.succeed()
 

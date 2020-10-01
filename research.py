@@ -12,6 +12,7 @@ from util import *
 __all__ = ['api_research_folder_add',
            'api_research_folder_delete',
            'api_research_folder_rename',
+           'api_research_file_copy',
            'api_research_file_rename',
            'api_research_file_delete',
            'api_research_system_metadata',
@@ -220,6 +221,80 @@ def api_research_folder_delete(ctx, coll, folder_name):
     # All requirements OK
     try:
         collection.remove(ctx, coll_target)
+    except msi.Error as e:
+        return {"proc_status": "nok",
+                "proc_status_info": "Something went wrong. Please try again"}
+
+    return {"proc_status": "ok",
+            "proc_status_info": ""}
+
+
+@api.make()
+def api_research_file_copy(ctx, copy, coll, file):
+    """Copy a file in a research folder.
+
+    :param copy: new file name
+    :param coll: parent collection of file
+    :param file: current name of the file
+    """
+    if len(copy) == 0:
+        return {"proc_status": "nok",
+                "proc_status_info": "Please add a file name"}
+
+    try:
+        validate_filename(copy.decode('utf-8'))
+    except Exception:
+        return {"proc_status": "nok",
+                "proc_status_info": "This is not a valid file name. Please choose another name"}
+
+    # Same name makes no sense
+    if copy == file:
+        return {"proc_status": "nok",
+                "proc_status_info": "Origin and copy file names are equal. Please choose another name"}
+
+    path_target = coll + '/' + copy
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(coll.split('/')) > 2:
+        return {"proc_status": "nok",
+                "proc_status_info": "It is not possible copy files at this location"}
+
+    # Name should not contain '\\' or '/'
+    if '/' in copy or '\\' in copy:
+        return {"proc_status": "nok",
+                "proc_status_info": "It is not allowed to use slashes in the new name of a file"}
+
+    # in vault?
+    target_group_name = path_target.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return {"proc_status": "nok",
+                "proc_status_info": "It is not possible to copy files in the vault"}
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return {"proc_status": "nok",
+                "proc_status_info": "You do not have sufficient permissions to copy the selected file"}
+
+    # folder not locked?
+    lock_count = meta_form.get_coll_lock_count(ctx, coll)
+    if lock_count:
+        return {"proc_status": "nok",
+                "proc_status_info": "The indicated folder is locked and therefore the indicated file can not be copied"}
+
+    # DOes org file exist?
+    if not data_object.exists(ctx, coll + '/' + file):
+        return {"proc_status": "nok",
+                "proc_status_info": "The original file " + file + " can not be found"}
+
+    # new filename already exists?
+    if data_object.exists(ctx, path_target):
+        return {"proc_status": "nok",
+                "proc_status_info": "The selected filename " + copy + " already exists"}
+
+    # All requirements OK
+    try:
+        data_object.copy(ctx, coll + '/' + file, coll + '/' + copy)
     except msi.Error as e:
         return {"proc_status": "nok",
                 "proc_status_info": "Something went wrong. Please try again"}
