@@ -29,7 +29,8 @@ __all__ = ['api_datarequest_submit',
            'api_datarequest_reviews_get',
            'api_datarequest_evaluation_submit',
            'api_datarequest_dta_post_upload_actions',
-           'api_datarequest_signed_dta_post_upload_actions']
+           'api_datarequest_signed_dta_post_upload_actions',
+           'api_datarequest_data_ready']
 
 
 def send_mail(to, subject, body):
@@ -1302,13 +1303,12 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
             send_mail(datamanager_email, "[data manager] YOUth data request %s: DTA signed" % request_id, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
 
 
-
-def requestDataReady(ctx, request_id, current_user_name):
+@api.make()
+def api_datarequest_data_ready(ctx, request_id):
     """Set the status of a submitted datarequest to "Data ready".
 
        Arguments:
        request_id        -- Unique identifier of the datarequest.
-       current_user_name -- Username of the user whose ownership is checked.
     """
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1343,8 +1343,6 @@ def requestDataReady(ctx, request_id, current_user_name):
     # request
     send_mail(researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 def mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
@@ -1366,7 +1364,3 @@ YOUth
 
 def uuGetStatus(rule_args, ctx, rei):
     ctx.writeString("stdout", get_status(ctx, rule_args[0]))
-
-
-def uuRequestDataReady(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDataReady(ctx, rule_args[0], rule_args[1])))
