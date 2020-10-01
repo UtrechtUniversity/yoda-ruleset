@@ -20,32 +20,38 @@ from conftest import api_request
 
 scenarios('../features/api_research.feature')
 
-@given('the Yoda folder add API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
+@given('the Yoda research folder add API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
 def api_response(folder, collection):
     return api_request(
         "research_folder_add",
         {"coll": collection, "new_folder_name": folder}
     )
 
-@given('the Yoda folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"', target_fixture="api_response")
+@given('the Yoda research folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"', target_fixture="api_response")
 def api_response(folder_old, folder, collection):
     return api_request(
         "research_folder_rename",
         {"new_folder_name": folder, "coll": collection, "org_folder_name": folder_old}
     )
 
-@given('the Yoda folder delete API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
+@given('the Yoda research folder delete API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
 def api_response(folder, collection):
     return api_request(
         "research_folder_delete",
         {"coll": collection, "folder_name": folder}
     )
 
+@given('the Yoda research collection details API is queried with "<collection>"', target_fixture="api_response")
+def api_response(collection):
+    return api_request(
+        "research_collection_details",
+        {"path": collection}
+    )
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, body = api_response
     assert http_status == code
-    assert body == {"status": "ok", "status_info": None, "data": {"proc_status_info": "", "proc_status": "ok"}}
 
 
 @then('folder "<folder>" exists in "<collection>"')
