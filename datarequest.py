@@ -15,8 +15,8 @@ from util import *
 import avu_json
 import mail
 
-__all__ = ['api_datarequest_get',
-           'api_datarequest_submit',
+__all__ = ['api_datarequest_submit',
+           'api_datarequest_get',
            'api_datarequest_is_owner',
            'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
@@ -27,7 +27,10 @@ __all__ = ['api_datarequest_get',
            'api_datarequest_assignment_get',
            'api_datarequest_review_submit',
            'api_datarequest_reviews_get',
-           'api_datarequest_evaluation_submit']
+           'api_datarequest_evaluation_submit',
+           'api_datarequest_dta_post_upload_actions',
+           'api_datarequest_signed_dta_post_upload_actions',
+           'api_datarequest_data_ready']
 
 
 def send_mail(to, subject, body):
@@ -425,8 +428,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 @api.make()
 def api_datarequest_preliminary_review_get(ctx, request_id):
@@ -442,7 +443,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this preliminary review.")
@@ -581,8 +582,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for datamanager_review in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for datamanager_review in data manager review JSON data."}
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 @api.make()
 def api_datarequest_datamanager_review_get(ctx, request_id):
@@ -598,7 +597,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     try:
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
             log.write(ctx, "User is not authorized to view this data manager review.")
@@ -686,16 +685,15 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
 
 @api.make()
-def api_datarequest_is_reviewer(ctx, request_id, user_name):
-    return datarequest_is_reviewer(ctx, request_id, user_name)
+def api_datarequest_is_reviewer(ctx, request_id):
+    return datarequest_is_reviewer(ctx, request_id)
 
 
-def datarequest_is_reviewer(ctx, request_id, user_name):
+def datarequest_is_reviewer(ctx, request_id):
     """Check if a user is assigned as reviewer to a data request
 
        Arguments:
        request_id -- Unique identifier of the data request
-       user_name  -- Username of the user that is to be checked
 
        Return:
        dict       -- A JSON dict specifying whether the user is assigned as
@@ -703,6 +701,9 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Get username
+    username = user.name(ctx)
 
     # Reviewers are stored in one or more assignedForReview attributes on
     # the data request, so our first step is to query the metadata of our
@@ -723,7 +724,7 @@ def datarequest_is_reviewer(ctx, request_id, user_name):
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
     # Check if the reviewers list contains the current user
-    is_reviewer = user_name in reviewers
+    is_reviewer = username in reviewers
 
     # Return the is_reviewer boolean
     return is_reviewer
@@ -886,8 +887,6 @@ def assign_request(ctx, assignees, request_id):
     # ... and triggering the processing of delayed rules
     ctx.adminDatarequestActions()
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 @api.make()
 def api_datarequest_assignment_get(ctx, request_id):
@@ -942,7 +941,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not isreviewer:
             log.write(ctx, "User is assigned as a reviewer to this data request.")
@@ -959,7 +958,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id, user.name(ctx))
+        isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not isreviewer:
             raise Exception
@@ -1186,13 +1185,16 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
 
-def DTAGrantReadPermissions(ctx, request_id, username, rei):
+@api.make()
+def api_datarequest_dta_post_upload_actions(ctx, request_id):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
        Arguments:
        requestId --
-       username  --
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
@@ -1234,6 +1236,9 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
+    # Set status to dta_ready
+    set_status(ctx, request_id, "dta_ready")
+
     # Get parameters needed for sending emails
     researcher_name = ""
     researcher_email = ""
@@ -1253,40 +1258,17 @@ def DTAGrantReadPermissions(ctx, request_id, username, rei):
     # data request is ready for them to sign and upload
     send_mail(researcher_email, "[researcher] YOUth data request %s: DTA ready" % request_id, "Dear %s,\n\nThe YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
 
-    return {'status': 0, 'statusInfo': "OK"}
 
-
-def requestDTAReady(ctx, request_id, current_user_name):
-    """Set the status of a submitted datarequest to "DTA ready".
-
-       Arguments:
-       request_id        -- Unique identifier of the datarequest.
-       current_user_name -- Username of the user whose ownership is checked.
-    """
-    # Check if the user requesting the status transition is a data manager.
-    # If not, do not allow status transition
-    try:
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-
-        if not isdatamanager:
-            log.write(ctx, "User is not authorized to change the status of this data request.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    set_status(ctx, request_id, "dta_ready")
-
-    return {'status': 0, 'statusInfo': "OK"}
-
-
-def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
+@api.make()
+def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     """Grant read permissions on the signed DTA to the datamanagers group.
 
        Arguments:
        request_id -- Unique identifier of the datarequest.
-       username  --
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
@@ -1309,6 +1291,9 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
+    # Set status to dta_signed
+    set_status(ctx, request_id, "dta_signed")
+
     # Get parameters needed for sending emails
     datamanager_emails = ""
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
@@ -1319,39 +1304,13 @@ def signedDTAGrantReadPermissions(ctx, request_id, username, rei):
         if not datamanager_email == "rods":
             send_mail(datamanager_email, "[data manager] YOUth data request %s: DTA signed" % request_id, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
 
-    return {'status': 0, 'statusInfo': "OK"}
 
-
-def requestDTASigned(ctx, request_id, current_user_name, rei):
-    """Set the status of a data request to "DTA signed".
-
-       Arguments:
-       request_id        -- Unique identifier of the datarequest.
-       current_user_name -- Username of the user whose role is checked.
-    """
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
-    try:
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
-
-        if not isrequestowner:
-            log.write(ctx, "User is not authorized to change the status of this data request.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to change the status of this data request."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    set_status(ctx, request_id, "dta_signed")
-
-    return {'status': 0, 'statusInfo': "OK"}
-
-
-def requestDataReady(ctx, request_id, current_user_name):
+@api.make()
+def api_datarequest_data_ready(ctx, request_id):
     """Set the status of a submitted datarequest to "Data ready".
 
        Arguments:
        request_id        -- Unique identifier of the datarequest.
-       current_user_name -- Username of the user whose ownership is checked.
     """
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1386,8 +1345,6 @@ def requestDataReady(ctx, request_id, current_user_name):
     # request
     send_mail(researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
-    return {'status': 0, 'statusInfo': "OK"}
-
 
 def mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
@@ -1409,23 +1366,3 @@ YOUth
 
 def uuGetStatus(rule_args, ctx, rei):
     ctx.writeString("stdout", get_status(ctx, rule_args[0]))
-
-
-def uuDTAGrantReadPermissions(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(DTAGrantReadPermissions(ctx, rule_args[0], rule_args[1], rei)))
-
-
-def uuRequestDTAReady(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDTAReady(ctx, rule_args[0], rule_args[1])))
-
-
-def uuSignedDTAGrantReadPermissions(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(signedDTAGrantReadPermissions(ctx, rule_args[0], rule_args[1], rei)))
-
-
-def uuRequestDTASigned(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDTASigned(ctx, rule_args[0], rule_args[1])))
-
-
-def uuRequestDataReady(rule_args, ctx, rei):
-    ctx.writeString("stdout", json.dumps(requestDataReady(ctx, rule_args[0], rule_args[1])))

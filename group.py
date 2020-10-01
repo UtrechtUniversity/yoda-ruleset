@@ -209,12 +209,12 @@ def api_group_user_exists(ctx, group_name, user_name, include_ro):
     if '#' not in user_name:
         user_name = user_name + "#" + user.zone(ctx)
 
-    if not include_ro:
-        groups = list(filter(lambda group: group_name == group["name"] and user_name in group["members"], groups))
-    else:
+    if include_ro:
         groups = list(filter(lambda group: group_name == group["name"] and (user_name in group["read"] or user_name in group["members"]), groups))
+    else:
+        groups = list(filter(lambda group: group_name == group["name"] and user_name in group["members"], groups))
 
-    return True if len(groups) == 1 else False
+    return len(groups) == 1
 
 
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
