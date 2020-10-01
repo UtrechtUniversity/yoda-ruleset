@@ -15,8 +15,8 @@ from util import *
 import avu_json
 import mail
 
-__all__ = ['api_datarequest_get',
-           'api_datarequest_submit',
+__all__ = ['api_datarequest_submit',
+           'api_datarequest_get',
            'api_datarequest_is_owner',
            'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
