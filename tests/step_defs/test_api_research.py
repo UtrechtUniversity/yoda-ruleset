@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Search API feature tests.
+"""Research API feature tests.
 
 Usage:
 pytest --api <url> --csrf <csrf> --session <session>
@@ -50,7 +50,6 @@ def api_response_code(api_response, code):
 
 @then('folder "<folder>" exists in "<collection>"')
 def api_response_contents(folder, collection):
-
     http_status, body = api_request(
         "browse_folder",
         {"coll": collection}
@@ -68,7 +67,6 @@ def api_response_contents(folder, collection):
 
 @then('folder "<folder>" does not exists in "<collection>"')
 def api_response_contents(folder, collection):
-
     http_status, body = api_request(
         "browse_folder",
         {"coll": collection}
