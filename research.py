@@ -312,64 +312,6 @@ def api_research_file_copy(ctx, copy, coll, file):
 
 
 @api.make()
-def api_research_folder_delete(ctx, coll, folder_name):
-    """Delete a research folder.
-
-    :param coll: parent collection of folder to delete
-    :param folder_name: name of folder to delete
-    """
-    coll_target = coll + '/' + folder_name
-
-    # Not in home - a groupname must be present ie at least 2!?
-    if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folder '" + folder_name + "' at this location"}
-
-    # Name should not contain '\\' or '/'.
-    if '/' in folder_name or '\\' in folder_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
-
-    # in vault?
-    target_group_name = coll_target.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folders from the vault"}
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to delete the selected folder"}
-
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore can not be deleted"}
-
-    # collection exists?
-    if not collection.exists(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder to add a new folder to does not exist"}
-
-    # Folder empty?
-    if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target) > 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder is not empty and can therefore not be deleted. Please delete entire content first"}
-
-    # All requirements OK
-    try:
-        collection.remove(ctx, coll_target)
-    except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
-
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
-
-
-@api.make()
 def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     """Rename a file in a research folder.
 
