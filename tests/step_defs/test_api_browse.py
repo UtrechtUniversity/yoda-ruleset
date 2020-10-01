@@ -45,10 +45,22 @@ def api_response_contents(api_response, result):
 
     assert len(body['data']['items']) > 0
 
-    # Check expected result is in search results.
+    # Check if expected result is in browse results.
     found = False
     for item in body['data']['items']:
         if item["name"] == result:
             found = True
+
+    assert found
+
+@then('the browse result does not contain "<notresult>"')
+def api_response_contents(api_response, notresult):
+    _, body = api_response
+
+    # Check if not expected result is in browse results.
+    found = True
+    for item in body['data']['items']:
+        if item["name"] == notresult:
+            found = False
 
     assert found
