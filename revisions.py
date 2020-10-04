@@ -262,7 +262,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     """Search revisions of a file in a research folder."""
     zone = user.zone(ctx)
 
-    revisions = []
+    dict_org_paths = {}
+    multiple_counted = 0
 
     # Return nothing if in fact requested ALL
     if len(searchString) == 0:
@@ -285,6 +286,11 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
         rev_data['main_revision_coll'] = rev['COLL_NAME']
         rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
 
+        # Situations in which a data_object including its parent folder is removed.
+        # And after a while gets reintroduced
+
+        # Hier de daadwerkelijke revisies ophalen
+        # Dit bepaalt het TOTAL REVISIONS
         iter = genquery.row_iterator(
             "DATA_ID",
             "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
@@ -292,9 +298,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
             genquery.AS_DICT, ctx)
 
-        revision_count = 0
         for row in iter:
-            revision_count = revision_count + 1
+            log.write(ctx, row['DATA_ID'])
 
             # based on data id get original_coll_name
             iter2 = genquery.row_iterator(
@@ -308,9 +313,27 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
             rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
 
-        rev_data['revision_count'] = revision_count
+            # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
+            try:
+                # This is a double entry and has to be corrected in the total returned to the frontend 
+                detail = dict_org_paths[rev_data['original_coll_name']]
+                total = detail[0] + 1
+                dict_org_paths[rev_data['original_coll_name']] = [total, detail[1], detail[2]]
+                # Increment correction as the main total is based on the first query. 
+                # This however can have multiple entries which require correction
+                multiple_counted += 1
+            except KeyError:
+                # [count, collect-exists, data-name]
+                dict_org_paths[rev_data['original_coll_name']] = [1, rev_data['collection_exists'], rev['META_DATA_ATTR_VALUE']]
 
-        revisions.append(rev_data)
+    # create a list from collected data in dict_org_paths
+    revisions = []
+    for key, value in dict_org_paths.items():
+        revisions.append({'main_original_dataname': value[2],
+                          'collection_exists': value[1],
+                          'original_coll_name': key,
+                          'revision_count': value[0]
+                         })
 
     # Alas an extra Query is required to get the total number of rows
     qtotalrows = Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
@@ -319,7 +342,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                        "AND COLL_NAME like '" + startpath + "%' ",
                        offset=0, limit=None, output=query.AS_DICT)
 
-    return {'total': qtotalrows.total_rows(),
+    # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
+    return {'total': qtotalrows.total_rows() - multiple_counted,
             'items': revisions}
 
 
