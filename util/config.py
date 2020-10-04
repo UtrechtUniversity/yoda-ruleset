@@ -86,7 +86,12 @@ config = Config(environment                = None,
                 datacite_password          = None,
                 eus_api_fqdn               = None,
                 eus_api_port               = None,
-                eus_api_secret             = None)
+                eus_api_secret             = None,
+                epic_pid_enabled           = False,
+                epic_url                   = None,
+                epic_handle_prefix         = None,
+                epic_key                   = None,
+                epic_certificate           = None)
 
 # }}}
 
