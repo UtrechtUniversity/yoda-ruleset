@@ -315,11 +315,11 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
-                # This is a double entry and has to be corrected in the total returned to the frontend 
+                # This is a double entry and has to be corrected in the total returned to the frontend
                 detail = dict_org_paths[rev_data['original_coll_name']]
                 total = detail[0] + 1
                 dict_org_paths[rev_data['original_coll_name']] = [total, detail[1], detail[2]]
-                # Increment correction as the main total is based on the first query. 
+                # Increment correction as the main total is based on the first query.
                 # This however can have multiple entries which require correction
                 multiple_counted += 1
             except KeyError:
@@ -332,8 +332,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
         revisions.append({'main_original_dataname': value[2],
                           'collection_exists': value[1],
                           'original_coll_name': key,
-                          'revision_count': value[0]
-                         })
+                          'revision_count': value[0]})
 
     # Alas an extra Query is required to get the total number of rows
     qtotalrows = Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
