@@ -314,10 +314,10 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
     # Alas an extra Query is required to get the total number of rows
     qtotalrows = Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                  "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                  "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                  "AND COLL_NAME like '" + startpath + "%' ",
-                  offset=0, limit=None, output=query.AS_DICT)
+                 "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+                 "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                 "AND COLL_NAME like '" + startpath + "%' ",
+                 offset=0, limit=None, output=query.AS_DICT)
 
     return {'total': qtotalrows.total_rows(),
             'items': revisions}
