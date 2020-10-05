@@ -21,10 +21,10 @@ __all__ = ['api_revisions_restore',
 
 @rule.make(inputs=range(2), outputs=range(2, 3))
 def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
-    """
-    Step through entire revision store and apply the chosen bucket strategy
+    """Step through entire revision store and apply the chosen bucket strategy.
+
     :param bucketcase       multiple ways of cleaning up revisions can be chosen.
-    :parem endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+    :param endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -39,7 +39,6 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
 
     # get definition of buckets
     buckets = revision_bucket_list(ctx, bucketcase)
-    log.write(ctx, buckets)
 
     # step through entire revision store and per item apply the bucket strategy
     iter = genquery.row_iterator(
@@ -56,8 +55,6 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
 
         # Process the original path conform the bucket settings
         candidates = get_deletion_candidates(ctx, buckets, revisions, end_of_calendar_day)
-        log.write(ctx, 'DELETION CANDIDATES')
-        log.write(ctx, candidates)
 
         # Delete the revisions that were found being obsolete
         for revision_id in candidates:
@@ -71,7 +68,7 @@ def revision_remove(ctx, revision_id):
     """ Remove a revision from the revision store.
     Called by revision-cleanup.r cronjob.
 
-    :param revisionId       DATA_ID of the revision to remove
+    :param revision_id       DATA_ID of the revision to remove
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -87,9 +84,7 @@ def revision_remove(ctx, revision_id):
         # revision is found
         try:
             revision_path = row[0] + '/' + row[1]
-            # log.write(ctx,  revision_path)
             msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
-            log.write(ctx, "revision_remove('" + revision_id + "'): Successfully deleted " + revision_path + " from revision store.")
             return True
         except msi.Error as e:
             log.write(ctx, "revision_remove('" + revision_id + "'): Error when deleting.")
@@ -213,9 +208,6 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
         # Link the collected data_ids (revision_ids) to the corresponding bucket
         bucket_revisions.append(revision_list)
 
-    log.write(ctx, '+++++ BUCKET REV LIST++++')
-    log.write(ctx, bucket_revisions)
-
     # Per bucket find the revision candidates for deletion
     bucket_counter = 0
     for rev_list in bucket_revisions:
@@ -259,7 +251,12 @@ def calculate_end_of_calendar_day(ctx):
 
 @api.make()
 def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
-    """Search revisions of a file in a research folder."""
+    """Search revisions of a file in a research folder and return list of corresponding revisions.
+
+    :param searchString: string to search for as part of a file name
+    :param offset:       starting point in total resultset to start fetching
+    :param limit:        max size of the resultset to be returned
+    """
     zone = user.zone(ctx)
 
     dict_org_paths = {}
@@ -299,8 +296,6 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             genquery.AS_DICT, ctx)
 
         for row in iter:
-            log.write(ctx, row['DATA_ID'])
-
             # based on data id get original_coll_name
             iter2 = genquery.row_iterator(
                 "META_DATA_ATTR_VALUE",
@@ -348,7 +343,10 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
 @api.make()
 def api_revisions_list(ctx, path):
-    """List revisions of a files in a research folder."""
+    """List revisions of a file in a research folder.
+
+    :param path: path to data object to find revisions for
+    """
     originalPathKey = ''
     startpath = ''
 
@@ -390,16 +388,15 @@ def api_revisions_list(ctx, path):
 
 
 @api.make()
-# "restore_no_overwrite"
-# "restore_overwrite" -> overwrite the file
-# "restore_next_to" -> revision is places next to the file it conflicted with by adding
-#
-# {restore_no_overwrite, restore_overwrite, restore_next_to}
-#   With "restore_no_overwrite" the front end tries to copy the selected revision in *target
-#    If the file already exist the user needs to decide what to do.
-#     Function exits with corresponding status so front end can take action
 def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename):
-    """Copy selected revision to target collection with given name."""
+    """Copy selected revision to target collection with given name.
+
+    :param revision_id:  data_id of the revision to be restored
+    :param overwrite:    overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
+    :param coll_target:  target collection to place the file
+    :param new_filename: new file name as entered by user (in case of duplicate)
+    """
+
     # New file name should not contain '\\' or '/'
     if '/' in new_filename or '\\' in new_filename:
         return {"proc_status": "nok",
