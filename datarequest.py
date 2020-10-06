@@ -341,49 +341,44 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the preliminary review (accepted/rejected)
-    preliminary_review = json.loads(data)['preliminary_review']
+    decision = json.loads(data)['preliminary_review']
 
     # Update the status of the data request
-    if preliminary_review == "Accepted for data manager review":
+    if decision == "Accepted for data manager review":
         set_status(ctx, request_id, "accepted_for_dm_review")
-    elif preliminary_review == "Rejected":
+    elif decision == "Rejected":
         set_status(ctx, request_id, "preliminary_reject")
-    elif preliminary_review == "Rejected (resubmit)":
+    elif decision == "Rejected (resubmit)":
         set_status(ctx, request_id, "preliminary_reject_submit")
     else:
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get parameters needed for sending emails
-    researcher_name = ""
-    researcher_email = ""
-    datamanager_emails = ""
-    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % coll_path
-                        + "DATA_NAME = 'datarequest.json'",
-                        AS_DICT, ctx)
-    for row in rows:
-        name = row["META_DATA_ATTR_NAME"]
-        value = row["META_DATA_ATTR_VALUE"]
-        if name == "name":
-            researcher_name = value
-        elif name == "email":
-            researcher_email = value
-    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
+    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
+
+    researcher = datarequest['researchers']['contacts'][0]
+
+    researcher_name = researcher['name']
+    researcher_email = researcher['email']
+
+    feedback_for_researcher = json.loads(data)['feedback_for_researcher']
+
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(
+                             'datarequests-research-datamanagers', "")['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
-    if preliminary_review == "Accepted for data manager review":
+    if decision == "Accepted for data manager review":
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
-                send_mail(datamanager_email, "[data manager] YOUth data request %s: accepted for data manager review" % request_id, "Dear data manager,\n\nData request %s has been approved for review by the Board of Directors.\n\nYou are now asked to review the data request for any potential problems concerning the requested data.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
-    elif preliminary_review == "Rejected":
-        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], datamanager_emails[0]))
-    elif preliminary_review == "Rejected (resubmit)":
-        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected (resubmit)" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager (%s).\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], request_id, datamanager_emails[0]))
+                mail_datarequest_preliminary_review_submit_datamanager(ctx, datamanager_email,
+                                                                       request_id)
     else:
-        log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
+        mail_datarequest_preliminary_review_submit_researcher(ctx, decision, researcher_email,
+                                                              researcher_name,
+                                                              feedback_for_researcher,
+                                                              datamanager_emails[0], request_id)
 
 
 @api.make()
@@ -1346,3 +1341,63 @@ With kind regards,
 YOUth
 """.format(researcher_name, researcher_email, researcher_institution, researcher_department,
            submission_date, request_id, proposal_title, request_id))
+
+
+def mail_datarequest_preliminary_review_submit_datamanager(ctx, datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = datamanager_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[data manager] YOUth data request {}: accepted for data manager review".format(request_id),
+                     body    = """
+Dear data manager,
+
+Data request {} has been approved for review by the Board of Directors.
+
+You are now asked to review the data request for any potential problems concerning the requested data.
+
+The following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, request_id))
+
+
+def mail_datarequest_preliminary_review_submit_researcher(ctx, decision, researcher_email,
+                                                          researcher_name, feedback_for_researcher,
+                                                          datamanager_email, request_id):
+    if decision == "Rejected":
+        return mail.send(ctx,
+                         to      = researcher_email,
+                         actor   = user.full_name(ctx),
+                         subject = "[researcher] YOUth data request {}: rejected".format(request_id),
+                         body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+If you wish to object against this rejection, please contact the YOUth data manager ({}).
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, datamanager_email))
+    elif decision == "Rejected (resubmit)":
+        return mail.send(ctx,
+                         to      = researcher_email,
+                         actor   = user.full_name(ctx),
+                         subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                         body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+
+If you wish to object against this rejection, please contact the YOUth data manager ({}).
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, request_id, datamanager_email))
