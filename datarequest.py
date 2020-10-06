@@ -364,8 +364,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     feedback_for_researcher = json.loads(data)['feedback_for_researcher']
 
-    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(
-                             'datarequests-research-datamanagers', "")['arguments'][1])
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers',
+                                    "")['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
@@ -1339,8 +1339,7 @@ The following link will take you to the preliminary review form: https://portal.
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
-           submission_date, request_id, proposal_title, request_id))
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
 def mail_datarequest_preliminary_review_submit_datamanager(ctx, datamanager_email, request_id):
