@@ -200,7 +200,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     """Persist a data request to disk.
 
        Arguments:
-       data -- JSON-formatted contents of the data request.
+       data -- Contents of the data request.
     """
     zone_path = '/tempZone/home/datarequests-research/'
     timestamp = datetime.now()
@@ -216,11 +216,10 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Write data request data to disk
     try:
-        file_path = coll_path + '/' + 'datarequest.json'
-        data_object.write(ctx, file_path, data)
-    except Exception:
-        log.write(ctx, "Could not write data request to disk.")
-        return api.Error("write_error", "Could not write datarequest to disk.")
+        datarequest_path = coll_path + '/' + 'datarequest.json'
+        jsonutil.write(ctx, datarequest_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write datarequest to disk')
 
     # Set the previous request ID as metadata if defined
     if previous_request_id:
@@ -336,7 +335,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     """Persist a preliminary review to disk.
 
        Arguments:
-       data       -- JSON-formatted contents of the preliminary review
+       data       -- Contents of the preliminary review
        request_id -- Unique identifier of the research proposal
     """
     # Force conversion of request_id to string
@@ -369,10 +368,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Write preliminary review data to disk
     try:
         preliminary_review_path = coll_path + '/preliminary_review_' + client_name + '.json'
-        data_object.write(ctx, preliminary_review_path, data)
-    except Exception:
-        log.write(ctx, "Could not write preliminary review data to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write preliminary review data to disk."}
+        jsonutil.write(ctx, preliminary_review_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write preliminary review data to disk')
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
     try:
@@ -484,7 +482,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     """Persist a preliminary review to disk.
 
        Arguments:
-       data       -- JSON-formatted contents of the preliminary review
+       data       -- Contents of the preliminary review
        proposalId -- Unique identifier of the research proposal
     """
     # Force conversion of request_id to string
@@ -517,10 +515,9 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Write data manager review data to disk
     try:
         datamanager_review_path = coll_path + '/datamanager_review_' + client_name + '.json'
-        data_object.write(ctx, datamanager_review_path, data)
-    except Exception:
-        log.write(ctx, "Could not write data manager review data to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write data manager review data to disk."}
+        jsonutil.write(ctx, datamanager_review_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write data manager review data to disk')
 
     # Give read permission on the data manager review to data managers and Board of Directors members
     try:
@@ -735,7 +732,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     """Persist an assignment to disk.
 
        Arguments:
-       data       -- JSON-formatted contents of the assignment
+       data       -- Contents of the assignment
        request_id -- Unique identifier of the data request
     """
     # Force conversion of request_id to string
@@ -768,10 +765,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Write assignment data to disk
     try:
         assignment_path = coll_path + '/assignment_' + client_name + '.json'
-        data_object.write(ctx, assignment_path, data)
-    except Exception:
-        log.write(ctx, "Could not write assignment data to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write assignment data to disk."}
+        jsonutil.write(ctx, assignment_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write assignment data to disk')
 
     # Give read permission on the assignment to data managers and Board of Directors members
     try:
@@ -976,10 +972,9 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Write review data to disk
     try:
         review_path = coll_path + '/review_' + client_name + '.json'
-        data_object.write(ctx, review_path, data)
-    except Exception:
-        log.write(ctx, "Could not write review data to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write review data to disk."}
+        jsonutil.write(ctx, review_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write review data to disk')
 
     # Give read permission on the review to Board of Director members
     try:
@@ -1100,7 +1095,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     """Persist an evaluation to disk.
 
        Arguments:
-       data       -- JSON-formatted contents of the evaluation
+       data       -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
     # Force conversion of request_id to string
@@ -1133,10 +1128,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Write evaluation data to disk
     try:
         evaluation_path = coll_path + '/evaluation_' + client_name + '.json'
-        data_object.write(ctx, evaluation_path, data)
-    except Exception:
-        log.write(ctx, "Could not write evaluation data to disk.")
-        return {"status": "WriteError", "statusInfo": "Could not write evaluation data to disk."}
+        jsonutil.write(ctx, evaluation_path, data)
+    except error.UUError:
+        return api.Error('write_error', 'Could not write evaluation data to disk')
 
     # Get outcome of evaluation
     decision = json.loads(data)['evaluation']
