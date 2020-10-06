@@ -210,39 +210,28 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     set_status(ctx, request_id, "submitted")
 
     # Get parameters needed for sending emails
-    researcher_name = ""
-    researcher_email = ""
-    researcher_institute = ""
-    researcher_department = ""
-    proposal_title = ""
-    submission_date = timestamp.strftime('%c')
-    bod_member_emails = ""
-    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % coll_path
-                        + "DATA_NAME = 'datarequest.json'",
-                        AS_DICT, ctx)
-    for row in rows:
-        name = row["META_DATA_ATTR_NAME"]
-        value = row["META_DATA_ATTR_VALUE"]
-        if name == "name":
-            researcher_name = value
-        elif name == "email":
-            researcher_email = value
-        elif name == "institution":
-            researcher_institute = value
-        elif name == "department":
-            researcher_department = value
-        elif name == "title":
-            proposal_title = value
-    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
-                                                               bod_member_emails)['arguments'][1])
+    datarequest = json.loads(data)
 
-    # Send email to researcher and data manager notifying them of the
-    # submission of this data request
-    mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id)
-    for bod_member_email in bod_member_emails:
-        if not bod_member_email == "rods":
-            (bod_member_email, "[bodmember] YOUth data request %s: submitted" % request_id, "Dear executive board delegate,\n\nA new data request has been submitted.\n\nSubmitted by: %s (%s)\nAffiliation: %s, %s\nDate: %s\nRequest ID: %s\nProposal title: %s\n\nThe following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, researcher_email, researcher_institute, researcher_department, submission_date, request_id, proposal_title, request_id))
+    contact = datarequest['researchers']['contacts'][0]
+    research_context = datarequest['research_context']
+
+    researcher_name        = contact['name']
+    researcher_email       = contact['email']
+    researcher_institution = contact['institution']
+    researcher_department  = contact['department']
+    proposal_title         = research_context['title']
+    submission_date        = timestamp.strftime('%c')
+    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
+                                   "datarequests-research-board-of-directors", "")['arguments'][1])
+
+    # Send email to researcher and board of directors member(s)
+    mail_datarequest_submitted_researcher(ctx, researcher_email, researcher_name, request_id)
+    for bodmember_email in bod_member_emails:
+        if not bodmember_email == "rods":
+            mail_datarequest_submitted_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                                 researcher_email, researcher_institution,
+                                                 researcher_department, submission_date,
+                                                 proposal_title)
 
 
 @api.make()
@@ -1314,7 +1303,7 @@ def api_datarequest_data_ready(ctx, request_id):
     send_mail(researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
 
-def mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_id):
+def mail_datarequest_submitted_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
@@ -1323,10 +1312,37 @@ def mail_datarequest_submitted(ctx, researcher_email, researcher_name, request_i
 Dear {},
 
 Your data request has been submitted.
-You will be notified by email of the status of your request.
-You may also log into Yoda to view the status and other information about your data request.
+
+You will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.
+
 The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
 
 With kind regards,
 YOUth
 """.format(researcher_name, request_id))
+
+
+def mail_datarequest_submitted_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                         researcher_email, researcher_institution,
+                                         researcher_department, submission_date, proposal_title):
+    return mail.send(ctx,
+                     to      = bodmember_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[bodmember] YOUth data request {}: submitted".format(request_id),
+                     body    = """
+Dear board of directors member,
+
+A new data request has been submitted.
+
+Submitted by: {} ({})
+Affiliation: {}, {}
+Date: {}
+Request ID: {}
+Proposal title: {}
+
+The following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
+           submission_date, request_id, proposal_title, request_id))
