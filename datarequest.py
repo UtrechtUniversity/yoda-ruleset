@@ -7,8 +7,6 @@ __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
-from smtplib import SMTP
-from email.mime.text import MIMEText
 import json
 
 from util import *
@@ -31,32 +29,6 @@ __all__ = ['api_datarequest_submit',
            'api_datarequest_dta_post_upload_actions',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
-
-
-def send_mail(to, subject, body):
-    """Send an email using the specified parameters.
-
-       Arguments:
-       to      -- Recipient email address
-       subject -- Email message subject
-       body    -- Email message body
-    """
-    # Construct message
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = "test@example.org"
-    msg["To"] = to
-
-    # Send message
-    #
-    # TO-DO: fetch credentials (smtp_server_address, email_address,
-    # password) from credential store
-    # When testing, replace to with hardcoded email address
-    s = SMTP('smtp_server_address')
-    s.starttls()
-    s.login("email_address", "password")
-    s.sendmail("from_email_address", to, msg.as_string())
-    s.quit()
 
 
 def get_group_data(ctx):
