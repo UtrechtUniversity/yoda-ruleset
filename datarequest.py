@@ -226,7 +226,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         set_metadata(ctx, request_id, "previous_request_id", previous_request_id)
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
+    avu_json.set_json_to_obj(ctx, datarequest_path, "-d", "root", data)
 
     # Set permissions for certain groups on the subcollection
     try:
