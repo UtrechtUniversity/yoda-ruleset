@@ -1,13 +1,17 @@
 Feature: Datarequest API
 
-  Scenario: Datarequest get
-    Given the Yoda datarequest API is queried with request "<request_id>"
-    Then the response status code is "200"
-    And request is returned with id "<request_id>"
+    Scenario: Datarequest submit
+        Given the Yoda datarequest submit API is queried with data
+        Then the response status code is "200"
 
-    Examples:
-    | request_id |
-    | 1601295614 |
+#  Scenario: Datarequest get
+#    Given the Yoda datarequest API is queried with request "<request_id>"
+#    Then the response status code is "200"
+#    And request is returned with id "<request_id>"
+
+#    Examples:
+#    | request_id |
+#    | 1601295614 |
 
 #    Scenario: Datarequest submit
 #        Given the Yoda datarequest submit API is queried with <data>
