@@ -299,6 +299,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Read data into a dictionary
+    preliminary_review = json.loads(data)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
     try:
@@ -341,7 +344,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
 
     # Get the outcome of the preliminary review (accepted/rejected)
-    decision = json.loads(data)['preliminary_review']
+    decision = preliminary_review['preliminary_review']
 
     # Update the status of the data request
     if decision == "Accepted for data manager review":
