@@ -686,6 +686,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Read assignment into dictionary
+    assignment = json.loads(data)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
     try:
@@ -728,10 +731,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
 
     # Get the outcome of the assignment (accepted/rejected)
-    decision = json.loads(data)['decision']
+    decision = assignment['decision']
 
     # If the data request has been accepted for DMC review, get the assignees
-    assignees = json.dumps(json.loads(data)['assign_to'])
+    assignees = json.dumps(assignment['assign_to'])
 
     # Update the status of the data request
     if decision == "Accepted for DMC review":
@@ -746,37 +749,24 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get email parameters
-    request_coll = ('/tempZone/home/datarequests-research/' + request_id)
-    researcher_name = ""
-    researcher_email = ""
-    proposal_title = ""
-    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % request_coll
-                        + "DATA_NAME = 'datarequest.json'",
-                        AS_DICT, ctx)
-    for row in rows:
-        name = row["META_DATA_ATTR_NAME"]
-        value = row["META_DATA_ATTR_VALUE"]
-        if name == "name":
-            researcher_name = value
-        elif name == "email":
-            researcher_email = value
-        elif name == "title":
-            proposal_title = value
+    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
+
+    contact = datarequest['researchers']['contacts'][0]
+
+    researcher_name  = contact['name']
+    researcher_email = contact['email']
+    proposal_title   = datarequest['research_context']['title']
+
+    if 'feedback_for_researcher' in assignment:
+        feedback_for_researcher = assignment['feedback_for_researcher']
 
     # Send emails to the researcher (and to the assignees if the data request has been accepted for DMC review)
     if decision == "Accepted for DMC review":
-        send_mail(researcher_email, "[researcher] YOUth data request %s: assigned" % request_id, "Dear %s,\n\nYour data request has been assigned for review by the YOUth data manager.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
-        log.write(ctx, assignees)
+        mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id)
         for assignee_email in json.loads(assignees):
-            send_mail(assignee_email, "[assignee] YOUth data request %s: assigned" % request_id, "Dear DMC member,\n\nData request %s (proposal title: \"%s\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.\n\nThe following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/%s.\n\nWith kind regards,\nYOUth" % (request_id, proposal_title, request_id))
-    elif decision == "Rejected":
-        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher']))
-    elif decision == "Rejected (resubmit)":
-        send_mail(researcher_email, "[researcher] YOUth data request %s: rejected (resubmit)" % request_id, "Dear %s,\n\nYour data request has been rejected for the following reason(s):\n\n%s\n\nYou are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/%s.\n\nIf you wish to object against this rejection, please contact the YOUth data manager.\n\nWith kind regards,\nYOUth" % (researcher_name, json.loads(data)['feedback_for_researcher'], request_id))
+            mail_datarequest_assignment_submit_assignee(ctx, assignee_email, proposal_title, request_id)
     else:
-        log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
+        mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id, feedback_for_researcher)
 
 
 def assign_request(ctx, assignees, request_id):
@@ -1442,3 +1432,72 @@ YOUth
                      actor   = user.full_name(ctx),
                      subject = subject,
                      body    = body)
+
+
+def mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id, feedback_for_researcher = None):
+
+    if decision == "Accepted for DMC review":
+        subject = "[researcher] YOUth data request {}: assigned".format(request_id)
+        body    = """
+Dear {},
+
+Your data request has been assigned for review by the YOUth data manager.
+
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, request_id)
+    elif decision == "Rejected (resubmit)":
+        subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id)
+        body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+
+If you wish to object against this rejection, please contact the YOUth data manager.
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, request_id)
+    elif decision == "Rejected":
+        subject = "[researcher] YOUth data request {}: rejected".format(request_id)
+        body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+If you wish to object against this rejection, please contact the YOUth data manager.
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher)
+
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = subject,
+                     body    = body)
+
+
+def mail_datarequest_assignment_submit_assignee(ctx, assignee_email, proposal_title, request_id):
+    return mail.send(ctx,
+                     to      = assignee_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[assignee] YOUth data request {}: assigned".format(request_id),
+                     body    = """
+Dear DMC member,
+
+Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
+
+The following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, proposal_title, request_id))
