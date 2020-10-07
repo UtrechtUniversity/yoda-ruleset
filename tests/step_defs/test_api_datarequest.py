@@ -70,8 +70,9 @@ def api_response():
         }
     )
 
-@given('the Yoda datarequest API is queried with request "<request_id>"')
-def api_response(request_id):
+@given('the Yoda datarequest get API is queried with latest request id', target_fixture="api_response")
+def api_response():
+    request_id = 1601989132
     return api_request(
         "datarequest_get",
         {"request_id": request_id}
@@ -83,8 +84,9 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@then('request is returned with id "<request_id>"')
-def api_response_contents(api_response, request_id):
-    http_status, body = api_response
+@then(parsers.parse('request status is "{status}"'))
+def api_response_contents(api_response, status):
+    _, body = api_response
 
     assert len(body['data']) > 0
+    assert body['data']['requestStatus'] == status
