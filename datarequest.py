@@ -1161,23 +1161,16 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     set_status(ctx, request_id, "dta_ready")
 
     # Get parameters needed for sending emails
-    researcher_name = ""
-    researcher_email = ""
-    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % coll_path
-                        + "DATA_NAME = 'datarequest.json'",
-                        AS_DICT, ctx)
-    for row in rows:
-        name = row["META_DATA_ATTR_NAME"]
-        value = row["META_DATA_ATTR_VALUE"]
-        if name == "name":
-            researcher_name = value
-        elif name == "email":
-            researcher_email = value
+    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
+
+    researcher = datarequest['researchers']['contacts'][0]
+
+    researcher_name = researcher['name']
+    researcher_email = researcher['email']
 
     # Send an email to the researcher informing them that the DTA of their
     # data request is ready for them to sign and upload
-    send_mail(researcher_email, "[researcher] YOUth data request %s: DTA ready" % request_id, "Dear %s,\n\nThe YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nIf you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+    mail_datarequest_dta_post_upload_actions_researcher(ctx, researcher_email, researcher_name, request_id)
 
 
 @api.make()
@@ -1597,3 +1590,22 @@ The following link will take you directly to the data request: https://portal.yo
 With kind regards,
 YOUth
 """.format(request_id, request_id))
+
+
+def mail_datarequest_dta_post_upload_actions_researcher(ctx, researcher_email, researcher_name, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: DTA ready".format(request_id),
+                     body    = """
+Dear {},
+
+The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
+
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+If you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.
+
+With kind regards,
+YOUth
+""".format(researcher_name, request_id))
