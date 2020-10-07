@@ -1216,7 +1216,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # signed by the researcher
     for datamanager_email in datamanager_emails:
         if not datamanager_email == "rods":
-            send_mail(datamanager_email, "[data manager] YOUth data request %s: DTA signed" % request_id, "Dear data manager,\n\nThe researcher has uploaded a signed copy of the Data Transfer Agreement for data request %s.\n\nPlease log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/%s.\n\nAfter verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
+            mail_datarequest_signed_dta_post_upload_actions_datamanager(ctx, datamanager_email, request_id)
 
 
 @api.make()
@@ -1609,3 +1609,22 @@ If you do not object to the agreement, please upload a signed copy of the agreem
 With kind regards,
 YOUth
 """.format(researcher_name, request_id))
+
+
+def mail_datarequest_signed_dta_post_upload_actions_datamanager(ctx, datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = datamanager_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[data manager] YOUth data request {}: DTA signed".format(request_id),
+                     body    = """
+Dear data manager,
+
+The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}.
+
+Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/{}.
+
+After verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.
+
+With kind regards,
+YOUth
+""".format(request_id, request_id))
