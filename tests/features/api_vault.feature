@@ -27,3 +27,13 @@ Feature: Vault API
         And the Yoda vault approve API is queried on datapackage in "<vault>"
         Then the response status code is "200"
         And data package status is "APPROVED_FOR_PUBLICATION"
+
+    Scenario: Vault system metadata
+        Given data package exists in "<vault>"
+        And the Yoda vault system metadata API is queried on datapackage in "<vault>"
+        Then the response status code is "200"
+
+    Scenario: Vault get publication terms
+        Given the Yoda vault get publication terms API is queried
+        Then the response status code is "200"
+        And publication terms are returned

@@ -50,6 +50,20 @@ def api_response(vault, data_package):
         {"coll": vault + "/" + data_package}
     )
 
+@given('the Yoda vault system metadata API is queried on datapackage in "<vault>"', target_fixture="api_response")
+def api_response(vault, data_package):
+    return api_request(
+        "vault_system_metadata",
+        {"coll": vault + "/" + data_package}
+    )
+
+@given('the Yoda vault get publication terms API is queried', target_fixture="api_response")
+def api_response():
+    return api_request(
+        "vault_get_publication_terms",
+        {}
+    )
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
@@ -64,7 +78,8 @@ def data_package_status(vault, data_package, status):
 
     assert body["data"]["status"] == status
 
-@then('folder locks contains "<folder>"')
-def folder_status(api_response, folder):
-    _, body = api_response
-    assert folder in body["data"]
+@then(parsers.parse('publication terms are returned'))
+def api_response_code(api_response):
+    http_status, body = api_response
+    assert http_status == 200
+    assert len(body["data"]) > 0
