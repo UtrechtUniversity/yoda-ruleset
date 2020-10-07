@@ -1241,23 +1241,19 @@ def api_datarequest_data_ready(ctx, request_id):
     set_status(ctx, request_id, "data_ready")
 
     # Get parameters needed for sending emails
-    researcher_name = ""
-    researcher_email = ""
-    rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % request_id
-                        + "DATA_NAME = 'datarequest.json'",
-                        AS_DICT, ctx)
-    for row in rows:
-        name = row["META_DATA_ATTR_NAME"]
-        value = row["META_DATA_ATTR_VALUE"]
-        if name == "name":
-            researcher_name = value
-        elif name == "email":
-            researcher_email = value
+    zone_path = '/tempZone/home/datarequests-research/'
+    coll_path = zone_path + request_id
+
+    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
+
+    researcher = datarequest['researchers']['contacts'][0]
+
+    researcher_name = researcher['name']
+    researcher_email = researcher['email']
 
     # Send email to researcher notifying him of of the submission of his
     # request
-    send_mail(researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
+    mail_datarequest_data_ready_researcher(ctx, researcher_email, researcher_name, request_id)
 
 
 def mail_datarequest_submit_researcher(ctx, researcher_email, researcher_name, request_id):
@@ -1628,3 +1624,18 @@ After verifying that the document has been signed correctly, you may prepare the
 With kind regards,
 YOUth
 """.format(request_id, request_id))
+
+
+def mail_datarequest_data_ready_researcher(ctx, researcher_email, researcher_name, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: Data ready".format(request_id),
+                     body    = """
+Dear {},
+
+The data you have requested is ready for you to download! [instructions here].
+
+With kind regards,
+YOUth
+""".format(researcher_name))
