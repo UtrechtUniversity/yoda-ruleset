@@ -1,14 +1,78 @@
-import pytest
+# coding=utf-8
+"""Datarequest API feature tests.
 
-from pytest_bdd import scenarios, given, when, then, parsers
+Usage:
+pytest --api <url> --csrf <csrf> --session <session>
+"""
+
+__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
+from pytest_bdd import (
+    given,
+    parsers,
+    scenarios,
+    then,
+    when,
+)
 
 from conftest import api_request
 
 scenarios('../features/api_datarequest.feature')
 
-@pytest.fixture
-@given('the Yoda datarequest API is queried with request "<request_id>"')
-def api_response(request_id):
+@given('the Yoda datarequest submit API is queried with data', target_fixture="api_response")
+def api_response():
+    return api_request(
+        "datarequest_submit",
+        {
+            "data": {
+                "introduction": {},
+                "researchers": {
+                    "contacts": []
+                },
+                "research_context": {
+                    "title": "test",
+                    "background": "test",
+                    "research_question": "test",
+                    "requested_data_summary": "test"
+                },
+                "hypotheses": {},
+                "methods": {
+                    "design": "test",
+                    "preparation": "test",
+                    "processing": "test"
+                },
+                "datarequest": {
+                    "data": {
+                        "selectedRows": [
+                            {
+                                "expId": 1,
+                                "expCohort": 1,
+                                "expWave": 7,
+                                "expType": 0,
+                                "expSubject": 0,
+                                "expName": "Blood",
+                                "expInfo": ""
+                            }
+                        ]
+                    },
+                    "purpose": "Analyses for data assessment only(results will not be published)",
+                    "data_lock_notification": True,
+                    "publication_approval": True
+                },
+                "contribution": {
+                    "contribution_time": "No",
+                    "contribution_financial": "No",
+                    "contribution_favor": "No"
+                }
+            },
+            "previous_request_id": None
+        }
+    )
+
+@given('the Yoda datarequest get API is queried with latest request id', target_fixture="api_response")
+def api_response():
+    request_id = 1601989132
     return api_request(
         "datarequest_get",
         {"request_id": request_id}
@@ -20,8 +84,9 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@then('request is returned with id "<request_id>"')
-def api_response_contents(api_response, request_id):
-    http_status, body = api_response
+@then(parsers.parse('request status is "{status}"'))
+def api_response_contents(api_response, status):
+    _, body = api_response
 
     assert len(body['data']) > 0
+    assert body['data']['requestStatus'] == status

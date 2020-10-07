@@ -204,7 +204,12 @@ def folder_secure(ctx, coll):
         avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
     # Copy all original info to vault
-    vault.copy_folder_to_vault(ctx, coll, target)
+    try:
+        vault.copy_folder_to_vault(ctx, coll, target)
+    except Exception as e:
+        log.write(ctx, e)
+        return '1'
+
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
     vault.vault_write_license(ctx, target)

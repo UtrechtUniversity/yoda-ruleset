@@ -1,5 +1,9 @@
 # coding=utf-8
-"""Folder feature tests."""
+"""Folder API feature tests.
+
+Usage:
+pytest --api <url> --csrf <csrf> --session <session>
+"""
 
 from pytest_bdd import (
     given,
