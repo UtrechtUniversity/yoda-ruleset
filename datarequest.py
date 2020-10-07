@@ -368,16 +368,18 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers',
                                     "")['arguments'][1])
 
-    # Send an email to the researcher informing them of whether their data
-    # request has been approved or rejected.
+    # Send an email to the researcher informing them of whether their data request has been approved
+    # or rejected
     if decision == "Accepted for data manager review":
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
-                mail_preliminary_review_datamanager(ctx, datamanager_email, request_id)
-    else:
-        mail_preliminary_review_researcher(ctx, decision, researcher_email, researcher_name,
-                                           feedback_for_researcher, datamanager_emails[0],
-                                           request_id)
+                mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
+    elif decision == "Rejected (resubmit)":
+        mail_preliminary_review_resubmit(ctx, decision, researcher_email, researcher_name,
+                                         feedback_for_researcher, datamanager_emails[0], request_id)
+    elif decision == "Rejected":
+        mail_preliminary_review_rejected(ctx, decision, researcher_email, researcher_name,
+                                         feedback_for_researcher, datamanager_emails[0], request_id)
 
 
 @api.make()
@@ -1289,7 +1291,7 @@ YOUth
 """.format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
-def mail_preliminary_review_datamanager(ctx, datamanager_email, request_id):
+def mail_preliminary_review_accepted(ctx, datamanager_email, request_id):
     return mail.send(ctx,
                      to      = datamanager_email,
                      actor   = user.full_name(ctx),
@@ -1308,31 +1310,13 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_preliminary_review_researcher(ctx, decision, researcher_email, researcher_name,
-                                       feedback_for_researcher, datamanager_email, request_id):
-    if decision == "Rejected":
-        return mail.send(ctx,
-                         to      = researcher_email,
-                         actor   = user.full_name(ctx),
-                         subject = "[researcher] YOUth data request {}: rejected".format(request_id),
-                         body    = """
-Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, datamanager_email))
-    elif decision == "Rejected (resubmit)":
-        return mail.send(ctx,
-                         to      = researcher_email,
-                         actor   = user.full_name(ctx),
-                         subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
-                         body    = """
+def mail_preliminary_review_resubmit(ctx, researcher_email, researcher_name,
+                                     feedback_for_researcher, datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                     body    = """
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1346,6 +1330,26 @@ If you wish to object against this rejection, please contact the YOUth data mana
 With kind regards,
 YOUth
 """.format(researcher_name, feedback_for_researcher, request_id, datamanager_email))
+
+
+def mail_preliminary_review_rejected(ctx, researcher_email, researcher_name,
+                                     feedback_for_researcher, datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: rejected".format(request_id),
+                     body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+If you wish to object against this rejection, please contact the YOUth data manager ({}).
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, datamanager_email))
 
 
 def mail_datamanager_review(ctx, decision, bodmember_email, datamanager_remarks, request_id):
