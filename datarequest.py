@@ -961,31 +961,24 @@ def api_datarequest_review_submit(ctx, data, request_id):
         set_status(ctx, request_id, "reviewed")
 
         # Get parameters needed for sending emails
-        researcher_name = ""
-        researcher_email = ""
-        bod_member_emails = ""
-        rows = row_iterator(["META_DATA_ATTR_NAME", "META_DATA_ATTR_VALUE"],
-                            "COLL_NAME = '%s' AND " % coll_path
-                            + "DATA_NAME = 'datarequest.json'",
-                            AS_DICT, ctx)
-        for row in rows:
-            name = row["META_DATA_ATTR_NAME"]
-            value = row["META_DATA_ATTR_VALUE"]
-            if name == "name":
-                researcher_name = value
-            elif name == "email":
-                researcher_email = value
+        datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
+
+        researcher = datarequest['researchers']['contacts'][0]
+
+        researcher_name = researcher['name']
+        researcher_email = researcher['email']
 
         bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
                                        'datarequests-research-board-of-directors',
-                                       bod_member_emails)['arguments'][1])
+                                       "")['arguments'][1])
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
-        send_mail(researcher_email, "[researcher] YOUth data request %s: reviewed" % request_id, "Dear %s,\n\nYour data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.\n\nThe following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/%s.\n\nWith kind regards,\nYOUth" % (researcher_name, request_id))
+        mail_datarequest_review_submit_researcher(ctx, researcher_email, researcher_name,
+                                                  request_id)
         for bodmember_email in bod_member_emails:
             if not bodmember_email == "rods":
-                send_mail(bodmember_email, "[bod member] YOUth data request %s: reviewed" % request_id, "Dear Board of Directors member,\n\nData request %s has been reviewed by the YOUth data management committee and is awaiting your final evaluation.\n\nPlease log into Yoda to evaluate the data request.\n\nThe following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/%s.\n\nWith kind regards,\nYOUth" % (request_id, request_id))
+                mail_datarequest_review_submit_bodmember(ctx, bodmember_email, request_id)
 
 
 @api.make()
@@ -1501,3 +1494,39 @@ The following link will take you directly to the review form: https://portal.yod
 With kind regards,
 YOUth
 """.format(request_id, proposal_title, request_id))
+
+
+def mail_datarequest_review_submit_researcher(ctx, researcher_email, researcher_name, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: reviewed".format(request_id),
+                     body    = """
+Dear {},
+
+Your data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.
+
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, request_id))
+
+
+def mail_datarequest_review_submit_bodmember(ctx, bodmember_email, request_id):
+    return mail.send(ctx,
+                     to      = bodmember_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[bod member] YOUth data request {}: reviewed".format(request_id),
+                     body    = """
+Dear Board of Directors member,
+
+Data request {} has been reviewed by the YOUth data management committee and is awaiting your final evaluation.
+
+Please log into Yoda to evaluate the data request.
+
+The following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, request_id))
