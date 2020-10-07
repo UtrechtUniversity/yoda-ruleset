@@ -365,7 +365,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     researcher_name = researcher['name']
     researcher_email = researcher['email']
 
-    feedback_for_researcher = json.loads(data)['feedback_for_researcher']
+    if 'feedback_for_researcher' in preliminary_review:
+        feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers',
                                     "")['arguments'][1])
