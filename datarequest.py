@@ -224,13 +224,12 @@ def api_datarequest_submit(ctx, data, previous_request_id):
                                    "datarequests-research-board-of-directors", "")['arguments'][1])
 
     # Send email to researcher and board of directors member(s)
-    mail_datarequest_submit_researcher(ctx, researcher_email, researcher_name, request_id)
+    mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
-            mail_datarequest_submit_bodmember(ctx, bodmember_email, request_id, researcher_name,
-                                              researcher_email, researcher_institution,
-                                              researcher_department, submission_date,
-                                              proposal_title)
+            mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                       researcher_email, researcher_institution,
+                                       researcher_department, submission_date, proposal_title)
 
 
 @api.make()
@@ -374,13 +373,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     if decision == "Accepted for data manager review":
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
-                mail_datarequest_preliminary_review_submit_datamanager(ctx, datamanager_email,
-                                                                       request_id)
+                mail_preliminary_review_datamanager(ctx, datamanager_email, request_id)
     else:
-        mail_datarequest_preliminary_review_submit_researcher(ctx, decision, researcher_email,
-                                                              researcher_name,
-                                                              feedback_for_researcher,
-                                                              datamanager_emails[0], request_id)
+        mail_preliminary_review_researcher(ctx, decision, researcher_email, researcher_name,
+                                           feedback_for_researcher, datamanager_emails[0],
+                                           request_id)
 
 
 @api.make()
@@ -522,7 +519,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # - the board of directors: call to action
     for bod_member_email in bod_member_emails:
         if not bod_member_email == "rods":
-            mail_datarequest_datamanager_review_submit_bodmember(ctx, decision, bod_member_email, datamanager_remarks, request_id)
+            mail_datamanager_review(ctx, decision, bod_member_email, datamanager_remarks,
+                                    request_id)
 
 
 @api.make()
@@ -758,11 +756,12 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Send emails to the researcher (and to the assignees if the data request has been accepted for DMC review)
     if decision == "Accepted for DMC review":
-        mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id)
+        mail_assignment_researcher(ctx, decision, researcher_email, researcher_name, request_id)
         for assignee_email in json.loads(assignees):
-            mail_datarequest_assignment_submit_assignee(ctx, assignee_email, proposal_title, request_id)
+            mail_assignment_assignee(ctx, assignee_email, proposal_title, request_id)
     else:
-        mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id, feedback_for_researcher)
+        mail_assignment_researcher(ctx, decision, researcher_email, researcher_name, request_id,
+                                   feedback_for_researcher)
 
 
 def assign_request(ctx, assignees, request_id):
@@ -969,11 +968,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
-        mail_datarequest_review_submit_researcher(ctx, researcher_email, researcher_name,
-                                                  request_id)
+        mail_review_researcher(ctx, researcher_email, researcher_name, request_id)
         for bodmember_email in bod_member_emails:
             if not bodmember_email == "rods":
-                mail_datarequest_review_submit_bodmember(ctx, bodmember_email, request_id)
+                mail_review_bodmember(ctx, bodmember_email, request_id)
 
 
 @api.make()
@@ -1088,16 +1086,13 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
     if decision == "Approved":
-        mail_datarequest_evaluation_submit_researcher(ctx, decision, researcher_email,
-                                                      researcher_name, request_id)
+        mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id)
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
-                mail_datarequest_evaluation_submit_datamanager(ctx, datamanager_email, request_id)
+                mail_evaluation_datamanager(ctx, datamanager_email, request_id)
     else:
-        mail_datarequest_evaluation_submit_researcher(ctx, decision, researcher_email,
-                                                      researcher_name, request_id,
-                                                      datamanager_emails[0],
-                                                      feedback_for_researcher)
+        mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id,
+                                   datamanager_emails[0], feedback_for_researcher)
 
 
 @api.make()
@@ -1164,7 +1159,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 
     # Send an email to the researcher informing them that the DTA of their
     # data request is ready for them to sign and upload
-    mail_datarequest_dta_post_upload_actions_researcher(ctx, researcher_email, researcher_name, request_id)
+    mail_dta(ctx, researcher_email, researcher_name, request_id)
 
 
 @api.make()
@@ -1210,7 +1205,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # signed by the researcher
     for datamanager_email in datamanager_emails:
         if not datamanager_email == "rods":
-            mail_datarequest_signed_dta_post_upload_actions_datamanager(ctx, datamanager_email, request_id)
+            mail_signed_dta(ctx, datamanager_email, request_id)
 
 
 @api.make()
@@ -1247,10 +1242,10 @@ def api_datarequest_data_ready(ctx, request_id):
 
     # Send email to researcher notifying him of of the submission of his
     # request
-    mail_datarequest_data_ready_researcher(ctx, researcher_email, researcher_name, request_id)
+    mail_data_ready(ctx, researcher_email, researcher_name, request_id)
 
 
-def mail_datarequest_submit_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
@@ -1269,9 +1264,9 @@ YOUth
 """.format(researcher_name, request_id))
 
 
-def mail_datarequest_submit_bodmember(ctx, bodmember_email, request_id, researcher_name,
-                                      researcher_email, researcher_institution,
-                                      researcher_department, submission_date, proposal_title):
+def mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher_name, researcher_email,
+                               researcher_institution, researcher_department, submission_date,
+                               proposal_title):
     return mail.send(ctx,
                      to      = bodmember_email,
                      actor   = user.full_name(ctx),
@@ -1294,7 +1289,7 @@ YOUth
 """.format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, request_id))
 
 
-def mail_datarequest_preliminary_review_submit_datamanager(ctx, datamanager_email, request_id):
+def mail_preliminary_review_datamanager(ctx, datamanager_email, request_id):
     return mail.send(ctx,
                      to      = datamanager_email,
                      actor   = user.full_name(ctx),
@@ -1313,9 +1308,8 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_datarequest_preliminary_review_submit_researcher(ctx, decision, researcher_email,
-                                                          researcher_name, feedback_for_researcher,
-                                                          datamanager_email, request_id):
+def mail_preliminary_review_researcher(ctx, decision, researcher_email, researcher_name,
+                                       feedback_for_researcher, datamanager_email, request_id):
     if decision == "Rejected":
         return mail.send(ctx,
                          to      = researcher_email,
@@ -1354,7 +1348,7 @@ YOUth
 """.format(researcher_name, feedback_for_researcher, request_id, datamanager_email))
 
 
-def mail_datarequest_datamanager_review_submit_bodmember(ctx, decision, bodmember_email, datamanager_remarks, request_id):
+def mail_datamanager_review(ctx, decision, bodmember_email, datamanager_remarks, request_id):
     if decision == "Accepted":
         subject = "[bod member] YOUth data request {}: accepted by data manager".format(request_id)
         body = """
@@ -1403,7 +1397,8 @@ YOUth
                      body    = body)
 
 
-def mail_datarequest_assignment_submit_researcher(ctx, decision, researcher_email, researcher_name, request_id, feedback_for_researcher = None):
+def mail_assignment_researcher(ctx, decision, researcher_email, researcher_name, request_id,
+                               feedback_for_researcher = None):
 
     if decision == "Accepted for DMC review":
         subject = "[researcher] YOUth data request {}: assigned".format(request_id)
@@ -1455,7 +1450,7 @@ YOUth
                      body    = body)
 
 
-def mail_datarequest_assignment_submit_assignee(ctx, assignee_email, proposal_title, request_id):
+def mail_assignment_assignee(ctx, assignee_email, proposal_title, request_id):
     return mail.send(ctx,
                      to      = assignee_email,
                      actor   = user.full_name(ctx),
@@ -1472,7 +1467,7 @@ YOUth
 """.format(request_id, proposal_title, request_id))
 
 
-def mail_datarequest_review_submit_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_review_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
@@ -1489,7 +1484,7 @@ YOUth
 """.format(researcher_name, request_id))
 
 
-def mail_datarequest_review_submit_bodmember(ctx, bodmember_email, request_id):
+def mail_review_bodmember(ctx, bodmember_email, request_id):
     return mail.send(ctx,
                      to      = bodmember_email,
                      actor   = user.full_name(ctx),
@@ -1508,9 +1503,8 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_datarequest_evaluation_submit_researcher(ctx, decision, researcher_email, researcher_name,
-                                                  request_id, datamanager_email = None,
-                                                  feedback_for_researcher = None):
+def mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id,
+                               datamanager_email = None, feedback_for_researcher = None):
     if decision == "Approved":
         subject = "[researcher] YOUth data request {}: approved".format(request_id)
         body    = """
@@ -1565,7 +1559,7 @@ YOUth
                      body    = body)
 
 
-def mail_datarequest_evaluation_submit_datamanager(ctx, datamanager_email, request_id):
+def mail_evaluation_datamanager(ctx, datamanager_email, request_id):
     return mail.send(ctx,
                      to      = datamanager_email,
                      actor   = user.full_name(ctx),
@@ -1582,7 +1576,7 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_datarequest_dta_post_upload_actions_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_dta(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
@@ -1601,7 +1595,7 @@ YOUth
 """.format(researcher_name, request_id))
 
 
-def mail_datarequest_signed_dta_post_upload_actions_datamanager(ctx, datamanager_email, request_id):
+def mail_signed_dta(ctx, datamanager_email, request_id):
     return mail.send(ctx,
                      to      = datamanager_email,
                      actor   = user.full_name(ctx),
@@ -1620,7 +1614,7 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_datarequest_data_ready_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_data_ready(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
