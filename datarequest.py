@@ -225,13 +225,13 @@ def api_datarequest_submit(ctx, data, previous_request_id):
                                    "datarequests-research-board-of-directors", "")['arguments'][1])
 
     # Send email to researcher and board of directors member(s)
-    mail_datarequest_submitted_researcher(ctx, researcher_email, researcher_name, request_id)
+    mail_datarequest_submit_researcher(ctx, researcher_email, researcher_name, request_id)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
-            mail_datarequest_submitted_bodmember(ctx, bodmember_email, request_id, researcher_name,
-                                                 researcher_email, researcher_institution,
-                                                 researcher_department, submission_date,
-                                                 proposal_title)
+            mail_datarequest_submit_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                              researcher_email, researcher_institution,
+                                              researcher_department, submission_date,
+                                              proposal_title)
 
 
 @api.make()
@@ -1298,7 +1298,7 @@ def api_datarequest_data_ready(ctx, request_id):
     send_mail(researcher_email, "[researcher] YOUth data request %s: Data ready" % request_id, "Dear %s,\n\nThe data you have requested is ready for you to download! [instructions here].\n\nWith kind regards,\nYOUth" % researcher_name)
 
 
-def mail_datarequest_submitted_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_datarequest_submit_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to      = researcher_email,
                      actor   = user.full_name(ctx),
@@ -1317,9 +1317,9 @@ YOUth
 """.format(researcher_name, request_id))
 
 
-def mail_datarequest_submitted_bodmember(ctx, bodmember_email, request_id, researcher_name,
-                                         researcher_email, researcher_institution,
-                                         researcher_department, submission_date, proposal_title):
+def mail_datarequest_submit_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                      researcher_email, researcher_institution,
+                                      researcher_department, submission_date, proposal_title):
     return mail.send(ctx,
                      to      = bodmember_email,
                      actor   = user.full_name(ctx),
