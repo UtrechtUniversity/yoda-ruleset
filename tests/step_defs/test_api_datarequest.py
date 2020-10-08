@@ -13,15 +13,15 @@ from pytest_bdd import (
     parsers,
     scenarios,
     then,
-    when,
 )
 
 from conftest import api_request
 
 scenarios('../features/api_datarequest.feature')
 
+
 @given('the Yoda datarequest submit API is queried with data', target_fixture="api_response")
-def api_response():
+def api_datarequest_submit():
     return api_request(
         "datarequest_submit",
         {
@@ -70,13 +70,15 @@ def api_response():
         }
     )
 
+
 @given('the Yoda datarequest get API is queried with latest request id', target_fixture="api_response")
-def api_response():
+def api_datarequest_get():
     request_id = 1601989132
     return api_request(
         "datarequest_get",
         {"request_id": request_id}
     )
+
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
