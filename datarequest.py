@@ -530,7 +530,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
                                                  datamanager_remarks, request_id)
 
 
-
 @api.make()
 def api_datarequest_datamanager_review_get(ctx, request_id):
     """Retrieve a data manager review.
