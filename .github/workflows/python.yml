@@ -24,7 +24,7 @@ jobs:
 
       - name: Lint with pycodestyle
         run: |
-          flake8 *.py avu_json/*.py util/*.py --exclude=__init__.py --statistics
+          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --exclude=__init__.py --statistics
 
       - name: Sort python imports
         run: |
@@ -36,4 +36,4 @@ jobs:
 
       - name: Check McCabe complexity
         run: |
-          flake8 *.py avu_json/*.py util/*.py --exclude=__init__.py --max-complexity 10 || true
+          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --exclude=__init__.py --max-complexity 10 || true
