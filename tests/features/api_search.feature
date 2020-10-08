@@ -33,5 +33,5 @@ Feature: Search API
         And result "<result>" is found
 
         Examples:
-            | status            | result             |
-            | research:SECURED  | /research-process2 |
+            | status           | result             |
+            | research:SECURED | /research-initial1 |

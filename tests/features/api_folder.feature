@@ -20,7 +20,8 @@ Feature: Folder API
         And folder "<folder>" status is "FOLDER"
 
     Scenario: Folder submit
-        Given the Yoda folder submit API is queried with "<folder>"
+        Given metadata JSON exists in "<folder>"
+        And the Yoda folder submit API is queried with "<folder>"
         Then the response status code is "200"
         And folder "<folder>" status is "SUBMITTED"
 
