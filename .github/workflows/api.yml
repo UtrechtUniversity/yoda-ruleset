@@ -4,6 +4,14 @@ on:
   push:
     branches:
     - development
+    paths-ignore:
+    - 'avu_json/**'
+    - 'file_formats/**'
+    - 'licenses/**'
+    - 'schemas/**'
+    - 'templates/**'
+    - 'terms/**'
+    - 'tests/**'
 
 jobs:
   build:
