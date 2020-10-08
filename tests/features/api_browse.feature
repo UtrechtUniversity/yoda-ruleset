@@ -6,9 +6,10 @@ Feature: Browse API
         And the browse result contains "<result>"
 
         Examples:
-            | collection                     | result             |
-            | /tempZone/home/research-mdtest | copyfromparent     |
-            | /tempZone/home/research-mdtest | yoda-metadata.json |
+            | collection                                | result                       |
+            | /tempZone/home/research-initial           | testdata                     |
+            | /tempZone/home/research-initial/testdata  | lorem.txt                    |
+            | /tempZone/home/research-initial/testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
 
     Scenario: Browse collections
         Given the Yoda browse collections API is queried with "<collection>"
@@ -17,5 +18,5 @@ Feature: Browse API
         And the browse result does not contain "<notresult>"
 
         Examples:
-            | collection                     | result          | notresult          |
-            | /tempZone/home/research-mdtest | copyfromparent  | yoda-metadata.json |
+            | collection                       | result          | notresult          |
+            |  /tempZone/home/research-initial | testdata        | yoda-metadata.json |

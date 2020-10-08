@@ -66,6 +66,38 @@ def api_response(folder):
         {"coll": folder}
     )
 
+@given('metadata JSON exists in "<folder>"')
+def api_response(folder):
+    http_status, _ = api_request(
+        "meta_form_save",
+        {"coll": folder,
+         "metadata": {
+             "links": [{
+                 "rel": "describedby",
+                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
+             }],
+             "Language": "en - English",
+             "Retention_Period": 10,
+             "Creator": [{
+                 "Name": {
+                     "Given_Name": "Test",
+                     "Family_Name": "Test"
+                 },
+                 "Affiliation": ["Utrecht University"],
+                 "Person_Identifier": [{}]
+             }],
+             "Data_Access_Restriction": "Restricted - available upon request",
+             "Version": "0",
+             "Title": "Test",
+             "Description": "Test",
+             "Data_Type": "Dataset",
+             "Data_Classification": "Public",
+             "License": "Creative Commons Attribution 4.0 International Public License"
+         }}
+    )
+
+    assert http_status == 200
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
