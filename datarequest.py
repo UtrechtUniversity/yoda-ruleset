@@ -1098,13 +1098,17 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
     if decision == "Approved":
-        mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id)
+        mail_evaluation_approved_researcher(ctx, decision, researcher_email, researcher_name,
+                                            request_id)
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
-                mail_evaluation_datamanager(ctx, datamanager_email, request_id)
-    else:
-        mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id,
-                                   datamanager_emails[0], feedback_for_researcher)
+                mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id)
+    elif decision == "Rejected (resubmit)":
+        mail_evaluation_resubmit(ctx, decision, researcher_email, researcher_name,
+                                 datamanager_emails[0], feedback_for_researcher, request_id)
+    elif decision == "Rejected":
+        mail_evaluation_rejected(ctx, decision, researcher_email, researcher_name,
+                                 datamanager_emails[0], feedback_for_researcher, request_id)
 
 
 @api.make()
@@ -1529,11 +1533,13 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_evaluation_researcher(ctx, decision, researcher_email, researcher_name, request_id,
-                               datamanager_email = None, feedback_for_researcher = None):
-    if decision == "Approved":
-        subject = "[researcher] YOUth data request {}: approved".format(request_id)
-        body    = """
+def mail_evaluation_approved_researcher(ctx, decision, researcher_email, researcher_name,
+                                        request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: approved".format(request_id),
+                     body    = """
 Dear {},
 
 Congratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
@@ -1542,50 +1548,10 @@ The following link will take you directly to your data request: https://portal.y
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id)
-    elif decision == "Rejected (resubmit)":
-        subject = "[researcher] YOUth data request {}: rejected".format(request_id)
-        body    = """
-Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
-
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
-
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, request_id, datamanager_email, request_id)
-    elif decision == "Rejected":
-        subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id)
-        body    = """
-Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
-
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, datamanager_email, request_id)
-
-    return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = subject,
-                     body    = body)
+""".format(researcher_name, request_id))
 
 
-def mail_evaluation_datamanager(ctx, datamanager_email, request_id):
+def mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id):
     return mail.send(ctx,
                      to      = datamanager_email,
                      actor   = user.full_name(ctx),
@@ -1600,6 +1566,52 @@ The following link will take you directly to the data request: https://portal.yo
 With kind regards,
 YOUth
 """.format(request_id, request_id))
+
+
+def mail_evaluation_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
+                             datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: rejected".format(request_id),
+                     body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+
+If you wish to object against this rejection, please contact the YOUth data manager ({}).
+
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, request_id, datamanager_email, request_id))
+
+
+def mail_evaluation_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
+                             datamanager_email, request_id):
+    return mail.send(ctx,
+                     to      = researcher_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                     body    = """
+Dear {},
+
+Your data request has been rejected for the following reason(s):
+
+{}
+
+If you wish to object against this rejection, please contact the YOUth data manager ({}).
+
+The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, feedback_for_researcher, datamanager_email, request_id))
 
 
 def mail_dta(ctx, researcher_email, researcher_name, request_id):
