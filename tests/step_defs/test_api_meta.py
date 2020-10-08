@@ -13,15 +13,15 @@ from pytest_bdd import (
     parsers,
     scenarios,
     then,
-    when,
 )
 
 from conftest import api_request
 
 scenarios('../features/api_meta.feature')
 
+
 @given('metadata JSON exists in "<collection>"')
-def api_response(collection):
+def api_meta_form_save(collection):
     http_status, _ = api_request(
         "meta_form_save",
         {"coll": collection,
@@ -52,8 +52,9 @@ def api_response(collection):
 
     assert http_status == 200
 
+
 @given('subcollection "<target_coll>" exists')
-def api_response(target_coll):
+def subcollection_exists(target_coll):
     x = target_coll.split('/')
 
     http_status, _ = api_request(
@@ -63,12 +64,14 @@ def api_response(target_coll):
 
     assert http_status == 200
 
+
 @given('the Yoda meta remove API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_response(collection):
+def api_meta_remove(collection):
     return api_request(
         "meta_remove",
         {"coll": collection}
     )
+
 
 @given('the Yoda meta clone file API is queried with "<target_coll>"', target_fixture="api_response")
 def api_response(target_coll):
@@ -77,13 +80,15 @@ def api_response(target_coll):
         {"target_coll": target_coll}
     )
 
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, body = api_response
     assert http_status == code
 
+
 @then('metadata JSON is removed from "<collection>"')
-def api_response_contents(collection):
+def metadata_removed(collection):
     http_status, body = api_request(
         "browse_folder",
         {"coll": collection}
@@ -99,8 +104,9 @@ def api_response_contents(collection):
 
     assert found
 
+
 @then('metadata JSON is cloned into "<target_coll>"')
-def api_response_contents(target_coll):
+def metadata_cloned(target_coll):
     http_status, body = api_request(
         "meta_form_load",
         {"coll": target_coll}

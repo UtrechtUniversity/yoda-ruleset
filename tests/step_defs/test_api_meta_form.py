@@ -13,15 +13,15 @@ from pytest_bdd import (
     parsers,
     scenarios,
     then,
-    when,
 )
 
 from conftest import api_request
 
 scenarios('../features/api_meta_form.feature')
 
+
 @given('the Yoda meta form save API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_response(collection):
+def api_meta_form_save(collection):
     return api_request(
         "meta_form_save",
         {"coll": collection,
@@ -50,12 +50,14 @@ def api_response(collection):
          }}
     )
 
+
 @given('the Yoda meta form load API is queried with "<collection>"', target_fixture="api_response")
-def api_response(collection):
+def api_meta_form_load(collection):
     return api_request(
         "meta_form_load",
         {"coll": collection}
     )
+
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
@@ -64,7 +66,7 @@ def api_response_code(api_response, code):
 
 
 @then('file "<file>" exists in "<collection>"')
-def api_response_contents(file, collection):
+def file_exists(file, collection):
     http_status, body = api_request(
         "browse_folder",
         {"coll": collection}
@@ -80,8 +82,9 @@ def api_response_contents(file, collection):
 
     assert found
 
+
 @then('metadata is returned for "<collection>"')
-def api_response_contents(api_response, collection):
+def metadata_returned(api_response, collection):
     http_status, body = api_response
 
     assert http_status == 200
