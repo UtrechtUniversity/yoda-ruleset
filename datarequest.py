@@ -208,18 +208,11 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     # Set the status metadata field to "submitted"
     set_status(ctx, request_id, "submitted")
 
-    # Get parameters needed for sending emails
+    # Get source data needed for sending emails
     datarequest = json.loads(data)
-
-    contact = datarequest['researchers']['contacts'][0]
+    researcher = datarequest['researchers']['contacts'][0]
     research_context = datarequest['research_context']
 
-    researcher_name        = contact['name']
-    researcher_email       = contact['email']
-    researcher_institution = contact['institution']
-    researcher_department  = contact['department']
-    proposal_title         = research_context['title']
-    submission_date        = timestamp.strftime('%c')
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
                                    "datarequests-research-board-of-directors", "")['arguments'][1])
 
@@ -227,9 +220,10 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
-            mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher_name,
-                                       researcher_email, researcher_institution,
-                                       researcher_department, submission_date, proposal_title)
+            mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher['name'],
+                                       researcher['email'], researcher['institution'],
+                                       researcher['department'], timestamp.strftime('%c'),
+                                       research_context['title'])
 
 
 @api.make()
@@ -354,13 +348,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
-    # Get parameters needed for sending emails
+    # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
     researcher = datarequest['researchers']['contacts'][0]
-
-    researcher_name = researcher['name']
-    researcher_email = researcher['email']
 
     if 'feedback_for_researcher' in preliminary_review:
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
@@ -375,10 +365,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
             if not datamanager_email == "rods":
                 mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
     elif decision == "Rejected (resubmit)":
-        mail_preliminary_review_resubmit(ctx, decision, researcher_email, researcher_name,
+        mail_preliminary_review_resubmit(ctx, researcher['email'], researcher['name'],
                                          feedback_for_researcher, datamanager_emails[0], request_id)
     elif decision == "Rejected":
-        mail_preliminary_review_rejected(ctx, decision, researcher_email, researcher_name,
+        mail_preliminary_review_rejected(ctx, researcher['email'], researcher['name'],
                                          feedback_for_researcher, datamanager_emails[0], request_id)
 
 
@@ -500,34 +490,24 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for decision in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for decision in data manager review JSON data."}
 
-    # Get parameters needed for sending emails
-    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
-    researcher = datarequest['researchers']['contacts'][0]
-
-    researcher_name = researcher['name']
-    researcher_email = researcher['email']
-
+    # Get source data needed for sending emails
     if 'datamanager_remarks' in datamanager_review:
         datamanager_remarks = datamanager_review['datamanager_remarks']
-    else:
-        datamanager_remarks = None
 
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
                                                                "")['arguments'][1])
 
-    # Send emails to:
-    # - the board of directors: call to action
+    # Send emails
     for bod_member_email in bod_member_emails:
         if not bod_member_email == "rods":
             if decision == "Accepted":
-                mail_datamanager_review_accepted(ctx, decision, bod_member_email, request_id)
+                mail_datamanager_review_accepted(ctx, bod_member_email, request_id)
             elif decision == "Rejected (resubmit)":
-                mail_datamanager_review_resubmit(ctx, decision, bod_member_email,
-                                                 datamanager_remarks, request_id)
+                mail_datamanager_review_resubmit(ctx, bod_member_email, datamanager_remarks,
+                                                 request_id)
             elif decision == "Rejected":
-                mail_datamanager_review_rejected(ctx, decision, bod_member_email,
-                                                 datamanager_remarks, request_id)
+                mail_datamanager_review_rejected(ctx, bod_member_email, datamanager_remarks,
+                                                 request_id)
 
 
 @api.make()
@@ -749,14 +729,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
-    # Get email parameters
-    datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
-    contact = datarequest['researchers']['contacts'][0]
-
-    researcher_name  = contact['name']
-    researcher_email = contact['email']
-    proposal_title   = datarequest['research_context']['title']
+    # Get source data needed for sending emails
+    datarequest      = jsonutil.read(ctx, coll_path + "/datarequest.json")
+    researcher       = datarequest['researchers']['contacts'][0]
+    research_context = datarequest['research_context']
 
     if 'feedback_for_researcher' in assignment:
         feedback_for_researcher = assignment['feedback_for_researcher']
@@ -764,14 +740,16 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Send emails to the researcher (and to the assignees if the data request has been accepted for
     # DMC review)
     if decision == "Accepted for DMC review":
-        mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id)
+        mail_assignment_accepted_researcher(ctx, researcher['email'], researcher['name'],
+                                            request_id)
         for assignee_email in json.loads(assignees):
-            mail_assignment_accepted_assignee(ctx, assignee_email, proposal_title, request_id)
+            mail_assignment_accepted_assignee(ctx, assignee_email, research_context['title'],
+                                              request_id)
     elif decision == "Rejected (resubmit)":
-        mail_assignment_resubmit(ctx, researcher_email, researcher_name, request_id,
+        mail_assignment_resubmit(ctx, researcher['email'], researcher['name'], request_id,
                                  feedback_for_researcher)
     elif decision == "Rejected":
-        mail_assignment_rejected(ctx, researcher_email, researcher_name, request_id,
+        mail_assignment_rejected(ctx, researcher['email'], researcher['name'], request_id,
                                  feedback_for_researcher)
 
 
@@ -965,13 +943,9 @@ def api_datarequest_review_submit(ctx, data, request_id):
     if len(reviewers) < 1:
         set_status(ctx, request_id, "reviewed")
 
-        # Get parameters needed for sending emails
+        # Get source data needed for sending emails
         datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
         researcher = datarequest['researchers']['contacts'][0]
-
-        researcher_name = researcher['name']
-        researcher_email = researcher['email']
 
         bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
                                        'datarequests-research-board-of-directors',
@@ -979,7 +953,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
-        mail_review_researcher(ctx, researcher_email, researcher_name, request_id)
+        mail_review_researcher(ctx, researcher['email'], researcher['name'], request_id)
         for bodmember_email in bod_member_emails:
             if not bodmember_email == "rods":
                 mail_review_bodmember(ctx, bodmember_email, request_id)
@@ -1038,6 +1012,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Read evaluation into dictionary
+    evaluation = json.loads(data)
+
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
     try:
@@ -1070,7 +1047,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
     # Get outcome of evaluation
-    decision = json.loads(data)['evaluation']
+    decision = evaluation['evaluation']
 
     # Update the status of the data request
     if decision == "Approved":
@@ -1083,13 +1060,12 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
-    # Get parameters needed for sending emails
+    # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
     researcher = datarequest['researchers']['contacts'][0]
 
-    researcher_name = researcher['name']
-    researcher_email = researcher['email']
+    if 'feedback_for_researcher' in evaluation:
+        feedback_for_researcher = evaluation['feedback_for_researcher']
 
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(
                                     'datarequests-research-datamanagers', "")['arguments'][1])
@@ -1097,16 +1073,16 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
     if decision == "Approved":
-        mail_evaluation_approved_researcher(ctx, decision, researcher_email, researcher_name,
+        mail_evaluation_approved_researcher(ctx, researcher['email'], researcher['name'],
                                             request_id)
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
                 mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id)
     elif decision == "Rejected (resubmit)":
-        mail_evaluation_resubmit(ctx, decision, researcher_email, researcher_name,
+        mail_evaluation_resubmit(ctx, researcher['email'], researcher['name'],
                                  datamanager_emails[0], feedback_for_researcher, request_id)
     elif decision == "Rejected":
-        mail_evaluation_rejected(ctx, decision, researcher_email, researcher_name,
+        mail_evaluation_rejected(ctx, researcher['email'], researcher['name'],
                                  datamanager_emails[0], feedback_for_researcher, request_id)
 
 
@@ -1164,17 +1140,13 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     # Set status to dta_ready
     set_status(ctx, request_id, "dta_ready")
 
-    # Get parameters needed for sending emails
+    # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
     researcher = datarequest['researchers']['contacts'][0]
 
-    researcher_name = researcher['name']
-    researcher_email = researcher['email']
-
-    # Send an email to the researcher informing them that the DTA of their
-    # data request is ready for them to sign and upload
-    mail_dta(ctx, researcher_email, researcher_name, request_id)
+    # Send an email to the researcher informing them that the DTA of their data request is ready for
+    # them to sign and upload
+    mail_dta(ctx, researcher['email'], researcher['name'], request_id)
 
 
 @api.make()
@@ -1249,15 +1221,11 @@ def api_datarequest_data_ready(ctx, request_id):
     coll_path = zone_path + request_id
 
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
-
     researcher = datarequest['researchers']['contacts'][0]
-
-    researcher_name = researcher['name']
-    researcher_email = researcher['email']
 
     # Send email to researcher notifying him of of the submission of his
     # request
-    mail_data_ready(ctx, researcher_email, researcher_name, request_id)
+    mail_data_ready(ctx, researcher['email'], researcher['name'], request_id)
 
 
 def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id):
@@ -1532,7 +1500,7 @@ YOUth
 """.format(request_id, request_id))
 
 
-def mail_evaluation_approved_researcher(ctx, decision, researcher_email, researcher_name,
+def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
                                         request_id):
     return mail.send(ctx,
                      to      = researcher_email,
