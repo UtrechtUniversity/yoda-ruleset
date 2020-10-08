@@ -517,12 +517,18 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
                                                                "")['arguments'][1])
 
     # Send emails to:
-    # - the researcher: progress update
     # - the board of directors: call to action
     for bod_member_email in bod_member_emails:
         if not bod_member_email == "rods":
-            mail_datamanager_review(ctx, decision, bod_member_email, datamanager_remarks,
-                                    request_id)
+            if decision == "Accepted":
+                mail_datamanager_review_accepted(ctx, decision, bod_member_email, request_id)
+            elif decision == "Rejected (resubmit)":
+                mail_datamanager_review_resubmit(ctx, decision, bod_member_email,
+                                                 datamanager_remarks, request_id)
+            elif decision == "Rejected":
+                mail_datamanager_review_rejected(ctx, decision, bod_member_email,
+                                                 datamanager_remarks, request_id)
+
 
 
 @api.make()
@@ -1352,10 +1358,12 @@ YOUth
 """.format(researcher_name, feedback_for_researcher, datamanager_email))
 
 
-def mail_datamanager_review(ctx, decision, bodmember_email, datamanager_remarks, request_id):
-    if decision == "Accepted":
-        subject = "[bod member] YOUth data request {}: accepted by data manager".format(request_id)
-        body = """
+def mail_datamanager_review_accepted(ctx, bodmember_email, request_id):
+    return mail.send(ctx,
+                     to      = bodmember_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[bod member] YOUth data request {}: accepted by data manager".format(request_id),
+                     body    = """
 Dear executive board delegate,
 
 Data request {} has been accepted by the data manager.
@@ -1364,10 +1372,15 @@ You are now asked to assign the data request for review to one or more DMC membe
 
 With kind regards,
 YOUth
-""".format(request_id, request_id)
-    elif decision == "Rejected (resubmit)":
-        subject = "[bod member] YOUth data request {}: rejected (resubmit) by data manager".format(request_id)
-        body = """
+""".format(request_id, request_id))
+
+
+def mail_datamanager_review_resubmit(ctx, bodmember_email, datamanager_remarks, request_id):
+    return mail.send(ctx,
+                     to      = bodmember_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[bod member] YOUth data request {}: rejected (resubmit) by data manager".format(request_id),
+                     body    = """
 Dear executive board delegate,
 
 Data request {} has been rejected (resubmission allowed) by the data manager for the following reason(s):
@@ -1378,10 +1391,15 @@ The data manager's review is advisory. Please consider the objections raised and
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, request_id)
-    elif decision == "Rejected":
-        subject = "[bod member] YOUth data request {}: rejected by data manager".format(request_id)
-        body = """
+""".format(request_id, datamanager_remarks, request_id))
+
+
+def mail_datamanager_review_rejected(ctx, bodmember_email, datamanager_remarks, request_id):
+    return mail.send(ctx,
+                     to      = bodmember_email,
+                     actor   = user.full_name(ctx),
+                     subject = "[bod member] YOUth data request {}: rejected by data manager".format(request_id),
+                     body    = """
 Dear executive board delegate,
 
 Data request {} has been rejected by the data manager for the following reason(s):
@@ -1392,13 +1410,7 @@ The data manager's review is advisory. Please consider the objections raised and
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, request_id)
-
-    return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = subject,
-                     body    = body)
+""".format(request_id, datamanager_remarks, request_id))
 
 
 def mail_assignment_researcher(ctx, decision, researcher_email, researcher_name, request_id,
