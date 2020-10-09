@@ -209,7 +209,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     set_status(ctx, request_id, "submitted")
 
     # Get source data needed for sending emails
-    datarequest = json.loads(data)
+    datarequest = data
     researcher = datarequest['researchers']['contacts'][0]
     research_context = datarequest['research_context']
 
@@ -217,7 +217,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
                                    "datarequests-research-board-of-directors", "")['arguments'][1])
 
     # Send email to researcher and board of directors member(s)
-    mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id)
+    mail_datarequest_researcher(ctx, researcher['email'], researcher['name'], request_id)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
             mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher['name'],
