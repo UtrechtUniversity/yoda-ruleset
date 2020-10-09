@@ -20,6 +20,14 @@ from conftest import api_request
 scenarios('../features/api_datarequest.feature')
 
 
+@given('the Yoda datarequest browse API is queried', target_fixture="api_response")
+def api_browse_folder():
+    return api_request(
+        "datarequest_browse",
+        {}
+    )
+
+
 @given('the Yoda datarequest submit API is queried with data', target_fixture="api_response")
 def api_datarequest_submit():
     return api_request(
