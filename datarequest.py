@@ -296,7 +296,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Read data into a dictionary
-    preliminary_review = json.loads(data)
+    preliminary_review = data
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
@@ -438,7 +438,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Read datamanager review into a dictionary
-    datamanager_review = json.loads(data)
+    datamanager_review = data
 
     # Check if user is a data manager. If not, do not the user to assign the
     # request
@@ -673,7 +673,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Read assignment into dictionary
-    assignment = json.loads(data)
+    assignment = data
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
