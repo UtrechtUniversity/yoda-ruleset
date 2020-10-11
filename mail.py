@@ -14,6 +14,7 @@ from util import *
 __all__ = ['rule_mail_new_package_published',
            'rule_mail_your_package_published',
            'rule_mail_test']
+           
 
 
 def send(ctx, to, actor, subject, body):
@@ -165,11 +166,8 @@ Yoda system
 
 @rule.make(inputs=range(1), outputs=range(1,3))
 def rule_mail_test(ctx, to):
-    return mail_test(ctx, to)
-
-def mail_test(ctx, addressee):
-    return _wrapper(ctx,
-                    to=addressee,
+	return _wrapper(ctx,
+                    to=to,
                     actor='None',
                     subject='[Yoda] Test mail',
                     body="""
