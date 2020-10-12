@@ -609,7 +609,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
                         AS_DICT, ctx)
 
     # If there is not exactly 1 resulting row, something went terribly wrong
-    if len(rows) != 1
+    if len(rows) != 1:
         raise Exception("No or ambiguous data owner")
 
     # There is only a single row containing the owner of the data request
