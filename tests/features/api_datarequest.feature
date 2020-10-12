@@ -1,5 +1,9 @@
 Feature: Datarequest API
 
+    Scenario: Datarequest browse
+        Given the Yoda datarequest browse API is queried
+        Then the response status code is "200"
+
     Scenario: Datarequest submit
         Given the Yoda datarequest submit API is queried with data
         Then the response status code is "200"

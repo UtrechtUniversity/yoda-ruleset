@@ -5,15 +5,19 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
+import json
+import re
+from collections import OrderedDict
 from datetime import datetime
 from genquery import (row_iterator, AS_DICT)
-import json
 
-from util import *
-import avu_json
 import mail
+import avu_json
+from util import *
+from util.query import Query
 
-__all__ = ['api_datarequest_submit',
+__all__ = ['api_datarequest_browse',
+           'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_is_owner',
            'api_datarequest_is_reviewer',
@@ -94,6 +98,81 @@ def set_metadata(ctx, request_id, key, value):
 
 
 @api.make()
+def api_datarequest_browse(ctx,
+                           sort_on='name',
+                           sort_order='asc',
+                           offset=0,
+                           limit=10):
+    """Get paginated collection contents, including size/modify date information.
+
+    :param sort_on:    Column to sort on ('name', 'modified')
+    :param sort_order: Column sort order ('asc' or 'desc')
+    :param offset:     Offset to start browsing from
+    :param limit:      Limit number of results
+    """
+    zone = user.zone(ctx)
+    coll = '/{}/home/datarequests-research'.format(zone)
+
+    def transform(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        return {'id':          x['COLL_NAME'].split('/')[-1],
+                'name':        x['COLL_OWNER_NAME'],
+                'create_time': int(x['COLL_CREATE_TIME']),
+                'status':      x['META_DATA_ATTR_VALUE']}
+
+    def transform_title(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        return {'id':          x['COLL_NAME'].split('/')[-1],
+                'title':       x['META_DATA_ATTR_VALUE']}
+
+    if sort_on == 'modified':
+        # FIXME: Sorting on modify date is borked: There appears to be no
+        # reliable way to filter out replicas this way - multiple entries for
+        # the same file may be returned when replication takes place on a
+        # minute boundary, for example.
+        # We would want to take the max modify time *per* data name.
+        # (or not? replication may take place a long time after a modification,
+        #  resulting in a 'too new' date)
+        ccols = ['COLL_NAME', 'ORDER(COLL_CREATE_TIME)', "COLL_OWNER_NAME", "META_DATA_ATTR_VALUE"]
+    else:
+        ccols = ['ORDER(COLL_NAME)', 'COLL_CREATE_TIME', "COLL_OWNER_NAME", "META_DATA_ATTR_VALUE"]
+
+    if sort_order == 'desc':
+        ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
+
+    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = 'datarequest.json' AND META_DATA_ATTR_NAME = 'status'".format(coll),
+                  offset=offset, limit=limit, output=query.AS_DICT)
+
+    ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
+    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = 'datarequest.json' AND META_DATA_ATTR_NAME = 'title'".format(coll),
+                        offset=offset, limit=limit, output=query.AS_DICT)
+
+    colls = map(transform, list(qcoll))
+    colls_title = map(transform_title, list(qcoll_title))
+
+    # Merge datarequest title in results.
+    for datarequest_title in colls_title:
+        for datarequest in colls:
+            if datarequest_title['id'] == datarequest['id']:
+                datarequest['title'] = datarequest_title['title']
+                break
+
+    if len(colls) == 0:
+        # No results at all?
+        # Make sure the collection actually exists.
+        if not collection.exists(ctx, coll):
+            return api.Error('nonexistent', 'The given path does not exist')
+        # (checking this beforehand would waste a query in the most common situation)
+
+    return OrderedDict([('total', qcoll.total_rows()),
+                        ('items', colls)])
+
+
+@api.make()
 def api_datarequest_submit(ctx, data, previous_request_id):
     """Persist a data request to disk.
 
@@ -124,7 +203,9 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         set_metadata(ctx, request_id, "previous_request_id", previous_request_id)
 
     # Set the proposal fields as AVUs on the proposal JSON file
-    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", data)
+    file_name = 'datarequest.json'
+    file_path = coll_path + '/' + file_name
+    avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
 
     # Set permissions for certain groups on the subcollection
     try:
