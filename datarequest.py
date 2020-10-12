@@ -586,7 +586,7 @@ def api_datarequest_is_owner(ctx, request_id, user_name):
        :rtype: bool
     """
 
-    is_owner = False;
+    is_owner = False
 
     try:
         is_owner = datarequest_is_owner(ctx, request_id, user_name)
