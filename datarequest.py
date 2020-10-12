@@ -214,7 +214,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Write data request data to disk
     try:
-        datarequest_path = coll_path + '/' + 'datarequest.json'
+        datarequest_path = coll_path + '/datarequest.json'
         jsonutil.write(ctx, datarequest_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write datarequest to disk')
