@@ -36,6 +36,7 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
+# List of valid datarequest statuses
 class status(Enum):
     SUBMITTED                         = 'SUBMITTED'
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
