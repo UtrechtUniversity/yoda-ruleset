@@ -89,6 +89,7 @@ def status_transition_allowed(ctx, current_status, new_status):
 
     return transition in status_transitions
 
+
 def status_set(ctx, request_id, status):
     """Set the status of a data request
 
