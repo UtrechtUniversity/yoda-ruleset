@@ -575,6 +575,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 def api_datarequest_is_owner(ctx, request_id, user_name):
     """Check if the invoking user is also the owner of a given data request
 
+        This function is a wrapper for datarequest_is_owner.
+
        :param request_id: Unique identifier of the data request
        :type request_id: str
        :param user_name: Username of the user whose ownership is checked
@@ -609,11 +611,11 @@ def datarequest_is_owner(ctx, request_id, user_name):
                         AS_DICT, ctx)
 
     # If there is not exactly 1 resulting row, something went terribly wrong
-    if len(rows) != 1:
+    if rows.total_rows() != 1:
         raise Exception("No or ambiguous data owner")
 
     # There is only a single row containing the owner of the data request
-    return rows[0]["DATA_OWNER_NAME"] == user_name
+    return list(rows)[0]["DATA_OWNER_NAME"] == user_name
 
 
 @api.make()
