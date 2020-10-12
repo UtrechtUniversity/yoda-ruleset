@@ -975,18 +975,15 @@ def api_datarequest_reviews_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_evaluation_submit(ctx, data, request_id):
+def api_datarequest_evaluation_submit(ctx, evaluation, request_id):
     """Persist an evaluation to disk.
 
        Arguments:
-       data       -- Contents of the evaluation
+       evaluation -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
-
-    # Read evaluation into dictionary
-    evaluation = json.loads(data)
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
@@ -1012,7 +1009,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Write evaluation data to disk
     try:
         evaluation_path = coll_path + '/evaluation.json'
-        jsonutil.write(ctx, evaluation_path, data)
+        jsonutil.write(ctx, evaluation_path, evaluation)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
