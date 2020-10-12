@@ -407,18 +407,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'preliminary_review_bodmember.json'
 
-    # Get the size of the preliminary review JSON file and the review's status
-    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
-                        "COLL_NAME = '%s' AND " % coll_name
-                        + "DATA_NAME like '%s'" % file_name,
-                        AS_DICT, ctx)
-    for row in rows:
-        coll_name = row['COLL_NAME']
-        data_name = row['DATA_NAME']
-        data_size = row['DATA_SIZE']
-
     # Construct path to file
-    file_path = coll_name + '/' + data_name
+    file_path = coll_name + '/' + file_name
 
     # Get the contents of the review JSON file
     try:
@@ -542,18 +532,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'datamanager_review.json'
 
-    # Get the size of the data manager review JSON file and the review's status
-    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
-                        "COLL_NAME = '%s' AND " % coll_name
-                        + "DATA_NAME like '%s'" % file_name,
-                        AS_DICT, ctx)
-    for row in rows:
-        coll_name = row['COLL_NAME']
-        data_name = row['DATA_NAME']
-        data_size = row['DATA_SIZE']
-
     # Construct path to file
-    file_path = coll_name + '/' + data_name
+    file_path = coll_name + '/' + file_name
 
     # Get the contents of the data manager review JSON file
     try:
@@ -823,17 +803,8 @@ def api_datarequest_assignment_get(ctx, request_id):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'assignment_bodmember.json'
 
-    # Get the size of the assignment JSON file and the review's status
-    rows = row_iterator(["DATA_NAME", "COLL_NAME"],
-                        "COLL_NAME = '%s' AND " % coll_name
-                        + "DATA_NAME like '%s'" % file_name,
-                        AS_DICT, ctx)
-    for row in rows:
-        coll_name = row['COLL_NAME']
-        data_name = row['DATA_NAME']
-
     # Construct path to file
-    file_path = coll_name + '/' + data_name
+    file_path = coll_name + '/' + file_name
 
     # Get the contents of the assignment JSON file
     try:
