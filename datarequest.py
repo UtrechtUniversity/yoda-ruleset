@@ -56,6 +56,38 @@ class status(Enum):
     DATA_READY                        = 'DATA_READY'
 
 
+# List of valid datarequest status transitions (source, destination)
+status_transitions = [(status(x),
+                       status(y))
+                      for x, y in [('SUBMITTED',            'PRELIMINARY_ACCEPT'),
+                                   ('SUBMITTED',            'PRELIMINARY_REJECT'),
+                                   ('SUBMITTED',            'PRELIMINARY_RESUBMIT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_ACCEPT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_REJECT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_RESUBMIT'),
+                                   ('DATAMANAGER_ACCEPT',   'UNDER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',   'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',   'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'UNDER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'UNDER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('UNDER_REVIEW',         'REVIEWED'),
+                                   ('REVIEWED',             'APPROVED'),
+                                   ('REVIEWED',             'REJECTED'),
+                                   ('REVIEWED',             'RESUBMIT'),
+                                   ('APPROVED',             'DTA_READY'),
+                                   ('DTA_READY',            'DTA_SIGNED'),
+                                   ('DTA_SIGNED',           'DATA_READY')]]
+
+
+def status_transition_allowed(ctx, current_status, new_status):
+    transition = (current_status, new_status)
+
+    return transition in status_transitions
+
 def status_set(ctx, request_id, status):
     """Set the status of a data request
 
@@ -320,6 +352,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.PRELIMINARY_ACCEPT):
+        return api.Error("transition", "Status transition not allowed.")
+
     # Read data into a dictionary
     preliminary_review = data
 
@@ -334,11 +370,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for the submission of the preliminary review
-    if not get_status(ctx, request_id) == "submitted":
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -459,6 +490,10 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_ACCEPT):
+        api.Error("transition", "Status transition not allowed.")
+
     # Read datamanager review into a dictionary
     datamanager_review = data
 
@@ -473,11 +508,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for the submission of the data manager review
-    if not get_status(ctx, request_id) == 'accepted_for_dm_review':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -691,6 +721,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.UNDER_REVIEW):
+        api.Error("transition", "Status transition not allowed.")
+
     # Read assignment into dictionary
     assignment = data
 
@@ -705,11 +739,6 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for assignment
-    if not get_status(ctx, request_id) in ['dm_accepted', 'dm_rejected', 'dm_rejected_resubmit']:
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -877,6 +906,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
@@ -888,11 +921,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for submission of the review
-    if not get_status(ctx, request_id) == 'assigned':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
@@ -1032,6 +1060,10 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.APPROVED):
+        api.Error("transition", "Status transition not allowed.")
+
     # Read evaluation into dictionary
     evaluation = json.loads(data)
 
@@ -1046,11 +1078,6 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for submission of the evaluation
-    if not get_status(ctx, request_id) == 'reviewed':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -1112,6 +1139,10 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_READY):
+        api.Error("transition", "Status transition not allowed.")
 
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1176,6 +1207,10 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_SIGNED):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
@@ -1219,6 +1254,13 @@ def api_datarequest_data_ready(ctx, request_id):
        Arguments:
        request_id        -- Unique identifier of the datarequest.
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATA_READY):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
