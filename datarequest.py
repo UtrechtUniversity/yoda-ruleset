@@ -77,20 +77,17 @@ def status_get(ctx, request_id):
     file_name = 'datarequest.json'
     file_path = coll_name + '/' + file_name
 
-    try:
-        rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
-                             + "META_DATA_ATTR_NAME = 'status'") % (coll_name,
-                                                                    file_name),
-                            AS_DICT, ctx)
+    rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                        ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
+                         + "META_DATA_ATTR_NAME = 'status'") % (coll_name,
+                                                                file_name),
+                        AS_DICT, ctx)
+    if rows.total_rows() == 1:
+        current_status = list(rows)[0]['META_DATA_ATTR_VALUE']
+    else:
+        raise Exception("This should not be happening.")
 
-        for row in rows:
-            request_status = row['META_DATA_ATTR_VALUE']
-    except Exception:
-        log.write(ctx, "Could not get data request status.")
-        return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
-
-    return request_status
+    return status[current_status]
 
 
 def metadata_set(ctx, request_id, key, value):
