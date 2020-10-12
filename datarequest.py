@@ -326,12 +326,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
 
-    # Get username
-    client_name = user.name(ctx)
-
     # Write preliminary review data to disk
     try:
-        preliminary_review_path = coll_path + '/preliminary_review_' + client_name + '.json'
+        preliminary_review_path = coll_path + '/preliminary_review.json'
         jsonutil.write(ctx, preliminary_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write preliminary review data to disk')
@@ -468,12 +465,9 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
 
-    # Get username
-    client_name = user.name(ctx)
-
     # Write data manager review data to disk
     try:
-        datamanager_review_path = coll_path + '/datamanager_review_' + client_name + '.json'
+        datamanager_review_path = coll_path + '/datamanager_review.json'
         jsonutil.write(ctx, datamanager_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
@@ -546,7 +540,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
-    file_name = 'datamanager_review_datamanager.json'
+    file_name = 'datamanager_review.json'
 
     # Get the size of the data manager review JSON file and the review's status
     rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
@@ -703,12 +697,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
 
-    # Get username
-    client_name = user.name(ctx)
-
     # Write assignment data to disk
     try:
-        assignment_path = coll_path + '/assignment_' + client_name + '.json'
+        assignment_path = coll_path + '/assignment.json'
         jsonutil.write(ctx, assignment_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
@@ -905,7 +896,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write review data to disk
     try:
-        review_path = coll_path + '/review_' + client_name + '.json'
+        review_path = coll_path + '/review.json'
         jsonutil.write(ctx, review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write review data to disk')
@@ -1047,12 +1038,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
 
-    # Get username
-    client_name = user.name(ctx)
-
     # Write evaluation data to disk
     try:
-        evaluation_path = coll_path + '/evaluation_' + client_name + '.json'
+        evaluation_path = coll_path + '/evaluation.json'
         jsonutil.write(ctx, evaluation_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
