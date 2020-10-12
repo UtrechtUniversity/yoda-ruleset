@@ -253,7 +253,7 @@ def api_datarequest_get(ctx, request_id):
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
         isdmcmember   = user.is_member_of(ctx, "datarequests-research-data-management-committee")
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
             log.write(ctx, "User is not authorized to view this data request.")
@@ -573,12 +573,18 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
 @api.make()
 def api_datarequest_is_owner(ctx, request_id, user_name):
-    result = datarequest_is_owner(ctx, request_id, user_name)
+    """Check if the invoking user is also the owner of a given data request
 
-    if not (result['status'] == 0):
-        return api.Error("error", "Something went wrong in determining datarequest ownership")
+       :param request_id: Unique identifier of the data request
+       :type request_id: str
+       :param user_name: Username of the user whose ownership is checked
+       :type user_name: str
 
-    return result['owner']
+       :raises Exception: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
+       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+       :rtype: bool
+    """
+    return datarequest_is_owner(ctx, request_id, user_name)
 
 
 def datarequest_is_owner(ctx, request_id, user_name):
@@ -1161,7 +1167,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
