@@ -9,9 +9,22 @@ Feature: Datarequest API
         Then the response status code is "200"
 
     Scenario: Datarequest get
-        Given the Yoda datarequest get API is queried with latest request id
+        Given datarequest exists
+        And the Yoda datarequest get API is queried with request id
         Then the response status code is "200"
         And request status is "submitted"
+
+    Scenario: Preliminary review submit
+        Given datarequest exists
+        And the Yoda datarequest preliminary review submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "accepted_for_dm_review"
+
+    Scenario: Datamanager review submit
+        Given datarequest exists
+        Given the Yoda datarequest datamanager review submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "dm_accepted"
 
 #    Scenario: Datarequest resubmit
 #        Given the Yoda datarequest submit API is queried with <data> and <previous_request_id>
@@ -31,9 +44,6 @@ Feature: Datarequest API
 #        Then the response status code is "200"
 #        And <preliminary_review_json> is returned
 
-#    Scenario: Datamanager review submit
-#        Given the Yoda datarequest datamanager review submit API is queried with <data> and <request_id>
-#        Then the response status code is "200"
 
 #    Scenario: Datamanager review get
 #        Given the Yoda datarequest datamanager review get API is queried with <request_id>
