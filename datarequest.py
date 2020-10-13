@@ -15,6 +15,7 @@ import mail
 import avu_json
 from util import *
 from util.query import Query
+from enum import Enum
 
 __all__ = ['api_datarequest_browse',
            'api_datarequest_submit',
@@ -35,6 +36,26 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
+class request_status(Enum):
+    SUBMITTED                         = 'SUBMITTED'
+    PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
+    PRELIMINARY_REJECT                = 'PRELIMINARY_REJECT'
+    PRELIMINARY_RESUBMIT              = 'PRELIMINARY_RESUBMIT'
+    DATAMANAGER_ACCEPT                = 'DATAMANAGER_ACCEPT'
+    DATAMANAGER_REJECT                = 'DATAMANAGER_REJECT'
+    DATAMANAGER_RESUBMIT              = 'DATAMANAGER_RESUBMIT'
+    UNDER_REVIEW                      = 'UNDER_REVIEW'
+    REJECTED_AFTER_DATAMANAGER_REVIEW = 'REJECTED_AFTER_DATAMANAGER_REVIEW'
+    RESUBMIT_AFTER_DATAMANAGER_REVIEW = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW'
+    REVIEWED                          = 'REVIEWED'
+    APPROVED                          = 'APPROVED'
+    REJECTED                          = 'REJECTED'
+    RESUBMIT                          = 'RESUBMIT'
+    DTA_READY                         = 'DTA_READY'
+    DTA_SIGNED                        = 'DTA_SIGNED'
+    DATA_READY                        = 'DATA_READY'
+
+
 def set_status(ctx, request_id, status):
     """Set the status of a data request
 
@@ -42,7 +63,7 @@ def set_status(ctx, request_id, status):
        request_id -- Unique identifier of the data request.
        status    -- The status to which the data request should be set.
     """
-    set_metadata(ctx, request_id, "status", status)
+    set_metadata(ctx, request_id, "status", status.value)
 
 
 def get_status(ctx, request_id):
@@ -193,7 +214,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Write data request data to disk
     try:
-        datarequest_path = coll_path + '/' + 'datarequest.json'
+        datarequest_path = coll_path + '/datarequest.json'
         jsonutil.write(ctx, datarequest_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write datarequest to disk')
@@ -217,7 +238,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
     # Set the status metadata field to "submitted"
-    set_status(ctx, request_id, "submitted")
+    set_status(ctx, request_id, request_status.SUBMITTED)
 
     # Get source data needed for sending emails
     datarequest = data
@@ -347,11 +368,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Accepted for data manager review":
-        set_status(ctx, request_id, "accepted_for_dm_review")
+        set_status(ctx, request_id, request_status.PRELIMINARY_ACCEPT)
     elif decision == "Rejected":
-        set_status(ctx, request_id, "preliminary_reject")
+        set_status(ctx, request_id, request_status.PRELIMINARY_REJECT)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, "preliminary_reject_submit")
+        set_status(ctx, request_id, request_status.PRELIMINARY_RESUBMIT)
     else:
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -475,11 +496,11 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Accepted":
-        set_status(ctx, request_id, "dm_accepted")
+        set_status(ctx, request_id, request_status.DATAMANAGER_ACCEPT)
     elif decision == "Rejected":
-        set_status(ctx, request_id, "dm_rejected")
+        set_status(ctx, request_id, request_status.DATAMANAGER_REJECT)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, "dm_rejected_resubmit")
+        set_status(ctx, request_id, request_status.DATAMANAGER_RESUBMIT)
     else:
         log.write(ctx, "Invalid value for decision in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for decision in data manager review JSON data."}
@@ -700,11 +721,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Update the status of the data request
     if decision == "Accepted for DMC review":
         assign_request(ctx, assignees, request_id)
-        set_status(ctx, request_id, "assigned")
+        set_status(ctx, request_id, request_status.UNDER_REVIEW)
     elif decision == "Rejected":
-        set_status(ctx, request_id, "rejected_after_data_manager_review")
+        set_status(ctx, request_id, request_status.REJECT_AFTER_DATAMANAGER_REVIEW)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, "rejected_resubmit_after_data_manager_review")
+        set_status(ctx, request_id, request_status.RESUBMIT_AFTER_DATAMANAGER_REVIEW)
     else:
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
@@ -911,7 +932,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # 'reviewed' and send an email to the board of directors members
     # informing them that the proposal is ready to be evaluated by them.
     if len(reviewers) < 1:
-        set_status(ctx, request_id, "reviewed")
+        set_status(ctx, request_id, request_status.REVIEWED)
 
         # Get source data needed for sending emails
         datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
@@ -1015,11 +1036,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Approved":
-        set_status(ctx, request_id, "approved")
+        set_status(ctx, request_id, request_status.APPROVED)
     elif decision == "Rejected":
-        set_status(ctx, request_id, "rejected")
+        set_status(ctx, request_id, request_status.REJECTED)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, "rejected_resubmit")
+        set_status(ctx, request_id, request_status.RESUBMIT)
     else:
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
@@ -1102,7 +1123,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Set status to dta_ready
-    set_status(ctx, request_id, "dta_ready")
+    set_status(ctx, request_id, request_status.DTA_READY)
 
     # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
@@ -1146,7 +1167,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
     # Set status to dta_signed
-    set_status(ctx, request_id, "dta_signed")
+    set_status(ctx, request_id, request_status.DTA_SIGNED)
 
     # Get parameters needed for sending emails
     datamanager_emails = ""
@@ -1178,7 +1199,7 @@ def api_datarequest_data_ready(ctx, request_id):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    set_status(ctx, request_id, "data_ready")
+    set_status(ctx, request_id, request_status.DATA_READY)
 
     # Get parameters needed for sending emails
     zone_path = '/tempZone/home/datarequests-research/'
