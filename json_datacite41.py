@@ -152,7 +152,10 @@ def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
               getFunders]:
         try:
             x = f(combi)
-        except KeyError, IndexError:
+        except KeyError:
+            # Ignore absent fields.
+            continue
+        except IndexError:
             # Ignore absent fields.
             continue
 
