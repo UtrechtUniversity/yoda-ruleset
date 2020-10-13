@@ -12,7 +12,8 @@ from email.mime.text import MIMEText
 from util import *
 
 __all__ = ['rule_mail_new_package_published',
-           'rule_mail_your_package_published']
+           'rule_mail_your_package_published',
+           'rule_mail_test']
 
 
 def send(ctx, to, actor, subject, body):
@@ -161,3 +162,19 @@ DOI:   {} (https://doi.org/{})
 Best regards,
 Yoda system
 """.format(title, doi, doi))
+
+@rule.make(inputs=range(1), outputs=range(1,3))
+def rule_mail_test(ctx, to):
+    return mail_test(ctx, to)
+
+def mail_test(ctx, addressee):
+    return _wrapper(ctx,
+                    to=addressee,
+                    actor='None',
+                    subject='[Yoda] Test mail',
+                    body="""
+Congratulations, you have sent a test mail from your Yoda system.
+
+Best regards,
+Yoda system
+""")
