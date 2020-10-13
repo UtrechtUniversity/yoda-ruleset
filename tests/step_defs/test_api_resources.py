@@ -39,7 +39,7 @@ def api_response_groups_for_datamanager(api_response, group):
     for list in body["data"]:
         if group in list:
             found_group = True
-            break		
+            break
 
     assert found_group
 
