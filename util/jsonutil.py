@@ -61,7 +61,7 @@ def _promote_strings(json_data):
     return _fold(json_data,
                  str=lambda x: x.decode('utf-8'),
                  OrderedDict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]),
-                 dict       =lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]))
+                 dict=lambda x: OrderedDict([(k.decode('utf-8'), v) for k, v in x.items()]))
 
 
 def parse(text, want_bytes=True):

@@ -42,7 +42,10 @@ irods_types.GenQueryInp.__repr__ = \
 
 # (add more as needed)
 
-col_name = lambda i: filter(lambda kv: kv[1] == i, cols)[0][0]
+
+def col_name(i):
+    return filter(lambda kv: kv[1] == i, cols)[0][0]
+
 
 cols =\
     [('ZONE_ID', 101),

@@ -71,27 +71,27 @@ class Config(object):
 # Default config {{{
 
 # Note: Must name all valid config items.
-config = Config(environment                = None,
-                resource_primary           = [],
-                resource_replica           = None,
-                notifications_enabled      = False,
-                notifications_sender_email = None,
-                notifications_sender_name  = None,
-                notifications_reply_to     = None,
-                smtp_server                = None,
-                smtp_username              = None,
-                smtp_password              = None,
-                datacite_url               = None,
-                datacite_username          = None,
-                datacite_password          = None,
-                eus_api_fqdn               = None,
-                eus_api_port               = None,
-                eus_api_secret             = None,
-                epic_pid_enabled           = False,
-                epic_url                   = None,
-                epic_handle_prefix         = None,
-                epic_key                   = None,
-                epic_certificate           = None)
+config = Config(environment=None,
+                resource_primary=[],
+                resource_replica=None,
+                notifications_enabled=False,
+                notifications_sender_email=None,
+                notifications_sender_name=None,
+                notifications_reply_to=None,
+                smtp_server=None,
+                smtp_username=None,
+                smtp_password=None,
+                datacite_url=None,
+                datacite_username=None,
+                datacite_password=None,
+                eus_api_fqdn=None,
+                eus_api_port=None,
+                eus_api_secret=None,
+                epic_pid_enabled=False,
+                epic_url=None,
+                epic_handle_prefix=None,
+                epic_key=None,
+                epic_certificate=None)
 
 # }}}
 
