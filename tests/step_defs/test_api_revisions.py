@@ -1,0 +1,89 @@
+# coding=utf-8
+"""Revisions API feature tests.
+
+Usage:
+pytest --api <url> --csrf <csrf> --session <session>
+"""
+
+__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
+from pytest_bdd import (
+    given,
+    parsers,
+    scenarios,
+    then,
+)
+
+from conftest import api_request
+
+scenarios('../features/api_revisions.feature')
+
+################################################################################## OK
+@given('the Yoda revision API is queried with "<filename>"', target_fixture="api_response")
+def api_search_revisions_on_filename(filename):
+    return api_request(
+        "revisions_search_on_filename",
+        {"searchString": filename, "offset": 0, "limit": "10"}
+    )
+	
+@then('"<revision_search_result>" is found')
+def api_response_revision_search_result(api_response, revision_search_result):
+    _, body = api_response
+
+    assert len(body['data']['items']) > 0
+
+    # Check expected result is in reveived search results.
+    found = False
+    for item in body['data']['items']:
+        print(item)
+        if revision_search_result in item["main_original_dataname"]:
+            found = True
+            break
+
+    assert found
+	
+################################    OK
+@given('the Yoda revision API is queried with "<path>"', target_fixture="api_response")
+def api_get_revision_list(path):
+    return api_request(
+        "revisions_list",
+        {"path": path}
+    )
+
+@then('revisions list is found')
+def api_response_list_found(api_response):
+    _, body = api_response
+
+    # print(body['data']['revisions'][0])
+    for key in ['org_original_path', 'data_id', 'org_original_data_name', 'org_original_data_owner_name', 'dezoned_coll_name', 'org_original_group_name', 'org_original_coll_id', 'org_original_data_id', 'org_original_filesize', 'org_original_modify_time']:
+        assert body['data']['revisions'][0][key]
+
+
+################################ OK
+@given('the Yoda revision API is requested to restore "<revision_id>" in collection "<coll_target>" with name "<new_filename>"', target_fixture="api_response")
+def api_restore_revision(revision_id, coll_target, new_filename):
+    return api_request(
+        "revisions_restore",
+        {"revision_id": revision_id, "overwrite": "restore_overwrite", "coll_target": coll_target, "new_filename": new_filename}
+    )
+@then('revision is restored successfully')
+def api_response_revision_successfully_restored(api_response):
+    _, body = api_response
+
+    # proc_status is an indication from the backend that the process went ok
+    assert body['status'] == 'ok' and body['data']['proc_status'] == 'ok'
+
+    assert False
+################################ 
+
+
+@then(parsers.parse('the response status code is "{code:d}"'))
+def api_response_code(api_response, code):
+    http_status, _ = api_response
+
+    print (api_response)
+
+    assert http_status == code
+
+
