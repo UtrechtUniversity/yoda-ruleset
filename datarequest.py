@@ -971,7 +971,7 @@ def api_datarequest_reviews_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_evaluation_submit(ctx, evaluation, request_id):
+def api_datarequest_evaluation_submit(ctx, data, request_id):
     """Persist an evaluation to disk.
 
        Arguments:
@@ -980,6 +980,7 @@ def api_datarequest_evaluation_submit(ctx, evaluation, request_id):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+    evaluation = data
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
