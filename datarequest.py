@@ -1218,10 +1218,10 @@ def api_datarequest_data_ready(ctx, request_id):
 
 def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = '[researcher] YOUth data request {}: submitted'.format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject='[researcher] YOUth data request {}: submitted'.format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been submitted.
@@ -1239,10 +1239,10 @@ def mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher_name
                                researcher_institution, researcher_department, submission_date,
                                proposal_title):
     return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[bodmember] YOUth data request {}: submitted".format(request_id),
-                     body    = """
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="[bodmember] YOUth data request {}: submitted".format(request_id),
+                     body="""
 Dear board of directors member,
 
 A new data request has been submitted.
@@ -1262,10 +1262,10 @@ YOUth
 
 def mail_preliminary_review_accepted(ctx, datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = datamanager_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[data manager] YOUth data request {}: accepted for data manager review".format(request_id),
-                     body    = """
+                     to=datamanager_email,
+                     actor=user.full_name(ctx),
+                     subject="[data manager] YOUth data request {}: accepted for data manager review".format(request_id),
+                     body="""
 Dear data manager,
 
 Data request {} has been approved for review by the Board of Directors.
@@ -1282,10 +1282,10 @@ YOUth
 def mail_preliminary_review_resubmit(ctx, researcher_email, researcher_name,
                                      feedback_for_researcher, datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1304,10 +1304,10 @@ YOUth
 def mail_preliminary_review_rejected(ctx, researcher_email, researcher_name,
                                      feedback_for_researcher, datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1323,10 +1323,10 @@ YOUth
 
 def mail_datamanager_review_accepted(ctx, bodmember_email, request_id):
     return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[bod member] YOUth data request {}: accepted by data manager".format(request_id),
-                     body    = """
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="[bod member] YOUth data request {}: accepted by data manager".format(request_id),
+                     body="""
 Dear executive board delegate,
 
 Data request {} has been accepted by the data manager.
@@ -1340,10 +1340,10 @@ YOUth
 
 def mail_datamanager_review_resubmit(ctx, bodmember_email, datamanager_remarks, request_id):
     return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[bod member] YOUth data request {}: rejected (resubmit) by data manager".format(request_id),
-                     body    = """
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="[bod member] YOUth data request {}: rejected (resubmit) by data manager".format(request_id),
+                     body="""
 Dear executive board delegate,
 
 Data request {} has been rejected (resubmission allowed) by the data manager for the following reason(s):
@@ -1359,10 +1359,10 @@ YOUth
 
 def mail_datamanager_review_rejected(ctx, bodmember_email, datamanager_remarks, request_id):
     return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[bod member] YOUth data request {}: rejected by data manager".format(request_id),
-                     body    = """
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="[bod member] YOUth data request {}: rejected by data manager".format(request_id),
+                     body="""
 Dear executive board delegate,
 
 Data request {} has been rejected by the data manager for the following reason(s):
@@ -1378,10 +1378,10 @@ YOUth
 
 def mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: assigned".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: assigned".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been assigned for review by the YOUth data manager.
@@ -1395,10 +1395,10 @@ YOUth
 
 def mail_assignment_accepted_assignee(ctx, assignee_email, proposal_title, request_id):
     return mail.send(ctx,
-                     to      = assignee_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[assignee] YOUth data request {}: assigned".format(request_id),
-                     body    = """
+                     to=assignee_email,
+                     actor=user.full_name(ctx),
+                     subject="[assignee] YOUth data request {}: assigned".format(request_id),
+                     body="""
 Dear DMC member,
 
 Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
@@ -1413,10 +1413,10 @@ YOUth
 def mail_assignment_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
                              request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1435,10 +1435,10 @@ YOUth
 def mail_assignment_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
                              request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1454,10 +1454,10 @@ YOUth
 
 def mail_review_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: reviewed".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: reviewed".format(request_id),
+                     body="""
 Dear {},
 
 Your data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.
@@ -1471,10 +1471,10 @@ YOUth
 
 def mail_review_bodmember(ctx, bodmember_email, request_id):
     return mail.send(ctx,
-                     to      = bodmember_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[bod member] YOUth data request {}: reviewed".format(request_id),
-                     body    = """
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="[bod member] YOUth data request {}: reviewed".format(request_id),
+                     body="""
 Dear Board of Directors member,
 
 Data request {} has been reviewed by the YOUth data management committee and is awaiting your final evaluation.
@@ -1491,10 +1491,10 @@ YOUth
 def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
                                         request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: approved".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: approved".format(request_id),
+                     body="""
 Dear {},
 
 Congratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
@@ -1508,10 +1508,10 @@ YOUth
 
 def mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = datamanager_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[data manager] YOUth data request {}: approved".format(request_id),
-                     body    = """
+                     to=datamanager_email,
+                     actor=user.full_name(ctx),
+                     subject="[data manager] YOUth data request {}: approved".format(request_id),
+                     body="""
 Dear data manager,
 
 Data request {} has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
@@ -1526,10 +1526,10 @@ YOUth
 def mail_evaluation_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
                              datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1550,10 +1550,10 @@ YOUth
 def mail_evaluation_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
                              datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: rejected (resubmit)".format(request_id),
+                     body="""
 Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -1571,10 +1571,10 @@ YOUth
 
 def mail_dta(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: DTA ready".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: DTA ready".format(request_id),
+                     body="""
 Dear {},
 
 The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
@@ -1590,10 +1590,10 @@ YOUth
 
 def mail_signed_dta(ctx, datamanager_email, request_id):
     return mail.send(ctx,
-                     to      = datamanager_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[data manager] YOUth data request {}: DTA signed".format(request_id),
-                     body    = """
+                     to=datamanager_email,
+                     actor=user.full_name(ctx),
+                     subject="[data manager] YOUth data request {}: DTA signed".format(request_id),
+                     body="""
 Dear data manager,
 
 The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}.
@@ -1609,10 +1609,10 @@ YOUth
 
 def mail_data_ready(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
-                     to      = researcher_email,
-                     actor   = user.full_name(ctx),
-                     subject = "[researcher] YOUth data request {}: Data ready".format(request_id),
-                     body    = """
+                     to=researcher_email,
+                     actor=user.full_name(ctx),
+                     subject="[researcher] YOUth data request {}: Data ready".format(request_id),
+                     body="""
 Dear {},
 
 The data you have requested is ready for you to download! [instructions here].
