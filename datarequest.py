@@ -590,8 +590,8 @@ def api_datarequest_is_owner(ctx, request_id, user_name):
 
     try:
         is_owner = datarequest_is_owner(ctx, request_id, user_name)
-    except Exception as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner')
+    except error.UUError as e:
+        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e.message))
 
     return is_owner
 
@@ -619,7 +619,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
     # If there is not exactly 1 resulting row, something went terribly wrong
     if rows.total_rows() != 1:
-        raise Exception("No or ambiguous data owner")
+        raise error.UUError("No or ambiguous data owner")
 
     # There is only a single row containing the owner of the data request
     return list(rows)[0]["DATA_OWNER_NAME"] == user_name
