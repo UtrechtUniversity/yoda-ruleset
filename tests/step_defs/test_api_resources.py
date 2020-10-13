@@ -19,7 +19,7 @@ from conftest import api_request
 
 scenarios('../features/api_resources.feature')
 
-#################################################### OK
+
 @given('the Yoda resources API is queried for all research groups of current datamanager', target_fixture="api_response")
 def api_get_groups_of_datamanger():
     print("hallo")
@@ -27,7 +27,8 @@ def api_get_groups_of_datamanger():
         "resource_groups_dm",
 		{}
     )
-	
+
+
 @then('"<group>" for datamanager are found')
 def api_response_groups_for_datamanager(api_response, group):
     _, body = api_response
@@ -41,14 +42,15 @@ def api_response_groups_for_datamanager(api_response, group):
             break			
 	
     assert found_group
-	
-########################### OK
+
+
 @given('the Yoda resources API is queried by a datamanager for monthly storage data', target_fixture="api_response")
 def api_get_monthly_stats_dm():
     return api_request(
         "resource_monthly_stats_dm",
         {}
     )
+
 
 @then('monthly storage data for a datamanager is found')
 def api_response_monthly_storage_for_dm(api_response):
@@ -64,14 +66,15 @@ def api_response_monthly_storage_for_dm(api_response):
     assert body["data"][0]["tier"]
     assert body["data"][0]["storage"]
 
-############################## OK
+
 @given('the Yoda resources API is queried by a for statistics data to be used as a feed for an export file', target_fixture="api_response")
 def api_get_monthly_category_stats_export_dm():
     return api_request(
         "resource_monthly_category_stats_export_dm",
         {}
     )
-	
+
+
 @then('storage data for export is found')
 def api_response_storage_data_for_export(api_response):
     _, body = api_response
@@ -83,13 +86,15 @@ def api_response_storage_data_for_export(api_response):
     assert body["data"][0]["groupname"]	
     assert body["data"][0]["tier"]		
 	
-################################################################## OK
+
 @given('the Yoda resources API is queried for all monthly statistics', target_fixture="api_response")
 def api_monthly_stats():
     return api_request(
         "resource_monthly_stats",
         {}
     )
+
+
 @then('rodsadmin monthly statistics is found')
 def api_response_monthly_statistics_rodsadmin(api_response):
     _, body = api_response
@@ -99,13 +104,14 @@ def api_response_monthly_statistics_rodsadmin(api_response):
     assert body['data'][0]['tier']
     assert body['data'][0]['storage']
 
-###################################### OK
+
 @given('the Yoda resources API is queried for all resources and tiers', target_fixture="api_response")
 def api_resource_and_tier_data():
     return api_request(
         "resource_resource_and_tier_data",
         {}
     )
+
 	
 @then('list of resources and tiers is found')
 def api_response_list_of_resources_and_tiers(api_response):
@@ -117,13 +123,15 @@ def api_response_list_of_resources_and_tiers(api_response):
     assert body['data'][0]['name']
     assert body['data'][0]['id']
 
-########################################################################################## OK
+
 @given('the Yoda resources API is queried for tier_name of "<resource_name>"', target_fixture="api_response")
 def api_get_tier_on_resource(resource_name):
     return api_request(
         "resource_tier",
         {"res_name": resource_name}
     )
+
+
 @then('"<tier_name>" is found')
 def api_response_tier_name_for_resource(api_response, tier_name):
     _, body = api_response
@@ -131,7 +139,7 @@ def api_response_tier_name_for_resource(api_response, tier_name):
 
     assert body['data'] == tier_name
 
-########################################################################################## OK
+
 @given('the Yoda resources API is queried for all available tiers', target_fixture="api_response")
 def api_get_tiers():
     return api_request(
@@ -145,13 +153,14 @@ def api_response_all_tiers(api_response, tier_name):
 
     assert tier_name in body['data']
 
-########################################################################################## OK
+
 @given('the Yoda resources API is requested to save tier "<tier_name>" for resource "<resource_name>"', target_fixture="api_response")
 def api_save_tier_for_resource(resource_name, tier_name):
     return api_request(
         "resource_save_tier",
         {"resource_name": resource_name, "tier_name": tier_name}
     )
+
 	
 @then('tier is saved successfully for resource')
 def api_response_save_tier_name_successful(api_response):
@@ -159,55 +168,61 @@ def api_response_save_tier_name_successful(api_response):
     print(body)
     assert body['status'] == 'ok'
 
-########################################################################################## OK
+
 @given('the Yoda resources API is queried for usertype of current user', target_fixture="api_response")
 def api_get_user_type():
     return api_request(
         "resource_user_get_type",
         {}
     )
+
+
 @then('"<user_type>" is found')
 def api_response_user_type(api_response, user_type):
     _, body = api_response
 
     assert body["data"] == user_type
 
-########################################################################################## OK
+
 @given('the Yoda resources API is queried for research groups of current user', target_fixture="api_response")
 def api_get_user_research_groups():
     return api_request(
         "resource_user_research_groups",
         {}
     )
-	
+
+
 @then('"<research_group>" are found for current user')
 def api_response_research_groups_for_user(api_response, research_group):
     _, body = api_response
 
     assert research_group in body["data"]
 
-########################################################################################## OK
+
 @given('the Yoda resources API is queried to know if current user is datamanager', target_fixture="api_response")
 def api_is_user_datamanager():
     return api_request(
         "resource_user_is_datamanager",
         {}
     )
-	
+
+
 @then('current user is found')
 def api_response_user_is_datamanager(api_response):
     _, body = api_response
     # print(body['data'])
 
     assert body["data"] == 'yes'
-	
-#################################################################################### OK
+
+
 @given('the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from month "<current_month>" backward', target_fixture="api_response")
-def api_get_user_research_groups(group_name, current_month):
+def api_get_monthly_user_research_groups(group_name, current_month):
     return api_request(
         "resource_full_year_group_data",
         {"group_name": group_name, "current_month": int(current_month)}
     )
+
+
 @then('full year storage data is found')
 def api_response_full_year_storage(api_response):
     _, body = api_response
@@ -221,7 +236,7 @@ def api_response_full_year_storage(api_response):
     for key in storage_month_data:
         assert 'month=' in key
         break
-    
+
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
