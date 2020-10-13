@@ -103,18 +103,83 @@ def api_datarequest_get(datarequest_id):
 
 
 @given('the Yoda datarequest preliminary review submit API is queried with request id', target_fixture="api_response")
-def api_datarequest_reliminary_submit(datarequest_id):
+def api_datarequest_preliminary_submit(datarequest_id):
     return api_request(
         "datarequest_preliminary_review_submit",
         {"data": {"preliminary_review": "Accepted for data manager review", "internal_remarks": "test"}, "request_id": datarequest_id}
     )
 
 
+@given('the Yoda datarequest preliminary review get API is queried with request id', target_fixture="api_response")
+def api_datarequest_preliminary_get(datarequest_id):
+    return api_request(
+        "datarequest_preliminary_review_get",
+        {"request_id": datarequest_id}
+    )
+
+
 @given('the Yoda datarequest datamanager review submit API is queried with request id', target_fixture="api_response")
-def api_datarequest_datamanager_submit(datarequest_id):
+def api_datarequest_datamanager_review_submit(datarequest_id):
     return api_request(
         "datarequest_datamanager_review_submit",
         {"data": {"datamanager_review": "Accepted", "datamanager_remarks": "test"}, "request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest datamanager review get API is queried with request id', target_fixture="api_response")
+def api_datarequest_review_get(datarequest_id):
+    return api_request(
+        "datarequest_datamanager_review_get",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the datarequest assignment submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_assignment_submit(datarequest_id):
+    return api_request(
+        "datarequest_assignment_submit",
+        {"data": {"decision": "Accepted for DMC review", "response_to_dm_remarks": "test", "assign_to": ["functionaladminpriv"]}, "request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest assignment get API is queried with request id', target_fixture="api_response")
+def api_datarequest_assignment_get(datarequest_id):
+    return api_request(
+        "datarequest_assignment_get",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the datarequest review submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_review_submit(datarequest_id):
+    return api_request(
+        "datarequest_review_submit",
+        {"data": {"biological_samples": "No", "evaluation": "Approve", "contribution": "test", "informed_consent_fit": "test", "research_question_answerability": "test", "study_quality": "test", "logistical_feasibility": "test", "study_value": "test", "researcher_expertise": "test", "username": "functionaladminpriv"}, "request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest reviews get API is queried with request id', target_fixture="api_response")
+def api_datarequest_reviews_get(datarequest_id):
+    return api_request(
+        "datarequest_reviews_get",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the datarequest evaluation submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_evaluation_submit(datarequest_id):
+    return api_request(
+        "datarequest_evaluation_submit",
+        {"data": {"evaluation": "Approved"}, "request_id": datarequest_id}
+
+    )
+
+
+@given('the Yoda datarequest DTA post upload actions API is queried with request id', target_fixture="api_response")
+def api_datarequest_dta_post_upload_actions(datarequest_id):
+    return api_request(
+        "api_datarequest_dta_post_upload_actions",
+        {"request_id": datarequest_id}
     )
 
 
