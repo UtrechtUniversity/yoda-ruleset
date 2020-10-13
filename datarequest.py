@@ -274,7 +274,7 @@ def api_datarequest_get(ctx, request_id):
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
         isdmcmember   = user.is_member_of(ctx, "datarequests-research-data-management-committee")
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
             log.write(ctx, "User is not authorized to view this data request.")
@@ -566,24 +566,40 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
 @api.make()
 def api_datarequest_is_owner(ctx, request_id, user_name):
-    result = datarequest_is_owner(ctx, request_id, user_name)
+    """Check if the invoking user is also the owner of a given data request
 
-    if not (result['status'] == 0):
-        return api.Error("error", "Something went wrong in determining datarequest ownership")
+        This function is a wrapper for datarequest_is_owner.
 
-    return result['owner']
+       :param request_id: Unique identifier of the data request
+       :type request_id: str
+       :param user_name: Username of the user whose ownership is checked
+       :type user_name: str
+
+       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+       :rtype: bool
+    """
+
+    is_owner = False
+
+    try:
+        is_owner = datarequest_is_owner(ctx, request_id, user_name)
+    except error.UUError as e:
+        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e.message))
+
+    return is_owner
 
 
 def datarequest_is_owner(ctx, request_id, user_name):
     """Check if the invoking user is also the owner of a given data request
 
-       Arguments:
-       request_id -- Unique identifier of the data request
-       user_name  -- Username of the user whose ownership is checked
+       :param request_id: Unique identifier of the data request
+       :type request_id: str
+       :param user_name: Username of the user whose ownership is checked
+       :type user_name: str
 
-       Return:
-       dict       -- status: 0 == lookup success, 1 == lookup fail
-                     owner: True/False
+       :raises Exception: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
+       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+       :rtype: bool
     """
     # Construct path to the collection of the datarequest
     client_zone = user.zone(ctx)
@@ -594,25 +610,12 @@ def datarequest_is_owner(ctx, request_id, user_name):
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like " + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
-    # Extract username from query results
-    request_owner_user_name = []
-    for row in rows:
-        request_owner_user_name.append(row["DATA_OWNER_NAME"])
+    # If there is not exactly 1 resulting row, something went terribly wrong
+    if rows.total_rows() != 1:
+        raise error.UUError("No or ambiguous data owner")
 
-    # Check if exactly 1 owner was found
-    if len(request_owner_user_name) == 1:
-        # We only have 1 owner. Set request_owner_user_name to this owner
-        request_owner_user_name = request_owner_user_name[0]
-
-        # Compare the request owner username to the username of the current
-        # user to determine ownership
-        is_request_owner = request_owner_user_name == user_name
-
-        # Return data
-        return {'owner': is_request_owner, 'status': 0}
-    # If not exactly 1 owner was found, something went quite wrong. Return error
-    else:
-        return {'owner': None, 'status': 1}
+    # There is only a single row containing the owner of the data request
+    return list(rows)[0]["DATA_OWNER_NAME"] == user_name
 
 
 @api.make()
@@ -1147,7 +1150,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
