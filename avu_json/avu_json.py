@@ -48,7 +48,7 @@ def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
 
         try:
             jsonschema.validate(instance=data, schema=schema)
-        except jsonschema.exceptions.ValidationError, e:
+        except jsonschema.exceptions.ValidationError as e:
             ctx.msiExit("-1101000", "JSON instance could not be validated against JSON-schema: " + str(e.message))
             return
 

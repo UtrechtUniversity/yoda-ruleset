@@ -5,6 +5,9 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
+import sys
+if sys.version_info > (2, 7):
+    from functools import reduce
 
 import genquery
 import irods_types
