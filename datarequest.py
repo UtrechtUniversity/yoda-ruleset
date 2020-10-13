@@ -405,7 +405,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
-    file_name = 'preliminary_review_bodmember.json'
+    file_name = 'preliminary_review.json'
 
     # Construct path to file
     file_path = coll_name + '/' + file_name
@@ -413,9 +413,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     # Get the contents of the review JSON file
     try:
         preliminary_review_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get preliminary review data.")
-        return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
+    except error.UUFileNotExistError:
+        return api.Error("data_read", "Could not get preliminary review data")
 
     return preliminary_review_json
 
@@ -538,9 +537,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     # Get the contents of the data manager review JSON file
     try:
         datamanager_review_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get data manager review data.")
-        return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
+    except error.UUFileNotExistError:
+        return api.Error("data_read", "Could not get data manager review data")
 
     return datamanager_review_json
 
@@ -801,7 +799,7 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
-    file_name = 'assignment_bodmember.json'
+    file_name = 'assignment.json'
 
     # Construct path to file
     file_path = coll_name + '/' + file_name
@@ -809,9 +807,8 @@ def api_datarequest_assignment_get(ctx, request_id):
     # Get the contents of the assignment JSON file
     try:
         assignment_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get assignment data.")
-        return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
+    except error.UUFileNotExistError:
+        return api.Error("data_read", "Could not get assignment data")
 
     return assignment_json
 
@@ -867,7 +864,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write review data to disk
     try:
-        review_path = coll_path + '/review.json'
+        review_path = coll_path + '/review' + client_name + ''.json'
         jsonutil.write(ctx, review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write review data to disk')
@@ -967,9 +964,8 @@ def api_datarequest_reviews_get(ctx, request_id):
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
             reviews.append(json.loads(data_object.read(ctx, file_path)))
-        except Exception:
-            log.write(ctx, "Could not get review data.")
-            return {"status": "ReadError", "statusInfo": "Could not get review data."}
+        except error.UUFileNotExistError:
+            return api.Error("data_read", "Could not get review data")
 
     return json.dumps(reviews)
 
