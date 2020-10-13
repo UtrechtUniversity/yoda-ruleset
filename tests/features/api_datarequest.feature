@@ -12,13 +12,13 @@ Feature: Datarequest API
         Given datarequest exists
         And the Yoda datarequest get API is queried with request id
         Then the response status code is "200"
-        And request status is "submitted"
+        And request status is "SUBMITTED"
 
     Scenario: Datarequest preliminary review submit
         Given datarequest exists
         And the Yoda datarequest preliminary review submit API is queried with request id
         Then the response status code is "200"
-        And request status is "accepted_for_dm_review"
+        And request status is "PRELIMINARY_ACCEPT"
 
     Scenario: Datarequest reliminary review get
         Given datarequest exists
@@ -29,7 +29,7 @@ Feature: Datarequest API
         Given datarequest exists
         Given the Yoda datarequest datamanager review submit API is queried with request id
         Then the response status code is "200"
-        And request status is "dm_accepted"
+        And request status is "DATAMANAGER_ACCEPT"
 
     Scenario: Datarequest datamanager review get
         Given datarequest exists
@@ -40,7 +40,7 @@ Feature: Datarequest API
         Given datarequest exists
         And the datarequest assignment submit API is queried with request id
         Then the response status code is "200"
-        And request status is "assigned"
+        And request status is "UNDER_REVIEW"
 
     Scenario: Datarequest assignment get
         Given datarequest exists
@@ -51,7 +51,7 @@ Feature: Datarequest API
         Given datarequest exists
         And the datarequest review submit API is queried with request id
         Then the response status code is "200"
-        And request status is "reviewed"
+        And request status is "REVIEWED"
 
     Scenario: Datarequest reviews get
         Given datarequest exists
