@@ -78,10 +78,10 @@ def send(ctx, to, actor, subject, body):
 
     msg = MIMEText(body)
     msg['Reply-To'] = cfg['reply_to']
-    msg['Date']     = email.utils.formatdate()
-    msg['From']     = fmt_addr(cfg['from_name'], cfg['from'])
-    msg['To']       = to
-    msg['Subject']  = subject
+    msg['Date'] = email.utils.formatdate()
+    msg['From'] = fmt_addr(cfg['from_name'], cfg['from'])
+    msg['To'] = to
+    msg['Subject'] = subject
 
     try:
         smtp.sendmail(cfg['from'], [to], msg.as_string())
@@ -107,10 +107,10 @@ def _wrapper(ctx, to, actor, subject, body):
 # @rule.make(inputs=range(4), outputs=range(4, 6))
 def mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, collection):
     return _wrapper(ctx,
-                    to      = datamanager,
-                    actor   = submitter,
-                    subject = '[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
-                    body    = """
+                    to=datamanager,
+                    actor=submitter,
+                    subject='[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
+                    body="""
 Dear {},
 {} submitted a datapackage to be accepted for publication.
 
@@ -128,10 +128,10 @@ def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
 
 def mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
-                    to      = datamanager,
-                    actor   = actor,
-                    subject = '[Yoda] New package is published with DOI: {}'.format(doi),
-                    body    = """
+                    to=datamanager,
+                    actor=actor,
+                    subject='[Yoda] New package is published with DOI: {}'.format(doi),
+                    body="""
 Congratulations, your data has been published.
 
 Title: {}
@@ -149,10 +149,10 @@ def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
 
 def mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
-                    to      = researcher,
-                    actor   = actor,
-                    subject = '[Yoda] Your package is published with DOI: {}'.format(doi),
-                    body    = """
+                    to=researcher,
+                    actor=actor,
+                    subject='[Yoda] Your package is published with DOI: {}'.format(doi),
+                    body="""
 Congratulations, your data has been published.
 
 Title: {}

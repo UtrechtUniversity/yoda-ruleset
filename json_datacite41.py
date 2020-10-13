@@ -341,8 +341,8 @@ def getRelatedDataPackage(combi):
     """Get string in DataCite format containing related datapackages."""
 
     related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
-                  relatedIdentifierType = rel['Persistent_Identifier']['Identifier_Scheme'],
-                  relationType          = rel['Relation_Type'].split(':')[0])
+                  relatedIdentifierType=rel['Persistent_Identifier']['Identifier_Scheme'],
+                  relationType=rel['Relation_Type'].split(':')[0])
                for rel in combi['Related_Datapackage']]
     if related:
         return El('relatedIdentifiers', *related)
