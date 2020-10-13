@@ -27,7 +27,7 @@ def api_search_revisions_on_filename(filename):
         {"searchString": filename, "offset": 0, "limit": "10"}
     )
 
-	
+
 @then('"<revision_search_result>" is found')
 def api_response_revision_search_result(api_response, revision_search_result):
     _, body = api_response
@@ -43,7 +43,7 @@ def api_response_revision_search_result(api_response, revision_search_result):
             break
 
     assert found
-	
+
 
 @given('the Yoda revision API is queried with "<path>"', target_fixture="api_response")
 def api_get_revision_list(path):
@@ -68,8 +68,8 @@ def api_restore_revision(revision_id, coll_target, new_filename):
         "revisions_restore",
         {"revision_id": revision_id, "overwrite": "restore_overwrite", "coll_target": coll_target, "new_filename": new_filename}
     )
-	
-	
+
+
 @then('revision is restored successfully')
 def api_response_revision_successfully_restored(api_response):
     _, body = api_response
