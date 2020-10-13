@@ -864,7 +864,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write review data to disk
     try:
-        review_path = coll_path + '/review' + client_name + ''.json'
+        review_path = coll_path + '/review' + client_name + '.json'
         jsonutil.write(ctx, review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write review data to disk')
