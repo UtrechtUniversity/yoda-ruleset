@@ -25,7 +25,7 @@ def api_get_groups_of_datamanger():
     print("hallo")
     return api_request(
         "resource_groups_dm",
-		{}
+        {}
     )
 
 
@@ -33,14 +33,14 @@ def api_get_groups_of_datamanger():
 def api_response_groups_for_datamanager(api_response, group):
     _, body = api_response
     print(body["data"])
-    
+
     assert len(body["data"]) > 0
     found_group = False
     for list in body["data"]:
         if group in list:
             found_group = True
-            break			
-	
+            break		
+
     assert found_group
 
 
@@ -57,11 +57,11 @@ def api_response_monthly_storage_for_dm(api_response):
     _, body = api_response
     print("hier")
     print(body["data"])
-	
+
     # check presence of first item of a list
     assert body["data"][0]
-	
-	# check presence all keys
+
+    # check presence all keys
     assert body["data"][0]["category"]
     assert body["data"][0]["tier"]
     assert body["data"][0]["storage"]
@@ -79,13 +79,13 @@ def api_get_monthly_category_stats_export_dm():
 def api_response_storage_data_for_export(api_response):
     _, body = api_response
 
-    assert body["data"][0]["category"]	
-    assert body["data"][0]["subcategory"]	
-    assert body["data"][0]["storage"]	
-    assert body["data"][0]["month"]	
-    assert body["data"][0]["groupname"]	
-    assert body["data"][0]["tier"]		
-	
+    assert body["data"][0]["category"]
+    assert body["data"][0]["subcategory"]
+    assert body["data"][0]["storage"]
+    assert body["data"][0]["month"]
+    assert body["data"][0]["groupname"]
+    assert body["data"][0]["tier"]
+
 
 @given('the Yoda resources API is queried for all monthly statistics', target_fixture="api_response")
 def api_monthly_stats():
@@ -112,13 +112,13 @@ def api_resource_and_tier_data():
         {}
     )
 
-	
+
 @then('list of resources and tiers is found')
 def api_response_list_of_resources_and_tiers(api_response):
     _, body = api_response
     print(body['data'])
 
-    #{'tier': 'Standard', 'name': 'dev001_2', 'id': '10018'}
+    # {'tier': 'Standard', 'name': 'dev001_2', 'id': '10018'}
     assert body['data'][0]['tier']
     assert body['data'][0]['name']
     assert body['data'][0]['id']
@@ -146,6 +146,8 @@ def api_get_tiers():
         "resource_get_tiers",
         {}
     )
+
+
 @then('list with "<tier_name>" is found')
 def api_response_all_tiers(api_response, tier_name):
     _, body = api_response
@@ -161,7 +163,7 @@ def api_save_tier_for_resource(resource_name, tier_name):
         {"resource_name": resource_name, "tier_name": tier_name}
     )
 
-	
+
 @then('tier is saved successfully for resource')
 def api_response_save_tier_name_successful(api_response):
     _, body = api_response
