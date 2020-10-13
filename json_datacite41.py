@@ -152,7 +152,10 @@ def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
               getFunders]:
         try:
             x = f(combi)
-        except KeyError, IndexError:
+        except KeyError:
+            # Ignore absent fields.
+            continue
+        except IndexError:
             # Ignore absent fields.
             continue
 
@@ -341,8 +344,8 @@ def getRelatedDataPackage(combi):
     """Get string in DataCite format containing related datapackages."""
 
     related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
-                  relatedIdentifierType = rel['Persistent_Identifier']['Identifier_Scheme'],
-                  relationType          = rel['Relation_Type'].split(':')[0])
+                  relatedIdentifierType=rel['Persistent_Identifier']['Identifier_Scheme'],
+                  relationType=rel['Relation_Type'].split(':')[0])
                for rel in combi['Related_Datapackage']]
     if related:
         return El('relatedIdentifiers', *related)

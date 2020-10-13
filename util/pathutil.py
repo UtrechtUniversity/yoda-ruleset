@@ -51,10 +51,19 @@ def chop(path):
         return '/'.join(x[:-1]), x[-1]
 
 
-# Shorthands.
-dirname  = lambda x: chop(x)[0]  # chops last component off
-basename = lambda x: chop(x)[1]  # chops everything *but* the last component
-chopext  = lambda x: x.rsplit('.', 1)
+def dirname(path):
+    """Return the dirname of a path."""
+    return chop(path)[0]  # chops last component off
+
+
+def basename(path):
+    """Return basename of a path."""
+    return chop(path)[1]  # chops everything *but* the last component
+
+
+def chopext(path):
+    """Return the extension of a path."""
+    return path.rsplit('.', 1)
 
 
 def info(path):
@@ -80,9 +89,14 @@ def info(path):
     etc.
     """
     # Turn empty match groups into empty strings.
-    f      = lambda x:    '' if x is None else x
-    g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
-    result = lambda s, m: (s, g(m, 1), g(m, 2), g(m, 3))
+    def f(x):
+        return '' if x is None else x
+
+    def g(m, i):
+        return '' if i > len(m.groups()) else f(m.group(i))
+
+    def result(s, m):
+        return (s, g(m, 1), g(m, 2), g(m, 3))
 
     # Try a pattern and report success if it matches.
     def test(r, space):

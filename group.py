@@ -136,7 +136,7 @@ def getSubcategories(callback, category):
             groupCategories[group][key] = value
 
         if ('category' in groupCategories[group]
-            and 'subcategory' in groupCategories[group]):
+           and 'subcategory' in groupCategories[group]):
             # Metadata complete, now filter on category.
             if groupCategories[group]['category'] == category:
                 # Bingo, add to the subcategory list.
