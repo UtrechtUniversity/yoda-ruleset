@@ -36,7 +36,8 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
-class request_status(Enum):
+# List of valid datarequest statuses
+class status(Enum):
     SUBMITTED                         = 'SUBMITTED'
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
     PRELIMINARY_REJECT                = 'PRELIMINARY_REJECT'
@@ -56,17 +57,50 @@ class request_status(Enum):
     DATA_READY                        = 'DATA_READY'
 
 
-def set_status(ctx, request_id, status):
+# List of valid datarequest status transitions (source, destination)
+status_transitions = [(status(x),
+                       status(y))
+                      for x, y in [('SUBMITTED',            'PRELIMINARY_ACCEPT'),
+                                   ('SUBMITTED',            'PRELIMINARY_REJECT'),
+                                   ('SUBMITTED',            'PRELIMINARY_RESUBMIT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_ACCEPT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_REJECT'),
+                                   ('PRELIMINARY_ACCEPT',   'DATAMANAGER_RESUBMIT'),
+                                   ('DATAMANAGER_ACCEPT',   'UNDER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',   'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',   'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'UNDER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',   'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'UNDER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT', 'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('UNDER_REVIEW',         'REVIEWED'),
+                                   ('REVIEWED',             'APPROVED'),
+                                   ('REVIEWED',             'REJECTED'),
+                                   ('REVIEWED',             'RESUBMIT'),
+                                   ('APPROVED',             'DTA_READY'),
+                                   ('DTA_READY',            'DTA_SIGNED'),
+                                   ('DTA_SIGNED',           'DATA_READY')]]
+
+
+def status_transition_allowed(ctx, current_status, new_status):
+    transition = (current_status, new_status)
+
+    return transition in status_transitions
+
+
+def status_set(ctx, request_id, status):
     """Set the status of a data request
 
        Arguments:
        request_id -- Unique identifier of the data request.
        status    -- The status to which the data request should be set.
     """
-    set_metadata(ctx, request_id, "status", status.value)
+    metadata_set(ctx, request_id, "status", status.value)
 
 
-def get_status(ctx, request_id):
+def status_get(ctx, request_id):
     """Get the status of a data request
 
        Arguments:
@@ -77,23 +111,20 @@ def get_status(ctx, request_id):
     file_name = 'datarequest.json'
     file_path = coll_name + '/' + file_name
 
-    try:
-        rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
-                             + "META_DATA_ATTR_NAME = 'status'") % (coll_name,
-                                                                    file_name),
-                            AS_DICT, ctx)
+    rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                        ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
+                         + "META_DATA_ATTR_NAME = 'status'") % (coll_name,
+                                                                file_name),
+                        AS_DICT, ctx)
+    if rows.total_rows() == 1:
+        current_status = list(rows)[0]['META_DATA_ATTR_VALUE']
+    else:
+        raise Exception("This should not be happening.")
 
-        for row in rows:
-            request_status = row['META_DATA_ATTR_VALUE']
-    except Exception:
-        log.write(ctx, "Could not get data request status.")
-        return {"status": "FailedGetDatarequestStatus", "statusInfo": "Could not get data request status."}
-
-    return request_status
+    return status[current_status]
 
 
-def set_metadata(ctx, request_id, key, value):
+def metadata_set(ctx, request_id, key, value):
     """Set an arbitrary metadata field on a data request
 
        Arguments:
@@ -221,7 +252,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Set the previous request ID as metadata if defined
     if previous_request_id:
-        set_metadata(ctx, request_id, "previous_request_id", previous_request_id)
+        metadata_set(ctx, request_id, "previous_request_id", previous_request_id)
 
     # Set the proposal fields as AVUs on the proposal JSON file
     file_name = 'datarequest.json'
@@ -238,7 +269,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
     # Set the status metadata field to "submitted"
-    set_status(ctx, request_id, request_status.SUBMITTED)
+    status_set(ctx, request_id, status.SUBMITTED)
 
     # Get source data needed for sending emails
     datarequest = data
@@ -274,7 +305,7 @@ def api_datarequest_get(ctx, request_id):
         isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
         isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
         isdmcmember   = user.is_member_of(ctx, "datarequests-research-data-management-committee")
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
             log.write(ctx, "User is not authorized to view this data request.")
@@ -323,6 +354,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.PRELIMINARY_ACCEPT):
+        return api.Error("transition", "Status transition not allowed.")
+
     # Read data into a dictionary
     preliminary_review = data
 
@@ -337,11 +372,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for the submission of the preliminary review
-    if not get_status(ctx, request_id) == "submitted":
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -368,11 +398,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Accepted for data manager review":
-        set_status(ctx, request_id, request_status.PRELIMINARY_ACCEPT)
+        status_set(ctx, request_id, status.PRELIMINARY_ACCEPT)
     elif decision == "Rejected":
-        set_status(ctx, request_id, request_status.PRELIMINARY_REJECT)
+        status_set(ctx, request_id, status.PRELIMINARY_REJECT)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, request_status.PRELIMINARY_RESUBMIT)
+        status_set(ctx, request_id, status.PRELIMINARY_RESUBMIT)
     else:
         log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
@@ -428,14 +458,25 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'preliminary_review.json'
 
+    # Get the size of the preliminary review JSON file and the review's status
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
+    for row in rows:
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
+        data_size = row['DATA_SIZE']
+
     # Construct path to file
-    file_path = coll_name + '/' + file_name
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the review JSON file
     try:
         preliminary_review_json = data_object.read(ctx, file_path)
-    except error.UUFileNotExistError:
-        return api.Error("data_read", "Could not get preliminary review data")
+    except Exception:
+        log.write(ctx, "Could not get preliminary review data.")
+        return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
 
     return preliminary_review_json
 
@@ -451,6 +492,10 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_ACCEPT):
+        api.Error("transition", "Status transition not allowed.")
+
     # Read datamanager review into a dictionary
     datamanager_review = data
 
@@ -465,11 +510,6 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for the submission of the data manager review
-    if not get_status(ctx, request_id) == 'accepted_for_dm_review':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -496,11 +536,11 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Accepted":
-        set_status(ctx, request_id, request_status.DATAMANAGER_ACCEPT)
+        status_set(ctx, request_id, status.DATAMANAGER_ACCEPT)
     elif decision == "Rejected":
-        set_status(ctx, request_id, request_status.DATAMANAGER_REJECT)
+        status_set(ctx, request_id, status.DATAMANAGER_REJECT)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, request_status.DATAMANAGER_RESUBMIT)
+        status_set(ctx, request_id, status.DATAMANAGER_RESUBMIT)
     else:
         log.write(ctx, "Invalid value for decision in data manager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for decision in data manager review JSON data."}
@@ -552,54 +592,49 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     coll_name = '/tempZone/home/datarequests-research/' + request_id
     file_name = 'datamanager_review.json'
 
+    # Get the size of the data manager review JSON file and the review's status
+    rows = row_iterator(["DATA_SIZE", "DATA_NAME", "COLL_NAME"],
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
+    for row in rows:
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
+        data_size = row['DATA_SIZE']
+
     # Construct path to file
-    file_path = coll_name + '/' + file_name
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the data manager review JSON file
     try:
         datamanager_review_json = data_object.read(ctx, file_path)
-    except error.UUFileNotExistError:
-        return api.Error("data_read", "Could not get data manager review data")
+    except Exception:
+        log.write(ctx, "Could not get data manager review data.")
+        return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
 
     return datamanager_review_json
 
 
 @api.make()
 def api_datarequest_is_owner(ctx, request_id, user_name):
-    """Check if the invoking user is also the owner of a given data request
+    result = datarequest_is_owner(ctx, request_id, user_name)
 
-        This function is a wrapper for datarequest_is_owner.
+    if not (result['status'] == 0):
+        return api.Error("error", "Something went wrong in determining datarequest ownership")
 
-       :param request_id: Unique identifier of the data request
-       :type request_id: str
-       :param user_name: Username of the user whose ownership is checked
-       :type user_name: str
-
-       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-       :rtype: bool
-    """
-
-    is_owner = False
-
-    try:
-        is_owner = datarequest_is_owner(ctx, request_id, user_name)
-    except error.UUError as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e.message))
-
-    return is_owner
+    return result['owner']
 
 
 def datarequest_is_owner(ctx, request_id, user_name):
     """Check if the invoking user is also the owner of a given data request
 
-       :param request_id: Unique identifier of the data request
-       :type request_id: str
-       :param user_name: Username of the user whose ownership is checked
-       :type user_name: str
+       Arguments:
+       request_id -- Unique identifier of the data request
+       user_name  -- Username of the user whose ownership is checked
 
-       :raises Exception: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
-       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-       :rtype: bool
+       Return:
+       dict       -- status: 0 == lookup success, 1 == lookup fail
+                     owner: True/False
     """
     # Construct path to the collection of the datarequest
     client_zone = user.zone(ctx)
@@ -610,12 +645,25 @@ def datarequest_is_owner(ctx, request_id, user_name):
                         ("DATA_NAME = 'datarequest.json' and COLL_NAME like " + "'%s'" % coll_path),
                         AS_DICT, ctx)
 
-    # If there is not exactly 1 resulting row, something went terribly wrong
-    if rows.total_rows() != 1:
-        raise error.UUError("No or ambiguous data owner")
+    # Extract username from query results
+    request_owner_user_name = []
+    for row in rows:
+        request_owner_user_name.append(row["DATA_OWNER_NAME"])
 
-    # There is only a single row containing the owner of the data request
-    return list(rows)[0]["DATA_OWNER_NAME"] == user_name
+    # Check if exactly 1 owner was found
+    if len(request_owner_user_name) == 1:
+        # We only have 1 owner. Set request_owner_user_name to this owner
+        request_owner_user_name = request_owner_user_name[0]
+
+        # Compare the request owner username to the username of the current
+        # user to determine ownership
+        is_request_owner = request_owner_user_name == user_name
+
+        # Return data
+        return {'owner': is_request_owner, 'status': 0}
+    # If not exactly 1 owner was found, something went quite wrong. Return error
+    else:
+        return {'owner': None, 'status': 1}
 
 
 @api.make()
@@ -675,6 +723,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.UNDER_REVIEW):
+        api.Error("transition", "Status transition not allowed.")
+
     # Read assignment into dictionary
     assignment = data
 
@@ -689,11 +741,6 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for assignment
-    if not get_status(ctx, request_id) in ['dm_accepted', 'dm_rejected', 'dm_rejected_resubmit']:
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
@@ -724,11 +771,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Update the status of the data request
     if decision == "Accepted for DMC review":
         assign_request(ctx, assignees, request_id)
-        set_status(ctx, request_id, request_status.UNDER_REVIEW)
+        status_set(ctx, request_id, status.UNDER_REVIEW)
     elif decision == "Rejected":
-        set_status(ctx, request_id, request_status.REJECT_AFTER_DATAMANAGER_REVIEW)
+        status_set(ctx, request_id, status.REJECT_AFTER_DATAMANAGER_REVIEW)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, request_status.RESUBMIT_AFTER_DATAMANAGER_REVIEW)
+        status_set(ctx, request_id, status.RESUBMIT_AFTER_DATAMANAGER_REVIEW)
     else:
         log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
@@ -823,16 +870,26 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
-    file_name = 'assignment.json'
+    file_name = 'assignment_bodmember.json'
+
+    # Get the size of the assignment JSON file and the review's status
+    rows = row_iterator(["DATA_NAME", "COLL_NAME"],
+                        "COLL_NAME = '%s' AND " % coll_name
+                        + "DATA_NAME like '%s'" % file_name,
+                        AS_DICT, ctx)
+    for row in rows:
+        coll_name = row['COLL_NAME']
+        data_name = row['DATA_NAME']
 
     # Construct path to file
-    file_path = coll_name + '/' + file_name
+    file_path = coll_name + '/' + data_name
 
     # Get the contents of the assignment JSON file
     try:
         assignment_json = data_object.read(ctx, file_path)
-    except error.UUFileNotExistError:
-        return api.Error("data_read", "Could not get assignment data")
+    except Exception:
+        log.write(ctx, "Could not get assignment data.")
+        return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
 
     return assignment_json
 
@@ -851,6 +908,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is a member of the Data Management Committee. If not, do
     # not allow submission of the review
     try:
@@ -862,11 +923,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     except Exception:
         log.write(ctx, "User is not a member of the Board of Directors.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
-    # Check if status is appropriate for submission of the review
-    if not get_status(ctx, request_id) == 'assigned':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
@@ -888,7 +944,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write review data to disk
     try:
-        review_path = coll_path + '/review' + client_name + '.json'
+        review_path = coll_path + '/review.json'
         jsonutil.write(ctx, review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write review data to disk')
@@ -922,20 +978,20 @@ def api_datarequest_review_submit(ctx, data, request_id):
     reviewers.remove(client_name)
 
     # ... and then updating the assignedForReview attributes
-    status = ""
+    status_code = ""
     status_info = ""
     ctx.requestDatarequestMetadataChange(coll_name,
                                          "assignedForReview",
                                          json.dumps(reviewers),
                                          str(len(reviewers)),
-                                         status, status_info)
+                                         status_code, status_info)
     ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
     # 'reviewed' and send an email to the board of directors members
     # informing them that the proposal is ready to be evaluated by them.
     if len(reviewers) < 1:
-        set_status(ctx, request_id, request_status.REVIEWED)
+        status_set(ctx, request_id, status.REVIEWED)
 
         # Get source data needed for sending emails
         datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
@@ -988,8 +1044,9 @@ def api_datarequest_reviews_get(ctx, request_id):
         file_path = coll_name + '/' + row['DATA_NAME']
         try:
             reviews.append(json.loads(data_object.read(ctx, file_path)))
-        except error.UUFileNotExistError:
-            return api.Error("data_read", "Could not get review data")
+        except Exception:
+            log.write(ctx, "Could not get review data.")
+            return {"status": "ReadError", "statusInfo": "Could not get review data."}
 
     return json.dumps(reviews)
 
@@ -999,12 +1056,18 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     """Persist an evaluation to disk.
 
        Arguments:
-       evaluation -- Contents of the evaluation
+       data       -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
-    evaluation = data
+
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.APPROVED):
+        api.Error("transition", "Status transition not allowed.")
+
+    # Read evaluation into dictionary
+    evaluation = json.loads(data)
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
@@ -1018,11 +1081,6 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    # Check if status is appropriate for submission of the evaluation
-    if not get_status(ctx, request_id) == 'reviewed':
-        log.write(ctx, "Current status of data request does not permit this operation.")
-        return {"status": "PermissionError", "statusInfo": "Current status of data request does not permit this operation."}
-
     # Construct path to collection of the evaluation
     zone_path = '/tempZone/home/datarequests-research/'
     coll_path = zone_path + request_id
@@ -1030,7 +1088,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Write evaluation data to disk
     try:
         evaluation_path = coll_path + '/evaluation.json'
-        jsonutil.write(ctx, evaluation_path, evaluation)
+        jsonutil.write(ctx, evaluation_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
@@ -1039,11 +1097,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Update the status of the data request
     if decision == "Approved":
-        set_status(ctx, request_id, request_status.APPROVED)
+        status_set(ctx, request_id, status.APPROVED)
     elif decision == "Rejected":
-        set_status(ctx, request_id, request_status.REJECTED)
+        status_set(ctx, request_id, status.REJECTED)
     elif decision == "Rejected (resubmit)":
-        set_status(ctx, request_id, request_status.RESUBMIT)
+        status_set(ctx, request_id, status.RESUBMIT)
     else:
         log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
@@ -1083,6 +1141,10 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_READY):
+        api.Error("transition", "Status transition not allowed.")
 
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1126,7 +1188,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
 
     # Set status to dta_ready
-    set_status(ctx, request_id, request_status.DTA_READY)
+    status_set(ctx, request_id, status.DTA_READY)
 
     # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, coll_path + "/datarequest.json")
@@ -1147,10 +1209,14 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_SIGNED):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not isrequestowner:
             log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
@@ -1170,7 +1236,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
 
     # Set status to dta_signed
-    set_status(ctx, request_id, request_status.DTA_SIGNED)
+    status_set(ctx, request_id, status.DTA_SIGNED)
 
     # Get parameters needed for sending emails
     datamanager_emails = ""
@@ -1190,6 +1256,13 @@ def api_datarequest_data_ready(ctx, request_id):
        Arguments:
        request_id        -- Unique identifier of the datarequest.
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Check if status transition allowed
+    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATA_READY):
+        api.Error("transition", "Status transition not allowed.")
+
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
@@ -1202,7 +1275,7 @@ def api_datarequest_data_ready(ctx, request_id):
         log.write(ctx, "Something went wrong during permission checking.")
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
-    set_status(ctx, request_id, request_status.DATA_READY)
+    status_set(ctx, request_id, status.DATA_READY)
 
     # Get parameters needed for sending emails
     zone_path = '/tempZone/home/datarequests-research/'
