@@ -22,7 +22,6 @@ scenarios('../features/api_resources.feature')
 
 @given('the Yoda resources API is queried for all research groups of current datamanager', target_fixture="api_response")
 def api_get_groups_of_datamanger():
-    print("hallo")
     return api_request(
         "resource_groups_dm",
         {}
@@ -32,7 +31,6 @@ def api_get_groups_of_datamanger():
 @then('"<group>" for datamanager are found')
 def api_response_groups_for_datamanager(api_response, group):
     _, body = api_response
-    print(body["data"])
 
     assert len(body["data"]) > 0
     found_group = False
@@ -55,11 +53,6 @@ def api_get_monthly_stats_dm():
 @then('monthly storage data for a datamanager is found')
 def api_response_monthly_storage_for_dm(api_response):
     _, body = api_response
-    print("hier")
-    print(body["data"])
-
-    # check presence of first item of a list
-    assert body["data"][0]
 
     # check presence all keys
     assert body["data"][0]["category"]
@@ -98,8 +91,7 @@ def api_monthly_stats():
 @then('rodsadmin monthly statistics is found')
 def api_response_monthly_statistics_rodsadmin(api_response):
     _, body = api_response
-    print(body['data'][0])
-    # category': 'nodminitial', 'tier': 'Standard', 'storage': '0
+    
     assert body['data'][0]['category']
     assert body['data'][0]['tier']
     assert body['data'][0]['storage']
@@ -116,7 +108,6 @@ def api_resource_and_tier_data():
 @then('list of resources and tiers is found')
 def api_response_list_of_resources_and_tiers(api_response):
     _, body = api_response
-    print(body['data'])
 
     # {'tier': 'Standard', 'name': 'dev001_2', 'id': '10018'}
     assert body['data'][0]['tier']
@@ -135,7 +126,6 @@ def api_get_tier_on_resource(resource_name):
 @then('"<tier_name>" is found')
 def api_response_tier_name_for_resource(api_response, tier_name):
     _, body = api_response
-    print(body['data'])
 
     assert body['data'] == tier_name
 
@@ -151,7 +141,6 @@ def api_get_tiers():
 @then('list with "<tier_name>" is found')
 def api_response_all_tiers(api_response, tier_name):
     _, body = api_response
-    print(body['data'])
 
     assert tier_name in body['data']
 
@@ -167,7 +156,7 @@ def api_save_tier_for_resource(resource_name, tier_name):
 @then('tier is saved successfully for resource')
 def api_response_save_tier_name_successful(api_response):
     _, body = api_response
-    print(body)
+
     assert body['status'] == 'ok'
 
 
@@ -212,7 +201,6 @@ def api_is_user_datamanager():
 @then('current user is found')
 def api_response_user_is_datamanager(api_response):
     _, body = api_response
-    # print(body['data'])
 
     assert body["data"] == 'yes'
 
@@ -228,7 +216,6 @@ def api_get_monthly_user_research_groups(group_name, current_month):
 @then('full year storage data is found')
 def api_response_full_year_storage(api_response):
     _, body = api_response
-    print(body['data'])
 
     # A list of dicts like following
     # [{'month=10-tier=Standard': 6772}]

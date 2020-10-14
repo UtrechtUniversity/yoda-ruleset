@@ -37,7 +37,6 @@ def api_response_revision_search_result(api_response, revision_search_result):
     # Check expected result is in reveived search results.
     found = False
     for item in body['data']['items']:
-        print(item)
         if revision_search_result in item["main_original_dataname"]:
             found = True
             break
@@ -57,7 +56,6 @@ def api_get_revision_list(path):
 def api_response_list_found(api_response):
     _, body = api_response
 
-    # print(body['data']['revisions'][0])
     for key in ['org_original_path', 'data_id', 'org_original_data_name', 'org_original_data_owner_name', 'dezoned_coll_name', 'org_original_group_name', 'org_original_coll_id', 'org_original_data_id', 'org_original_filesize', 'org_original_modify_time']:
         assert body['data']['revisions'][0][key]
 
@@ -83,7 +81,5 @@ def api_response_revision_successfully_restored(api_response):
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
-
-    print (api_response)
 
     assert http_status == code
