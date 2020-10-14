@@ -231,8 +231,6 @@ def api_response_full_year_storage(api_response):
 def api_response_code(api_response, code):
     http_status, _ = api_response
 
-    print (api_response)
-
     assert http_status == code
 
 
