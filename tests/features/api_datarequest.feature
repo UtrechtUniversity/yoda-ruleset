@@ -12,62 +12,75 @@ Feature: Datarequest API
         Given datarequest exists
         And the Yoda datarequest get API is queried with request id
         Then the response status code is "200"
-        And request status is "submitted"
+        And request status is "SUBMITTED"
 
-    Scenario: Preliminary review submit
+    Scenario: Datarequest preliminary review submit
         Given datarequest exists
         And the Yoda datarequest preliminary review submit API is queried with request id
         Then the response status code is "200"
-        And request status is "accepted_for_dm_review"
+        And request status is "PRELIMINARY_ACCEPT"
 
-    Scenario: Datamanager review submit
+    Scenario: Datarequest reliminary review get
+        Given datarequest exists
+        And the Yoda datarequest preliminary review get API is queried with request id
+        Then the response status code is "200"
+
+    Scenario: Datarequest datamanager review submit
         Given datarequest exists
         Given the Yoda datarequest datamanager review submit API is queried with request id
         Then the response status code is "200"
-        And request status is "dm_accepted"
+        And request status is "DATAMANAGER_ACCEPT"
+
+    Scenario: Datarequest datamanager review get
+        Given datarequest exists
+        And the Yoda datarequest datamanager review get API is queried with request id
+        Then the response status code is "200"
+
+    Scenario: Datarequest assignment submit
+        Given datarequest exists
+        And the datarequest assignment submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "UNDER_REVIEW"
+
+    Scenario: Datarequest assignment get
+        Given datarequest exists
+        And the Yoda datarequest assignment get API is queried with request id
+        Then the response status code is "200"
+
+    Scenario: Datarequest review submit
+        Given datarequest exists
+        And the datarequest review submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "REVIEWED"
+
+    Scenario: Datarequest reviews get
+        Given datarequest exists
+        And the Yoda datarequest reviews get API is queried with request id
+        Then the response status code is "200"
+
+    Scenario: Datarequest evaluation submit
+        Given datarequest exists
+        Given the datarequest evaluation submit API is queried with request id
+        Then the response status code is "200"
+
+# 'api_datarequest_dta_post_upload_actions',
+#    Scenario: Datarequest DTA post upload actions
+#        Given datarequest exists
+#        And the Yoda datarequest DTA post upload actions API is queried with request id
+#        Then the response status code is "200"
+
+# 'api_datarequest_signed_dta_post_upload_actions',
+#    Scenario: Datarequest signed DTA post upload actions
+#        Given datarequest exists
+#        And the Yoda datarequest signed DTA post upload actions API is queried with request id
+#        Then the response status code is "200"
+
+# 'api_datarequest_data_ready'
+#    Scenario: Datarequest DTA ready actions
+#        Given datarequest exists
+#        And the Yoda datarequest DTA ready API is queried with request id
+#        Then the response status code is "200"
 
 #    Scenario: Datarequest resubmit
 #        Given the Yoda datarequest submit API is queried with <data> and <previous_request_id>
-#        Then the response status code is "200"
-
-#    Scenario: Datarequest get
-#        Given the Yoda datarequest get API is queried with <request_id>
-#        Then the response status code is "200"
-#        And <request_json> and <request_status> is returned
-
-#    Scenario: Preliminary review submit
-#        Given the Yoda datarequest preliminary review submit API is queried with <data> and <request_id>
-#        Then the response status is code "200"
-
-#    Scenario: Preliminary review get
-#        Given the Yoda datarequest preliminary review get API is queried with <request_id>
-#        Then the response status code is "200"
-#        And <preliminary_review_json> is returned
-
-
-#    Scenario: Datamanager review get
-#        Given the Yoda datarequest datamanager review get API is queried with <request_id>
-#        Then the response status code is "200"
-#        And <datamanager_review_json> is returned
-
-#    Scenario: Assignment submit
-#        Given the datarequest assignment submit API is queried with <data> and <request_id>
-#        Then the response status code is "200"
-
-#    Scenario: Assignment get
-#        Given the datarequest assignment get API is queried with <request_id>
-#        Then the response status code is "200"
-#        And <assignment_json> is returned
-
-#    Scenario: Review submit
-#        Given the datarequest review submit API is queried with <data> and <request_id>
-#        Then the response status code is "200"
-
-#    Scenario: Reviews get
-#        Given the datarequest reviews get API is queried with <request_id>
-#        Then the response status code is "200"
-#        And <reviews> is returned
-
-#    Scenario: Evaluation submit
-#        Given the datarequest evaluation submit API is queried with <data> and <request_id>
 #        Then the response status code is "200"
