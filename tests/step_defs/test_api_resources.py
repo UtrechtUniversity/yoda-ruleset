@@ -91,7 +91,7 @@ def api_monthly_stats():
 @then('rodsadmin monthly statistics is found')
 def api_response_monthly_statistics_rodsadmin(api_response):
     _, body = api_response
-    
+
     assert body['data'][0]['category']
     assert body['data'][0]['tier']
     assert body['data'][0]['storage']
