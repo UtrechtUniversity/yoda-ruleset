@@ -2,8 +2,7 @@
 
 ## Requirements
 - pip
-- Yoda development environments (running on https://portal.yoda.test)
-- Yoda CSRF and session cookie
+- Yoda environment (running on https://portal.yoda.test)
 
 ## Installation
 Install pip requirements for tests:
@@ -12,7 +11,12 @@ $ python -m pip install -r requirements.txt
 ```
 
 ## Usage
-Run tests, replace <csrf> and <session> with Yoda CSRF and session cookie:
+Run tests:
 ```bash
-$ pytest --api https://portal.yoda.test/api --csrf <csrf> --session <session>
+$ pytest
+```
+
+If Yoda is not running on development address, use --url to specify address:
+```bash
+$ pytest --url <url>
 ```
