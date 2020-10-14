@@ -2,7 +2,7 @@
 """Yoda API tests.
 
 Usage:
-pytest --api <url> --csrf <csrf> --session <session> -v
+pytest --url <url>
 """
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
@@ -14,20 +14,27 @@ import urllib3
 
 
 def pytest_addoption(parser):
-    parser.addoption("--api", action="store", default="https://portal.yoda.test/api")
-    parser.addoption("--csrf", action="store", default="36185869eaebe1f3199eb4ae6824e5bc")
-    parser.addoption("--session", action="store", default="pjpr2qp8h5452ftisi49ibfccb8q5rt7")
+    parser.addoption("--url", action="store", default="https://portal.yoda.test/")
+    parser.addoption("--user", action="store", default="functionaladminpriv")
+    parser.addoption("--password", action="store", default="test")
 
 
 def pytest_configure(config):
+    global _URL
+    _URL = config.getoption("--url")
+
+    global _USER
+    _USER = config.getoption("--user")
+
+    global _PASSWORD
+    _PASSWORD = config.getoption("--password")
+
     global _API
-    _API = config.getoption("--api")
+    _API = _URL + "api"
 
     global _CSRF
-    _CSRF = config.getoption("--csrf")
-
     global _SESSION
-    _SESSION = config.getoption("--session")
+    _CSRF, _SESSION = login(_USER, _PASSWORD)
 
 
 def api():
@@ -40,6 +47,26 @@ def csrf():
 
 def session():
     return _SESSION
+
+
+def login(user, password):
+    """Login portal and retrieve CSRF and session cookies."""
+    # Disable unsecure connection warning.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    url = _URL + 'user/login'
+    client = requests.session()
+
+    # Retrieve the CSRF token first
+    csrf = client.get(url, verify=False).cookies['csrf_yoda']
+
+    # Login
+    login_data = dict(csrf_yoda=csrf, username='functionaladminpriv', password='test', next='/home')
+    client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    client.close()
+
+    # Return CSRF and session cookies.
+    return client.cookies['csrf_yoda'], client.cookies['yoda_session']
 
 
 def api_request(request, data):
