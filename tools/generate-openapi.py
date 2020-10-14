@@ -135,11 +135,17 @@ spec = O(('openapi', '3.0.0'),
                 ('name', 'yoda_session'))),
               ('basicAuth', O(('type', 'http'), ('scheme', 'basic'))))),
             ('responses',
-            O(('status_500',
-              O(('description', 'Error'),
+            O(('status_400',
+              O(('description', 'Bad request'),
                 ('content',
                 O(('application/json',
-                  O(('schema', O(('$ref', '#/components/schemas/result_error'))))))))))))),
+                  O(('schema', O(('$ref', '#/components/schemas/result_error'))))))))),
+              ('status_500',
+                O(('description', 'Internal error'),
+                  ('content',
+                  O(('application/json',
+                    O(('schema', O(('$ref', '#/components/schemas/result_error'))))))))),
+             )))),
          ('paths', O())
       )
 
@@ -249,6 +255,7 @@ def gen_fn_spec(name, fn):
                   O(('status',      O(('type', 'string'))),
                     ('status_info', O(('type', 'string'), ('nullable', True))),
                     ('data',        O(('nullable', True))))))))))))),
+          ('400', O(('$ref', '#/components/responses/status_400'))),
           ('500', O(('$ref', '#/components/responses/status_500'))))))))
 
 for name, fn in api.fns:

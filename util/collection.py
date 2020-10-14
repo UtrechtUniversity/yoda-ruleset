@@ -5,6 +5,9 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
+import sys
+if sys.version_info > (2, 7):
+    from functools import reduce
 
 import genquery
 import irods_types
@@ -42,7 +45,10 @@ def empty(callback, path):
 
 def size(callback, path):
     """Get a collection's size in bytes."""
-    return reduce(lambda x, row: x + int(row[1]),
+    def func(x, row):
+        return x + int(row[1])
+
+    return reduce(func,
                   itertools.chain(genquery.row_iterator("DATA_ID, DATA_SIZE",
                                                         "COLL_NAME like '{}'".format(path),
                                                         genquery.AS_LIST, callback),
@@ -80,7 +86,8 @@ def data_objects(callback, path, recursive=False):
     The returned paths are absolute paths (e.g. ['/tempZone/home/x/y.txt']).
     """
     # coll+data name -> path
-    to_absolute = lambda row: '{}/{}'.format(*row)
+    def to_absolute(row):
+        return '{}/{}'.format(*row)
 
     q_root = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                    "COLL_NAME = '{}'".format(path),
