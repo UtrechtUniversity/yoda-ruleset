@@ -978,13 +978,13 @@ def api_datarequest_review_submit(ctx, data, request_id):
     reviewers.remove(client_name)
 
     # ... and then updating the assignedForReview attributes
-    status = ""
+    status_code = ""
     status_info = ""
     ctx.requestDatarequestMetadataChange(coll_name,
                                          "assignedForReview",
                                          json.dumps(reviewers),
                                          str(len(reviewers)),
-                                         status, status_info)
+                                         status_code, status_info)
     ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
