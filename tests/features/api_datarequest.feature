@@ -74,6 +74,7 @@ Feature: Datarequest API
         And datarequest exists
         And the datarequest evaluation submit API is queried with request id
         Then the response status code is "200"
+        And request status is "APPROVED"
 
 # 'api_datarequest_dta_post_upload_actions',
 #    Scenario: Datarequest DTA post upload actions
