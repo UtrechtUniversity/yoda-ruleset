@@ -828,21 +828,6 @@ def assign_request(ctx, assignees, request_id):
     # Construct data request collection path
     requestColl = ('/tempZone/home/datarequests-research/' + request_id)
 
-    # Check if data request has already been assigned. If true, set status
-    # code to failure and do not perform requested assignment
-    rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % requestColl
-                        + "DATA_NAME = 'datarequest.json' AND "
-                        + "META_DATA_ATTR_NAME = 'status'",
-                        AS_DICT, ctx)
-
-    for row in rows:
-        requestStatus = row['META_DATA_ATTR_VALUE']
-
-    if not (requestStatus == "dm_accepted" or requestStatus == "dm_rejected"):
-        log.write(ctx, "Proposal is already assigned.")
-        return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
-
     # Assign the data request by adding a delayed rule that sets one or more
     # "assignedForReview" attributes on the datarequest (the number of
     # attributes is determined by the number of assignees) ...
@@ -911,18 +896,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
         api.Error("transition", "Status transition not allowed.")
-
-    # Check if user is a member of the Data Management Committee. If not, do
-    # not allow submission of the review
-    try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id)
-
-        if not isreviewer:
-            log.write(ctx, "User is assigned as a reviewer to this data request.")
-            return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
-    except Exception:
-        log.write(ctx, "User is not a member of the Board of Directors.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
