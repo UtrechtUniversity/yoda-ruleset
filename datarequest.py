@@ -897,18 +897,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
         api.Error("transition", "Status transition not allowed.")
 
-    # Check if user is a member of the Data Management Committee. If not, do
-    # not allow submission of the review
-    try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id)
-
-        if not isreviewer:
-            log.write(ctx, "User is assigned as a reviewer to this data request.")
-            return {"status": "PermissionError", "statusInfo": "User is not assigned as a reviewer to this data request."}
-    except Exception:
-        log.write(ctx, "User is not a member of the Board of Directors.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
-
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     try:
