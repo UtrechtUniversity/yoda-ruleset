@@ -80,7 +80,7 @@ def api_request(user, request, data):
     return (response.status_code, body)
 
 
-def post_form_data(user, request, data):
+def post_form_data(user, request, files):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -89,7 +89,7 @@ def post_form_data(user, request, data):
 
     # Make POST request.
     url = portal_url + "/" + request
-    files = {'csrf_yoda': (None, csrf), 'data': data}
+    files['csrf_yoda'] = (None, csrf)
     cookies = {'csrf_yoda': csrf, 'yoda_session': session}
 
     response = requests.post(url, files=files, cookies=cookies, verify=False)
