@@ -828,21 +828,6 @@ def assign_request(ctx, assignees, request_id):
     # Construct data request collection path
     requestColl = ('/tempZone/home/datarequests-research/' + request_id)
 
-    # Check if data request has already been assigned. If true, set status
-    # code to failure and do not perform requested assignment
-    rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % requestColl
-                        + "DATA_NAME = 'datarequest.json' AND "
-                        + "META_DATA_ATTR_NAME = 'status'",
-                        AS_DICT, ctx)
-
-    for row in rows:
-        requestStatus = row['META_DATA_ATTR_VALUE']
-
-    if not (requestStatus == "dm_accepted" or requestStatus == "dm_rejected"):
-        log.write(ctx, "Proposal is already assigned.")
-        return {"status": "AlreadyAssigned", "statusInfo": "Proposal is already assigned."}
-
     # Assign the data request by adding a delayed rule that sets one or more
     # "assignedForReview" attributes on the datarequest (the number of
     # attributes is determined by the number of assignees) ...
