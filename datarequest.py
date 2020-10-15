@@ -38,6 +38,10 @@ __all__ = ['api_datarequest_browse',
 
 DRCOLLECTION    = 'home/datarequests-research'
 
+GROUP_DM        = "datarequests-research-datamanagers"
+GROUP_DMC       = "datarequests-research-data-management-committee"
+GROUP_BOD       = "datarequests-research-board-of-directors"
+
 DR_FILENAME     = "datarequest.json"
 PR_REV_FILENAME = "preliminary_review.json"
 DM_REV_FILENAME = "datamanager_review.json"
@@ -265,9 +269,9 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Set permissions for certain groups on the subcollection
     try:
-        msi.set_acl(ctx, "recursive", "write", "datarequests-research-datamanagers", coll_path)
-        msi.set_acl(ctx, "recursive", "write", "datarequests-research-data-management-committee", coll_path)
-        msi.set_acl(ctx, "recursive", "write", "datarequests-research-board-of-directors", coll_path)
+        msi.set_acl(ctx, "recursive", "write", GROUP_DM, coll_path)
+        msi.set_acl(ctx, "recursive", "write", GROUP_DMC, coll_path)
+        msi.set_acl(ctx, "recursive", "write", GROUP_BOD, coll_path)
     except Exception:
         log.write(ctx, "Could not set permissions on subcollection.")
         return api.Error("permission_error", "Could not set permissions on subcollection.")
@@ -281,7 +285,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     research_context = datarequest['research_context']
 
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
-                                   "datarequests-research-board-of-directors", "")['arguments'][1])
+                                   GROUP_BOD, "")['arguments'][1])
 
     # Send email to researcher and board of directors member(s)
     mail_datarequest_researcher(ctx, researcher['email'], researcher['name'], request_id)
@@ -306,9 +310,9 @@ def api_datarequest_get(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
-        isdmcmember   = user.is_member_of(ctx, "datarequests-research-data-management-committee")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
+        isdmcmember   = user.is_member_of(ctx, GROUP_DMC)
         isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))['owner']
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
@@ -367,7 +371,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the preliminary review
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
@@ -388,9 +392,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Give read permission on the preliminary review to data managers and Board of Directors members
     try:
-        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", preliminary_review_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", preliminary_review_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", preliminary_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, preliminary_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, preliminary_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DMC, preliminary_review_path)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
@@ -416,8 +420,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     if 'feedback_for_researcher' in preliminary_review:
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
-    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers',
-                                    "")['arguments'][1])
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data request has been approved
     # or rejected
@@ -445,8 +448,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Check if user is authorized. If not, return PermissionError
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
         isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
@@ -492,7 +495,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
             log.write(ctx, "User is not a data manager.")
@@ -513,9 +516,9 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Give read permission on the data manager review to data managers and Board of Directors members
     try:
-        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", datamanager_review_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", datamanager_review_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", datamanager_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, datamanager_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, datamanager_review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DMC, datamanager_review_path)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the preliminary review file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
@@ -538,8 +541,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     if 'datamanager_remarks' in datamanager_review:
         datamanager_remarks = datamanager_review['datamanager_remarks']
 
-    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson("datarequests-research-board-of-directors",
-                                                               "")['arguments'][1])
+    bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
 
     # Send emails
     for bod_member_email in bod_member_emails:
@@ -566,8 +568,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     # Check if user is authorized. If not, return PermissionError
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
         isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
@@ -708,7 +710,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Check if user is a member of the Board of Directors. If not, do not
     # allow assignment
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
@@ -729,9 +731,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Give read permission on the assignment to data managers and Board of Directors members
     try:
-        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", assignment_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", assignment_path)
-        msi.set_acl(ctx, "default", "read", "datarequests-research-data-management-committee", assignment_path)
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, assignment_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, assignment_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DMC, assignment_path)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the assignment file.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
@@ -791,7 +793,7 @@ def assign_request(ctx, assignees, request_id):
     # Check if user is a data manager. If not, do not the user to assign the
     # request
     try:
-        isbodmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isbodmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isbodmember:
             raise Exception
@@ -886,7 +888,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Give read permission on the review to Board of Director members
     try:
-        msi.set_acl(ctx, "default", "read", "datarequests-research-board-of-directors", review_path)
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, review_path)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
@@ -929,9 +931,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
         datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
         researcher = datarequest['researchers']['contacts'][0]
 
-        bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(
-                                       'datarequests-research-board-of-directors',
-                                       "")['arguments'][1])
+        bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
 
         # Send email to researcher and data manager notifying them of the
         # submission of this data request
@@ -953,7 +953,7 @@ def api_datarequest_reviews_get(ctx, request_id):
 
     # Check if user is authorized. If not, return PermissionError
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
             log.write(ctx, "User is not authorized to view this review.")
@@ -1004,7 +1004,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
     try:
-        isboardmember = user.is_member_of(ctx, "datarequests-research-board-of-directors")
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
             log.write(ctx, "User is not a member of the Board of Directors.")
@@ -1044,8 +1044,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     if 'feedback_for_researcher' in evaluation:
         feedback_for_researcher = evaluation['feedback_for_researcher']
 
-    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(
-                                    'datarequests-research-datamanagers', "")['arguments'][1])
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
 
     # Send an email to the researcher informing them of whether their data
     # request has been approved or rejected.
@@ -1080,7 +1079,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
             log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
@@ -1158,7 +1157,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
 
     try:
-        msi.set_acl(ctx, "default", "read", "datarequests-research-datamanagers", coll_path + "/" + SIGDTA_FILENAME)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path + "/" + SIGDTA_FILENAME)
     except Exception:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
@@ -1168,7 +1167,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
 
     # Get parameters needed for sending emails
     datamanager_emails = ""
-    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson('datarequests-research-datamanagers', datamanager_emails)['arguments'][1])
+    datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, datamanager_emails)['arguments'][1])
 
     # Send an email to the data manager informing them that the DTA has been
     # signed by the researcher
@@ -1194,7 +1193,7 @@ def api_datarequest_data_ready(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isdatamanager = user.is_member_of(ctx, "datarequests-research-datamanagers")
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
             log.write(ctx, "User is not authorized to mark the data as ready.")
