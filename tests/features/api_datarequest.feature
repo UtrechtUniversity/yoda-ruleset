@@ -76,23 +76,26 @@ Feature: Datarequest API
         Then the response status code is "200"
         And request status is "APPROVED"
 
-# 'api_datarequest_dta_post_upload_actions',
-#    Scenario: Datarequest DTA post upload actions
-#        Given datarequest exists
-#        And the Yoda datarequest DTA post upload actions API is queried with request id
-#        Then the response status code is "200"
+    Scenario: Datarequest datamanager upload DTA
+        Given user "datamanager" is authenticated
+        And datarequest exists
+        And DTA is uploaded
+        Then the response status code is "200"
+        And request status is "DTA_READY"
 
-# 'api_datarequest_signed_dta_post_upload_actions',
-#    Scenario: Datarequest signed DTA post upload actions
-#        Given datarequest exists
-#        And the Yoda datarequest signed DTA post upload actions API is queried with request id
-#        Then the response status code is "200"
+    Scenario: Datarequest researcher upload signed DTA
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And signed DTA is uploaded
+        Then the response status code is "200"
+        And request status is "DTA_SIGNED"
 
-# 'api_datarequest_data_ready'
-#    Scenario: Datarequest DTA ready actions
-#        Given datarequest exists
-#        And the Yoda datarequest DTA ready API is queried with request id
-#        Then the response status code is "200"
+    Scenario: Datarequest datamanager data ready
+        Given user "datamanager" is authenticated
+        And datarequest exists
+        And the datarequest data ready API is queried with request id
+        Then the response status code is "200"
+        And request status is "DATA_READY"
 
 #    Scenario: Datarequest resubmit
 #        Given the Yoda datarequest submit API is queried with <data> and <previous_request_id>

@@ -15,7 +15,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request
+from conftest import api_request, post_form_data
 
 scenarios('../features/api_datarequest.feature')
 
@@ -187,11 +187,29 @@ def api_datarequest_evaluation_submit(user, datarequest_id):
     )
 
 
-@given('the Yoda datarequest DTA post upload actions API is queried with request id', target_fixture="api_response")
-def api_datarequest_dta_post_upload_actions(user, datarequest_id):
+@given('DTA is uploaded', target_fixture="api_response")
+def api_datarequest_dta_upload(user, datarequest_id):
+    return post_form_data(
+        user,
+        "/datarequest/datarequest/upload_dta/{}".format(datarequest_id),
+        ("dta.pdf", "test")
+    )
+
+
+@given('signed DTA is uploaded', target_fixture="api_response")
+def api_datarequest_signed_dta_upload(user, datarequest_id):
+    return post_form_data(
+        user,
+        "/datarequest/datarequest/upload_signed_dta/{}".format(datarequest_id),
+        ("signed_dta.pdf", "test")
+    )
+
+
+@given('the datarequest data ready API is queried with request id', target_fixture="api_response")
+def api_datarequest_data_ready(user, datarequest_id):
     return api_request(
         user,
-        "api_datarequest_dta_post_upload_actions",
+        "datarequest_data_ready",
         {"request_id": datarequest_id}
     )
 

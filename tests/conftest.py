@@ -20,7 +20,7 @@ password = "test"
 users = ['researcher',
          'datamanager',
          'bodmember',
-         'dmcmember']]
+         'dmcmember']
 user_cookies = {}
 
 
