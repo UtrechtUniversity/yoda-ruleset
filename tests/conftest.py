@@ -13,7 +13,7 @@ from pytest_bdd import (
     parsers,
 )
 
-users = ['researcher', 'datamanager']
+users = ['researcher', 'datamanager', 'bodmember', 'dmcmember']
 user_cookies = {}
 
 def pytest_addoption(parser):
