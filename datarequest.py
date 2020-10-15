@@ -870,7 +870,7 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     # Construct filename
     coll_name = '/tempZone/home/datarequests-research/' + request_id
-    file_name = 'assignment_bodmember.json'
+    file_name = 'assignment.json'
 
     # Get the size of the assignment JSON file and the review's status
     rows = row_iterator(["DATA_NAME", "COLL_NAME"],
