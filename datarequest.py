@@ -1067,7 +1067,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         api.Error("transition", "Status transition not allowed.")
 
     # Read evaluation into dictionary
-    evaluation = json.loads(data)
+    evaluation = data
 
     # Check if user is a member of the Board of Directors. If not, do not
     # allow submission of the evaluation
