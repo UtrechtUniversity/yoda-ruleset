@@ -876,9 +876,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Construct path to collection of review
     coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
 
-    # Get username
-    client_name = user.name(ctx)
-
     # Write review data to disk
     try:
         review_path = coll_path + "/review_" + user.name(ctx) + ".json"
@@ -896,7 +893,6 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Remove the assignedForReview attribute of this user by first fetching
     # the list of reviewers ...
     reviewers = []
-    client_zone = user.zone(ctx)
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
@@ -909,7 +905,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
         reviewers.append(reviewer)
 
     # ... then removing the current reviewer from the list
-    reviewers.remove(client_name)
+    reviewers.remove(user.name(ctx))
 
     # ... and then updating the assignedForReview attributes
     status_code = ""
@@ -1210,7 +1206,7 @@ def api_datarequest_data_ready(ctx, request_id):
     datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
     researcher = datarequest['researchers']['contacts'][0]
 
-    # Send email to researcher notifying him of of the submission of his
+    # Send email to researcher notifying him of the submission of his
     # request
     mail_data_ready(ctx, researcher['email'], researcher['name'], request_id)
 
