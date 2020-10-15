@@ -50,6 +50,7 @@ ASSIGN_FILENAME = "assignment.json"
 DTA_FILENAME    = "dta.pdf"
 SIGDTA_FILENAME = "dta_signed.pdf"
 
+
 # List of valid datarequest statuses
 class status(Enum):
     SUBMITTED                         = 'SUBMITTED'
