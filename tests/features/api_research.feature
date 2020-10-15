@@ -54,6 +54,16 @@ Feature: Research API
             | file                    | file_renamed               | collection                       |
             | yoda-metadata_copy.json | yoda-metadata_renamed.json | /tempZone/home/research-initial1 |
 
+    Scenario: Research file upload
+        Given user "researcher" is authenticated
+        And a file "<file>" is uploaded in "<folder>"
+        Then the response status code is "200"
+        And file "<file>" exists in "<collection>"
+
+        Examples:
+            | file                 | folder             | collection                       |
+            | upload_test_file.txt | /research-initial1 | /tempZone/home/research-initial1 |
+
     Scenario: Research file delete
         Given user "researcher" is authenticated
         And the Yoda research file delete API is queried with "<file>" and "<collection>"
@@ -63,6 +73,7 @@ Feature: Research API
         Examples:
             | file                       | collection                       |
             | yoda-metadata_renamed.json | /tempZone/home/research-initial1 |
+            | upload_test_file.txt       | /tempZone/home/research-initial1 |
 
     Scenario: Research collection details
         Given user "researcher" is authenticated

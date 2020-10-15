@@ -11,7 +11,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request
+from conftest import api_request, post_form_data
 
 scenarios('../features/api_research.feature')
 
@@ -58,6 +58,15 @@ def api_research_file_rename(user, file, file_renamed, collection):
         user,
         "research_file_rename",
         {"new_file_name": file_renamed, "coll": collection, "org_file_name": file}
+    )
+
+
+@given('a file "<file>" is uploaded in "<folder>"', target_fixture="api_response")
+def api_research_file_upload(user, file, folder):
+    return post_form_data(
+        user,
+        "research/browse/upload",
+        {"file": (file, "test"), "filepath": (None, folder)}
     )
 
 
