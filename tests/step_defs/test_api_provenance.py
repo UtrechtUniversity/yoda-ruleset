@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Provenance API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Provenance API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -21,8 +17,9 @@ scenarios('../features/api_provenance.feature')
 
 
 @given('the Yoda provenance log API is queried with "<collection>"', target_fixture="api_response")
-def api_provenance_log(collection):
+def api_provenance_log(user, collection):
     return api_request(
+        user,
         "provenance_log",
         {"coll": collection}
     )

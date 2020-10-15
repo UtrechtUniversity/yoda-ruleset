@@ -1,7 +1,8 @@
 Feature: Search API
 
     Scenario: Search file
-        Given the Yoda search file API is queried with "<file>"
+        Given user "researcher" is authenticated
+        And the Yoda search file API is queried with "<file>"
         Then the response status code is "200"
         And result "<result>" is found
 
@@ -10,7 +11,8 @@ Feature: Search API
             | yoda-metadata.json | /research-initial1/yoda-metadata.json |
 
     Scenario: Search folder
-        Given the Yoda search folder API is queried with "<folder>"
+        Given user "researcher" is authenticated
+        And the Yoda search folder API is queried with "<folder>"
         Then the response status code is "200"
         And result "<result>" is found
 
@@ -19,7 +21,8 @@ Feature: Search API
             | research-initial1 | /research-initial1 |
 
     Scenario: Search metadata
-        Given the Yoda search metadata API is queried with "<metadata>"
+        Given user "researcher" is authenticated
+        And the Yoda search metadata API is queried with "<metadata>"
         Then the response status code is "200"
         And result "<result>" is found
 
@@ -28,7 +31,8 @@ Feature: Search API
             | yoda     | /research-initial1 |
 
     Scenario: Search folder status
-        Given the Yoda search folder status API is queried with "<status>"
+        Given user "researcher" is authenticated
+        And the Yoda search folder status API is queried with "<status>"
         Then the response status code is "200"
         And result "<result>" is found
 
