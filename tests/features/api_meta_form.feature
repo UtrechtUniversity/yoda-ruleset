@@ -1,7 +1,8 @@
 Feature: Meta form API
 
     Scenario: Meta form save
-        Given the Yoda meta form save API is queried with metadata and "<collection>"
+        Given user "researcher" is authenticated
+        And the Yoda meta form save API is queried with metadata and "<collection>"
         Then the response status code is "200"
         And file "<file>" exists in "<collection>"
 
@@ -11,7 +12,8 @@ Feature: Meta form API
 
 
     Scenario: Meta form load
-        Given the Yoda meta form load API is queried with "<collection>"
+        Given user "researcher" is authenticated
+        And the Yoda meta form load API is queried with "<collection>"
         Then the response status code is "200"
         And metadata is returned for "<collection>"
 

@@ -1,22 +1,28 @@
 Feature: Browse API
 
     Scenario: Browse folder
-        Given the Yoda browse folder API is queried with "<collection>"
+        Given user "<user>" is authenticated
+        And the Yoda browse folder API is queried with "<collection>"
         Then the response status code is "200"
         And the browse result contains "<result>"
 
         Examples:
-            | collection                                | result                       |
-            | /tempZone/home/research-initial           | testdata                     |
-            | /tempZone/home/research-initial/testdata  | lorem.txt                    |
-            | /tempZone/home/research-initial/testdata  | SIPI_Jelly_Beans_4.1.07.tiff |
+            | user        | collection                               | result                       |
+            | researcher  | /tempZone/home/research-initial          | testdata                     |
+            | researcher  | /tempZone/home/research-initial/testdata | lorem.txt                    |
+            | researcher  | /tempZone/home/research-initial/testdata | SIPI_Jelly_Beans_4.1.07.tiff |
+            | datamanager | /tempZone/home/research-initial          | testdata                     |
+            | datamanager | /tempZone/home/research-initial/testdata | lorem.txt                    |
+            | datamanager | /tempZone/home/research-initial/testdata | SIPI_Jelly_Beans_4.1.07.tiff |
 
     Scenario: Browse collections
-        Given the Yoda browse collections API is queried with "<collection>"
+        Given user "<user>" is authenticated
+        And the Yoda browse collections API is queried with "<collection>"
         Then the response status code is "200"
         And the browse result contains "<result>"
         And the browse result does not contain "<notresult>"
 
         Examples:
-            | collection                       | result          | notresult          |
-            |  /tempZone/home/research-initial | testdata        | yoda-metadata.json |
+            | user        | collection                      | result   | notresult          |
+            | researcher  | /tempZone/home/research-initial | testdata | yoda-metadata.json |
+            | datamanager | /tempZone/home/research-initial | testdata | yoda-metadata.json |

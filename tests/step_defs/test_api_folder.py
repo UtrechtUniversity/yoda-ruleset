@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Folder API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Folder API feature tests."""
 
 from pytest_bdd import (
     given,
@@ -18,64 +14,72 @@ scenarios('../features/api_folder.feature')
 
 
 @given('the Yoda folder lock API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_lock(folder):
+def api_folder_lock(user, folder):
     return api_request(
+        user,
         "folder_lock",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder get locks API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_get_locks(folder):
+def api_folder_get_locks(user, folder):
     return api_request(
+        user,
         "folder_get_locks",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder unlock API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_unlock(folder):
+def api_folder_unlock(user, folder):
     return api_request(
+        user,
         "folder_unlock",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder submit API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_submit(folder):
+def api_folder_submit(user, folder):
     return api_request(
+        user,
         "folder_submit",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder unsubmit API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_unsubmit(folder):
+def api_folder_unsubmit(user, folder):
     return api_request(
+        user,
         "folder_unsubmit",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder reject API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_reject(folder):
+def api_folder_reject(user, folder):
     return api_request(
+        user,
         "folder_reject",
         {"coll": folder}
     )
 
 
 @given('the Yoda folder accept API is queried with "<folder>"', target_fixture="api_response")
-def api_folder_accept(folder):
+def api_folder_accept(user, folder):
     return api_request(
+        user,
         "folder_accept",
         {"coll": folder}
     )
 
 
 @given('metadata JSON exists in "<folder>"')
-def api_response(folder):
+def api_response(user, folder):
     http_status, _ = api_request(
+        user,
         "meta_form_save",
         {"coll": folder,
          "metadata": {
@@ -113,12 +117,13 @@ def api_response_code(api_response, code):
 
 
 @then(parsers.parse('folder "<folder>" status is "{status}"'))
-def folder_status(folder, status):
+def folder_status(user, folder, status):
     # Status FOLDER is empty.
     if status == "FOLDER":
         status = ""
 
     _, body = api_request(
+        user,
         "research_collection_details",
         {"path": folder}
     )
