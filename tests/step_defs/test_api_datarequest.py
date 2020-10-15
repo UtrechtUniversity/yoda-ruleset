@@ -147,7 +147,7 @@ def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"decision": "Accepted for DMC review", "response_to_dm_remarks": "test", "assign_to": ["functionaladminpriv"]}, "request_id": datarequest_id}
+        {"data": {"decision": "Accepted for DMC review", "response_to_dm_remarks": "test", "assign_to": ["dmcmember"]}, "request_id": datarequest_id}
     )
 
 
