@@ -192,7 +192,7 @@ def api_datarequest_dta_upload(user, datarequest_id):
     return post_form_data(
         user,
         "/datarequest/datarequest/upload_dta/{}".format(datarequest_id),
-        ("dta.pdf", "test")
+        {"data": ("dta.pdf", "test")}
     )
 
 
@@ -201,7 +201,8 @@ def api_datarequest_signed_dta_upload(user, datarequest_id):
     return post_form_data(
         user,
         "/datarequest/datarequest/upload_signed_dta/{}".format(datarequest_id),
-        ("signed_dta.pdf", "test")
+        {"data": ("signed_dta.pdf", "test")}
+
     )
 
 
