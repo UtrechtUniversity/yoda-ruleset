@@ -16,7 +16,7 @@ Run tests:
 $ pytest
 ```
 
-If Yoda is not running on development address, use --url to specify address:
+If Yoda is not running on development address or test password is not the default, use --url and --password to specify:
 ```bash
-$ pytest --url <url>
+$ pytest --url <url> --password <password>
 ```

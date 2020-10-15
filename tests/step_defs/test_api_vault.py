@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Vault API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Vault API feature tests."""
 
 from pytest_bdd import (
     given,
@@ -18,8 +14,9 @@ scenarios('../features/api_vault.feature')
 
 
 @given('data package exists in "<vault>"', target_fixture="data_package")
-def data_package(vault):
+def data_package(user, vault):
     http_status, body = api_request(
+        user,
         "browse_collections",
         {"coll": vault, "sort_order": "desc"}
     )
@@ -31,64 +28,72 @@ def data_package(vault):
 
 
 @given('the Yoda vault submit API is queried on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_submit(vault, data_package):
+def api_vault_submit(user, vault, data_package):
     return api_request(
+        user,
         "vault_submit",
         {"coll": vault + "/" + data_package}
     )
 
 
 @given('the Yoda vault cancel API is queried on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_cancel(vault, data_package):
+def api_vault_cancel(user, vault, data_package):
     return api_request(
+        user,
         "vault_cancel",
         {"coll": vault + "/" + data_package}
     )
 
 
 @given('the Yoda vault approve API is queried on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_approve(vault, data_package):
+def api_vault_approve(user, vault, data_package):
     return api_request(
+        user,
         "vault_approve",
         {"coll": vault + "/" + data_package}
     )
 
 
 @given('the Yoda vault preservable formats lists API is queried', target_fixture="api_response")
-def api_vault_preservable_formats_lists():
+def api_vault_preservable_formats_lists(user):
     return api_request(
+        user,
         "vault_preservable_formats_lists",
         {}
     )
 
 
 @given('the Yoda vault unpreservable files API is queried with "<list>" on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_unpreservable_files(list, vault, data_package):
+def api_vault_unpreservable_files(user, list, vault, data_package):
     return api_request(
+        user,
         "vault_unpreservable_files",
         {"coll": vault + "/" + data_package, "list_name": list}
     )
 
 
 @given('the Yoda vault system metadata API is queried on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_system_metadata(vault, data_package):
+def api_vault_system_metadata(user, vault, data_package):
     return api_request(
+        user,
         "vault_system_metadata",
         {"coll": vault + "/" + data_package}
     )
 
 
 @given('the Yoda vault collection details API is queried on datapackage in "<vault>"', target_fixture="api_response")
-def api_vault_collection_details(vault, data_package):
+def api_vault_collection_details(user, vault, data_package):
     return api_request(
+        user,
         "vault_collection_details",
         {"path": vault + "/" + data_package}
     )
 
 
 @given('the Yoda vault get publication terms API is queried', target_fixture="api_response")
-def api_vault_get_publication_terms():
+def api_vault_get_publication_terms(user):
     return api_request(
+        user,
         "vault_get_publication_terms",
         {}
     )
@@ -101,8 +106,9 @@ def api_response_code(api_response, code):
 
 
 @then(parsers.parse('data package status is "{status}"'))
-def data_package_status(vault, data_package, status):
+def data_package_status(user, vault, data_package, status):
     _, body = api_request(
+        user,
         "vault_collection_details",
         {"path": vault + "/" + data_package}
     )

@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Meta API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Meta API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -21,8 +17,9 @@ scenarios('../features/api_meta.feature')
 
 
 @given('metadata JSON exists in "<collection>"')
-def api_meta_form_save(collection):
+def api_meta_form_save(user, collection):
     http_status, _ = api_request(
+        user,
         "meta_form_save",
         {"coll": collection,
          "metadata": {
@@ -54,10 +51,11 @@ def api_meta_form_save(collection):
 
 
 @given('subcollection "<target_coll>" exists')
-def subcollection_exists(target_coll):
+def subcollection_exists(user, target_coll):
     x = target_coll.split('/')
 
     http_status, _ = api_request(
+        user,
         "research_folder_add",
         {"coll": "/".join(x[:-1]), "new_folder_name": x[-1]}
     )
@@ -66,16 +64,18 @@ def subcollection_exists(target_coll):
 
 
 @given('the Yoda meta remove API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_meta_remove(collection):
+def api_meta_remove(user, collection):
     return api_request(
+        user,
         "meta_remove",
         {"coll": collection}
     )
 
 
 @given('the Yoda meta clone file API is queried with "<target_coll>"', target_fixture="api_response")
-def api_response(target_coll):
+def api_response(user, target_coll):
     return api_request(
+        user,
         "meta_clone_file",
         {"target_coll": target_coll}
     )
@@ -88,8 +88,9 @@ def api_response_code(api_response, code):
 
 
 @then('metadata JSON is removed from "<collection>"')
-def metadata_removed(collection):
+def metadata_removed(user, collection):
     http_status, body = api_request(
+        user,
         "browse_folder",
         {"coll": collection}
     )
@@ -106,8 +107,9 @@ def metadata_removed(collection):
 
 
 @then('metadata JSON is cloned into "<target_coll>"')
-def metadata_cloned(target_coll):
+def metadata_cloned(user, target_coll):
     http_status, body = api_request(
+        user,
         "meta_form_load",
         {"coll": target_coll}
     )

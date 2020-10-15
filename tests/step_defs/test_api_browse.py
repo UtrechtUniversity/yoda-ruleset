@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Browse API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Browse API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -21,16 +17,18 @@ scenarios('../features/api_browse.feature')
 
 
 @given('the Yoda browse folder API is queried with "<collection>"', target_fixture="api_response")
-def api_browse_folder(collection):
+def api_browse_folder(user, collection):
     return api_request(
+        user,
         "browse_folder",
         {"coll": collection}
     )
 
 
 @given('the Yoda browse collections API is queried with "<collection>"', target_fixture="api_response")
-def api_browse_collections(collection):
+def api_browse_collections(user, collection):
     return api_request(
+        user,
         "browse_collections",
         {"coll": collection}
     )

@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Research API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Research API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -21,64 +17,72 @@ scenarios('../features/api_research.feature')
 
 
 @given('the Yoda research folder add API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
-def api_research_folder_add(folder, collection):
+def api_research_folder_add(user, folder, collection):
     return api_request(
+        user,
         "research_folder_add",
         {"coll": collection, "new_folder_name": folder}
     )
 
 
 @given('the Yoda research folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"', target_fixture="api_response")
-def api_research_folder_rename(folder_old, folder, collection):
+def api_research_folder_rename(user, folder_old, folder, collection):
     return api_request(
+        user,
         "research_folder_rename",
         {"new_folder_name": folder, "coll": collection, "org_folder_name": folder_old}
     )
 
 
 @given('the Yoda research folder delete API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
-def api_research_folder_delete(folder, collection):
+def api_research_folder_delete(user, folder, collection):
     return api_request(
+        user,
         "research_folder_delete",
         {"coll": collection, "folder_name": folder}
     )
 
 
 @given('the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"', target_fixture="api_response")
-def api_research_file_copy(file, copy, collection):
+def api_research_file_copy(user, file, copy, collection):
     return api_request(
+        user,
         "research_file_copy",
         {"coll": collection, "file": file, "copy": copy}
     )
 
 
 @given('the Yoda research file rename API is queried with "<file>", "<file_renamed>" and "<collection>"', target_fixture="api_response")
-def api_research_file_rename(file, file_renamed, collection):
+def api_research_file_rename(user, file, file_renamed, collection):
     return api_request(
+        user,
         "research_file_rename",
         {"new_file_name": file_renamed, "coll": collection, "org_file_name": file}
     )
 
 
 @given('the Yoda research file delete API is queried with "<file>" and "<collection>"', target_fixture="api_response")
-def api_research_file_delete(file, collection):
+def api_research_file_delete(user, file, collection):
     return api_request(
+        user,
         "research_file_delete",
         {"coll": collection, "file_name": file}
     )
 
 
 @given('the Yoda research system metadata API is queried with "<collection>"', target_fixture="api_response")
-def api_research_system_metadata(collection):
+def api_research_system_metadata(user, collection):
     return api_request(
+        user,
         "research_system_metadata",
         {"coll": collection}
     )
 
 
 @given('the Yoda research collection details API is queried with "<collection>"', target_fixture="api_response")
-def api_research_collection_details(collection):
+def api_research_collection_details(user, collection):
     return api_request(
+        user,
         "research_collection_details",
         {"path": collection}
     )
@@ -90,8 +94,9 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-def object_exists(object, collection):
+def object_exists(user, object, collection):
     http_status, body = api_request(
+        user,
         "browse_folder",
         {"coll": collection}
     )
@@ -108,30 +113,30 @@ def object_exists(object, collection):
 
 
 @then('folder "<folder>" exists in "<collection>"')
-def folder_exists(folder, collection):
-    assert object_exists(folder, collection)
+def folder_exists(user, folder, collection):
+    assert object_exists(user, folder, collection)
 
 
 @then('folder "<folder>" does not exists in "<collection>"')
-def folder_not_exists(folder, collection):
-    assert not object_exists(folder, collection)
+def folder_not_exists(user, folder, collection):
+    assert not object_exists(user, folder, collection)
 
 
 @then('file "<file>" exists in "<collection>"')
-def file_exists(file, collection):
-    assert object_exists(file, collection)
+def file_exists(user, file, collection):
+    assert object_exists(user, file, collection)
 
 
 @then('file "<copy>" exists in "<collection>"')
-def file_copy_exists(copy, collection):
-    assert object_exists(copy, collection)
+def file_copy_exists(user, copy, collection):
+    assert object_exists(user, copy, collection)
 
 
 @then('file "<file_renamed>" exists in "<collection>"')
-def file_renamed_exists(file_renamed, collection):
-    assert object_exists(file_renamed, collection)
+def file_renamed_exists(user, file_renamed, collection):
+    assert object_exists(user, file_renamed, collection)
 
 
 @then('file "<file>" does not exist in "<collection>"')
-def file_not_exist(file, collection):
-    assert not object_exists(file, collection)
+def file_not_exist(user, file, collection):
+    assert not object_exists(user, file, collection)

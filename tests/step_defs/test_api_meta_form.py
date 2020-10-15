@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Meta form API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Meta form API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -21,8 +17,9 @@ scenarios('../features/api_meta_form.feature')
 
 
 @given('the Yoda meta form save API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_meta_form_save(collection):
+def api_meta_form_save(user, collection):
     return api_request(
+        user,
         "meta_form_save",
         {"coll": collection,
          "metadata": {
@@ -52,8 +49,9 @@ def api_meta_form_save(collection):
 
 
 @given('the Yoda meta form load API is queried with "<collection>"', target_fixture="api_response")
-def api_meta_form_load(collection):
+def api_meta_form_load(user, collection):
     return api_request(
+        user,
         "meta_form_load",
         {"coll": collection}
     )
@@ -66,8 +64,9 @@ def api_response_code(api_response, code):
 
 
 @then('file "<file>" exists in "<collection>"')
-def file_exists(file, collection):
+def file_exists(user, file, collection):
     http_status, body = api_request(
+        user,
         "browse_folder",
         {"coll": collection}
     )
