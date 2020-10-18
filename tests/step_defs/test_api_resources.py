@@ -246,21 +246,3 @@ def api_response_code(api_response, code):
     http_status, _ = api_response
 
     assert http_status == code
-
-"""
-@then('result "<result>" is found')
-def api_response_contents(api_response, result):
-    _, body = api_response
-
-    assert len(body['data']['items']) > 0
-
-    # Check expected result is in search results.
-    found = False
-    for item in body['data']['items']:
-        print(item)
-        if item["main_original_dataname"] == result:
-            found = True
-            break
-
-    assert found
-""" 	
