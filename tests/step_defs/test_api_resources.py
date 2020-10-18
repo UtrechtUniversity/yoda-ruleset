@@ -21,8 +21,9 @@ scenarios('../features/api_resources.feature')
 
 
 @given('the Yoda resources API is queried for all research groups of current datamanager', target_fixture="api_response")
-def api_get_groups_of_datamanger():
+def api_get_groups_of_datamanger(user):
     return api_request(
+        user,
         "resource_groups_dm",
         {}
     )
@@ -43,8 +44,9 @@ def api_response_groups_for_datamanager(api_response, group):
 
 
 @given('the Yoda resources API is queried by a datamanager for monthly storage data', target_fixture="api_response")
-def api_get_monthly_stats_dm():
+def api_get_monthly_stats_dm(user):
     return api_request(
+        user,
         "resource_monthly_stats_dm",
         {}
     )
@@ -61,8 +63,9 @@ def api_response_monthly_storage_for_dm(api_response):
 
 
 @given('the Yoda resources API is queried by a for statistics data to be used as a feed for an export file', target_fixture="api_response")
-def api_get_monthly_category_stats_export_dm():
+def api_get_monthly_category_stats_export_dm(user):
     return api_request(
+        user,
         "resource_monthly_category_stats_export_dm",
         {}
     )
@@ -81,8 +84,9 @@ def api_response_storage_data_for_export(api_response):
 
 
 @given('the Yoda resources API is queried for all monthly statistics', target_fixture="api_response")
-def api_monthly_stats():
+def api_monthly_stats(user):
     return api_request(
+        user,
         "resource_monthly_stats",
         {}
     )
@@ -98,8 +102,9 @@ def api_response_monthly_statistics_rodsadmin(api_response):
 
 
 @given('the Yoda resources API is queried for all resources and tiers', target_fixture="api_response")
-def api_resource_and_tier_data():
+def api_resource_and_tier_data(user):
     return api_request(
+        user,
         "resource_resource_and_tier_data",
         {}
     )
@@ -116,8 +121,9 @@ def api_response_list_of_resources_and_tiers(api_response):
 
 
 @given('the Yoda resources API is queried for tier_name of "<resource_name>"', target_fixture="api_response")
-def api_get_tier_on_resource(resource_name):
+def api_get_tier_on_resource(user, resource_name):
     return api_request(
+        user,
         "resource_tier",
         {"res_name": resource_name}
     )
@@ -131,8 +137,9 @@ def api_response_tier_name_for_resource(api_response, tier_name):
 
 
 @given('the Yoda resources API is queried for all available tiers', target_fixture="api_response")
-def api_get_tiers():
+def api_get_tiers(user):
     return api_request(
+        user,
         "resource_get_tiers",
         {}
     )
@@ -146,8 +153,9 @@ def api_response_all_tiers(api_response, tier_name):
 
 
 @given('the Yoda resources API is requested to save tier "<tier_name>" for resource "<resource_name>"', target_fixture="api_response")
-def api_save_tier_for_resource(resource_name, tier_name):
+def api_save_tier_for_resource(user, resource_name, tier_name):
     return api_request(
+        user,
         "resource_save_tier",
         {"resource_name": resource_name, "tier_name": tier_name}
     )
@@ -157,12 +165,15 @@ def api_save_tier_for_resource(resource_name, tier_name):
 def api_response_save_tier_name_successful(api_response):
     _, body = api_response
 
+    print(body)
+
     assert body['status'] == 'ok'
 
 
 @given('the Yoda resources API is queried for usertype of current user', target_fixture="api_response")
-def api_get_user_type():
+def api_get_user_type(user):
     return api_request(
+        user,
         "resource_user_get_type",
         {}
     )
@@ -176,8 +187,9 @@ def api_response_user_type(api_response, user_type):
 
 
 @given('the Yoda resources API is queried for research groups of current user', target_fixture="api_response")
-def api_get_user_research_groups():
+def api_get_user_research_groups(user):
     return api_request(
+        user,
         "resource_user_research_groups",
         {}
     )
@@ -191,8 +203,9 @@ def api_response_research_groups_for_user(api_response, research_group):
 
 
 @given('the Yoda resources API is queried to know if current user is datamanager', target_fixture="api_response")
-def api_is_user_datamanager():
+def api_is_user_datamanager(user):
     return api_request(
+        user,
         "resource_user_is_datamanager",
         {}
     )
@@ -206,8 +219,9 @@ def api_response_user_is_datamanager(api_response):
 
 
 @given('the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from month "<current_month>" backward', target_fixture="api_response")
-def api_get_monthly_user_research_groups(group_name, current_month):
+def api_get_monthly_user_research_groups(user, group_name, current_month):
     return api_request(
+        user,
         "resource_full_year_group_data",
         {"group_name": group_name, "current_month": int(current_month)}
     )
@@ -233,7 +247,7 @@ def api_response_code(api_response, code):
 
     assert http_status == code
 
-
+"""
 @then('result "<result>" is found')
 def api_response_contents(api_response, result):
     _, body = api_response
@@ -249,3 +263,4 @@ def api_response_contents(api_response, result):
             break
 
     assert found
+""" 	
