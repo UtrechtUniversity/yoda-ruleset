@@ -63,7 +63,7 @@
           "type": "string",
           "title": "Contact person in YOUth Data Management Committee (if any)",
           "enum": [
-            "Prof. Dr. M.J.N.L. Benders / Wilhelmina Children\'s Hospital, UMCU / Neonatology / m.benders@umcutrecht.nl",
+            "Prof. Dr. M.J.N.L. Benders / Wilhelmina Children's Hospital, UMCU / Neonatology / m.benders@umcutrecht.nl",
             "Prof. Dr. M. Dekovic / Utrecht University / Clinical Child and Family Studies / M.Dekovic@uu.nl",
             "Prof. Dr. S. Durston / UMCU / Psychiatry / s.durston@umcutrecht.nl",
             "Prof. Dr. H.E. Hulshoff Pol / UMCU / Psychiatry / h.e.hulshoff@umcutrecht.nl",
