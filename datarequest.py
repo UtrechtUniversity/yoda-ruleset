@@ -18,6 +18,7 @@ from util.query import Query
 from enum import Enum
 
 __all__ = ['api_datarequest_browse',
+           'api_schema_get',
            'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_is_owner',
@@ -36,19 +37,20 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
-DRCOLLECTION    = 'home/datarequests-research'
+DRCOLLECTION     = 'home/datarequests-research'
+SCHEMACOLLECTION = 'yoda/datarequest/schemas/youth'
 
-GROUP_DM        = "datarequests-research-datamanagers"
-GROUP_DMC       = "datarequests-research-data-management-committee"
-GROUP_BOD       = "datarequests-research-board-of-directors"
+GROUP_DM         = "datarequests-research-datamanagers"
+GROUP_DMC        = "datarequests-research-data-management-committee"
+GROUP_BOD        = "datarequests-research-board-of-directors"
 
-DR_FILENAME     = "datarequest.json"
-PR_REV_FILENAME = "preliminary_review.json"
-DM_REV_FILENAME = "datamanager_review.json"
-EVAL_FILENAME   = "evaluation.json"
-ASSIGN_FILENAME = "assignment.json"
-DTA_FILENAME    = "dta.pdf"
-SIGDTA_FILENAME = "dta_signed.pdf"
+DR_FILENAME      = "datarequest.json"
+PR_REV_FILENAME  = "preliminary_review.json"
+DM_REV_FILENAME  = "datamanager_review.json"
+EVAL_FILENAME    = "evaluation.json"
+ASSIGN_FILENAME  = "assignment.json"
+DTA_FILENAME     = "dta.pdf"
+SIGDTA_FILENAME  = "dta_signed.pdf"
 
 
 # List of valid datarequest statuses
@@ -234,6 +236,26 @@ def api_datarequest_browse(ctx,
 
     return OrderedDict([('total', qcoll.total_rows()),
                         ('items', colls)])
+
+
+@api.make()
+def api_schema_get(ctx, schema_name):
+    """Get a schema.
+
+       Arguments:
+       schema_name -- Name of schema.
+    """
+    # Define paths to schema and uischema
+    coll_path = "/" + user.zone(ctx) + "/" + SCHEMACOLLECTION
+    schema_path = coll_path + "/" + schema_name + "/" + "schema.json"
+    uischema_path = coll_path + "/" + schema_name + "/" + "uischema.json"
+
+    # Retrieve and read schema and uischema
+    schema = jsonutil.read(ctx, schema_path)
+    uischema = jsonutil.read(ctx, uischema_path)
+
+    # Return JSON with schema and uischema
+    return {"schema": schema, "uischema": uischema}
 
 
 @api.make()
