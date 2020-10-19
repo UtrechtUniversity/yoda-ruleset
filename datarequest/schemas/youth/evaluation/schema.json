@@ -1,0 +1,54 @@
+{
+  "type": "object",
+  "required": [
+    "evaluation"
+  ],
+  "properties": {
+    "evaluation": {
+      "type": "string",
+      "title": "This data request is",
+      "enum": [
+        "Approved",
+        "Rejected (resubmit)",
+        "Rejected"
+      ]
+    },
+    "internal_remarks": {
+      "type": "string",
+      "title": "Internal remarks, if any. Mandatory if data request is rejected. The researcher cannot read these remarks."
+    }
+  },
+  "dependencies": {
+    "evaluation": {
+      "oneOf": [
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Approved"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Rejected (resubmit)",
+                "Rejected"
+              ]
+            },
+            "feedback_for_researcher": {
+              "type": "string",
+              "title": "Feedback for researcher",
+              "description": "Please provide feedback to the researcher in case of rejection here. This feedback will be included in the rejection email."
+            }
+          },
+          "required": [
+            "internal_remarks", "feedback_for_researcher"
+          ]
+        }
+      ]
+    }
+  }
+}

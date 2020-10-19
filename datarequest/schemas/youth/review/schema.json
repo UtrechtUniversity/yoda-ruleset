@@ -1,0 +1,129 @@
+{
+  "type": "object",
+  "required": [
+    "evaluation",
+    "contribution",
+    "informed_consent_fit",
+    "research_question_answerability",
+    "study_quality",
+    "logistical_feasibility",
+    "study_value",
+    "researcher_expertise",
+    "biological_samples"
+  ],
+  "properties": {
+    "evaluation": {
+      "type": "string",
+      "title": "Would you approve / reject / reject (resubmit) this data request?",
+      "enum": [
+        "Approve",
+        "Reject (resubmit)",
+        "Reject"
+      ]
+    },
+    "evaluation_rationale": {
+      "type": "string",
+      "title": "Please provide a brief rationale for your evaluation.",
+      "description": "This is mandatory if the data request is rejected."
+    },
+    "contribution": {
+      "type": "string",
+      "title": "How much did the applicant involved contribute to YOUth with respect to recruitment, setup, and continuation of YOUth?"
+    },
+    "informed_consent_fit": {
+      "type": "string",
+      "title": "How does the research question fit with the provided informed consent of the participants of YOUth?"
+    },
+    "research_question_answerability": {
+      "type": "string",
+      "title": "Can the research question be answered with the requested YOUth data?"
+    },
+    "study_quality": {
+      "type": "string",
+      "title": "Is the quality of the proposal good? Is the study design correct?"
+    },
+    "logistical_feasibility": {
+      "type": "string",
+      "title": "Is the proposal logistically feasible?"
+    },
+    "study_value": {
+      "type": "string",
+      "title": "Is the study valuable?"
+    },
+    "researcher_expertise": {
+      "type": "string",
+      "title": "Does the researcher have the expertise necessary to correctly analyze and report on the research question at hand?"
+    },
+    "biological_samples": {
+      "type": "string",
+      "title": "Will biological samples be used?",
+      "enum": [
+        "No",
+        "Yes"
+      ],
+      "default": "No"
+    }
+  },
+  "dependencies": {
+    "evaluation": {
+      "oneOf": [
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Approve"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "evaluation": {
+              "enum": [
+                "Reject (resubmit)",
+                "Reject"
+              ]
+            }
+          },
+          "required": [
+            "evaluation_rationale"
+          ]
+        }
+      ]
+    },
+    "biological_samples": {
+      "oneOf": [
+        {
+          "properties": {
+            "biological_samples": {
+              "enum": [
+                "No"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "biological_samples": {
+              "enum": [
+                "Yes"
+              ]
+            },
+            "biological_samples_volume": {
+              "type": "string",
+              "title": "Is the volume requested reasonable and does it not seriously deplete the resource?"
+            },
+            "biological_samples_committee_approval": {
+              "type": "string",
+              "title": "Does the committee agree to the use of these samples for the specific research question?"
+            }
+          },
+          "required": [
+            "biological_samples_volume",
+            "biological_samples_committee_approval"
+          ]
+        }
+      ]
+    }
+  }
+}
