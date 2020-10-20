@@ -32,7 +32,7 @@ def api_search_revisions_on_filename(user, filename):
 @then('"<revision_search_result>" is found')
 def api_response_revision_search_result(api_response, revision_search_result):
     _, body = api_response
-	
+
     assert len(body['data']['items']) > 0
 
     # Check expected result is in reveived search results.
