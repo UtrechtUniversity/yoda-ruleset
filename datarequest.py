@@ -126,14 +126,12 @@ def status_get(ctx, request_id):
        request_id -- Unique identifier of the data request.
     """
     # Construct filename and filepath
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DR_FILENAME
-    file_path = coll_path + '/' + file_name
+    file_path = "{}/{}".format(coll_path, file_name)
 
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        ("COLL_NAME = '%s' AND DATA_NAME = '%s' AND "
-                         + "META_DATA_ATTR_NAME = 'status'") % (coll_path,
-                                                                file_name),
+                        ("COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'").format(coll_path, file_name),
                         AS_DICT, ctx)
     if rows.total_rows() == 1:
         current_status = list(rows)[0]['META_DATA_ATTR_VALUE']
@@ -153,7 +151,7 @@ def metadata_set(ctx, request_id, key, value):
     """
 
     # Construct path to the collection of the data request
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Add delayed rule to update data request status
     response_status = ""
@@ -179,7 +177,7 @@ def api_datarequest_browse(ctx,
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
     """
-    coll = "/" + user.zone(ctx) + "/" + DRCOLLECTION
+    coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -248,9 +246,9 @@ def api_datarequest_schema_get(ctx, schema_name):
        schema_name -- Name of schema.
     """
     # Define paths to schema and uischema
-    coll_path = "/" + user.zone(ctx) + "/" + SCHEMACOLLECTION
-    schema_path = coll_path + "/" + schema_name + "/" + SCHEMA_FILENAME
-    uischema_path = coll_path + "/" + schema_name + "/" + UISCHEMA_FILENAME
+    coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
+    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA_FILENAME)
+    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA_FILENAME)
 
     # Retrieve and read schema and uischema
     try:
@@ -272,8 +270,8 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     """
     timestamp = datetime.now()
     request_id = str(timestamp.strftime('%s'))
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
-    file_path = coll_path + "/" + DR_FILENAME
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path = "{}/{}".format(coll_path, DR_FILENAME)
 
     # Create collection
     try:
@@ -351,16 +349,14 @@ def api_datarequest_get(ctx, request_id):
         return api.Error("permission_error", "Something went wrong during permission checking.")
 
     # Construct filename and filepath
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DR_FILENAME
-    file_path = coll_path + "/" + file_name
+    file_path = "{}/{}".format(coll_path, file_name)
 
     try:
         # Get request status
         rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            "COLL_NAME = '%s'" % coll_path
-                            + " AND DATA_NAME = '%s'" % file_name
-                            + " AND META_DATA_ATTR_NAME = 'status'",
+                            "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll_path, file_name),
                             AS_DICT, ctx)
         for row in rows:
             request_status = row['META_DATA_ATTR_VALUE']
@@ -409,11 +405,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Write preliminary review data to disk
     try:
-        preliminary_review_path = coll_path + "/" + PR_REV_FILENAME
+        preliminary_review_path = "{}/{}".format(coll_path, PR_REV_FILENAME)
         jsonutil.write(ctx, preliminary_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write preliminary review data to disk')
@@ -442,7 +438,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
     researcher = datarequest['researchers']['contacts'][0]
 
     if 'feedback_for_researcher' in preliminary_review:
@@ -488,9 +484,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = PR_REV_FILENAME
-    file_path = coll_path + "/" + file_name
+    file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the review JSON file
     try:
@@ -533,11 +529,11 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Write data manager review data to disk
     try:
-        datamanager_review_path = coll_path + "/" + DM_REV_FILENAME
+        datamanager_review_path = "{}/{}".format(coll_path, DM_REV_FILENAME)
         jsonutil.write(ctx, datamanager_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
@@ -608,9 +604,9 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DM_REV_FILENAME
-    file_path = coll_path + "/" + file_name
+    file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the data manager review JSON file
     try:
@@ -644,7 +640,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
                      owner: True/False
     """
     # Construct path to the collection of the datarequest
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
@@ -698,14 +694,12 @@ def datarequest_is_reviewer(ctx, request_id):
     # data request file for these attributes
 
     # Declare variables needed for retrieving the list of reviewers
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     reviewers = []
 
     # Retrieve list of reviewers
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '%s' AND " % coll_path
-                        + "DATA_NAME = '%s' AND " % DR_FILENAME
-                        + "META_DATA_ATTR_NAME = 'assignedForReview'",
+                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DR_FILENAME),
                         AS_DICT, ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
@@ -748,11 +742,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Write assignment data to disk
     try:
-        assignment_path = coll_path + "/" + ASSIGN_FILENAME
+        assignment_path = "{}/{}".format(coll_path, ASSIGN_FILENAME)
         jsonutil.write(ctx, assignment_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
@@ -785,7 +779,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get source data needed for sending emails
-    datarequest      = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+    datarequest      = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
     researcher       = datarequest['researchers']['contacts'][0]
     research_context = datarequest['research_context']
 
@@ -830,7 +824,7 @@ def assign_request(ctx, assignees, request_id):
         return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
 
     # Construct data request collection path
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Assign the data request by adding a delayed rule that sets one or more
     # "assignedForReview" attributes on the datarequest (the number of
@@ -858,9 +852,9 @@ def api_datarequest_assignment_get(ctx, request_id):
     request_id = str(request_id)
 
     # Construct filename
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = ASSIGN_FILENAME
-    file_path = coll_path + "/" + file_name
+    file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the assignment JSON file
     try:
@@ -902,11 +896,11 @@ def api_datarequest_review_submit(ctx, data, request_id):
         return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
 
     # Construct path to collection of review
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Write review data to disk
     try:
-        review_path = coll_path + "/review_" + user.name(ctx) + ".json"
+        review_path = "{}/review_{}.json".format(coll_path, user.name(ctx))
         jsonutil.write(ctx, review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write review data to disk')
@@ -924,8 +918,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND ".format(coll_path, DR_FILENAME)
-        + "META_DATA_ATTR_NAME = 'assignedForReview'",
+        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DR_FILENAME),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -952,7 +945,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
         status_set(ctx, request_id, status.REVIEWED)
 
         # Get source data needed for sending emails
-        datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+        datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
         researcher = datarequest['researchers']['contacts'][0]
 
         bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
@@ -987,17 +980,16 @@ def api_datarequest_reviews_get(ctx, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct filename
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = 'review_%.json'
 
     # Get the review JSON files
     reviews = []
     rows = row_iterator(["DATA_NAME"],
-                        "COLL_NAME = '%s' AND " % coll_path
-                        + "DATA_NAME like '%s'" % file_name,
+                        "COLL_NAME = '{}' AND DATA_NAME like '{}'".format(coll_path, file_name),
                         AS_DICT, ctx)
     for row in rows:
-        file_path = coll_path + '/' + row['DATA_NAME']
+        file_path = "{}/{}".format(coll_path, row['DATA_NAME'])
         try:
             reviews.append(json.loads(data_object.read(ctx, file_path)))
         except Exception:
@@ -1038,11 +1030,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to collection of the evaluation
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Write evaluation data to disk
     try:
-        evaluation_path = coll_path + "/" + EVAL_FILENAME
+        evaluation_path = "{}/{}".format(coll_path, EVAL_FILENAME)
         jsonutil.write(ctx, evaluation_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
@@ -1062,7 +1054,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
     researcher = datarequest['researchers']['contacts'][0]
 
     if 'feedback_for_researcher' in evaluation:
@@ -1113,7 +1105,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
@@ -1134,7 +1126,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     request_owner_username = request_owner_username[0]
 
     try:
-        msi.set_acl(ctx, "default", "read", request_owner_username, coll_path + "/" + DTA_FILENAME)
+        msi.set_acl(ctx, "default", "read", request_owner_username, "{}/{}".format(coll_path, DTA_FILENAME))
     except Exception:
         log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
         return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
@@ -1143,7 +1135,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     status_set(ctx, request_id, status.DTA_READY)
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
     researcher = datarequest['researchers']['contacts'][0]
 
     # Send an email to the researcher informing them that the DTA of their data request is ready for
@@ -1178,10 +1170,10 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
         return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
 
     # Construct path to the collection of the datarequest
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     try:
-        msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path + "/" + SIGDTA_FILENAME)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, "{}/{}".format(coll_path, SIGDTA_FILENAME))
     except Exception:
         log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
         return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
@@ -1229,9 +1221,9 @@ def api_datarequest_data_ready(ctx, request_id):
     status_set(ctx, request_id, status.DATA_READY)
 
     # Get parameters needed for sending emails
-    coll_path = "/" + user.zone(ctx) + "/" + DRCOLLECTION + "/" + request_id
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    datarequest = jsonutil.read(ctx, coll_path + "/" + DR_FILENAME)
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
     researcher = datarequest['researchers']['contacts'][0]
 
     # Send email to researcher notifying him of the submission of his
