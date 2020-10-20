@@ -13,8 +13,15 @@ from pytest_bdd import (
     parsers,
 )
 
-users = ['researcher', 'datamanager', 'technicaladmin']
+
+portal_url = "https://portal.yoda.test/"
+api_url = "https://portal.yoda.test/api"
+password = "test"
+users = ['researcher',
+         'datamanager',
+         'technicaladmin']
 user_cookies = {}
+
 
 def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test/")
@@ -22,23 +29,14 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    global _URL
-    _URL = config.getoption("--url")
-
-    global _PASSWORD
-    _PASSWORD = config.getoption("--password")
-
-    global _API
-    _API = _URL + "api"
+    portal_url = config.getoption("--url")
+    api_url = portal_url + "api"
+    password = config.getoption("--password")
 
     # Store cookies for each user.
     for user in users:
-        csrf, session = login(user, _PASSWORD)
-        user_cookies[user] = (csrf ,session)
-
-
-def api():
-    return _API
+        csrf, session = login(user, password)
+        user_cookies[user] = (csrf, session)
 
 
 def login(user, password):
@@ -46,7 +44,7 @@ def login(user, password):
     # Disable unsecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    url = _URL + 'user/login'
+    url = portal_url + 'user/login'
     client = requests.session()
 
     # Retrieve the CSRF token first
@@ -69,7 +67,7 @@ def api_request(user, request, data):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     # Make API request.
-    url = api() + "/" + request
+    url = api_url + "/" + request
     files = {'csrf_yoda': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'csrf_yoda': csrf, 'yoda_session': session}
 
@@ -81,6 +79,23 @@ def api_request(user, request, data):
         del body["debug_info"]
 
     return (response.status_code, body)
+
+
+def post_form_data(user, request, files):
+    # Retrieve user cookies.
+    csrf, session = user_cookies[user]
+
+    # Disable unsecure connection warning.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    # Make POST request.
+    url = portal_url + "/" + request
+    files['csrf_yoda'] = (None, csrf)
+    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
+
+    response = requests.post(url, files=files, cookies=cookies, verify=False)
+
+    return (response.status_code, response)
 
 
 @given('user "<user>" is authenticated', target_fixture="user")
