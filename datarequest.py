@@ -240,7 +240,7 @@ def api_datarequest_browse(ctx,
 
 @api.make()
 def api_datarequest_schema_get(ctx, schema_name):
-    """Get a schema.
+    """Get schema and uischema of a datarequest form
 
        Arguments:
        schema_name -- Name of schema.
