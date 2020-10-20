@@ -37,20 +37,22 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
-DRCOLLECTION     = 'home/datarequests-research'
-SCHEMACOLLECTION = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
+DRCOLLECTION      = "home/datarequests-research"
+SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
 
-GROUP_DM         = "datarequests-research-datamanagers"
-GROUP_DMC        = "datarequests-research-data-management-committee"
-GROUP_BOD        = "datarequests-research-board-of-directors"
+GROUP_DM          = "datarequests-research-datamanagers"
+GROUP_DMC         = "datarequests-research-data-management-committee"
+GROUP_BOD         = "datarequests-research-board-of-directors"
 
-DR_FILENAME      = "datarequest.json"
-PR_REV_FILENAME  = "preliminary_review.json"
-DM_REV_FILENAME  = "datamanager_review.json"
-EVAL_FILENAME    = "evaluation.json"
-ASSIGN_FILENAME  = "assignment.json"
-DTA_FILENAME     = "dta.pdf"
-SIGDTA_FILENAME  = "dta_signed.pdf"
+SCHEMA_FILENAME   = "schema.json"
+UISCHEMA_FILENAME = "uischema.json"
+DR_FILENAME       = "datarequest.json"
+PR_REV_FILENAME   = "preliminary_review.json"
+DM_REV_FILENAME   = "datamanager_review.json"
+EVAL_FILENAME     = "evaluation.json"
+ASSIGN_FILENAME   = "assignment.json"
+DTA_FILENAME      = "dta.pdf"
+SIGDTA_FILENAME   = "dta_signed.pdf"
 
 
 # List of valid datarequest statuses
@@ -247,8 +249,8 @@ def api_datarequest_schema_get(ctx, schema_name):
     """
     # Define paths to schema and uischema
     coll_path = "/" + user.zone(ctx) + "/" + SCHEMACOLLECTION
-    schema_path = coll_path + "/" + schema_name + "/" + "schema.json"
-    uischema_path = coll_path + "/" + schema_name + "/" + "uischema.json"
+    schema_path = coll_path + "/" + schema_name + "/" + SCHEMA_FILENAME
+    uischema_path = coll_path + "/" + schema_name + "/" + UISCHEMA_FILENAME
 
     # Retrieve and read schema and uischema
     schema = jsonutil.read(ctx, schema_path)
