@@ -1,4 +1,5 @@
 {
+  "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "title": "Assignment",
   "description": "Please consider carefully the remarks of the data manager, if any.",
