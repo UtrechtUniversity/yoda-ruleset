@@ -18,7 +18,7 @@ from util.query import Query
 from enum import Enum
 
 __all__ = ['api_datarequest_browse',
-           'api_schema_get',
+           'api_datarequest_schema_get',
            'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_is_owner',
@@ -239,7 +239,7 @@ def api_datarequest_browse(ctx,
 
 
 @api.make()
-def api_schema_get(ctx, schema_name):
+def api_datarequest_schema_get(ctx, schema_name):
     """Get a schema.
 
        Arguments:
