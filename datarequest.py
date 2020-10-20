@@ -38,7 +38,7 @@ __all__ = ['api_datarequest_browse',
 
 
 DRCOLLECTION     = 'home/datarequests-research'
-SCHEMACOLLECTION = 'yoda/datarequest/schemas/youth'
+SCHEMACOLLECTION = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
 
 GROUP_DM         = "datarequests-research-datamanagers"
 GROUP_DMC        = "datarequests-research-data-management-committee"
