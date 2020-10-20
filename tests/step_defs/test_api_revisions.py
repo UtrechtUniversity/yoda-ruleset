@@ -32,7 +32,7 @@ def api_search_revisions_on_filename(user, filename):
 @then('"<revision_search_result>" is found')
 def api_response_revision_search_result(api_response, revision_search_result):
     _, body = api_response
-
+	
     assert len(body['data']['items']) > 0
 
     # Check expected result is in reveived search results.
@@ -62,7 +62,20 @@ def api_response_list_found(api_response):
         assert body['data']['revisions'][0][key]
 
 
-@given('the Yoda revision API is requested to restore "<revision_id>" in collection "<coll_target>" with name "<new_filename>"', target_fixture="api_response")
+@given('the Yoda revision API is requested for first revision for "<path>"', target_fixture="revision_id")
+def api_get_first_revision_id_for_path(user, path):
+    api_response = api_request(
+        user,
+        "revisions_list",
+        {"path": path}
+    )
+    _, body = api_response
+    assert body['data']['revisions'][0]['data_id']
+
+    return body['data']['revisions'][0]['data_id']
+
+
+@given('the Yoda revision API is requested to restore revision in collection "<coll_target>" with name "<new_filename>" with revision id', target_fixture="api_response")
 def api_restore_revision(user, revision_id, coll_target, new_filename):
     return api_request(
         user,
