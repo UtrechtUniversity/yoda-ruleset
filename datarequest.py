@@ -255,12 +255,9 @@ def api_datarequest_schema_get(ctx, schema_name):
     # Retrieve and read schema and uischema
     try:
         schema = jsonutil.read(ctx, schema_path)
-    except Exception:
-        return api.Error("file_read_error", "Could not read schema.")
-    try:
         uischema = jsonutil.read(ctx, uischema_path)
-    except Exception:
-        return api.Error("file_read_error", "Could not read uischema.")
+    except error.UUFileNotExistError:
+        return api.Error("file_read_error", "Could not read schema.")
 
     # Return JSON with schema and uischema
     return {"schema": schema, "uischema": uischema}
