@@ -21,32 +21,39 @@
             "properties": {
               "name": {
                 "type": "string",
-                "title": "Name"
+                "title": "Name",
+                "maxLength": 2700
               },
               "institution": {
                 "type": "string",
-                "title": "Institution"
+                "title": "Institution",
+                "maxLength": 2700
               },
               "department": {
                 "type": "string",
-                "title": "Department"
+                "title": "Department",
+                "maxLength": 2700
               },
               "academic_role": {
                 "type": "string",
                 "title": "Academic role",
-                "description": "E.g. Professor, Associate professor, PhD student"
+                "description": "E.g. Professor, Associate professor, PhD student",
+                "maxLength": 2700
               },
               "work_address": {
                 "type": "string",
-                "title": "Address"
+                "title": "Address",
+                "maxLength": 2700
               },
               "email": {
                 "type": "string",
-                "title": "Email"
+                "title": "Email",
+                "maxLength": 2700
               },
               "phone": {
                 "type": "string",
-                "title": "Phone"
+                "title": "Phone",
+                "maxLength": 2700
               }
             }
           },
@@ -89,12 +96,14 @@
         "additional_specifications": {
           "type": "string",
           "title": "Additional specifications",
-          "description": "If necessary, please provide additional specifications on the data you would like to obtain (e.g. only of children of which the mother smoked during pregnancy)."
+          "description": "If necessary, please provide additional specifications on the data you would like to obtain (e.g. only of children of which the mother smoked during pregnancy).",
+          "maxLength": 2700
         },
         "other_remarks": {
           "type": "string",
           "title": "Other aspects relevant to your data request",
-          "description": "Optional"
+          "description": "Optional",
+          "maxLength": 2700
         },
         "purpose": {
           "type": "string",
@@ -171,7 +180,8 @@
                 },
                 "private_request_explanation": {
                   "type": "string",
-                  "title": "Please explain why your request should not be made public."
+                  "title": "Please explain why your request should not be made public.",
+                  "maxLength": 2700
                 }
               },
               "required": [
@@ -197,21 +207,25 @@
         },
         "background": {
           "type": "string",
-          "title": "Background of the topic of your research plan, rationale, relevance (max. 500 words)"
+          "title": "Background of the topic of your research plan, rationale, relevance (max. 500 words)",
+          "maxLength": 2700
         },
         "research_question": {
           "type": "string",
-          "title": "The specific research question(s) or aim(s) of your research"
+          "title": "The specific research question(s) or aim(s) of your research",
+          "maxLength": 2700
         },
         "requested_data_summary": {
           "type": "string",
           "title": "Summary of the data requested for your project",
-          "description": "Please indicate which data you request to answer your research question."
+          "description": "Please indicate which data you request to answer your research question.",
+          "maxLength": 2700
         },
         "references": {
           "type": "string",
           "title": "References",
-          "description": "Optional"
+          "description": "Optional",
+          "maxLength": 2700
         }
       },
       "required": ["title", "background", "research_question", "requested_data_summary"]
@@ -223,7 +237,8 @@
       "properties": {
         "hypotheses": {
           "type": "string",
-          "title": "Hypotheses"
+          "title": "Hypotheses",
+          "maxLength": 2700
         }
       }
     },
@@ -235,20 +250,24 @@
         "design": {
           "type": "string",
           "title": "Study design, study population and sample size",
-          "description": "E.g. cross-sectional or longitudinal; entire population or a subset; substantiate your choices."
+          "description": "E.g. cross-sectional or longitudinal; entire population or a subset; substantiate your choices.",
+          "maxLength": 2700
         },
         "preparation": {
           "type": "string",
-          "title": "General processing steps to prepare the data for analysis"
+          "title": "General processing steps to prepare the data for analysis",
+          "maxLength": 2700
         },
         "processing": {
           "type": "string",
-          "title": "Specific processing and analysis steps to address the hypotheses"
+          "title": "Specific processing and analysis steps to address the hypotheses",
+          "maxLength": 2700
         },
         "additional_methodological_aspects": {
           "type": "string",
           "title": "Additional methodological aspects",
-          "description": "Optional"
+          "description": "Optional",
+          "maxLength": 2700
         }
       },
       "required": ["design", "preparation", "processing"]
@@ -320,7 +339,8 @@
                 },
                 "contribution_time_specification": {
                   "type": "string",
-                  "title": "Number of hours of contribution incl. specification"
+                  "title": "Number of hours of contribution incl. specification",
+                  "maxLength": 2700
                 }
               },
               "required": [
@@ -350,7 +370,8 @@
                 },
                 "contribution_time_type_other": {
                   "type": "string",
-                  "title": "Who will provide the time contribution?"
+                  "title": "Who will provide the time contribution?",
+                  "maxLength": 2700
                 }
               },
               "required": [
@@ -410,7 +431,8 @@
                 },
                 "contribution_favor_description": {
                   "type": "string",
-                  "title": "Detailed description of the return favor."
+                  "title": "Detailed description of the return favor.",
+                  "maxLength": 2700
                 }
               },
               "required": [
