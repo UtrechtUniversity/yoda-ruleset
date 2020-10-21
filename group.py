@@ -149,13 +149,17 @@ def getSubcategories(callback, category):
 
 @api.make()
 def api_group_data(ctx):
-    """Write group data for all users to stdout."""
+    """Retrieve group data for all users."""
     return getGroupData(ctx)
 
 
 @api.make()
 def api_group_data_filtered(ctx, user_name, zone_name):
-    """Write group data for a single user to stdout."""
+    """Retrieve group data for a single user.
+
+    :param user_name: User to retrieve group data for
+    :param zone_name: Zone name of user
+    """
     groups    = getGroupData(ctx)
     full_name = '{}#{}'.format(user_name, zone_name)
 
@@ -187,13 +191,16 @@ def rule_group_user_exists(rule_args, callback, rei):
 
 @api.make()
 def api_group_categories(ctx):
-    """Write category list to stdout."""
+    """Retrieve category list."""
     return getCategories(ctx)
 
 
 @api.make()
 def api_group_subcategories(ctx, category):
-    """Write subcategory list to stdout."""
+    """Retrieve subcategory list.
+
+    :param category: Category to retrieve subcategories of
+    """
     return getSubcategories(ctx, category)
 
 
@@ -204,6 +211,10 @@ def api_group_user_exists(ctx, group_name, user_name, include_ro):
     If include_ro is true, membership of a group's read-only shadow group will be
     considered as well. Otherwise, the user must be a normal member or manager of
     the given group.
+
+    :param group_name: Group to check user membership of
+    :param user_name:  Username of user to check group membership
+    :param include_ro: Include read-only users
     """
     groups = getGroupData(ctx)
     if '#' not in user_name:
