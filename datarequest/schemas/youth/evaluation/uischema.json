@@ -1,0 +1,8 @@
+{
+  "internal_remarks": {
+    "ui:widget": "textarea"
+  },
+  "feedback_for_researcher": {
+    "ui:widget": "textarea"
+  }
+}
