@@ -107,11 +107,11 @@ def info(path):
 
     return (namedtuple('PathInfo', 'space zone group subpath'.split())
             (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',        Space.VAULT)
-                or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
-                or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
-                or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
-                or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
-                or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
+            or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
+            or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
+            or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
+            or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
+            or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
 
 
 def object_type(ctx, path):
