@@ -285,7 +285,8 @@ def datarequest_data_valid(ctx, data, schema_name):
         return len(errors) == 0
     except error.UUJsonValidationError as e:
         # File may be missing or not valid JSON
-        return api.Error("validation_error", "Data could not be validated.")
+        return api.Error("validation_error",
+                         "Data could not be validated against {} schema.".format(schema_name))
 
 
 @api.make()
