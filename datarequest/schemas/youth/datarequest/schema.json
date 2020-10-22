@@ -30,32 +30,32 @@
             "type": "object",
             "properties": {
               "name": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Name"
               },
               "institution": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Institution"
               },
               "department": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Department"
               },
               "academic_role": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Academic role",
                 "description": "E.g. Professor, Associate professor, PhD student"
               },
               "work_address": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Address"
               },
               "email": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Email"
               },
               "phone": {
-                "type": "stringNormal",
+                "$ref": "#/definitions/stringNormal",
                 "title": "Phone"
               }
             }
@@ -97,12 +97,12 @@
           "title": "Data"
         },
         "additional_specifications": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Additional specifications",
           "description": "If necessary, please provide additional specifications on the data you would like to obtain (e.g. only of children of which the mother smoked during pregnancy)."
         },
         "other_remarks": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Other aspects relevant to your data request",
           "description": "Optional"
         },
@@ -180,7 +180,7 @@
                   ]
                 },
                 "private_request_explanation": {
-                  "type": "stringLong",
+                  "$ref": "#/definitions/stringLong",
                   "title": "Please explain why your request should not be made public."
                 }
               },
@@ -201,24 +201,24 @@
       "description": "In this section, please briefly describe the context for your research plans. This section should logically introduce the next section (hypotheses). As mentioned, please note that this section will be made publicly available on our researcher’s website after submission of your request.<br/>Please provide:<br/><ul><li>The title of your research plan</li><li>A very brief background for the topic of your research plan</li><li>The rationale for and relevance of your specific research plan</li><li>The specific research question(s) or aim(s) of your research (Please also provide a brief specification)</li><li>A short description of the data you request</li></ul>References can be added at the end of this section (optional).",
       "properties": {
         "title": {
-          "type": "stringNormal",
+          "$ref": "#/definitions/stringNormal",
           "title": "Title of the study"
         },
         "background": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Background of the topic of your research plan, rationale, relevance (max. 500 words)"
         },
         "research_question": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "The specific research question(s) or aim(s) of your research"
         },
         "requested_data_summary": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Summary of the data requested for your project",
           "description": "Please indicate which data you request to answer your research question."
         },
         "references": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "References",
           "description": "Optional"
         }
@@ -231,7 +231,7 @@
       "description": "In this section, please provide your research hypotheses. For each hypothesis:<ul><li>Be as specific as possible</li><li>Provide the anticipated outcomes for accepting and/or rejecting a hypothesis</li></ul>",
       "properties": {
         "hypotheses": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Hypotheses"
         }
       }
@@ -242,20 +242,20 @@
       "description": "In this section, you should make clear how the hypotheses are tested. Be as specific as possible.<br/>Please describe:<ul><li>The study design and study population (Which data do you require from which subjects?)</li><li>The general processing steps (to prepare the data for analysis)</li><li>The analysis steps (How are the data analysed to address the hypotheses? If possible, link each description to a specific hypothesis)</li><li>Any additional aspects that need to be described to clarify the methodological approach (optional)</li></ul>",
       "properties": {
         "design": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Study design, study population and sample size",
           "description": "E.g. cross-sectional or longitudinal; entire population or a subset; substantiate your choices."
         },
         "preparation": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "General processing steps to prepare the data for analysis"
         },
         "processing": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Specific processing and analysis steps to address the hypotheses"
         },
         "additional_methodological_aspects": {
-          "type": "stringLong",
+          "$ref": "#/definitions/stringLong",
           "title": "Additional methodological aspects",
           "description": "Optional"
         }
@@ -328,7 +328,7 @@
                   ]
                 },
                 "contribution_time_specification": {
-                  "type": "stringLong",
+                  "$ref": "#/definitions/stringLong",
                   "title": "Number of hours of contribution incl. specification"
                 }
               },
@@ -358,7 +358,7 @@
                   ]
                 },
                 "contribution_time_type_other": {
-                  "type": "stringNormal",
+                  "$ref": "#/definitions/stringNormal",
                   "title": "Who will provide the time contribution?"
                 }
               },
@@ -418,7 +418,7 @@
                   ]
                 },
                 "contribution_favor_description": {
-                  "type": "stringLong",
+                  "$ref": "#/definitions/stringLong",
                   "title": "Detailed description of the return favor."
                 }
               },
