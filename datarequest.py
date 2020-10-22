@@ -304,6 +304,10 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DR_FILENAME)
 
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, DR):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Create collection
     try:
         collection.create(ctx, coll_path)
@@ -413,6 +417,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
        data       -- Contents of the preliminary review
        request_id -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, PR_REV):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -537,6 +545,10 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
        data       -- Contents of the preliminary review
        proposalId -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, DM_REV):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -750,6 +762,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
        data       -- Contents of the assignment
        request_id -- Unique identifier of the data request
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, ASSIGN):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -908,6 +924,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
        Return:
        dict -- A JSON dict with status info for the front office.
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, REV):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1038,6 +1058,10 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
        data       -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, EVAL):
+        return api.Error("validation_fail", "Data did not pass validation.")
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
