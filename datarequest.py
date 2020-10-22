@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
+import jsonschema
 import re
 from collections import OrderedDict
 from datetime import datetime
@@ -240,10 +241,14 @@ def api_datarequest_browse(ctx,
 
 @api.make()
 def api_datarequest_schema_get(ctx, schema_name):
+    return datarequest_schema_get(ctx, schema_name)
+
+
+def datarequest_schema_get(ctx, schema_name):
     """Get schema and uischema of a datarequest form
 
        Arguments:
-       schema_name -- Name of schema.
+       schema_name -- Name of schema
     """
     # Define paths to schema and uischema
     coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
@@ -259,6 +264,26 @@ def api_datarequest_schema_get(ctx, schema_name):
 
     # Return JSON with schema and uischema
     return {"schema": schema, "uischema": uischema}
+
+
+def datarequest_data_valid(ctx, data, schema_name):
+    """
+    Check if form data contains no errors
+
+    data   -- The form data to validate
+    schema -- Name of JSON schema against which to validate the form data
+    """
+    try:
+        schema = datarequest_schema_get(ctx, schema_name)['schema']
+
+        validator = jsonschema.Draft7Validator(schema)
+
+        errors = list(validator.iter_errors(data))
+
+        return len(errors) == 0
+    except error.UUJsonValidationError as e:
+        # File may be missing or not valid JSON
+        return api.Error("validation_error", "Data could not be validated.")
 
 
 @api.make()
