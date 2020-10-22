@@ -286,7 +286,7 @@ def datarequest_data_valid(ctx, data, schema_name):
     except error.UUJsonValidationError as e:
         # File may be missing or not valid JSON
         return api.Error("validation_error",
-                         "Data could not be validated against {} schema.".format(schema_name))
+                         "{} form data could not be validated against its schema.".format(schema_name))
 
 
 @api.make()
@@ -303,7 +303,8 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
     # Create collection
     try:
@@ -416,7 +417,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(PR_REVIEW))
 
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -544,7 +546,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(DM_REVIEW))
 
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -761,7 +764,8 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, ASSIGNMENT):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
 
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -923,7 +927,8 @@ def api_datarequest_review_submit(ctx, data, request_id):
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(REVIEW))
 
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1057,7 +1062,8 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, EVALUATION):
-        return api.Error("validation_fail", "Data did not pass validation.")
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(EVALUATION))
 
     # Force conversion of request_id to string
     request_id = str(request_id)
