@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
+import jsonschema
 import re
 from collections import OrderedDict
 from datetime import datetime
@@ -36,21 +37,23 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
 
+JSON_EXT          = ".json"
 
-DRCOLLECTION      = "home/datarequests-research"
 SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
+SCHEMA            = "schema"
+UISCHEMA          = "uischema"
 
 GROUP_DM          = "datarequests-research-datamanagers"
 GROUP_DMC         = "datarequests-research-data-management-committee"
 GROUP_BOD         = "datarequests-research-board-of-directors"
 
-SCHEMA_FILENAME   = "schema.json"
-UISCHEMA_FILENAME = "uischema.json"
-DR_FILENAME       = "datarequest.json"
-PR_REV_FILENAME   = "preliminary_review.json"
-DM_REV_FILENAME   = "datamanager_review.json"
-EVAL_FILENAME     = "evaluation.json"
-ASSIGN_FILENAME   = "assignment.json"
+DRCOLLECTION      = "home/datarequests-research"
+DATAREQUEST       = "datarequest"
+PR_REVIEW         = "preliminary_review"
+DM_REVIEW         = "datamanager_review"
+REVIEW            = "review"
+ASSIGNMENT        = "assignment"
+EVALUATION        = "evaluation"
 DTA_FILENAME      = "dta.pdf"
 SIGDTA_FILENAME   = "dta_signed.pdf"
 
@@ -127,7 +130,7 @@ def status_get(ctx, request_id):
     """
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = DR_FILENAME
+    file_name = DATAREQUEST + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
@@ -210,11 +213,11 @@ def api_datarequest_browse(ctx,
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DR_FILENAME),
+    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
                   offset=offset, limit=limit, output=query.AS_DICT)
 
     ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
-    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DR_FILENAME),
+    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
                         offset=offset, limit=limit, output=query.AS_DICT)
 
     colls = map(transform, list(qcoll))
@@ -240,15 +243,19 @@ def api_datarequest_browse(ctx,
 
 @api.make()
 def api_datarequest_schema_get(ctx, schema_name):
+    return datarequest_schema_get(ctx, schema_name)
+
+
+def datarequest_schema_get(ctx, schema_name):
     """Get schema and uischema of a datarequest form
 
        Arguments:
-       schema_name -- Name of schema.
+       schema_name -- Name of schema
     """
     # Define paths to schema and uischema
     coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
-    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA_FILENAME)
-    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA_FILENAME)
+    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
+    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
 
     # Retrieve and read schema and uischema
     try:
@@ -261,6 +268,27 @@ def api_datarequest_schema_get(ctx, schema_name):
     return {"schema": schema, "uischema": uischema}
 
 
+def datarequest_data_valid(ctx, data, schema_name):
+    """
+    Check if form data contains no errors
+
+    :param data:   The form data to validate
+    :param schema: Name of JSON schema against which to validate the form data
+    """
+    try:
+        schema = datarequest_schema_get(ctx, schema_name)['schema']
+
+        validator = jsonschema.Draft7Validator(schema)
+
+        errors = list(validator.iter_errors(data))
+
+        return len(errors) == 0
+    except error.UUJsonValidationError as e:
+        # File may be missing or not valid JSON
+        return api.Error("validation_error",
+                         "{} form data could not be validated against its schema.".format(schema_name))
+
+
 @api.make()
 def api_datarequest_submit(ctx, data, previous_request_id):
     """Persist a data request to disk.
@@ -271,7 +299,12 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     timestamp = datetime.now()
     request_id = str(timestamp.strftime('%s'))
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, DR_FILENAME)
+    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, DATAREQUEST):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
     # Create collection
     try:
@@ -350,7 +383,7 @@ def api_datarequest_get(ctx, request_id):
 
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = DR_FILENAME
+    file_name = DATAREQUEST + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
     try:
@@ -382,6 +415,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
        data       -- Contents of the preliminary review
        request_id -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, PR_REVIEW):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(PR_REVIEW))
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -409,7 +447,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Write preliminary review data to disk
     try:
-        preliminary_review_path = "{}/{}".format(coll_path, PR_REV_FILENAME)
+        preliminary_review_path = "{}/{}".format(coll_path, PR_REVIEW + JSON_EXT)
         jsonutil.write(ctx, preliminary_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write preliminary review data to disk')
@@ -438,7 +476,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
     researcher = datarequest['researchers']['contacts'][0]
 
     if 'feedback_for_researcher' in preliminary_review:
@@ -485,7 +523,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = PR_REV_FILENAME
+    file_name = PR_REVIEW + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the review JSON file
@@ -506,6 +544,11 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
        data       -- Contents of the preliminary review
        proposalId -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, DM_REVIEW):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(DM_REVIEW))
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -533,7 +576,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Write data manager review data to disk
     try:
-        datamanager_review_path = "{}/{}".format(coll_path, DM_REV_FILENAME)
+        datamanager_review_path = "{}/{}".format(coll_path, DM_REVIEW + JSON_EXT)
         jsonutil.write(ctx, datamanager_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
@@ -605,7 +648,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = DM_REV_FILENAME
+    file_name = DM_REVIEW + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the data manager review JSON file
@@ -644,7 +687,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DR_FILENAME, coll_path)),
+                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path)),
                         AS_DICT, ctx)
 
     # Extract username from query results
@@ -699,7 +742,7 @@ def datarequest_is_reviewer(ctx, request_id):
 
     # Retrieve list of reviewers
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DR_FILENAME),
+                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
                         AS_DICT, ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
@@ -719,6 +762,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
        data       -- Contents of the assignment
        request_id -- Unique identifier of the data request
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, ASSIGNMENT):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -746,7 +794,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Write assignment data to disk
     try:
-        assignment_path = "{}/{}".format(coll_path, ASSIGN_FILENAME)
+        assignment_path = "{}/{}".format(coll_path, ASSIGNMENT + JSON_EXT)
         jsonutil.write(ctx, assignment_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
@@ -779,7 +827,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
 
     # Get source data needed for sending emails
-    datarequest      = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+    datarequest      = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
     researcher       = datarequest['researchers']['contacts'][0]
     research_context = datarequest['research_context']
 
@@ -853,7 +901,7 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_name = ASSIGN_FILENAME
+    file_name = ASSIGNMENT + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
     # Get the contents of the assignment JSON file
@@ -877,6 +925,11 @@ def api_datarequest_review_submit(ctx, data, request_id):
        Return:
        dict -- A JSON dict with status info for the front office.
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, REVIEW):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(REVIEW))
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -918,7 +971,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
-        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DR_FILENAME),
+        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
         genquery.AS_LIST, ctx)
 
     for row in iter:
@@ -945,7 +998,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
         status_set(ctx, request_id, status.REVIEWED)
 
         # Get source data needed for sending emails
-        datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+        datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
         researcher = datarequest['researchers']['contacts'][0]
 
         bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
@@ -1007,6 +1060,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
        data       -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
     """
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, EVALUATION):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(EVALUATION))
+
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1034,7 +1092,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Write evaluation data to disk
     try:
-        evaluation_path = "{}/{}".format(coll_path, EVAL_FILENAME)
+        evaluation_path = "{}/{}".format(coll_path, EVALUATION + JSON_EXT)
         jsonutil.write(ctx, evaluation_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
@@ -1054,7 +1112,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
     researcher = datarequest['researchers']['contacts'][0]
 
     if 'feedback_for_researcher' in evaluation:
@@ -1109,7 +1167,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
-                        "DATA_NAME = '{}' and COLL_NAME like '{}'".format(DR_FILENAME, coll_path),
+                        "DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path),
                         AS_DICT, ctx)
 
     # Extract username from query results
@@ -1135,7 +1193,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     status_set(ctx, request_id, status.DTA_READY)
 
     # Get source data needed for sending emails
-    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
     researcher = datarequest['researchers']['contacts'][0]
 
     # Send an email to the researcher informing them that the DTA of their data request is ready for
@@ -1223,7 +1281,7 @@ def api_datarequest_data_ready(ctx, request_id):
     # Get parameters needed for sending emails
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DR_FILENAME))
+    datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
     researcher = datarequest['researchers']['contacts'][0]
 
     # Send email to researcher notifying him of the submission of his
