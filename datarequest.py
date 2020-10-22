@@ -38,20 +38,26 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_data_ready']
 
 
-DRCOLLECTION      = "home/datarequests-research"
 SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
+SCHEMA_FILENAME   = "schema.json"
+UISCHEMA_FILENAME = "uischema.json"
 
 GROUP_DM          = "datarequests-research-datamanagers"
 GROUP_DMC         = "datarequests-research-data-management-committee"
 GROUP_BOD         = "datarequests-research-board-of-directors"
 
-SCHEMA_FILENAME   = "schema.json"
-UISCHEMA_FILENAME = "uischema.json"
-DR_FILENAME       = "datarequest.json"
-PR_REV_FILENAME   = "preliminary_review.json"
-DM_REV_FILENAME   = "datamanager_review.json"
-EVAL_FILENAME     = "evaluation.json"
-ASSIGN_FILENAME   = "assignment.json"
+DRCOLLECTION      = "home/datarequests-research"
+DR                = "datarequest"
+PR_REV            = "preliminary_review"
+DM_REV            = "datamanager_review"
+REV               = "review"
+ASSIGN            = "assignment"
+EVAL              = "evaluation"
+DR_FILENAME       = DR + ".json"
+PR_REV_FILENAME   = PR_REV + ".json"
+DM_REV_FILENAME   = DM_REV + ".json"
+ASSIGN_FILENAME   = ASSIGN + ".json"
+EVAL_FILENAME     = EVAL + ".json"
 DTA_FILENAME      = "dta.pdf"
 SIGDTA_FILENAME   = "dta_signed.pdf"
 
