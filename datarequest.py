@@ -272,8 +272,8 @@ def datarequest_data_valid(ctx, data, schema_name):
     """
     Check if form data contains no errors
 
-    data   -- The form data to validate
-    schema -- Name of JSON schema against which to validate the form data
+    :param data:   The form data to validate
+    :param schema: Name of JSON schema against which to validate the form data
     """
     try:
         schema = datarequest_schema_get(ctx, schema_name)['schema']
