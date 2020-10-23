@@ -109,6 +109,7 @@ def getCategories(callback):
 def getSubcategories(callback, category):
     """Get a list of all subcategories within a given group category.
 
+    :param callback: Combined type of a callback and rei struct
     :param category: Category to retrieve subcategories of
     """
     categories = set()    # Unique subcategories.
@@ -156,6 +157,7 @@ def api_group_data(ctx):
 def api_group_data_filtered(ctx, user_name, zone_name):
     """Retrieve group data for a single user.
 
+    :param ctx:       Combined type of a callback and rei struct
     :param user_name: User to retrieve group data for
     :param zone_name: Zone name of user
     """
@@ -198,6 +200,7 @@ def api_group_categories(ctx):
 def api_group_subcategories(ctx, category):
     """Retrieve subcategory list.
 
+    :param ctx:      Combined type of a callback and rei struct
     :param category: Category to retrieve subcategories of
     """
     return getSubcategories(ctx, category)
@@ -206,7 +209,8 @@ def api_group_subcategories(ctx, category):
 def provisionExternalUser(callback, username, creatorUser, creatorZone):
     """Call External User Service API to add new user.
 
-    :param username: Username of external user
+    :param callback:    Combined type of a callback and rei struct
+    :param username:    Username of external user
     :param creatorUser: User creating the external user
     :param creatorZone: Zone of user creating the external user
     """
@@ -269,6 +273,7 @@ def rule_group_provision_external_user(rule_args, callback, rei):
 def removeExternalUser(callback, username, userzone):
     """Call External User Service API to remove user.
 
+    :param callback: Combined type of a callback and rei struct
     :param username: Username of user to remove
     :param userzone: Zone of user to remove
     """
