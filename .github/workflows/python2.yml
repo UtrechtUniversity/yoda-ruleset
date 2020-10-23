@@ -1,4 +1,4 @@
-name: Python lint
+name: Python 2 lint
 
 on: [push, pull_request]
 
@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [2.7]
     steps:
       - uses: actions/checkout@v2
 
@@ -20,16 +20,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install flake8 flake8-import-order darglint codespell
+          python -m pip install flake8 flake8-import-order codespell
 
       - name: Lint with flake8
         run: |
           flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --statistics
-
-      - name: Check code for common misspellings
-        run: |
-          codespell -q 3 --skip="*.r,*.xsd,*.json" || true
-
-      - name: Check McCabe complexity
-        run: |
-          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --exclude=__init__.py --max-complexity 10 || true
