@@ -38,6 +38,7 @@ __all__ = ['api_vault_submit',
 def api_vault_submit(ctx, coll):
     """Submit data package for publication.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to submit
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
@@ -54,6 +55,7 @@ def api_vault_submit(ctx, coll):
 def api_vault_approve(ctx, coll):
     """Approve data package for publication.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to approve
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
@@ -70,6 +72,7 @@ def api_vault_approve(ctx, coll):
 def api_vault_cancel(ctx, coll):
     """Cancel submit of data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to cancel submit
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
@@ -86,6 +89,7 @@ def api_vault_cancel(ctx, coll):
 def api_vault_depublish(ctx, coll):
     """Depublish data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to depublish
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
@@ -102,6 +106,7 @@ def api_vault_depublish(ctx, coll):
 def api_vault_republish(ctx, coll):
     """Republish data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to republish
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
@@ -118,6 +123,7 @@ def api_vault_republish(ctx, coll):
 def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     """Copy data package from vault to research space.
 
+    :param ctx:         Combined type of a callback and rei struct
     :param coll_origin: Collection of data package to copy
     :param coll_target: Collection to copy data package to
     """
@@ -186,6 +192,8 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 def api_vault_preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
 
+    :param ctx: Combined type of a callback and rei struct
+
     :returns: dict -- Lists of preservable file formats {name => [ext...]}
     """
     zone = user.zone(ctx)
@@ -204,6 +212,7 @@ def api_vault_preservable_formats_lists(ctx):
 def api_vault_unpreservable_files(ctx, coll, list_name):
     """Retrieve the set of unpreservable file formats in a collection.
 
+    :param ctx:       Combined type of a callback and rei struct
     :param coll:      Collection of folder to check
     :param list_name: Name of preservable file format list
 
@@ -240,6 +249,11 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
 
 
 def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
+    """Copy original metadata to the vault package root.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param vault_package_path: Path of a package in the vault
+    """
     original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
     copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
@@ -261,6 +275,7 @@ def rule_vault_write_license(rule_args, callback, rei):
 def vault_write_license(ctx, vault_pkg_coll):
     """Write the license as a text file into the root of the vault package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param vault_pkg_coll: Path of a package in the vault
     """
     zone = user.zone(ctx)
@@ -508,6 +523,7 @@ def copy_folder_to_vault(ctx, folder, target):
 
     The data will reside onder folder '/original' within the vault.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param folder: Path of a folder in the research space
     :param target: Path of a package in the vault space
 
@@ -779,6 +795,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 def send_datamanagers_publication_request_mail(ctx, coll):
     """All involved datamanagers will receive an email notification regarding a publication request by a researcher.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Vault package with publication request
     """
     # Find group
@@ -820,6 +837,7 @@ def send_datamanagers_publication_request_mail(ctx, coll):
 def vault_request_status_transitions(ctx, coll, new_vault_status):
     """Request vault status transition action.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Vault package to be changed of status in publication cycle
     :param new_vault_status: New vault status
 

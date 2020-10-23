@@ -68,6 +68,12 @@ def get_json_metadata_errors(callback,
 
     This will throw exceptions on missing metadata / schema files and invalid
     JSON formats.
+
+    :param callback:        Combined type of a callback and rei struct
+    :param metadata_path:   Path to the JSON object
+    :param metadata:        Pre-parsed JSON object
+    :param schema:          Schema to check against
+    :param ignore_required: Ignore required fields
     """
     if schema is None:
         schema = schema_.get_active_schema(callback, metadata_path)
@@ -102,6 +108,11 @@ def is_json_metadata_valid(callback,
 
     Argument 'metadata' may contain a preparsed JSON document, otherwise it
     is loaded from the provided path.
+
+    :param callback:        Combined type of a callback and rei struct
+    :param metadata_path:   Path to the JSON object
+    :param metadata:        Pre-parsed JSON object
+    :param ignore_required: Ignore required fields
     """
     try:
         return len(get_json_metadata_errors(callback,
@@ -118,6 +129,9 @@ def get_collection_metadata_path(callback, coll):
     Check if a collection has a metadata file and provide its path, if any.
 
     Both JSON and legacy XML are checked, JSON has precedence if it exists.
+
+    :param callback: Combined type of a callback and rei struct
+    :param coll:     Path of collection to check for metadata
     """
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
                                                    constants.IIMETADATAXMLNAME]]:
@@ -131,6 +145,7 @@ def get_latest_vault_metadata_path(ctx, vault_pkg_coll):
     """
     Get the latest vault metadata JSON file.
 
+    :param ctx:            Combined type of a callback and rei struct
     :param vault_pkg_coll: Vault package collection
 
     :returns: string -- Metadata JSON path
@@ -181,6 +196,9 @@ def collection_has_cloneable_metadata(callback, coll):
 
     This always ignores 'required' schema attributes, since metadata can
     only be cloned in the research area.
+
+    :param callback: Combined type of a callback and rei struct
+    :param coll:     Path of collection to check for cloneable metadata
     """
     path = get_collection_metadata_path(callback, coll)
 
@@ -219,7 +237,8 @@ def api_meta_remove(ctx, coll):
 def api_meta_clone_file(ctx, target_coll):
     """Clone a metadata file from a parent collection to a subcollection.
 
-    The destination collection (where the metadata is copied *to*) is given as an argument.
+    :param ctx:         Combined type of a callback and rei struct
+    :param target_coll: Target collection (where the metadata is copied to)
     """
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
     source_data = get_collection_metadata_path(ctx, source_coll)
@@ -471,6 +490,7 @@ def copy_user_metadata(ctx, source, target):
     """
     Copy the user metadata of a collection to another collection.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
