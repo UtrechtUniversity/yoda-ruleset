@@ -765,9 +765,6 @@ def api_datarequest_is_bod_member(ctx):
     """
     Check if given user is BOD member
 
-    :param user: User name
-    :type user: str
-
     :return True if user is BOD member else False
     :rtype bool
     """
@@ -779,9 +776,6 @@ def api_datarequest_is_dmc_member(ctx):
     """
     Check if given user is BOD member
 
-    :param user: User name
-    :type user: str
-
     :return True if user is BOD member else False
     :rtype bool
     """
@@ -792,9 +786,6 @@ def api_datarequest_is_dmc_member(ctx):
 def api_datarequest_is_datamanager(ctx):
     """
     Check if given user is BOD member
-
-    :param user: User name
-    :type user: str
 
     :return True if user is BOD member else False
     :rtype bool
