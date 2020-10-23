@@ -45,17 +45,3 @@ Feature: Group API
             | user        | category |
             | researcher  | initial  |
             | datamanager | initial  |
-
-    Scenario: Group user exists
-        Given user "<user>" is authenticated
-        And the Yoda group user exists API is queried with "<group>" and "<user>"
-        Then the response status code is "200"
-        And response is "<exists>"
-
-        Examples:
-            | user        | group                           | exists |
-            | researcher  | research-initial                | True   |
-            | researcher  | research-initial1               | True   |
-            | datamanager | datamanager-initial             | True   |
-            | researcher  | datamanager-initial             | False  |
-            | datamanager | research-initial1               | False  |

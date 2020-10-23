@@ -12,7 +12,6 @@ __all__ = ['api_group_data',
            'api_group_data_filtered',
            'api_group_categories',
            'api_group_subcategories',
-           'api_group_user_exists',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_user_exists']
@@ -202,30 +201,6 @@ def api_group_subcategories(ctx, category):
     :param category: Category to retrieve subcategories of
     """
     return getSubcategories(ctx, category)
-
-
-@api.make()
-def api_group_user_exists(ctx, group_name, user_name, include_ro):
-    """Check if a user is a member of the given group.
-
-    If include_ro is true, membership of a group's read-only shadow group will be
-    considered as well. Otherwise, the user must be a normal member or manager of
-    the given group.
-
-    :param group_name: Group to check user membership of
-    :param user_name:  Username of user to check group membership
-    :param include_ro: Include read-only users
-    """
-    groups = getGroupData(ctx)
-    if '#' not in user_name:
-        user_name = user_name + "#" + user.zone(ctx)
-
-    if include_ro:
-        groups = list(filter(lambda group: group_name == group["name"] and (user_name in group["read"] or user_name in group["members"]), groups))
-    else:
-        groups = list(filter(lambda group: group_name == group["name"] and user_name in group["members"], groups))
-
-    return len(groups) == 1
 
 
 def provisionExternalUser(callback, username, creatorUser, creatorZone):

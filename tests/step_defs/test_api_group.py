@@ -52,15 +52,6 @@ def api_group_subcategories(user, category):
     )
 
 
-@given('the Yoda group user exists API is queried with "<group>" and "<user>"', target_fixture="api_response")
-def api_group_user_exists(user, group):
-    return api_request(
-        user,
-        "group_user_exists",
-        {"group_name": group, "user_name": user, "include_ro": False}
-    )
-
-
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
@@ -97,10 +88,3 @@ def category_exists(api_response, category):
             break
 
     assert found
-
-
-@then('response is "<exists>"')
-def user_exists(api_response, exists):
-    _, body = api_response
-
-    assert str(body['data']) == exists
