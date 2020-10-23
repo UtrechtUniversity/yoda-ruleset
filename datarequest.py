@@ -681,7 +681,7 @@ def api_datarequest_is_owner(ctx, request_id, user_name):
     try:
         is_owner = datarequest_is_owner(ctx, request_id, user_name)
     except error.UUError as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e.message))
+        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(str(e)))
 
     return is_owner
 
