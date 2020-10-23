@@ -900,7 +900,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
             "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
             genquery.AS_LIST, ctx
         )
-        for row in iter:
+        for _row in iter:
             # Don't accept request if a status transition is already pending.
             return ['PermissionDenied', "Vault package is being processed, please wait until finished."]
 

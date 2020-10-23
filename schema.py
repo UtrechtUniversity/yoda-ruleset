@@ -47,7 +47,7 @@ def get_group_category(callback, rods_zone, group_name):
             genquery.AS_LIST, callback
         )
 
-        for row in iter:
+        for _row in iter:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
     return schemaCategory

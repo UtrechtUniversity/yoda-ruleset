@@ -541,7 +541,7 @@ def resource_exists(ctx, resource_name):
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
+    for _row in iter:
         return True
 
     return False

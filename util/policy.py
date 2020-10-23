@@ -78,13 +78,13 @@ def require():
             elif isinstance(result, Fail):
                 log._write(ctx, '{} denied: {}'.format(f.__name__, str(result)))
                 ctx.msiOprDisallowed()
-                assert False  # Just in case.
+                raise AssertionError()  # Just in case.
 
             # Require an unambiguous YES from the policy function.
             # Default to fail.
             log._write(ctx, '{} denied: ambiguous policy result (internal error): {}'
                             .format(f.__name__, str(result)))
             ctx.msiOprDisallowed()
-            assert False
+            raise AssertionError()
         return r
     return deco
