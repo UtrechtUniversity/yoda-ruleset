@@ -8,6 +8,7 @@ import itertools
 from collections import namedtuple
 
 import irods_types
+
 import msi
 import pathutil
 from query import Query

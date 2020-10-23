@@ -6,12 +6,14 @@ __copyright__ = ['Copyright (c) 2019, Maastricht University',
 __license__   = 'Apache License 2.0, see LICENSE'
 
 import json
-import jsonavu
+
 import genquery
+import irods_types
+import jsonavu
 import jsonschema
 import requests
 import requests_cache
-import irods_types
+
 
 # Global vars
 activelyUpdatingAVUs = False

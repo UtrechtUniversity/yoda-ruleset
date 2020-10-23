@@ -12,6 +12,7 @@ from collections import namedtuple
 from enum import Enum
 
 import session_vars
+
 from util import *
 
 __all__ = ['rule_integrity_check_vault']

@@ -61,3 +61,23 @@ uuChopPath(*path, *parent, *baseName) {
 		uuChop(*path, *parent, *baseName, "/", false);
 	}
 }
+
+# \brief Split a checksum into a checksum type and a value
+#
+# \param[in]  checksum
+# \param[out] checksumType  e.g. "md5" or "sha2"
+# \param[out] checksumValue
+#
+uuChopChecksum(*checksum, *checksumType, *checksumValue) {
+# if checksum is not labeled then it is "md5"
+   *checksumType = "md5";
+   *checksumValue = *checksum;
+   *checksumParts = split(*checksum, ":");
+   if (size(*checksumParts) > 1 ) {
+      *checksumType = hd(*checksumParts);
+      *checksumValue = "";
+      foreach (*value in tl(*checksumParts)) {
+         *checksumValue = "*checksumValue*value";
+      }
+   }
+}

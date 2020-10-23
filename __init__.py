@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.6.1'
+__version__   = '1.6.3'
 __copyright__ = 'Copyright (c) 2015-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 

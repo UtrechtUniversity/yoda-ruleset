@@ -4,10 +4,11 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import constants
-import error
 import genquery
 import irods_types
+
+import constants
+import error
 import msi
 import pathutil
 from query import Query

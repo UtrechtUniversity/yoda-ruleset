@@ -7,11 +7,10 @@ __license__   = 'GPLv3, see LICENSE'
 import datacite
 import json_datacite41
 import json_landing_page
-import meta
-import vault
-import provenance
 import mail
-
+import meta
+import provenance
+import vault
 from util import *
 
 __all__ = ['rule_process_publication',
