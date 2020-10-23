@@ -6,10 +6,11 @@ __license__   = 'GPLv3, see LICENSE'
 
 import os
 import time
+
 import irods_types
+
 import folder
 import meta_form
-
 from util import *
 from util.query import Query
 

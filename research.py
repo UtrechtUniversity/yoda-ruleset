@@ -4,9 +4,10 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from pathvalidate import validate_filename, validate_filepath, ValidationError
+
 import folder
 import meta_form
-from pathvalidate import ValidationError, validate_filename, validate_filepath
 from util import *
 
 __all__ = ['api_research_folder_add',
