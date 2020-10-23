@@ -4,16 +4,18 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import mail
-import group
 import itertools
 import os
 import time
-import policies_datapackage_status
-import folder
+
 import irods_types
+
+import folder
+import group
+import mail
 import meta
 import meta_form
+import policies_datapackage_status
 from util import *
 
 __all__ = ['api_vault_submit',

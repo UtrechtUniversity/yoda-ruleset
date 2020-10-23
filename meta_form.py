@@ -6,8 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
-import folder
 import irods_types
+
+import folder
 import meta
 import schema as schema_
 import schema_transformation

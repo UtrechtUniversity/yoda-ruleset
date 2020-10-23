@@ -13,12 +13,13 @@ import re
 import time
 
 import irods_types
+import session_vars
+import xmltodict
+
 import meta
 import schema
 import schema_transformations
-import session_vars
 import vault_xml_to_json
-import xmltodict
 from util import *
 
 

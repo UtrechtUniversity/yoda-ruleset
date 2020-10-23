@@ -8,6 +8,7 @@ from collections import namedtuple
 
 import genquery
 import session_vars
+
 from query import Query
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
