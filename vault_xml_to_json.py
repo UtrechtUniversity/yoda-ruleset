@@ -375,7 +375,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 "DATA_NAME like 'yoda-metadata%%.json' AND COLL_ID = '%d'" % (coll_id),
                 genquery.AS_LIST, callback)
 
-            for row2 in iter2:
+            for _row in iter2:
                 jsonFound = True
                 continue
 

@@ -51,7 +51,7 @@ def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
         try:
             jsonschema.validate(instance=data, schema=schema)
         except jsonschema.exceptions.ValidationError as e:
-            ctx.msiExit("-1101000", "JSON instance could not be validated against JSON-schema: " + str(e.message))
+            ctx.msiExit("-1101000", "JSON instance could not be validated against JSON-schema: " + str(e))
             return
 
     # Load global variable activelyUpdatingAVUs and set this to true. At this point we are actively updating
@@ -170,7 +170,7 @@ def get_json_schema_from_object(ctx, object_name, object_type, json_namespace):
         try:
             r = requests.get(json_schema_url)
         except requests.exceptions.RequestException as e:  # This is the correct syntax
-            ctx.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e.message))
+            ctx.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e))
             return
         schema = r.text
     else:
