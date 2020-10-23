@@ -7,9 +7,10 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
-import avu_json
 import irods_types
 import jsonschema
+
+import avu_json
 import schema as schema_
 import vault
 from util import *

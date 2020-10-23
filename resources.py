@@ -6,9 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
 
-from util import *
 import meta_form
-
+from util import *
 
 __all__ = ['api_resource_groups_dm',
            'api_resource_monthly_stats_dm',

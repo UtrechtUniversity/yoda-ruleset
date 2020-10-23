@@ -7,10 +7,11 @@ __license__   = 'GPLv3, see LICENSE'
 import os
 import time
 
-import folder
 import irods_types
+from pathvalidate import validate_filename, validate_filepath, ValidationError
+
+import folder
 import meta_form
-from pathvalidate import ValidationError, validate_filename, validate_filepath
 from util import *
 from util.query import Query
 

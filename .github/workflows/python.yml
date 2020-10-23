@@ -20,15 +20,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install flake8 isort codespell
+          python -m pip install flake8 flake8-import-order codespell
 
-      - name: Lint with pycodestyle
+      - name: Lint with flake8
         run: |
-          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --exclude=__init__.py --statistics
-
-      - name: Sort python imports
-        run: |
-          isort --recursive --diff --skip __init__.py . || true
+          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --statistics
 
       - name: Check code for common misspellings
         run: |

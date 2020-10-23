@@ -11,6 +11,7 @@ if sys.version_info > (2, 7):
 
 import genquery
 import irods_types
+
 import msi
 from query import Query
 

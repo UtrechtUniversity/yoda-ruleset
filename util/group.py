@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from query import Query
 import user
+from query import Query
 
 
 def exists(ctx, grp):

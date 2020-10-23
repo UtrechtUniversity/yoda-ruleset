@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import publication
 import uuid
 
+import publication
 from util import *
 
 __all__ = ['rule_generate_uuid']
