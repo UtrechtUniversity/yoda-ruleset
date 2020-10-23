@@ -694,7 +694,7 @@ def datarequest_is_owner(ctx, request_id, user_name):
        :param user_name: Username of the user whose ownership is checked
        :type user_name: str
 
-       :raises Exception: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
+       :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
        :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
        :rtype: bool
     """
