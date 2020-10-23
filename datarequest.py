@@ -6,17 +6,18 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
-import jsonschema
 import re
 from collections import OrderedDict
 from datetime import datetime
-from genquery import (row_iterator, AS_DICT)
+from enum import Enum
 
-import mail
+import jsonschema
+from genquery import AS_DICT, row_iterator
+
 import avu_json
+import mail
 from util import *
 from util.query import Query
-from enum import Enum
 
 __all__ = ['api_datarequest_browse',
            'api_datarequest_schema_get',
