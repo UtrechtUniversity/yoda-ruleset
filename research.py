@@ -32,8 +32,9 @@ __all__ = ['api_research_folder_add',
 def api_research_folder_add(ctx, coll, new_folder_name):
     """Add a new folder to a research folder.
 
-    :param coll: collection to create new folder in
-    :param new_folder_name: name of the new folder
+    :param ctx:             Combined type of a callback and rei struct
+    :param coll:            Collection to create new folder in
+    :param new_folder_name: Name of the new folder
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -105,9 +106,10 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     """Rename an existing research folder.
 
-    :param new_folder_name: new folder name
-    :param coll: parent collection of folder
-    :param org_folder_name: current name of the folder
+    :param ctx:             Combined type of a callback and rei struct
+    :param new_folder_name: New folder name
+    :param coll:            Parent collection of folder
+    :param org_folder_name: Current name of the folder
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -184,8 +186,9 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 def api_research_folder_delete(ctx, coll, folder_name):
     """Delete a research folder.
 
-    :param coll: parent collection of folder to delete
-    :param folder_name: name of folder to delete
+    :param ctx:         Combined type of a callback and rei struct
+    :param coll:        Parent collection of folder to delete
+    :param folder_name: Name of folder to delete
     """
     coll_target = coll + '/' + folder_name
 
@@ -242,9 +245,10 @@ def api_research_folder_delete(ctx, coll, folder_name):
 def api_research_file_copy(ctx, copy, coll, file):
     """Copy a file in a research folder.
 
-    :param copy: new file name
-    :param coll: parent collection of file
-    :param file: current name of the file
+    :param ctx:  Combined type of a callback and rei struct
+    :param copy: New file name
+    :param coll: Parent collection of file
+    :param file: Current name of the file
     """
     if len(copy) == 0:
         return {"proc_status": "nok",
@@ -316,9 +320,10 @@ def api_research_file_copy(ctx, copy, coll, file):
 def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     """Rename a file in a research folder.
 
-    :param new_file_name: new file name
-    :param coll: parent collection of file
-    :param org_file_name: current name of the file
+    :param ctx:           Combined type of a callback and rei struct
+    :param new_file_name: New file name
+    :param coll:          Parent collection of file
+    :param org_file_name: Current name of the file
     """
     if len(new_file_name) == 0:
         return {"proc_status": "nok",
@@ -390,8 +395,9 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 def api_research_file_delete(ctx, coll, file_name):
     """Delete a file in a research folder.
 
-    :param coll: parent collection of file to delete
-    :param file_name: name of file to delete
+    :param ctx:       Combined type of a callback and rei struct
+    :param coll:      Parent collection of file to delete
+    :param file_name: Name of file to delete
     """
     path_target = coll + '/' + file_name
 
@@ -633,7 +639,8 @@ def api_research_revision_restore(ctx, revision_id, overwrite, coll_target, new_
 def api_research_system_metadata(ctx, coll):
     """Return collection statistics as JSON.
 
-    :param coll: research collection
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Research collection
     """
     import math
 

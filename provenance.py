@@ -16,11 +16,11 @@ __all__ = ['rule_provenance_log_action',
 
 @rule.make()
 def rule_provenance_log_action(ctx, actor, coll, action):
-    """
-    Function to add action log record to provenance of specific folder.
+    """Function to add action log record to provenance of specific folder.
 
-    :param actor: The actor of the action
-    :param coll: The collection the provenance log is linked to.
+    :param ctx:    Combined type of a callback and rei struct
+    :param actor:  The actor of the action
+    :param coll:   The collection the provenance log is linked to.
     :param action: The action that is logged.
     """
     try:
@@ -32,11 +32,11 @@ def rule_provenance_log_action(ctx, actor, coll, action):
 
 
 def log_action(ctx, actor, coll, action):
-    """
-    Function to add action log record to provenance of specific folder.
+    """Function to add action log record to provenance of specific folder.
 
-    :param actor: The actor of the action
-    :param coll: The collection the provenance log is linked to.
+    :param ctx:    Combined type of a callback and rei struct
+    :param actor:  The actor of the action
+    :param coll:   The collection the provenance log is linked to.
     :param action: The action that is logged.
     """
     try:
@@ -49,9 +49,9 @@ def log_action(ctx, actor, coll, action):
 
 @rule.make()
 def rule_copy_provenance_log(ctx, source, target):
-    """
-    Copy the provenance log of a collection to another collection.
+    """Copy the provenance log of a collection to another collection.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
@@ -59,9 +59,9 @@ def rule_copy_provenance_log(ctx, source, target):
 
 
 def provenance_copy_log(ctx, source, target):
-    """
-    Copy the provenance log of a collection to another collection.
+    """Copy the provenance log of a collection to another collection.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param source: Path of source collection.
     :param target: Path of target collection.
     """
@@ -83,9 +83,9 @@ def provenance_copy_log(ctx, source, target):
 
 
 def get_provenance_log(ctx, coll):
-    """
-    Return provenance log of a collection.
+    """Return provenance log of a collection.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Path of a collection in research or vault space.
 
     :returns dict: Provenance log.
@@ -110,6 +110,7 @@ def get_provenance_log(ctx, coll):
 def api_provenance_log(ctx, coll):
     """Return formatted provenance log of a collection.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Path of a collection in research or vault space.
 
     :returns dict: Formatted provenance log.
@@ -130,6 +131,7 @@ def api_provenance_log(ctx, coll):
 def latest_action_actor(ctx, path):
     """Return the actor of the latest provenance action.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param path: Path of a collection in research or vault space.
 
     :returns str: Actor of latest provenance action.
