@@ -179,8 +179,8 @@ def rule_get_transformation_info(rule_args, callback, rei):
 
     :param rule_args[0]: JSON path
 
-    :returns: rule_args[1] -- transformation possible? true|false
-              rule_args[2] -- human-readable description of the transformation
+    :param rule_args[1]: Transformation possible? true|false
+    :param rule_args[2]: human-readable description of the transformation
     """
     json_path = rule_args[0]
 

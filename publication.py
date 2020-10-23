@@ -400,8 +400,6 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
 
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
-
-    :return: Landing page URL
     """
     vaultPackage = publication_state["vaultPackage"]
     yodaDOI = publication_state["yodaDOI"]
