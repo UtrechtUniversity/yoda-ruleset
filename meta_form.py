@@ -74,7 +74,7 @@ def get_coll_lock_count(ctx, path, org_metadata=None):
 
     count = 0
 
-    for root in [v for k, v in org_metadata if k == constants.IILOCKATTRNAME]:
+    for _root in [v for k, v in org_metadata if k == constants.IILOCKATTRNAME]:
         count += 1
 
     return count
@@ -90,7 +90,7 @@ def humanize_validation_error(e):
 
     # Make array indices human-readable.
     path_out = []
-    for i, x in enumerate(e['path']):
+    for _i, x in enumerate(e['path']):
         if type(x) is int:
             path_out[-1] = '{} {}'.format(path_out[-1], x + 1)
         else:

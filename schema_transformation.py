@@ -45,7 +45,7 @@ def execute_transformation(callback, metadata_path, transform):
         callback.rule_provenance_log_action("system", coll, "updated metadata schema")
         log.write(callback, "Transformed %s" % (new_path))
     else:
-        assert False
+        raise AssertionError()
 
 
 def transform_research_xml(callback, xml_path):
