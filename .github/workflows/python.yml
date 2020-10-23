@@ -24,7 +24,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --statistics
+          flake8 --statistics
 
       - name: Check code for common misspellings
         run: |
@@ -32,4 +32,4 @@ jobs:
 
       - name: Check McCabe complexity
         run: |
-          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --exclude=__init__.py --max-complexity 10 || true
+          flake8 --max-complexity 10 || true

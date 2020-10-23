@@ -24,4 +24,4 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 *.py avu_json/*.py util/*.py tests/step_defs/*.py --statistics
+          flake8 --statistics

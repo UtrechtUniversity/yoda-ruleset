@@ -5,9 +5,9 @@ __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+
 import requests
 import urllib3
-
 from pytest_bdd import (
     given,
     parsers,
