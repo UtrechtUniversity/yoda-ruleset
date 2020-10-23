@@ -24,6 +24,9 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_is_owner',
+           'api_datarequest_is_bod_member',
+           'api_datarequest_is_dmc_member',
+           'api_datarequest_is_datamanager',
            'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
            'api_datarequest_preliminary_review_get',
@@ -663,7 +666,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_is_owner(ctx, request_id, user_name):
+def api_datarequest_is_owner(ctx, request_id):
     """Check if the invoking user is also the owner of a given data request
 
        This function is a wrapper for datarequest_is_owner.
@@ -679,7 +682,7 @@ def api_datarequest_is_owner(ctx, request_id, user_name):
     is_owner = False
 
     try:
-        is_owner = datarequest_is_owner(ctx, request_id, user_name)
+        is_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
     except error.UUError as e:
         return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(str(e)))
 
@@ -755,6 +758,39 @@ def datarequest_is_reviewer(ctx, request_id):
 
     # Return the is_reviewer boolean
     return is_reviewer
+
+
+@api.make()
+def api_datarequest_is_bod_member(ctx):
+    """
+    Check if given user is BOD member
+
+    :return True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_BOD)
+
+
+@api.make()
+def api_datarequest_is_dmc_member(ctx):
+    """
+    Check if given user is BOD member
+
+    :return True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_DMC)
+
+
+@api.make()
+def api_datarequest_is_datamanager(ctx):
+    """
+    Check if given user is BOD member
+
+    :return True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_DM)
 
 
 @api.make()
