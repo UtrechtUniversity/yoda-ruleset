@@ -492,6 +492,6 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
         ofFlags = 'forceFlag=++++numThreads=1'
         msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
     except msi.Error as e:
-        raise api.Error('copy_failed', 'The file could not be copied', str(e))
+        return api.Error('copy_failed', 'The file could not be copied', str(e))
 
     return {"proc_status": "ok"}
