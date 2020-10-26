@@ -175,6 +175,8 @@ class Query(object):
         """Return the total amount of rows matching the query.
 
         This includes rows that are omitted from the result due to limit/offset parameters.
+
+        :returns: Total amount of rows matching the query
         """
         if self._total is None:
             if self.offset == 0 and self.options & Option.RETURN_TOTAL_ROW_COUNT:

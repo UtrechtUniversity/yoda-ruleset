@@ -198,6 +198,8 @@ def set_update_publication_state(ctx, vault_package):
     """Routine to set publication state of vault package pending to update.
 
     :param vault_package: Path to the package in the vault
+
+    :returns: String with state of publication state update
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':

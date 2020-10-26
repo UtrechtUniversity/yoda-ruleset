@@ -73,6 +73,8 @@ def make(inputs=None, outputs=None, transform=lambda x: x, handler=Output.STORE)
         def foo(rule_args, callback, rei):
             x, y = rule_args[0:2]
             callback.writeString('stdout', json.dumps(int(x) + int(y)))
+
+    :returns: Decorator to create a rule from a Python function
     """
     def encode_val(v):
         """Encode a value such that it can be safely transported in rule_args, as output."""

@@ -32,6 +32,8 @@ def api_browse_folder(ctx,
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
     :param space:      Space the collection is in
+
+    :returns: Dict with paginated collection contents
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -120,6 +122,8 @@ def api_browse_collections(ctx,
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
     :param space:      Space the collection is in
+
+    :returns: Dict with paginated collection contents
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -197,6 +201,8 @@ def api_search(ctx,
     :param sort_order:    Column sort order ('asc' or 'desc')
     :param offset:        Offset to start browsing from
     :param limit:         Limit number of results
+
+    :returns: Dict with paginated search results
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.

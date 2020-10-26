@@ -88,7 +88,7 @@ def get_provenance_log(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Path of a collection in research or vault space.
 
-    :returns dict: Provenance log.
+    :returns: Provenance log as a list
     """
     provenance_log = []
 
@@ -113,7 +113,7 @@ def api_provenance_log(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Path of a collection in research or vault space.
 
-    :returns dict: Formatted provenance log.
+    :returns: Formatted provenance log as a list
     """
     provenance_log = get_provenance_log(ctx, coll)
     output = []
@@ -134,7 +134,7 @@ def latest_action_actor(ctx, path):
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of a collection in research or vault space.
 
-    :returns str: Actor of latest provenance action.
+    :returns: Actor of latest provenance action
     """
     provenance_log = get_provenance_log(ctx, path)
     return provenance_log[-1][2]

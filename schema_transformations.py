@@ -34,13 +34,11 @@ def _default0_default1(m):
 
     Finally, the creator and contributor name fields have been split into first
     and last names, to comply with the OpenAIRE standard.
+
+    :returns: Transformed (default-1) JSON object
     """
     def fixup_name(n):
-        """
-        Split a name into a first and last name.
-
-        This algo is error-prone, but acceptable.
-        """
+        """Split a name into a first and last name, error-prone, but acceptable."""
         n.strip()  # Trim whitespace, if any.
 
         # Name contains comma? Parse as: last, first, first, first.

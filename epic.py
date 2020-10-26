@@ -24,6 +24,7 @@ rule_generate_uuid = rule.make(inputs=[], outputs=[0])(generate_uuid)
 def register_epic_pid(ctx, target):
     """Create and try to register an EPIC PID.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param target: Target to register EPIC PID on
 
     :return: Dict with url, PID and http status.
@@ -47,6 +48,7 @@ def register_epic_pid(ctx, target):
 def save_epic_pid(ctx, target, url, pid):
     """Save persistent EPIC ID.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param target: Target to register EPIC PID on
     :param url:    URL of EPIC PID
     :param pid:    PID of EPIC PID

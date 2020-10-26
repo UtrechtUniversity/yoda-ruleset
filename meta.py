@@ -74,6 +74,8 @@ def get_json_metadata_errors(callback,
     :param metadata:        Pre-parsed JSON object
     :param schema:          Schema to check against
     :param ignore_required: Ignore required fields
+
+    :returns: List of errors in JSON object
     """
     if schema is None:
         schema = schema_.get_active_schema(callback, metadata_path)
@@ -113,6 +115,8 @@ def is_json_metadata_valid(callback,
     :param metadata_path:   Path to the JSON object
     :param metadata:        Pre-parsed JSON object
     :param ignore_required: Ignore required fields
+
+    :returns: Boolean indicating if JSON metadata us valid
     """
     try:
         return len(get_json_metadata_errors(callback,
@@ -132,6 +136,8 @@ def get_collection_metadata_path(callback, coll):
 
     :param callback: Combined type of a callback and rei struct
     :param coll:     Path of collection to check for metadata
+
+    :returns: String with path to metadata file
     """
     for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
                                                    constants.IIMETADATAXMLNAME]]:
@@ -192,13 +198,13 @@ def collection_has_cloneable_metadata(callback, coll):
     """
     Check if a collection has metadata, and validate it.
 
-    Return the parent metadata_path on success, or False otherwise.
-
     This always ignores 'required' schema attributes, since metadata can
     only be cloned in the research area.
 
     :param callback: Combined type of a callback and rei struct
     :param coll:     Path of collection to check for cloneable metadata
+
+    :returns: String with the parent metadata_path on success, or False otherwise.
     """
     path = get_collection_metadata_path(callback, coll)
 
