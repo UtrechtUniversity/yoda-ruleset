@@ -14,10 +14,10 @@ __all__ = ['rule_published_xml_to_json_check_published_metadata_xml_for_transfor
 def transformPublishedMetadataXmlToJson(callback, rods_zone, publish_collection, xml_data_name, data_name_json):
     """Convert current yoda-metadata.xml to yoda-metadata.json.
 
-    :param rods_zone: Zone name
-    :param vault_collection: Collection name of metadata XML
-    :param xml_data_name: Data name of metadata XML that requires transformation
-    :param data_name_json: Name of data object to be created containing the
+    :param rods_zone:          Zone name
+    :param publish_collection: Collection name of metadata XML
+    :param xml_data_name:      Data name of metadata XML that requires transformation
+    :param data_name_json:     Name of data object to be created containing the
     """
     # This function simply transforms given data_name to a Json data object.
     # No further intelligence required further.
@@ -110,13 +110,13 @@ def iiCheckPublishedMetadataXmlForTransformationToJsonBatch(callback, rods_zone,
 def rule_published_xml_to_json_check_published_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert published metadata XML that residedes in 'published' collection to JSON - batchwise.
 
-    :param data_id: First DATA_ID to check - initial =0
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
-    :param delay: Delay between batches in seconds
-    :param publicHost: Hostname of public host
-    :param yodaInstance:  Name of Yoda instance
-    :param yodaPrefix: Prefix of Yoda DOIs from this instance
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
+                      [4] Hostname of public host
+                      [5]  Name of Yoda instance
+                      [6] Prefix of Yoda DOIs from this instance
     """
     data_id = int(rule_args[0])
     batch = int(rule_args[1])

@@ -410,10 +410,10 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 def rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert vault metadata XML to JSON - batchwise.
 
-    :param coll_id: First COLL_ID to check - initial =0
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
-    :param delay: Delay between batches in seconds
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
     """
     import session_vars
 

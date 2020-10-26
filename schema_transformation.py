@@ -178,10 +178,9 @@ def rule_get_transformation_info(rule_args, callback, rei):
     """
     Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
 
-    :param rule_args[0]: JSON path
-
-    :param rule_args[1]: Transformation possible? true|false
-    :param rule_args[2]: human-readable description of the transformation
+    :param rule_args: [0] JSON path
+                      [1] Transformation possible? true|false
+                      [2] human-readable description of the transformation
     """
     json_path = rule_args[0]
 
@@ -230,10 +229,10 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
     """
     Transform all metadata JSON files in the vault to the active schema.
 
-    :param coll_id: First COLL_ID to check
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
-    :param delay: Delay between batches in seconds
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
     """
     coll_id = int(rule_args[0])
     batch   = int(rule_args[1])
