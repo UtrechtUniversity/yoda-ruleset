@@ -129,8 +129,9 @@ def status_set(ctx, request_id, status):
 def status_get(ctx, request_id):
     """Get the status of a data request
 
-       Arguments:
-       request_id -- Unique identifier of the data request.
+    :param request_id: Unique identifier of the data request
+
+    :raises Exception: Status could not be retrieved
 
     :returns: Status of given data request
     """
