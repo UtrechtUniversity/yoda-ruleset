@@ -26,6 +26,8 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
 
     :param bucketcase       multiple ways of cleaning up revisions can be chosen.
     :param endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+
+    :returns: String with status of cleanup
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -66,10 +68,13 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
 
 
 def revision_remove(ctx, revision_id):
-    """ Remove a revision from the revision store.
+    """Remove a revision from the revision store.
+
     Called by revision-cleanup.r cronjob.
 
     :param revision_id       DATA_ID of the revision to remove
+
+    :returns: Boolean indicating if revision was removed
     """
     zone = user.zone(ctx)
     revision_store = '/' + zone + constants.UUREVISIONCOLLECTION
@@ -96,7 +101,8 @@ def revision_remove(ctx, revision_id):
 
 
 def revision_bucket_list(ctx, case):
-    """ Returns a bucket list definition containing timebox of a bucket, max number of entries and start index.
+    """Returns a bucket list definition containing timebox of a bucket, max number of entries and start index.
+
     The first integer represents a time offset
     The second integer represents the number of revisions that can stay in the bucket
     The third integer represents the starting index when revisions need to remove. 0 is the newest, -1 the oldest
@@ -104,6 +110,7 @@ def revision_bucket_list(ctx, case):
 
     :param case  Select a bucketlist based on a string
 
+    :returns: List representing revision strategy
     """
     # Time to second conversion
     HOURS = 3600
@@ -148,9 +155,13 @@ def revision_bucket_list(ctx, case):
 
 
 def get_revision_list(ctx, path):
-    """
-    Returns list of all revisions [dataId, timestamp of modification] in descending order where org_original_path=path
+    """Returns list of all revisions
+
+    Format: [dataId, timestamp of modification] in descending order where org_original_path=path
+
     :param path  path of original
+
+    :returns: List of all revisions
     """
     candidates = []
     zone = user.zone(ctx)
@@ -186,8 +197,9 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
     :param buckets
     :param revisions
     :param intial_upper_time_bound
-    """
 
+    :returns: List of candidates for deletion based on the active strategy case
+    """
     deletion_candidates = []
 
     # Set initial upper bound
@@ -237,10 +249,9 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
 
 
 def calculate_end_of_calendar_day(ctx):
-    """
-    Calculate the unix timestamp for the end of the current day (Same as start of next day).
-    returns end of calendar day - Timestamp of the end of the current day
+    """Calculate the unix timestamp for the end of the current day (Same as start of next day).
 
+    :returns: End of calendar day - Timestamp of the end of the current day
     """
     import datetime
     # Get datetime of tomorrow.
@@ -257,6 +268,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     :param searchString: string to search for as part of a file name
     :param offset:       starting point in total resultset to start fetching
     :param limit:        max size of the resultset to be returned
+
+    :returns: Paginated revision search result
     """
     zone = user.zone(ctx)
 
@@ -344,9 +357,11 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
 @api.make()
 def api_revisions_list(ctx, path):
-    """List revisions of a file in a research folder.
+    """Get list revisions of a file in a research folder.
 
     :param path: path to data object to find revisions for
+
+    :returns: List revisions of a file in a research folder
     """
     originalPathKey = ''
     startpath = ''
@@ -396,6 +411,8 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     :param overwrite:    overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
     :param coll_target:  target collection to place the file
     :param new_filename: new file name as entered by user (in case of duplicate)
+
+    :returns: API status
     """
 
     # New file name should not contain '\\' or '/'
