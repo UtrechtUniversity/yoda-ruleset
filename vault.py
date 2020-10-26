@@ -40,6 +40,8 @@ def api_vault_submit(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to submit
+
+    :returns: API status
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
 
@@ -57,6 +59,8 @@ def api_vault_approve(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to approve
+
+    :returns: API status
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
@@ -74,6 +78,8 @@ def api_vault_cancel(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to cancel submit
+
+    :returns: API status
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
 
@@ -91,6 +97,8 @@ def api_vault_depublish(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to depublish
+
+    :returns: API status
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
 
@@ -108,6 +116,8 @@ def api_vault_republish(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to republish
+
+    :returns: API status
     """
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
 
@@ -126,6 +136,8 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     :param ctx:         Combined type of a callback and rei struct
     :param coll_origin: Collection of data package to copy
     :param coll_target: Collection to copy data package to
+
+    :returns: API status
     """
     zone = user.zone(ctx)
 
@@ -544,7 +556,7 @@ def treewalk_and_ingest(ctx, folder, target, origin, error):
 
         target, origin - will not change during iterative processing
 
-        return error status (which should remain 0 for further processing in iterative manner)
+        :returns: Error status (which should remain 0 for further processing in iterative manner)
     """
     parent_coll, coll = pathutil.chop(folder)
 

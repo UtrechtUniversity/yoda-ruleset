@@ -21,8 +21,15 @@ def send(ctx, to, actor, subject, body):
 
     The originating address and mail server credentials are taken from the
     ruleset configuration file.
-    """
 
+    :param ctx:     Combined type of a callback and rei struct
+    :param to:      Recipient of them mail
+    :param actor:   Actor of the mail
+    :param subject: Subject of mail
+    :param body:    Body of mail
+
+    :returns: API status
+    """
     if not config.notifications_enabled:
         log.write(ctx, '[EMAIL] Notifications are disabled')
         return

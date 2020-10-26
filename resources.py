@@ -31,6 +31,8 @@ def api_resource_save_tier(ctx, resource_name, tier_name):
     :param ctx:           Combined type of a callback and rei struct
     :param resource_name: Resource that the tier is equipped with
     :param tier_name:     Name of the tier that is given to the resource
+
+    :returns: API status
     """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -50,8 +52,9 @@ def api_resource_full_year_group_data(ctx, group_name, current_month):
     :param ctx:           Combined type of a callback and rei struct
     :param group_name:    group that is searched for storage data
     :param current_month: Month passed that is supposed to be the month to look back from
-    """
 
+    :returns: API status
+    """
     # Check permissions for this function
     # Member of this group?
     member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
@@ -150,6 +153,8 @@ def api_resource_tier(ctx, res_name):
 
     :param ctx:      Combined type of a callback and rei struct
     :param res_name: Resource that the tier is equipped with
+
+    :returns: API status
     """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -223,6 +228,8 @@ def api_resource_monthly_category_stats_export_dm(ctx):
     - 12 columns, one per month, with used storage count in bytes
 
     :param ctx:  Combined type of a callback and rei struct
+
+    :returns: API status
     """
     datamanager = user.full_name(ctx)
     categories = get_categories_datamanager(ctx, datamanager)
@@ -274,7 +281,7 @@ def get_group_category_info(ctx, groupName):
     :param ctx:       Combined type of a callback and rei struct
     :param groupName: groupname to get cat/subcat info for
 
-    Returns a dict with indices 'category' and 'subcategory'.
+    :returns: A dict with indices 'category' and 'subcategory'.
     """
     category = ''
     subcategory = ''
@@ -305,6 +312,8 @@ def getMonthlyCategoryStorageStatistics(ctx, categories):
 
     :param ctx:        Combined type of a callback and rei struct
     :param categories: List of categories to collect storage data for
+
+    :returns: Storage stats of last month for a list of categories
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
@@ -353,6 +362,8 @@ def get_groups_on_categories(ctx, categories):
 
     :param ctx:        Combined type of a callback and rei struct
     :param categories: List of categories groups have to be found for
+
+    :returns: All groups belonging to all given categories
     """
     groups = []
     metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
@@ -388,6 +399,8 @@ def get_categories_datamanager(ctx, datamanagerName):
 
     :param ctx:             Combined type of a callback and rei struct
     :param datamanagerName: Datamanager involved
+
+    :returns: All categories for current datamanager
     """
     categories = []
 
@@ -415,6 +428,8 @@ def get_tier_by_resource_name(ctx, res_name):
 
     :param ctx:      Combined type of a callback and rei struct
     :param res_name: Name of the resource to get the tier name for
+
+    :returns: Tiername for given resource
     """
     tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
@@ -442,6 +457,8 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     3) actual calculated storage for the group
 
     :param ctx:  Combined type of a callback and rei struct
+
+    :returns: Storage data for each group of each category
     """
     zone = user.zone(ctx)
 

@@ -67,6 +67,8 @@ def _wrap(msi, exception):
 
     e.g.:    callback.msiDataObjCreate(x, y, z)
     becomes: data_obj_create(callback, x, y, z)
+
+    :returns: MSI wrapper
     """
     return lambda callback, *args: _run(getattr(callback, msi), exception, *args)
 

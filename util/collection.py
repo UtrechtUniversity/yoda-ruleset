@@ -63,7 +63,8 @@ def data_count(callback, path, recursive=True):
 
     :param path: A collection path
     :param recursive: Measure subcollections as well
-    :return: A number of data objects.
+
+    :returns: Number of data objects
     """
     # Generators can't be fed to len(), so here we are...
     return sum(1 for _ in data_objects(callback, path, recursive=recursive))
@@ -85,6 +86,8 @@ def data_objects(callback, path, recursive=False):
           use list(...) on the result to get an actual list if necessary.
 
     The returned paths are absolute paths (e.g. ['/tempZone/home/x/y.txt']).
+
+    :returns: List of all data objects in a collection
     """
     # coll+data name -> path
     def to_absolute(row):
@@ -153,5 +156,7 @@ def name_from_id(ctx, coll_id):
     """Get collection name from collection id.
 
     :param coll_id Collection id
+
+    :returns: Collection name
     """
     return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
