@@ -26,13 +26,16 @@ __all__ = ['rule_collection_group_name',
            'rule_folder_secure']
 
 
-def set_status(_ctx, coll, status):
+def set_status(ctx, coll, status):
     """Change a folder's status.
 
     Status changes are validated by policy (AVU modify preproc).
 
+    :param ctx:    Combined type of a callback and rei struct
     :param coll:   Folder to change status of
     :param status: Status to change to
+
+    :returns: API status
     """
     # Ideally we would pass in the current (expected) status as part of the
     # request, and perform a metadata 'mod' operation instead of a 'set'.
@@ -44,12 +47,12 @@ def set_status(_ctx, coll, status):
     # FOLDER transition.
     try:
         if status.value == '':
-            avu.rmw_from_coll(_ctx, coll, constants.IISTATUSATTRNAME, '%')
+            avu.rmw_from_coll(ctx, coll, constants.IISTATUSATTRNAME, '%')
         else:
-            avu.set_on_coll(_ctx, coll, constants.IISTATUSATTRNAME, status.value)
+            avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, status.value)
     except Exception as e:
-        x = policies_folder_status.can_set_folder_status_attr(_ctx,
-                                                              user.user_and_zone(_ctx),
+        x = policies_folder_status.can_set_folder_status_attr(ctx,
+                                                              user.user_and_zone(ctx),
                                                               coll,
                                                               status.value)
         if x:
@@ -59,254 +62,275 @@ def set_status(_ctx, coll, status):
     return api.Result.ok()
 
 
-def set_status_as_datamanager(_ctx, coll, status):
+def set_status_as_datamanager(ctx, coll, status):
     """Change a folder's status as a datamanager."""
-    res = _ctx.iiFolderDatamanagerAction(coll, status.value, '', '')
+    res = ctx.iiFolderDatamanagerAction(coll, status.value, '', '')
     if res['arguments'][2] != 'Success':
         return api.Error(*res['arguments'][1:])
 
 
 @api.make()
-def api_folder_lock(_ctx, coll):
+def api_folder_lock(ctx, coll):
     """Lock a folder.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to lock
+
+    :returns: API status
     """
-    return set_status(_ctx, coll, constants.research_package_state.LOCKED)
+    return set_status(ctx, coll, constants.research_package_state.LOCKED)
 
 
 @api.make()
-def api_folder_unlock(_ctx, coll):
+def api_folder_unlock(ctx, coll):
     """Unlock a folder.
 
     Unlocking is implemented by clearing the folder status. Since this action
     can also represent other state changes than "unlock", we perform a sanity
     check to see if the folder is currently in the expected state.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to unlock
+
+    :returns: API status
     """
-    if get_status(_ctx, coll) is not constants.research_package_state.LOCKED:
+    if get_status(ctx, coll) is not constants.research_package_state.LOCKED:
         return api.Error('status_changed',
                          'Insufficient permissions or the folder is currently not locked')
 
-    return set_status(_ctx, coll, constants.research_package_state.FOLDER)
+    return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
 @api.make()
-def api_folder_submit(_ctx, coll):
+def api_folder_submit(ctx, coll):
     """Submit a folder.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to submit
+
+    :returns: API status
     """
-    return set_status(_ctx, coll, constants.research_package_state.SUBMITTED)
+    return set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
 @api.make()
-def api_folder_unsubmit(_ctx, coll):
+def api_folder_unsubmit(ctx, coll):
     """Unsubmit a folder.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to unsubmit
+
+    :returns: API status
     """
     # Sanity check. See 'unlock'.
-    if get_status(_ctx, coll) is not constants.research_package_state.SUBMITTED:
+    if get_status(ctx, coll) is not constants.research_package_state.SUBMITTED:
         return api.Error('status_changed', 'Folder cannot be unsubmitted because its status has changed.')
 
-    return set_status(_ctx, coll, constants.research_package_state.FOLDER)
+    return set_status(ctx, coll, constants.research_package_state.FOLDER)
 
 
 @api.make()
-def api_folder_accept(_ctx, coll):
+def api_folder_accept(ctx, coll):
     """Accept a folder.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to accept
+
+    :returns: API status
     """
-    return set_status_as_datamanager(_ctx, coll, constants.research_package_state.ACCEPTED)
+    return set_status_as_datamanager(ctx, coll, constants.research_package_state.ACCEPTED)
 
 
 @api.make()
-def api_folder_reject(_ctx, coll):
+def api_folder_reject(ctx, coll):
     """Reject a folder.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to reject
+
+    :returns: API status
     """
-    return set_status_as_datamanager(_ctx, coll, constants.research_package_state.REJECTED)
+    return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_folder_secure(_ctx, coll):
+def rule_folder_secure(ctx, coll):
     """Rule entry to folder_secure: Secure a folder to the vault.
     This function should only be called by a rodsadmin
     and should not be called from the portal.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to secure
 
-    :return: '0' when nu error occurred
+    :returns: '0' when nu error occurred
     """
-    return folder_secure(_ctx, coll)
+    return folder_secure(ctx, coll)
 
 
-def folder_secure(_ctx, coll):
+def folder_secure(ctx, coll):
     """Secure a folder to the vault.
+
     This function should only be called by a rodsadmin
     and should not be called from the portal.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to secure
 
-    :return: '0' when nu error occurred
+    :returns: '0' when nu error occurred
     """
-    log.write(_ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
+    log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
 
-    if user.user_type(_ctx) != 'rodsadmin':
-        log.write(_ctx, "folder_secure: User is no rodsadmin")
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "folder_secure: User is no rodsadmin")
         return '1'
 
     # Check modify access on research folder.
-    msi.check_access(_ctx, coll, 'modify object', irods_types.BytesBuf())
+    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
 
-    modify_access = msi.check_access(_ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
+    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
 
     # Set cronjob status
     if modify_access != b'\x01':
         try:
-            msi.set_acl(_ctx, "default", "admin:write", user.full_name(_ctx), coll)
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
         except msi.Error as e:
-            log.write(_ctx, "Could not set acl (admin:write) for collection: " + coll)
+            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
             return '1'
 
-    avu.set_on_coll(_ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['PROCESSING'])
+    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['PROCESSING'])
 
     found = False
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.IICOPYPARAMSNAME + "'",
-        genquery.AS_LIST, _ctx
+        genquery.AS_LIST, ctx
     )
     for row in iter:
         target = row[0]
         found = True
 
     if found:
-        avu.rm_from_coll(_ctx, coll, constants.IICOPYPARAMSNAME, target)
+        avu.rm_from_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
 
     if modify_access != b'\x01':
         try:
-            msi.set_acl(_ctx, "default", "admin:null", user.full_name(_ctx), coll)
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
         except msi.Error as e:
-            log.write(_ctx, "Could not set acl (admin:null) for collection: " + coll)
+            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
     # Determine vault target if it does not exist.
     if not found:
-        target = determine_vault_target(_ctx, coll)
+        target = determine_vault_target(ctx, coll)
         if target == "":
-            log.write(_ctx, "folder_secure: No vault target found")
+            log.write(ctx, "folder_secure: No vault target found")
             return '1'
 
         # Create vault target and set status to INCOMPLETE.
-        msi.coll_create(_ctx, target, '', irods_types.BytesBuf())
-        avu.set_on_coll(_ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
+        msi.coll_create(ctx, target, '', irods_types.BytesBuf())
+        avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
     # Copy all original info to vault
     try:
-        vault.copy_folder_to_vault(_ctx, coll, target)
+        vault.copy_folder_to_vault(ctx, coll, target)
     except Exception as e:
-        log.write(_ctx, e)
+        log.write(ctx, e)
         return '1'
 
-    meta.copy_user_metadata(_ctx, coll, target)
-    vault.vault_copy_original_metadata_to_vault(_ctx, target)
-    vault.vault_write_license(_ctx, target)
+    meta.copy_user_metadata(ctx, coll, target)
+    vault.vault_copy_original_metadata_to_vault(ctx, target)
+    vault.vault_write_license(ctx, target)
 
     # Copy provenance log from research folder to vault package.
-    provenance.provenance_copy_log(_ctx, coll, target)
+    provenance.provenance_copy_log(ctx, coll, target)
 
     # Try to register EPIC PID if enabled.
     if config.epic_pid_enabled:
-        ret = epic.register_epic_pid(_ctx, target)
+        ret = epic.register_epic_pid(ctx, target)
         url = ret['url']
         pid = ret['pid']
         http_code = ret['httpCode']
 
         if (http_code != "0" and http_code != "200" and http_code != "201"):
             # Something went wrong while registering EPIC PID, set cronjob state to retry.
-            log.write(_ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
+            log.write(ctx, "folder_secure: epid pid returned http <{}>".format(http_code))
             if modify_access != b'\x01':
                 try:
-                    msi.set_acl(_ctx, "default", "admin:write", user.full_name(_ctx), coll)
+                    msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
                 except msi.Error as e:
                     return '1'
 
-            avu.set_on_coll(_ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
-            avu.set_on_coll(_ctx, coll, constants.IICOPYPARAMSNAME, target)
+            avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
+            avu.set_on_coll(ctx, coll, constants.IICOPYPARAMSNAME, target)
 
             if modify_access != b'\x01':
                 try:
-                    msi.set_acl(_ctx, "default", "admin:null", user.full_name(_ctx), coll)
+                    msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
                 except msi.Error as e:
-                    log.write(_ctx, "Could not set acl (admin:null) for collection: " + coll)
+                    log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
                     return '1'
 
         if http_code != "0":
             # save EPIC Persistent ID in metadata
-            epic.save_epic_pid(_ctx, target, url, pid)
+            epic.save_epic_pid(ctx, target, url, pid)
 
     # Set vault permissions for new vault package.
-    group = collection_group_name(_ctx, coll)
+    group = collection_group_name(ctx, coll)
     if group == '':
-        log.write(_ctx, "folder_secure: Cannot determine which research group <{}> belongs to".format(coll))
+        log.write(ctx, "folder_secure: Cannot determine which research group <{}> belongs to".format(coll))
         return '1'
 
-    vault.set_vault_permissions(_ctx, group, coll, target)
+    vault.set_vault_permissions(ctx, group, coll, target)
 
     # Set cronjob status to OK.
     if modify_access != b'\x01':
         try:
-            msi.set_acl(_ctx, "default", "admin:write", user.full_name(_ctx), coll)
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
         except msi.Error:
-            log.write(_ctx, "Could not set acl (admin:write) for collection: " + coll)
+            log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
             return '1'
 
-    avu.set_on_coll(_ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'])
+    avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['OK'])
 
     if modify_access != b'\x01':
         try:
-            msi.set_acl(_ctx, "default", "admin:null", user.full_name(_ctx), coll)
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
         except msi.Error:
-            log.write(_ctx, "Could not set acl (admin:null) for collection: " + coll)
+            log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
-    avu.set_on_coll(_ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
+    avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
 
     # Everything is done, set research folder state to SECURED.
     try:
-        msi.set_acl(_ctx, "recursive", "admin:write", user.full_name(_ctx), coll)
+        msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
     except msi.Error:
-        log.write(_ctx, "Could not set acl (admin:write) for collection: " + coll)
+        log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
         return '1'
 
     parent, chopped_coll = pathutil.chop(coll)
-    while parent != "/" + user.zone(_ctx) + "/home":
+    while parent != "/" + user.zone(ctx) + "/home":
         try:
-            msi.set_acl(_ctx, "default", "admin:write", user.full_name(_ctx), parent)
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
         except msi.Error:
-            log.write(_ctx, "Could not set ACL on " + parent)
+            log.write(ctx, "Could not set ACL on " + parent)
         parent, chopped_coll = pathutil.chop(parent)
 
-    avu.set_on_coll(_ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
+    avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
 
     try:
-        msi.set_acl(_ctx, "recursive", "admin:null", user.full_name(_ctx), coll)
+        msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
     except msi.Error:
-        log.write(_ctx, "Could not set acl (admin:null) for collection: " + coll)
+        log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
         return '1'
 
     parent, chopped_coll = pathutil.chop(coll)
-    while parent != "/" + user.zone(_ctx) + "/home":
+    while parent != "/" + user.zone(ctx) + "/home":
         try:
-            msi.set_acl(_ctx, "default", "admin:null", user.full_name(_ctx), parent)
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), parent)
         except msi.Error:
-            log.write(_ctx, "Could not set ACL (admin:null) on " + parent)
+            log.write(ctx, "Could not set ACL (admin:null) on " + parent)
 
         parent, chopped_coll = pathutil.chop(parent)
 
@@ -314,12 +338,12 @@ def folder_secure(_ctx, coll):
     return '0'
 
 
-def determine_vault_target(_ctx, folder):
+def determine_vault_target(ctx, folder):
     """Determine vault target path for a folder."""
 
-    group = collection_group_name(_ctx, folder)
+    group = collection_group_name(ctx, folder)
     if group == '':
-        log.write(_ctx, "Cannot determine which research group " + + " ibelongs to")
+        log.write(ctx, "Cannot determine which research group " + + " ibelongs to")
         return ""
 
     parts = group.split('-')
@@ -331,16 +355,16 @@ def determine_vault_target(_ctx, folder):
     if len(datapackage_name) > 235:
         datapackage_name = datapackage_name[0:235]
 
-    ret = msi.get_icat_time(_ctx, '', 'unix')
+    ret = msi.get_icat_time(ctx, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
     # Ensure vault target does not exist.
     i = 0
-    target_base = "/" + user.zone(_ctx) + "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
+    target_base = "/" + user.zone(ctx) + "/home/" + vault_group_name + "/" + datapackage_name + "[" + timestamp + "]"
     target = target_base
-    while collection.exists(_ctx, target):
+    while collection.exists(ctx, target):
         i += 1
         target = target_base + "[" + str(i) + "]"
 
@@ -390,22 +414,22 @@ def collection_group_name(callback, coll):
 rule_collection_group_name = rule.make(inputs=[0], outputs=[1])(collection_group_name)
 
 
-def get_org_metadata(_ctx, path, object_type=pathutil.ObjectType.COLL):
+def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
     """Obtain a (k,v) list of all organisation metadata on a given collection or data object."""
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
     return [(k, v) for k, v
-            in Query(_ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
+            in Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
                      "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
                      + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
                         if object_type is pathutil.ObjectType.DATA
                         else " AND COLL_NAME = '{}'".format(path)))]
 
 
-def get_locks(_ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
+def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
     """Return all locks on a collection or data object (includes locks on parents and children)."""
     if org_metadata is None:
-        org_metadata = get_org_metadata(_ctx, path, object_type=object_type)
+        org_metadata = get_org_metadata(ctx, path, object_type=object_type)
 
     return [root for k, root in org_metadata
             if k == constants.IILOCKATTRNAME
@@ -413,38 +437,44 @@ def get_locks(_ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COL
 
 
 @api.make()
-def api_folder_get_locks(_ctx, coll):
+def api_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection."""
-    return get_locks(_ctx, coll)
+    return get_locks(ctx, coll)
 
 
-def has_locks(_ctx, coll, org_metadata=None):
+def has_locks(ctx, coll, org_metadata=None):
     """Check whether a lock exists on the given collection, its parents or children."""
-    return len(get_locks(_ctx, coll, org_metadata=org_metadata)) > 0
+    return len(get_locks(ctx, coll, org_metadata=org_metadata)) > 0
 
 
-def is_locked(_ctx, coll, org_metadata=None):
+def is_locked(ctx, coll, org_metadata=None):
     """Check whether a lock exists on the given collection itself or a parent collection.
 
     Locks on subcollections are not counted.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param coll:         Collection to check for locks
+    :param org_metadata: Organizational metadata
+
+    :returns: Boolean indicating if folder is locked
     """
-    locks = get_locks(_ctx, coll, org_metadata=org_metadata)
+    locks = get_locks(ctx, coll, org_metadata=org_metadata)
 
     # Count only locks that exist on the coll itself or its parents.
     return len([x for x in locks if coll.startswith(x)]) > 0
 
 
-def is_data_locked(_ctx, path, org_metadata=None):
+def is_data_locked(ctx, path, org_metadata=None):
     """Check whether a lock exists on the given data object."""
-    locks = get_locks(_ctx, path, org_metadata=org_metadata, object_type=pathutil.ObjectType.DATA)
+    locks = get_locks(ctx, path, org_metadata=org_metadata, object_type=pathutil.ObjectType.DATA)
 
     return len(locks) > 0
 
 
-def get_status(_ctx, path, org_metadata=None):
+def get_status(ctx, path, org_metadata=None):
     """Get the status of a research folder."""
     if org_metadata is None:
-        org_metadata = get_org_metadata(_ctx, path)
+        org_metadata = get_org_metadata(ctx, path)
 
     # Don't care about duplicate attr names here.
     org_metadata = dict(org_metadata)
@@ -453,14 +483,14 @@ def get_status(_ctx, path, org_metadata=None):
         try:
             return constants.research_package_state(x)
         except Exception as e:
-            log.write(_ctx, 'Invalid folder status <{}>'.format(x))
+            log.write(ctx, 'Invalid folder status <{}>'.format(x))
 
     return constants.research_package_state.FOLDER
 
 
-def datamanager_exists(_ctx, coll):
+def datamanager_exists(ctx, coll):
     """Check if a datamanager exists for a given collection."""
-    group_name = collection_group_name(_ctx, coll)
-    category = group.get_category(_ctx, group_name)
+    group_name = collection_group_name(ctx, coll)
+    category = group.get_category(ctx, group_name)
 
-    return group.exists(_ctx, "datamanager-" + category)
+    return group.exists(ctx, "datamanager-" + category)

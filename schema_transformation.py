@@ -53,6 +53,8 @@ def transform_research_xml(callback, xml_path):
     Transform a yoda-metadata XML to JSON in the research area.
 
     Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
+
+    :returns: API status
     """
     _, zone, _1, _2 = pathutil.info(xml_path)
     xml_data = xmltodict.parse(data_object.read(callback, xml_path))
@@ -150,10 +152,9 @@ def api_transform_metadata(ctx, coll):
 
 
 def get(callback, metadata_path, metadata=None):
-    """
-    Find a transformation that can be executed on the given metadata JSON.
+    """Find a transformation that can be executed on the given metadata JSON.
 
-    Returns a transformation function on success, or None if no transformation was found.
+    :returns: Transformation function on success, or None if no transformation was found
     """
     try:
         src = schema.get_schema_id(callback, metadata_path, metadata=metadata)
@@ -285,10 +286,11 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
 
 
 def html(f):
-    """
-    Get a human-readable HTML description of a transformation function.
+    """Get a human-readable HTML description of a transformation function.
 
     The text is derived from the function's docstring.
+
+    :returns: Human-readable HTML description of a transformation function
     """
     return '\n'.join(map(lambda paragraph:
                      '<p>{}</p>'.format(  # Trim whitespace.

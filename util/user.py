@@ -38,9 +38,11 @@ def zone(ctx):
 
 
 def from_str(ctx, s):
-    """Return a (user,zone) tuple from a user[#zone] string.
+    """Create a (user,zone) tuple from a user[#zone] string.
 
     If no zone is present in the string, the client's zone is used.
+
+    :returns: A (user,zone) tuple
     """
     parts = s.split('#')
     if len(parts) < 2 or len(parts[1]) == 0:
@@ -62,6 +64,8 @@ def user_type(ctx, user=None):
     """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
+
+    :returns: User type ('rodsuser' or 'rodsadmin')
     """
     if user is None:
         user = user_and_zone(ctx)

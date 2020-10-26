@@ -44,8 +44,7 @@ def size(callback, path):
 
 
 def write(callback, path, data):
-    """
-    Write a string to an iRODS data object.
+    """Write a string to an iRODS data object.
 
     This will overwrite the data object if it exists.
     """
@@ -137,6 +136,8 @@ def name_from_id(ctx, data_id):
     """Get data object name from data object id.
 
     :param data_id Data object id
+
+    :returns: Data object nam
     """
     x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
     if x is not None:

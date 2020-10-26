@@ -41,6 +41,8 @@ def chop(path):
     """Split off the rightmost path component of a path.
 
     /a/b/c -> (/a/b, c)
+
+    :returns: Path with rightmost split off
     """
     # In practice, this is the same as os.path.split on POSIX systems,
     # but it's better to not rely on OS-defined path syntax for iRODS paths.
@@ -67,8 +69,7 @@ def chopext(path):
 
 
 def info(path):
-    """
-    Parse a path into a (Space, zone, group, subpath) tuple.
+    """Parse a path into a (Space, zone, group, subpath) tuple.
 
     Synopsis: space, zone, group, subpath = pathutil.info(path)
 
@@ -87,6 +88,8 @@ def info(path):
     /tempZone/home/datamanager-x/y => Space.DATAMANAGER, 'tempZone', 'datamanager-x', 'y'
     /tempZone/home/research-x/y/z  => Space.RESEARCH,    'tempZone', 'research-x',    'y/z'
     etc.
+
+    :returns: Tuple with space, zone, group and subpath
     """
     # Turn empty match groups into empty strings.
     def f(x):

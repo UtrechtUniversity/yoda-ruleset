@@ -111,6 +111,8 @@ def getSubcategories(callback, category):
 
     :param callback: Combined type of a callback and rei struct
     :param category: Category to retrieve subcategories of
+
+    :returns: List of all subcategories within a given group category
     """
     categories = set()    # Unique subcategories.
     groupCategories = {}  # Group name => { category => .., subcategory => .. }
@@ -160,6 +162,8 @@ def api_group_data_filtered(ctx, user_name, zone_name):
     :param ctx:       Combined type of a callback and rei struct
     :param user_name: User to retrieve group data for
     :param zone_name: Zone name of user
+
+    :returns: Group data for a single user
     """
     groups    = getGroupData(ctx)
     full_name = '{}#{}'.format(user_name, zone_name)
@@ -202,6 +206,8 @@ def api_group_subcategories(ctx, category):
 
     :param ctx:      Combined type of a callback and rei struct
     :param category: Category to retrieve subcategories of
+
+    :returns: Subcategory list of specified category
     """
     return getSubcategories(ctx, category)
 
@@ -213,6 +219,8 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     :param username:    Username of external user
     :param creatorUser: User creating the external user
     :param creatorZone: Zone of user creating the external user
+
+    :returns: Response status code
     """
     eus_api_fqdn   = config.eus_api_fqdn
     eus_api_port   = config.eus_api_port
@@ -276,6 +284,8 @@ def removeExternalUser(callback, username, userzone):
     :param callback: Combined type of a callback and rei struct
     :param username: Username of user to remove
     :param userzone: Zone of user to remove
+
+    :returns: Response status code
     """
     eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
     eus_api_port = credentialsStoreGet("eus_api_port")

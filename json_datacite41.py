@@ -16,8 +16,9 @@ def El(tag, *children, **attrs):
     """Construct an XML element with the given attributes and children.
 
     If a string is given as the only child, it is used as a textual element body instead.
-    """
 
+    :returns: XML element
+    """
     if type(tag) is str:
         tag = tag.decode('utf-8')
 
@@ -207,6 +208,8 @@ def getSubjects(combi):
 
        1) standard objects like tags/disciplne
        2) free items, for now specifically for GEO schemas
+
+    :returns: XML element with subjects in DataCite format
     """
 
     subjects = []  # :: [(scheme, value)]
@@ -249,7 +252,6 @@ def getFunders(combi):
 
 def getCreators(combi):
     """Get string in DataCite format containing creator information."""
-
     creators = [El('creator',
                    El('creatorName', '{}, {}'.format(creator['Name']['Family_Name'], creator['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
@@ -263,8 +265,10 @@ def getCreators(combi):
 
 
 def getContributors(combi):
-    """Get string in datacite format containing contributors,
+    """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
+
+    :returns: XML element with contributors in DataCite format
     """
     contribs = [El('contributor',
                    El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
@@ -323,7 +327,6 @@ def getLanguage(combi):
 
 def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
-
     typs = {'Dataset':   'Research Data',
             'DataPaper': 'Method Description',
             'Software':  'Computer code'}
@@ -342,7 +345,6 @@ def getResourceType(combi):
 
 def getRelatedDataPackage(combi):
     """Get string in DataCite format containing related datapackages."""
-
     related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
                   relatedIdentifierType=rel['Persistent_Identifier']['Identifier_Scheme'],
                   relationType=rel['Relation_Type'].split(':')[0])
@@ -359,6 +361,8 @@ def getGeoLocations(combi):
        2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
        Both are mutually exclusive.
        I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
+
+    :returns: XML element with information of geo locations in DataCite format
     """
 
     geoLocations = []

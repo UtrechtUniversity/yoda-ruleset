@@ -17,7 +17,8 @@ def get_group_category(callback, rods_zone, group_name):
 
     If the category does not have a schema, 'default' is returned.
 
-    :param rods_zone: Rods zone name
+    :param callback:   Combined type of a callback and rei struct
+    :param rods_zone:  Rods zone name
     :param group_name: Group name
 
     :returns: string -- Category
@@ -54,13 +55,13 @@ def get_group_category(callback, rods_zone, group_name):
 
 
 def get_active_schema_path(callback, path):
-    """
-    Get the iRODS path to a schema file from a research or vault path.
+    """Get the iRODS path to a schema file from a research or vault path.
 
     The schema path is determined from the category name of the path's group level.
 
-    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                 (anything after the group name is ignored)
+    :param callback: Combined type of a callback and rei struct
+    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                     (anything after the group name is ignored)
 
     :returns: string -- Schema path (e.g. /tempZone/yoda/schemas/.../metadata.json)
     """
@@ -77,11 +78,11 @@ def get_active_schema_path(callback, path):
 
 
 def get_active_schema(callback, path):
-    """
-    Get a schema object from a research or vault path.
+    """Get a schema object from a research or vault path.
 
-    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                 (anything after the group name is ignored)
+    :param callback: Combined type of a callback and rei struct
+    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                     (anything after the group name is ignored)
 
     :returns: Schema object (parsed from JSON)
     """
@@ -98,11 +99,11 @@ def get_active_schema_uischema(callback, path):
 
 
 def get_active_schema_id(callback, path):
-    """
-    Get the active schema id from a research or vault path.
+    """Get the active schema id from a research or vault path.
 
-    :param path: A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
-                 (anything after the group name is ignored)
+    :param callback: Combined type of a callback and rei struct
+    :param path:     A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                     (anything after the group name is ignored)
 
     :returns: string -- Schema $id (e.g. https://yoda.uu.nl/schemas/.../metadata.json)
     """
@@ -134,6 +135,13 @@ def get_schema_by_id(callback, path, schema_id):
     Get a schema from a schema id.
 
     The path is used solely to get the zone name.
+
+    :param callback:  Combined type of a callback and rei struct
+    :param path:      A research or vault path, e.g. /tempZone/home/vault-bla/pkg1/yoda-metadata.json
+                      (anything after the group name is ignored)
+    :param schema_id: Identifier of schema to get
+
+    :returns: Schema object (parsed from JSON)
     """
     path = get_schema_path_by_id(callback, path, schema_id)
     if path is None:

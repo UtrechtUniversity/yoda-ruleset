@@ -47,6 +47,12 @@ def get_coll_lock(ctx, path, org_metadata=None):
     """Check for existence of locks on a collection.
 
     path -> ((no|here|outoftree|ancestor|descendant), rootcoll)
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param path:         Path of collection to check for locks
+    :param org_metadata: Organizational metadata of folder
+
+    :returns: Locks on collection
     """
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
@@ -68,7 +74,14 @@ def get_coll_lock(ctx, path, org_metadata=None):
 
 
 def get_coll_lock_count(ctx, path, org_metadata=None):
-    """Count locks on a collection."""
+    """Count locks on a collection.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param path:         Path of collection to count locks on
+    :param org_metadata: Organizational metadata of folder
+
+    :returns: Number of locks on collection
+    """
     if org_metadata is None:
         org_metadata = folder.get_org_metadata(ctx, path)
 
@@ -84,6 +97,7 @@ def humanize_validation_error(e):
     """Transform a jsonschema validation error such that it is readable by humans.
 
     :param e: a jsonschema.exceptions.ValidationError
+
     :returns: a supposedly human-readable description of the error
     """
     # Error format: "Creator 1 -> Person Identifier 1 -> Name Identifier Scheme"
@@ -123,7 +137,10 @@ def api_meta_form_load(ctx, coll):
     impossible, this is indicated by the 'errors' array being present in the
     output.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to retrieve all information required to load a metadata form from
+
+    :returns: API status
     """
     # The information that is returned to the caller, in dict form,
     # if everything is in order.
@@ -288,8 +305,11 @@ def api_meta_form_load(ctx, coll):
 def api_meta_form_save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection.
 
+    :param ctx:      Combined type of a callback and rei struct
     :param coll:     Collection to save metadata on
     :param metadata: Metadata to save
+
+    :returns: API status
     """
     log.write(ctx, 'save form for coll <{}>'.format(coll))
 

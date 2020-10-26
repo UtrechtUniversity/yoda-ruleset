@@ -60,6 +60,8 @@ def require():
 
     The function must explicitly return policy.succeed() or .fail('reason') as a result.
     Any other return type will result in the PEP failing (blocks associated action).
+
+    :returns: Decorator to turn a function into a PEP rule that fails unless policy.succeed() is returned
     """
     def deco(f):
         @rule.make(outputs=[])

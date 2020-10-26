@@ -27,6 +27,8 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to create new folder in
     :param new_folder_name: Name of the new folder
+
+    :returns: Dict with API status result
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -102,6 +104,8 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     :param new_folder_name: New folder name
     :param coll:            Parent collection of folder
     :param org_folder_name: Current name of the folder
+
+    :returns: Dict with API status result
     """
     coll_target = coll + '/' + new_folder_name
 
@@ -181,6 +185,8 @@ def api_research_folder_delete(ctx, coll, folder_name):
     :param ctx:         Combined type of a callback and rei struct
     :param coll:        Parent collection of folder to delete
     :param folder_name: Name of folder to delete
+
+    :returns: Dict with API status result
     """
     coll_target = coll + '/' + folder_name
 
@@ -241,6 +247,8 @@ def api_research_file_copy(ctx, copy, coll, file):
     :param copy: New file name
     :param coll: Parent collection of file
     :param file: Current name of the file
+
+    :returns: Dict with API status result
     """
     if len(copy) == 0:
         return {"proc_status": "nok",
@@ -316,6 +324,8 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     :param new_file_name: New file name
     :param coll:          Parent collection of file
     :param org_file_name: Current name of the file
+
+    :returns: Dict with API status result
     """
     if len(new_file_name) == 0:
         return {"proc_status": "nok",
@@ -390,6 +400,8 @@ def api_research_file_delete(ctx, coll, file_name):
     :param ctx:       Combined type of a callback and rei struct
     :param coll:      Parent collection of file to delete
     :param file_name: Name of file to delete
+
+    :returns: Dict with API status result
     """
     path_target = coll + '/' + file_name
 
@@ -438,6 +450,8 @@ def api_research_system_metadata(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Research collection
+
+    :returns: Dict with research system metadata
     """
     import math
 
