@@ -245,6 +245,8 @@ def api_meta_clone_file(ctx, target_coll):
 
     :param ctx:         Combined type of a callback and rei struct
     :param target_coll: Target collection (where the metadata is copied to)
+
+    :raises Error: The metadata file could not be copied
     """
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
     source_data = get_collection_metadata_path(ctx, source_coll)

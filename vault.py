@@ -539,7 +539,7 @@ def copy_folder_to_vault(ctx, folder, target):
     :param folder: Path of a folder in the research space
     :param target: Path of a package in the vault space
 
-    Raises exception when treewalk_and_ingest did not finish correctly
+    :raises Exception: Raises exception when treewalk_and_ingest did not finish correctly
     """
     destination = target + '/original'
     origin = folder
