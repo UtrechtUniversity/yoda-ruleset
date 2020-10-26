@@ -73,6 +73,8 @@ def parse(text, want_bytes=True):
     All strings are UTF-8 encoded with Python2 in mind.
     This behavior is disabled if want_bytes is False.
 
+    :raises ParseError: JSON file format error
+
     :returns: JSON string as OrderedDict
     """
     try:

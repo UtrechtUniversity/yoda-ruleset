@@ -88,6 +88,9 @@ def _api(f):
     In development environments, the result may contain a 'debug_info' property
     with additional information on errors, or timing information.
 
+    :raises ParseError: API rule called with invalid JSON argument
+    :raises result: API rule returned error
+
     :returns: Wrapper function to turn a Python function into a basic API function
     """
     # Determine required and optional argument names from the function signature.
