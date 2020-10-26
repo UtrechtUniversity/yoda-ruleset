@@ -152,10 +152,10 @@ def checkVaultIntegrityBatch(callback, rods_zone, data_id, batch, pause):
 def rule_integrity_check_vault(rule_args, callback, rei):
     """Check integrity of all data objects in the vault.
 
-    :param data_id: first DATA_ID to check
-    :param batch: batch size, <= 256
-    :param pause: pause between checks (float)
-    :param delay: delay between batches in seconds
+    :param rule_args: [0] first DATA_ID to check
+                      [1] batch size, <= 256
+                      [2] pause between checks (float)
+                      [3] delay between batches in seconds
     """
     data_id = int(rule_args[0])
     batch = int(rule_args[1])

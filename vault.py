@@ -254,7 +254,7 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
-    :param rule_args[0]: Path of a new package in the vault
+    :param rule_args: [0] Path of a new package in the vault
     """
     vault_package = rule_args[0]
     vault_copy_original_metadata_to_vault(callback, vault_package)
@@ -277,7 +277,7 @@ def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
 def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args[0]: Path of a package in the vault
+    :param rule_args: [0] Path of a package in the vault
     """
 
     vault_pkg_coll = rule_args[0]
