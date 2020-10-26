@@ -281,8 +281,8 @@ def datarequest_schema_get(ctx, schema_name):
 def datarequest_data_valid(ctx, data, schema_name):
     """Check if form data contains no errors
 
-    :param data:   The form data to validate
-    :param schema: Name of JSON schema against which to validate the form data
+    :param data:        The form data to validate
+    :param schema_name: Name of JSON schema against which to validate the form data
 
     :returns: Boolean indicating if datarequest is valid or API error
     """
@@ -692,8 +692,6 @@ def api_datarequest_is_owner(ctx, request_id):
 
     :param request_id: Unique identifier of the data request
     :type request_id: str
-    :param user_name: Username of the user whose ownership is checked
-    :type user_name: str
 
     :returns: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
     :rtype: bool
