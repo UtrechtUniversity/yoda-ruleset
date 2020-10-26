@@ -21,6 +21,10 @@ UUSYSTEMCOLLECTION = "/yoda"
 # \constant  UUREVISIONCOLLECTION   irods path where all revisions will be stored
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION ++ "/revisions"
 
+# \constant UUDATAREQUESTCOLLECTION irods path where system data of the datarequest module will be
+# stored
+UUDATAREQUESTCOLLECTION = UUSYSTEMCOLLECTION ++ "/datarequest"
+
 # \RESOURCE AND TIER MANAGEMENT
 # \Default name for a tier when none defined yet
 UUDEFAULTRESOURCETIER = 'Standard';
