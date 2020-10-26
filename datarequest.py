@@ -131,6 +131,8 @@ def status_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the data request.
+
+    :returns: Status of given data request
     """
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -177,12 +179,14 @@ def api_datarequest_browse(ctx,
                            sort_order='asc',
                            offset=0,
                            limit=10):
-    """Get paginated collection contents, including size/modify date information.
+    """Get paginated datarequests, including size/modify date information.
 
     :param sort_on:    Column to sort on ('name', 'modified')
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
+
+    :returns: Dict with paginated datarequests
     """
     coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
@@ -251,10 +255,12 @@ def api_datarequest_schema_get(ctx, schema_name):
 
 
 def datarequest_schema_get(ctx, schema_name):
-    """Get schema and uischema of a datarequest form
+    """Get schema and UI schema of a datarequest form
 
        Arguments:
        schema_name -- Name of schema
+
+    :returns: Dict with schema and UI schema
     """
     # Define paths to schema and uischema
     coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
@@ -273,11 +279,12 @@ def datarequest_schema_get(ctx, schema_name):
 
 
 def datarequest_data_valid(ctx, data, schema_name):
-    """
-    Check if form data contains no errors
+    """Check if form data contains no errors
 
     :param data:   The form data to validate
     :param schema: Name of JSON schema against which to validate the form data
+
+    :returns: Boolean indicating if datarequest is valid or API error
     """
     try:
         schema = datarequest_schema_get(ctx, schema_name)['schema']
@@ -299,6 +306,8 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
        Arguments:
        data -- Contents of the data request.
+
+    :returns: API status
     """
     timestamp = datetime.now()
     request_id = str(timestamp.strftime('%s'))
@@ -366,6 +375,8 @@ def api_datarequest_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the data request.
+
+    :returns: Dict with request JSON and status or API error on failure
     """
     # Convert request_id to string if it isn't already
     request_id = str(request_id)
@@ -418,6 +429,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
        Arguments:
        data       -- Contents of the preliminary review
        request_id -- Unique identifier of the research proposal
+
+    :returns: API status
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
@@ -508,6 +521,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the preliminary review
+
+    :returns: Preliminary review JSON or API error on failure
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -547,6 +562,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
        Arguments:
        data       -- Contents of the preliminary review
        proposalId -- Unique identifier of the research proposal
+
+    :returns: API status
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
@@ -633,6 +650,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the data manager review
+
+    :returns: Datamanager review JSON or API error on failure
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -669,14 +688,15 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 def api_datarequest_is_owner(ctx, request_id):
     """Check if the invoking user is also the owner of a given data request
 
-       This function is a wrapper for datarequest_is_owner.
+    This function is a wrapper for datarequest_is_owner.
 
-       :param request_id: Unique identifier of the data request
-       :type request_id: str
-       :param user_name: Username of the user whose ownership is checked
-       :type user_name: str
-       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-       :rtype: bool
+    :param request_id: Unique identifier of the data request
+    :type request_id: str
+    :param user_name: Username of the user whose ownership is checked
+    :type user_name: str
+
+    :returns: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+    :rtype: bool
     """
 
     is_owner = False
@@ -692,14 +712,14 @@ def api_datarequest_is_owner(ctx, request_id):
 def datarequest_is_owner(ctx, request_id, user_name):
     """Check if the invoking user is also the owner of a given data request
 
-       :param request_id: Unique identifier of the data request
-       :type request_id: str
-       :param user_name: Username of the user whose ownership is checked
-       :type user_name: str
+    :param request_id: Unique identifier of the data request
+    :type request_id: str
+    :param user_name: Username of the user whose ownership is checked
+    :type user_name: str
 
-       :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
-       :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-       :rtype: bool
+    :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
+    :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+    :rtype: bool
     """
     # Construct path to the collection of the datarequest
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -725,12 +745,9 @@ def api_datarequest_is_reviewer(ctx, request_id):
 def datarequest_is_reviewer(ctx, request_id):
     """Check if a user is assigned as reviewer to a data request
 
-       Arguments:
-       request_id -- Unique identifier of the data request
+    :param request_id: Unique identifier of the data request
 
-       Return:
-       dict       -- A JSON dict specifying whether the user is assigned as
-                     reviewer to the data request
+    :returns: Boolean indicating if the user is assigned as reviewer
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -762,10 +779,9 @@ def datarequest_is_reviewer(ctx, request_id):
 
 @api.make()
 def api_datarequest_is_bod_member(ctx):
-    """
-    Check if given user is BOD member
+    """Check if given user is BOD member
 
-    :return True if user is BOD member else False
+    :returns: True if user is BOD member else False
     :rtype bool
     """
     return user.is_member_of(ctx, GROUP_BOD)
@@ -773,10 +789,9 @@ def api_datarequest_is_bod_member(ctx):
 
 @api.make()
 def api_datarequest_is_dmc_member(ctx):
-    """
-    Check if given user is BOD member
+    """Check if given user is BOD member
 
-    :return True if user is BOD member else False
+    :returns: True if user is BOD member else False
     :rtype bool
     """
     return user.is_member_of(ctx, GROUP_DMC)
@@ -784,10 +799,9 @@ def api_datarequest_is_dmc_member(ctx):
 
 @api.make()
 def api_datarequest_is_datamanager(ctx):
-    """
-    Check if given user is BOD member
+    """Check if given user is BOD member
 
-    :return True if user is BOD member else False
+    :returns: True if user is BOD member else False
     :rtype bool
     """
     return user.is_member_of(ctx, GROUP_DM)
@@ -800,6 +814,8 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
        Arguments:
        data       -- Contents of the assignment
        request_id -- Unique identifier of the data request
+
+    :returns: API status
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, ASSIGNMENT):
@@ -896,8 +912,7 @@ def assign_request(ctx, assignees, request_id):
        assignees -- JSON-formatted array of DMC members.
        request_id -- Unique identifier of the data request
 
-       Return:
-       dict -- A JSON dict with status info for the front office.
+    :returns: A JSON dict with status info for the front office
     """
     # Check if user is a data manager. If not, do not the user to assign the
     # request
@@ -934,6 +949,8 @@ def api_datarequest_assignment_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the assignment
+
+    :returns: Datarequest assignment JSON or API error on failure
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -961,8 +978,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
        data -- JSON-formatted contents of the data request review
        proposalId -- Unique identifier of the research proposal
 
-       Return:
-       dict -- A JSON dict with status info for the front office.
+    :returns: A JSON dict with status info for the front office.
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
@@ -1056,6 +1072,8 @@ def api_datarequest_reviews_get(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the data request
+
+    :returns: Datarequest review JSON or API error on failure
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1098,6 +1116,8 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
        Arguments:
        data       -- Contents of the evaluation
        proposalId -- Unique identifier of the research proposal
+
+    :returns: API status
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, EVALUATION):
@@ -1181,6 +1201,8 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 
        Arguments:
        requestId --
+
+    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1246,6 +1268,8 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
 
        Arguments:
        request_id -- Unique identifier of the datarequest.
+
+    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1295,6 +1319,8 @@ def api_datarequest_data_ready(ctx, request_id):
 
        Arguments:
        request_id        -- Unique identifier of the datarequest.
+
+    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
