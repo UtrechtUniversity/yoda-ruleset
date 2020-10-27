@@ -12,6 +12,10 @@ createSystemCollection {
 		*systemcolls = uuListReverse(cons("/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION, *systemcolls));
 	}
 
+        if (*enableDatarequest == 1) {
+		*systemcolls = uuListReverse(cons("/" ++ $rodsZoneClient ++ UUDATAREQUESTCOLLECTION, *systemcolls));
+        }
+
 	foreach(*systemcoll in *systemcolls) {
 		*exists = false;
 		foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *systemcoll) {
