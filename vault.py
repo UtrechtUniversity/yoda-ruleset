@@ -255,6 +255,8 @@ def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
     :param rule_args: [0] Path of a new package in the vault
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     vault_package = rule_args[0]
     vault_copy_original_metadata_to_vault(callback, vault_package)
@@ -278,6 +280,8 @@ def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
     :param rule_args: [0] Path of a package in the vault
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
 
     vault_pkg_coll = rule_args[0]
@@ -551,12 +555,15 @@ def copy_folder_to_vault(ctx, folder, target):
 
 
 def treewalk_and_ingest(ctx, folder, target, origin, error):
-    """
-        folder - will change every time as it represents every folder that has to be copied to vault
+    """Treewalk folder and ingest.
 
-        target, origin - will not change during iterative processing
+    :param ctx:    Combined type of a callback and rei struct
+    :param folder: Will change every time as it represents every folder that has to be copied to vault
+    :param target: Target of ingest
+    :param origin: Origin of treewalk
+    :param error:  0/1 indicating if treewalk or ingest failed
 
-        :returns: Error status (which should remain 0 for further processing in iterative manner)
+    :returns: Error status (which should remain 0 for further processing in iterative manner)
     """
     parent_coll, coll = pathutil.chop(folder)
 
@@ -732,9 +739,10 @@ def set_vault_permissions(ctx, group_name, folder, target):
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     """Rule interface for processing vault status transition request.
 
-    param[in] coll - vault collection to change status for
-    param[in] new_coll_status (which is a string datatype here!! no longer enumerate)
-    param[in] actor
+    :param ctx:             Combined type of a callback and rei struct
+    :param coll:            Vault collection to change status for
+    :param new_coll_status: New vault package status
+    :param actor:           Actor of the status change
 
     :return: Dict with status and statusinfo.
     """
@@ -746,9 +754,10 @@ def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     """Processing vault status transition request.
 
-    param[in] coll
-    param[in] new_coll_status
-    param[in] actor
+    :param ctx:             Combined type of a callback and rei struct
+    :param coll:            Vault collection to change status for
+    :param new_coll_status: New vault package status
+    :param actor:           Actor of the status change
 
     :return: Dict with status and statusinfo
     """
