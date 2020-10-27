@@ -18,6 +18,8 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
                       [1] Name of landingpage template
                       [2] Path to Yoda metadata JSON
                       [3] Output HTML landing page
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
     rule_args[3] = json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath)
@@ -26,13 +28,13 @@ def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
 def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath):
     """Get the landing page of published YoDa metadata as a string.
 
-    :param rodsZone: Zone name
+    :param callback:      Callback to rule Language
+    :param rodsZone:      Zone name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
 
     :return: Output HTML landing page
     """
-
     # Landing page creation is part of the publication process
     # Read user & system metadata from corresponding combi JSON file
     # (Python2) 'want_bytes=False': Do not encode embedded unicode strings as

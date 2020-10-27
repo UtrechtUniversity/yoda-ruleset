@@ -35,6 +35,8 @@ def _default0_default1(m):
     Finally, the creator and contributor name fields have been split into first
     and last names, to comply with the OpenAIRE standard.
 
+    :param m: Metadata to transform (default-0)
+
     :returns: Transformed (default-1) JSON object
     """
     def fixup_name(n):

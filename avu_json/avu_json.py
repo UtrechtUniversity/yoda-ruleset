@@ -22,6 +22,7 @@ activelyUpdatingAVUs = False
 def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
     """This rule stores a given json string as AVU's to an object.
 
+    :param ctx:            iRODS context
     :param object_name:    The object name (/nlmumc/P000000003, /nlmumc/projects/metadata.xml, user@mail.com, demoResc)
     :param object_type:    The object type
                              -d for data object
