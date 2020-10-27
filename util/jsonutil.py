@@ -27,6 +27,9 @@ def _fold(x, **alg):
 
     Calls functions from 'alg', indexed by the type of value, to transform values recursively.
 
+    :param x:     JSON structure
+    :param **alg: Functions to fold over JSON structure
+
     :returns: Function f folded over a JSON structure
     """
     f = alg.get(type(x).__name__, lambda y: y)
@@ -44,6 +47,8 @@ def _demote_strings(json_data):
     Needed for handling unicode in JSON as long as we are still using Python2.
     Both JSON string values and JSON object (dict) keys are transformed.
 
+    :param json_data: JSON structure to transform
+
     :returns: JSON structure with unicode strings transformed to UTF-8 encoded strings
     """
     return _fold(json_data,
@@ -59,6 +64,8 @@ def _promote_strings(json_data):
 
     May raise UnicodeDecodeError if strings are not proper UTF-8.
 
+    :param json_data: JSON structure to transform
+
     :returns: JSON structure with UTF-8 encoded strings transformed to unicode strings
     """
     return _fold(json_data,
@@ -72,6 +79,9 @@ def parse(text, want_bytes=True):
 
     All strings are UTF-8 encoded with Python2 in mind.
     This behavior is disabled if want_bytes is False.
+
+    :param text:       JSON to parse into an OrderedDict
+    :param want_bytes: Should strings be UTF-8 encoded?
 
     :raises ParseError: JSON file format error
 
