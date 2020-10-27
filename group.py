@@ -17,7 +17,7 @@ __all__ = ['api_group_data',
            'rule_group_user_exists']
 
 
-def getGroupData(callback):
+def getGroupData(ctx):
     """Return groups and related data."""
     groups = {}
 
@@ -25,7 +25,7 @@ def getGroupData(callback):
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -58,7 +58,7 @@ def getGroupData(callback):
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, USER_NAME, USER_ZONE",
         "USER_TYPE != 'rodsgroup'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -90,14 +90,14 @@ def getGroupData(callback):
     return groups.values()
 
 
-def getCategories(callback):
+def getCategories(ctx):
     """Get a list of all group categories."""
     categories = []
 
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -106,10 +106,10 @@ def getCategories(callback):
     return categories
 
 
-def getSubcategories(callback, category):
+def getSubcategories(ctx, category):
     """Get a list of all subcategories within a given group category.
 
-    :param callback: Combined type of a callback and rei struct
+    :param ctx:      Combined type of a ctx and rei struct
     :param category: Category to retrieve subcategories of
 
     :returns: List of all subcategories within a given group category
@@ -123,7 +123,7 @@ def getSubcategories(callback, category):
     iter = genquery.row_iterator(
         "USER_GROUP_NAME, META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME LIKE '%category'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -159,7 +159,7 @@ def api_group_data(ctx):
 def api_group_data_filtered(ctx, user_name, zone_name):
     """Retrieve group data for a single user.
 
-    :param ctx:       Combined type of a callback and rei struct
+    :param ctx:       Combined type of a ctx and rei struct
     :param user_name: User to retrieve group data for
     :param zone_name: Zone name of user
 
@@ -179,6 +179,12 @@ def rule_group_user_exists(rule_args, callback, rei):
     If includeRo is true, membership of a group's read-only shadow group will be
     considered as well. Otherwise, the user must be a normal member or manager of
     the given group.
+
+    :param rule_args: [0] Group to check for user membership
+                      [1] User to check for membership
+                      [2] Include read-only shadow group users
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     groups = getGroupData(callback)
     user = rule_args[1]
@@ -204,7 +210,7 @@ def api_group_categories(ctx):
 def api_group_subcategories(ctx, category):
     """Retrieve subcategory list.
 
-    :param ctx:      Combined type of a callback and rei struct
+    :param ctx:      Combined type of a ctx and rei struct
     :param category: Category to retrieve subcategories of
 
     :returns: Subcategory list of specified category
@@ -212,10 +218,10 @@ def api_group_subcategories(ctx, category):
     return getSubcategories(ctx, category)
 
 
-def provisionExternalUser(callback, username, creatorUser, creatorZone):
+def provisionExternalUser(ctx, username, creatorUser, creatorZone):
     """Call External User Service API to add new user.
 
-    :param callback:    Combined type of a callback and rei struct
+    :param ctx:         Combined type of a ctx and rei struct
     :param username:    Username of external user
     :param creatorUser: User creating the external user
     :param creatorZone: Zone of user creating the external user
@@ -245,12 +251,12 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
     return response.status_code
 
 
-def rule_group_provision_external_user(rule_args, callback, rei):
+def rule_group_provision_external_user(rule_args, ctx, rei):
     """Provision external user."""
     status = 1
     message = "An internal error occurred."
 
-    status = provisionExternalUser(callback, rule_args[0], rule_args[1], rule_args[2])
+    status = provisionExternalUser(ctx, rule_args[0], rule_args[1], rule_args[2])
 
     if status < 0:
         message = """Error: Could not connect to external user service.\n
@@ -278,10 +284,10 @@ def rule_group_provision_external_user(rule_args, callback, rei):
     rule_args[4] = message
 
 
-def removeExternalUser(callback, username, userzone):
+def removeExternalUser(ctx, username, userzone):
     """Call External User Service API to remove user.
 
-    :param callback: Combined type of a callback and rei struct
+    :param ctx:      Combined type of a ctx and rei struct
     :param username: Username of user to remove
     :param userzone: Zone of user to remove
 
@@ -305,6 +311,6 @@ def removeExternalUser(callback, username, userzone):
     return str(response.status_code)
 
 
-def rule_group_remove_external_user(rule_args, callback, rei):
+def rule_group_remove_external_user(rule_args, ctx, rei):
     """Remove external user."""
-    log.write(callback, removeExternalUser(callback, rule_args[0], rule_args[1]))
+    log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
