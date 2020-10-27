@@ -11,6 +11,7 @@ from query import Query
 def exists(ctx, grp):
     """Check if a group with the given name exists.
 
+    :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
     :returns: Boolean indicating if group with given name exists
@@ -22,6 +23,7 @@ def exists(ctx, grp):
 def members(ctx, grp):
     """Get members of a given group.
 
+    :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
     :returns: Members of given group
@@ -34,7 +36,9 @@ def members(ctx, grp):
 def is_member(ctx, grp, usr=None):
     """Check if a group has a certain member.
 
+    :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
+    :param usr: Given user, otherwise client user is used
 
     :returns: Boolean indicating if group has a certain member
     """
@@ -44,6 +48,7 @@ def is_member(ctx, grp, usr=None):
 def get_category(ctx, grp):
     """Get the category of a group.
 
+    :param ctx: Combined type of a callback and rei struct
     :param grp: Group name
 
     :returns: Categroy of given group

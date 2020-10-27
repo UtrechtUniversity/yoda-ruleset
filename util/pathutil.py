@@ -42,6 +42,8 @@ def chop(path):
 
     /a/b/c -> (/a/b, c)
 
+    :param path: Path to chop
+
     :returns: Path with rightmost split off
     """
     # In practice, this is the same as os.path.split on POSIX systems,
@@ -88,6 +90,8 @@ def info(path):
     /tempZone/home/datamanager-x/y => Space.DATAMANAGER, 'tempZone', 'datamanager-x', 'y'
     /tempZone/home/research-x/y/z  => Space.RESEARCH,    'tempZone', 'research-x',    'y/z'
     etc.
+
+    :param path: Path to parse
 
     :returns: Tuple with space, zone, group and subpath
     """

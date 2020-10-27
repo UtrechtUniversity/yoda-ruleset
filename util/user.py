@@ -42,6 +42,9 @@ def from_str(ctx, s):
 
     If no zone is present in the string, the client's zone is used.
 
+    :param ctx: Combined type of a callback and rei struct
+    :param s:   User string (user[#zone])
+
     :returns: A (user,zone) tuple
     """
     parts = s.split('#')
@@ -64,6 +67,9 @@ def user_type(ctx, user=None):
     """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param user: Given user, otherwise client user is used
 
     :returns: User type ('rodsuser' or 'rodsadmin')
     """
