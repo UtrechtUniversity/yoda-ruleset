@@ -156,6 +156,8 @@ def rule_integrity_check_vault(rule_args, callback, rei):
                       [1] batch size, <= 256
                       [2] pause between checks (float)
                       [3] delay between batches in seconds
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     data_id = int(rule_args[0])
     batch = int(rule_args[1])
