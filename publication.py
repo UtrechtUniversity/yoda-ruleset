@@ -66,6 +66,7 @@ def get_publication_config(ctx):
 def generate_combi_json(ctx, publication_config, publication_state):
     """Join system metadata with the user metadata in yoda-metadata.json.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -103,6 +104,7 @@ def generate_combi_json(ctx, publication_config, publication_state):
 def generate_system_json(ctx, publication_config, publication_state):
     """Overwrite combi metadata json with system-only metadata.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -130,6 +132,7 @@ def generate_system_json(ctx, publication_config, publication_state):
 def get_publication_state(ctx, vault_package):
     """The publication state is kept as metadata on the vault package.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :returns: Dict with state of the publication process
@@ -185,8 +188,9 @@ def get_publication_state(ctx, vault_package):
 def save_publication_state(ctx, vault_package, publication_state):
     """Save the publication state key-value-pairs to AVU's on the vault package.
 
-    :param vault_package:        Path to the package in the vault
-    :param publication_state:    Dict with state of the publication process
+    :param ctx:               Combined type of a callback and rei struct
+    :param vault_package:     Path to the package in the vault
+    :param publication_state: Dict with state of the publication process
     """
     ret_val = ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
     for key in publication_state.keys():
@@ -197,6 +201,7 @@ def save_publication_state(ctx, vault_package, publication_state):
 def set_update_publication_state(ctx, vault_package):
     """Routine to set publication state of vault package pending to update.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :returns: String with state of publication state update
@@ -249,6 +254,7 @@ def get_publication_date(ctx, vault_package):
 
     First try action_log. Then icat-time.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: Publication date in ISO8601 format
@@ -276,6 +282,7 @@ def get_publication_date(ctx, vault_package):
 def get_last_modified_datetime(ctx, vault_package):
     """Determine the time of last modification as a datetime with UTC offset.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: Last modified date in ISO8601 format
@@ -297,6 +304,7 @@ def get_last_modified_datetime(ctx, vault_package):
 def generate_preliminary_DOI(ctx, publication_config, publication_state):
     """Generate a Preliminary DOI. Preliminary, because we check for collision later.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -331,6 +339,7 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 def post_metadata_to_datacite(ctx, publication_config, publication_state):
     """Upload DataCite XML to DataCite. This will register the DOI, without minting it.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -375,6 +384,7 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
 def mint_doi(ctx, publication_config, publication_state):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -400,6 +410,7 @@ def mint_doi(ctx, publication_config, publication_state):
 def generate_landing_page_url(ctx, publication_config, publication_state):
     """Generate a URL for the landing page.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -418,6 +429,7 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
 def generate_landing_page(ctx, publication_config, publication_state, publish):
     """Generate a dataCite compliant XML based up yoda-metadata.json.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     :param publish:            Publication or depublication
@@ -444,6 +456,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
 def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     """Copy the resulting landing page to configured public host.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -468,6 +481,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
 def copy_metadata_to_moai(ctx, publication_config, publication_state):
     """Copy the metadata json file to configured MOAI.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -490,6 +504,7 @@ def copy_metadata_to_moai(ctx, publication_config, publication_state):
 def set_access_restrictions(ctx, vault_package, publication_state):
     """Set access restriction for vault package.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param vault_package:      Path to the package in the vault
     :param publication_state:  Dict with state of the publication process
     """
@@ -514,6 +529,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 def check_doi_availability(ctx, publication_config, publication_state):
     """Request DOI to check on availibity. We want a 404 as return code.
 
+    :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -536,6 +552,7 @@ def check_doi_availability(ctx, publication_config, publication_state):
 def rule_process_publication(ctx, vault_package):
     """Rule interface for processing vault status transition request.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: "OK" if all went ok
@@ -747,6 +764,7 @@ def process_publication(ctx, vault_package):
 def rule_process_depublication(ctx, vault_package):
     """Rule interface for processing depublication of a vault package.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: "OK" if all went ok
@@ -865,6 +883,7 @@ def process_depublication(ctx, vault_package):
 def rule_process_republication(ctx, vault_package):
     """Rule interface for processing republication of a vault package.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: "OK" if all went ok
@@ -997,6 +1016,10 @@ def process_republication(ctx, vault_package):
 
 def get_collection_metadata(ctx, coll, prefix):
     """Retrieve all collection metadata.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param coll:   Collection to retrieve metadata from
+    :param prefix: Prefix of the requested metadata
 
     :return: Dict with all requested (prefixed) attributes and strip off prefix for the key names
     """
