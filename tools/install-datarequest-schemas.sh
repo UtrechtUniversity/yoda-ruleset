@@ -21,7 +21,7 @@ else
                         coll=`echo $schemapath | sed 's/\(.*\)\/.*/\1/'`
                         file=`echo $schemapath | sed 's/.*\/\(.*\)/\1/'`
                         imkdir -p /$zone/yoda/datarequest/$coll
-                        iput $schemapath /$zone/yoda/datarequest/
+                        iput $schemapath /$zone/yoda/datarequest/$coll
                 fi
         done
         cd - > /dev/null
