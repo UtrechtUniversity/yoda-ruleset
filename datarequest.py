@@ -43,7 +43,7 @@ __all__ = ['api_datarequest_browse',
 
 JSON_EXT          = ".json"
 
-SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth"
+SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
 SCHEMA            = "schema"
 UISCHEMA          = "uischema"
 
