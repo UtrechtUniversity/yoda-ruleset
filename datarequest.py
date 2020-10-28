@@ -119,9 +119,9 @@ def status_transition_allowed(ctx, current_status, new_status):
 def status_set(ctx, request_id, status):
     """Set the status of a data request
 
-       Arguments:
-       request_id -- Unique identifier of the data request.
-       status    -- The status to which the data request should be set.
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param status:     The status to which the data request should be set
     """
     metadata_set(ctx, request_id, "status", status.value)
 
@@ -129,6 +129,7 @@ def status_set(ctx, request_id, status):
 def status_get(ctx, request_id):
     """Get the status of a data request
 
+    :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
     :raises Exception: Status could not be retrieved
@@ -154,10 +155,10 @@ def status_get(ctx, request_id):
 def metadata_set(ctx, request_id, key, value):
     """Set an arbitrary metadata field on a data request
 
-       Arguments:
-       request_id -- Unique identifier of the data request.
-       key        -- Key of the metdata field
-       value      -- Value of the meta field
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param key:        Key of the metdata field
+    :param value:      Value of the meta field
     """
 
     # Construct path to the collection of the data request
@@ -182,6 +183,7 @@ def api_datarequest_browse(ctx,
                            limit=10):
     """Get paginated datarequests, including size/modify date information.
 
+    :param ctx:        Combined type of a callback and rei struct
     :param sort_on:    Column to sort on ('name', 'modified')
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
@@ -258,8 +260,8 @@ def api_datarequest_schema_get(ctx, schema_name):
 def datarequest_schema_get(ctx, schema_name):
     """Get schema and UI schema of a datarequest form
 
-       Arguments:
-       schema_name -- Name of schema
+    :param ctx:         Combined type of a callback and rei struct
+    :param schema_name: Name of schema
 
     :returns: Dict with schema and UI schema
     """
@@ -282,6 +284,7 @@ def datarequest_schema_get(ctx, schema_name):
 def datarequest_data_valid(ctx, data, schema_name):
     """Check if form data contains no errors
 
+    :param ctx:         Combined type of a callback and rei struct
     :param data:        The form data to validate
     :param schema_name: Name of JSON schema against which to validate the form data
 
@@ -305,8 +308,9 @@ def datarequest_data_valid(ctx, data, schema_name):
 def api_datarequest_submit(ctx, data, previous_request_id):
     """Persist a data request to disk.
 
-       Arguments:
-       data -- Contents of the data request.
+    :param ctx:                 Combined type of a callback and rei struct
+    :param data:                Contents of the data request
+    :param previous_request_id: Unique identifier of previous data request
 
     :returns: API status
     """
@@ -374,8 +378,8 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 def api_datarequest_get(ctx, request_id):
     """Retrieve a data request.
 
-       Arguments:
-       request_id -- Unique identifier of the data request.
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: Dict with request JSON and status or API error on failure
     """
@@ -427,9 +431,9 @@ def api_datarequest_get(ctx, request_id):
 def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     """Persist a preliminary review to disk.
 
-       Arguments:
-       data       -- Contents of the preliminary review
-       request_id -- Unique identifier of the research proposal
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the preliminary review
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -520,8 +524,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 def api_datarequest_preliminary_review_get(ctx, request_id):
     """Retrieve a preliminary review.
 
-       Arguments:
-       request_id -- Unique identifier of the preliminary review
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: Preliminary review JSON or API error on failure
     """
@@ -560,9 +564,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     """Persist a datamanager review to disk.
 
-       Arguments:
-       data       -- Contents of the preliminary review
-       proposalId -- Unique identifier of the research proposal
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the datamanager review
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -649,8 +653,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 def api_datarequest_datamanager_review_get(ctx, request_id):
     """Retrieve a data manager review.
 
-       Arguments:
-       request_id -- Unique identifier of the data manager review
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: Datamanager review JSON or API error on failure
     """
@@ -691,6 +695,7 @@ def api_datarequest_is_owner(ctx, request_id):
 
     This function is a wrapper for datarequest_is_owner.
 
+    :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :type request_id: str
 
@@ -711,6 +716,7 @@ def api_datarequest_is_owner(ctx, request_id):
 def datarequest_is_owner(ctx, request_id, user_name):
     """Check if the invoking user is also the owner of a given data request
 
+    :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :type request_id: str
     :param user_name: Username of the user whose ownership is checked
@@ -744,6 +750,7 @@ def api_datarequest_is_reviewer(ctx, request_id):
 def datarequest_is_reviewer(ctx, request_id):
     """Check if a user is assigned as reviewer to a data request
 
+    :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
     :returns: Boolean indicating if the user is assigned as reviewer
@@ -780,6 +787,8 @@ def datarequest_is_reviewer(ctx, request_id):
 def api_datarequest_is_bod_member(ctx):
     """Check if given user is BOD member
 
+    :param ctx: Combined type of a callback and rei struct
+
     :returns: True if user is BOD member else False
     :rtype bool
     """
@@ -789,6 +798,8 @@ def api_datarequest_is_bod_member(ctx):
 @api.make()
 def api_datarequest_is_dmc_member(ctx):
     """Check if given user is BOD member
+
+    :param ctx: Combined type of a callback and rei struct
 
     :returns: True if user is BOD member else False
     :rtype bool
@@ -800,6 +811,8 @@ def api_datarequest_is_dmc_member(ctx):
 def api_datarequest_is_datamanager(ctx):
     """Check if given user is BOD member
 
+    :param ctx: Combined type of a callback and rei struct
+
     :returns: True if user is BOD member else False
     :rtype bool
     """
@@ -810,9 +823,9 @@ def api_datarequest_is_datamanager(ctx):
 def api_datarequest_assignment_submit(ctx, data, request_id):
     """Persist an assignment to disk.
 
-       Arguments:
-       data       -- Contents of the assignment
-       request_id -- Unique identifier of the data request
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the assignment
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -907,9 +920,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 def assign_request(ctx, assignees, request_id):
     """Assign a data request to one or more DMC members for review.
 
-       Arguments:
-       assignees -- JSON-formatted array of DMC members.
-       request_id -- Unique identifier of the data request
+    :param ctx:        Combined type of a callback and rei struct
+    :param assignees:  JSON-formatted array of DMC members
+    :param request_id: Unique identifier of the data request
 
     :returns: A JSON dict with status info for the front office
     """
@@ -946,8 +959,8 @@ def assign_request(ctx, assignees, request_id):
 def api_datarequest_assignment_get(ctx, request_id):
     """Retrieve assignment.
 
-       Arguments:
-       request_id -- Unique identifier of the assignment
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: Datarequest assignment JSON or API error on failure
     """
@@ -973,11 +986,11 @@ def api_datarequest_assignment_get(ctx, request_id):
 def api_datarequest_review_submit(ctx, data, request_id):
     """Persist a data request review to disk.
 
-       Arguments:
-       data -- JSON-formatted contents of the data request review
-       proposalId -- Unique identifier of the research proposal
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the review
+    :param request_id: Unique identifier of the data request
 
-    :returns: A JSON dict with status info for the front office.
+    :returns: A JSON dict with status info for the front office
     """
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
@@ -1069,8 +1082,8 @@ def api_datarequest_review_submit(ctx, data, request_id):
 def api_datarequest_reviews_get(ctx, request_id):
     """Retrieve a data request review.
 
-       Arguments:
-       request_id -- Unique identifier of the data request
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: Datarequest review JSON or API error on failure
     """
@@ -1112,9 +1125,9 @@ def api_datarequest_reviews_get(ctx, request_id):
 def api_datarequest_evaluation_submit(ctx, data, request_id):
     """Persist an evaluation to disk.
 
-       Arguments:
-       data       -- Contents of the evaluation
-       proposalId -- Unique identifier of the research proposal
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the evaluation
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -1198,8 +1211,8 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 def api_datarequest_dta_post_upload_actions(ctx, request_id):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
-       Arguments:
-       requestId --
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -1265,8 +1278,8 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     """Grant read permissions on the signed DTA to the datamanagers group.
 
-       Arguments:
-       request_id -- Unique identifier of the datarequest.
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
@@ -1316,8 +1329,8 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
 def api_datarequest_data_ready(ctx, request_id):
     """Set the status of a submitted datarequest to "Data ready".
 
-       Arguments:
-       request_id        -- Unique identifier of the datarequest.
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: API status
     """
