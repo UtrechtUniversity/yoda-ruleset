@@ -17,6 +17,10 @@ def El(tag, *children, **attrs):
 
     If a string is given as the only child, it is used as a textual element body instead.
 
+    :param tag:       Tag of XML element to construct
+    :param *children: Children of XML element to construct
+    :param **attrs:   Attributes of XML element to construct
+
     :returns: XML element
     """
     if type(tag) is str:
@@ -46,9 +50,16 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                     licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
-    :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
-    :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-                          other are system info parameters
+
+    :param ctx:                  Combined type of a callback and rei struct
+    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                                 other are system info parameters
+    :param lastModifiedDateTime: Last modification time of publication
+    :param yodaDOI:              DOI of publication
+    :param publicationDate:      Date of publication
+    :param openAccessLink:       Open access link to data of publication
+    :param licenseUri:           URI to license of publication
     """
     json_datacite41_create_combi_metadata_json(ctx,
                                                metadataJsonPath,
@@ -90,11 +101,16 @@ def json_datacite41_create_combi_metadata_json(ctx,
                                                licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
-    :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
-    :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-                          other are system info parameters
+    :param ctx:                  Combined type of a callback and rei struct
+    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                                 other are system info parameters
+    :param lastModifiedDateTime: Last modification time of publication
+    :param yodaDOI:              DOI of publication
+    :param publicationDate:      Date of publication
+    :param openAccessLink:       Open access link to data of publication
+    :param licenseUri:           URI to license of publication
     """
-
     # get the data in the designated YoDa metadata.json and retrieve it as dict
     metaDict = jsonutil.read(ctx, metadataJsonPath)
 
@@ -122,7 +138,8 @@ def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
 def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.
 
-    :param combi_path: path to the combined Json file that holds both User and System metadata
+    :param ctx:        Combined type of a callback and rei struct
+    :param combi_path: Path to the combined JSON file that holds both user and system metadata
 
     :returns: string -- Holds Datacite formatted metadata of Yoda
     """
@@ -209,6 +226,8 @@ def getSubjects(combi):
        1) standard objects like tags/disciplne
        2) free items, for now specifically for GEO schemas
 
+    :param combi: Combined JSON file that holds both user and system metadata
+
     :returns: XML element with subjects in DataCite format
     """
 
@@ -268,6 +287,8 @@ def getContributors(combi):
     """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
 
+    :param combi: Combined JSON file that holds both user and system metadata
+
     :returns: XML element with contributors in DataCite format
     """
     contribs = [El('contributor',
@@ -311,7 +332,6 @@ def getVersion(combi):
 
 def getRightsList(combi):
     """Get string in DataCite format containing rights related information."""
-
     options = {'Open':       'info:eu-repo/semantics/openAccess',
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
@@ -361,6 +381,8 @@ def getGeoLocations(combi):
        2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
        Both are mutually exclusive.
        I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
+
+    :param combi: Combined JSON file that holds both user and system metadata
 
     :returns: XML element with information of geo locations in DataCite format
     """
