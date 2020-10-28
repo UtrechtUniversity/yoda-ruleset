@@ -24,8 +24,9 @@ __all__ = ['api_revisions_restore',
 def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
     """Step through entire revision store and apply the chosen bucket strategy.
 
-    :param bucketcase       multiple ways of cleaning up revisions can be chosen.
-    :param endOfCalendarDay if zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
+    :param ctx:              Combined type of a callback and rei struct
+    :param bucketcase:       Multiple ways of cleaning up revisions can be chosen.
+    :param endOfCalendarDay: If zero, system will determine end of current day in seconds since epoch (1970-01-01 00:00 UTC)
 
     :returns: String with status of cleanup
     """
@@ -72,7 +73,8 @@ def revision_remove(ctx, revision_id):
 
     Called by revision-cleanup.r cronjob.
 
-    :param revision_id       DATA_ID of the revision to remove
+    :param ctx:         Combined type of a callback and rei struct
+    :param revision_id: DATA_ID of the revision to remove
 
     :returns: Boolean indicating if revision was removed
     """
@@ -108,7 +110,8 @@ def revision_bucket_list(ctx, case):
     The third integer represents the starting index when revisions need to remove. 0 is the newest, -1 the oldest
     revision after the current original (which should always be kept) , 1 the revision after that, etc.
 
-    :param case  Select a bucketlist based on a string
+    :param ctx:   Combined type of a callback and rei struct
+    :param case:  Select a bucketlist based on a string
 
     :returns: List representing revision strategy
     """
@@ -159,7 +162,8 @@ def get_revision_list(ctx, path):
 
     Format: [dataId, timestamp of modification] in descending order where org_original_path=path
 
-    :param path  path of original
+    :param ctx:   Combined type of a callback and rei struct
+    :param path:  Path of original
 
     :returns: List of all revisions
     """
@@ -192,11 +196,12 @@ def get_revision_list(ctx, path):
 
 
 def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
-    """ Get the candidates for deletion based on the active strategy case
+    """Get the candidates for deletion based on the active strategy case
 
-    :param buckets
-    :param revisions
-    :param intial_upper_time_bound
+    :param ctx:                     Combined type of a callback and rei struct
+    :param buckets:                 List of buckets
+    :param revisions:               List of revisions
+    :param initial_upper_time_bound: Initial upper time bound for first bucket
 
     :returns: List of candidates for deletion based on the active strategy case
     """
@@ -251,6 +256,8 @@ def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
 def calculate_end_of_calendar_day(ctx):
     """Calculate the unix timestamp for the end of the current day (Same as start of next day).
 
+    :param ctx: Combined type of a callback and rei struct
+
     :returns: End of calendar day - Timestamp of the end of the current day
     """
     import datetime
@@ -265,9 +272,10 @@ def calculate_end_of_calendar_day(ctx):
 def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     """Search revisions of a file in a research folder and return list of corresponding revisions.
 
-    :param searchString: string to search for as part of a file name
-    :param offset:       starting point in total resultset to start fetching
-    :param limit:        max size of the resultset to be returned
+    :param ctx:          Combined type of a callback and rei struct
+    :param searchString: String to search for as part of a file name
+    :param offset:       Starting point in total resultset to start fetching
+    :param limit:        Max size of the resultset to be returned
 
     :returns: Paginated revision search result
     """
@@ -359,7 +367,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 def api_revisions_list(ctx, path):
     """Get list revisions of a file in a research folder.
 
-    :param path: path to data object to find revisions for
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to data object to find revisions for
 
     :returns: List revisions of a file in a research folder
     """
@@ -407,14 +416,14 @@ def api_revisions_list(ctx, path):
 def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename):
     """Copy selected revision to target collection with given name.
 
-    :param revision_id:  data_id of the revision to be restored
-    :param overwrite:    overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
-    :param coll_target:  target collection to place the file
-    :param new_filename: new file name as entered by user (in case of duplicate)
+    :param ctx:          Combined type of a callback and rei struct
+    :param revision_id:  Data id of the revision to be restored
+    :param overwrite:    Overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
+    :param coll_target:  Target collection to place the file
+    :param new_filename: New file name as entered by user (in case of duplicate)
 
     :returns: API status
     """
-
     # New file name should not contain '\\' or '/'
     if '/' in new_filename or '\\' in new_filename:
         return {"proc_status": "nok",
