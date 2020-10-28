@@ -58,17 +58,17 @@
                 "$ref": "#/definitions/stringNormal",
                 "title": "Phone"
               }
-            }
-          },
-          "required": [
-            "name",
-            "institution",
-            "department",
-            "academic_role",
-            "work_address",
-            "email",
-            "phone"
-          ]
+            },
+            "required": [
+              "name",
+              "institution",
+              "department",
+              "academic_role",
+              "work_address",
+              "email",
+              "phone"
+            ]
+	  }
         },
         "dmc_contact": {
           "type": "string",
