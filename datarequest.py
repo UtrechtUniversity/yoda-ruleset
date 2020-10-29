@@ -324,13 +324,6 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
-    # Additional validation that cannot be validated in-schema
-    if (data['contribution']['contribution_time'] == "No" and
-        data['contribution']['contribution_financial'] == "No" and
-        data['contribution']['contribution_favor'] == "No"):
-        return api.Error("validation_fail",
-                         "Please specify at least one contribution.");
-
     # Create collection
     try:
         collection.create(ctx, coll_path)

@@ -300,6 +300,13 @@
         "contribution_financial",
         "contribution_favor"
       ],
+      "not": {
+        "properties": {
+          "contribution_time": { "enum": ["No"] },
+          "contribution_financial": { "enum": ["No"] },
+          "contribution_favor": { "enum": ["No"] }
+        }
+      },
       "dependencies": {
         "contribution_time": {
           "oneOf": [
