@@ -456,7 +456,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except error.UUError:
         return api.Error("PermissionError", "Something went wrong during permissen checking")
 
-
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
@@ -475,7 +474,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the preliminary review file.")
 
-
     # Get the outcome of the preliminary review (accepted/rejected)
     decision = preliminary_review['preliminary_review']
 
@@ -488,7 +486,6 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         status_set(ctx, request_id, status.PRELIMINARY_RESUBMIT)
     else:
         return api.Error("InvalidData", "Invalid value for preliminary_review in preliminary review JSON data.")
-
 
     # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
@@ -580,7 +577,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     try:
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
-        if not isdatamanager:            
+        if not isdatamanager:
             return api.Error("PermissionError", "User is not a data manager.")
     except error.UUerror as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
@@ -913,7 +910,7 @@ def assign_request(ctx, assignees, request_id):
         if not isbodmember:
             raise error.UUError("User is not a datamanager")
     except error.UUError:
-        return api.Error("PermissionDenied", "User is not a data manager.")"
+        return api.Error("PermissionDenied", "User is not a data manager.")
 
     # Construct data request collection path
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -979,7 +976,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
-       return api.Error("transition", "Status transition not allowed.")
+        return api.Error("transition", "Status transition not allowed.")
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
