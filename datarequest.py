@@ -132,7 +132,7 @@ def status_get(ctx, request_id):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :raises error.UUError: Status could not be retrieved
+    :raises UUError: Status could not be retrieved
 
     :returns: Status of given data request
     """
@@ -906,10 +906,10 @@ def assign_request(ctx, assignees, request_id):
     # request
     try:
         isbodmember = user.is_member_of(ctx, GROUP_BOD)
-
-        if not isbodmember:
-            raise error.UUError("User is not a datamanager")
     except error.UUError:
+        isbodmember = false
+
+    if not isbodmember:    
         return api.Error("PermissionDenied", "User is not a data manager.")
 
     # Construct data request collection path
