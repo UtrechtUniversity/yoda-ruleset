@@ -132,7 +132,7 @@ def status_get(ctx, request_id):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :raises Exception: Status could not be retrieved
+    :raises UUError: Status could not be retrieved
 
     :returns: Status of given data request
     """
@@ -147,7 +147,7 @@ def status_get(ctx, request_id):
     if rows.total_rows() == 1:
         current_status = list(rows)[0]['META_DATA_ATTR_VALUE']
     else:
-        raise Exception("This should not be happening.")
+        raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
 
     return status[current_status]
 
@@ -275,7 +275,7 @@ def datarequest_schema_get(ctx, schema_name):
         schema = jsonutil.read(ctx, schema_path)
         uischema = jsonutil.read(ctx, uischema_path)
     except error.UUFileNotExistError:
-        return api.Error("file_read_error", "Could not read schema.")
+        return api.Error("file_read_error", "Could not read schema because it doesn't exist.")
 
     # Return JSON with schema and uischema
     return {"schema": schema, "uischema": uischema}
@@ -327,9 +327,8 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     # Create collection
     try:
         collection.create(ctx, coll_path)
-    except Exception:
-        log.write(ctx, "Could not create collection path.")
-        return api.Error("create_collection_fail", "Could not create collection path.")
+    except error.UUError as e:
+        return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
 
     # Write data request data to disk
     try:
@@ -349,8 +348,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         msi.set_acl(ctx, "recursive", "write", GROUP_DM, coll_path)
         msi.set_acl(ctx, "recursive", "write", GROUP_DMC, coll_path)
         msi.set_acl(ctx, "recursive", "write", GROUP_BOD, coll_path)
-    except Exception:
-        log.write(ctx, "Could not set permissions on subcollection.")
+    except SetACLError:
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
     # Set the status metadata field to "submitted"
@@ -395,11 +393,9 @@ def api_datarequest_get(ctx, request_id):
         isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not (isboardmember or isdatamanager or isdmcmember or isrequestowner):
-            log.write(ctx, "User is not authorized to view this data request.")
             return api.Error("permission_error", "User is not authorized to view this data request.")
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return api.Error("permission_error", "Something went wrong during permission checking.")
+    except error.UUError as e:
+        return api.Error("permission_error", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -413,16 +409,14 @@ def api_datarequest_get(ctx, request_id):
                             AS_DICT, ctx)
         for row in rows:
             request_status = row['META_DATA_ATTR_VALUE']
-    except Exception:
-        log.write(ctx, "Could not get data request status and filesize. (Does a request with this requestID exist?")
+    except error.UUError:
         return api.Error("failed_get_datarequest_info", "Could not get data request status and filesize. (Does a request with this requestID exist?)")
 
     # Get the contents of the datarequest JSON file
     try:
         request_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get contents of datarequest JSON file.")
-        return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file.")
+    except error.UUError as e:
+        return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file: {}.".format(e))
 
     return {'requestJSON': request_json, 'requestStatus': request_status}
 
@@ -458,11 +452,9 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
-            log.write(ctx, "User is not a member of the Board of Directors.")
-            return {'status': "PermissionError", 'statusInfo': "User is not a member of the Board of Directors"}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not a member of the Board of Directors")
+    except error.UUError:
+        return api.Error("PermissionError", "Something went wrong during permissen checking")
 
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -479,9 +471,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         msi.set_acl(ctx, "default", "read", GROUP_BOD, preliminary_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, preliminary_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DMC, preliminary_review_path)
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the preliminary review file.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
+    except error.UUError:
+        return api.Error("PermissionError", "Could not grant read permissions on the preliminary review file.")
 
     # Get the outcome of the preliminary review (accepted/rejected)
     decision = preliminary_review['preliminary_review']
@@ -494,8 +485,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     elif decision == "Rejected (resubmit)":
         status_set(ctx, request_id, status.PRELIMINARY_RESUBMIT)
     else:
-        log.write(ctx, "Invalid value for preliminary_review in preliminary review JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for preliminary_review in preliminary review JSON data."}
+        return api.Error("InvalidData", "Invalid value for preliminary_review in preliminary review JSON data.")
 
     # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
@@ -539,11 +529,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
         isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
-            log.write(ctx, "User is not authorized to view this preliminary review.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this preliminary review."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to view this preliminary review.")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -553,9 +541,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     # Get the contents of the review JSON file
     try:
         preliminary_review_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get preliminary review data.")
-        return {"status": "ReadError", "statusInfo": "Could not get preliminary review data."}
+    except error.UUError as e:
+        return api.Error("ReadError", "Could not get preliminary review data: {}.".format(e))
 
     return preliminary_review_json
 
@@ -591,11 +578,9 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
-            log.write(ctx, "User is not a data manager.")
-            return {"status": "PermissionError", "statusInfo": "User is not a data manager."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not a data manager.")
+    except error.UUerror as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -612,9 +597,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         msi.set_acl(ctx, "default", "read", GROUP_BOD, datamanager_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, datamanager_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DMC, datamanager_review_path)
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the preliminary review file.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the preliminary review file."}
+    except error.UUError:
+        return api.Error("PermissionsError", "Could not grant read permissions on the preliminary review file.")
 
     # Get the outcome of the data manager review (accepted/rejected)
     decision = datamanager_review['datamanager_review']
@@ -627,8 +611,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     elif decision == "Rejected (resubmit)":
         status_set(ctx, request_id, status.DATAMANAGER_RESUBMIT)
     else:
-        log.write(ctx, "Invalid value for decision in data manager review JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for decision in data manager review JSON data."}
+        return api.Error("InvalidData", "Invalid value for decision in data manager review JSON data.")
 
     # Get source data needed for sending emails
     if 'datamanager_remarks' in datamanager_review:
@@ -668,11 +651,9 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
         isreviewer = datarequest_is_reviewer(ctx, request_id)
 
         if not (isboardmember or isdatamanager or isreviewer):
-            log.write(ctx, "User is not authorized to view this data manager review.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this data manager review."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to view this data manager review.")
+    except error.UUError:
+        return api.Error("PermissionError", "Something went wrong during permission checking.")
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -682,9 +663,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     # Get the contents of the data manager review JSON file
     try:
         datamanager_review_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get data manager review data.")
-        return {"status": "ReadError", "statusInfo": "Could not get data manager review data."}
+    except error.UUError as e:
+        return api.Error("ReadError", "Could not get data manager review data: {}.".format(e))
 
     return datamanager_review_json
 
@@ -708,7 +688,7 @@ def api_datarequest_is_owner(ctx, request_id):
     try:
         is_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
     except error.UUError as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(str(e)))
+        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e))
 
     return is_owner
 
@@ -850,11 +830,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
-            log.write(ctx, "User is not a member of the Board of Directors.")
-            return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not a member of the Board of Directors")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -871,9 +849,8 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         msi.set_acl(ctx, "default", "read", GROUP_BOD, assignment_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, assignment_path)
         msi.set_acl(ctx, "default", "read", GROUP_DMC, assignment_path)
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the assignment file.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the assignment file."}
+    except error.UUError as e:
+        return api.Error("PermissionsError", "Could not grant read permissions on the assignment file: {}.".format(e))
 
     # Get the outcome of the assignment (accepted/rejected)
     decision = assignment['decision']
@@ -890,8 +867,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     elif decision == "Rejected (resubmit)":
         status_set(ctx, request_id, status.RESUBMIT_AFTER_DATAMANAGER_REVIEW)
     else:
-        log.write(ctx, "Invalid value for 'decision' key in datamanager review JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for 'decision' key in datamanager review JSON data."}
+        return api.Error("InvalidData", "Invalid value for 'decision' key in datamanager review JSON data.")
 
     # Get source data needed for sending emails
     datarequest      = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
@@ -930,12 +906,11 @@ def assign_request(ctx, assignees, request_id):
     # request
     try:
         isbodmember = user.is_member_of(ctx, GROUP_BOD)
+    except error.UUError:
+        isbodmember = false
 
-        if not isbodmember:
-            raise Exception
-    except Exception:
-        log.write(ctx, "User is not a data manager.")
-        return {"status": "PermissionDenied", "statusInfo": "User is not a data manager."}
+    if not isbodmember:
+        return api.Error("PermissionDenied", "User is not a data manager.")
 
     # Construct data request collection path
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -975,9 +950,8 @@ def api_datarequest_assignment_get(ctx, request_id):
     # Get the contents of the assignment JSON file
     try:
         assignment_json = data_object.read(ctx, file_path)
-    except Exception:
-        log.write(ctx, "Could not get assignment data.")
-        return {"status": "ReadError", "statusInfo": "Could not get assignment data."}
+    except error.UUError:
+        return api.Error("ReadError", "Could not get assignment data.")
 
     return assignment_json
 
@@ -1002,18 +976,17 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
-        api.Error("transition", "Status transition not allowed.")
+        return api.Error("transition", "Status transition not allowed.")
 
     # Check if the user has been assigned as a reviewer. If not, do not
     # allow submission of the review
     try:
         isreviewer = datarequest_is_reviewer(ctx, request_id)
+    except error.UUError:
+        isreviewer = false
 
-        if not isreviewer:
-            raise Exception
-    except Exception:
-        log.write(ctx, "User is not assigned as a reviewer to this request.")
-        return {"status": "PermissionDenied", "statusInfo": "User is not assigned as a reviewer to this request."}
+    if not isreviewer:
+        return api.Error("PermissionDenied", "User is not assigned as a reviewer to this request.")
 
     # Construct path to collection of review
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1022,15 +995,14 @@ def api_datarequest_review_submit(ctx, data, request_id):
     try:
         review_path = "{}/review_{}.json".format(coll_path, user.name(ctx))
         jsonutil.write(ctx, review_path, data)
-    except error.UUError:
-        return api.Error('write_error', 'Could not write review data to disk')
+    except error.UUError as e:
+        return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
 
     # Give read permission on the review to Board of Director members
     try:
         msi.set_acl(ctx, "default", "read", GROUP_BOD, review_path)
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the review file to the Board of Directors.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the review file to the Board of Directors"}
+    except error.UUError:
+        return api.Error("PermissionsError", "Could not grant read permissions on the review file to the Board of Directors")
 
     # Remove the assignedForReview attribute of this user by first fetching
     # the list of reviewers ...
@@ -1095,11 +1067,9 @@ def api_datarequest_reviews_get(ctx, request_id):
         isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
-            log.write(ctx, "User is not authorized to view this review.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to view this review."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to view this review.")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1114,9 +1084,8 @@ def api_datarequest_reviews_get(ctx, request_id):
         file_path = "{}/{}".format(coll_path, row['DATA_NAME'])
         try:
             reviews.append(json.loads(data_object.read(ctx, file_path)))
-        except Exception:
-            log.write(ctx, "Could not get review data.")
-            return {"status": "ReadError", "statusInfo": "Could not get review data."}
+        except error.UUError as e:
+            return api.Error("ReadError", "Could not get review data: {}.".format(e))
 
     return json.dumps(reviews)
 
@@ -1152,11 +1121,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         isboardmember = user.is_member_of(ctx, GROUP_BOD)
 
         if not isboardmember:
-            log.write(ctx, "User is not a member of the Board of Directors.")
-            return {"status": "PermissionError", "statusInfo": "User is not a member of the Board of Directors"}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not a member of the Board of Directors")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.")
 
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1179,8 +1146,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     elif decision == "Rejected (resubmit)":
         status_set(ctx, request_id, status.RESUBMIT)
     else:
-        log.write(ctx, "Invalid value for 'evaluation' key in evaluation JSON data.")
-        return {"status": "InvalidData", "statusInfo": "Invalid value for 'evaluation' key in evaluation JSON data."}
+        return api.Error("InvalidData", "Invalid value for 'evaluation' key in evaluation JSON data.")
 
     # Get source data needed for sending emails
     datarequest = jsonutil.read(ctx, "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT))
@@ -1221,7 +1187,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_READY):
-        api.Error("transition", "Status transition not allowed.")
+        return api.Error("transition", "Status transition not allowed.")
 
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1229,11 +1195,9 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
-            log.write(ctx, "User is not authorized to grant read permissions on the DTA.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the DTA."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to grant read permissions on the DTA.")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Construct path to the collection of the datarequest
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1251,16 +1215,14 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
     # Check if exactly 1 owner was found. If not, wipe
     # requestOwnerUserName list and set error status code
     if len(request_owner_username) != 1:
-        log.write(ctx, "Not exactly 1 owner found. Something is very wrong.")
-        return {"status": "MoreThanOneOwner", "statusInfo": "Not exactly 1 owner found. Something is very wrong."}
+        return api.Error("MoreThanOneOwner", "Not exactly 1 owner found. Something is very wrong.")
 
     request_owner_username = request_owner_username[0]
 
     try:
         msi.set_acl(ctx, "default", "read", request_owner_username, "{}/{}".format(coll_path, DTA_FILENAME))
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the DTA to the data request owner.")
-        return {"status": "PermissionError", "statusInfo": "Could not grant read permissions on the DTA to the data request owner."}
+    except error.UUError:
+        return api.Error("PermissionError", "Could not grant read permissions on the DTA to the data request owner.")
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
@@ -1288,7 +1250,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
 
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_SIGNED):
-        api.Error("transition", "Status transition not allowed.")
+        return api.Error("transition", "Status transition not allowed.")
 
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1296,20 +1258,17 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
         isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
         if not isrequestowner:
-            log.write(ctx, "User is not authorized to grant read permissions on the signed DTA.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to grant read permissions on the signed DTA."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to grant read permissions on the signed DTA.")
+    except error.UUError:
+        return api.Error("PermissionError", "Something went wrong during permission checking.")
 
     # Construct path to the collection of the datarequest
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     try:
         msi.set_acl(ctx, "default", "read", GROUP_DM, "{}/{}".format(coll_path, SIGDTA_FILENAME))
-    except Exception:
-        log.write(ctx, "Could not grant read permissions on the signed DTA to the data managers group.")
-        return {"status": "PermissionsError", "statusInfo": "Could not grant read permissions on the signed DTA to the data managers group."}
+    except error.UUError:
+        return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the data managers group.")
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
@@ -1339,7 +1298,7 @@ def api_datarequest_data_ready(ctx, request_id):
 
     # Check if status transition allowed
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATA_READY):
-        api.Error("transition", "Status transition not allowed.")
+        return api.Error("transition", "Status transition not allowed.")
 
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
@@ -1347,11 +1306,9 @@ def api_datarequest_data_ready(ctx, request_id):
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
 
         if not isdatamanager:
-            log.write(ctx, "User is not authorized to mark the data as ready.")
-            return {'status': "PermissionError", 'statusInfo': "User is not authorized to mark the data as ready."}
-    except Exception:
-        log.write(ctx, "Something went wrong during permission checking.")
-        return {'status': "PermissionError", 'statusInfo': "Something went wrong during permission checking."}
+            return api.Error("PermissionError", "User is not authorized to mark the data as ready.")
+    except error.UUError as e:
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     status_set(ctx, request_id, status.DATA_READY)
 
