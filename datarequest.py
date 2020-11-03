@@ -909,7 +909,7 @@ def assign_request(ctx, assignees, request_id):
     except error.UUError:
         isbodmember = false
 
-    if not isbodmember:    
+    if not isbodmember:
         return api.Error("PermissionDenied", "User is not a data manager.")
 
     # Construct data request collection path
