@@ -225,7 +225,7 @@ def provisionExternalUser(callback, username, creatorUser, creatorZone):
         response = requests.post(url, data=json.dumps(data),
                                  headers={'X-Yoda-External-User-Secret':
                                           eus_api_secret},
-                                 timeout=5,
+                                 timeout=10,
                                  verify=False)
     except requests.ConnectionError or requests.ConnectTimeout:
         return -1
