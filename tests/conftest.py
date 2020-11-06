@@ -19,6 +19,7 @@ api_url = "https://portal.yoda.test/api"
 password = "test"
 users = ['researcher',
          'datamanager',
+         'technicaladmin',
          'bodmember',
          'dmcmember']
 user_cookies = {}

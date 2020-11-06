@@ -20,6 +20,14 @@ UUSYSTEMCOLLECTION = '/yoda'
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
 """iRODS path where all revisions will be stored."""
 
+UUBLOCKLIST = ["._*", ".DS_Store"]
+""" List of file extensions not to be copied to revision"""
+
+UUMAXREVISIONSIZE = 2000000000
+""" Max size of a file to be allowed to be made revisions
+2GB as in 2 * 1000 * 1000 * 1000
+"""
+
 UUDEFAULTRESOURCETIER = 'Standard'
 """Default name for a tier when none defined yet."""
 
