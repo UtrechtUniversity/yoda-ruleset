@@ -218,12 +218,15 @@ def api_response_user_is_datamanager(api_response):
     assert body["data"] == 'yes'
 
 
-@given('the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from month "<current_month>" backward', target_fixture="api_response")
-def api_get_monthly_user_research_groups(user, group_name, current_month):
+@given('the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from current month backward', target_fixture="api_response")
+def api_get_monthly_user_research_groups(user, group_name):
+    from datetime import datetime
+    current_month = datetime.now().month
+
     return api_request(
         user,
         "resource_full_year_group_data",
-        {"group_name": group_name, "current_month": int(current_month)}
+        {"group_name": group_name, "current_month": current_month}
     )
 
 

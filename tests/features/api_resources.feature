@@ -17,8 +17,8 @@ Feature: Resources API
 	    And monthly storage data for a datamanager is found
 
         Examples:
-            | user        | 
-			| datamanager | 
+            | user        |
+			| datamanager |
 
    Scenario: As a datamanager request montly based statistics for the categories under care which are meant to be used to be exported in a file
         Given user "<user>" is authenticated
@@ -28,7 +28,7 @@ Feature: Resources API
 
         Examples:
             | user        |
-			| datamanager | 
+			| datamanager |
 
     Scenario: As rodsadmin collect monthly statistics
         Given user "<user>" is authenticated
@@ -50,7 +50,7 @@ Feature: Resources API
             | user           |
 			| technicaladmin |
 
-    Scenario: Request the tiername for a resource 
+    Scenario: Request the tiername for a resource
         Given user "<user>" is authenticated
         And the Yoda resources API is queried for tier_name of "<resource_name>"
         Then the response status code is "200"
@@ -60,7 +60,7 @@ Feature: Resources API
             | user           | resource_name | tier_name |
             | technicaladmin | irodsResc     | Standard  |
 
-    Scenario: Request all available tiers 
+    Scenario: Request all available tiers
         Given user "<user>" is authenticated
         And the Yoda resources API is queried for all available tiers
 	    Then the response status code is "200"
@@ -77,9 +77,10 @@ Feature: Resources API
         And tier is saved successfully for resource
 
         Examples:
-            | user           | resource_name | tier_name |
-            | technicaladmin | irodsResc     | blabla3   |
-  
+            | user           | resource_name | tier_name   |
+            | technicaladmin | irodsResc     | NonStandard |
+            | technicaladmin | irodsResc     | Standard    |
+
     Scenario: Get user type for current user
         Given user "<user>" is authenticated
         And the Yoda resources API is queried for usertype of current user
@@ -97,7 +98,7 @@ Feature: Resources API
         And "<research_group>" are found for current user
 
        Examples:
-            | user        | research_group   |
+            | user       | research_group   |
             | researcher | research-initial |
 
     Scenario: Check whether current user is datamanager of group
@@ -112,10 +113,10 @@ Feature: Resources API
 
     Scenario: Get a full year of monthly storage data starting from indicated month and look back one year
         Given user "<user>" is authenticated
-        And the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from month "<current_month>" backward
+        And the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from current month backward
         Then the response status code is "200"
         And full year storage data is found
 
         Examples:
-            | user        | group_name        | current_month | 
-            | datamanager | research-initial  | 10            | 
+            | user        | group_name        |
+            | datamanager | research-initial  |
