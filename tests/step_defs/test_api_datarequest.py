@@ -41,22 +41,11 @@ def api_datarequest_submit(user):
                     "name": "test",
                     "institution": "test",
                     "department": "test",
-                    "email": "test",
+                    "academic_role": "test",
                     "work_address": "test",
+                    "email": "test",
                     "phone": "test"
                 }]
-            },
-            "research_context": {
-                "title": "test",
-                "background": "test",
-                "research_question": "test",
-                "requested_data_summary": "test"
-            },
-            "hypotheses": {},
-            "methods": {
-                "design": "test",
-                "preparation": "test",
-                "processing": "test"
             },
             "datarequest": {
                 "data": {
@@ -74,10 +63,23 @@ def api_datarequest_submit(user):
                 "data_lock_notification": True,
                 "publication_approval": True
             },
+            "research_context": {
+                "title": "test",
+                "background": "test",
+                "research_question": "test",
+                "requested_data_summary": "test"
+            },
+            "hypotheses": {},
+            "methods": {
+                "design": "test",
+                "preparation": "test",
+                "processing": "test"
+            },
             "contribution": {
                 "contribution_time": "No",
-                "contribution_financial": "No",
-                "contribution_favor": "No"
+                "contribution_financial": "Yes",
+                "contribution_favor": "No",
+                "contribution_financial_amount": 9000
             }
         }, "previous_request_id": None,
         })
