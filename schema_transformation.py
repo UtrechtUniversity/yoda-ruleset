@@ -304,8 +304,13 @@ def html(f):
 
     :returns: Human-readable HTML description of a transformation function
     """
-    return '\n'.join(map(lambda paragraph:
-                     '<p>{}</p>'.format(  # Trim whitespace.
-                         re.sub('\s+', ' ', paragraph).strip()),
-                         # Docstring paragraphs are separated by blank lines.
-                         re.split('\n{2,}', f.__doc__)))
+    description = '\n'.join(map(lambda paragraph:
+                            '<p>{}</p>'.format(  # Trim whitespace.
+                                re.sub('\s+', ' ', paragraph).strip()),
+                                # Docstring paragraphs are separated by blank lines.
+                                re.split('\n{2,}', f.__doc__)))
+
+    # Remove docstring.
+    description = re.sub('((:param).*)|((:returns:).*)', ' ', description)
+
+    return description
