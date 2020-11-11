@@ -41,6 +41,8 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
 
+DATAREQUESTSTATUSATTRNAME = "status"
+
 JSON_EXT          = ".json"
 
 SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
@@ -124,6 +126,19 @@ def status_set(ctx, request_id, status):
     :param status:     The status to which the data request should be set
     """
     metadata_set(ctx, request_id, "status", status.value)
+
+
+def status_get_from_path(ctx, path):
+    """Get the status of a datarequest from a path
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of the datarequest collection
+
+    :returns: Status of given data request
+    """
+    _, request_id = pathutil.chop(path)
+
+    return status_get(ctx, request_id)
 
 
 def status_get(ctx, request_id):

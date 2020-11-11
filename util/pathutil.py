@@ -21,6 +21,7 @@ class Space(Enum):
     RESEARCH    = 1
     VAULT       = 2
     DATAMANAGER = 3
+    DATAREQUEST = 4
 
     def __repr__(self):
         return 'Space.' + self.name

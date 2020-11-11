@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+import datarequest
 import session_vars
 
 import folder
@@ -358,6 +359,11 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
             return policy.succeed()
         else:
             return policy.fail('Folder is locked')
+
+    elif space is pathutil.Space.DATAREQUEST and attr == datarequest.DATAREQUESTSTATUSATTRNAME:
+        # Datarequest status change. Validate.
+        return policies_datarequest_status.can_set_datarequest_status(ctx, actor, obj_name, value)
+
     else:
         # Allow metadata operations in general if they do not affect reserved
         # attributes.
