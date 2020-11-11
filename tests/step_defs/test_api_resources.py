@@ -165,8 +165,6 @@ def api_save_tier_for_resource(user, resource_name, tier_name):
 def api_response_save_tier_name_successful(api_response):
     _, body = api_response
 
-    print(body)
-
     assert body['status'] == 'ok'
 
 
