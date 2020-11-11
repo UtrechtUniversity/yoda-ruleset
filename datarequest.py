@@ -41,6 +41,8 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
 
+DATAREQUESTSTATUSATTRNAME = "status"
+
 JSON_EXT          = ".json"
 
 SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
