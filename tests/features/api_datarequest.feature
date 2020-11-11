@@ -5,10 +5,77 @@ Feature: Datarequest API
         And the Yoda datarequest browse API is queried
         Then the response status code is "200"
 
+    Scenario: Datarequest schema get
+        Given user "researcher" is authenticated
+        And the Yoda datarequest schema get API is queried with schema name "<schema_name>"
+        Then the response status code is "200"
+
+        Examples:
+            | schema_name        |
+            | datarequest        |
+            | preliminary_review |
+            | datamanager_review |
+            | review             |
+            | assignment         |
+            | evaluation         |
+
     Scenario: Datarequest submit
         Given user "researcher" is authenticated
         And the Yoda datarequest submit API is queried with data
         Then the response status code is "200"
+
+    Scenario: Datarequest is owner
+        Given user "<user>" is authenticated
+        And datarequest exists
+        And the Yoda datarequest is owner API is queried with request id
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user        | result |
+            | researcher  | True   |
+            | datamanager | False  |
+            | bodmember   | False  |
+            | dmcmember   | False  |
+
+    Scenario: Datarequest is datamanager
+        Given user "<user>" is authenticated
+        And the Yoda datarequest is datamanager API is queried
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user        | result |
+            | researcher  | False  |
+            | datamanager | True   |
+            | bodmember   | False  |
+            | dmcmember   | False  |
+
+    Scenario: Datarequest is bod member
+        Given user "<user>" is authenticated
+        And the Yoda datarequest is bod member API is queried
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user        | result |
+            | researcher  | False  |
+            | datamanager | False  |
+            | bodmember   | True   |
+            | dmcmember   | False  |
+
+    Scenario: Datarequest is dmc member
+        Given user "<user>" is authenticated
+        And the Yoda datarequest is dmc member API is queried
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user        | result |
+            | researcher  | False  |
+            | datamanager | False  |
+            | bodmember   | False  |
+            | dmcmember   | True   |
 
     Scenario: Datarequest get
         Given user "researcher" is authenticated
@@ -55,6 +122,20 @@ Feature: Datarequest API
         And datarequest exists
         And the Yoda datarequest assignment get API is queried with request id
         Then the response status code is "200"
+
+    Scenario: Datarequest is reviewer
+        Given user "<user>" is authenticated
+        And datarequest exists
+        And the Yoda datarequest is reviewer API is queried with request id
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user        | result |
+            | researcher  | False  |
+            | datamanager | False  |
+            | bodmember   | False  |
+            | dmcmember   | True   |
 
     Scenario: Datarequest review submit
         Given user "dmcmember" is authenticated
