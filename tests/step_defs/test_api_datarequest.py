@@ -21,11 +21,20 @@ scenarios('../features/api_datarequest.feature')
 
 
 @given('the Yoda datarequest browse API is queried', target_fixture="api_response")
-def api_browse_folder(user):
+def api_datarequest_browse(user):
     return api_request(
         user,
         "datarequest_browse",
         {}
+    )
+
+
+@given('the Yoda datarequest schema get API is queried with schema name "<schema_name>"', target_fixture="api_response")
+def api_datarequest_schema_get(user, schema_name):
+    return api_request(
+        user,
+        "datarequest_schema_get",
+        {"schema_name": schema_name}
     )
 
 
@@ -97,6 +106,51 @@ def datarequest_exists(user):
     assert len(body["data"]["items"]) > 0
 
     return body["data"]["items"][0]["id"]
+
+
+@given('the Yoda datarequest is owner API is queried with request id', target_fixture="api_response")
+def api_datarequest_is_owner(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_is_owner",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest is datamanager API is queried', target_fixture="api_response")
+def api_datarequest_is_datamanager(user):
+    return api_request(
+        user,
+        "datarequest_is_datamanager",
+        {}
+    )
+
+
+@given('the Yoda datarequest is BoD member API is queried', target_fixture="api_response")
+def api_datarequest_is_bod_member(user):
+    return api_request(
+        user,
+        "datarequest_is_bod_member",
+        {}
+    )
+
+
+@given('the Yoda datarequest is DMC member API is queried', target_fixture="api_response")
+def api_datarequest_is_dmc_member(user):
+    return api_request(
+        user,
+        "datarequest_is_dmc_member",
+        {}
+    )
+
+
+@given('the Yoda datarequest is reviewer API is queried with request id', target_fixture="api_response")
+def api_datarequest_is_reviewer(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_is_reviewer",
+        {"request_id": datarequest_id}
+    )
 
 
 @given('the Yoda datarequest get API is queried with request id', target_fixture="api_response")
@@ -219,7 +273,7 @@ def api_datarequest_data_ready(user, datarequest_id):
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
-    http_status, body = api_response
+    http_status, _ = api_response
     assert http_status == code
 
 
@@ -233,3 +287,10 @@ def request_status(user, datarequest_id, status):
 
     assert len(body['data']) > 0
     assert body['data']['requestStatus'] == status
+
+
+@then('the result is "<result>"')
+def result_is(api_response, result):
+    _, body = api_response
+
+    assert str(body['data']) == result
