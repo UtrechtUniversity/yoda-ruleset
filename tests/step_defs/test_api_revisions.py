@@ -1,9 +1,5 @@
 # coding=utf-8
-"""Revisions API feature tests.
-
-Usage:
-pytest --api <url> --csrf <csrf> --session <session>
-"""
+"""Revisions API feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
