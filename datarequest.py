@@ -128,6 +128,19 @@ def status_set(ctx, request_id, status):
     metadata_set(ctx, request_id, "status", status.value)
 
 
+def status_get_from_path(ctx, path):
+    """Get the status of a datarequest from a path
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of the datarequest collection
+
+    :returns: Status of given data request
+    """
+    _, request_id = pathutil.chop(path)
+
+    return status_get(ctx, request_id)
+
+
 def status_get(ctx, request_id):
     """Get the status of a data request
 
