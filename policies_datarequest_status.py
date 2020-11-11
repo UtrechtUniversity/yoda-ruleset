@@ -6,6 +6,8 @@ __license__   = "GPLv3, see LICENSE"
 
 import datarequest
 
+from util import *
+
 
 def can_set_datarequest_status(ctx, actor, obj_name, status_to):
     # Check if user is rods.

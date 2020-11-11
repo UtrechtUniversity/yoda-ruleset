@@ -6,9 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+import datarequest
 import session_vars
 
-import datarequest
 import folder
 import policies_datapackage_status
 import policies_folder_status
