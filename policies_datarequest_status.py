@@ -5,7 +5,6 @@ __copyright__ = "Copyright (c) 2019-2020, Utrecht University"
 __license__   = "GPLv3, see LICENSE"
 
 import datarequest
-
 from util import *
 
 
