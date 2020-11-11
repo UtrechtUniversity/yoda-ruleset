@@ -126,7 +126,7 @@ def api_datarequest_is_datamanager(user):
     )
 
 
-@given('the Yoda datarequest is bod member API is queried', target_fixture="api_response")
+@given('the Yoda datarequest is BoD member API is queried', target_fixture="api_response")
 def api_datarequest_is_bod_member(user):
     return api_request(
         user,
@@ -135,7 +135,7 @@ def api_datarequest_is_bod_member(user):
     )
 
 
-@given('the Yoda datarequest is dmc member API is queried', target_fixture="api_response")
+@given('the Yoda datarequest is DMC member API is queried', target_fixture="api_response")
 def api_datarequest_is_dmc_member(user):
     return api_request(
         user,

@@ -51,9 +51,9 @@ Feature: Datarequest API
             | bodmember   | False  |
             | dmcmember   | False  |
 
-    Scenario: Datarequest is bod member
+    Scenario: Datarequest is BoD member
         Given user "<user>" is authenticated
-        And the Yoda datarequest is bod member API is queried
+        And the Yoda datarequest is BoD member API is queried
         Then the response status code is "200"
         And the result is "<result>"
 
@@ -64,9 +64,9 @@ Feature: Datarequest API
             | bodmember   | True   |
             | dmcmember   | False  |
 
-    Scenario: Datarequest is dmc member
+    Scenario: Datarequest is DMC member
         Given user "<user>" is authenticated
-        And the Yoda datarequest is dmc member API is queried
+        And the Yoda datarequest is DMC member API is queried
         Then the response status code is "200"
         And the result is "<result>"
 
