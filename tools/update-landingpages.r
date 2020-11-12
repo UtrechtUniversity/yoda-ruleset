@@ -15,12 +15,11 @@ updateLandingpages() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiUpdateLandingpage(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiUpdateLandingpage *collName returned errorcode *err");
-				} else {
-					writeLine("stdout", "iiUpdateLandingpage *collName returned with status: *status");
-				}
+                *status = ''
+                *statusInfo = '';
+				rule_update_landingpage(*collName, *status, *statusInfo);
+                writeLine("stdout", "*status");
+                writeLine("stdout", "*statusInfo");
 			}
 		}
 

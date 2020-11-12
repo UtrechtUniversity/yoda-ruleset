@@ -1014,6 +1014,87 @@ def process_republication(ctx, vault_package):
     return publication_state["status"]
 
 
+@rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_update_landingpage(ctx, vault_package):
+    """Rule interface for updating the landingpage of a vault package.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+
+    :return: "OK" if all went ok
+    """
+    return update_landingpage(ctx, vault_package)
+
+
+def update_landingpage(ctx, vault_package):
+    """Routine to update a landingpage with sanity checks at every step."""
+    publication_state = {}
+
+    log.write(ctx, "update_landingpage: Process vault package <{}>".format(vault_package))
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return 'Insufficient permissions - should only be called by rodsadmin'
+
+    # check current status, perhaps transitioned already
+    vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+    if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)]:
+        return "InvalidPackageStatus" + ": " + vault_status
+
+    publication_config = get_publication_config(ctx)
+
+    # Get state of all related to the publication.
+    publication_state = get_publication_state(ctx, vault_package)
+    status = publication_state['status']
+
+    # Publication must be finsished.
+    if status != "OK":
+        return status
+
+    # Publication date
+    if "publicationDate" not in publication_state:
+        publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
+
+    # Determine last modification time. Always run, no matter if retry
+    publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
+
+    # Generate Combi Json consisting of user and system metadata
+    try:
+        generate_combi_json(ctx, publication_config, publication_state)
+    except msi.Error as e:
+        publication_state["status"] = "Unrecoverable"
+
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        return publication_state["status"]
+
+    # Create landing page
+    try:
+        generate_landing_page(ctx, publication_config, publication_state, "publish")
+    except msi.Error as e:
+        publication_state["status"] = "Unrecoverable"
+
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] == "Unrecoverable":
+        return publication_state["status"]
+
+    # Use secure copy to push landing page to the public host
+    copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] == "Retry":
+        return publication_state["status"]
+
+    # Updating the landingpage was a success
+    publication_state["status"] = "OK"
+    save_publication_state(ctx, vault_package, publication_state)
+
+    return publication_state["status"]
+
+
 def get_collection_metadata(ctx, coll, prefix):
     """Retrieve all collection metadata.
 
