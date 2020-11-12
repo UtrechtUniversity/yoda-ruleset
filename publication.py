@@ -680,7 +680,7 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-    # Use secure copy to push combi XML to MOAI server
+    # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
         copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
@@ -855,7 +855,7 @@ def process_depublication(ctx, vault_package):
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-    # Use secure copy to push combi XML to MOAI server
+    # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
         copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
@@ -990,7 +990,7 @@ def process_republication(ctx, vault_package):
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-    # Use secure copy to push combi XML to MOAI server
+    # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
         copy_metadata_to_moai(ctx, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
@@ -1016,19 +1016,19 @@ def process_republication(ctx, vault_package):
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_update_landingpage(ctx, vault_package):
-    """Rule interface for updating the landingpage of a vault package.
+def rule_update_publication(ctx, vault_package):
+    """Rule interface for updating the publication of a vault package.
 
     :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
 
     :return: "OK" if all went ok
     """
-    return update_landingpage(ctx, vault_package)
+    return update_publication(ctx, vault_package)
 
 
-def update_landingpage(ctx, vault_package):
-    """Routine to update a landingpage with sanity checks at every step."""
+def update_publication(ctx, vault_package):
+    """Routine to update a publication with sanity checks at every step."""
     publication_state = {}
 
     log.write(ctx, "update_landingpage: Process vault package <{}>".format(vault_package))
@@ -1084,6 +1084,13 @@ def update_landingpage(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] == "Retry":
+        return publication_state["status"]
+
+    # Use secure copy to push combi JSON to MOAI server
+    copy_metadata_to_moai(ctx, publication_config, publication_state)
     save_publication_state(ctx, vault_package, publication_state)
 
     if publication_state["status"] == "Retry":

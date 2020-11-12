@@ -1,4 +1,4 @@
-updateLandingpages() {
+updatePublications() {
 	# Scan for published vault packages.
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
@@ -17,9 +17,8 @@ updateLandingpages() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
                 *status = ''
                 *statusInfo = '';
-                rule_update_landingpage(*collName, *status, *statusInfo);
-                writeLine("stdout", "*status");
-                writeLine("stdout", "*statusInfo");
+                rule_update_publication(*collName, *status, *statusInfo);
+                writeLine("stdout", "*collName: *status *statusInfo");
 			}
 		}
 
