@@ -17,7 +17,7 @@ updateLandingpages() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
                 *status = ''
                 *statusInfo = '';
-				rule_update_landingpage(*collName, *status, *statusInfo);
+                rule_update_landingpage(*collName, *status, *statusInfo);
                 writeLine("stdout", "*status");
                 writeLine("stdout", "*statusInfo");
 			}

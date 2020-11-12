@@ -15,7 +15,8 @@ from util import *
 
 __all__ = ['rule_process_publication',
            'rule_process_depublication',
-           'rule_process_republication']
+           'rule_process_republication',
+           'rule_update_landingpage']
 
 
 def get_publication_config(ctx):
