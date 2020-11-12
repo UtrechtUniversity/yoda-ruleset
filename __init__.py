@@ -27,7 +27,6 @@ from mail                   import *
 from meta                   import *
 from meta_form              import *
 from provenance             import *
-from published_xml_to_json  import *
 from research               import *
 from resources              import *
 from schema                 import *

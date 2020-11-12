@@ -11,6 +11,7 @@ import irods_types
 import jsonschema
 
 import avu_json
+import publication
 import schema as schema_
 import vault
 from util import *
@@ -479,8 +480,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
             ret = msi.string_2_key_val_pair(callback, s, irods_types.BytesBuf())
             kvp = ret['arguments'][1]
             msi.associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
-
-            callback.iiSetUpdatePublicationState(vault_pkg_path, irods_types.BytesBuf())
+            publication.set_update_publication_state(callback, vault_pkg_path)
         except Exception:
             set_result('FailedToSetPublicationUpdateStatus',
                        'Failed to set publication update status on <{}>'.format(vault_pkg_path))

@@ -5,6 +5,21 @@
 # \copyright Copyright (c) 2016-2020, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+#\ Generic secure copy functionality
+# \param[in] argv         argument string for secure copy like "*publicHost inbox /var/www/landingpages/*publicPath";
+# \param[in] origin_path  local path of origin file
+# \param[out] err         return the error to calling function
+#
+iiGenericSecureCopy(*argv, *origin_path, *err) {
+        *err = errorcode(msiExecCmd("securecopy.sh", *argv, "", *origin_path, 1, *cmdExecOut));
+        if (*err < 0) {
+                msiGetStderrInExecCmdOut(*cmdExecOut, *stderr);
+                msiGetStdoutInExecCmdOut(*cmdExecOut, *stdout);
+                writeLine("serverLog", "iiGenericSecureCopy: errorcode *err");
+                writeLine("serverLog", *stderr);
+                writeLine("serverLog", *stdout);
+        }
+}
 
 # \brief Rule to grant read access to the vault package managed by a datamanger.
 #
