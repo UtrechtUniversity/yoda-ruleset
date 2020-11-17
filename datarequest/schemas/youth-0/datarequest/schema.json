@@ -1,0 +1,441 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "definitions": {
+    "stringNormal": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "stringLong": {
+      "type": "string",
+      "maxLength": 2700
+    }
+  },
+  "type": "object",
+  "properties": {
+    "introduction": {
+      "type": "object",
+      "title": "Introduction",
+      "description": "The information you provide here will be used by the YOUth Executive Board, the Data Manager, and the Data Management Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the Data Access Protocol.<br/><br/>All data requests will be published on the YOUth researcher’s website in order to provide a searchable overview of past, current, and pending data requests. By default, the publication of submitted and pending data requests includes he names and institutions of the contact person and participating researchers as well as a broad description of the research context.</br></br>After approval of a data request, the complete request (including hypotheses and proposed analyses) will be published. If an applicant has reasons to object to the publication of their complete data request, they should notify the Project Manager, who will evaluate the objection   with the other members of the Executive Board and the Data Management Committee. If the objection is rejected, the researcher may decide to withdraw their data request."
+    },
+    "researchers": {
+      "type": "object",
+      "title": "Researchers",
+      "description": "In this section, please provide information about the researchers involved with this data request.</br><ul><li>Name, affiliation and contact information of the contact person</li><li>Name and details of participating researchers (e.g. intended co-authors)</li><li>Name and details of the contact person within YOUth (if any)</li></ul>",
+      "properties": {
+        "contacts": {
+          "type": "array",
+          "title": "Contact person(s) for the proposed study",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Name"
+              },
+              "institution": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Institution"
+              },
+              "department": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Department"
+              },
+              "academic_role": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Academic role",
+                "description": "E.g. Professor, Associate professor, PhD student"
+              },
+              "work_address": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Address"
+              },
+              "email": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Email"
+              },
+              "phone": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Phone"
+              }
+            },
+            "required": [
+              "name",
+              "institution",
+              "department",
+              "academic_role",
+              "work_address",
+              "email",
+              "phone"
+            ]
+	  }
+        },
+        "dmc_contact": {
+          "type": "string",
+          "title": "Contact person in YOUth Data Management Committee (if any)",
+          "enum": [
+            "Prof. Dr. M.J.N.L. Benders / Wilhelmina Children's Hospital, UMCU / Neonatology / m.benders@umcutrecht.nl",
+            "Prof. Dr. M. Dekovic / Utrecht University / Clinical Child and Family Studies / M.Dekovic@uu.nl",
+            "Prof. Dr. S. Durston / UMCU / Psychiatry / s.durston@umcutrecht.nl",
+            "Prof. Dr. H.E. Hulshoff Pol / UMCU / Psychiatry / h.e.hulshoff@umcutrecht.nl",
+            "Prof. Dr. R.W.J. Kager / Utrecht University / Utrecht Institute of Linguistics OTS / R.W.J.Kager@uu.nl",
+            "Prof. Dr. R. Kahn / Icahn School of Medicine, Mount Sinai, NY / Psychiatry / rkahn@umcutrecht.nl",
+            "Prof. Dr. C. Kemner / Utrecht University / Developmental Psychology / C.Kemner@uu.nl",
+            "Prof. Dr. P.M. Valkenburg / University of Amsterdam / Media, Youth and Society / P.M.Valkenburg@uva.nl",
+            "Prof. Dr. W.A.M. Vollebergh / Utrecht University / Social Sciences / W.A.M.Vollebergh@uu.nl"
+          ]
+        }
+      }
+    },
+    "datarequest": {
+      "type": "object",
+      "title": "Requested data",
+      "description": "In this section, please specify as detailed as possible which data you request (and from which subjects). Include information regarding:<ul><li>Which wave(s)</li><li>Which experiments, questionnaires, etc.</li><li>How many sets (sample-size)</li><li>Purpose of your data request</li><li>Other aspects relevant to your data request (optional).</li></ul>Some information on the use of the data selection table below:<ul><li>Use the sorting options to find the data set(s) you would like to request</li><li>Click the checkbox or the row to add the data to your \"shopping cart\"</li><li>Click the (+) to show additional information about a data set (if available)</li><li>Your selection is shown in the shopping cart below the data selection table</li><li>You may change the number of rows per page using the bottom-left drop-down menu</li></ul>",
+      "properties": {
+        "data": {
+          "type": "object",
+          "title": "Data"
+        },
+        "additional_specifications": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Additional specifications",
+          "description": "If necessary, please provide additional specifications on the data you would like to obtain (e.g. only of children of which the mother smoked during pregnancy)."
+        },
+        "other_remarks": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Other aspects relevant to your data request",
+          "description": "Optional"
+        },
+        "purpose": {
+          "type": "string",
+          "title": "Purpose",
+          "description": "Data request for the purpose of:",
+          "enum": [
+            "Analyses in order to publish",
+            "Analyses for data assessment only (results will not be published)"
+          ]
+        },
+        "data_lock_notification": {
+          "type": "boolean",
+          "title": "Would you like to be notified when a new data lock is available?",
+          "enumNames": [ "Yes", "No" ]
+        },
+        "publication_approval": {
+          "type": "boolean",
+          "title": "Do you agree with publishing the complete request on our researcher’s website after it is approved?",
+          "enumNames": [ "Yes", "No (please provide a rationale)" ]
+        }
+      },
+      "dependencies": {
+        "purpose": {
+          "oneOf": [
+            {
+              "properties": {
+                "purpose": {
+                  "enum": [
+                    "Analyses for data assessment only (results will not be published)"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "purpose": {
+                  "enum": [
+                    "Analyses in order to publish"
+                  ]
+                },
+                "publication_type": {
+                  "type": "string",
+                  "title": "Publication type",
+                  "enum": [
+                    "Article or report",
+                    "Article or report that will also be part of a PhD thesis",
+                    "PhD thesis"
+                  ]
+                }
+              },
+              "required": [
+                "publication_type"
+              ]
+            }
+          ]
+        },
+        "publication_approval": {
+          "oneOf": [
+            {
+              "properties": {
+                "publication_approval": {
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "publication_approval": {
+                  "enum": [
+                    false
+                  ]
+                },
+                "private_request_explanation": {
+                  "$ref": "#/definitions/stringLong",
+                  "title": "Please explain why your request should not be made public."
+                }
+              },
+              "required": [
+                "private_request_explanation"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "data", "purpose", "data_lock_notification", "publication_approval"
+      ]
+    },
+    "research_context": {
+      "type": "object",
+      "title": "Research context",
+      "description": "In this section, please briefly describe the context for your research plans. This section should logically introduce the next section (hypotheses). As mentioned, please note that this section will be made publicly available on our researcher’s website after submission of your request.<br/>Please provide:<br/><ul><li>The title of your research plan</li><li>A very brief background for the topic of your research plan</li><li>The rationale for and relevance of your specific research plan</li><li>The specific research question(s) or aim(s) of your research (Please also provide a brief specification)</li><li>A short description of the data you request</li></ul>References can be added at the end of this section (optional).",
+      "properties": {
+        "title": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Title of the study"
+        },
+        "background": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Background of the topic of your research plan, rationale, relevance (max. 500 words)"
+        },
+        "research_question": {
+          "$ref": "#/definitions/stringLong",
+          "title": "The specific research question(s) or aim(s) of your research"
+        },
+        "requested_data_summary": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Summary of the data requested for your project",
+          "description": "Please indicate which data you request to answer your research question."
+        },
+        "references": {
+          "$ref": "#/definitions/stringLong",
+          "title": "References",
+          "description": "Optional"
+        }
+      },
+      "required": ["title", "background", "research_question", "requested_data_summary"]
+    },
+    "hypotheses": {
+      "type": "object",
+      "title": "Hypotheses",
+      "description": "In this section, please provide your research hypotheses. For each hypothesis:<ul><li>Be as specific as possible</li><li>Provide the anticipated outcomes for accepting and/or rejecting a hypothesis</li></ul>",
+      "properties": {
+        "hypotheses": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Hypotheses"
+        }
+      }
+    },
+    "methods": {
+      "type": "object",
+      "title": "Methods",
+      "description": "In this section, you should make clear how the hypotheses are tested. Be as specific as possible.<br/>Please describe:<ul><li>The study design and study population (Which data do you require from which subjects?)</li><li>The general processing steps (to prepare the data for analysis)</li><li>The analysis steps (How are the data analysed to address the hypotheses? If possible, link each description to a specific hypothesis)</li><li>Any additional aspects that need to be described to clarify the methodological approach (optional)</li></ul>",
+      "properties": {
+        "design": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Study design, study population and sample size",
+          "description": "E.g. cross-sectional or longitudinal; entire population or a subset; substantiate your choices."
+        },
+        "preparation": {
+          "$ref": "#/definitions/stringLong",
+          "title": "General processing steps to prepare the data for analysis"
+        },
+        "processing": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Specific processing and analysis steps to address the hypotheses"
+        },
+        "additional_methodological_aspects": {
+          "$ref": "#/definitions/stringLong",
+          "title": "Additional methodological aspects",
+          "description": "Optional"
+        }
+      },
+      "required": ["design", "preparation", "processing"]
+    },
+    "contribution": {
+      "type": "object",
+      "title": "Contributions to YOUth data collection",
+      "description": "The investigator contributes to YOUth with ...",
+      "properties": {
+        "contribution_time": {
+          "type": "string",
+          "title": "Time",
+          "enum": [
+            "No",
+            "Yes"
+          ],
+          "default": "No"
+        },
+        "contribution_financial": {
+          "type": "string",
+          "title": "Money",
+          "enum": [
+            "No",
+            "Yes"
+          ],
+          "default": "No"
+        },
+        "contribution_favor": {
+          "type": "string",
+          "title": "Return favor",
+          "enum": [
+            "No",
+            "Yes"
+          ],
+          "default": "No"
+        }
+      },
+      "required": [
+        "contribution_time",
+        "contribution_financial",
+        "contribution_favor"
+      ],
+      "not": {
+        "properties": {
+          "contribution_time": { "enum": ["No"] },
+          "contribution_financial": { "enum": ["No"] },
+          "contribution_favor": { "enum": ["No"] }
+        }
+      },
+      "dependencies": {
+        "contribution_time": {
+          "oneOf": [
+            {
+              "properties": {
+                "contribution_time": {
+                  "enum": [
+                    "No"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "contribution_time": {
+                  "enum": [
+                    "Yes"
+                  ]
+                },
+                "contribution_time_type": {
+                  "type": "string",
+                  "title": "Contribution in time",
+                  "enum": [
+                    "PhD student",
+                    "Other contribution"
+                  ]
+                },
+                "contribution_time_specification": {
+                  "$ref": "#/definitions/stringLong",
+                  "title": "Number of hours of contribution incl. specification"
+                }
+              },
+              "required": [
+                "contribution_time_type",
+                "contribution_time_specification"
+              ]
+            }
+          ]
+        },
+        "contribution_time_type": {
+          "oneOf": [
+            {
+              "properties": {
+                "contribution_time_type": {
+                  "enum": [
+                    "PhD student"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "contribution_time_type": {
+                  "enum": [
+                    "Other contribution"
+                  ]
+                },
+                "contribution_time_type_other": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Who will provide the time contribution?"
+                }
+              },
+              "required": [
+                "contribution_time_type_other"
+              ]
+            }
+          ]
+        },
+        "contribution_financial": {
+          "oneOf": [
+            {
+              "properties": {
+                "contribution_financial": {
+                  "enum": [
+                    "No"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "contribution_financial": {
+                  "enum": [
+                    "Yes"
+                  ]
+                },
+                "contribution_financial_amount": {
+                  "type": "number",
+                  "title": "Financial contribution",
+                  "description": "In euros",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "contribution_financial_amount"
+              ]
+            }
+          ]
+        },
+        "contribution_favor": {
+          "oneOf": [
+            {
+              "properties": {
+                "contribution_favor": {
+                  "enum": [
+                    "No"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "contribution_favor": {
+                  "enum": [
+                    "Yes"
+                  ]
+                },
+                "contribution_favor_description": {
+                  "$ref": "#/definitions/stringLong",
+                  "title": "Detailed description of the return favor."
+                }
+              },
+              "required": [
+                "contribution_favor_description"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 processVaultActions() {
 	# Scan for any pending vault actions.
 	*ContInxOld = 1;
+
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddSelectFieldToGenQuery("META_COLL_ATTR_VALUE", "", *GenQInp);
 	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "like", UUORGMETADATAPREFIX ++ "vault_action_%", *GenQInp);
@@ -11,7 +12,6 @@ processVaultActions() {
 	while(*ContInxOld > 0) {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
-
 			# Check if vault status transition is requested in research or datamanager group.
 			if (*collName like regex "/[^/]+/home/research-.*" ||
 			    *collName like regex "/[^/]+/home/datamanager-.*") {
@@ -22,6 +22,7 @@ processVaultActions() {
 				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0));
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
+
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 					writeLine("stdout", "Failed to process vault request on *collName");
 				} else { # skip processing this vault request
@@ -39,12 +40,10 @@ processVaultActions() {
 
 					# Perform status transition if action is pending.
 					if (*pending) {
-						*err = errorcode(iiVaultProcessStatusTransition(*folder, *action, *actor, *status, *statusInfo));
-						if (*err < 0) {
-							writeLine("stdout", "iiVaultProcessStatusTransition: *err");
-							*status = "InternalError";
-							*statusInfo = "";
-						}
+                        *status = '';
+                        *statusInfo = '';
+                        rule_vault_process_status_transitions(*folder, *action, *actor, *status, *statusInfo);
+                        *status = 'Success';
 
 						# Check if rods can modify metadata and grant temporary write ACL if necessary.
 						msiCheckAccess(*collName, "modify metadata", *modifyPermission);
@@ -67,7 +66,7 @@ processVaultActions() {
 
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
 							msiSetKeyValuePairsToObj(*vaultStatusKvp, *collName, "-C");
-							writeLine("stdout", "iiVaultProcessStatusTransition: *status - *statusInfo");
+							writeLine("stdout", "rule_vault_process_status_transitions: *status - *statusInfo");
 						} else {
 							*json_str = "[]";
 							*size = 0;
@@ -83,7 +82,7 @@ processVaultActions() {
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultActionKvp, *collName, "-C"), *msg);
 							*err = errormsg(msiRemoveKeyValuePairsFromObj(*vaultStatusKvp, *collName, "-C"), *msg);
 
-							writeLine("stdout", "iiVaultProcessStatusTransition: Successfully processed *action by *actor on *folder");
+							writeLine("stdout", "rule_vault_process_status_transitions: Successfully processed *action by *actor on *folder");
 						}
 
 						# Remove the temporary write ACL.

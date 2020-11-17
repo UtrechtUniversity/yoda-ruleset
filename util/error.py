@@ -15,3 +15,7 @@ class UUFileSizeError(UUError):
 
 class UUFileNotExistError(UUError):
     """File does not exist."""
+
+
+class UUJsonValidationError(UUError):
+    """JSON data could not be validated."""

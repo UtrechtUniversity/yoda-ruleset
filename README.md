@@ -12,7 +12,7 @@ research data.
 This repository contains all iRODS rules and policies useful for all Yoda environments.
 
 ## Requirements
-- [iRODS >= 4.2.5](https://irods.org/download/)
+- [iRODS >= 4.2.7](https://irods.org/download/)
 - [Sudo microservices](https://github.com/UtrechtUniversity/irods-sudo-microservices)
 - [UU microservices](https://github.com/UtrechtUniversity/irods-uu-microservices)
 

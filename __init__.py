@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.6.1'
-__copyright__ = 'Copyright (c) 2015-2019, Utrecht University'
+__version__   = '1.6.3'
+__copyright__ = 'Copyright (c) 2015-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
@@ -27,7 +27,6 @@ from mail                   import *
 from meta                   import *
 from meta_form              import *
 from provenance             import *
-from published_xml_to_json  import *
 from research               import *
 from resources              import *
 from schema                 import *
@@ -37,5 +36,8 @@ from vault                  import *
 from vault_xml_to_json      import *
 from datacite               import *
 from epic                   import *
+from publication            import *
 
 from policies               import *
+from revisions              import *
+from datarequest            import *

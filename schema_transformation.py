@@ -13,48 +13,53 @@ import re
 import time
 
 import irods_types
+import session_vars
+import xmltodict
+
 import meta
 import schema
 import schema_transformations
-import session_vars
 import vault_xml_to_json
-import xmltodict
 from util import *
 
 
-def execute_transformation(callback, metadata_path, transform):
+def execute_transformation(ctx, metadata_path, transform):
     """Transform a metadata file with the given transformation function."""
     coll, data = os.path.split(metadata_path)
 
     group_name = metadata_path.split('/')[3]
 
-    metadata = jsonutil.read(callback, metadata_path)
+    metadata = jsonutil.read(ctx, metadata_path)
     metadata = transform(metadata)
 
     if group_name.startswith('research-'):
         backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in research {}, backup @ {}'.format(metadata_path, backup))
-        msi.data_obj_copy(callback, metadata_path, backup, '', irods_types.BytesBuf())
-        jsonutil.write(callback, metadata_path, metadata)
+        msi.data_obj_copy(ctx, metadata_path, backup, '', irods_types.BytesBuf())
+        jsonutil.write(ctx, metadata_path, metadata)
     elif group_name.startswith('vault-'):
         new_path = '{}/yoda-metadata[{}].json'.format(coll, str(int(time.time())))
         # print('TRANSFORMING in vault <{}> -> <{}>'.format(metadata_path, new_path))
-        jsonutil.write(callback, new_path, metadata)
-        copy_acls_from_parent(callback, new_path, "default")
-        callback.rule_provenance_log_action("system", coll, "updated metadata schema")
-        log.write(callback, "Transformed %s" % (new_path))
+        jsonutil.write(ctx, new_path, metadata)
+        copy_acls_from_parent(ctx, new_path, "default")
+        ctx.rule_provenance_log_action("system", coll, "updated metadata schema")
+        log.write(ctx, "Transformed %s" % (new_path))
     else:
-        assert False
+        raise AssertionError()
 
 
-def transform_research_xml(callback, xml_path):
-    """
-    Transform a yoda-metadata XML to JSON in the research area.
+def transform_research_xml(ctx, xml_path):
+    """Transform a Yoda metadata XML to JSON in the research area.
 
     Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param xml_path: Path to Yoda metadata XML to transform
+
+    :returns: API status
     """
     _, zone, _1, _2 = pathutil.info(xml_path)
-    xml_data = xmltodict.parse(data_object.read(callback, xml_path))
+    xml_data = xmltodict.parse(data_object.read(ctx, xml_path))
 
     try:
         xml_ns = xml_data['metadata']['@xmlns']
@@ -71,22 +76,22 @@ def transform_research_xml(callback, xml_path):
 
     try:
         json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
-        schem = jsonutil.read(callback, json_schema_path)
+        schem = jsonutil.read(ctx, json_schema_path)
     except error.UUFileNotExistError:
         return api.Error('missing_schema',
                          'Metadata schema for default-0 is needed for XML transformation. Please contact an administrator.')
 
     try:
         # FIXME: This should get a dict instead of a json string.
-        metadata = jsonutil.parse(vault_xml_to_json.transformYodaXmlDataToJson(callback, schem, xml_data))
+        metadata = jsonutil.parse(vault_xml_to_json.transformYodaXmlDataToJson(ctx, schem, xml_data))
         # FIXME: schema id should be inserted by the transformer instead.
         schema_id = xml_ns + '/metadata.json'
         meta.metadata_set_schema_id(metadata, schema_id)
 
         try:
-            schem = schema.get_schema_by_id(callback, schema_id, xml_path)
+            schem = schema.get_schema_by_id(ctx, schema_id, xml_path)
         except Exception as e:
-            log.write(callback, 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
+            log.write(ctx, 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
                       .format(xml_path, schema_id, str(e)))
             # The result is unusable, as there will be no possible JSON → JSON
             # transformation that will make this a valid metadata file.
@@ -97,7 +102,7 @@ def transform_research_xml(callback, xml_path):
         # Validate against the metadata's indicated schema.
         # This is purely for logging / debugging currently,
         # any validation errors will be reported when the form is next opened.
-        errors = meta.get_json_metadata_errors(callback,
+        errors = meta.get_json_metadata_errors(ctx,
                                                json_path,
                                                metadata=metadata,
                                                schema=schem,
@@ -107,10 +112,10 @@ def transform_research_xml(callback, xml_path):
             # This is not fatal - there may have been validation errors in the XML as well,
             # which should remain exactly the same in the new JSON situation.
             # print(errors)
-            log.write(callback, 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
+            log.write(ctx, 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
                       .format(xml_path, schema_id))
 
-        jsonutil.write(callback, json_path, metadata)
+        jsonutil.write(ctx, json_path, metadata)
     except Exception as e:
         return api.Error('bad_xml', 'XML metadata file could not be transformed', debug_info=repr(e))
 
@@ -148,15 +153,18 @@ def api_transform_metadata(ctx, coll):
         execute_transformation(ctx, metadata_path, transform)
 
 
-def get(callback, metadata_path, metadata=None):
-    """
-    Find a transformation that can be executed on the given metadata JSON.
+def get(ctx, metadata_path, metadata=None):
+    """Find a transformation that can be executed on the given metadata JSON.
 
-    Returns a transformation function on success, or None if no transformation was found.
+    :param ctx:           Combined type of a ctx and rei struct
+    :param metadata_path: Path to metadata JSON
+    :param metadata:      Optional metadata object
+
+    :returns: Transformation function on success, or None if no transformation was found
     """
     try:
-        src = schema.get_schema_id(callback, metadata_path, metadata=metadata)
-        dst = schema.get_active_schema_id(callback, metadata_path)
+        src = schema.get_schema_id(ctx, metadata_path, metadata=metadata)
+        dst = schema.get_active_schema_id(ctx, metadata_path)
 
         # Ideally, we would check that the metadata is valid in its current
         # schema before claiming that we can transform it...
@@ -173,13 +181,14 @@ def get(callback, metadata_path, metadata=None):
 
 # TODO: @rule.make
 def rule_get_transformation_info(rule_args, callback, rei):
-    """
-    Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
+    """Check if a yoda-metadata.json transformation is possible and if so, retrieve transformation description.
 
-    :param rule_args[0]: JSON path
+    :param rule_args: [0] JSON path
+                      [1] Transformation possible? true|false
+                      [2] human-readable description of the transformation
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
 
-    :returns: rule_args[1] -- transformation possible? true|false
-              rule_args[2] -- human-readable description of the transformation
     """
     json_path = rule_args[0]
 
@@ -191,11 +200,12 @@ def rule_get_transformation_info(rule_args, callback, rei):
         rule_args[1:3] = 'true', transformation_html(transform)
 
 
-def copy_acls_from_parent(callback, path, recursive_flag):
+def copy_acls_from_parent(ctx, path, recursive_flag):
     """
     When inheritance is missing we need to copy ACLs when introducing new data in vault package.
 
-    :param path: Path of object that needs the permissions of parent
+    :param ctx:            Combined type of a ctx and rei struct
+    :param path:           Path of object that needs the permissions of parent
     :param recursive_flag: Either "default" for no recursion or "recursive"
     """
     parent = os.path.dirname(path)
@@ -203,24 +213,24 @@ def copy_acls_from_parent(callback, path, recursive_flag):
     iter = genquery.row_iterator(
         "COLL_ACCESS_NAME, COLL_ACCESS_USER_ID",
         "COLL_NAME = '" + parent + "'",
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
         access_name = row[0]
         user_id = int(row[1])
 
-        user_name = user.name_from_id(callback, user_id)
+        user_name = user.name_from_id(ctx, user_id)
 
         if access_name == "own":
-            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            callback.msiSetACL(recursive_flag, "own", user_name, path)
+            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            ctx.msiSetACL(recursive_flag, "own", user_name, path)
         elif access_name == "read object":
-            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            callback.msiSetACL(recursive_flag, "read", user_name, path)
+            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            ctx.msiSetACL(recursive_flag, "read", user_name, path)
         elif access_name == "modify object":
-            log.write(callback, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
-            callback.msiSetACL(recursive_flag, "write", user_name, path)
+            log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
+            ctx.msiSetACL(recursive_flag, "write", user_name, path)
 
 
 # TODO: @rule.make
@@ -228,10 +238,12 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
     """
     Transform all metadata JSON files in the vault to the active schema.
 
-    :param coll_id: First COLL_ID to check
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
-    :param delay: Delay between batches in seconds
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     coll_id = int(rule_args[0])
     batch   = int(rule_args[1])
@@ -284,13 +296,21 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
 
 
 def html(f):
-    """
-    Get a human-readable HTML description of a transformation function.
+    """Get a human-readable HTML description of a transformation function.
 
     The text is derived from the function's docstring.
+
+    :param f: Transformation function
+
+    :returns: Human-readable HTML description of a transformation function
     """
-    return '\n'.join(map(lambda paragraph:
-                     '<p>{}</p>'.format(  # Trim whitespace.
-                         re.sub('\s+', ' ', paragraph).strip()),
-                         # Docstring paragraphs are separated by blank lines.
-                         re.split('\n{2,}', f.__doc__)))
+    description = '\n'.join(map(lambda paragraph:
+                            '<p>{}</p>'.format(  # Trim whitespace.
+                                re.sub('\s+', ' ', paragraph).strip()),
+                                # Docstring paragraphs are separated by blank lines.
+                                re.split('\n{2,}', f.__doc__)))
+
+    # Remove docstring.
+    description = re.sub('((:param).*)|((:returns:).*)', ' ', description)
+
+    return description

@@ -8,6 +8,7 @@ from collections import namedtuple
 
 import genquery
 import session_vars
+
 from query import Query
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
@@ -37,9 +38,14 @@ def zone(ctx):
 
 
 def from_str(ctx, s):
-    """Return a (user,zone) tuple from a user[#zone] string.
+    """Create a (user,zone) tuple from a user[#zone] string.
 
     If no zone is present in the string, the client's zone is used.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param s:   User string (user[#zone])
+
+    :returns: A (user,zone) tuple
     """
     parts = s.split('#')
     if len(parts) < 2 or len(parts[1]) == 0:
@@ -61,6 +67,11 @@ def user_type(ctx, user=None):
     """Return the user type ('rodsuser' or 'rodsadmin') for the given user, or the client user if no user is given.
 
     If the user does not exist, None is returned.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param user: Given user, otherwise client user is used
+
+    :returns: User type ('rodsuser' or 'rodsadmin')
     """
     if user is None:
         user = user_and_zone(ctx)

@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
-
 import xml.etree.cElementTree as ET
+
+from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
            'rule_json_datacite41_create_data_cite_xml_on_json']
@@ -16,8 +16,13 @@ def El(tag, *children, **attrs):
     """Construct an XML element with the given attributes and children.
 
     If a string is given as the only child, it is used as a textual element body instead.
-    """
 
+    :param tag:       Tag of XML element to construct
+    :param *children: Children of XML element to construct
+    :param **attrs:   Attributes of XML element to construct
+
+    :returns: XML element
+    """
     if type(tag) is str:
         tag = tag.decode('utf-8')
 
@@ -45,11 +50,67 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                     licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
-    :param metadataJsonPath: Path to the most recent vault yoda-metadata.json in the corresponding vault
-    :param combiJsonPath: Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
-                          other are system info parameters
+
+    :param ctx:                  Combined type of a callback and rei struct
+    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                                 other are system info parameters
+    :param lastModifiedDateTime: Last modification time of publication
+    :param yodaDOI:              DOI of publication
+    :param publicationDate:      Date of publication
+    :param openAccessLink:       Open access link to data of publication
+    :param licenseUri:           URI to license of publication
+    """
+    json_datacite41_create_combi_metadata_json(ctx,
+                                               metadataJsonPath,
+                                               combiJsonPath,
+                                               lastModifiedDateTime,
+                                               yodaDOI,
+                                               publicationDate,
+                                               openAccessLink,
+                                               licenseUri)
+    """
+    # get the data in the designated YoDa metadata.json and retrieve it as dict
+    metaDict = jsonutil.read(ctx, metadataJsonPath)
+
+    # add System info
+    metaDict['System'] = {
+        'Last_Modified_Date': lastModifiedDateTime,
+        'Persistent_Identifier_Datapackage': {
+            'Identifier_Scheme': 'DOI',
+            'Identifier': yodaDOI
+        },
+        'Publication_Date': publicationDate,
+        'Open_access_Link': openAccessLink,
+        'License_URI': licenseUri
+    }
+
+    # Write combined data to file at location combiJsonPath
+    jsonutil.write(ctx, combiJsonPath, metaDict)
+
     """
 
+
+def json_datacite41_create_combi_metadata_json(ctx,
+                                               metadataJsonPath,
+                                               combiJsonPath,
+                                               lastModifiedDateTime,
+                                               yodaDOI,
+                                               publicationDate,
+                                               openAccessLink,
+                                               licenseUri):
+    """Frontend function to add system info to yoda-metadata in json format.
+
+    :param ctx:                  Combined type of a callback and rei struct
+    :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
+    :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
+                                 other are system info parameters
+    :param lastModifiedDateTime: Last modification time of publication
+    :param yodaDOI:              DOI of publication
+    :param publicationDate:      Date of publication
+    :param openAccessLink:       Open access link to data of publication
+    :param licenseUri:           URI to license of publication
+    """
     # get the data in the designated YoDa metadata.json and retrieve it as dict
     metaDict = jsonutil.read(ctx, metadataJsonPath)
 
@@ -71,9 +132,14 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
 
 @rule.make(inputs=[0], outputs=[1])
 def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
+    return json_datacite41_create_data_cite_xml_on_json(ctx, combi_path)
+
+
+def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
     """Based on content of combi json, get DataciteXml as string.
 
-    :param combi_path: path to the combined Json file that holds both User and System metadata
+    :param ctx:        Combined type of a callback and rei struct
+    :param combi_path: Path to the combined JSON file that holds both user and system metadata
 
     :returns: string -- Holds Datacite formatted metadata of Yoda
     """
@@ -104,7 +170,10 @@ def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
               getFunders]:
         try:
             x = f(combi)
-        except KeyError, IndexError:
+        except KeyError:
+            # Ignore absent fields.
+            continue
+        except IndexError:
             # Ignore absent fields.
             continue
 
@@ -156,6 +225,10 @@ def getSubjects(combi):
 
        1) standard objects like tags/disciplne
        2) free items, for now specifically for GEO schemas
+
+    :param combi: Combined JSON file that holds both user and system metadata
+
+    :returns: XML element with subjects in DataCite format
     """
 
     subjects = []  # :: [(scheme, value)]
@@ -198,7 +271,6 @@ def getFunders(combi):
 
 def getCreators(combi):
     """Get string in DataCite format containing creator information."""
-
     creators = [El('creator',
                    El('creatorName', '{}, {}'.format(creator['Name']['Family_Name'], creator['Name']['Given_Name'])),
                    *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
@@ -212,8 +284,12 @@ def getCreators(combi):
 
 
 def getContributors(combi):
-    """Get string in datacite format containing contributors,
+    """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
+
+    :param combi: Combined JSON file that holds both user and system metadata
+
+    :returns: XML element with contributors in DataCite format
     """
     contribs = [El('contributor',
                    El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
@@ -256,7 +332,6 @@ def getVersion(combi):
 
 def getRightsList(combi):
     """Get string in DataCite format containing rights related information."""
-
     options = {'Open':       'info:eu-repo/semantics/openAccess',
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
@@ -272,7 +347,6 @@ def getLanguage(combi):
 
 def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
-
     typs = {'Dataset':   'Research Data',
             'DataPaper': 'Method Description',
             'Software':  'Computer code'}
@@ -291,10 +365,9 @@ def getResourceType(combi):
 
 def getRelatedDataPackage(combi):
     """Get string in DataCite format containing related datapackages."""
-
     related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
-                  relatedIdentifierType = rel['Persistent_Identifier']['Identifier_Scheme'],
-                  relationType          = rel['Relation_Type'].split(':')[0])
+                  relatedIdentifierType=rel['Persistent_Identifier']['Identifier_Scheme'],
+                  relationType=rel['Relation_Type'].split(':')[0])
                for rel in combi['Related_Datapackage']]
     if related:
         return El('relatedIdentifiers', *related)
@@ -308,6 +381,10 @@ def getGeoLocations(combi):
        2) Geo schema including map (=bounding box or marker/point information) Inclunding temporal and spatial descriptions
        Both are mutually exclusive.
        I.e. first test presence of 'geoLocation'. Then test presence of 'Covered_Geolocation_Place'
+
+    :param combi: Combined JSON file that holds both user and system metadata
+
+    :returns: XML element with information of geo locations in DataCite format
     """
 
     geoLocations = []

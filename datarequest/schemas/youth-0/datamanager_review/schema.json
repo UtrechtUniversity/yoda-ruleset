@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "title": "Data manager review",
+  "properties": {
+    "datamanager_review": {
+      "type": "string",
+      "title": "I advise that this data request be",
+      "enum": [
+        "Accepted",
+        "Rejected (resubmit)",
+        "Rejected"
+      ]
+    },
+    "datamanager_remarks": {
+      "type": "string",
+      "title": "Data manager remarks",
+      "description": "Any advisory remarks about the data request go here. In case of rejection, an explanation is mandatory. The researcher cannot read these remarks."
+    }
+  },
+  "dependencies": {
+    "datamanager_review": {
+      "oneOf": [
+        {
+          "properties": {
+            "datamanager_review": {
+              "enum": [
+                "Accepted"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "datamanager_review": {
+              "enum": [
+                "Rejected (resubmit)",
+                "Rejected"
+              ]
+            },
+            "datamanager_remarks": {
+              "type": "string",
+              "title": "Data manager remarks",
+             "description": "Any advisory remarks about the data request go here. In case of rejection, an explanation is mandatory. The researcher cannot read these remarks."
+            }
+          },
+          "required": [
+            "datamanager_remarks"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "datamanager_review"
+  ]
+}

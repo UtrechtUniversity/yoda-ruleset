@@ -25,12 +25,15 @@ def api_browse_folder(ctx,
                       space=pathutil.Space.OTHER.value):
     """Get paginated collection contents, including size/modify date information.
 
+    :param ctx:        Combined type of a callback and rei struct
     :param coll:       Collection to get paginated contents of
     :param sort_on:    Column to sort on ('name', 'modified' or size)
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
     :param space:      Space the collection is in
+
+    :returns: Dict with paginated collection contents
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -112,12 +115,15 @@ def api_browse_collections(ctx,
     This function browses a folder and only looks at the collections in it. No dataobjects.
     Specifically for folder selection for copying data to research area from vault for instance.
 
+    :param ctx:        Combined type of a callback and rei struct
     :param coll:       Collection to get paginated contents of
     :param sort_on:    Column to sort on ('name', 'modified' or size)
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
     :param space:      Space the collection is in
+
+    :returns: Dict with paginated collection contents
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -188,12 +194,15 @@ def api_search(ctx,
                limit=10):
     """Get paginated search results, including size/modify date/location information.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param search_string: String used to search
     :param search_type:   Search type ('filename', 'folder', 'metadata', 'status')
     :param sort_on:       Column to sort on ('name', 'modified' or size)
     :param sort_order:    Column sort order ('asc' or 'desc')
     :param offset:        Offset to start browsing from
     :param limit:         Limit number of results
+
+    :returns: Dict with paginated search results
     """
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.

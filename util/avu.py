@@ -8,6 +8,7 @@ import itertools
 from collections import namedtuple
 
 import irods_types
+
 import msi
 import pathutil
 from query import Query
@@ -30,6 +31,13 @@ def of_data(ctx, path):
     return itertools.imap(lambda x: Avu(*x),
                           Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
                                      "COLL_NAME = '{}', DATA_NAME = '{}'".format(*pathutil.chop(path))))
+
+
+def of_group(ctx, group):
+    """Get (a,v,u) triplets for a given group."""
+    return itertools.imap(lambda x: Avu(*x),
+                          Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                     "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
 def set_on_coll(ctx, coll, a, v):

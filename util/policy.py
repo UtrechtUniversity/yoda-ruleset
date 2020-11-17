@@ -60,6 +60,11 @@ def require():
 
     The function must explicitly return policy.succeed() or .fail('reason') as a result.
     Any other return type will result in the PEP failing (blocks associated action).
+
+    :raises api.Error:      Unhandled API error
+    :raises AssertionError: Policy did not succeed
+
+    :returns: Decorator to turn a function into a PEP rule that fails unless policy.succeed() is returned
     """
     def deco(f):
         @rule.make(outputs=[])
@@ -78,13 +83,13 @@ def require():
             elif isinstance(result, Fail):
                 log._write(ctx, '{} denied: {}'.format(f.__name__, str(result)))
                 ctx.msiOprDisallowed()
-                assert False  # Just in case.
+                raise AssertionError()  # Just in case.
 
             # Require an unambiguous YES from the policy function.
             # Default to fail.
             log._write(ctx, '{} denied: ambiguous policy result (internal error): {}'
                             .format(f.__name__, str(result)))
             ctx.msiOprDisallowed()
-            assert False
+            raise AssertionError()
         return r
     return deco

@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "title": "Preliminary review",
+  "properties": {
+    "preliminary_review": {
+      "type": "string",
+      "title": "This data request is",
+      "enum": [
+        "Accepted for data manager review",
+        "Rejected (resubmit)",
+        "Rejected"
+      ]
+    },
+    "internal_remarks": {
+      "type": "string",
+      "title": "Internal remarks",
+      "description": "Any remarks about the data request go here. In case of rejection, please provide a rationale here. The researcher cannot read these remarks."
+    }
+  },
+  "dependencies": {
+    "preliminary_review": {
+      "oneOf": [
+        {
+          "properties": {
+            "preliminary_review": {
+              "enum": [
+                "Accepted for data manager review"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "preliminary_review": {
+              "enum": [
+                "Rejected (resubmit)",
+                "Rejected"
+              ]
+            },
+            "internal_remarks": {
+              "type": "string",
+              "title": "Internal remarks",
+              "description": "Any remarks about the data request go here. In case of rejection, please provide a rationale here. The researcher cannot read these remarks."
+            },
+            "feedback_for_researcher": {
+              "type": "string",
+              "title": "Feedback for researcher",
+              "description": "Please provide feedback to the researcher in case of rejection here. This feedback will be included in the rejection email."
+            }
+          },
+          "required": [
+            "internal_remarks", "feedback_for_researcher"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "preliminary_review"
+  ]
+}

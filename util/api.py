@@ -87,6 +87,13 @@ def _api(f):
 
     In development environments, the result may contain a 'debug_info' property
     with additional information on errors, or timing information.
+
+    :param f: Python function to turn into a API function
+
+    :raises ParseError: API rule called with invalid JSON argument
+    :raises result: API rule returned error
+
+    :returns: Wrapper function to turn a Python function into a basic API function
     """
     # Determine required and optional argument names from the function signature.
     a_pos, a_var, a_kw, a_defaults = inspect.getargspec(f)
@@ -192,6 +199,8 @@ def make():
 
         # this returns {"status": "ok", "status_info": null, "data": 42}
         # when called as api_ping {"foo": 42}
+
+    :returns: API function callable as iRODS rules
     """
     def deco(f):
         # The "base" API function, that does handling of arguments and errors.

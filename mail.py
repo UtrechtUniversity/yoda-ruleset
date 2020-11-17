@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """Rules for sending e-mails."""
 
-__copyright__ = 'Copyright (c) 20202, Utrecht University'
+__copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
 import email
-from email.mime.text import MIMEText
+import re
 import smtplib
+from email.mime.text import MIMEText
 
 from util import *
 
 __all__ = ['rule_mail_new_package_published',
-           'rule_mail_your_package_published']
+           'rule_mail_your_package_published',
+           'rule_mail_test']
 
 
 def send(ctx, to, actor, subject, body):
@@ -20,6 +21,14 @@ def send(ctx, to, actor, subject, body):
 
     The originating address and mail server credentials are taken from the
     ruleset configuration file.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param to:      Recipient of them mail
+    :param actor:   Actor of the mail
+    :param subject: Subject of mail
+    :param body:    Body of mail
+
+    :returns: API status
     """
     if not config.notifications_enabled:
         log.write(ctx, '[EMAIL] Notifications are disabled')
@@ -77,10 +86,10 @@ def send(ctx, to, actor, subject, body):
 
     msg = MIMEText(body)
     msg['Reply-To'] = cfg['reply_to']
-    msg['Date']     = email.utils.formatdate()
-    msg['From']     = fmt_addr(cfg['from_name'], cfg['from'])
-    msg['To']       = to
-    msg['Subject']  = subject
+    msg['Date'] = email.utils.formatdate()
+    msg['From'] = fmt_addr(cfg['from_name'], cfg['from'])
+    msg['To'] = to
+    msg['Subject'] = subject
 
     try:
         smtp.sendmail(cfg['from'], [to], msg.as_string())
@@ -103,13 +112,34 @@ def _wrapper(ctx, to, actor, subject, body):
     return '0', ''
 
 
+# @rule.make(inputs=range(4), outputs=range(4, 6))
+def mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, collection):
+    return _wrapper(ctx,
+                    to=datamanager,
+                    actor=submitter,
+                    subject='[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
+                    body="""
+Dear {},
+{} submitted a datapackage to be accepted for publication.
+
+Datapackage: {}
+
+Best regards,
+Yoda system
+""".format(datamanager, submitter, collection))
+
+
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
+    return mail_new_package_published(ctx, datamanager, actor, title, doi)
+
+
+def mail_new_package_published(ctx, datamanager, actor, title, doi):
     return _wrapper(ctx,
-                    to      = datamanager,
-                    actor   = actor,
-                    subject = '[Yoda] New package is published with DOI: {}'.format(doi),
-                    body    = """
+                    to=datamanager,
+                    actor=actor,
+                    subject='[Yoda] New package is published with DOI: {}'.format(doi),
+                    body="""
 Congratulations, your data has been published.
 
 Title: {}
@@ -122,11 +152,15 @@ Yoda system
 
 @rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
+    return mail_your_package_published(ctx, researcher, actor, title, doi)
+
+
+def mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
-                    to      = researcher,
-                    actor   = actor,
-                    subject = '[Yoda] Your package is published with DOI: {}'.format(doi),
-                    body    = """
+                    to=researcher,
+                    actor=actor,
+                    subject='[Yoda] Your package is published with DOI: {}'.format(doi),
+                    body="""
 Congratulations, your data has been published.
 
 Title: {}
@@ -135,3 +169,17 @@ DOI:   {} (https://doi.org/{})
 Best regards,
 Yoda system
 """.format(title, doi, doi))
+
+
+@rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_mail_test(ctx, to):
+    return _wrapper(ctx,
+                    to=to,
+                    actor='None',
+                    subject='[Yoda] Test mail',
+                    body="""
+Congratulations, you have sent a test mail from your Yoda system.
+
+Best regards,
+Yoda system
+""")

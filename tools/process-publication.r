@@ -15,12 +15,11 @@ processPublication() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiProcessPublication(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
-				} else {
-					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
-				}
+                    *status = '';
+                    *statusInfo = '';
+                    rule_process_publication(*collName, *status, *statusInfo);
+                    writeLine("stdout", "*status");
+                    writeLine("stdout", "*statusInfo");
 			}
 		}
 
@@ -47,12 +46,11 @@ processPublication() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiProcessDepublication(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiProcessDepublication *collName returned errorcode *err");
-				} else {
-					writeLine("stdout", "iiProcessDepublication *collName returned with status: *status");
-				}
+                    *status = ''
+                    *statusInfo = '';
+                    rule_process_depublication(*collName, *status, *statusInfo);
+                    writeLine("stdout", "*status");
+                    writeLine("stdout", "*statusInfo");
 			}
 		}
 
@@ -79,12 +77,11 @@ processPublication() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiProcessRepublication(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiProcessRepublication *collName returned errorcode *err");
-				} else {
-					writeLine("stdout", "iiProcessRepublication *collName returned with status: *status");
-				}
+                    *status = ''
+                    *statusInfo = '';
+                    rule_process_republication(*collName, *status, *statusInfo);
+                    writeLine("stdout", "*status");
+                    writeLine("stdout", "*statusInfo");
 			}
 		}
 

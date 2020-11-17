@@ -5,72 +5,81 @@ __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
+import sys
+if sys.version_info > (2, 7):
+    from functools import reduce
 
 import genquery
 import irods_types
+
 import msi
 from query import Query
 
 
-def exists(callback, path):
+def exists(ctx, path):
     """Check if a collection with the given path exists."""
     return len(list(genquery.row_iterator(
                "COLL_ID", "COLL_NAME = '{}'".format(path),
-               genquery.AS_LIST, callback))) > 0
+               genquery.AS_LIST, ctx))) > 0
 
 
-def owner(callback, path):
+def owner(ctx, path):
     """Find the owner of a collection. Returns (name, zone) or None."""
     owners = list(genquery.row_iterator(
                   "COLL_OWNER_NAME, COLL_OWNER_ZONE",
                   "COLL_NAME = '{}'".format(path),
-                  genquery.AS_LIST, callback))
+                  genquery.AS_LIST, ctx))
     return tuple(owners[0]) if len(owners) > 0 else None
 
 
-def empty(callback, path):
+def empty(ctx, path):
     """Check if a collection contains any data objects."""
     return (len(list(genquery.row_iterator(
                      "DATA_ID",
                      "COLL_NAME = '{}'".format(path),
-                     genquery.AS_LIST, callback))) == 0
+                     genquery.AS_LIST, ctx))) == 0
             and len(list(genquery.row_iterator(
                     "DATA_ID",
                     "COLL_NAME like '{}/%'".format(path),
-                    genquery.AS_LIST, callback))) == 0)
+                    genquery.AS_LIST, ctx))) == 0)
 
 
-def size(callback, path):
+def size(ctx, path):
     """Get a collection's size in bytes."""
-    return reduce(lambda x, row: x + int(row[1]),
+    def func(x, row):
+        return x + int(row[1])
+
+    return reduce(func,
                   itertools.chain(genquery.row_iterator("DATA_ID, DATA_SIZE",
                                                         "COLL_NAME like '{}'".format(path),
-                                                        genquery.AS_LIST, callback),
+                                                        genquery.AS_LIST, ctx),
                                   genquery.row_iterator("DATA_ID, DATA_SIZE",
                                                         "COLL_NAME like '{}/%'".format(path),
-                                                        genquery.AS_LIST, callback)), 0)
+                                                        genquery.AS_LIST, ctx)), 0)
 
 
-def data_count(callback, path, recursive=True):
+def data_count(ctx, path, recursive=True):
     """Get a collection's data count.
 
-    :param path: A collection path
+    :param ctx:       Combined type of a callback and rei struct
+    :param path:      A collection path
     :param recursive: Measure subcollections as well
-    :return: A number of data objects.
+
+    :returns: Number of data objects
     """
     # Generators can't be fed to len(), so here we are...
-    return sum(1 for _ in data_objects(callback, path, recursive=recursive))
+    return sum(1 for _ in data_objects(ctx, path, recursive=recursive))
 
 
-def collection_count(callback, path):
+def collection_count(ctx, path):
     """Get a collection's collection count (the amount of collections within a collection)."""
     return sum(1 for _ in genquery.row_iterator(
                "COLL_ID",
                "COLL_NAME like '{}/%'".format(path),
-               genquery.AS_LIST, callback))
+               genquery.AS_LIST, ctx))
 
 
-def data_objects(callback, path, recursive=False):
+def data_objects(ctx, path, recursive=False):
     """Get a list of all data objects in a collection.
 
     Note: the returned value is a generator / lazy list, so that large
@@ -78,13 +87,20 @@ def data_objects(callback, path, recursive=False):
           use list(...) on the result to get an actual list if necessary.
 
     The returned paths are absolute paths (e.g. ['/tempZone/home/x/y.txt']).
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path:      Path of collection
+    :param recursive: List data objects in subcollections recursively
+
+    :returns: List of all data objects in a collection
     """
     # coll+data name -> path
-    to_absolute = lambda row: '{}/{}'.format(*row)
+    def to_absolute(row):
+        return '{}/{}'.format(*row)
 
     q_root = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                    "COLL_NAME = '{}'".format(path),
-                                   genquery.AS_LIST, callback)
+                                   genquery.AS_LIST, ctx)
 
     if not recursive:
         return itertools.imap(to_absolute, q_root)
@@ -92,7 +108,7 @@ def data_objects(callback, path, recursive=False):
     # Recursive? Return a generator combining both queries.
     q_sub = genquery.row_iterator("COLL_NAME, DATA_NAME",
                                   "COLL_NAME like '{}/%'".format(path),
-                                  genquery.AS_LIST, callback)
+                                  genquery.AS_LIST, ctx)
 
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
 
@@ -100,6 +116,7 @@ def data_objects(callback, path, recursive=False):
 def create(ctx, path):
     """Create new collection.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param path: Path including new collection
 
     This may raise a error.UUError if the file does not exist, or when the user
@@ -114,6 +131,7 @@ def create(ctx, path):
 def remove(ctx, path):
     """Delete a collection.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param path: Path of collection to be deleted
 
     This may raise a error.UUError if the file does not exist, or when the user
@@ -128,7 +146,8 @@ def remove(ctx, path):
 def rename(ctx, path_org, path_target):
     """Rename collection from path_org to path_target.
 
-    :param path_org: Collection original path
+    :param ctx:         Combined type of a callback and rei struct
+    :param path_org:    Collection original path
     :param path_target: Collection new path
 
     This may raise a error.UUError if the file does not exist, or when the user
@@ -144,6 +163,9 @@ def rename(ctx, path_org, path_target):
 def name_from_id(ctx, coll_id):
     """Get collection name from collection id.
 
-    :param coll_id Collection id
+    :param ctx:     Combined type of a callback and rei struct
+    :param coll_id: Collection id
+
+    :returns: Collection name
     """
     return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()

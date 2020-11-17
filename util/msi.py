@@ -67,6 +67,11 @@ def _wrap(msi, exception):
 
     e.g.:    callback.msiDataObjCreate(x, y, z)
     becomes: data_obj_create(callback, x, y, z)
+
+    :param msi:       MSI function to wrap
+    :param exception: Exeption to throw on failure
+
+    :returns: MSI wrapper
     """
     return lambda callback, *args: _run(getattr(callback, msi), exception, *args)
 
@@ -100,6 +105,8 @@ check_access,    CheckAccessError   = make('CheckAccess',   'Could not check acc
 set_acl,         SetACLError        = make('SetACL',        'Could not set ACL')
 get_icat_time,   GetIcatTimeError   = make('GetIcatTime',   'Could not get Icat time')
 get_obj_type,    GetObjTypeError    = make('GetObjType',    'Could not get object type')
+
+register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
 
 string_2_key_val_pair, String2KeyValPairError = \
     make('String2KeyValPair', 'Could not create keyval pair')

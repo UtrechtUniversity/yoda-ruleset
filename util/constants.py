@@ -12,12 +12,21 @@ from enum import Enum
 
 IIGROUPPREFIX = "research-"
 IIGRPPREFIX = "grp-"
+IIVAULTPREFIX = "vault-"
 
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = '/yoda'
 
 UUREVISIONCOLLECTION = UUSYSTEMCOLLECTION + '/revisions'
 """iRODS path where all revisions will be stored."""
+
+UUBLOCKLIST = ["._*", ".DS_Store"]
+""" List of file extensions not to be copied to revision"""
+
+UUMAXREVISIONSIZE = 2000000000
+""" Max size of a file to be allowed to be made revisions
+2GB as in 2 * 1000 * 1000 * 1000
+"""
 
 UUDEFAULTRESOURCETIER = 'Standard'
 """Default name for a tier when none defined yet."""
@@ -33,6 +42,9 @@ UUPROVENANCELOG = UUORGMETADATAPREFIX + 'action_log'
 
 IILICENSECOLLECTION = UUSYSTEMCOLLECTION + '/licenses'
 """iRODS path where all licenses will be stored."""
+
+IIPUBLICATIONCOLLECTION = UUSYSTEMCOLLECTION + '/publication'
+"""iRODS path where publications will be stored. """
 
 IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
 """iRODS path where the publication terms will be stored."""
@@ -65,6 +77,7 @@ UUORGMETADATAPREFIX = 'org_'
 IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
+IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',
@@ -80,8 +93,8 @@ class vault_package_state(Enum):
     """Vault package states."""
 
     # Values are as they appear in AVU values.
+    EMPTY                     = ''  # (absence of status attribute)
     INCOMPLETE                = 'INCOMPLETE'
-    COMPLETE                  = 'COMPLETE'
     UNPUBLISHED               = 'UNPUBLISHED'
     SUBMITTED_FOR_PUBLICATION = 'SUBMITTED_FOR_PUBLICATION'
     APPROVED_FOR_PUBLICATION  = 'APPROVED_FOR_PUBLICATION'
@@ -92,6 +105,22 @@ class vault_package_state(Enum):
 
     def __str__(self):
         return self.name
+
+
+# List of valid datapackage transitions (src, dst).
+datapackage_transitions = [(vault_package_state(x),
+                            vault_package_state(y))
+                           for x, y in [('',                          'INCOMPLETE'),
+                                        ('',                          'UNPUBLISHED'),
+                                        ('INCOMPLETE',                'UNPUBLISHED'),
+                                        ('UNPUBLISHED',               'SUBMITTED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'APPROVED_FOR_PUBLICATION'),
+                                        ('SUBMITTED_FOR_PUBLICATION', 'UNPUBLISHED'),
+                                        ('APPROVED_FOR_PUBLICATION',  'PUBLISHED'),
+                                        ('PUBLISHED',                 'PENDING_DEPUBLICATION'),
+                                        ('PENDING_DEPUBLICATION',     'DEPUBLISHED'),
+                                        ('DEPUBLISHED',               'PENDING_REPUBLICATION'),
+                                        ('PENDING_REPUBLICATION',     'PUBLISHED')]]
 
 
 class research_package_state(Enum):

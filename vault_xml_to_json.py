@@ -4,7 +4,10 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 import xmltodict
+
 from util import *
 import time
 
@@ -30,8 +33,9 @@ def getActiveJsonSchemaAsDict(callback, rods_zone, category):  # irods-ruleset-u
 def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
     """Turn yoda-metadata.xml into JSON
 
+    :param callback:   Callback to rule Language
     :param dictSchema: JSON schema that yoda-metadata.xml must be transformed to
-    :param xmlData: Dict with all data in yoda-metadata.xml
+    :param xmlData:    Dict with all data in yoda-metadata.xml
 
     :returns: dict -- JSON formatted string holding content of yoda-metadata.xml
     """
@@ -275,10 +279,11 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
 def transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, xml_data_name):
     """Convert current yoda-metadata.xml to yoda-metadata.json.
 
-    :param rods_zone: Zone name
+    :param callback:         Callback to rule Language
+    :param rods_zone:        Zone name
     :param vault_collection: Collection name of metadata XML
-    :param group_name: Group name of metadata XML
-    :param xml_data_name: Data name of metadata XML that requires transformation
+    :param group_name:       Group name of metadata XML
+    :param xml_data_name:    Data name of metadata XML that requires transformation
     """
 
     # This function simply transforms given data_name to a Json data object.
@@ -324,10 +329,11 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
        If NO yoda-metadata.json is found in that collection,
        the corresponding yoda-metadata.xml must be converted to json as an extra file - yoda-metadata.json
 
+    :param callback:  Callback to rule Language
     :param rods_zone: Zone name
-    :param coll_id: First collection id of batch
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
+    :param coll_id:   First collection id of batch
+    :param batch:     Batch size, <= 256
+    :param pause:     Pause between checks (float)
 
     :returns: integer -- Collection id to continue with in next batch.
                          If collection_id=0, no more collections are found containing yoda-metadata.xml
@@ -373,7 +379,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 "DATA_NAME like 'yoda-metadata%%.json' AND COLL_ID = '%d'" % (coll_id),
                 genquery.AS_LIST, callback)
 
-            for row2 in iter2:
+            for _row in iter2:
                 jsonFound = True
                 continue
 
@@ -408,10 +414,12 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
 def rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(rule_args, callback, rei):
     """Convert vault metadata XML to JSON - batchwise.
 
-    :param coll_id: First COLL_ID to check - initial =0
-    :param batch: Batch size, <= 256
-    :param pause: Pause between checks (float)
-    :param delay: Delay between batches in seconds
+    :param rule_args: [0] First COLL_ID to check - initial = 0
+                      [1] Batch size, <= 256
+                      [2] Pause between checks (float)
+                      [3] Delay between batches in seconds
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     import session_vars
 

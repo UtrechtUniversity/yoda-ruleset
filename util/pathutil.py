@@ -21,6 +21,7 @@ class Space(Enum):
     RESEARCH    = 1
     VAULT       = 2
     DATAMANAGER = 3
+    DATAREQUEST = 4
 
     def __repr__(self):
         return 'Space.' + self.name
@@ -41,6 +42,10 @@ def chop(path):
     """Split off the rightmost path component of a path.
 
     /a/b/c -> (/a/b, c)
+
+    :param path: Path to chop
+
+    :returns: Path with rightmost split off
     """
     # In practice, this is the same as os.path.split on POSIX systems,
     # but it's better to not rely on OS-defined path syntax for iRODS paths.
@@ -51,15 +56,23 @@ def chop(path):
         return '/'.join(x[:-1]), x[-1]
 
 
-# Shorthands.
-dirname  = lambda x: chop(x)[0]  # chops last component off
-basename = lambda x: chop(x)[1]  # chops everything *but* the last component
-chopext  = lambda x: x.rsplit('.', 1)
+def dirname(path):
+    """Return the dirname of a path."""
+    return chop(path)[0]  # chops last component off
+
+
+def basename(path):
+    """Return basename of a path."""
+    return chop(path)[1]  # chops everything *but* the last component
+
+
+def chopext(path):
+    """Return the extension of a path."""
+    return path.rsplit('.', 1)
 
 
 def info(path):
-    """
-    Parse a path into a (Space, zone, group, subpath) tuple.
+    """Parse a path into a (Space, zone, group, subpath) tuple.
 
     Synopsis: space, zone, group, subpath = pathutil.info(path)
 
@@ -78,11 +91,20 @@ def info(path):
     /tempZone/home/datamanager-x/y => Space.DATAMANAGER, 'tempZone', 'datamanager-x', 'y'
     /tempZone/home/research-x/y/z  => Space.RESEARCH,    'tempZone', 'research-x',    'y/z'
     etc.
+
+    :param path: Path to parse
+
+    :returns: Tuple with space, zone, group and subpath
     """
     # Turn empty match groups into empty strings.
-    f      = lambda x:    '' if x is None else x
-    g      = lambda m, i: '' if i > len(m.groups()) else f(m.group(i))
-    result = lambda s, m: (s, g(m, 1), g(m, 2), g(m, 3))
+    def f(x):
+        return '' if x is None else x
+
+    def g(m, i):
+        return '' if i > len(m.groups()) else f(m.group(i))
+
+    def result(s, m):
+        return (s, g(m, 1), g(m, 2), g(m, 3))
 
     # Try a pattern and report success if it matches.
     def test(r, space):

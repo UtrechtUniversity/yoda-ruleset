@@ -8,10 +8,14 @@ import itertools
 import os
 import time
 
+import irods_types
+
 import folder
+import group
+import mail
 import meta
 import meta_form
-import session_vars
+import policies_datapackage_status
 from util import *
 
 __all__ = ['api_vault_submit',
@@ -23,6 +27,7 @@ __all__ = ['api_vault_submit',
            'api_vault_unpreservable_files',
            'rule_vault_copy_original_metadata_to_vault',
            'rule_vault_write_license',
+           'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_copy_to_research',
@@ -33,64 +38,106 @@ __all__ = ['api_vault_submit',
 def api_vault_submit(ctx, coll):
     """Submit data package for publication.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to submit
+
+    :returns: API status
     """
-    res = ctx.iiVaultSubmit(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
-    return res['arguments'][1]
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
 def api_vault_approve(ctx, coll):
     """Approve data package for publication.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to approve
+
+    :returns: API status
     """
-    res = ctx.iiVaultApprove(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
 def api_vault_cancel(ctx, coll):
     """Cancel submit of data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to cancel submit
+
+    :returns: API status
     """
-    res = ctx.iiVaultCancel(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.UNPUBLISHED)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
 def api_vault_depublish(ctx, coll):
     """Depublish data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to depublish
+
+    :returns: API status
     """
-    res = ctx.iiVaultDepublish(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_DEPUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
 def api_vault_republish(ctx, coll):
     """Republish data package.
 
+    :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection of data package to republish
+
+    :returns: API status
     """
-    res = ctx.iiVaultRepublish(coll, '', '')
-    if res['arguments'][1] != 'Success':
-        return api.Error(*res['arguments'][1:])
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.PENDING_REPUBLICATION)
+
+    if ret[0] == '':
+        log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
+        ctx.iiAdminVaultActions()
+        return 'Success'
+    else:
+        return api.Error(ret[0], ret[1])
 
 
 @api.make()
 def api_vault_copy_to_research(ctx, coll_origin, coll_target):
     """Copy data package from vault to research space.
 
+    :param ctx:         Combined type of a callback and rei struct
     :param coll_origin: Collection of data package to copy
     :param coll_target: Collection to copy data package to
+
+    :returns: API status
     """
     zone = user.zone(ctx)
 
@@ -157,6 +204,8 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 def api_vault_preservable_formats_lists(ctx):
     """Retrieve lists of preservable file formats on the system.
 
+    :param ctx: Combined type of a callback and rei struct
+
     :returns: dict -- Lists of preservable file formats {name => [ext...]}
     """
     zone = user.zone(ctx)
@@ -175,6 +224,7 @@ def api_vault_preservable_formats_lists(ctx):
 def api_vault_unpreservable_files(ctx, coll, list_name):
     """Retrieve the set of unpreservable file formats in a collection.
 
+    :param ctx:       Combined type of a callback and rei struct
     :param coll:      Collection of folder to check
     :param list_name: Name of preservable file format list
 
@@ -204,24 +254,47 @@ def api_vault_unpreservable_files(ctx, coll, list_name):
 def rule_vault_copy_original_metadata_to_vault(rule_args, callback, rei):
     """Copy the original metadata JSON into the root of the package.
 
-    :param rule_args[0]: Path of a new package in the vault
+    :param rule_args: [0] Path of a new package in the vault
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
     vault_package = rule_args[0]
-    original_metadata = vault_package + "/original/" + constants.IIJSONMETADATA
+    vault_copy_original_metadata_to_vault(callback, vault_package)
+
+
+def vault_copy_original_metadata_to_vault(ctx, vault_package_path):
+    """Copy original metadata to the vault package root.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param vault_package_path: Path of a package in the vault
+    """
+    original_metadata = vault_package_path + "/original/" + constants.IIJSONMETADATA
+    copied_metadata = vault_package_path + '/yoda-metadata[' + str(int(time.time())) + '].json'
 
     # Copy original metadata JSON.
-    copied_metadata = vault_package + '/yoda-metadata[' + str(int(time.time())) + '].json'
-    callback.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    ctx.msiDataObjCopy(original_metadata, copied_metadata, 'verifyChksum=', 0)
+    # msi.data_obj_copy(ctx, original_metadata, copied_metadata, 'verifyChksum=', irods_types.BytesBuf())
 
 
 def rule_vault_write_license(rule_args, callback, rei):
     """Write the license as a text file into the root of the vault package.
 
-    :param rule_args[0]: Path of a package in the vault
+    :param rule_args: [0] Path of a package in the vault
+    :param callback:  Callback to rule Language
+    :param rei:       The rei struct
     """
 
     vault_pkg_coll = rule_args[0]
-    zone = session_vars.get_map(rei)["client_user"]["irods_zone"]
+    vault_write_license(callback, vault_pkg_coll)
+
+
+def vault_write_license(ctx, vault_pkg_coll):
+    """Write the license as a text file into the root of the vault package.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param vault_pkg_coll: Path of a package in the vault
+    """
+    zone = user.zone(ctx)
 
     # Retrieve license.
     license = ""
@@ -231,48 +304,48 @@ def rule_vault_write_license(rule_args, callback, rei):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}' AND META_COLL_ATTR_UNITS LIKE '{}'".format(vault_pkg_coll, license_key, license_unit),
-        genquery.AS_LIST, callback)
+        genquery.AS_LIST, ctx)
 
     for row in iter:
         license = row[0]
 
     if license == "":
         # No license set in user metadata.
-        log.write(callback, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
+        log.write(ctx, "rule_vault_write_license: No license found in user metadata <{}>".format(vault_pkg_coll))
     elif license == "Custom":
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
-        if data_object.exists(callback, license_file):
-            data_object.remove(callback, license_file)
+        if data_object.exists(ctx, license_file):
+            data_object.remove(ctx, license_file)
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.
         license_txt = "/{}{}/{}.txt".format(zone, constants.IILICENSECOLLECTION, license)
-        if data_object.exists(callback, license_txt):
+        if data_object.exists(ctx, license_txt):
             # Copy license file.
             license_file = vault_pkg_coll + "/License.txt"
-            data_object.copy(callback, license_txt, license_file)
+            data_object.copy(ctx, license_txt, license_file)
 
             # Fix ACLs.
             try:
-                callback.iiCopyACLsFromParent(license_file, 'default')
+                ctx.iiCopyACLsFromParent(license_file, 'default')
             except Exception as e:
-                log.write(callback, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
+                log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
-            log.write(callback, "rule_vault_write_license: License text not available for <{}>".format(license))
+            log.write(ctx, "rule_vault_write_license: License text not available for <{}>".format(license))
 
         # Check if license URI exists.
         license_uri_file = "/{}{}/{}.uri".format(zone, constants.IILICENSECOLLECTION, license)
-        if data_object.exists(callback, license_uri_file):
+        if data_object.exists(ctx, license_uri_file):
             # Retrieve license URI.
-            license_uri = data_object.read(callback, license_uri_file)
+            license_uri = data_object.read(ctx, license_uri_file)
             license_uri = license_uri.strip()
             license_uri = license_uri.strip('\"')
 
             # Set license URI.
-            avu.set_on_coll(callback, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
+            avu.set_on_coll(ctx, vault_pkg_coll, "{}{}".format(constants.UUORGMETADATAPREFIX, "license_uri"), license_uri)
         else:
-            log.write(callback, "rule_vault_write_license: License URI not available for <{}>".format(license))
+            log.write(ctx, "rule_vault_write_license: License URI not available for <{}>".format(license))
 
 
 @api.make()
@@ -379,7 +452,8 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
             return constants.vault_package_state(x)
         except Exception as e:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
-    return constants.vault_package_state.UNPUBLISHED
+
+    return constants.vault_package_state.EMPTY
 
 
 @api.make()
@@ -458,3 +532,429 @@ def api_vault_get_publication_terms(ctx):
         return data_object.read(ctx, terms_file)
     except Exception:
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
+
+
+def copy_folder_to_vault(ctx, folder, target):
+    """Copy folder and all its contents to target in vault.
+
+    The data will reside onder folder '/original' within the vault.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param folder: Path of a folder in the research space
+    :param target: Path of a package in the vault space
+
+    :raises Exception: Raises exception when treewalk_and_ingest did not finish correctly
+    """
+    destination = target + '/original'
+    origin = folder
+
+    # Origin is a never changing value to be able to designate a relative path within ingest_object
+    error = 0  # Initial error state. Should stay 0.
+    if treewalk_and_ingest(ctx, folder, destination, origin, error):
+        raise Exception('copy_folder_to_vault: Error copying folder to vault')
+
+
+def treewalk_and_ingest(ctx, folder, target, origin, error):
+    """Treewalk folder and ingest.
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param folder: Will change every time as it represents every folder that has to be copied to vault
+    :param target: Target of ingest
+    :param origin: Origin of treewalk
+    :param error:  0/1 indicating if treewalk or ingest failed
+
+    :returns: Error status (which should remain 0 for further processing in iterative manner)
+    """
+    parent_coll, coll = pathutil.chop(folder)
+
+    # 1. Process this collection itself as a collection.
+    # INGEST
+    if error == 0:
+        # INGEST COLLECTION
+        error = ingest_object(ctx, parent_coll, coll, True, target, origin)
+
+    # 2. Process dataobjects located directly within the collection
+    if error == 0:
+        iter = genquery.row_iterator(
+            "DATA_NAME",
+            "COLL_NAME = '" + folder + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            # INGEST OBJECT
+            error = ingest_object(ctx, folder, row[0], False, target, origin)
+            if error:
+                break
+
+    if error == 0:
+        # 3. Process the subfolders
+        # Loop through subfolders which have folder as parent folder
+        iter = genquery.row_iterator(
+            "COLL_NAME",
+            "COLL_PARENT_NAME = '" + folder + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            error = treewalk_and_ingest(ctx, row[0], target, origin, error)
+            if error:
+                break
+
+    return error
+
+
+def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
+    source_path = parent + "/" + item
+    read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
+
+    if read_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
+        except msi.Error as e:
+            return 1
+
+    dest_path = destination
+
+    if source_path != origin:
+        markIncomplete = False
+        # rewrite path to copy objects that are located underneath the toplevel collection
+        source_length = len(source_path)
+        relative_path = source_path[len(origin) + 1: source_length]
+        dest_path = destination + '/' + relative_path
+    else:
+        markIncomplete = True
+
+    if item_is_collection:
+        # CREATE COLLECTION
+        try:
+            log.write(ctx, 'coll_create ' + dest_path)
+            msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
+        except msi.Error as e:
+            return 1
+
+        if markIncomplete:
+            avu.set_on_coll(ctx, dest_path, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
+    else:
+        # CREATE COPY OF DATA OBJECT
+        try:
+            # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
+            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
+        except msi.Error as e:
+            return 1
+
+    if read_access != b'\x01':
+        try:
+            msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
+        except msi.Error as e:
+            return 1
+
+    return 0
+
+
+def set_vault_permissions(ctx, group_name, folder, target):
+    """Set permissions in the vault as such that data can be copied to the vault."""
+    parts = group_name.split('-')
+    base_name = '-'.join(parts[1:])
+
+    parts = folder.split('/')
+    datapackage_name = parts[-1]
+    vault_group_name = constants.IIVAULTPREFIX + base_name
+
+    # Check if noinherit is set
+    zone = user.zone(ctx)
+    vault_path = "/" + zone + "/home/" + vault_group_name
+
+    inherit = "0"
+    iter = genquery.row_iterator(
+        "COLL_INHERITANCE",
+        "COLL_NAME = '" + vault_path + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # COLL_INHERITANCE can be empty which is interpreted as noinherit
+        inherit = row[0]
+
+    if inherit == "1":
+        msi.set_acl(ctx, "recursive", "admin:noinherit", "", vault_path)
+
+        # Check if research group has read-only access
+        iter = genquery.row_iterator(
+            "USER_ID",
+            "USER_NAME = '" + group_name + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            group_id = row[0]
+
+        access_name = "null"
+        iter = genquery.row_iterator(
+            "COLL_ACCESS_NAME",
+            "COLL_ACCESS_USER_ID = '" + group_id + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            access_name = row[0]
+
+        if access_name != "read object":
+            # Grant the research group read-only access to the collection to enable browsing through the vault.
+            try:
+                msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
+                log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
+            except msi.Error as e:
+                log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
+
+    # Check if vault group has ownership
+    iter = genquery.row_iterator(
+        "USER_ID",
+        "USER_NAME = '" + vault_group_name + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_group_id = row[0]
+
+    vault_group_access_name = "null"
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_NAME",
+        "COLL_ACCESS_USER_ID = '" + vault_group_id + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        vault_group_access_name = row[0]
+
+    # Ensure vault-groupName has ownership on vault package
+    if vault_group_access_name != "own":
+        msi.set_acl(ctx, "recursive", "admin:own", vault_group_name, target)
+
+    # Grant datamanager group read access to vault package.
+    category = group.get_category(ctx, group_name)
+    datamanager_group_name = "datamanager-" + category
+
+    if group.exists(ctx, datamanager_group_name):
+        msi.set_acl(ctx, "recursive", "admin:read", datamanager_group_name, target)
+
+    # Grant research group read access to vault package.
+    msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
+
+
+@rule.make(inputs=range(3), outputs=range(3, 5))
+def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+    """Rule interface for processing vault status transition request.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param coll:            Vault collection to change status for
+    :param new_coll_status: New vault package status
+    :param actor:           Actor of the status change
+
+    :return: Dict with status and statusinfo.
+    """
+    vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+
+    return 'Success'
+
+
+def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+    """Processing vault status transition request.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param coll:            Vault collection to change status for
+    :param new_coll_status: New vault package status
+    :param actor:           Actor of the status change
+
+    :return: Dict with status and statusinfo
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "User is no rodsadmin")
+        return ['1', 'Insufficient permissions - should only be called by rodsadmin']
+
+    # check current status, perhaps transitioned already
+    current_coll_status = get_coll_vault_status(ctx, coll).value
+    if current_coll_status == new_coll_status:
+        return ['Success', '']
+
+    # Set new status
+    try:
+        avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
+        if new_coll_status == str(constants.vault_package_state.SUBMITTED_FOR_PUBLICATION):
+            send_datamanagers_publication_request_mail(ctx, coll)
+        return ['Success', '']
+    except msi.Error as e:
+        current_coll_status = get_coll_vault_status(ctx, coll).value
+        is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_coll_status, new_coll_status)
+        if not is_legal:
+            return ['1', 'Illegal status transition']
+        else:
+            if new_coll_status == str(constants.vault_package_state.PUBLISHED):
+                # Special case is transition to PUBLISHED
+                # landing page and doi have to be present
+
+                # Landingpage URL.
+                landinpage_url = ""
+                iter = genquery.row_iterator(
+                    "META_COLL_ATTR_VALUE",
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
+                    genquery.AS_LIST, callback
+                )
+
+                for row in iter:
+                    if row[0] == "":
+                        return ['1', 'Landing page is missing']
+
+                # Persistent Identifier DOI.
+                iter = genquery.row_iterator(
+                    "META_COLL_ATTR_VALUE",
+                    "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+                    genquery.AS_LIST, callback
+                )
+
+                for row in iter:
+                    if row[0] == "":
+                        return ['1', 'DOI is missing']
+
+    return ['Success', '']
+
+
+def send_datamanagers_publication_request_mail(ctx, coll):
+    """All involved datamanagers will receive an email notification regarding a publication request by a researcher.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Vault package with publication request
+    """
+    # Find group
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+    group_parts = vault_group_name.split('-')
+
+    # Create the research equivalent in order to get the category.
+    group_name = 'research-' + '-'.join(group_parts[1:])
+
+    # Find category.
+    category = group.get_category(ctx, group_name)
+
+    # Get the submitter.
+    submitter = 'Unknown'
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        submitter = row[0].split('#')[0]
+
+    # Find the datamanagers of the category and inform them of data to be accepted to vault
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_GROUP_NAME = 'datamanager-" + category + "' "
+        "AND USER_ZONE = '" + user.zone(ctx) + "' "
+        "AND USER_TYPE != 'rodsgroup'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        datamanager = row[0]
+        # coll split off zone / home
+        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
+
+
+def vault_request_status_transitions(ctx, coll, new_vault_status):
+    """Request vault status transition action.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Vault package to be changed of status in publication cycle
+    :param new_vault_status: New vault status
+
+    :return: Dict with status and statusinfo
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        if new_vault_status == constants.vault_package_state.PUBLISHED:
+            log.write(ctx, "Publication request - User is no rodsadmin")
+            return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
+        elif new_vault_status == constants.vault_package_state.DEPUBLISHED:
+            log.write(ctx, "depublication request - User is no rodsadmin")
+            return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
+
+    # Determine vault group and actor
+    # Find group
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+
+    group_parts = vault_group_name.split('-')
+    # create the research equivalent in order to get the category
+    group_name = 'research-' + '-'.join(group_parts[1:])
+
+    # Find category
+    category = group.get_category(ctx, group_name)
+    zone = user.zone(ctx)
+    coll_parts = coll.split('/')
+    vault_group_name = coll_parts[3]
+
+    # User/actor specific stuff
+    actor = user.full_name(ctx)
+
+    actor_group = folder.collection_group_name(ctx, coll)
+    if actor_group == '':
+        log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
+        return ['1', '']
+
+    is_datamanager = meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']
+
+    actor_group_path = '/' + zone + '/home/'
+
+    # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
+    # Status UNPUBLISHED can be called by researcher and datamanager.
+    # HIER NOG FF NAAR KIJKEN
+    if not is_datamanager:
+        if new_vault_status in [constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, constants.vault_package_state.UNPUBLISHED]:
+            actor_group_path = '/' + zone + '/home/' + actor_group
+    else:
+        actor_group_path = '/' + zone + '/home/datamanager-' + category
+
+#        if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        # Status UNPUBLISHED can be called by researcher and datamanager.
+#        } else  if (*newVaultStatus == UNPUBLISHED && !*isDatamanager) {
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        } else  if (*isDatamanager) {
+#                iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
+#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
+#        }
+
+    # Retrieve collection id.
+    iter = genquery.row_iterator(
+        "COLL_ID",
+        "COLL_NAME = '" + coll + "' ",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        coll_id = row[0]
+
+    # Check if vault package is currently pending for status transition.
+    # Except for status transition to PUBLISHED/DEPUBLISHED,
+    # because it is requested by the system before previous pending
+    # transition is removed.
+    if new_vault_status != constants.vault_package_state.PUBLISHED and new_vault_status != constants.vault_package_state.DEPUBLISHED:
+        action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
+        iter = genquery.row_iterator(
+            "COLL_ID",
+            "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+            genquery.AS_LIST, ctx
+        )
+        for _row in iter:
+            # Don't accept request if a status transition is already pending.
+            return ['PermissionDenied', "Vault package is being processed, please wait until finished."]
+
+    # Check if status transition is allowed.
+    current_vault_status = get_coll_vault_status(ctx, coll).value
+
+    is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_vault_status, new_vault_status)
+    if not is_legal:
+        return ['PermissionDenied', 'Illegal status transition']
+
+    # Add vault action request to actor group.
+    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
+    # opposite is: jsonutil.parse('["coll","status","actor"]')[0] => coll
+
+    # Add vault action status to actor group.
+    avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
+
+    return ['', '']

@@ -6,9 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
 
-from util import *
 import meta_form
-
+from util import *
 
 __all__ = ['api_resource_groups_dm',
            'api_resource_monthly_stats_dm',
@@ -29,8 +28,11 @@ __all__ = ['api_resource_groups_dm',
 def api_resource_save_tier(ctx, resource_name, tier_name):
     """Save tier for given resource as metadata.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param resource_name: Resource that the tier is equipped with
     :param tier_name:     Name of the tier that is given to the resource
+
+    :returns: API status
     """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -47,10 +49,12 @@ def api_resource_save_tier(ctx, resource_name, tier_name):
 def api_resource_full_year_group_data(ctx, group_name, current_month):
     """Get a full year of monthly storage data starting from current month and look back one year.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param group_name:    group that is searched for storage data
     :param current_month: Month passed that is supposed to be the month to look back from
-    """
 
+    :returns: API status
+    """
     # Check permissions for this function
     # Member of this group?
     member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
@@ -98,8 +102,7 @@ def api_resource_user_get_type(ctx):
 
 @api.make()
 def api_resource_user_research_groups(ctx):
-    """Get the research groups a user is member of.
-    """
+    """Get the research groups a user is member of."""
     groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
@@ -148,7 +151,10 @@ def api_resource_get_tiers(ctx):
 def api_resource_tier(ctx, res_name):
     """Get the tier belonging to the given resource.
 
+    :param ctx:      Combined type of a callback and rei struct
     :param res_name: Resource that the tier is equipped with
+
+    :returns: API status
     """
     if user.user_type(ctx) != 'rodsadmin':
         return api.Error('not_allowed', 'Insufficient permissions')
@@ -220,6 +226,10 @@ def api_resource_monthly_category_stats_export_dm(ctx):
     - Groupname
     - Tier
     - 12 columns, one per month, with used storage count in bytes
+
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: API status
     """
     datamanager = user.full_name(ctx)
     categories = get_categories_datamanager(ctx, datamanager)
@@ -268,9 +278,10 @@ def api_resource_monthly_category_stats_export_dm(ctx):
 def get_group_category_info(ctx, groupName):
     """Get category and subcategory for a group.
 
+    :param ctx:       Combined type of a callback and rei struct
     :param groupName: groupname to get cat/subcat info for
 
-    Returns a dict with indices 'category' and 'subcategory'.
+    :returns: A dict with indices 'category' and 'subcategory'.
     """
     category = ''
     subcategory = ''
@@ -298,7 +309,11 @@ def getMonthlyCategoryStorageStatistics(ctx, categories):
 
     Storage is summed up for each category/tier combination.
     Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
-    :param categories: list of categories to collect storage data for
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param categories: List of categories to collect storage data for
+
+    :returns: Storage stats of last month for a list of categories
     """
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
@@ -345,7 +360,10 @@ def getMonthlyCategoryStorageStatistics(ctx, categories):
 def get_groups_on_categories(ctx, categories):
     """Get all groups belonging to all given categories.
 
+    :param ctx:        Combined type of a callback and rei struct
     :param categories: List of categories groups have to be found for
+
+    :returns: All groups belonging to all given categories
     """
     groups = []
     metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
@@ -379,7 +397,10 @@ def get_groups_on_categories(ctx, categories):
 def get_categories_datamanager(ctx, datamanagerName):
     """Get all categories for current datamanager.
 
+    :param ctx:             Combined type of a callback and rei struct
     :param datamanagerName: Datamanager involved
+
+    :returns: All categories for current datamanager
     """
     categories = []
 
@@ -404,7 +425,11 @@ def get_tier_by_resource_name(ctx, res_name):
     """Get Tiername, if present, for given resource.
 
     If not present, fall back to default tier name.
+
+    :param ctx:      Combined type of a callback and rei struct
     :param res_name: Name of the resource to get the tier name for
+
+    :returns: Tiername for given resource
     """
     tier = constants.UUDEFAULTRESOURCETIER  # Add default tier as this might not be present in database.
 
@@ -430,8 +455,11 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     1) category of group on probe date - this can change
     2) tier
     3) actual calculated storage for the group
-    """
 
+    :param ctx:  Combined type of a callback and rei struct
+
+    :returns: Storage data for each group of each category
+    """
     zone = user.zone(ctx)
 
     # Get storage month with leading 0
@@ -542,7 +570,7 @@ def resource_exists(ctx, resource_name):
         genquery.AS_LIST, ctx
     )
 
-    for row in iter:
+    for _row in iter:
         return True
 
     return False
@@ -567,7 +595,7 @@ def get_all_tiers(ctx):
 
 
 def get_categories(ctx):
-    """ Get all categories currently present."""
+    """Get all categories currently present."""
     categories = []
 
     iter = genquery.row_iterator(
@@ -583,7 +611,7 @@ def get_categories(ctx):
 
 
 def get_groups_on_category(ctx, category):
-    """ Get all groups for category """
+    """Get all groups for category."""
     groups = []
     iter = genquery.row_iterator(
         "USER_NAME",
