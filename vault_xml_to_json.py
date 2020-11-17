@@ -9,7 +9,6 @@ import time
 import xmltodict
 
 from util import *
-import time
 
 __all__ = ['rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json']
 
