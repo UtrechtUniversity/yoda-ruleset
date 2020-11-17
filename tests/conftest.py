@@ -31,8 +31,12 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    global portal_url
     portal_url = config.getoption("--url")
+
+    global api_url
     api_url = portal_url + "api"
+
     password = config.getoption("--password")
 
     # Store cookies for each user.
@@ -47,13 +51,14 @@ def login(user, password):
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     url = portal_url + 'user/login'
+
     client = requests.session()
 
     # Retrieve the CSRF token first
     csrf = client.get(url, verify=False).cookies['csrf_yoda']
 
     # Login as user.
-    login_data = dict(csrf_yoda=csrf, username=user, password='test', next='/home')
+    login_data = dict(csrf_yoda=csrf, username=user, password=password, next='/home')
     client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
     client.close()
 
