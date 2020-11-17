@@ -52,10 +52,98 @@ def api_group_subcategories(user, category):
     )
 
 
+@given('the user searches for users matching "<pattern>"', target_fixture="api_response")
+def api_group_search_users(user, pattern):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
+@given(parsers.parse('the group "{groupName}" does not exist'))
+def api_group_does_not_exist(user, groupName):
+    assert False
+
+
+@given('the user creates a new group "{groupName}"', target_fixture="api_response")
+def api_group_create(user, groupName):
+    return api_request(
+        user,
+        "tbd",
+        { "args" : "" }
+    )
+
+
+@given(parsers.parse('the group "{groupName}" exists'))
+def given_group_exists(user, groupName):
+    assert False
+
+
+@given('the user updates group "{groupName}"', target_fixture="api_response")
+def api_group_update(user, groupName):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
+@given('the user deletes group "{groupName}"', target_fixture="api_response")
+def api_group_delete(user, groupName):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
+@given(parsers.parse('there exists no user named "{newUser}"'))
+def given_user_does_not_exist(user, newUser):
+    assert False
+
+
+@given('the user creates the new user', target_fixture="api_response")
+def api_group_create_user(user, newUser):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
+@given(parsers.parse('there exists a user X named "{targetUser}"'))
+def given_target_user_exists(user, targetUser):
+    assert False
+
+
+@given('the user updates user X', target_fixture="api_response")
+def api_group_update_user(user, targetUser):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
+@given('the user deletes user X', target_fixture="api_response")
+def api_group_delete_user(user, targetUser):
+    return api_request(
+        user,
+        "tbd",
+        {}
+    )
+
+
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
     http_status, _ = api_response
     assert http_status == code
+
+
+@then('the result is equal to "<users>"')
+def then_users_found_match(api_response, users):
+    assert False
 
 
 @then('group "<group>" exists')
@@ -88,3 +176,33 @@ def category_exists(api_response, category):
             break
 
     assert found
+
+
+@then('the group "{groupName}" is created')
+def then_group_created(api_response, groupName):
+    assert False
+
+
+@then('the update to group "{groupName}" is persisted')
+def then_group_updated(user, groupNamer, api_response):
+    assert False
+
+
+@then('the group "{groupName}" no longer exists')
+def then_group_does_not_exist(user, groupName):
+    assert False
+
+
+@then('the new user is persisted')
+def then_user_exists(user, newUser):
+    assert False
+
+
+@then('the user update is persisted')
+def then_user_update_persisted(user, targetUser):
+    assert False
+
+
+@then('the user no longer exists')
+def  then_user_deleted(user, targetUser):
+    assert False
