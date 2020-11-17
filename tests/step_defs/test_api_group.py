@@ -71,7 +71,7 @@ def api_group_create(user, groupName):
     return api_request(
         user,
         "tbd",
-        { "args" : "" }
+        {"args": ""}
     )
 
 
@@ -204,5 +204,5 @@ def then_user_update_persisted(user, targetUser):
 
 
 @then('the user no longer exists')
-def  then_user_deleted(user, targetUser):
+def then_user_deleted(user, targetUser):
     assert False
