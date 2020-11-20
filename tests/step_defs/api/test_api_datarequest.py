@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request, post_form_data
 
-scenarios('../features/api_datarequest.feature')
+scenarios('../../features/api/api_datarequest.feature')
 
 
 @given('the Yoda datarequest browse API is queried', target_fixture="api_response")

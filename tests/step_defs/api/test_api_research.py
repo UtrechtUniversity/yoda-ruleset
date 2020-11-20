@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request, post_form_data
 
-scenarios('../features/api_research.feature')
+scenarios('../../features/api/api_research.feature')
 
 
 @given('the Yoda research folder add API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
