@@ -31,6 +31,8 @@ def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
                              -u for user
     :param json_namespace: The JSON namespace according to https://github.com/MaastrichtUniversity/irods_avu_json.
     :param json_string:    The JSON string {"k1":"v1","k2":{"k3":"v2","k4":"v3"},"k5":["v4","v5"],"k6":[{"k7":"v6","k8":"v7"}]}
+
+    :returns: None
     """
     try:
         data = json.loads(json_string)

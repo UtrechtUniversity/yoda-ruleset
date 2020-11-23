@@ -508,6 +508,8 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     :param ctx:                Combined type of a callback and rei struct
     :param vault_package:      Path to the package in the vault
     :param publication_state:  Dict with state of the publication process
+
+    :returns: None
     """
     access_restriction = publication_state["accessRestriction"]
     access_level = "null"

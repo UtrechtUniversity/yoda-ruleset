@@ -90,9 +90,6 @@ def _api(f):
 
     :param f: Python function to turn into a API function
 
-    :raises ParseError: API rule called with invalid JSON argument
-    :raises result: API rule returned error
-
     :returns: Wrapper function to turn a Python function into a basic API function
     """
     # Determine required and optional argument names from the function signature.
@@ -106,7 +103,16 @@ def _api(f):
     allow_extra = a_kw is not None
 
     def wrapper(ctx, inp):
-        """A function that receives a JSON string and calls a wrapped function with unpacked arguments."""
+        """A function that receives a JSON string and calls a wrapped function with unpacked arguments.
+
+        :param ctx: Combined type of a callback and rei struct
+        :param inp: JSON string
+
+        :raises ParseError: API rule called with invalid JSON argument
+        :raises result: API rule returned error
+
+        :returns: Result of the JSON API call
+        """
         # Result shorthands.
         def error_internal(debug_info=None):
             return Error('internal', 'An internal error occurred', debug_info=debug_info)
