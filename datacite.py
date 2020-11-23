@@ -40,7 +40,7 @@ def register_doi_metadata(ctx, doi, payload):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
 
-    response = requests.put(url, auth=auth, data=payload, headers=headers)
+    response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
 
     return response.status_code
 
@@ -57,7 +57,7 @@ def register_doi_url(ctx, doi, url):
     payload = "doi={}\nurl={}".format(doi, url)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
 
-    response = requests.put(url, auth=auth, data=payload, headers=headers)
+    response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
 
     return response.status_code
 
@@ -73,7 +73,7 @@ def check_doi_availability(ctx, doi):
     url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
 
-    response = requests.get(url, auth=auth)
+    response = requests.get(url, auth=auth, timeout=30)
 
     return response.status_code
 
@@ -89,6 +89,6 @@ def delete_doi_metadata(ctx, doi):
     auth = (config.datacite_username, config.datacite_password)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
 
-    response = requests.delete(url, auth=auth, headers=headers)
+    response = requests.delete(url, auth=auth, headers=headers, timeout=30)
 
     return response.status_code

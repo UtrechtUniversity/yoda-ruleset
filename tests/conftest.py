@@ -78,7 +78,7 @@ def api_request(user, request, data):
     files = {'csrf_yoda': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'csrf_yoda': csrf, 'yoda_session': session}
 
-    response = requests.post(url, files=files, cookies=cookies, verify=False)
+    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
 
     # Remove debug info from response body.
     body = response.json()
@@ -100,7 +100,7 @@ def post_form_data(user, request, files):
     files['csrf_yoda'] = (None, csrf)
     cookies = {'csrf_yoda': csrf, 'yoda_session': session}
 
-    response = requests.post(url, files=files, cookies=cookies, verify=False)
+    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
 
