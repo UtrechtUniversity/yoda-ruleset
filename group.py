@@ -306,6 +306,7 @@ def removeExternalUser(ctx, username, userzone):
     response = requests.post(url, data=jsonutil.dump(data),
                              headers={'X-Yoda-External-User-Secret':
                                       eus_api_secret},
+                             timeout=10,
                              verify=False)
 
     return str(response.status_code)

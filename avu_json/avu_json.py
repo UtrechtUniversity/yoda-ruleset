@@ -169,7 +169,7 @@ def get_json_schema_from_object(ctx, object_name, object_type, json_namespace):
         requests_cache.install_cache('/tmp/irods_avu_json-ruleset-cache', backend='sqlite', expire_after=60 * 60 * 24)
 
         try:
-            r = requests.get(json_schema_url)
+            r = requests.get(json_schema_url, timeout=30)
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             ctx.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e))
             return
