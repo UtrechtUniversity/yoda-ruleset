@@ -31,6 +31,8 @@ def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
                              -u for user
     :param json_namespace: The JSON namespace according to https://github.com/MaastrichtUniversity/irods_avu_json.
     :param json_string:    The JSON string {"k1":"v1","k2":{"k3":"v2","k4":"v3"},"k5":["v4","v5"],"k6":[{"k7":"v6","k8":"v7"}]}
+
+    :returns: None
     """
     try:
         data = json.loads(json_string)
@@ -169,7 +171,7 @@ def get_json_schema_from_object(ctx, object_name, object_type, json_namespace):
         requests_cache.install_cache('/tmp/irods_avu_json-ruleset-cache', backend='sqlite', expire_after=60 * 60 * 24)
 
         try:
-            r = requests.get(json_schema_url)
+            r = requests.get(json_schema_url, timeout=30)
         except requests.exceptions.RequestException as e:  # This is the correct syntax
             ctx.msiExit("-1101000", "JSON schema could not be downloaded : " + str(e))
             return

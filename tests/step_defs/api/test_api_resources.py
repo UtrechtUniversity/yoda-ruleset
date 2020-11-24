@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_resources.feature')
+scenarios('../../features/api/api_resources.feature')
 
 
 @given('the Yoda resources API is queried for all research groups of current datamanager', target_fixture="api_response")

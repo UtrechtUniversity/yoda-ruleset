@@ -10,7 +10,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_folder.feature')
+scenarios('../../features/api/api_folder.feature')
 
 
 @given('the Yoda folder lock API is queried with "<folder>"', target_fixture="api_response")

@@ -61,14 +61,21 @@ def require():
     The function must explicitly return policy.succeed() or .fail('reason') as a result.
     Any other return type will result in the PEP failing (blocks associated action).
 
-    :raises api.Error:      Unhandled API error
-    :raises AssertionError: Policy did not succeed
-
     :returns: Decorator to turn a function into a PEP rule that fails unless policy.succeed() is returned
     """
     def deco(f):
         @rule.make(outputs=[])
         def r(ctx, *args):
+            """Execute a function as a PEP rule.
+
+            :param ctx:  Combined type of a callback and rei struct
+            :param args: Arguments of function
+
+            :raises api.Error:      Unhandled API error
+            :raises AssertionError: Policy did not succeed
+
+            :returns: Result of function as PEP rule
+            """
             try:
                 result = f(ctx, *args)
             except api.Error as e:

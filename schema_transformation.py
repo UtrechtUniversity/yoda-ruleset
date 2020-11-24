@@ -56,6 +56,8 @@ def transform_research_xml(ctx, xml_path):
     :param ctx:      Combined type of a ctx and rei struct
     :param xml_path: Path to Yoda metadata XML to transform
 
+    :raises KeyError: Schema is not defined, use fallback
+
     :returns: API status
     """
     _, zone, _1, _2 = pathutil.info(xml_path)

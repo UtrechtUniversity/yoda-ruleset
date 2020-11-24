@@ -10,7 +10,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_vault.feature')
+scenarios('../../features/api/api_vault.feature')
 
 
 @given('data package exists in "<vault>"', target_fixture="data_package")
