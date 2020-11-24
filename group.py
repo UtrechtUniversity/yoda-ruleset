@@ -326,32 +326,32 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
     """Remove external user."""
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
 
-    
+
 @api.make()
 def api_group_search_users(ctx, pattern):
-    if "#" in pattern :
+    if "#" in pattern:
         parts = pattern.split("#")
         user = parts[0]
         zone = parts[1]
-    else :
+    else:
         user = pattern
         zone = ""
 
     userList = list()
 
-    userIter = genquery.row_iterator( "USER_NAME, USER_ZONE",
-                         "USER_TYPE = 'rodsuser' AND  USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
-                         genquery.AS_LIST, ctx)
+    userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
+                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                     genquery.AS_LIST, ctx)
 
-    adminIter = genquery.row_iterator( "USER_NAME, USER_ZONE",
-                         "USER_TYPE = 'rodsadmin' AND  USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
-                         genquery.AS_LIST, ctx)
+    adminIter = genquery.row_iterator("USER_NAME, USER_ZONE",
+                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                      genquery.AS_LIST, ctx)
 
     for row in userIter:
-	    userList.append("{}#{}".format(row[0],row[1]))
+        userList.append("{}#{}".format(row[0], row[1]))
     for row in adminIter:
-        userList.append("{}#{}".format(row[0],row[1]))
-	
+        userList.append("{}#{}".format(row[0], row[1]))
+
     return userList
 
 
@@ -370,6 +370,7 @@ def api_group_exists(ctx, groupName):
         raise error.UUError("Invalid rule result: not a boolean")
 
     return exists
+
 
 @api.make()
 def api_group_create(ctx, groupName, category, subcategory, description, dataClassification):
