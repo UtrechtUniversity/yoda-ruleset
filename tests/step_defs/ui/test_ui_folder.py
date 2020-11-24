@@ -87,7 +87,7 @@ def ui_folder_accept(browser):
 
 
 @then(parsers.parse('the folder status is "{status}"'))
-def ui_module_shown(browser, status):
+def ui_folder_status(browser, status):
     time.sleep(2)
     badge = browser.find_by_id('statusBadge')
     if status in ["Unlocked", "Unsubmitted"]:
