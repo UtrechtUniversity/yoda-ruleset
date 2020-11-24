@@ -88,14 +88,14 @@ uuGroupCategoryExists(*categoryName, *exists) {
 # \param[out] exists
 #
 uuGroupExists(*groupName, *exists) {
-	*exists = false;
+	*exists = 'false';
 	foreach (
 		*row in
 		SELECT USER_GROUP_NAME, USER_TYPE
 		WHERE  USER_GROUP_NAME = '*groupName'
 		  AND  USER_TYPE       = 'rodsgroup'
 	) {
-		*exists = true;
+		*exists = 'true';
 	}
 }
 
@@ -558,7 +558,7 @@ uuGroupGetManagers(*groupName, *managers) {
 # \param[out] users a list of user names
 #
 uuFindUsers(*query, *users) {
-	*users = list();
+	*userList = list();
 
 	*queryUser = *query;
 	*queryZone = "";
@@ -576,7 +576,7 @@ uuFindUsers(*query, *users) {
 		  AND  USER_NAME LIKE '%*queryUser%'
 		  AND  USER_ZONE LIKE '%*queryZone%'
 	) {
-		*users = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *users);
+		*userList = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *userList);
 	}
 	foreach (
 		*user in
@@ -585,8 +585,10 @@ uuFindUsers(*query, *users) {
 		  AND  USER_NAME LIKE '%*queryUser%'
 		  AND  USER_ZONE LIKE '%*queryZone%'
 	) {
-		*users = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *users);
+		*userList = cons(*user."USER_NAME" ++ "#" ++ *user."USER_ZONE", *userList);
 	}
+
+	uuJoin(',', *userList, *users)
 }
 
 # \brief Check if a user is a manager in the given group.
