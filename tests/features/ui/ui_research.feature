@@ -23,6 +23,7 @@ Feature: Research UI
             | research-initial | ui_test_folder1 |
             | research-initial | ui_test_folder2 |
 
+
     Scenario: Renaming a folder
         Given user "researcher" is logged in
         And module "research" module is shown
@@ -43,6 +44,6 @@ Feature: Research UI
         Then folder "<folder_delete>" does not exists in "<folder>"
 
         Examples:
-            | folder           | folder_delete   |
-            | research-initial | ui_test_folder1 |
-            | research-initial | ui_test_folder2 |
+            | folder           | folder_delete           |
+            | research-initial | ui_test_folder1_renamed |
+            | research-initial | ui_test_folder2_renamed |

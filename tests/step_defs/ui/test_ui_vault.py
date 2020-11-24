@@ -9,10 +9,10 @@ from pytest_bdd import (
     parsers,
     scenarios,
     when,
-    then,
 )
 
 scenarios('../../features/ui/ui_vault.feature')
+
 
 @given('user "<user>" is logged in')
 def ui_login(browser, user):
