@@ -21,7 +21,8 @@ users = ['researcher',
          'datamanager',
          'technicaladmin',
          'bodmember',
-         'dmcmember']
+         'dmcmember',
+         'groupmanager']
 user_cookies = {}
 
 

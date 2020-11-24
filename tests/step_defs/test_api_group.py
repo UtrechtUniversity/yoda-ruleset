@@ -56,82 +56,114 @@ def api_group_subcategories(user, category):
 def api_group_search_users(user, pattern):
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_search_users",
+        {"pattern": pattern}
     )
 
 
 @given(parsers.parse('the group "{groupName}" does not exist'))
+@then(parsers.parse('the group "{groupName}" no longer exists'))
 def api_group_does_not_exist(user, groupName):
-    assert False
+    _, body = api_request(
+        user,
+        "group_exists",
+        {"groupName": groupName }
+    )
+
+    exists = body['data']
+    assert not exists
 
 
-@given('the user creates a new group "{groupName}"', target_fixture="api_response")
+@given(parsers.parse('the user creates a new group "{groupName}"'), target_fixture="api_response")
 def api_group_create(user, groupName):
     return api_request(
         user,
-        "tbd",
-        {"args": ""}
+        "group_create",
+        {"groupName": groupName,
+         "category": "abs",
+         "subcategory": "cde",
+         "description": "",
+         "dataClassification": "wat"}
     )
 
 
 @given(parsers.parse('the group "{groupName}" exists'))
 def given_group_exists(user, groupName):
-    assert False
+    _, body = api_request(
+        user,
+        "group_exists",
+        {"groupName": groupName}
+    )
+
+    exists = body['data']
+    assert exists
 
 
-@given('the user updates group "{groupName}"', target_fixture="api_response")
+@given(parsers.parse('the user updates group "{groupName}"'), target_fixture="api_response")
 def api_group_update(user, groupName):
+    tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
+    
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_update",
+        { 'groupName': groupName,
+          'propertyName': 'description',
+          'propertyValue': tobeDescription
+        }
     )
 
 
-@given('the user deletes group "{groupName}"', target_fixture="api_response")
+@given(parsers.parse('the user deletes group "{groupName}"'), target_fixture="api_response")
 def api_group_delete(user, groupName):
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_delete",
+        {"groupName": groupName}
     )
 
 
-@given(parsers.parse('there exists no user named "{newUser}"'))
-def given_user_does_not_exist(user, newUser):
-    assert False
+@given(parsers.parse('the user X "{newUser}" is not a member of group "{groupName}"'))
+@then('user X is no longer a member of the group')
+def given_user_is_not_member(user, newUser, groupName):
+    _, body = api_request(
+        user,
+        "group_user_is_member",
+        {"username": newUser,
+         "groupName": groupName}
+    )
+    
+    is_member = body["data"]
+    assert not is_member
 
 
-@given('the user creates the new user', target_fixture="api_response")
-def api_group_create_user(user, newUser):
+@given('the user adds user X to the group', target_fixture="api_response")
+def api_group_create_user(user, newUser, groupName):
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_user_add",
+        {"username": newUser,
+         "groupName": groupName}
     )
 
 
-@given(parsers.parse('there exists a user X named "{targetUser}"'))
-def given_target_user_exists(user, targetUser):
-    assert False
-
-
-@given('the user updates user X', target_fixture="api_response")
-def api_group_update_user(user, targetUser):
+@given('the user updates the role of user X', target_fixture="api_response")
+def api_group_update_user(user, newUser, groupName):
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_user_update_role",
+        {"username": newUser,
+         "groupName": groupName,
+         "newRole": "manager"}
     )
 
 
-@given('the user deletes user X', target_fixture="api_response")
-def api_group_delete_user(user, targetUser):
+@given('the user removes user X from the group', target_fixture="api_response")
+def api_group_delete_user(user, newUser, groupName):
     return api_request(
         user,
-        "tbd",
-        {}
+        "group_remove_user_from_group",
+        {"username": newUser,
+         "groupName": groupName}
     )
 
 
@@ -143,7 +175,9 @@ def api_response_code(api_response, code):
 
 @then('the result is equal to "<users>"')
 def then_users_found_match(api_response, users):
-    assert False
+    _, body = api_response
+
+    assert body["data"] == users.split(", ")
 
 
 @then('group "<group>" exists')
@@ -178,31 +212,61 @@ def category_exists(api_response, category):
     assert found
 
 
-@then('the group "{groupName}" is created')
-def then_group_created(api_response, groupName):
-    assert False
+@then(parsers.parse('the group "{groupName}" is created'))
+def then_group_created(user, groupName):
+    _, body = api_request(
+        user,
+        'group_exists',
+        {'groupName': groupName}
+    )
+
+    exists = body["data"]
+
+    assert exists
 
 
-@then('the update to group "{groupName}" is persisted')
-def then_group_updated(user, groupNamer, api_response):
-    assert False
+@then(parsers.parse('the update to group "{groupName}" is persisted'))
+def then_group_updated(user, groupName, api_response):
+    _, body = api_request(
+        user,
+        "group_get_description",
+        {"groupName": groupName}
+    )
+    
+    description = body['data']
+    tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
+
+    assert description == tobeDescription
+
+#@then('the group "{groupName}" no longer exists')
+#def then_group_does_not_exist(user, groupName):
+#    assert False
 
 
-@then('the group "{groupName}" no longer exists')
-def then_group_does_not_exist(user, groupName):
-    assert False
+@then('user X is now a member of the group')
+@given(parsers.parse('the user X "{newUser}" is a member of group "{groupName}"'))
+def then_user_is_member(user, newUser, groupName):
+    _, body = api_request(
+        user,
+        "group_user_is_member",
+        {"username": newUser,
+         "groupName": groupName
+        }
+    )
+    
+    is_member = body['data']
+    assert is_member
 
 
-@then('the new user is persisted')
-def then_user_exists(user, newUser):
-    assert False
+@then('the update is persisted')
+def then_user_update_persisted(user, newUser, groupName):
+    _, body = api_request(
+        user,
+        "group_get_user_role",
+        {"username": newUser,
+         "groupName": groupName}
+    )
+    
+    role = body["data"]
+    assert role == "manager"
 
-
-@then('the user update is persisted')
-def then_user_update_persisted(user, targetUser):
-    assert False
-
-
-@then('the user no longer exists')
-def then_user_deleted(user, targetUser):
-    assert False

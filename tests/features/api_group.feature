@@ -47,54 +47,55 @@ Feature: Group API
             | datamanager | initial  |
 
     Scenario: Group search users
-        Given user "datamanager" is authenticated
+        Given user "<user>" is authenticated
         And the user searches for users matching "<pattern>"
         Then the response status code is "200"
         And the result is equal to "<users>"
 
         Examples:
-            | pattern   | users                                         |
-            | test      | testuseradd#tempZone, testuserdel#tempZone    |
-            | tech      | technicaladmin#tempZone                       |
+            | user          | pattern   | users                                         |
+            | datamanager   | test      | testuseradd#tempZone, testuserdel#tempZone    |
+            | datamanager   | tech      | technicaladmin#tempZone                       |
+            | groupmanager  | tech      | technicaladmin#tempZone                       |
 
     Scenario: Group creation
-        Given user "datamanager" is authenticated
+        Given user "technicaladmin" is authenticated
         And the group "testGroupie" does not exist
         And the user creates a new group "testGroupie"
-        Then the response status code is "201"
+        Then the response status code is "200"
         And the group "testGroupie" is created
 
     Scenario: Group update
-        Given user "datamanager" is authenticated
+        Given user "technicaladmin" is authenticated
         And the group "testGroupie" exists
         And the user updates group "testGroupie"
         Then the response status code is "200"
         And the update to group "testGroupie" is persisted
 
+    Scenario: Adding user to group
+        Given user "technicaladmin" is authenticated
+        And the user X "sterlingarcher" is not a member of group "testGroupie"
+        And the user adds user X to the group
+        Then the response status code is "200"
+        And user X is now a member of the group
+
+    Scenario: Group user update role
+        Given user "technicaladmin" is authenticated
+        And the user X "sterlingarcher" is a member of group "testGroupie"
+        And the user updates the role of user X
+        Then the response status code is "200"
+        And the update is persisted
+
+    Scenario: Remove user from group
+        Given user "technicaladmin" is authenticated
+        And the user X "sterlingarcher" is a member of group "testGroupie"
+        And the user removes user X from the group
+        Then the response status code is "200"
+        And user X is no longer a member of the group
+
     Scenario: Group delete
-        Given user "datamanager" is authenticated
+        Given user "technicaladmin" is authenticated
         And the group "testGroupie" exists
         And the user deletes group "testGroupie"
         Then the response status code is "200"
         And the group "testGroupie" no longer exists
-
-    Scenario: User creation
-        Given user "datamanager" is authenticated
-        And there exists no user named "sterlingarcher"
-        And the user creates the new user
-        Then the response status code is "201"
-        And the new user is persisted
-
-    Scenario: User update
-        Given user "datamanager" is authenticated
-        And there exists a user X named "sterlingarcher"
-        And the user updates user X
-        Then the response status code is "200"
-        And the user update is persisted
-
-    Scenario: User delete
-        Given user "datamanager" is authenticated
-        And there exists a user X named "sterlingarcher"
-        And the user deletes user X
-        Then the response status code is "200"
-        And the user no longer exists
