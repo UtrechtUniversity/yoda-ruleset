@@ -67,7 +67,7 @@ def api_group_does_not_exist(user, groupName):
     _, body = api_request(
         user,
         "group_exists",
-        {"groupName": groupName }
+        {"groupName": groupName}
     )
 
     exists = body['data']
@@ -102,14 +102,13 @@ def given_group_exists(user, groupName):
 @given(parsers.parse('the user updates group "{groupName}"'), target_fixture="api_response")
 def api_group_update(user, groupName):
     tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
-    
+
     return api_request(
         user,
         "group_update",
-        { 'groupName': groupName,
-          'propertyName': 'description',
-          'propertyValue': tobeDescription
-        }
+        {'groupName': groupName,
+         'propertyName': 'description',
+         'propertyValue': tobeDescription}
     )
 
 
@@ -131,7 +130,7 @@ def given_user_is_not_member(user, newUser, groupName):
         {"username": newUser,
          "groupName": groupName}
     )
-    
+
     is_member = body["data"]
     assert not is_member
 
@@ -232,15 +231,11 @@ def then_group_updated(user, groupName, api_response):
         "group_get_description",
         {"groupName": groupName}
     )
-    
+
     description = body['data']
     tobeDescription = 'To test or not to test, that is the question. Whether it is nobler in the mind to suffer the production errors and bugs of life, or to test and squash them all and by ending them hear "the button colour is wrong"...'
 
     assert description == tobeDescription
-
-#@then('the group "{groupName}" no longer exists')
-#def then_group_does_not_exist(user, groupName):
-#    assert False
 
 
 @then('user X is now a member of the group')
@@ -250,10 +245,9 @@ def then_user_is_member(user, newUser, groupName):
         user,
         "group_user_is_member",
         {"username": newUser,
-         "groupName": groupName
-        }
+         "groupName": groupName}
     )
-    
+
     is_member = body['data']
     assert is_member
 
@@ -266,7 +260,6 @@ def then_user_update_persisted(user, newUser, groupName):
         {"username": newUser,
          "groupName": groupName}
     )
-    
+
     role = body["data"]
     assert role == "manager"
-
