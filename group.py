@@ -14,7 +14,18 @@ __all__ = ['api_group_data',
            'api_group_subcategories',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
-           'rule_group_user_exists']
+           'rule_group_user_exists',
+           'api_group_search_users',
+           'api_group_exists',
+           'api_group_create',
+           'api_group_update',
+           'api_group_delete',
+           'api_group_get_description',
+           'api_group_user_is_member',
+           'api_group_user_add',
+           'api_group_user_update_role',
+           'api_group_get_user_role',
+           'api_group_remove_user_from_group']
 
 
 def getGroupData(ctx):
@@ -314,3 +325,108 @@ def removeExternalUser(ctx, username, userzone):
 def rule_group_remove_external_user(rule_args, ctx, rei):
     """Remove external user."""
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
+
+    
+@api.make()
+def api_group_search_users(ctx, pattern):
+    if "#" in pattern :
+        parts = pattern.split("#")
+        user = parts[0]
+        zone = parts[1]
+    else :
+        user = pattern
+        zone = ""
+
+    userList = list()
+
+    userIter = genquery.row_iterator( "USER_NAME, USER_ZONE",
+                         "USER_TYPE = 'rodsuser' AND  USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                         genquery.AS_LIST, ctx)
+
+    adminIter = genquery.row_iterator( "USER_NAME, USER_ZONE",
+                         "USER_TYPE = 'rodsadmin' AND  USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                         genquery.AS_LIST, ctx)
+
+    for row in userIter:
+	    userList.append("{}#{}".format(row[0],row[1]))
+    for row in adminIter:
+        userList.append("{}#{}".format(row[0],row[1]))
+	
+    return userList
+
+
+@api.make()
+def api_group_exists(ctx, groupName):
+    ruleResult = ctx.uuGroupExists(groupName, '')
+
+    resultString = str(ruleResult["arguments"][1])
+    exists = False
+
+    if resultString == "true":
+        exists = True
+    elif resultString == "false":
+        exists = False
+    else:
+        raise error.UUError("Invalid rule result: not a boolean")
+
+    return exists
+
+@api.make()
+def api_group_create(ctx, groupName, category, subcategory, description, dataClassification):
+    ruleResult = ctx.uuGroupAdd(groupName, category, subcategory, description, dataClassification, '', '')
+
+
+@api.make()
+def api_group_update(ctx, groupName, propertyName, propertyValue):
+    ruleResult = ctx.uuGroupModify(groupName, propertyName, propertyValue, '', '')
+
+
+@api.make()
+def api_group_delete(ctx, groupName):
+    ruleResult = ctx.uuGroupRemove(groupName, '', '')
+
+
+@api.make()
+def api_group_get_description(ctx, groupName):
+    ruleResult = ctx.uuGroupGetDescription(groupName, '')
+
+    description = ruleResult["arguments"][1]
+    return description
+
+
+@api.make()
+def api_group_user_is_member(ctx, username, groupName):
+    ruleResult = ctx.rule_group_user_exists(groupName, username, True, '')
+
+    resultString = ruleResult["arguments"][3]
+    if resultString == "true":
+        exists = True
+    elif resultString == "false":
+        exists = False
+    else:
+        raise error.UUError("Invalid rule result: not a boolean")
+
+    return exists
+
+
+@api.make()
+def api_group_user_add(ctx, username, groupName):
+    ruleResult = ctx.uuGroupUserAdd(groupName, username, '', '')
+
+
+@api.make()
+def api_group_user_update_role(ctx, username, groupName, newRole):
+    ruleResult = ctx.uuGroupUserChangeRole(groupName, username, newRole, '', '')
+
+
+@api.make()
+def api_group_get_user_role(ctx, username, groupName):
+    ruleResult = ctx.uuGroupGetMemberType(groupName, username, '')
+
+    role = ruleResult["arguments"][2]
+    return role
+
+
+@api.make()
+def api_group_remove_user_from_group(ctx, username, groupName):
+    ruleResult = ctx.uuGroupUserRemove(groupName, username, '', '')
