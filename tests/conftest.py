@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Yoda API tests configuration."""
+"""Yoda tests configuration."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'

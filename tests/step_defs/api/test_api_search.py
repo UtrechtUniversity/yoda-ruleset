@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_search.feature')
+scenarios('../../features/api/api_search.feature')
 
 
 @given('the Yoda search file API is queried with "<file>"', target_fixture="api_response")

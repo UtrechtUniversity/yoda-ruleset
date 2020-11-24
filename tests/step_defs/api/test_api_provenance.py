@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_provenance.feature')
+scenarios('../../features/api/api_provenance.feature')
 
 
 @given('the Yoda provenance log API is queried with "<collection>"', target_fixture="api_response")
