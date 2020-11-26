@@ -176,7 +176,7 @@ def api_response_code(api_response, code):
 def then_users_found_match(api_response, users):
     _, body = api_response
 
-    assert body["data"] == users.split(", ")
+    assert body["data"].sort() == users.split(", ").sort()
 
 
 @then('group "<group>" exists')
