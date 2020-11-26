@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 
 from pytest_bdd import (
-    given,
     parsers,
     scenarios,
     then,
