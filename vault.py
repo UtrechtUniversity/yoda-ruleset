@@ -489,6 +489,16 @@ def api_vault_collection_details(ctx, path):
 
     # Check if a vault action is pending.
     vault_action_pending = False
+    coll_id = collection.id_from_name(path)
+
+    action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
+    iter = genquery.row_iterator(
+        "COLL_ID",
+        "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+        genquery.AS_LIST, ctx
+    )
+    for _row in iter:
+        vault_action_pending = True
 
     # Check if research group has access.
     research_group_access = True
@@ -920,13 +930,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 #        }
 
     # Retrieve collection id.
-    iter = genquery.row_iterator(
-        "COLL_ID",
-        "COLL_NAME = '" + coll + "' ",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        coll_id = row[0]
+    coll_id = collection.id_from_name(coll)
 
     # Check if vault package is currently pending for status transition.
     # Except for status transition to PUBLISHED/DEPUBLISHED,

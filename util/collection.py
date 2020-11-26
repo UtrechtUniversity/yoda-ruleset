@@ -160,6 +160,17 @@ def rename(ctx, path_org, path_target):
                         irods_types.BytesBuf())
 
 
+def id_from_name(ctx, coll_name):
+    """Get collection id from collection name.
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param coll_name: Collection name
+
+    :returns: Collection id
+    """
+    return Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
+
+
 def name_from_id(ctx, coll_id):
     """Get collection name from collection id.
 
