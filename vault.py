@@ -954,7 +954,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 #        }
 
     # Retrieve collection id.
-    coll_id = collection.id_from_name(coll)
+    coll_id = collection.id_from_name(ctx, coll)
 
     # Check if vault package is currently pending for status transition.
     # Except for status transition to PUBLISHED/DEPUBLISHED,
