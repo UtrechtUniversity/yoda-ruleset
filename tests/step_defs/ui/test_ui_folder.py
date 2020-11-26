@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Research UI feature tests."""
+"""Folder UI feature tests."""
 
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -15,28 +15,6 @@ from pytest_bdd import (
 )
 
 scenarios('../../features/ui/ui_folder.feature')
-
-
-@given('user "<user>" is logged in')
-@given(parsers.parse('user "{user}" is logged in'))
-def ui_login(browser, user):
-    url = "https://portal.yoda.test/user/login"
-    browser.visit(url)
-
-    # Fill in username
-    browser.find_by_id('f-login-username').fill(user)
-
-    # Fill in password
-    browser.find_by_id('f-login-password').fill('test')
-
-    # Find and click the 'Sign in' button
-    browser.find_by_id('f-login-submit').click()
-
-
-@given(parsers.parse('module "{module}" module is shown'))
-def ui_module_shown(browser, module):
-    url = "https://portal.yoda.test/{}".format(module)
-    browser.visit(url)
 
 
 @when('user browses to folder "<folder>"')
