@@ -507,7 +507,7 @@ def api_vault_collection_details(ctx, path):
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
         "COLL_NAME = '{}'".format(path),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -517,7 +517,7 @@ def api_vault_collection_details(ctx, path):
         iter2 = genquery.row_iterator(
             "USER_NAME",
             "USER_ID = '{}'".format(user_id),
-            genquery.AS_LIST, callback
+            genquery.AS_LIST, ctx
         )
 
         for row2 in iter2:
