@@ -350,7 +350,8 @@ def api_group_search_users(ctx, pattern):
     for row in adminIter:
         userList.append("{}#{}".format(row[0], row[1]))
 
-    return userList.sort()
+    userList.sort()
+    return userList
 
 
 @api.make()
