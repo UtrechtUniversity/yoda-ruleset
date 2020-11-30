@@ -351,19 +351,11 @@ def api_group_search_users(ctx, pattern):
 
 @api.make()
 def api_group_exists(ctx, groupName):
-    ruleResult = ctx.uuGroupExists(groupName, '')
+    groupIter = genquery.row_iterator("USER_GROUP_NAME, USER_TYPE",
+                                      "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(groupName),
+                                      genquery.AS_LIST, ctx)
 
-    resultString = str(ruleResult["arguments"][1])
-    exists = False
-
-    if resultString == "true":
-        exists = True
-    elif resultString == "false":
-        exists = False
-    else:
-        raise error.UUError("Invalid rule result: not a boolean")
-
-    return exists
+    return groupIter.total_rows()
 
 
 @api.make()
