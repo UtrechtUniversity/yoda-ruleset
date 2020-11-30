@@ -182,6 +182,7 @@ def api_group_data_filtered(ctx, user_name, zone_name):
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
+
 def group_user_exists(ctx, groupName, userName, include_readonly):
     groups = getGroupData(ctx)
     if '#' not in userName:
@@ -334,7 +335,7 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
 
 @api.make()
 def api_group_search_users(ctx, pattern):
-    (userName,zoneName) = user.from_str(ctx, pattern)
+    (userName, zoneName) = user.from_str(ctx, pattern)
     userList = list()
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
