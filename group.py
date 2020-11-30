@@ -330,22 +330,15 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
 
 @api.make()
 def api_group_search_users(ctx, pattern):
-    if "#" in pattern:
-        parts = pattern.split("#")
-        user = parts[0]
-        zone = parts[1]
-    else:
-        user = pattern
-        zone = ""
-
+    (userName,zoneName) = user.from_str(ctx, pattern)
     userList = list()
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
                                      genquery.AS_LIST, ctx)
 
     adminIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
                                       genquery.AS_LIST, ctx)
 
     for row in userIter:
