@@ -182,6 +182,19 @@ def api_group_data_filtered(ctx, user_name, zone_name):
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
+def group_user_exists(ctx, groupName, userName, include_readonly):
+    groups = getGroupData(ctx)
+    if '#' not in userName:
+        import session_vars
+        userName = userName + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+
+    if not include_readonly:
+        groups = list(filter(lambda group: groupName == group["name"] and userName in group["members"], groups))
+    else:
+        groups = list(filter(lambda group: groupName == group["name"] and (userName in group["read"] or userName in group["members"]), groups))
+
+    return len(groups) == 1
+
 
 def rule_group_user_exists(rule_args, callback, rei):
     """Check if a user is a member of the given group.
@@ -197,18 +210,9 @@ def rule_group_user_exists(rule_args, callback, rei):
     :param callback:  Callback to rule Language
     :param rei:       The rei struct
     """
-    groups = getGroupData(callback)
-    user = rule_args[1]
-    if '#' not in user:
-        import session_vars
-        user = user + "#" + session_vars.get_map(rei)["client_user"]["irods_zone"]
-
-    if rule_args[2] == "false":
-        groups = list(filter(lambda group: rule_args[0] == group["name"] and user in group["members"], groups))
-    else:
-        groups = list(filter(lambda group: rule_args[0] == group["name"] and (user in group["read"] or user in group["members"]), groups))
-
-    rule_args[3] = "true" if len(groups) == 1 else "false"
+    ctx = rule.Context(callback, rei)
+    exists = group_user_exists(ctx, rule_args[0], rule_args[1], rule_args[2])
+    rule_args[3] = "true" if exists else "false"
 
 
 @api.make()
@@ -330,22 +334,15 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
 
 @api.make()
 def api_group_search_users(ctx, pattern):
-    if "#" in pattern:
-        parts = pattern.split("#")
-        user = parts[0]
-        zone = parts[1]
-    else:
-        user = pattern
-        zone = ""
-
+    (userName,zoneName) = user.from_str(ctx, pattern)
     userList = list()
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
                                      genquery.AS_LIST, ctx)
 
     adminIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(user, zone),
+                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
                                       genquery.AS_LIST, ctx)
 
     for row in userIter:
@@ -353,24 +350,16 @@ def api_group_search_users(ctx, pattern):
     for row in adminIter:
         userList.append("{}#{}".format(row[0], row[1]))
 
-    return userList
+    return userList.sort()
 
 
 @api.make()
 def api_group_exists(ctx, groupName):
-    ruleResult = ctx.uuGroupExists(groupName, '')
+    groupIter = genquery.row_iterator("USER_GROUP_NAME, USER_TYPE",
+                                      "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(groupName),
+                                      genquery.AS_LIST, ctx)
 
-    resultString = str(ruleResult["arguments"][1])
-    exists = False
-
-    if resultString == "true":
-        exists = True
-    elif resultString == "false":
-        exists = False
-    else:
-        raise error.UUError("Invalid rule result: not a boolean")
-
-    return exists
+    return groupIter.total_rows()
 
 
 @api.make()
@@ -398,17 +387,7 @@ def api_group_get_description(ctx, groupName):
 
 @api.make()
 def api_group_user_is_member(ctx, username, groupName):
-    ruleResult = ctx.rule_group_user_exists(groupName, username, True, '')
-
-    resultString = ruleResult["arguments"][3]
-    if resultString == "true":
-        exists = True
-    elif resultString == "false":
-        exists = False
-    else:
-        raise error.UUError("Invalid rule result: not a boolean")
-
-    return exists
+    return group_user_exists(ctx, groupName, username, True)
 
 
 @api.make()

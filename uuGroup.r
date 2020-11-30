@@ -88,14 +88,14 @@ uuGroupCategoryExists(*categoryName, *exists) {
 # \param[out] exists
 #
 uuGroupExists(*groupName, *exists) {
-	*exists = 'false';
+	*exists = false;
 	foreach (
 		*row in
 		SELECT USER_GROUP_NAME, USER_TYPE
 		WHERE  USER_GROUP_NAME = '*groupName'
 		  AND  USER_TYPE       = 'rodsgroup'
 	) {
-		*exists = 'true';
+		*exists = true;
 	}
 }
 
