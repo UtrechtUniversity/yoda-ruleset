@@ -167,32 +167,32 @@ def api_group_data(ctx):
 
 
 @api.make()
-def api_group_data_filtered(ctx, user_name, zone_name):
+def api_group_data_filtered(ctx, username, zone_name):
     """Retrieve group data for a single user.
 
     :param ctx:       Combined type of a ctx and rei struct
-    :param user_name: User to retrieve group data for
+    :param username: User to retrieve group data for
     :param zone_name: Zone name of user
 
     :returns: Group data for a single user
     """
     groups    = getGroupData(ctx)
-    full_name = '{}#{}'.format(user_name, zone_name)
+    full_name = '{}#{}'.format(username, zone_name)
 
     # Filter groups (only return groups user is part of), convert to json and write to stdout.
     return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
 
-def group_user_exists(ctx, groupName, userName, include_readonly):
+def group_user_exists(ctx, group_name, username, include_readonly):
     groups = getGroupData(ctx)
-    if '#' not in userName:
+    if '#' not in username:
         import session_vars
-        userName = userName + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+        username = username + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
 
     if not include_readonly:
-        groups = list(filter(lambda group: groupName == group["name"] and userName in group["members"], groups))
+        groups = list(filter(lambda group: group_name == group["name"] and username in group["members"], groups))
     else:
-        groups = list(filter(lambda group: groupName == group["name"] and (userName in group["read"] or userName in group["members"]), groups))
+        groups = list(filter(lambda group: group_name == group["name"] and (username in group["read"] or username in group["members"]), groups))
 
     return len(groups) == 1
 
@@ -335,15 +335,15 @@ def rule_group_remove_external_user(rule_args, ctx, rei):
 
 @api.make()
 def api_group_search_users(ctx, pattern):
-    (userName, zoneName) = user.from_str(ctx, pattern)
+    (username, zone_name) = user.from_str(ctx, pattern)
     userList = list()
 
     userIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
+                                     "USER_TYPE = 'rodsuser' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(username, zone_name),
                                      genquery.AS_LIST, ctx)
 
     adminIter = genquery.row_iterator("USER_NAME, USER_ZONE",
-                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(userName, zoneName),
+                                      "USER_TYPE = 'rodsadmin' AND USER_NAME LIKE '%{}%' AND USER_ZONE LIKE '%{}%'".format(username, zone_name),
                                       genquery.AS_LIST, ctx)
 
     for row in userIter:
@@ -356,56 +356,56 @@ def api_group_search_users(ctx, pattern):
 
 
 @api.make()
-def api_group_exists(ctx, groupName):
-    return group.exists(ctx, groupName)
+def api_group_exists(ctx, group_name):
+    return group.exists(ctx, group_name)
 
 
 @api.make()
-def api_group_create(ctx, groupName, category, subcategory, description, dataClassification):
-    ruleResult = ctx.uuGroupAdd(groupName, category, subcategory, description, dataClassification, '', '')
+def api_group_create(ctx, group_name, category, subcategory, description, data_classification):
+    ruleResult = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
 
 
 @api.make()
-def api_group_update(ctx, groupName, propertyName, propertyValue):
-    ruleResult = ctx.uuGroupModify(groupName, propertyName, propertyValue, '', '')
+def api_group_update(ctx, group_name, property_name, property_value):
+    ruleResult = ctx.uuGroupModify(group_name, property_name, property_value, '', '')
 
 
 @api.make()
-def api_group_delete(ctx, groupName):
-    ruleResult = ctx.uuGroupRemove(groupName, '', '')
+def api_group_delete(ctx, group_name):
+    ruleResult = ctx.uuGroupRemove(group_name, '', '')
 
 
 @api.make()
-def api_group_get_description(ctx, groupName):
-    ruleResult = ctx.uuGroupGetDescription(groupName, '')
+def api_group_get_description(ctx, group_name):
+    ruleResult = ctx.uuGroupGetDescription(group_name, '')
 
     description = ruleResult["arguments"][1]
     return description
 
 
 @api.make()
-def api_group_user_is_member(ctx, username, groupName):
-    return group_user_exists(ctx, groupName, username, True)
+def api_group_user_is_member(ctx, username, group_name):
+    return group_user_exists(ctx, group_name, username, True)
 
 
 @api.make()
-def api_group_user_add(ctx, username, groupName):
-    ruleResult = ctx.uuGroupUserAdd(groupName, username, '', '')
+def api_group_user_add(ctx, username, group_name):
+    ruleResult = ctx.uuGroupUserAdd(group_name, username, '', '')
 
 
 @api.make()
-def api_group_user_update_role(ctx, username, groupName, newRole):
-    ruleResult = ctx.uuGroupUserChangeRole(groupName, username, newRole, '', '')
+def api_group_user_update_role(ctx, username, group_name, new_role):
+    ruleResult = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
 
 
 @api.make()
-def api_group_get_user_role(ctx, username, groupName):
-    ruleResult = ctx.uuGroupGetMemberType(groupName, username, '')
+def api_group_get_user_role(ctx, username, group_name):
+    ruleResult = ctx.uuGroupGetMemberType(group_name, username, '')
 
     role = ruleResult["arguments"][2]
     return role
 
 
 @api.make()
-def api_group_remove_user_from_group(ctx, username, groupName):
-    ruleResult = ctx.uuGroupUserRemove(groupName, username, '', '')
+def api_group_remove_user_from_group(ctx, username, group_name):
+    ruleResult = ctx.uuGroupUserRemove(group_name, username, '', '')
