@@ -357,11 +357,7 @@ def api_group_search_users(ctx, pattern):
 
 @api.make()
 def api_group_exists(ctx, groupName):
-    groupIter = genquery.row_iterator("USER_GROUP_NAME, USER_TYPE",
-                                      "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(groupName),
-                                      genquery.AS_LIST, ctx)
-
-    return groupIter.total_rows()
+    return group.exists(ctx, groupName)
 
 
 @api.make()
