@@ -1,19 +1,8 @@
 Feature: Research UI
 
-    Scenario: Browsing to a folder
-        Given user "<user>" is logged in
-        And module "research" module is shown
-        When user browses to folder "<folder>"
-        #Then content of sub-folder "<folder>" is shown
-
-        Examples:
-          | user       | folder            |
-          | researcher | research-initial  |
-          | researcher | research-initial1 |
-
     Scenario: Adding a folder
         Given user "researcher" is logged in
-        And module "research" module is shown
+        And module "research" is shown
         When user browses to folder "<folder>"
         And user adds a new folder "<folder_new>"
         Then folder "<folder_new>" exists in "<folder>"
@@ -23,10 +12,9 @@ Feature: Research UI
             | research-initial | ui_test_folder1 |
             | research-initial | ui_test_folder2 |
 
-
     Scenario: Renaming a folder
         Given user "researcher" is logged in
-        And module "research" module is shown
+        And module "research" is shown
         When user browses to folder "<folder>"
         And user renames folder "<folder_old>" to "<folder_new>"
         Then folder "<folder_new>" exists in "<folder>"
@@ -38,7 +26,7 @@ Feature: Research UI
 
     Scenario: Deleting a folder
         Given user "researcher" is logged in
-        And module "research" module is shown
+        And module "research" is shown
         When user browses to folder "<folder>"
         And user deletes folder "<folder_delete>"
         Then folder "<folder_delete>" does not exists in "<folder>"

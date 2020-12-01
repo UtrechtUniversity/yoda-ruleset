@@ -36,8 +36,9 @@ def pytest_configure(config):
     portal_url = config.getoption("--url")
 
     global api_url
-    api_url = portal_url + "api"
+    api_url = "{}/api".format(portal_url)
 
+    global password
     password = config.getoption("--password")
 
     # Store cookies for each user.
@@ -51,7 +52,7 @@ def login(user, password):
     # Disable unsecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    url = portal_url + 'user/login'
+    url = "{}/user/login".format(portal_url)
 
     client = requests.session()
 
@@ -111,3 +112,25 @@ def post_form_data(user, request, files):
 def api_user_authenticated(user):
     assert user in users
     return user
+
+
+@given('user "<user>" is logged in')
+@given(parsers.parse('user "{user}" is logged in'))
+def ui_login(browser, user):
+    url = "{}/user/login".format(portal_url)
+    browser.visit(url)
+
+    # Fill in username
+    browser.find_by_id('f-login-username').fill(user)
+
+    # Fill in password
+    browser.find_by_id('f-login-password').fill(password)
+
+    # Find and click the 'Sign in' button
+    browser.find_by_id('f-login-submit').click()
+
+
+@given(parsers.parse('module "{module}" is shown'))
+def ui_module_shown(browser, module):
+    url = "{}/{}".format(portal_url, module)
+    browser.visit(url)

@@ -489,9 +489,43 @@ def api_vault_collection_details(ctx, path):
 
     # Check if a vault action is pending.
     vault_action_pending = False
+    coll_id = collection.id_from_name(ctx, path)
+
+    action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
+    iter = genquery.row_iterator(
+        "COLL_ID",
+        "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+        genquery.AS_LIST, ctx
+    )
+    for _row in iter:
+        vault_action_pending = True
 
     # Check if research group has access.
-    research_group_access = True
+    research_group_access = False
+
+    # Retrieve all access user IDs on collection.
+    iter = genquery.row_iterator(
+        "COLL_ACCESS_USER_ID",
+        "COLL_NAME = '{}'".format(path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        user_id = row[0]
+
+        # Retrieve all group names with this ID.
+        iter2 = genquery.row_iterator(
+            "USER_NAME",
+            "USER_ID = '{}'".format(user_id),
+            genquery.AS_LIST, ctx
+        )
+
+        for row2 in iter2:
+            user_name = row2[0]
+
+            # Check if group is a research or intake group.
+            if user_name.startswith("research-"):
+                research_group_access = True
 
     # Check if research space is accessible.
     research_path = ""
@@ -920,13 +954,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
 #        }
 
     # Retrieve collection id.
-    iter = genquery.row_iterator(
-        "COLL_ID",
-        "COLL_NAME = '" + coll + "' ",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        coll_id = row[0]
+    coll_id = collection.id_from_name(ctx, coll)
 
     # Check if vault package is currently pending for status transition.
     # Except for status transition to PUBLISHED/DEPUBLISHED,
