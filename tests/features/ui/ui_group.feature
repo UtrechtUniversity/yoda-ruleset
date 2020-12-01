@@ -39,7 +39,7 @@ Feature: Group UI
         And module "group-manager" is shown
         When user has access to group "<group>" in category "<category>"
         And user removes "<user_remove>" from group
-        #Then user "<user_add>" is removed from the group
+        Then user "<user_remove>" is removed from the group
 
         Examples:
             | category | group            | user_remove   |
