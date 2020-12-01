@@ -21,7 +21,8 @@ users = ['researcher',
          'datamanager',
          'technicaladmin',
          'bodmember',
-         'dmcmember']
+         'dmcmember',
+         'groupmanager']
 user_cookies = {}
 
 
@@ -35,7 +36,7 @@ def pytest_configure(config):
     portal_url = config.getoption("--url")
 
     global api_url
-    api_url = portal_url + "api"
+    api_url = "{}/api".format(portal_url)
 
     global password
     password = config.getoption("--password")
@@ -51,7 +52,7 @@ def login(user, password):
     # Disable unsecure connection warning.
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    url = portal_url + 'user/login'
+    url = "{}/user/login".format(portal_url)
 
     client = requests.session()
 
@@ -116,7 +117,7 @@ def api_user_authenticated(user):
 @given('user "<user>" is logged in')
 @given(parsers.parse('user "{user}" is logged in'))
 def ui_login(browser, user):
-    url = "https://portal.yoda.test/user/login"
+    url = "{}/user/login".format(portal_url)
     browser.visit(url)
 
     # Fill in username
@@ -131,5 +132,5 @@ def ui_login(browser, user):
 
 @given(parsers.parse('module "{module}" is shown'))
 def ui_module_shown(browser, module):
-    url = "https://portal.yoda.test/{}".format(module)
+    url = "{}/{}".format(portal_url, module)
     browser.visit(url)
