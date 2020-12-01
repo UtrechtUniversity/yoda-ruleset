@@ -175,7 +175,7 @@ def api_response_code(api_response, code):
 @then('the result is equal to "<users>"')
 def then_users_found_match(api_response, users):
     _, body = api_response
-    
+
     users = users.split(", ")
     users.sort()
     assert body["data"] == users
