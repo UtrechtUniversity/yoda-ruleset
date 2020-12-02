@@ -11,6 +11,7 @@ import urllib3
 from pytest_bdd import (
     given,
     parsers,
+    when,
 )
 
 
@@ -131,6 +132,7 @@ def ui_login(browser, user):
 
 
 @given(parsers.parse('module "{module}" is shown'))
+@when(parsers.parse('module "{module}" is shown'))
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
