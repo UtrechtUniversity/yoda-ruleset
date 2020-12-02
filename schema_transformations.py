@@ -29,6 +29,8 @@ def _default0_default1(m):
     This makes it possible to specify the type of data that is being published.
     The default data type is Dataset.
 
+    The version number for the data package is no longer required.
+
     Furthermore, the metadata schema is extended with a remarks field.
     These remarks are intended for communication between researchers and datamanager.
 
