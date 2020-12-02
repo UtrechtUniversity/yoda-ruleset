@@ -98,7 +98,6 @@ def api_response(user, folder):
                  "Person_Identifier": [{}]
              }],
              "Data_Access_Restriction": "Restricted - available upon request",
-             "Version": "0",
              "Title": "Test",
              "Description": "Test",
              "Data_Type": "Dataset",
