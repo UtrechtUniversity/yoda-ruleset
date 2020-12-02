@@ -8,9 +8,9 @@ Feature: Group UI
         Then user "<user_add>" is added to the group
 
         Examples:
-            | category | group            | user_add      |
-            | initial  | research-initial | uitestpromote |
-            | initial  | research-initial | uitestdemote  |
+            | category | group            | user_add  |
+            | initial  | research-initial | uipromote |
+            | initial  | research-initial | uidemote  |
 
     Scenario: Group user promote
         Given user "groupmanager" is logged in
@@ -20,8 +20,8 @@ Feature: Group UI
         #Then user "<user_add>" is added to the group
 
         Examples:
-            | category | group            | user_promote  |
-            | initial  | research-initial | uitestpromote |
+            | category | group            | user_promote |
+            | initial  | research-initial | uipromote    |
 
     Scenario: Group user demote
         Given user "groupmanager" is logged in
@@ -31,8 +31,8 @@ Feature: Group UI
         #Then user "<user_add>" is added to the group
 
         Examples:
-            | category | group            | user_demote  |
-            | initial  | research-initial | uitestdemote |
+            | category | group            | user_demote |
+            | initial  | research-initial | uidemote    |
 
     Scenario: Group user remove
         Given user "groupmanager" is logged in
@@ -42,6 +42,6 @@ Feature: Group UI
         Then user "<user_remove>" is removed from the group
 
         Examples:
-            | category | group            | user_remove   |
-            | initial  | research-initial | uitestpromote |
-            | initial  | research-initial | uitestdemote  |
+            | category | group            | user_remove |
+            | initial  | research-initial | uipromote   |
+            | initial  | research-initial | uidemote    |
