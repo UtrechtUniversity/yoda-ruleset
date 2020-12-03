@@ -1,8 +1,10 @@
 Feature: Folder API
 
     Examples:
-        | folder                           |
-        | /tempZone/home/research-initial1 |
+        | folder                            |
+        | /tempZone/home/research-initial1  |
+        | /tempZone/home/research-core-0    |
+        | /tempZone/home/research-default-1 |
 
     Scenario: Folder lock
         Given user "researcher" is authenticated
