@@ -88,18 +88,14 @@
     }
   },
   "Creator": {
+    "ui:description": "The person(s) who created (a version of) the data package.",
     "items": {
-      "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package."
-      },
       "Affiliation": {
-        "items": {
-          "ui:help": "The organizational or institutional affiliation of the creator"
-        }
+        "ui:description": "The organizational or institutional affiliation of the creator"
       },
       "Person_Identifier": {
+        "ui:description": "Person identifier of creator of the data package",
         "items": {
-          "ui:help": "Person identifier of creator of the data package",
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
@@ -111,17 +107,13 @@
     }
   },
   "Contributor": {
+    "ui:description": "The person(s) who have contributed to this data package",
     "items": {
-      "Name": {
-        "ui:help": "The name(s) of the persons who have contributed to this data package"
-      },
       "Contributor_Type": {
         "ui:help": "The type of contributor. List of values is derived from DataCite"
       },
       "Affiliation": {
-        "items": {
-          "ui:help": "The organizational or institutional affiliation of the creator"
-        }
+        "ui:description": "The organizational or institutional affiliation of the contributor"
       },
       "Person_Identifier": {
         "items": {
