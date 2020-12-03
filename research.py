@@ -50,7 +50,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     # Name should not contain '\\' or '/'
     if '/' in new_folder_name or '\\' in new_folder_name:
         return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
+                "proc_status_info": "It is not allowed to use slashes in a folder name"}
 
     # Name should not be '.' or '..'
     if new_folder_name == '.' or new_folder_name == '..':
@@ -61,13 +61,13 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
         return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folders from the vault"}
+                "proc_status_info": "It is not possible to add folders in the vault"}
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to delete the selected folder"}
+                "proc_status_info": "You do not have sufficient permissions to add new folders"}
 
     # coll exists?
     if not collection.exists(ctx, coll):
@@ -75,10 +75,9 @@ def api_research_folder_add(ctx, coll, new_folder_name):
                 "proc_status_info": "The selected folder to add a new folder to does not exist"}
 
     # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll)
-    if lock_count:
+    if folder.is_locked(ctx, coll):
         return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore can not be deleted"}
+                "proc_status_info": "The indicated folder is locked so no new folders can be added to it"}
 
     # new collection exists?
     if collection.exists(ctx, coll_target):
@@ -132,7 +131,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     # Name should not contain '\\' or '/'
     if '/' in new_folder_name or '\\' in new_folder_name:
         return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
+                "proc_status_info": "It is not allowed to use slashes in the new folder name"}
 
     # Name should not be '.' or '..'
     if new_folder_name == '.' or new_folder_name == '..':
@@ -143,24 +142,24 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
         return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folders from the vault"}
+                "proc_status_info": "It is not possible to rename folders in the vault"}
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to delete the selected folder"}
+                "proc_status_info": "You do not have sufficient permissions to rename the selected folder"}
 
     # coll exists?
     if not collection.exists(ctx, coll):
         return {"proc_status": "nok",
-                "proc_status_info": "The selected folder to add a new folder to does not exist"}
+                "proc_status_info": "The selected folder does not exist"}
 
     # folder not locked?
     lock_count = meta_form.get_coll_lock_count(ctx, coll)
     if lock_count:
         return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore can not be deleted"}
+                "proc_status_info": "The indicated folder is locked and therefore can not be renamed"}
 
     # new collection exists?
     if collection.exists(ctx, coll_target):
