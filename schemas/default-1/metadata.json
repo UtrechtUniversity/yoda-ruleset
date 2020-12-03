@@ -738,11 +738,12 @@
       }
     },
     "Covered_Geolocation_Place": {
+      "title": "Location(s) covered",
       "type": "array",
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/stringNormalNullable",
-        "title": "Location(s) covered",
+        "title": "Location",
         "default": ""
       }
     },
@@ -778,6 +779,7 @@
       }
     },
     "Related_Datapackage": {
+      "title": "Related datapackage",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -787,7 +789,7 @@
         "properties": {
           "Relation_Type": {
             "$ref": "#/definitions/optionsRelationType",
-            "title": "Related datapackage"
+            "title": "Relation type"
           },
           "Title": {
             "$ref": "#/definitions/stringNormal",
@@ -848,12 +850,12 @@
       "title": "Name of collection"
     },
     "Funding_Reference": {
+      "title": "Funding reference",
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "title": "Funder",
         "yoda:structure": "subproperties",
         "properties": {
           "Funder_Name": {
