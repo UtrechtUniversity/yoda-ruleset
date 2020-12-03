@@ -2,7 +2,6 @@ Feature: Vault API
 
     Examples:
         | vault                          |
-        | /tempZone/home/vault-initial1  |
         | /tempZone/home/vault-core-0    |
         | /tempZone/home/vault-default-1 |
 
