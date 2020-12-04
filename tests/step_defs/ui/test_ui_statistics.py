@@ -47,4 +47,4 @@ def ui_statistics_csv_downloaded(browser, tmpdir):
             os.remove(child)
             assert True
         else:
-            assert False
+            raise AssertionError()
