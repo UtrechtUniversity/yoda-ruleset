@@ -155,12 +155,13 @@ def api_folder_reject(ctx, coll):
 
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_folder_secure(ctx, coll, target):
+
     """Rule interface for processing vault status transition request.
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
     :param target:          Vault target to copy research package to including license file etc
 
-    :return:
+    :return: returns result of securing action
     """
     return folder_secure(ctx, coll, target)
 
