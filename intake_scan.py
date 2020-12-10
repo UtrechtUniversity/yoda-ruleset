@@ -15,9 +15,10 @@ from folder import *
 def intake_scan_collection(ctx, root, scope, in_dataset):
     """Recursively scan a directory in a Youth Cohort intake.
 
-    :param[in] root      the directory to scan
-    :param[in] scope     a scoped kvlist buffer
-    :param[in] inDataset whether this collection is within a dataset collection
+    :param ctx:    Combined type of a callback and rei struct
+    :param root:   the directory to scan
+    :param scope:     a scoped kvlist buffer
+    :param in_dataset: whether this collection is within a dataset collection
     """
 
     log.write(ctx, "AT ENTRY")
@@ -119,13 +120,23 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
 
 
 def scan_filename_is_valid(ctx, name):
-    """ Check if a file or directory name contains invalid characters """
+    """ Check if a file or directory name contains invalid characters
+    :param ctx:    Combined type of a callback and rei struct
+    :param name:   Name of collection or object
+    :returns:      whether is valid or not
+    """
 
     return (re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
 
 
 def object_is_locked(ctx, path, is_collection):
-    """ Returns whether given object in path (collection or dataobject) is locked or frozen """
+    """ Returns whether given object in path (collection or dataobject) is locked or frozen
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param path:   path to object or collection
+    :param is_collection: Whether path contains a collection or data object
+    :returns: returns locked_state
+    """
 
     locked_state = {"locked": False,
                     "frozen": False}
@@ -161,7 +172,8 @@ def intake_tokens_identify_dataset(tokens):
     """ Check whether the tokens gathered so far are sufficient for indentifyng a dataset.
        returns whether complete or not.
 
-    :param[in]  tokens a key-value list of tokens
+    :param tokens: a key-value list of tokens
+    :returns: returns whether a dataset is identified
     """
     required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
 
@@ -176,12 +188,12 @@ def intake_tokens_identify_dataset(tokens):
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
     """ Extract one or more tokens from a file / directory name and add dataset
     information as metadata.
-
-    :param[in]     path
-    :param[in]     name
-    :param[in]     isCollection
-    :param[in]     scoped_buffer
-    returns extended scope buffer
+    :param ctx:    Combined type of a callback and rei struct
+    :param path:   Path to object or collection
+    :param name:   Name of object or collection
+    :param is_collection: Indicates if object or collection
+    :param scoped_buffer: Holds dataset buffer with prefilled keys
+    :returns: returns extended scope buffer
     """
     # chop of extension
     # base_name = '.'.join(name.split('.'))[:-1]
@@ -202,8 +214,9 @@ def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffe
 
 def intake_extract_tokens(ctx, string):
     """ Extract tokens from a string and return as dict.
-
-    :param[in] string
+    :param ctx:    Combined type of a callback and rei struct
+    :param string: token of which to be determined whether experiment type, version etc
+    :returns: returns found kv's
     """
     exp_types = ["pci",
                  "echo",
@@ -270,7 +283,11 @@ def intake_extract_tokens(ctx, string):
 
 
 def remove_dataset_metadata(ctx, path, is_collection):
-    """ Remove all intake metadata from dataset """
+    """ Remove all intake metadata from dataset
+    :param ctx:    Combined type of a callback and rei struct
+    :param path:   Path to collection or data object
+    :param is_collection: whether is a collection or data object
+    """
     intake_metadata = ["wave",
                        "experiment_type",
                        "pseudocode",
@@ -320,9 +337,9 @@ def remove_dataset_metadata(ctx, path, is_collection):
 
 def scan_mark_scanned(ctx, path, is_collection):
     """ Sets the username of the scanner and a timestamp as metadata on the scanned object.
-
-    :param[in] path
-    :param[in] is_collection
+    :param ctx:    Combined type of a callback and rei struct
+    :param path:
+    :param is_collection:
     """
     timestamp = int(time.time())
     user_and_timestamp = user.name(ctx) + ':' + str(timestamp)  # str(datetime.date.today())
@@ -335,11 +352,11 @@ def scan_mark_scanned(ctx, path, is_collection):
 
 def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
     """ Apply dataset metadata to an object in a dataset.
-
-    :param[in] path         path to the object
-    :param[in] scope        a scanner scope containing WEPV values
-    :param[in] is_collection whether the object is a collection
-    :param[in] is_top_level   if true, a dataset_toplevel field will be set on the object
+    :param ctx:    Combined type of a callback and rei struct
+    :param path:         path to the object
+    :param scope:        a scanner scope containing WEPV values
+    :param is_collection: whether the object is a collection
+    :param is_top_level:   if true, a dataset_toplevel field will be set on the object
     """
 
 #    if is_collection:
@@ -381,10 +398,10 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
     """ Apply any available id component metadata to the given object.
     To be called only for objects outside datasets. When inside a dataset
     (or at a dataset toplevel), use intake_apply_dataset_metadata() instead.
-
-    :param[in] scope        a scanner scope containing some WEPV values
-    :param[in] path         path to the object
-    :param[in] is_collection whether the object is a collection
+    :param ctx:    Combined type of a callback and rei struct
+    :param scope:  A scanner scope containing some WEPV values
+    :param path:   Path to the object
+    :param is_collection: whether the object is a collection
     """
     keys = ['wave', 'experiment_type', 'pseudocode', 'version']
     for key in keys:
@@ -398,9 +415,10 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
 
 def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
     """ Add a dataset warning to all given dataset toplevels.
-    :param[in] toplevels
-    :param[in] isCollectionToplevel
-    :param[in] text
+    :param ctx:    Combined type of a callback and rei struct
+    :param top_levels:
+    :param is_collection_toplevel:
+    :param text: warning text
     """
     for tl in top_levels:
         if is_collection_toplevel:
@@ -411,9 +429,10 @@ def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
 
 def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
     """ Add a dataset error to all given dataset toplevels.
-    :param[in] toplevels
-    :param[in] isCollectionToplevel
-    :param[in] text
+    :param ctx:       Combined type of a callback and rei struct
+    :param top_levels: A list of toplevel datasets
+    :param is_collection_toplevel: indication of whether it is a collection or object
+    :param text: error text 
     """
     for tl in top_levels:
         if is_collection_toplevel:
@@ -424,9 +443,9 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
 
 def dataset_get_ids(ctx, coll):
     """ Find dataset ids under coll
-
-    :param[in]  root
-    returns ids  a list of dataset ids
+    :param ctx:    Combined type of a callback and rei struct
+    :param coll: collection name for which to find dataset-ids
+    :returns: returns ids a list of dataset ids
     """
     data_ids = []
 
@@ -455,8 +474,8 @@ def dataset_get_ids(ctx, coll):
 
 def intake_check_datasets(ctx, root):
     """ Run checks on all datasets under root.
-
-    :param[in] root
+    :param ctx:  Combined type of a callback and rei struct
+    :param root: The collection to get datasets for
     """
     dataset_ids = dataset_get_ids(ctx, root)
     for dataset_id in dataset_ids:
@@ -467,9 +486,9 @@ def intake_check_dataset(ctx, root, dataset_id):
     """ Run checks on the dataset specified by the given dataset id.
 
     This function adds warnings and errors to objects within the dataset.
-
-    :param[in] root
-    :param[in] id
+    :param ctx:    Combined type of a callback and rei struct
+    :param root:   Collection name
+    :param dataset_id: dataset_id
     """
     tl_info = get_dataset_toplevel_objects(ctx, root, dataset_id)
     is_collection = tl_info['is_collection']
@@ -507,11 +526,11 @@ def intake_check_dataset(ctx, root, dataset_id):
 
 def intake_check_generic(ctx, root, dataset_id, toplevels, is_collection):
     """ Run checks that must be applied to all datasets regardless of WEPV values.
-
-    :param[in] root
-    :param[in] dataset_id           the dataset id to check
-    :param[in] toplevels    a list of toplevel objects for this dataset id
-    :param[in] isCollection
+    :param ctx:    Combined type of a callback and rei struct
+    :param root:   Root of the dataset
+    :param dataset_id:   the dataset id to check
+    :param toplevels:    a list of toplevel objects for this dataset id
+    :param is_collection: whether dataset is represented as a collection
     """
     # Check validity of wav
     waves = ["20w", "30w", "0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
@@ -522,10 +541,11 @@ def intake_check_generic(ctx, root, dataset_id, toplevels, is_collection):
 
 def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
     """ Run checks specific to the Echo experiment type.
-    :param[in] root
-    :param[in] id           the dataset id to check
-    :param[in] toplevels    a list of toplevel objects for this dataset id
-    :param[in] is_collection
+    :param ctx:    Combined type of a callback and rei struct
+    :param root:   Root of the dataset
+    :param dataset_id:   the dataset id to check
+    :param toplevels:    a list of toplevel objects for this dataset id
+    :param is_collection: whether is a collection
     """
     objects = get_rel_paths_objects(ctx, root, dataset_id)
 
@@ -545,9 +565,10 @@ def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
 
 def get_rel_paths_objects(ctx, root, dataset_id):
     """Get a list of relative paths to all data objects in a dataset.
-    :param[in]  root
-    :param[in]  dataset_id
-    returns a list of objects of relative object paths (e.g. file1.dat, some-subdir/file2.dat...)
+    :param ctx:    Combined type of a callback and rei struct
+    :param root:   Root path of the dataset
+    :param dataset_id: dataset id
+    :returns: returns a list of objects of relative object paths (e.g. file1.dat, some-subdir/file2.dat...)
     """
     tl_info = get_dataset_toplevel_objects(ctx, root, dataset_id)
     is_collection = tl_info['is_collection']
@@ -601,15 +622,15 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
        For other experiment types it may be desirable to match patterns with
        basenames instead of paths. In this case the currently commented-out
        code in this function can be used.
-
-    :param[in] datasetParent        either the dataset collection or the first parent of a data-object dataset toplevel
-    :param[in] toplevels            a list of toplevel objects
-    :param[in] isCollectionToplevel
-    :param[in] objects              a list of dataset object paths relative to the datasetParent parameter
-    :param[in] patternHuman         a human-readable pattern (e.g.: 'I0000000.raw')
-    :param[in] patternRegex         a regular expression that matches filenames (e.g.: 'I[0-9]{7}\.raw')
-    :param[in] min                  the minimum amount of occurrences. set to -1 to disable minimum check.
-    :param[in] max                  the maximum amount of occurrences. set to -1 to disable maximum check.
+    :param ctx:    Combined type of a callback and rei struct
+    :param dataset_parent:        either the dataset collection or the first parent of a data-object dataset toplevel
+    :param toplevels:            a list of toplevel objects
+    :param is_collection_toplevel:
+    :param objects:              a list of dataset object paths relative to the datasetParent parameter
+    :param pattern_human:         a human-readable pattern (e.g.: 'I0000000.raw')
+    :param pattern_regex:         a regular expression that matches filenames (e.g.: 'I[0-9]{7}\.raw')
+    :param min:                  the minimum amount of occurrences. set to -1 to disable minimum check.
+    :param max:                  the maximum amount of occurrences. set to -1 to disable maximum check.
     """
     count = 0
     for path in objects:
@@ -631,7 +652,12 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
 
 
 def get_aggregated_object_count(ctx, dataset_id, tl_collection):
-    """ return total amounts of objects """
+    """ return total amounts of objects
+    :param ctx:    Combined type of a callback and rei struct
+    :param dataset_id:    Dataset id
+    :param tl_collection: collection name of top level
+    :returns: returns count
+    """
     return len(list(genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'dataset_id' "
@@ -648,7 +674,13 @@ def get_aggregated_object_count(ctx, dataset_id, tl_collection):
 
 
 def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
-    """ return total amounts of object errors """
+    """ return total amounts of object errors
+
+    :param ctx:    Combined type of a callback and rei struct
+    :param dataset_id:    Dataset id
+    :param tl_collection: collection name of top level
+    :returns: returns count
+    """
     return len(list(genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'error' ",
@@ -663,7 +695,12 @@ def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
 
 
 def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
-    """ return total amounts of object warnings """
+    """ return total amounts of object warnings
+    :param ctx:    Combined type of a callback and rei struct
+    :param dataset_id:    Dataset id
+    :param tl_collection: collection name of top level
+    :returns: returns count
+    """
     return len(list(genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'warning' ",
@@ -678,12 +715,18 @@ def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
 
 
 def dataset_make_id(scope):
-    """ Construct a dateset based on WEPV and directory """
+    """ Construct a dateset based on WEPV and directory
+    :param scope:  create a dataset id 
+    :returns: dataset id
+    """
     return scope['wave'] + '\t' + scope['experiment_type'] + '\t' + scope['pseudocode'] + '\t' + scope['version'] + '\t' + scope['directory']
 
 
 def dataset_parse_id(dataset_id):
-    """ Parse a dataset into its consructive data """
+    """ Parse a dataset into its consructive data
+    :param dataset_id:    Dataset id
+    :returns: returns dataset as a dict
+    """
     dataset_parts = dataset_id.split('\t')
     dataset = {}
     dataset['wave'] = dataset_parts[0]
