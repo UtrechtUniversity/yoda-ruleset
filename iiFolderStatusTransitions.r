@@ -204,3 +204,135 @@ iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *er
 		}
 	}
 }
+
+# \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
+#			  and should not be called from the portal. Thus no statusInfo is returned, but
+#			  log messages are sent to stdout instead
+#
+# \param[in] folder
+#
+iiFolderSecure(*folder) {
+	uuGetUserType(uuClientFullName, *userType);
+	if (*userType != "rodsadmin") {
+		writeLine("stdout", "iiFolderSecure: Should only be called by a rodsadmin");
+		fail;
+	}
+
+	# Check modify access on research folder.
+	msiCheckAccess(*folder, "modify object", *modifyAccess);
+
+	# Set cronjob status.
+	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PROCESSING, *kvp);
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:write", uuClientFullName, *folder);
+	}
+	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
+	*found = false;
+	foreach (*row in SELECT META_COLL_ATTR_VALUE
+			 WHERE COLL_NAME = '*folder'
+			 AND META_COLL_ATTR_NAME = IICOPYPARAMSNAME) {
+		# retry with previous parameters
+		*target = *row.META_COLL_ATTR_VALUE;
+		*found = true;
+	}
+	if (*found) {
+		# Remove parameters from metadata
+		msiString2KeyValPair("", *kvp);
+		*key = IICOPYPARAMSNAME;
+		*kvp."*key" = *target;
+		msiRemoveKeyValuePairsFromObj(*kvp, *folder, "-C");
+	}
+	if (*modifyAccess != 1) {
+		msiSetACL("default", "admin:null", uuClientFullName, *folder);
+	}
+
+	if (!*found) {
+                # this file
+		*target = iiDetermineVaultTarget(*folder);
+	}
+
+	# Copy to vault
+	iiCopyFolderToVault(*folder, *target);
+	
+        # From HERE relay to python
+        *return = "";
+        rule_folder_secure(*folder, *target, *return);
+}
+
+
+# \brief iiDetermineVaultTarget
+#
+# \param[in] folder
+# \returnvalue target path
+#
+iiDetermineVaultTarget(*folder) {
+	*err = errorcode(iiCollectionGroupName(*folder, *groupName));
+	if (*err < 0) {
+		writeLine("stdout", "iiDetermineVaultTarget: Cannot determine which research group *folder belongs to");
+		fail;
+	} else {
+		writeLine("stdout", "iiDetermineVaultTarget: *folder belongs to *groupName");
+	}
+	uuChop(*groupName, *_, *baseName, "-", true);
+	uuChopPath(*folder, *parent, *datapackageName);
+
+	# Make room for the timestamp and sequence number
+	if (strlen(*datapackageName) > 235) {
+		*datapackageName = substr(*datapackageName, 0, 235);
+	}
+
+	msiGetIcatTime(*timestamp, "unix");
+	*timestamp = triml(*timestamp, "0");
+        *vaultGroupName = IIVAULTPREFIX ++ *baseName;
+
+	*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp]";
+
+	*i = 0;
+	while (uuCollectionExists(*target)) {
+		writeLine("stdout", "iiDetermineVaultTarget: *target already exists");
+		*i = *i + 1;
+		*target = "/$rodsZoneClient/home/*vaultGroupName/*datapackageName[*timestamp][*i]";
+	}
+	writeLine("stdout", "iiDetermineVaultTarget: Target is *target");
+	*target;
+}
+
+
+# \brief Return the name of the group a collection belongs to.
+#
+# \param[in]  path
+# \param[out] groupName
+#
+iiCollectionGroupName(*path, *groupName) {
+	*isfound = false;
+	*groupName = "";
+	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+		*id = *accessid.COLL_ACCESS_USER_ID;
+		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
+				*groupName = *group.USER_GROUP_NAME;
+		}
+		if (*groupName like regex "(research|intake)-.*") {
+			*isfound = true;
+			break;
+		}
+	}
+
+	if (!*isfound) {
+		foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {
+			*id = *accessid.COLL_ACCESS_USER_ID;
+			foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
+					*groupName = *group.USER_GROUP_NAME;
+			}
+			if (*groupName like regex "(datamanager|vault)-.*") {
+				*isfound = true;
+				break;
+			}
+		}
+	}
+	if (!*isfound){
+		# No results found. Not a group folder
+		writeLine("serverLog", "*path does not belong to a research or intake group or is not available to current user");
+	}
+}
+
+
