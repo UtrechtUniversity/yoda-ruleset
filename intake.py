@@ -4,14 +4,12 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import os
 import time
 import irods_types
-import re
 
 from util import *
-from util.query import Query
 from folder import *
+
 
 __all__ = ['api_intake_list_studies',
            'api_intake_list_dm_studies',
@@ -75,7 +73,7 @@ def api_intake_list_dm_studies(ctx):
             )
             for row2 in iter2:
                 datamanager_group = row2[0]
-                if user.is_member_of(ctx, datamanager_group): 
+                if user.is_member_of(ctx, datamanager_group):
                     datamanager_groups.append(study)
 
     return datamanager_groups
@@ -139,18 +137,18 @@ def api_intake_list_unrecognized_files(ctx, coll):
                      "experiment_type": '',
                      "pseudocode": '',
                      "wave": '',
-                     "version": ''
-        }
+                     "version": ''}
+
         # per data object get relevent metadata (experiment type, version, wave, pseudocode) if present
         iter2 = genquery.row_iterator(
             "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-            "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] +"' AND META_DATA_ATTR_NAME in ('experiment_type', 'pseudocode', 'wave', 'version')",
+            "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "' AND META_DATA_ATTR_NAME in ('experiment_type', 'pseudocode', 'wave', 'version')",
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
             file_data[row2[0]] = row2[1]
 
-        files.append(file_data) 
+        files.append(file_data)
 
     return files
 
@@ -173,14 +171,13 @@ def api_intake_list_datasets(ctx, coll):
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE, COLL_NAME",
-        "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ", 
+        "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ",
         genquery.AS_LIST, ctx
     )
     for row in iter:
         log.write(ctx, 'DATASET COLL: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
-
 
     # 2) Query for datasets distinguished dataobjects
 #    "COL_META_DATA_ATTR_VALUE" => NULL,
@@ -288,7 +285,7 @@ def get_dataset_details(ctx, dataset_id, path):
             if row[1] == 'object_errors':
                 dataset['objectErrors'] += int(row[2])
             if row[1] == 'object_warnings':
-               dataset['objectWarnings'] += int(row[2])
+                dataset['objectWarnings'] += int(row[2])
     else:
         """ dataset is based on a dataobject
         Step through all data objects as found in tlObjects """
@@ -306,7 +303,7 @@ def get_dataset_details(ctx, dataset_id, path):
             if objects == 1:
                 iter = genquery.row_iterator(
                     "DATA_OWNER_NAME, DATA_CREATE_TIME",
-                    "COLL_NAME = '" +  parent + "' and DATA_NAME = '" + base_name + "' ",
+                    "COLL_NAME = '" + parent + "' and DATA_NAME = '" + base_name + "' ",
                     genquery.AS_LIST, ctx
                 )
                 for row in iter:
@@ -315,7 +312,7 @@ def get_dataset_details(ctx, dataset_id, path):
 
             iter = genquery.row_iterator(
                 "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-                "COLL_NAME = '" +  parent + "' and DATA_NAME = '" + base_name + "' ",
+                "COLL_NAME = '" + parent + "' and DATA_NAME = '" + base_name + "' ",
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -343,7 +340,7 @@ def get_dataset_details(ctx, dataset_id, path):
 
 
 def get_dataset_toplevel_objects(ctx, root, dataset_id):
-    """ returns dict with toplevel object paths and whether is collection based dataset 
+    """ returns dict with toplevel object paths and whether is collection based dataset
     if is a collection - only one object is returned (collection path)
     if not a collection- all objects are returned with full object path
 
@@ -389,7 +386,7 @@ def api_intake_scan_for_datasets(ctx, coll):
         return {}
 
     # folder.set_status(coll, 'lock')
-   
+
     scope = {"wave": "",
              "experiment_type": "",
              "pseudocode": ""}
@@ -400,7 +397,7 @@ def api_intake_scan_for_datasets(ctx, coll):
 
     log.write(ctx, "AFTER SCAN")
     log.write(ctx, "BEFORE CHECK")
-    
+
     intake_check_datasets(ctx, coll)
 
     log.write(ctx, "AFTER CHECK")
@@ -472,9 +469,9 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
 
     tl_info = get_dataset_toplevel_objects(ctx, coll, dataset_id)
     is_collection = tl_info['is_collection']
-    tl_objects = tl_info['objects'] 
+    tl_objects = tl_info['objects']
 
-    timestamp = int(time.time()) # int(datetime.timestamp(datetime.now()))
+    timestamp = int(time.time())  # int(datetime.timestamp(datetime.now()))
 
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
 
@@ -524,12 +521,12 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
                 genquery.AS_LIST, ctx
             )
             for row in iter:
-               if row[1] == 'dataset_error':
-                   dataset_errors.append(row[0])
-               elif row[1] == 'dataset_warning':
-                   dataset_warnings.append(row[0])
-               else:
-                   comments.append(row[0])
+                if row[1] == 'dataset_error':
+                    dataset_errors.append(row[0])
+                elif row[1] == 'dataset_warning':
+                    dataset_warnings.append(row[0])
+                else:
+                    comments.append(row[0])
 
             # Scanned by/when
             iter = genquery.row_iterator(
@@ -553,28 +550,29 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
                 genquery.AS_LIST, ctx
             )
             for row in iter:
-               if row[1] == 'dataset_error':
-                   dataset_errors.append(row[0])
-               elif row[1] == 'dataset_warning':
-                   dataset_warnings.append(row[0])
-               elif row[1] == 'scanned':
-                   scanned = row[0]
-               else:
-                   comments.append(row[0])
-            
+                if row[1] == 'dataset_error':
+                    dataset_errors.append(row[0])
+                elif row[1] == 'dataset_warning':
+                    dataset_warnings.append(row[0])
+                elif row[1] == 'scanned':
+                    scanned = row[0]
+                else:
+                    comments.append(row[0])
+
             # do it only once - all data is gathered in the first run
             break
 
     level = '0'
-    files = coll_objects(ctx, level, coll) 
+    files = coll_objects(ctx, level, coll)
 
     return {"files": files,
             # "is_collection": is_collection,
             # "tlobj": tl_objects,
             "scanned": scanned,
-            "comments": comments, 
-            "dataset_warnings": dataset_warnings, 
+            "comments": comments,
+            "dataset_warnings": dataset_warnings,
             "dataset_errors": dataset_errors}
+
 
 # recursive function to pass entire folder/file structure in such that frontend can do something useful with it
 # including errors/warnings on object level
@@ -605,9 +603,9 @@ def coll_objects(ctx, level, coll):
         )
         for row2 in iter2:
             if row[1] == 'error':
-                 errors.append(row2[0])
+                errors.append(row2[0])
             else:
-                 warnings.append(row2[0])
+                warnings.append(row2[0])
         node['errors'] = errors
         node['warnings'] = warnings
 
@@ -638,14 +636,14 @@ def coll_objects(ctx, level, coll):
         errors = []
         for row2 in iter2:
             if row2[1] == 'error':
-                 errors.append(row2[0])
+                errors.append(row2[0])
             else:
-                 warnings.append(row2[0])
+                warnings.append(row2[0])
         node['errors'] = errors
         node['warnings'] = warnings
 
         files[level + "." + str(counter)] = node
-        
+
         counter += 1
 
     return files
@@ -653,7 +651,7 @@ def coll_objects(ctx, level, coll):
 
 # Reporting / export functions
 @api.make()
-def  api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
+def api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
     """
     Get the count of datasets wave/experimenttype
     In the vault a dataset is always located in a folder.
@@ -671,7 +669,7 @@ def  api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
 
 
 @api.make()
-def  api_intake_report_vault_aggregated_info(ctx, study_id):
+def api_intake_report_vault_aggregated_info(ctx, study_id):
     """
     Collects the following information for Raw, Processed datasets. Including a totalisation of this all
     (Raw/processed is kept in VERSION)
@@ -710,4 +708,3 @@ def api_intake_report_export_study_data(ctx, study_id):
         return {}
 
     return intake_report_export_study_data(ctx, study_id)
-

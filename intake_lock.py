@@ -1,6 +1,7 @@
 import time
 
 import genquery
+
 from util import *
 
 
@@ -91,7 +92,7 @@ def intake_dataset_lock(ctx, collection, dataset_id):
     if is_collection:
         intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_lock", timestamp, False)
     else:
-        # Dataset based on 
+        # Dataset based on
         for tl_object in tl_objects:
             avu.set_on_data(ctx, tl_object, "to_vault_lock", timestamp)
 

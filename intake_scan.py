@@ -4,13 +4,11 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import os
 import time
 import irods_types
 import re
 
 from util import *
-from util.query import Query
 from folder import *
 
 
@@ -71,16 +69,16 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
     for row in iter:
         log.write(ctx, 'found colls: ' + row[0])
 
-    counter = 0 
+    counter = 0
     for row in iter:
         path = row[0]
-        counter = counter +1
+        counter = counter + 1
         dirname = pathutil.basename(path)
         log.write(ctx, str(counter) + "FOUND COLLECTION: " + path)
         log.write(ctx, root)
         log.write(ctx, scope)
 
-        if dirname is not '/':
+        if dirname != '/':
             # get locked /frozen status
             locked_state = object_is_locked(ctx, path, True)
 
@@ -93,7 +91,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                 subscope = scope.copy()
                 child_in_dataset = in_dataset
 
-                if in_dataset: # initially is False
+                if in_dataset:  # initially is False
                     apply_dataset_metadata(ctx, path, subscope, True, False)
                     scan_mark_scanned(ctx, path, True)
                 else:
@@ -165,7 +163,7 @@ def intake_tokens_identify_dataset(tokens):
 
     :param[in]  tokens a key-value list of tokens
     """
-    required = ['wave', 'experiment_type', 'pseudocode'] # version is optional
+    required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
 
     complete = False
     for req_token in required:
@@ -190,10 +188,9 @@ def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffe
     if is_collection:
         base_name = name
     else:
-        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald 
+        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald
         # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
         # weggehaald met belangrijke beschrijvende info over de dataset.
-        #
         base_name = name # name.rsplit('.', 1)[0]
     parts = base_name.split('_')
     for part in parts:
@@ -327,15 +324,8 @@ def scan_mark_scanned(ctx, path, is_collection):
     :param[in] path
     :param[in] is_collection
     """
-    #import datetime
-    # Get datetime of tomorrow.
-    #tomorrow = datetime.date.today() + datetime.timedelta(1)
-
-    # Convert tomorrow to unix timestamp.
-    #return int(tomorrow.strftime("%s"))
-
     timestamp = int(time.time())
-    user_and_timestamp = user.name(ctx) + ':' + str(timestamp) #str(datetime.date.today())
+    user_and_timestamp = user.name(ctx) + ':' + str(timestamp)  # str(datetime.date.today())
 
     if is_collection:
         avu.set_on_coll(ctx, path, 'scanned', user_and_timestamp)
@@ -357,7 +347,7 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
 #    else:
 #        avu.set_on_data(ctx, )
 
-    if not "version" in scope:
+    if "version" not in scope:
         version = "Raw"
     else:
         version = scope["version"]
@@ -366,9 +356,7 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
                 "experiment_type":  scope["experiment_type"],
                 "pseudocode": scope["pseudocode"],
                 "version": version,
-                "directory": scope["dataset_directory"],
-
-    }
+                "directory": scope["dataset_directory"]}
 
     subscope["dataset_id"] = dataset_make_id(subscope)
 
@@ -459,7 +447,7 @@ def dataset_get_ids(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        if row[0]: # CHECK FOR DUPLICATES???
+        if row[0]:  # CHECK FOR DUPLICATES???
             data_ids.append(row[0])
 
     return data_ids
@@ -526,7 +514,7 @@ def intake_check_generic(ctx, root, dataset_id, toplevels, is_collection):
     :param[in] isCollection
     """
     # Check validity of wav
-    waves = ["20w", "30w","0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
+    waves = ["20w", "30w", "0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
     components = dataset_parse_id(dataset_id)
     if components['wave'] not in waves:
         dataset_add_error(ctx, toplevels, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
@@ -632,11 +620,11 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
 
     # count = count / 2
 
-    if min!=-1 and count < min:
+    if mini != -1 and count < min:
         text = "Expected at least " + str(min) + " files of type '" + pattern_human + "', found " + str(count)
         log.write(ctx, '##' + text)
         dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
-    if max!=-1 and count > max:
+    if max != -1 and count > max:
         text = "Expected at most " + str(max) + " files of type '" + pattern_human + "', found " + str(count)
         log.write(ctx, '##' + text)
         dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
@@ -699,11 +687,10 @@ def dataset_parse_id(dataset_id):
     dataset_parts = dataset_id.split('\t')
     dataset = {}
     dataset['wave'] = dataset_parts[0]
-    dataset['experiment_type'] = dataset_parts[1]  ## IS DIT NOG ERGENS GOED VOOR
+    dataset['experiment_type'] = dataset_parts[1]  # Is DIT NOG ERGENS GOED VOOR
     dataset['expType'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    dataset['directory'] = dataset_parts[4] # HIER WORDT NIKS MEE GEDAAN - toch ff zo laten
+    dataset['directory'] = dataset_parts[4]  # HIER WORDT NIKS MEE GEDAAN - toch ff zo laten
 
     return dataset
-
