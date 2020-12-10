@@ -660,7 +660,6 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     if item_is_collection:
         # CREATE COLLECTION
         try:
-            log.write(ctx, 'coll_create ' + dest_path)
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
         except msi.Error as e:
             return 1

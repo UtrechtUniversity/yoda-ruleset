@@ -212,7 +212,6 @@ iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *er
 # \param[in] folder
 #
 iiFolderSecure(*folder) {
-        writeLine("serverLog", "iiFolderSecure: STARTING *folder");
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") {
 		writeLine("stdout", "iiFolderSecure: Should only be called by a rodsadmin");
@@ -258,10 +257,6 @@ iiFolderSecure(*folder) {
         # From HERE relay to python
         *return = "";
         rule_folder_secure(*folder, *target, *return);
-        writeLine("serverLog", "Out of the function");
-        writeLine("serverLog", *return);
-
-        writeLine("serverLog", "WE DO NOT GET HERE");
 }
 
 
