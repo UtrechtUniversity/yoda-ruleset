@@ -5,10 +5,9 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
-import irods_types
 
-from util import *
 from folder import *
+from util import *
 
 
 __all__ = ['api_intake_list_studies',
@@ -86,7 +85,7 @@ def api_intake_list_dm_studies(ctx):
 
 @api.make()
 def api_intake_count_total_files(ctx, coll):
-    """ get the total count of all files in coll 
+    """ get the total count of all files in coll
     :param ctx: Combined type of a callback and rei struct
     :param coll: collection from which to list all datasets
     :returns: total file count
@@ -479,7 +478,7 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
 def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
     """ Add a comment to a dataset
     :param ctx: Combined type of a callback and rei struct
-    :param coll: Collection to add to 
+    :param coll: Collection to add to
     :param dataset_id: id of the dataset to add a comment to
     :param comment: comment as added by user
     :returns: indication correct
@@ -610,7 +609,7 @@ def coll_objects(ctx, level, coll):
     """
     :param ctx:   Combined type of a callback and rei struct
     :param level: level in hierarchy (tree)
-    :param coll:  collection to collect 
+    :param coll:  collection to collect
     :returns:     tree of collections and files
     """
     # First get the sub collections
@@ -742,7 +741,7 @@ def api_intake_report_export_study_data(ctx, study_id):
 
     :param ctx:    Combined type of a callback and rei struct
     :param study_id: Study id to get a report from
-    :returns:      report 
+    :returns:      report
     """
     # check permissions - datamanager only
     datamanager_group = "grp-datamanager-" + study_id

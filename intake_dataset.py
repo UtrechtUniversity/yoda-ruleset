@@ -2,10 +2,6 @@ import genquery
 
 # from rules_uu.util import *
 
-import time
-import re
-import irods_types
-
 from util import *
 from query import Query
 
@@ -24,7 +20,7 @@ def intake_report_export_study_data(ctx, study_id):
 
     :param ctx:      Combined type of a callback and rei struct
     :param study_id: Unique identifier op study
-
+    :returns: returns datasets
     """
     zone = user.zone(ctx)
     log.write(ctx, zone)

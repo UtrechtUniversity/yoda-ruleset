@@ -11,6 +11,7 @@ def chop_checksum(checksum):
     Checksum format is ({type}:){checksum}, if type is missing then it is "md5".
 
     :param checksum: iRODS checksum string
+    :returns: type checksum
     """
     checksum_split = checksum.split(":")
 
@@ -24,6 +25,7 @@ def chop_checksum(checksum):
 def intake_generate_dataset_checksums(ctx, dataset_path, checksum_file):
     """"Generate data object with all checksums of a dataset.
 
+    :param ctx:    Combined type of a callback and rei struct
     :param dataset_path:  Root collection of dataset to be indexed
     :param checksum_file: Data object to write checksums to
     """

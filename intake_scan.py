@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
-import irods_types
 import re
 
 from util import *
@@ -203,7 +202,7 @@ def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffe
         # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald
         # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
         # weggehaald met belangrijke beschrijvende info over de dataset.
-        base_name = name # name.rsplit('.', 1)[0]
+        base_name = name  # name.rsplit('.', 1)[0]
     parts = base_name.split('_')
     for part in parts:
         subparts = part.split('-')
@@ -337,8 +336,8 @@ def remove_dataset_metadata(ctx, path, is_collection):
 
 def scan_mark_scanned(ctx, path, is_collection):
     """ Sets the username of the scanner and a timestamp as metadata on the scanned object.
-    :param ctx:    Combined type of a callback and rei struct
-    :param path:
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path on which to add scan indication to
     :param is_collection:
     """
     timestamp = int(time.time())
@@ -416,8 +415,8 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
 def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
     """ Add a dataset warning to all given dataset toplevels.
     :param ctx:    Combined type of a callback and rei struct
-    :param top_levels:
-    :param is_collection_toplevel:
+    :param top_levels: top level objects
+    :param is_collection_toplevel: indicator whether is a collection or not
     :param text: warning text
     """
     for tl in top_levels:
@@ -432,7 +431,7 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
     :param ctx:       Combined type of a callback and rei struct
     :param top_levels: A list of toplevel datasets
     :param is_collection_toplevel: indication of whether it is a collection or object
-    :param text: error text 
+    :param text: error text
     """
     for tl in top_levels:
         if is_collection_toplevel:
@@ -625,7 +624,7 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
     :param ctx:    Combined type of a callback and rei struct
     :param dataset_parent:        either the dataset collection or the first parent of a data-object dataset toplevel
     :param toplevels:            a list of toplevel objects
-    :param is_collection_toplevel:
+    :param is_collection_toplevel: indication of toplevel or not
     :param objects:              a list of dataset object paths relative to the datasetParent parameter
     :param pattern_human:         a human-readable pattern (e.g.: 'I0000000.raw')
     :param pattern_regex:         a regular expression that matches filenames (e.g.: 'I[0-9]{7}\.raw')
@@ -716,7 +715,7 @@ def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
 
 def dataset_make_id(scope):
     """ Construct a dateset based on WEPV and directory
-    :param scope:  create a dataset id 
+    :param scope:  create a dataset id
     :returns: dataset id
     """
     return scope['wave'] + '\t' + scope['experiment_type'] + '\t' + scope['pseudocode'] + '\t' + scope['version'] + '\t' + scope['directory']
