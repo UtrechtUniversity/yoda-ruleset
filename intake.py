@@ -9,9 +9,9 @@ import time
 import irods_types
 import re
 
-from rules_uu.util import *
-from rules_uu.util.query import Query
-from rules_uu.folder import *
+from util import *
+from util.query import Query
+from folder import *
 
 __all__ = ['api_intake_list_studies',
            'api_intake_list_dm_studies',

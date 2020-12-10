@@ -1,8 +1,7 @@
-
 import time
 
 import genquery
-from rules_uu.util import *
+from util import *
 
 
 def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, remove):

@@ -9,9 +9,9 @@ import time
 import irods_types
 import re
 
-from rules_uu.util import *
-from rules_uu.util.query import Query
-from rules_uu.folder import *
+from util import *
+from util.query import Query
+from folder import *
 
 
 def intake_scan_collection(ctx, root, scope, in_dataset):

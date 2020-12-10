@@ -2,14 +2,12 @@ import genquery
 
 # from rules_uu.util import *
 
-import os
 import time
-import irods_types
 import re
+import irods_types
 
-from rules_uu.util import *
-from rules_uu.util.query import Query
-# from rules_uu.folder import *
+from util import *
+from query import Query
 
 
 def intake_report_export_study_data(ctx, study_id):
@@ -56,8 +54,8 @@ def intake_report_export_study_data(ctx, study_id):
                                            "COLL_NAME like '{}%'".format(set_path),
                                            genquery.AS_LIST, ctx)
             for row in result:
-                real_datasets[set_path]['totalFiles'] = int(row[0])/2
-                real_datasets[set_path]['totalFileSize'] = int(row[1])/2
+                real_datasets[set_path]['totalFiles'] = int(row[0]) / 2
+                real_datasets[set_path]['totalFileSize'] = int(row[1]) / 2
 
     return real_datasets
 
@@ -91,9 +89,9 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
         attribute_name = row[2]
         attribute_value = row[3]
 
-        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type','pseudocode']:
+        if attribute_name in ['dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode']:
             if attribute_name in ['version', 'experiment_type']:
-                val =  attribute_value.lower()
+                val = attribute_value.lower()
                 # datasets[dataset][attribute_name] = attribute_value.lower()
             else:
                 val = attribute_value
@@ -181,7 +179,7 @@ def vault_aggregated_info(ctx, study_id):
             else:
                 version = 'processed'
 
-            #if version in ['raw', 'processed']:
+            # if version in ['raw', 'processed']:
             dataset_count[version] += 1
 
             date_created = int(datasets[dataset]['dataset_date_created'])
@@ -254,4 +252,3 @@ def vault_aggregated_info(ctx, study_id):
             'distinctPseudoCodes': len(dataset_pseudocodes['processed']),
         },
     }
-
