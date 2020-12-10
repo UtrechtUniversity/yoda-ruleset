@@ -986,4 +986,3 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
-
