@@ -25,6 +25,7 @@ __all__ = ['rule_collection_group_name',
            'api_folder_reject',
            'rule_folder_secure']
 
+
 def set_status(ctx, coll, status):
     """Change a folder's status.
 
@@ -155,7 +156,6 @@ def api_folder_reject(ctx, coll):
 @rule.make(inputs=[0, 1], outputs=[2])
 def rule_folder_secure(ctx, coll, target):
     """Rule interface for processing vault status transition request.
-
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Collection to be copied to vault
     :param target:          Vault target to copy research package to including license file etc
@@ -173,6 +173,7 @@ def folder_secure(ctx, coll, target):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to secure
+    :param target: Target folder in vault
 
     :returns: '0' when nu error occurred
     """
