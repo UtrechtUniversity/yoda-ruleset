@@ -1,9 +1,6 @@
 import genquery
 
-# from rules_uu.util import *
-
 from util import *
-from query import Query
 
 
 def intake_report_export_study_data(ctx, study_id):
