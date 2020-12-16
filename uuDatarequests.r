@@ -33,7 +33,7 @@ requestDatarequestMetadataChange(*requestColl, *attributeName,
         # Set the path of the user group to which the data request belongs.
         # Hardcoded for now as all data requests are stored in the same user
         # group
-        *actorGroupPath = '/tempZone/home/datarequests-research';
+        *actorGroupPath = "/$rodsZoneClient/home/datarequests-research";
 
         # Construct key-value pair (the key specifies the collection on which
         # the metadata change should be applied; the value is a JSON array
