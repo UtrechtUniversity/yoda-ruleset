@@ -7,8 +7,9 @@ Feature: Search API
         And result "<result>" is found
 
         Examples:
-            | file               | result                                |
-            | yoda-metadata.json | /research-initial1/yoda-metadata.json |
+            | file               | result                                 |
+            | yoda-metadata.json | /research-core-0/yoda-metadata.json    |
+            | yoda-metadata.json | /research-default-1/yoda-metadata.json |
 
     Scenario: Search folder
         Given user "researcher" is authenticated
@@ -18,6 +19,7 @@ Feature: Search API
 
         Examples:
             | folder            | result             |
+            | research-initial  | /research-initial  |
             | research-initial1 | /research-initial1 |
 
     Scenario: Search metadata
@@ -28,6 +30,7 @@ Feature: Search API
 
         Examples:
             | metadata | result             |
+            | yoda     | /research-initial  |
             | yoda     | /research-initial1 |
 
     Scenario: Search folder status
@@ -37,5 +40,6 @@ Feature: Search API
         And result "<result>" is found
 
         Examples:
-            | status           | result             |
-            | research:SECURED | /research-initial1 |
+            | status           | result              |
+            | research:SECURED | /research-core-0    |
+            | research:SECURED | /research-default-1 |
