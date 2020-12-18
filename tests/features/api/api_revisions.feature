@@ -30,5 +30,5 @@ Feature: Revisions API
 	    And revision is restored successfully
 
        Examples:
-        | user       | path                                                                  | coll_target                    | new_filename            |
-        | researcher | /tempZone/home/research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff | /tempZone/home/research-browse | SIPI_Jelly_Beans_2.tiff |
+        | user       | path                                                                  | coll_target                       | new_filename            |
+        | researcher | /tempZone/home/research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff | /tempZone/home/research-revisions | SIPI_Jelly_Beans_2.tiff |

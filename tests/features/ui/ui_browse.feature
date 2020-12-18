@@ -7,9 +7,11 @@ Feature: Browse UI
         #Then content of sub-folder "<folder>" is shown
 
         Examples:
-          | user       | folder            |
-          | researcher | research-initial  |
-          | researcher | research-initial1 |
+          | user        | folder             |
+          | researcher  | research-core-0    |
+          | researcher  | research-default-1 |
+          | datamanager | research-core-0    |
+          | datamanager | research-default-1 |
 
     Scenario: Browsing to a folder in the vault space
           Given user "<user>" is logged in
@@ -18,6 +20,8 @@ Feature: Browse UI
           #Then content of sub-folder "<data_package>" is shown
 
           Examples:
-            | user       | data_package   |
-            | researcher | vault-initial  |
-            | researcher | vault-initial1 |
+            | user        | data_package    |
+            | researcher  | vault-core-0    |
+            | researcher  | vault-default-1 |
+            | datamanager | vault-core-0    |
+            | datamanager | vault-default-1 |
