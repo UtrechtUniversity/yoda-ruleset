@@ -152,7 +152,7 @@ def study_returned(api_response, study):
 
 
 @then('debug')
-def study_returned(api_response):
+def debug(api_response):
     _, body = api_response
 
     assert 0, body

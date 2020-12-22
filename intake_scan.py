@@ -4,11 +4,11 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import time
 import re
+import time
 
-from util import *
 from folder import *
+from util import *
 
 
 def intake_scan_collection(ctx, root, scope, in_dataset):
@@ -319,7 +319,7 @@ def remove_dataset_metadata(ctx, path, is_collection):
             genquery.AS_LIST, ctx
         )
 
-    for row in iter:
+    for _row in iter:
         for md_key in intake_metadata:
             if is_collection:
                 log.write(ctx, md_key + ' => ' + path)
@@ -335,10 +335,11 @@ def remove_dataset_metadata(ctx, path, is_collection):
 
 
 def scan_mark_scanned(ctx, path, is_collection):
-    """ Sets the username of the scanner and a timestamp as metadata on the scanned object.
+    """Sets the username of the scanner and a timestamp as metadata on the scanned object.
+
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path on which to add scan indication to
-    :param is_collection:
+    :param is_collection: Is scanned object a collection?
     """
     timestamp = int(time.time())
     user_and_timestamp = user.name(ctx) + ':' + str(timestamp)  # str(datetime.date.today())
