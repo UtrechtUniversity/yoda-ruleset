@@ -1,7 +1,7 @@
 import time
 
 import genquery
-
+import intake
 from util import *
 
 
@@ -84,7 +84,7 @@ def intake_dataset_lock(ctx, collection, dataset_id):
 
     log.write(ctx, collection)
 
-    tl_info = get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
     log.write(ctx, tl_info)
@@ -102,7 +102,7 @@ def intake_dataset_unlock(ctx, collection, dataset_id):
 
     log.write(ctx, collection)
 
-    tl_info = get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
     log.write(ctx, tl_info)

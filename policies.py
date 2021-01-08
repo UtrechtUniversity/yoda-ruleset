@@ -5,13 +5,14 @@ __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-
+import string
 import session_vars
 
 import datarequest
 import folder
 import policies_datapackage_status
 import policies_folder_status
+import policies_intake
 from util import *
 
 
@@ -27,6 +28,7 @@ from util import *
 
 # Separate from ACLs, we deny certain operations on collections and data in
 # research folders when paths are locked.
+
 
 def can_coll_create(ctx, actor, coll):
     """Disallow creating collections in locked folders."""
@@ -65,6 +67,11 @@ def can_coll_move(ctx, actor, src, dst):
 
 def can_data_create(ctx, actor, path):
     log.debug(ctx, 'check data create <{}>'.format(path))
+    log.debug(ctx, 'Before intake check')
+    if path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        log.debug(ctx, 'IS INTAKE')
+        #if policies_intake.
+        #return policy.succeed()  # policy.fail('Destination is locked')
 
     if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_locked(ctx, pathutil.dirname(path)):
@@ -131,6 +138,13 @@ def can_data_move(ctx, actor, src, dst):
 def py_acPreprocForCollCreate(ctx):
     log._debug(ctx, 'py_acPreprocForCollCreate')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
+
+    coll = str(session_vars.get_map(ctx.rei)['collection']['name'])
+    # diffentiate Intake module
+    if coll.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        if policies_intake.is_coll_in_locked_dataset(ctx, user.user_and_zone(ctx), pathutil.chop(coll)[0]):
+            return policy.fail('Collection part of a locked dataset')
+
     return can_coll_create(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
 
@@ -139,25 +153,49 @@ def py_acPreprocForCollCreate(ctx):
 def py_acPreprocForRmColl(ctx):
     log._debug(ctx, 'py_acPreprocForRmColl')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
-    return can_coll_delete(ctx, user.user_and_zone(ctx),
-                           str(session_vars.get_map(ctx.rei)['collection']['name']))
+    # object_path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
+
+    coll = str(session_vars.get_map(ctx.rei)['collection']['name'])
+    # diffentiate Intake module
+    if coll.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        if policies_intake.coll_in_path_of_locked_dataset(ctx, user.user_and_zone(ctx), coll):
+            return policy.fail('Collection part of a locked dataset')
+
+    return can_coll_delete(ctx, user.user_and_zone(ctx), coll)
 
 
 @policy.require()
 def py_acPreprocForDataObjOpen(ctx):
     log._debug(ctx, 'py_acPreprocForDataObjOpen')
+    object_path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
+
     # data object reads are always allowed.
     # writes are blocked e.g. when the object is locked (unless actor is a rodsadmin).
     if session_vars.get_map(ctx.rei)['data_object']['write_flag'] == 1:
-        return can_data_write(ctx, user.user_and_zone(ctx),
-                              str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
+        # diffentiate Intake module
+        if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+            if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
+                return policy.fail('Collection part of a locked dataset')
+        return can_data_write(ctx, user.user_and_zone(ctx), object_path)
     else:
+        # diffentiate Intake module
+        if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+            if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
+                return policy.fail('Collection part of a locked dataset')
         return policy.succeed()
 
 
 @policy.require()
 def py_acDataDeletePolicy(ctx):
     log._debug(ctx, 'py_acDataDeletePolicy')
+
+    object_path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
+    # diffentiate Intake module
+    log._debug(ctx, object_path) 
+    if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        if policies_intake.data_part_of_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
+            return policy.fail('Collection part of a locked dataset')
+
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
@@ -168,16 +206,40 @@ def py_acDataDeletePolicy(ctx):
 def py_acPreProcForObjRename(ctx, src, dst):
     log._debug(ctx, 'py_acPreProcForObjRename')
 
-    # irods/lib/api/include/dataObjInpOut.h
     RENAME_DATA_OBJ = 11
     RENAME_COLL     = 12
 
-    if session_vars.get_map(ctx.rei)['operation_type'] == RENAME_DATA_OBJ:
-        return can_data_move(ctx, user.user_and_zone(ctx), src, dst)
-    elif session_vars.get_map(ctx.rei)['operation_type'] == RENAME_COLL:
-        return can_coll_move(ctx, user.user_and_zone(ctx), src, dst)
+    src_in_intake = src.startswith('/' + user.zone(ctx) + '/home/grp-intake-')
+    dst_in_intake = dst.startswith('/' + user.zone(ctx) + '/home/grp-intake-')
 
-    # if ($objPath like regex "/[^/]+/home/" ++ IIGROUPPREFIX ++ ".[^/]*/.*") {
+    # Renaming within, into or out of the intake module
+    # Special situation as different policies can apply deleting in intake/not-intake or creating in intake/not-intake
+
+    if session_vars.get_map(ctx.rei)['operation_type'] == RENAME_DATA_OBJ:
+        if src_in_intake and dst_in_intake:
+            return policy.all(policies_intake.can_data_delete(ctx, actor, src),
+                              policies_intake.can_data_create(ctx, actor, dst))
+        elif src_in_intake:
+            return policy.all(policies_intake.can_data_delete(ctx, actor, src),
+                              can_data_create(ctx, actor, dst))
+        elif dst_in_intake:
+            return policy.all(can_data_delete(ctx, actor, src),
+                              policies_intake.can_data_create(ctx, actor, dst))
+        else:
+            return can_data_move(ctx, user.user_and_zone(ctx), src, dst)
+
+    elif session_vars.get_map(ctx.rei)['operation_type'] == RENAME_COLL:
+        if src_in_intake and dst_in_intake:
+            return policy.all(policies_intake.can_coll_delete(ctx, actor, src),
+                              policies_intake.can_coll_create(ctx, actor, dst))
+        elif src_in_intake:
+            return policy.all(policies_intake.can_coll_delete(ctx, actor, src),
+                              can_data_create(ctx, actor, dst))
+        elif dst_in_intake:
+            return policy.all(can_data_delete(ctx, actor, src),
+                              policies_intake.can_coll_create(ctx, actor, dst))
+        else:
+            return can_coll_move(ctx, user.user_and_zone(ctx), src, dst)
 
 
 @policy.require()
@@ -240,8 +302,13 @@ def pep_api_data_obj_create_pre(ctx, instance_name, rs_comm, data_obj_inp):
     # nice as to set the "PUT_OPR" flag, and thereby bypasses the static PUT postproc above.
     # Note that this should only be needed for create actions, not open in general:
     # for overwriting there is still a PRE static PEP that applies - acPreprocForDataObjOpen.
-    return can_data_create(ctx, user.user_and_zone(ctx),
-                           str(data_obj_inp.objPath))
+
+    object_path = str(data_obj_inp.objPath)
+    if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
+            return policy.fail('Collection part of a locked dataset')
+
+    return can_data_create(ctx, user.user_and_zone(ctx), object_path)
 
 
 @policy.require()
@@ -281,6 +348,7 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
 #                              str(data_obj_rename_inp.srcDataObjInp.objPath),
 #                              str(data_obj_rename_inp.destDataObjInp.objPath))
 
+
 @policy.require()
 def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):
     log._debug(ctx, 'pep_api_data_obj_trim_pre')
@@ -294,12 +362,19 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
 
-# Disabled: caught by acDataDeletePolicy
-# @policy.require()
-# def pep_api_data_obj_unlink_pre(ctx, instance_name, rs_comm, data_obj_unlink_inp):
-#     log._debug(ctx, 'pep_api_data_obj_unlink_pre')
-#     return can_data_delete(ctx, user.user_and_zone(ctx),
-#                            str(data_obj_unlink_inp.objPath))
+
+# Disabled: caught by acDataDeletePolicy  ## SINGLE FILE DELETION
+@policy.require()
+def pep_api_data_obj_unlink_pre(ctx, instance_name, rs_comm, data_obj_unlink_inp):
+    log._debug(ctx, 'pep_api_data_obj_unlink_pre')
+
+    object_path = str(data_obj_unlink_inp.objPath)
+    if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
+            return policy.fail('Data is part of a locked dataset and cannot be deleted')
+
+    return can_data_delete(ctx, user.user_and_zone(ctx), object_path)
+
 
 # }}}
 # Authorize metadata operations {{{

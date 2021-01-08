@@ -41,3 +41,5 @@ from publication            import *
 from policies               import *
 from revisions              import *
 from datarequest            import *
+
+from intake                 import *

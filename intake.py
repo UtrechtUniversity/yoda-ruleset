@@ -7,6 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 import time
 
 from folder import *
+import intake_dataset
+import intake_lock
+import intake_scan
 from util import *
 
 
@@ -412,12 +415,12 @@ def api_intake_scan_for_datasets(ctx, coll):
 
     log.write(ctx, "BEFORE SCAN coll: " + coll)
 
-    intake_scan_collection(ctx, coll, scope, False)
+    intake_scan.intake_scan_collection(ctx, coll, scope, False)
 
     log.write(ctx, "AFTER SCAN")
     log.write(ctx, "BEFORE CHECK")
 
-    intake_check_datasets(ctx, coll)
+    intake_scan.intake_check_datasets(ctx, coll)
 
     log.write(ctx, "AFTER CHECK")
 
@@ -445,7 +448,7 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
         log.write(ctx, "No permissions to lock dataset")
         return 'NOK'
 
-    intake_dataset_lock(ctx, path, dataset_id)
+    intake_lock.intake_dataset_lock(ctx, path, dataset_id)
 
     return 'OK'
 
@@ -469,7 +472,7 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
         log.write(ctx, "No permissions to unlock dataset")
         return 'NOK'
 
-    intake_dataset_unlock(ctx, path, dataset_id)
+    intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
 
     return 'OK'
 
@@ -702,7 +705,7 @@ def api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
         log.write(ctx, "No permissions for reporting functionality")
         return {}
 
-    return intake_youth_dataset_counts_per_study(ctx, study_id)
+    return intake_dataset.intake_youth_dataset_counts_per_study(ctx, study_id)
 
 
 @api.make()
@@ -730,7 +733,7 @@ def api_intake_report_vault_aggregated_info(ctx, study_id):
         log.write(ctx, "No permissions for reporting functionality")
         return {}
 
-    return vault_aggregated_info(ctx, study_id)
+    return intake_dataset.vault_aggregated_info(ctx, study_id)
 
 
 @api.make()
@@ -750,4 +753,4 @@ def api_intake_report_export_study_data(ctx, study_id):
         log.write(ctx, "No permissions to export data for this study")
         return {}
 
-    return intake_report_export_study_data(ctx, study_id)
+    return intake_dataset.intake_report_export_study_data(ctx, study_id)

@@ -7,7 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 import time
 
-from folder import *
+import folder
+import intake
 from util import *
 
 
@@ -490,7 +491,7 @@ def intake_check_dataset(ctx, root, dataset_id):
     :param root:   Collection name
     :param dataset_id: dataset_id
     """
-    tl_info = get_dataset_toplevel_objects(ctx, root, dataset_id)
+    tl_info = intake.get_dataset_toplevel_objects(ctx, root, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
@@ -570,7 +571,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
     :param dataset_id: dataset id
     :returns: returns a list of objects of relative object paths (e.g. file1.dat, some-subdir/file2.dat...)
     """
-    tl_info = get_dataset_toplevel_objects(ctx, root, dataset_id)
+    tl_info = intake.get_dataset_toplevel_objects(ctx, root, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
@@ -641,7 +642,7 @@ def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplev
 
     # count = count / 2
 
-    if mini != -1 and count < min:
+    if min != -1 and count < min:
         text = "Expected at least " + str(min) + " files of type '" + pattern_human + "', found " + str(count)
         log.write(ctx, '##' + text)
         dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
