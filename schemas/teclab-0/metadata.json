@@ -1648,7 +1648,8 @@
     },
     "Data_Type": {
       "$ref": "#/definitions/optionsDataType",
-      "title": "Data type"
+      "title": "Data type",
+      "default": "Dataset"
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
