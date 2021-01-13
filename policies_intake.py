@@ -5,9 +5,9 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
-from util import *
-
 import intake_scan
+
+from util import *
 
 
 def is_data_in_locked_dataset(ctx, actor, path):
@@ -181,7 +181,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
         for row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
-            return not user.is_admin(ctx, actor) 
+            return not user.is_admin(ctx, actor)
 
         # Could be a dataset based on a data object
         iter = genquery.row_iterator(
@@ -246,7 +246,7 @@ def data_part_of_locked_dataset(ctx, actor, path):
             for row in iter:
                 toplevel_collection = row[0]
                 toplevel_is_collection = False
-            
+ 
         if toplevel_collection:
             locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)
@@ -285,21 +285,21 @@ def data_part_of_locked_dataset(ctx, actor, path):
 def can_data_create(ctx, actor, path):
     # Check lock state.
     if is_data_in_locked_dataset(ctx, actor, path):
-         return policy.fail(path + ' contains locked dataset')
+        return policy.fail(path + ' contains locked dataset')
     return policy.succeed()
 
 
 def can_data_delete(ctx, actor, path):
     # Check lock state.
     if is_data_in_locked_dataset(ctx, actor, path):
-         return policy.fail(path + ' contains locked dataset')
+        return policy.fail(path + ' contains locked dataset')
     return policy.succeed()
 
 
 def can_coll_create(ctx, actor, path):
     # Check lock state of parent collection
     if is_coll_in_locked_dataset(ctx, actor, pathutil.chop(path)[0]):
-         return policy.fail(path + ' contains locked dataset')
+        return policy.fail(path + ' contains locked dataset')
     return policy.succeed()
 
 

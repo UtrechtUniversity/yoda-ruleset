@@ -5,14 +5,15 @@ __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
-import string
 import session_vars
 
 import datarequest
 import folder
+
 import policies_datapackage_status
-import policies_folder_status
 import policies_intake
+import policies_folder_status
+
 from util import *
 
 
@@ -67,11 +68,6 @@ def can_coll_move(ctx, actor, src, dst):
 
 def can_data_create(ctx, actor, path):
     log.debug(ctx, 'check data create <{}>'.format(path))
-    log.debug(ctx, 'Before intake check')
-    if path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
-        log.debug(ctx, 'IS INTAKE')
-        #if policies_intake.
-        #return policy.succeed()  # policy.fail('Destination is locked')
 
     if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_locked(ctx, pathutil.dirname(path)):
@@ -191,7 +187,7 @@ def py_acDataDeletePolicy(ctx):
 
     object_path = str(session_vars.get_map(ctx.rei)['data_object']['object_path'])
     # diffentiate Intake module
-    log._debug(ctx, object_path) 
+    log._debug(ctx, object_path)
     if object_path.startswith('/' + user.zone(ctx) + '/home/grp-intake-'):
         if policies_intake.data_part_of_locked_dataset(ctx, user.user_and_zone(ctx), object_path):
             return policy.fail('Collection part of a locked dataset')

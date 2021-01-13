@@ -7,8 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 import time
 
-import folder
 import intake
+
 from util import *
 
 
@@ -20,10 +20,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
     :param scope:     a scoped kvlist buffer
     :param in_dataset: whether this collection is within a dataset collection
     """
-
-    log.write(ctx, "AT ENTRY")
-    log.write(ctx, "SCAN OBJECTS: " + root)
-    log.write(ctx, scope)
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",

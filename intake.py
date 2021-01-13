@@ -6,10 +6,12 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 
-from folder import *
 import intake_dataset
 import intake_lock
 import intake_scan
+
+from folder import *
+
 from util import *
 
 
