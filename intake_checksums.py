@@ -1,6 +1,11 @@
-import itertools
+# -*- coding: utf-8 -*-
+"""Functions for revision management."""
+
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
 
 import genquery
+import itertools
 
 from util import *
 

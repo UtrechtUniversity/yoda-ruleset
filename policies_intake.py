@@ -30,7 +30,7 @@ def is_data_in_locked_dataset(ctx, actor, path):
         log.debug(ctx, 'dataset found: ' + dataset_id)
 
         # now check whether a lock exists
-        return True
+        # return True
 
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
@@ -83,7 +83,7 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
         log.debug(ctx, 'dataset found: ' + dataset_id)
 
         # now check whether a lock exists
-        return True
+        # return True
 
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
@@ -246,7 +246,7 @@ def data_part_of_locked_dataset(ctx, actor, path):
             for row in iter:
                 toplevel_collection = row[0]
                 toplevel_is_collection = False
- 
+
         if toplevel_collection:
             locked_state = intake_scan.object_is_locked(ctx, toplevel_collection, toplevel_is_collection)
             log.debug(ctx, locked_state)

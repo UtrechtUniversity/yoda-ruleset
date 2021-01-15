@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
+"""Functions for revision management."""
+
+__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__license__   = 'GPLv3, see LICENSE'
+
+
 import time
 
 import genquery
-
 import intake
 
 from util import *
@@ -109,12 +115,13 @@ def intake_dataset_unlock(ctx, collection, dataset_id):
     tl_objects = tl_info['objects']
     log.write(ctx, tl_info)
 
+    # It is possible that the status of the dataset status has moved on.
     if is_collection:
         intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_lock", timestamp, True)
     else:
-        # Dataset based on
+        # Dataset based on data objects
         for tl_object in tl_objects:
-            avu.rmw_from_data(ctx, tl_object, "to_vault_lock", status, "%")
+            avu.rmw_from_data(ctx, tl_object, "to_vault_lock", "%")
 
 
 def intake_dataset_freeze(ctx, collection, dataset_id):

@@ -4,13 +4,13 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import fnmatch
+import folder
 import time
 
 import intake_dataset
 import intake_lock
 import intake_scan
-
-from folder import *
 
 from util import *
 
@@ -106,8 +106,10 @@ def api_intake_count_total_files(ctx, coll):
 
     count = 0
     for row in iter:
-        log.write(ctx, row[0] + '/' + row[1])
-        count += 1
+        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in constants.INTAKE_FILE_EXCLUSION_PATTERNS)
+        if not exclusion_matched:
+            log.write(ctx, row[0] + '/' + row[1])
+            count += 1
 
     return count
 
@@ -143,27 +145,30 @@ def api_intake_list_unrecognized_files(ctx, coll):
 
     files = []
     for row in iter:
-        # Error is hardcoded! (like in the original) and initialize attributes already as empty strings.
-        file_data = {"name": row[1],
-                     "path": row[0],
-                     "date": row[2],
-                     "creator": row[3],
-                     "error": 'Experiment type, wave or pseudocode is missing from path',
-                     "experiment_type": '',
-                     "pseudocode": '',
-                     "wave": '',
-                     "version": ''}
+        # Check whether object type is within exclusion pattern
+        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in constants.INTAKE_FILE_EXCLUSION_PATTERNS)
+        if not exclusion_matched:
+            # Error is hardcoded! (like in the original) and initialize attributes already as empty strings.
+            file_data = {"name": row[1],
+                         "path": row[0],
+                         "date": row[2],
+                         "creator": row[3],
+                         "error": 'Experiment type, wave or pseudocode is missing from path',
+                         "experiment_type": '',
+                         "pseudocode": '',
+                         "wave": '',
+                         "version": ''}
 
-        # per data object get relevent metadata (experiment type, version, wave, pseudocode) if present
-        iter2 = genquery.row_iterator(
-            "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-            "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "' AND META_DATA_ATTR_NAME in ('experiment_type', 'pseudocode', 'wave', 'version')",
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            file_data[row2[0]] = row2[1]
+            # per data object get relevent metadata (experiment type, version, wave, pseudocode) if present
+            iter2 = genquery.row_iterator(
+                "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
+                "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "' AND META_DATA_ATTR_NAME in ('experiment_type', 'pseudocode', 'wave', 'version')",
+                genquery.AS_LIST, ctx
+            )
+            for row2 in iter2:
+                file_data[row2[0]] = row2[1]
 
-        files.append(file_data)
+            files.append(file_data)
 
     return files
 

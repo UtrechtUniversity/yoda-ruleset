@@ -10,10 +10,10 @@ import session_vars
 import datarequest
 import folder
 
-import policies_datapackage_status
 import policies_intake
-import policies_folder_status
+import policies_datapackage_status
 
+import policies_folder_status
 from util import *
 
 
