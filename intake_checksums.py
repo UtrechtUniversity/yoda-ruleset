@@ -6,8 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 
-import genquery
-from util import *
+import genquery  # 3rd party
+
+from util import *  # App
 
 
 def chop_checksum(checksum):
