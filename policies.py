@@ -4,16 +4,16 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import re
-import session_vars
+import re # Stdlib
+
+import policies_intake  # 3rd party
+import session_vars  # 3rd party
 
 import datarequest
 import folder
+import policies_datapackage_status #App
+import policies_folder_status  # App
 
-import policies_intake
-import policies_datapackage_status
-
-import policies_folder_status
 from util import *
 
 

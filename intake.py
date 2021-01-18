@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import fnmatch
-import folder
 import time
 
 import intake_dataset
