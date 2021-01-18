@@ -26,7 +26,6 @@ def intake_report_export_study_data(ctx, study_id):
     :returns: returns datasets
     """
     zone = user.zone(ctx)
-    log.write(ctx, zone)
 
     result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
                                    "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
@@ -74,7 +73,6 @@ def intake_youth_get_datasets_in_study(ctx, study_id):
     :returns: Dict with datasets and relevant metadata.
     """
     zone = user.zone(ctx)
-    log.write(ctx, zone)
 
     result = genquery.row_iterator("COLL_NAME, COLL_PARENT_NAME, META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
                                    "COLL_NAME like '/{}/home/grp-vault-{}%' AND META_COLL_ATTR_NAME IN ('dataset_id', 'dataset_date_created', 'wave', 'version', 'experiment_type', 'pseudocode')".format(zone, study_id),
@@ -114,7 +112,6 @@ def intake_youth_dataset_counts_per_study(ctx, study_id):
 
     :returns: Dict with counts of datasets wave/experimenttype
     """
-    log.write(ctx, 'dataset counts per study')
     datasets = intake_youth_get_datasets_in_study(ctx, study_id)
 
     dataset_type_counts = {}
@@ -209,7 +206,6 @@ def vault_aggregated_info(ctx, study_id):
                 part_of_dataset = True
                 break
 
-        log.write(ctx, part_of_dataset)
         # File is part of dataset.
         if part_of_dataset:
             # version = datasets[dataset]['version']

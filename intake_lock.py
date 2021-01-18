@@ -22,10 +22,6 @@ def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, re
     :param timestamp:  Timestamp of status change
     :param remove:     Boolean, set or remove status
     """
-
-    log.write(ctx, collection)
-    log.write(ctx, status)
-
     # 1. Change status on this collection.
     if remove:
         avu.rmw_from_coll(ctx, collection, status, "%")
@@ -90,8 +86,6 @@ def intake_dataset_change_status(ctx, object, is_collection, dataset_id, status,
 def intake_dataset_lock(ctx, collection, dataset_id):
     timestamp = str(int(time.time()))
 
-    log.write(ctx, collection)
-
     tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
@@ -108,12 +102,9 @@ def intake_dataset_lock(ctx, collection, dataset_id):
 def intake_dataset_unlock(ctx, collection, dataset_id):
     timestamp = str(int(time.time()))
 
-    log.write(ctx, collection)
-
     tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
-    log.write(ctx, tl_info)
 
     # It is possible that the status of the dataset status has moved on.
     if is_collection:

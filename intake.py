@@ -186,11 +186,6 @@ def api_intake_list_datasets(ctx, coll):
     datasets = []
 
     # 1) Query for datasets distinguished by collections
-#      "COL_META_COLL_ATTR_VALUE" => NULL,
-#      "COL_COLL_NAME" => NULL
-#        $condition->add('COL_COLL_NAME', 'like', $referencePath . '%');
-#        $condition->add('COL_META_COLL_ATTR_NAME', '=', 'dataset_toplevel');
-
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE, COLL_NAME",
         "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME = 'dataset_toplevel' ",
@@ -202,11 +197,6 @@ def api_intake_list_datasets(ctx, coll):
         datasets.append(dataset)
 
     # 2) Query for datasets distinguished dataobjects
-#    "COL_META_DATA_ATTR_VALUE" => NULL,
-#     "COL_COLL_NAME" => NULL,
-#    $condition->add('COL_COLL_NAME', 'like', $referencePath . '/%');
-#    $condition->add('COL_META_DATA_ATTR_NAME', '=', 'dataset_toplevel');
-
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE, COLL_NAME",
         "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
@@ -218,11 +208,6 @@ def api_intake_list_datasets(ctx, coll):
         datasets.append(dataset)
 
     # 3) extra query for datasets that fall out of above query due to 'like' in query
-#    "COL_META_DATA_ATTR_VALUE" => NULL,
-#    "COL_COLL_NAME" => NULL,
-#    $condition->add('COL_COLL_NAME', '=', $referencePath);
-#    $condition->add('COL_META_DATA_ATTR_NAME', '=', 'dataset_toplevel');
-
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE, COLL_NAME",
         "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
@@ -413,26 +398,15 @@ def api_intake_scan_for_datasets(ctx, coll):
         log.write(ctx, "No permissions to scan collection")
         return {}
 
-    # folder.set_status(coll, 'lock')
-
     scope = {"wave": "",
              "experiment_type": "",
              "pseudocode": ""}
 
-    log.write(ctx, "BEFORE SCAN coll: " + coll)
-
     intake_scan.intake_scan_collection(ctx, coll, scope, False)
-
-    log.write(ctx, "AFTER SCAN")
-    log.write(ctx, "BEFORE CHECK")
 
     intake_scan.intake_check_datasets(ctx, coll)
 
-    log.write(ctx, "AFTER CHECK")
-
     return {"proc_status": "OK"}
-
-    # folder.set_status(coll, 'unlocked')
 
 
 @api.make()

@@ -27,9 +27,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        # chop file extension ???? HIER WORDT NIKS MEE GEDAAN
-        # uuChopFileExtension(*item>DATANAME, baseName, extension) ??? baseName en extension komen niet terug in oorspronkeljike functie
-
         path = row[1] + '/' + row[0]
 
         # Determene lock state for object (no collectoin
@@ -55,25 +52,17 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
-    log.write(ctx, "SCAN COLLECTION: " + root)
-    log.write(ctx, scope)
     # Scan collections under root
     iter = genquery.row_iterator(
         "COLL_NAME",
         "COLL_PARENT_NAME = '" + root + "'",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        log.write(ctx, 'found colls: ' + row[0])
-
     counter = 0
     for row in iter:
         path = row[0]
         counter = counter + 1
         dirname = pathutil.basename(path)
-        log.write(ctx, str(counter) + "FOUND COLLECTION: " + path)
-        log.write(ctx, root)
-        log.write(ctx, scope)
 
         if dirname != '/':
             # get locked /frozen status
@@ -92,27 +81,17 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                     apply_dataset_metadata(ctx, path, subscope, True, False)
                     scan_mark_scanned(ctx, path, True)
                 else:
-                    # uuYcIntakeExtractTokensFromFileName(*item."COLL_NAME", *dirName, true, *subScope);
-                    # sub_scope wordt gevuld via extract tokens
-                    log.write(ctx, 'COLLECTION')
                     subscope = intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
-                    log.write(ctx, subscope)
 
                     if intake_tokens_identify_dataset(subscope):
-                        log.write(ctx, "IS DATASET")
                         child_in_dataset = True
                         # We found a top-level dataset collection.
                         subscope["dataset_directory"] = path
                         apply_dataset_metadata(ctx, path, subscope, True, True)
                     else:
-                        log.write(ctx, "IS NO DATASET")
                         apply_partial_metadata(ctx, subscope, path, True)
                 # Go a level deeper
-                log.write(ctx, "BEFORE DEEPER LEVEL: " + path)
-                log.write(ctx, subscope)
-                log.write(ctx, scope)
                 intake_scan_collection(ctx, path, subscope, child_in_dataset)
-                log.write(ctx, "AFTER DEEPER LEVEL scan")
 
 
 def scan_filename_is_valid(ctx, name):
@@ -662,13 +641,6 @@ def get_aggregated_object_count(ctx, dataset_id, tl_collection):
         genquery.AS_LIST, ctx
     )))
 
-#    return count + len(list(genquery.row_iterator(
-#        "DATA_ID",
-#        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'dataset_id' "
-#        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
-#        genquery.AS_LIST, ctx
-#    )))
-
 
 def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
     """ return total amounts of object errors
@@ -684,12 +656,6 @@ def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
         genquery.AS_LIST, ctx
     )))
 
-#    return count + len(list(genquery.row_iterator(
-#        "DATA_ID",
-#        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'error' ",
-#        genquery.AS_LIST, ctx
-#    )))
-
 
 def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
     """ return total amounts of object warnings
@@ -703,12 +669,6 @@ def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
         "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'warning' ",
         genquery.AS_LIST, ctx
     )))
-
-#    return count + len(list(genquery.row_iterator(
-#        "DATA_ID",
-#        "COLL_NAME = '" + tl_collection + "' AND META_DATA_ATTR_NAME = 'warning' ",
-#        genquery.AS_LIST, ctx
-#    )))
 
 
 def dataset_make_id(scope):
