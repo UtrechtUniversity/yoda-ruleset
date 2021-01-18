@@ -6,13 +6,13 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 
-import policies_intake
 import session_vars
 
 import datarequest
 import folder
 import policies_datapackage_status
 import policies_folder_status
+import policies_intake
 from util import *
 
 
