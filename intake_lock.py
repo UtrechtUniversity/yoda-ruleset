@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Functions for revision management."""
+"""Functions for intake locking."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 

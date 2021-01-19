@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Functions for revision management."""
+"""Functions for intake module."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import fnmatch
@@ -31,9 +31,11 @@ __all__ = ['api_intake_list_studies',
 
 @api.make()
 def api_intake_list_studies(ctx):
-    """ Get list of all studies current user is involved in
-    :param ctx:    Combined type of a callback and rei struct
-    :returns:  list of studies
+    """Get list of all studies current user is involved in.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of studies
 
     """
     groups = []
@@ -56,9 +58,11 @@ def api_intake_list_studies(ctx):
 
 @api.make()
 def api_intake_list_dm_studies(ctx):
-    """ Return list of studies current user is datamanager of
+    """Return list of studies current user is datamanager of.
+
     :param ctx: Combined type of a callback and rei struct
-    :returns: list of dm studies
+
+    :returns: List of dm studies
     """
     datamanager_groups = []
     user_name = user.name(ctx)
@@ -89,10 +93,12 @@ def api_intake_list_dm_studies(ctx):
 
 @api.make()
 def api_intake_count_total_files(ctx, coll):
-    """ get the total count of all files in coll
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: collection from which to list all datasets
-    :returns: total file count
+    """Get the total count of all files in collection
+    .
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection from which to count all datasets
+
+    :returns: Total file count
     """
 
     log.write(ctx, coll)
@@ -115,12 +121,11 @@ def api_intake_count_total_files(ctx, coll):
 
 @api.make()
 def api_intake_list_unrecognized_files(ctx, coll):
-    """
-    Get list of all unrecognized files for given path including relevant metadata
+    """Get list of all unrecognized files for given path including relevant metadata.
 
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: collection from which to list all datasets
-    :returns: list of unrecognized files
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection from which to list all unrecognized files
+    :returns: List of unrecognized files
     """
     # check permissions
     parts = coll.split('/')
@@ -174,13 +179,14 @@ def api_intake_list_unrecognized_files(ctx, coll):
 
 @api.make()
 def api_intake_list_datasets(ctx, coll):
-    """
-    Get list of datasets for given path.
+    """Get list of datasets for given path.
+
     A dataset is distinguished by attribute name 'dataset_toplevel' which can either reside on a collection or a data object.
     That is why 2 seperate queries have to be performed.
 
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: collection from which to list all datasets
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection from which to list all datasets
+
     :returns: list of datasets
     """
     datasets = []
@@ -221,11 +227,13 @@ def api_intake_list_datasets(ctx, coll):
 
 
 def get_dataset_details(ctx, dataset_id, path):
-    """ get details of dataset based on dataset_id (dataset['dataset_id'])
-    :param ctx: Combined type of a callback and rei struct
-    :param dataset_id:    id of dataset
-    :param path:          path to dataset
-    :returns: dict holding objects for the dataset
+    """Get details of dataset based on dataset identifier.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param dataset_id: Identifier of dataset
+    :param path:       Path to dataset
+
+    :returns: Dict holding objects for the dataset
     """
     # Inialise all attributes
     dataset = {"dataset_id": dataset_id,
@@ -296,8 +304,8 @@ def get_dataset_details(ctx, dataset_id, path):
             if row[1] == 'object_warnings':
                 dataset['objectWarnings'] += int(row[2])
     else:
-        """ dataset is based on a dataobject
-        Step through all data objects as found in tlObjects """
+        # Dataset is based on a dataobject
+        # Step through all data objects as found in tl_objects
         objects = 0
         object_errors = 0
         object_warnings = 0
@@ -349,14 +357,16 @@ def get_dataset_details(ctx, dataset_id, path):
 
 
 def get_dataset_toplevel_objects(ctx, root, dataset_id):
-    """ returns dict with toplevel object paths and whether is collection based dataset
-    if is a collection - only one object is returned (collection path)
-    if not a collection- all objects are returned with full object path
+    """Returns dict with toplevel object paths and whether is collection based dataset.
 
-    :param ctx: Combined type of a callback and rei struct
-    :param root: path to a dataset
-    :param dataset_id: id of the dataset
-    :returns: dict holding objects for the dataset
+    If is a collection - only one object is returned (collection path).
+    If not a collection- all objects are returned with full object path.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param root:       Path to a dataset
+    :param dataset_id: Identifier of the dataset
+
+    :returns: Dict holding objects for the dataset
     """
     iter = genquery.row_iterator(
         "COLL_NAME",
@@ -384,9 +394,12 @@ def get_dataset_toplevel_objects(ctx, root, dataset_id):
 
 @api.make()
 def api_intake_scan_for_datasets(ctx, coll):
-    """ The toplevel of a dataset can be determined by attribute 'dataset_toplevel' and can either be a collection or a data_object
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: collection to scan for datasets
+    """The toplevel of a dataset can be determined by attribute 'dataset_toplevel'
+    and can either be a collection or a data_object.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to scan for datasets
+
     :returns: indication correct
     """
     # check permissions - both researcher and datamanager
@@ -411,12 +424,14 @@ def api_intake_scan_for_datasets(ctx, coll):
 
 @api.make()
 def api_intake_lock_dataset(ctx, path, dataset_id):
-    """
-    Lock a dataset to mark as an indication it can be 'frozen' for it to progress to vault
+    """Lock a dataset to mark as an indication it can be 'frozen' for it to progress to vault.
+
     Lock = datamanager only
-    :param ctx: Combined type of a callback and rei struct
-    :param path: collection for which to lock a specific dataset id
-    :param dataset_id: id of the dataset to be locked
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param path:       Collection for which to lock a specific dataset id
+    :param dataset_id: Identifier of the dataset to be locked
+
     :returns: indication correct
     """
     # check permissions - datamanager only
@@ -435,12 +450,14 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
 
 @api.make()
 def api_intake_unlock_dataset(ctx, path, dataset_id):
-    """
-    Unlock a dataset to remove the indication so it can be 'frozen' for it to progress to vault
-    Unlock = datamanager onlyi
-    :param ctx: Combined type of a callback and rei struct
-    :param path: collection for which to lock a specific dataset id
-    :param dataset_id: id of the dataset to be unlocked
+    """Unlock a dataset to remove the indication so it can be 'frozen' for it to progress to vault
+
+    Unlock = datamanager only
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param path:       Collection for which to lock a specific dataset id
+    :param dataset_id: Identifier of the dataset to be unlocked
+
     :returns: indication correct
     """
     # check permissions - datamanager only
@@ -459,11 +476,13 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
 
 @api.make()
 def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
-    """ Add a comment to a dataset
-    :param ctx: Combined type of a callback and rei struct
-    :param coll: Collection to add to
-    :param dataset_id: id of the dataset to add a comment to
-    :param comment: comment as added by user
+    """Add a comment to a dataset.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param coll:       Collection to add comment to
+    :param dataset_id: Identifier of the dataset to add a comment to
+    :param comment:    Comment as added by user
+
     :returns: indication correct
     """
     # check permissions - can be researcher or datamanager
@@ -494,16 +513,17 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
 
 @api.make()
 def api_intake_dataset_get_details(ctx, coll, dataset_id):
-    """
-    Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree)
+    """Get all details for a dataset (errors/warnings, scanned by who/when, comments, file tree).
+
     1) Errors/warnings
     2) Comments
     3) Tree view of files within dataset.
 
-    :param ctx:    Combined type of a callback and rei struct
-    :param coll:   collection to start from
-    :param dataset_id: id of the dataset to get details for
-    :returns:      dictionary with all dataset data
+    :param ctx:        Combined type of a callback and rei struct
+    :param coll:       Collection to start from
+    :param dataset_id: Identifier of the dataset to get details for
+
+    :returns: dictionary with all dataset data
     """
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
@@ -586,14 +606,15 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
             "dataset_errors": dataset_errors}
 
 
-# recursive function to pass entire folder/file structure in such that frontend can do something useful with it
-# including errors/warnings on object level
 def coll_objects(ctx, level, coll):
-    """
+    """Recursive function to pass entire folder/file structure in such that frontend
+    can do something useful with it including errors/warnings on object level
+
     :param ctx:   Combined type of a callback and rei struct
-    :param level: level in hierarchy (tree)
-    :param coll:  collection to collect
-    :returns:     tree of collections and files
+    :param level: Level in hierarchy (tree)
+    :param coll:  Collection to collect
+
+    :returns: Tree of collections and files
     """
     # First get the sub collections
     counter = 0
@@ -670,13 +691,15 @@ def coll_objects(ctx, level, coll):
 # Reporting / export functions
 @api.make()
 def api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
-    """
-    Get the count of datasets wave/experimenttype
+    """Get the count of datasets wave/experimenttype.
+
     In the vault a dataset is always located in a folder.
-    Therefore, looking at the folders only is enough
-    :param ctx:    Combined type of a callback and rei struct
-    :param study_id:   Study id
-    :returns:      dictionary with relevant aggregated counts
+    Therefore, looking at the folders only is enough.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param study_id: Study id
+
+    :returns: Dictionary with relevant aggregated counts
     """
     # check permissions - datamanager only
     datamanager_group = "grp-datamanager-" + study_id
@@ -690,9 +713,8 @@ def api_intake_report_vault_dataset_counts_per_study(ctx, study_id):
 
 @api.make()
 def api_intake_report_vault_aggregated_info(ctx, study_id):
-    """
-    Collects the following information for Raw, Processed datasets. Including a totalisation of this all
-    (Raw/processed is kept in VERSION)
+    """Collects the following information for Raw, Processed datasets.
+    Including a totalisation of this all (Raw/processed is kept in VERSION).
 
     -Total datasets
     -Total files
@@ -701,9 +723,10 @@ def api_intake_report_vault_aggregated_info(ctx, study_id):
     -Datasets growth in a month
     -Pseudocodes  (distinct)
 
-    :param ctx:    Combined type of a callback and rei struct
-    :param study_id:   Study id
-    :returns:      dictionary with data for analysis
+    :param ctx:      Combined type of a callback and rei struct
+    :param study_id: Study id
+
+    :returns: Dictionary with data for analysis
     """
     log.write(ctx, 'ERIN VAULT AGGREGATED INFO')
     # check permissions - datamanager only
@@ -718,13 +741,14 @@ def api_intake_report_vault_aggregated_info(ctx, study_id):
 
 @api.make()
 def api_intake_report_export_study_data(ctx, study_id):
-    """
-    Find all datasets in the vault for $studyID.
+    """Find all datasets in the vault for $studyID.
+
     Include file count and total file size as well as dataset meta data version, experiment type, pseudocode and wave
 
-    :param ctx:    Combined type of a callback and rei struct
+    :param ctx:      Combined type of a callback and rei struct
     :param study_id: Study id to get a report from
-    :returns:      report
+
+    :returns: Study report
     """
     # check permissions - datamanager only
     datamanager_group = "grp-datamanager-" + study_id
