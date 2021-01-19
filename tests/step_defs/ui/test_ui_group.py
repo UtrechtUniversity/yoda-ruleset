@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import pytest
+import splinter
 from pytest_bdd import (
     scenarios,
     then,
@@ -43,10 +45,17 @@ def ui_group_user_demote(browser, user_demote):
 @when('user removes "<user_remove>" from group')
 def ui_group_user_remove(browser, user_remove):
     browser.find_by_id('user-list').links.find_by_partial_text(user_remove).click()
-    browser.find_by_css('a.delete-button').click()
-    browser.find_by_css('button.confirm').click()
+    browser.find_by_css('.users a.delete-button').click()
+    browser.find_by_css('#f-user-delete.confirm').click()
 
 
 @then('user "<user_add>" is added to the group')
 def ui_group_user_added(browser, user_add):
     assert browser.find_by_css('.users .active').value == user_add
+
+
+@then('user "<user_remove>" is removed from the group')
+def ui_group_user_removed(browser, user_remove):
+    with pytest.raises(splinter.exceptions.ElementDoesNotExist):
+        browser.is_text_not_present(user_remove, wait_time=1)
+        browser.find_by_id('user-list').links.find_by_partial_text(user_remove).value

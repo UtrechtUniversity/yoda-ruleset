@@ -7,8 +7,8 @@ Feature: Meta form API
         And file "<file>" exists in "<collection>"
 
         Examples:
-            | collection                      | file               |
-            | /tempZone/home/research-initial | yoda-metadata.json |
+            | collection                       | file               |
+            | /tempZone/home/research-initial1 | yoda-metadata.json |
 
 
     Scenario: Meta form load
@@ -18,5 +18,5 @@ Feature: Meta form API
         And metadata is returned for "<collection>"
 
         Examples:
-            | collection                      |
-            | /tempZone/home/research-initial |
+            | collection                       |
+            | /tempZone/home/research-initial1 |

@@ -201,6 +201,7 @@
       "enum": [
         "Creative Commons Attribution 4.0 International Public License",
         "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Zero v1.0 Universal",
         "Open Data Commons Attribution License (ODC-By) v1.0",
         "Custom"
       ]
@@ -738,11 +739,12 @@
       }
     },
     "Covered_Geolocation_Place": {
+      "title": "Location(s) covered",
       "type": "array",
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/stringNormalNullable",
-        "title": "Location(s) covered",
+        "title": "Location",
         "default": ""
       }
     },
@@ -769,6 +771,7 @@
       }
     },
     "Tag": {
+      "title": "Tags",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -778,6 +781,7 @@
       }
     },
     "Related_Datapackage": {
+      "title": "Related datapackage",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -787,7 +791,7 @@
         "properties": {
           "Relation_Type": {
             "$ref": "#/definitions/optionsRelationType",
-            "title": "Related datapackage"
+            "title": "Relation type"
           },
           "Title": {
             "$ref": "#/definitions/stringNormal",
@@ -837,7 +841,8 @@
     },
     "Data_Type": {
       "$ref": "#/definitions/optionsDataType",
-      "title": "Data type"
+      "title": "Data type",
+      "default": "Dataset"
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
@@ -848,12 +853,12 @@
       "title": "Name of collection"
     },
     "Funding_Reference": {
+      "title": "Funding reference",
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "title": "Funder",
         "yoda:structure": "subproperties",
         "properties": {
           "Funder_Name": {
@@ -913,12 +918,12 @@
             }
           },
           "Person_Identifier": {
+            "title": "Person identifier",
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "title": "Person identifier",
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {
@@ -981,12 +986,12 @@
             }
           },
           "Person_Identifier": {
+            "title": "Person identifier",
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "title": "Person identifier",
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {

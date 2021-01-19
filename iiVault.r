@@ -86,6 +86,39 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 }
 
 
+# \brief Called by uuTreeWalk for each collection and dataobject to copy to the research area.
+#
+# \param[in] itemParent
+# \param[in] itemName
+# \param[in] itemIsCollection
+# \param[in/out] buffer
+# \param[in/out] error
+#
+iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
+	*sourcePath = "*itemParent/*itemName";
+	*destPath = *buffer.destination;
+
+	if (*sourcePath != *buffer."source") {
+		# rewrite path to copy objects that are located underneath the toplevel collection
+		*sourceLength = strlen(*sourcePath);
+		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
+		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
+	}
+
+	if (*itemIsCollection) {
+		*error = errorcode(msiCollCreate(*destPath, 1, *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to create collection *destPath";
+		}
+	} else {
+		*error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "verifyChksum=", *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to copy *sourcePath to *destPath";
+		}
+	}
+}
+
+
 #\ Generic secure copy functionality
 # \param[in] argv         argument string for secure copy like "*publicHost inbox /var/www/landingpages/*publicPath";
 # \param[in] origin_path  local path of origin file

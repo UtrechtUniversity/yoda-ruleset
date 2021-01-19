@@ -43,6 +43,8 @@ __all__ = ['api_datarequest_browse',
 
 DATAREQUESTSTATUSATTRNAME = "status"
 
+YODA_PORTAL_FQDN  = config.yoda_portal_fqdn
+
 JSON_EXT          = ".json"
 
 SCHEMACOLLECTION  = constants.UUSYSTEMCOLLECTION + "/datarequest/schemas/youth-0"
@@ -1350,11 +1352,11 @@ Your data request has been submitted.
 
 You will be notified by email of the status of your request. You may also log into Yoda to view the status and other information about your data request.
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher_name, researcher_email,
@@ -1375,11 +1377,11 @@ Date: {}
 Request ID: {}
 Proposal title: {}
 
-The following link will take you to the preliminary review form: https://portal.yoda.test/datarequest/preliminaryreview/{}.
+The following link will take you to the preliminary review form: https://{}/datarequest/preliminaryreview/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, request_id))
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_preliminary_review_accepted(ctx, datamanager_email, request_id):
@@ -1394,11 +1396,11 @@ Data request {} has been approved for review by the Board of Directors.
 
 You are now asked to review the data request for any potential problems concerning the requested data.
 
-The following link will take you directly to the review form: https://portal.yoda.test/datarequest/datamanagerreview/{}.
+The following link will take you directly to the review form: https://{}/datarequest/datamanagerreview/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, request_id))
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_preliminary_review_resubmit(ctx, researcher_email, researcher_name,
@@ -1414,13 +1416,13 @@ Your data request has been rejected for the following reason(s):
 
 {}
 
-You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+You are however allowed to resubmit your data request. To do so, follow the following link: https://{}/datarequest/add/{}.
 
 If you wish to object against this rejection, please contact the YOUth data manager ({}).
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, request_id, datamanager_email))
+""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, datamanager_email))
 
 
 def mail_preliminary_review_rejected(ctx, researcher_email, researcher_name,
@@ -1453,11 +1455,11 @@ Dear executive board delegate,
 
 Data request {} has been accepted by the data manager.
 
-You are now asked to assign the data request for review to one or more DMC members. To do so, please navigate to the assignment form using this link: https://portal.yoda.test/datarequest/assign/{}.
+You are now asked to assign the data request for review to one or more DMC members. To do so, please navigate to the assignment form using this link: https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, request_id))
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_datamanager_review_resubmit(ctx, bodmember_email, datamanager_remarks, request_id):
@@ -1472,11 +1474,11 @@ Data request {} has been rejected (resubmission allowed) by the data manager for
 
 {}
 
-The data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/{}.
+The data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, request_id))
+""".format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_datamanager_review_rejected(ctx, bodmember_email, datamanager_remarks, request_id):
@@ -1491,11 +1493,11 @@ Data request {} has been rejected by the data manager for the following reason(s
 
 {}
 
-The data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://portal.yoda.test/datarequest/assign/{}.
+The data manager's review is advisory. Please consider the objections raised and then either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, datamanager_remarks, request_id))
+""".format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id):
@@ -1508,11 +1510,11 @@ Dear {},
 
 Your data request has been assigned for review by the YOUth data manager.
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_assignment_accepted_assignee(ctx, assignee_email, proposal_title, request_id):
@@ -1525,11 +1527,11 @@ Dear DMC member,
 
 Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
 
-The following link will take you directly to the review form: https://portal.yoda.test/datarequest/review/{}.
+The following link will take you directly to the review form: https://{}/datarequest/review/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, proposal_title, request_id))
+""".format(request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_assignment_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
@@ -1545,13 +1547,13 @@ Your data request has been rejected for the following reason(s):
 
 {}
 
-You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+You are however allowed to resubmit your data request. To do so, follow the following link: https://{}/datarequest/add/{}.
 
 If you wish to object against this rejection, please contact the YOUth data manager.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, request_id))
+""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_assignment_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
@@ -1584,11 +1586,11 @@ Dear {},
 
 Your data request been reviewed by the YOUth data management committee and is awaiting final evaluation by the YOUth Board of Directors.
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_review_bodmember(ctx, bodmember_email, request_id):
@@ -1603,11 +1605,11 @@ Data request {} has been reviewed by the YOUth data management committee and is 
 
 Please log into Yoda to evaluate the data request.
 
-The following link will take you directly to the evaluation form: https://portal.yoda.test/datarequest/evaluate/{}.
+The following link will take you directly to the evaluation form: https://{}/datarequest/evaluate/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, request_id))
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
@@ -1621,11 +1623,11 @@ Dear {},
 
 Congratulations! Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id):
@@ -1638,11 +1640,11 @@ Dear data manager,
 
 Data request {} has been approved by the Board of Directors. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
 
-The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to the data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, request_id))
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_evaluation_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
@@ -1658,15 +1660,15 @@ Your data request has been rejected for the following reason(s):
 
 {}
 
-You are however allowed to resubmit your data request. To do so, follow the following link: https://portal.yoda.test/datarequest/add/{}.
+You are however allowed to resubmit your data request. To do so, follow the following link: https://{}/datarequest/add/{}.
 
 If you wish to object against this rejection, please contact the YOUth data manager ({}).
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, request_id, datamanager_email, request_id))
+""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, datamanager_email, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_evaluation_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
@@ -1684,11 +1686,11 @@ Your data request has been rejected for the following reason(s):
 
 If you wish to object against this rejection, please contact the YOUth data manager ({}).
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, datamanager_email, request_id))
+""".format(researcher_name, feedback_for_researcher, datamanager_email, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_dta(ctx, researcher_email, researcher_name, request_id):
@@ -1701,13 +1703,13 @@ Dear {},
 
 The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
 
-The following link will take you directly to your data request: https://portal.yoda.test/datarequest/view/{}.
+The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 If you do not object to the agreement, please upload a signed copy of the agreement. After this, the YOUth data manager will prepare the requested data and will provide you with instructions on how to download them.
 
 With kind regards,
 YOUth
-""".format(researcher_name, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_signed_dta(ctx, datamanager_email, request_id):
@@ -1720,13 +1722,13 @@ Dear data manager,
 
 The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}.
 
-Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://portal.yoda.test/datarequest/view/{}.
+Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://{}/datarequest/view/{}.
 
 After verifying that the document has been signed correctly, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data.
 
 With kind regards,
 YOUth
-""".format(request_id, request_id))
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_data_ready(ctx, researcher_email, researcher_name, request_id):

@@ -1,8 +1,9 @@
 Feature: Vault API
 
     Examples:
-        | vault                         |
-        | /tempZone/home/vault-initial1 |
+        | vault                          |
+        | /tempZone/home/vault-core-0    |
+        | /tempZone/home/vault-default-1 |
 
     Scenario: Vault submit
         Given user "researcher" is authenticated

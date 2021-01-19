@@ -53,10 +53,10 @@ Feature: Group API
         And the result is equal to "<users>"
 
         Examples:
-            | user          | pattern   | users                                         |
-            | datamanager   | test      | testuseradd#tempZone, testuserdel#tempZone    |
-            | datamanager   | tech      | technicaladmin#tempZone                       |
-            | groupmanager  | tech      | technicaladmin#tempZone                       |
+            | user         | pattern    | users                                                                                         |
+            | datamanager  | functional | functionaladmingroup#tempZone, functionaladmincategory#tempZone, functionaladminpriv#tempZone |
+            | datamanager  | tech       | technicaladmin#tempZone                                                                       |
+            | groupmanager | tech       | technicaladmin#tempZone                                                                       |
 
     Scenario: Group creation
         Given user "technicaladmin" is authenticated

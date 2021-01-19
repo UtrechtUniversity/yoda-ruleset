@@ -20,5 +20,6 @@ Feature: Meta API
         And metadata JSON is removed from "<collection>"
 
         Examples:
-            | collection                      |
+            | collection                            |
             | /tempZone/home/research-initial/clone |
+            | /tempZone/home/research-initial       |

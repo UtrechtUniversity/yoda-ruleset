@@ -64,6 +64,7 @@
       "enum": [
         "Creative Commons Attribution 4.0 International Public License",
         "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Zero v1.0 Universal",
         "Open Data Commons Attribution License (ODC-By) v1.0",
         "Custom"
       ]
@@ -91,7 +92,8 @@
     },
     "Data_Type": {
       "$ref": "#/definitions/optionsDataType",
-      "title": "Data type"
+      "title": "Data type",
+      "default": "Dataset"
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
@@ -102,6 +104,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "required": [
           "Name",
@@ -110,6 +113,7 @@
         "properties": {
           "Name": {
             "type": "object",
+            "additionalProperties": false,
             "title": "Creator of datapackage",
             "yoda:structure": "compound",
             "required": [
@@ -137,11 +141,12 @@
             }
           },
           "Person_Identifier": {
+            "title": "Person identifier",
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
-              "title": "Person identifier",
+              "additionalProperties": false,
               "yoda:structure": "compound",
               "properties": {
                 "Name_Identifier_Scheme": {

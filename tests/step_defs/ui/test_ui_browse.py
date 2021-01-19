@@ -14,7 +14,13 @@ scenarios('../../features/ui/ui_browse.feature')
 
 @when('user browses to folder "<folder>"')
 def ui_browse_folder(browser, folder):
-    browser.links.find_by_partial_text(folder).click()
+    link = []
+    while len(link) == 0:
+        link = browser.links.find_by_partial_text(folder)
+        if len(link) > 0:
+            link.click()
+        else:
+            browser.find_by_id('file-browser_next').click()
 
 
 @when('user browses to data package "<data_package>"')
