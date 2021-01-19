@@ -15,7 +15,6 @@ import vault
 from util import *
 from util.query import Query
 
-
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',
            'api_folder_lock',
