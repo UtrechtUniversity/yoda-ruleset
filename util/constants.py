@@ -14,9 +14,6 @@ IIGROUPPREFIX = "research-"
 IIGRPPREFIX = "grp-"
 IIVAULTPREFIX = "vault-"
 
-INTAKE_FILE_EXCLUSION_PATTERNS = ['*.abc', '*.PNG']
-""" List of file patterns not to take into account within INTAKE module."""
-
 UUORGMETADATAPREFIX = 'org_'
 UUSYSTEMCOLLECTION = '/yoda'
 

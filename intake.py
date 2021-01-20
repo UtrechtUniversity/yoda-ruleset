@@ -13,7 +13,6 @@ import intake_scan
 
 from util import *
 
-
 __all__ = ['api_intake_list_studies',
            'api_intake_list_dm_studies',
            'api_intake_count_total_files',
@@ -27,6 +26,9 @@ __all__ = ['api_intake_list_studies',
            'api_intake_report_vault_dataset_counts_per_study',
            'api_intake_report_vault_aggregated_info',
            'api_intake_report_export_study_data']
+
+INTAKE_FILE_EXCLUSION_PATTERNS = ['*.abc', '*.PNG']
+""" List of file patterns not to take into account within INTAKE module."""
 
 
 @api.make()
