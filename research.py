@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pathvalidate import validate_filename, validate_filepath, ValidationError
@@ -33,66 +33,54 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     coll_target = coll + '/' + new_folder_name
 
     if len(new_folder_name) == 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "Please add a folder name"}
+        return api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
     except ValidationError as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "This is not a correct folder name. Please choose another name for your folder"}
+        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to add folder '" + new_folder_name + "' at this location"}
+        return api.Error('invalid_destination', 'It is not possible to add folder ' + new_folder_name + ' at this location')
 
     # Name should not contain '\\' or '/'
     if '/' in new_folder_name or '\\' in new_folder_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in a folder name"}
+        return api.Error('invalid_foldername', 'It is not allowed to use slashes in a folder name')
 
     # Name should not be '.' or '..'
     if new_folder_name == '.' or new_folder_name == '..':
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to name the folder {}".format(new_folder_name)}
+        return api.Error('invalid_foldername', 'It is not allowed to name the folder {}'.format(new_folder_name))
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to add folders in the vault"}
+        return api.Error('not_allowed', 'It is not possible to add folders in the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to add new folders"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders')
 
-    # coll exists?
+    # Collection exists?
     if not collection.exists(ctx, coll):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder to add a new folder to does not exist"}
+        return api.Error('invalid_foldername', 'The selected folder to add a new folder to does not exist')
 
-    # folder not locked?
+    # Folder not locked?
     if folder.is_locked(ctx, coll):
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked so no new folders can be added to it"}
+        return api.Error('not_allowed', 'The indicated folder is locked so no new folders can be added to it')
 
     # new collection exists?
     if collection.exists(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The folder already exists. Please choose another name"}
+        return api.Error('invalid_foldername', 'The folder already exists. Please choose another name')
 
     # All requirements OK
     try:
         collection.create(ctx, coll_target)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
@@ -109,72 +97,58 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     coll_target = coll + '/' + new_folder_name
 
     if len(new_folder_name) == 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "Please add a folder name"}
+        return api.Error('missing_foldername', 'Missing folder name. Please add a folder name')
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
     except ValidationError as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "This is not a correct folder name. Please choose another name for your folder"}
+        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # Same name makes no sense
     if new_folder_name == org_folder_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "Origin and target folder names are equal. Please choose another name"}
+        return api.Error('invalid_foldername', 'Origin and target folder names are equal. Please choose another name')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to add folder '" + folder_name + "' at this location"}
+        return api.Error('invalid_destination', 'It is not possible to add folder ' + folder_name + ' at this location')
 
     # Name should not contain '\\' or '/'
     if '/' in new_folder_name or '\\' in new_folder_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the new folder name"}
+        return api.Error('invalid_foldername', 'It is not allowed to use slashes in the new folder name')
 
     # Name should not be '.' or '..'
     if new_folder_name == '.' or new_folder_name == '..':
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to name the folder {}".format(new_folder_name)}
+        return api.Error('invalid_foldername', 'It is not allowed to name the folder {}'.format(new_folder_name))
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to rename folders in the vault"}
+        return api.Error('not_allowed', 'It is not possible to rename folders in the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to rename the selected folder"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected folder')
 
-    # coll exists?
+    # Collection exists?
     if not collection.exists(ctx, coll):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder does not exist"}
+        return api.Error('invalid_foldername', 'The selected folder does not exist')
 
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore can not be renamed"}
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore can not be renamed')
 
     # new collection exists?
     if collection.exists(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The folder already exists. Please choose another name"}
+        return api.Error('invalid_foldername', 'The folder already exists. Please choose another name')
 
     # All requirements OK
     try:
         collection.rename(ctx, coll + '/' + org_folder_name, coll_target)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
@@ -191,51 +165,41 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # Not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folder '" + folder_name + "' at this location"}
+        return api.Error('invalid_target', 'It is not possible to delete folder ' + folder_name + ' at this location')
 
     # Name should not contain '\\' or '/'.
     if '/' in folder_name or '\\' in folder_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the folder name to be deleted"}
+        return api.Error('invalid_foldername', 'It is not allowed to use slashes in folder name to be delete')
 
     # in vault?
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete folders from the vault"}
+        return api.Error('not_allowed', 'It is not possible to delete folders from the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to delete the selected folder"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected folder')
 
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll_target)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore can not be deleted"}
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore can not be deleted')
 
-    # collection exists?
+    # Collection exists?
     if not collection.exists(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder to add a new folder to does not exist"}
+        return api.Error('invalid_target', 'The selected folder to add a new folder to does not exist')
 
     # Folder empty?
     if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target) > 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder is not empty and can therefore not be deleted. Please delete entire content first"}
+        return api.Error('not_empty', 'The selected folder is not empty and can therefore not be deleted. Please delete entire content first')
 
     # All requirements OK
     try:
         collection.remove(ctx, coll_target)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
@@ -250,69 +214,56 @@ def api_research_file_copy(ctx, copy, coll, file):
     :returns: Dict with API status result
     """
     if len(copy) == 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "Please add a file name"}
+        return api.Error('missing_filename', 'Missing filename. Please add a file name')
 
     try:
         validate_filename(copy.decode('utf-8'))
     except Exception:
-        return {"proc_status": "nok",
-                "proc_status_info": "This is not a valid file name. Please choose another name"}
+        return api.Error('missing_filename', 'Missing filename. Please add a file name')
 
     # Same name makes no sense
     if copy == file:
-        return {"proc_status": "nok",
-                "proc_status_info": "Origin and copy file names are equal. Please choose another name"}
+        return api.Error('invalid_filename', 'Origin and copy file names are equal. Please choose another name')
 
     path_target = coll + '/' + copy
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible copy files at this location"}
+        return api.Error('invalid_destination', 'It is not possible to copy files at this location')
 
     # Name should not contain '\\' or '/'
     if '/' in copy or '\\' in copy:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the new name of a file"}
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
 
     # in vault?
     target_group_name = path_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to copy files in the vault"}
+        return api.Error('invalid_destination', 'It is not possible to copy files in the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to copy the selected file"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected file')
 
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore the indicated file can not be copied"}
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be copied')
 
-    # DOes org file exist?
+    # Does org file exist?
     if not data_object.exists(ctx, coll + '/' + file):
-        return {"proc_status": "nok",
-                "proc_status_info": "The original file " + file + " can not be found"}
+        return api.Error('invalid_source', 'The original file ' + file + ' can not be found')
 
     # new filename already exists?
     if data_object.exists(ctx, path_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected filename " + copy + " already exists"}
+        return api.Error('invalid_destination', 'The selected filename ' + copy + ' already exists')
 
     # All requirements OK
     try:
         data_object.copy(ctx, coll + '/' + file, coll + '/' + copy)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
@@ -327,69 +278,56 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     :returns: Dict with API status result
     """
     if len(new_file_name) == 0:
-        return {"proc_status": "nok",
-                "proc_status_info": "Please add a file name"}
+        return api.Error('missing_filename', 'Missing filename. Please add a file name')
 
     try:
         validate_filename(new_file_name.decode('utf-8'))
     except Exception:
-        return {"proc_status": "nok",
-                "proc_status_info": "This is not a valid file name. Please choose another name"}
+        return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
 
     # Same name makes no sense
     if new_file_name == org_file_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "Origin and target file names are equal. Please choose another name"}
+        return api.Error('invalid_filename', 'Origin and target file names are equal. Please choose another name')
 
     path_target = coll + '/' + new_file_name
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible rename files at this location"}
+        return api.Error('invalid_destination', 'It is not possible to rename files at this location')
 
     # Name should not contain '\\' or '/'
     if '/' in new_file_name or '\\' in new_file_name:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in the new name of a file"}
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
 
     # in vault?
     target_group_name = path_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to rename files in the vault"}
+        return api.Error('invalid_destination', 'It is not possible to rename files in the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to rename the selected file"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected file')
 
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, coll)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore the indicated file can not be renamed"}
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be renamed')
 
-    # DOes org file exist?
+    # Does org file exist?
     if not data_object.exists(ctx, coll + '/' + org_file_name):
-        return {"proc_status": "nok",
-                "proc_status_info": "The original file " + org_file_name + " can not be found"}
+        return api.Error('invalid_source', 'The original file ' + org_file_name + ' can not be found')
 
     # new filename already exists?
     if data_object.exists(ctx, path_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected filename " + new_file_name + " already exists"}
+        return api.Error('invalid_destination', 'The selected filename ' + new_file_name + ' already exists')
 
     # All requirements OK
     try:
         data_object.rename(ctx, coll + '/' + org_file_name, path_target)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
@@ -406,41 +344,33 @@ def api_research_file_delete(ctx, coll, file_name):
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete files at this location"}
+        return api.Error('invalid_target', 'It is not possible to delete files at this location')
 
     # in vault?
     target_group_name = path_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not possible to delete files from the vault"}
+        return api.Error('not_allowed', 'It is not possible to delete files from the vault')
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You do not have sufficient permissions to delete the selected file"}
+        return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected file')
 
-    # folder not locked?
-    lock_count = meta_form.get_coll_lock_count(ctx, path_target)
-    if lock_count:
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated folder is locked and therefore the indicated file can not be deleted"}
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be deleted')
 
-    # collection exists?
+    # Collection exists?
     if not data_object.exists(ctx, path_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The selected folder to add a new folder to does not exist"}
+        return api.Error('invalid_target', 'The selected folder to add a new folder to does not exist')
 
     # All requirements OK
     try:
         data_object.remove(ctx, path_target)
     except msi.Error as e:
-        return {"proc_status": "nok",
-                "proc_status_info": "Something went wrong. Please try again"}
+        return api.Error('internal', 'Something went wrong. Please try again')
 
-    return {"proc_status": "ok",
-            "proc_status_info": ""}
+    return api.Result.ok()
 
 
 @api.make()
