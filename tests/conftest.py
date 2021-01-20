@@ -21,10 +21,8 @@ api_url = "https://portal.yoda.test/api"
 password = "test"
 users = ['researcher',
          'datamanager',
-         'technicaladmin',
-         'bodmember',
-         'dmcmember',
-         'groupmanager']
+         'groupmanager',
+         'technicaladmin']
 user_cookies = {}
 datarequest = False
 
@@ -36,6 +34,10 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "datarequest: Run datarequest tests"
+    )
+
     global portal_url
     portal_url = config.getoption("--url")
 
@@ -47,6 +49,10 @@ def pytest_configure(config):
 
     global datarequest
     datarequest = config.getoption("--datarequest")
+
+    global users
+    if datarequest:
+        users = users + ['bodmember', 'dmcmember']
 
     # Store cookies for each user.
     for user in users:
