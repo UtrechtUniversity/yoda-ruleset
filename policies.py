@@ -29,7 +29,6 @@ from util import *
 # Separate from ACLs, we deny certain operations on collections and data in
 # research folders when paths are locked.
 
-
 def can_coll_create(ctx, actor, coll):
     """Disallow creating collections in locked folders."""
     log.debug(ctx, 'check coll create <{}>'.format(coll))
@@ -151,7 +150,6 @@ def can_data_move(ctx, actor, src, dst):
 def py_acPreprocForCollCreate(ctx):
     log._debug(ctx, 'py_acPreprocForCollCreate')
     # print(jsonutil.dump(session_vars.get_map(ctx.rei)))
-
     return can_coll_create(ctx, user.user_and_zone(ctx),
                            str(session_vars.get_map(ctx.rei)['collection']['name']))
 
@@ -167,7 +165,6 @@ def py_acPreprocForRmColl(ctx):
 @policy.require()
 def py_acPreprocForDataObjOpen(ctx):
     log._debug(ctx, 'py_acPreprocForDataObjOpen')
-
     # data object reads are always allowed.
     # writes are blocked e.g. when the object is locked (unless actor is a rodsadmin).
     if session_vars.get_map(ctx.rei)['data_object']['write_flag'] == 1:
@@ -180,7 +177,6 @@ def py_acPreprocForDataObjOpen(ctx):
 @policy.require()
 def py_acDataDeletePolicy(ctx):
     log._debug(ctx, 'py_acDataDeletePolicy')
-
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
@@ -318,11 +314,10 @@ def pep_api_data_obj_truncate_pre(ctx, instance_name, rs_comm, data_obj_truncate
     return can_data_write(ctx, user.user_and_zone(ctx),
                           str(data_obj_inp.objPath))
 
-
 # Disabled: caught by acDataDeletePolicy
 # @policy.require()
 # def pep_api_data_obj_unlink_pre(ctx, instance_name, rs_comm, data_obj_unlink_inp):
-#    log._debug(ctx, 'pep_api_data_obj_unlink_pre')
+#     log._debug(ctx, 'pep_api_data_obj_unlink_pre')
 #     return can_data_delete(ctx, user.user_and_zone(ctx),
 #                            str(data_obj_unlink_inp.objPath))
 
