@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 
+import pytest
 import requests
 import urllib3
 from pytest_bdd import (
@@ -25,11 +26,13 @@ users = ['researcher',
          'dmcmember',
          'groupmanager']
 user_cookies = {}
+datarequest = False
 
 
 def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test/")
     parser.addoption("--password", action="store", default="test")
+    parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
 
 
 def pytest_configure(config):
@@ -42,10 +45,23 @@ def pytest_configure(config):
     global password
     password = config.getoption("--password")
 
+    global datarequest
+    datarequest = config.getoption("--datarequest")
+
     # Store cookies for each user.
     for user in users:
         csrf, session = login(user, password)
         user_cookies[user] = (csrf, session)
+
+
+def pytest_bdd_apply_tag(tag, function):
+    if tag == 'datarequest' and not datarequest:
+        marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    else:
+        # Fall back to pytest-bdd's default behavior
+        return None
 
 
 def login(user, password):

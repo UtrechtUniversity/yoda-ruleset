@@ -27,7 +27,12 @@ Use `-k` to only run API or UI tests:
 $ pytest -k api
 ```
 
-If Yoda is not running on development address or test password is not the default, use --url and --password to specify:
+If Yoda is not running on development address or test password is not the default, use `--url` and `--password` to specify:
 ```bash
 $ pytest --url <url> --password <password>
+```
+
+Datarequest tests are disabled by default, enable using `--datarequest`:
+```bash
+$ pytest -k api --datarequest
 ```
