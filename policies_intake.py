@@ -178,7 +178,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
             "COLL_NAME like '" + coll + "%' AND META_COLL_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
             genquery.AS_LIST, ctx
         )
-        for row in iter:
+        for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
             return not user.is_admin(ctx, actor)
@@ -189,7 +189,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
             "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
             genquery.AS_LIST, ctx
         )
-        for row in iter:
+        for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
             return not user.is_admin(ctx, actor)
@@ -262,7 +262,7 @@ def data_part_of_locked_dataset(ctx, actor, path):
             "COLL_NAME like '" + coll + "%' AND  META_COLL_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
             genquery.AS_LIST, ctx
         )
-        for row in iter:
+        for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
             return not user.is_admin(ctx, actor)
@@ -273,38 +273,10 @@ def data_part_of_locked_dataset(ctx, actor, path):
             "COLL_NAME like '" + coll + "%' AND META_DATA_ATTR_NAME in ('to_vault_lock','to_vault_freeze') ",
             genquery.AS_LIST, ctx
         )
-        for row in iter:
+        for _row in iter:
             log.debug(ctx, 'Found deeper LOCK')
             # If present there is a lock. No need to further inquire
             return not user.is_admin(ctx, actor)
 
         # There is no lock present
         return False
-
-
-def can_data_create(ctx, actor, path):
-    # Check lock state.
-    if is_data_in_locked_dataset(ctx, actor, path):
-        return policy.fail(path + ' contains locked dataset')
-    return policy.succeed()
-
-
-def can_data_delete(ctx, actor, path):
-    # Check lock state.
-    if is_data_in_locked_dataset(ctx, actor, path):
-        return policy.fail(path + ' contains locked dataset')
-    return policy.succeed()
-
-
-def can_coll_create(ctx, actor, path):
-    # Check lock state of parent collection
-    if is_coll_in_locked_dataset(ctx, actor, pathutil.chop(path)[0]):
-        return policy.fail(path + ' contains locked dataset')
-    return policy.succeed()
-
-
-def can_coll_delete(ctx, actor, coll):
-    # Check lock state of any locked state in full path
-    if coll_in_path_of_locked_dataset(ctx, actor, coll):
-        return policy.fail(coll + ' contains locked dataset')
-    return policy.succeed()
