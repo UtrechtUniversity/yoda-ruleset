@@ -426,30 +426,25 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     """
     # New file name should not contain '\\' or '/'
     if '/' in new_filename or '\\' in new_filename:
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to use slashes in a filename"}
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in a filename')
 
     target_group_name = coll_target.split('/')[3]
     if target_group_name.startswith('vault-'):
-        return {"proc_status": "nok",
-                "proc_status_info": "It is not allowed to store file in the vault"}
+        return api.Error('not_allowed', 'It is not allowed to store file in the vault')
 
     # Check existence of target_coll
     if not collection.exists(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The target collection does not exist or is not accessible for you"}
+        return api.Error('invalid_target', 'The target collection does not exist or is not accessible for you')
 
     user_full_name = user.full_name(ctx)
 
     # Target collection write access?
     if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You are not allowed to write in the selected collection"}
+        return api.Error('not_allowed', 'You are not allowed to write in the selected collection')
 
     # Target_coll locked?
     if folder.is_locked(ctx, coll_target):
-        return {"proc_status": "nok",
-                "proc_status_info": "The target collection is locked and therefore this revision cannot be written to the indicated collection"}
+        return api.Error('not_allowed', 'The target collection is locked and therefore this revision cannot be written to the indicated collection')
 
     # Read access in org collection?
     # Find actual revision inf on revision_id
@@ -473,26 +468,22 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     origin_group_name = original_path.split('/')[3]
 
     if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
-        return {"proc_status": "nok",
-                "proc_status_info": "You are not allowed to view the information from this group " + origin_group_name}
+        return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
 
     source_path = coll_origin + "/"  + filename_origin
 
     if source_path == '':
-        return {"proc_status": "nok",
-                "proc_status_info": "The indicated revision does not exist"}
+        return api.Error('invalid_revision', 'The indicated revision does not exist')
 
     if overwrite in ["restore_no_overwrite", "restore_next_to"]:
         if data_object.exists(ctx, coll_target + '/' + new_filename):
-            return {"proc_status": "ok_duplicate",
-                    "proc_status_info": "The file is already present at the indicated location"}
+            return api.Error('duplicate_file', 'The file is already present at the indicated location')
 
     elif overwrite in ["restore_overwrite"]:
         restore_allowed = True
 
     else:
-        return {"proc_status": "nok",
-                "proc_status_info": "Unknown requested action: " + overwrite}
+        return api.Error('invalid_action', 'Unknown requested action: {}'.format(overwrite))
 
     # Allowed to restore revision
     # Start actual restoration of the revision
@@ -503,4 +494,4 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     except msi.Error as e:
         return api.Error('copy_failed', 'The file could not be copied', str(e))
 
-    return {"proc_status": "ok"}
+    return api.Result.ok()

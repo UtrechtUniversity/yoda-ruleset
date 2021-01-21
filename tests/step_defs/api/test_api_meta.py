@@ -51,15 +51,24 @@ def api_meta_form_save(user, collection):
 
 @given('subcollection "<target_coll>" exists')
 def subcollection_exists(user, target_coll):
-    x = target_coll.split('/')
-
     http_status, _ = api_request(
         user,
-        "research_folder_add",
-        {"coll": "/".join(x[:-1]), "new_folder_name": x[-1]}
+        "research_collection_details",
+        {"path": target_coll}
     )
 
-    assert http_status == 200
+    if http_status == 400:
+        x = target_coll.split('/')
+
+        http_status, _ = api_request(
+            user,
+            "research_folder_add",
+            {"coll": "/".join(x[:-1]), "new_folder_name": x[-1]}
+        )
+
+        assert http_status == 200
+    else:
+        assert True
 
 
 @given('the Yoda meta remove API is queried with metadata and "<collection>"', target_fixture="api_response")
