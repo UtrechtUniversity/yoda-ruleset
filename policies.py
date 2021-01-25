@@ -12,6 +12,7 @@ import datarequest
 import folder
 import policies_datapackage_status
 import policies_folder_status
+import policies_datarequest_status
 from util import *
 
 
