@@ -643,6 +643,10 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
+    return datarequest_preliminary_review_get(ctx, request_id)
+
+
+def datarequest_preliminary_review_get(ctx, request_id):
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = PR_REVIEW + JSON_EXT
@@ -650,11 +654,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Get the contents of the review JSON file
     try:
-        preliminary_review_json = data_object.read(ctx, file_path)
+        return data_object.read(ctx, file_path)
     except error.UUError as e:
         return api.Error("ReadError", "Could not get preliminary review data: {}.".format(e))
-
-    return preliminary_review_json
 
 
 @api.make()
@@ -747,6 +749,11 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     except error.UUError:
         return api.Error("PermissionError", "Something went wrong during permission checking.")
 
+    # Retrieve and return datamanager review
+    return datarequest_datamanager_review_get(ctx, request_id)
+
+
+def datarequest_datamanager_review_get(ctx, request_id):
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DM_REVIEW + JSON_EXT
@@ -754,12 +761,9 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     # Get the contents of the data manager review JSON file
     try:
-        datamanager_review_json = data_object.read(ctx, file_path)
+        return data_object.read(ctx, file_path)
     except error.UUError as e:
         return api.Error("ReadError", "Could not get data manager review data: {}.".format(e))
-
-    return datamanager_review_json
-
 
 
 @api.make()
@@ -882,6 +886,10 @@ def api_datarequest_assignment_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    return datarequest_assignment_get(ctx, request_id)
+
+
+def datarequest_assignment_get(ctx, request_id):
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = ASSIGNMENT + JSON_EXT
@@ -889,11 +897,9 @@ def api_datarequest_assignment_get(ctx, request_id):
 
     # Get the contents of the assignment JSON file
     try:
-        assignment_json = data_object.read(ctx, file_path)
+        return data_object.read(ctx, file_path)
     except error.UUError:
         return api.Error("ReadError", "Could not get assignment data.")
-
-    return assignment_json
 
 
 @api.make()
@@ -1075,6 +1081,18 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     else:
         return api.Error("InvalidData", "Invalid value for 'evaluation' key in evaluation JSON data.")
 
+
+def datarequest_evaluation_get(ctx, request_id):
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = EVALUATION + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name)
+
+    # Get the contents of the assignment JSON file
+    try:
+        return data_object.read(ctx, file_path)
+    except error.UUError:
+        return api.Error("ReadError", "Could not get assignment data.")
 
 
 @api.make()
