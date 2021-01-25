@@ -68,6 +68,7 @@ SIGDTA_FILENAME   = "dta_signed.pdf"
 
 # List of valid datarequest statuses
 class status(Enum):
+    IN_SUBMISSION                     = 'IN_SUBMISSION'
     SUBMITTED                         = 'SUBMITTED'
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
     PRELIMINARY_REJECT                = 'PRELIMINARY_REJECT'
@@ -90,7 +91,8 @@ class status(Enum):
 # List of valid datarequest status transitions (source, destination)
 status_transitions = [(status(x),
                        status(y))
-                      for x, y in [('SUBMITTED',            'PRELIMINARY_ACCEPT'),
+                      for x, y in [('IN_SUBMISSION',        'SUBMITTED'),
+                                   ('SUBMITTED',            'PRELIMINARY_ACCEPT'),
                                    ('SUBMITTED',            'PRELIMINARY_REJECT'),
                                    ('SUBMITTED',            'PRELIMINARY_RESUBMIT'),
                                    ('PRELIMINARY_ACCEPT',   'DATAMANAGER_ACCEPT'),
@@ -159,15 +161,19 @@ def status_get(ctx, request_id):
     file_name = DATAREQUEST + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
+    # Retrieve current status
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
                         ("COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'").format(coll_path, file_name),
                         AS_DICT, ctx)
     if rows.total_rows() == 1:
-        current_status = list(rows)[0]['META_DATA_ATTR_VALUE']
+        return status[list(rows)[0]['META_DATA_ATTR_VALUE']]
+    # If no status is set, set status to IN_SUBMISSION (this is the case for newly submitted data
+    # requests)
+    elif rows.total_rows() == 0:
+        return status.IN_SUBMISSION
     else:
         raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
 
-    return status[current_status]
 
 
 def metadata_set(ctx, request_id, key, value):
