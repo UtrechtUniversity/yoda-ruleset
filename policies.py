@@ -424,6 +424,10 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
     elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
         policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
 
+    # Send emails after datarequest status transition if appropriate
+    elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
+        policies_datarequest_status.post_status_transition(ctx, obj_name, value)
+
 
 # }}}
 # ExecCmd {{{

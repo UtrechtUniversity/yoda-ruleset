@@ -1217,6 +1217,46 @@ def api_datarequest_data_ready(ctx, request_id):
     status_set(ctx, request_id, status.DATA_READY)
 
 
+def send_emails(ctx, obj_name, status_to):
+    # Get request ID
+    temp, _ = pathutil.chop(obj_name)
+    _, request_id = pathutil.chop(temp)
+
+    # Get datarequest status
+    datarequest_status = status_get(ctx, request_id)
+
+    # Determine and invoke the appropriate email routine
+    if datarequest_status == status.SUBMITTED:
+        datarequest_submit_emails(ctx, request_id)
+
+    elif datarequest_status in (status.PRELIMINARY_ACCEPT, status.PRELIMINARY_REJECT,
+                                status.PRELIMINARY_RESUBMIT):
+        preliminary_review_emails(ctx, request_id, datarequest_status)
+
+    elif datarequest_status in (status.DATAMANAGER_ACCEPT, status.DATAMANAGER_REJECT,
+                                status.DATAMANAGER_RESUBMIT):
+        datamanager_review_emails(ctx, request_id, datarequest_status)
+
+    elif datarequest_status in (status.UNDER_REVIEW, status.REJECTED_AFTER_DATAMANAGER_REVIEW,
+                                status.RESUBMIT_AFTER_DATAMANAGER_REVIEW):
+        assignment_submit_emails(ctx, request_id, datarequest_status)
+
+    elif datarequest_status == status.REVIEWED:
+        review_submit_emails(ctx, request_id)
+
+    elif datarequest_status in (status.APPROVED, status.REJECTED, status.RESUBMIT):
+        evaluation_submit_emails(ctx, request_id, datarequest_status)
+
+    elif datarequest_status == status.DTA_READY:
+        dta_post_upload_actions_emails(ctx, request_id)
+
+    elif datarequest_status == status.DTA_SIGNED:
+        signed_dta_post_upload_actions_emails(ctx, request_id)
+
+    elif datarequest_status == status.DATA_READY:
+        data_ready_emails(ctx, request_id)
+
+
 def datarequest_submit_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
