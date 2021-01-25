@@ -417,28 +417,27 @@ def api_datarequest_get(ctx, request_id):
     except error.UUError as e:
         return api.Error("permission_error", "Something went wrong during permission checking: {}.".format(e))
 
+    # Get request status
+    datarequest_status = status_get(ctx, request_id).value
+
+    # Get request
+    datarequest = datarequest_get(ctx, request_id)
+
+    # Return JSON encoded results
+    return {'requestJSON': datarequest, 'requestStatus': datarequest_status}
+
+
+def datarequest_get(ctx, request_id):
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DATAREQUEST + JSON_EXT
     file_path = "{}/{}".format(coll_path, file_name)
 
-    try:
-        # Get request status
-        rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                            "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll_path, file_name),
-                            AS_DICT, ctx)
-        for row in rows:
-            request_status = row['META_DATA_ATTR_VALUE']
-    except error.UUError:
-        return api.Error("failed_get_datarequest_info", "Could not get data request status and filesize. (Does a request with this requestID exist?)")
-
     # Get the contents of the datarequest JSON file
     try:
-        request_json = data_object.read(ctx, file_path)
+        return data_object.read(ctx, file_path)
     except error.UUError as e:
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file: {}.".format(e))
-
-    return {'requestJSON': request_json, 'requestStatus': request_status}
 
 
 @api.make()
