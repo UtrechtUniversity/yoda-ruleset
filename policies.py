@@ -361,8 +361,12 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
             return policy.fail('Folder is locked')
 
     elif space is pathutil.Space.DATAREQUEST and attr == datarequest.DATAREQUESTSTATUSATTRNAME:
+        # Check if user is permitted to change the status
+        if not user.is_admin(ctx, actor):
+            return policy.fail('No permission to change datarequest status')
+
         # Datarequest status change. Validate.
-        return policies_datarequest_status.can_set_datarequest_status(ctx, actor, obj_name, value)
+        return policies_datarequest_status.can_set_datarequest_status(ctx, obj_name, value)
 
     else:
         # Allow metadata operations in general if they do not affect reserved

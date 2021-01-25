@@ -8,14 +8,7 @@ import datarequest
 from util import *
 
 
-def can_set_datarequest_status(ctx, actor, obj_name, status_to):
-    # Check if user is rods.
-    if actor != "rods":
-        return policy.fail('No permission to change datarequest status')
-
-    # Check if user is admin.
-    if not user.is_admin(ctx, actor):
-        return policy.fail('No permission to change datarequest status')
+def can_set_datarequest_status(ctx, obj_name, status_to):
 
     # Get current status.
     try:
