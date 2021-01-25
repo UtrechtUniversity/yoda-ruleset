@@ -200,6 +200,188 @@ def metadata_set(ctx, request_id, key, value):
 
 
 @api.make()
+def api_datarequest_is_owner(ctx, request_id):
+    """Check if the invoking user is also the owner of a given data request
+
+    This function is a wrapper for datarequest_is_owner.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :type request_id: str
+
+    :returns: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+    :rtype: bool
+    """
+
+    is_owner = False
+
+    try:
+        is_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    except error.UUError as e:
+        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e))
+
+    return is_owner
+
+
+def datarequest_is_owner(ctx, request_id, user_name):
+    """Check if the invoking user is also the owner of a given data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :type request_id: str
+    :param user_name: Username of the user whose ownership is checked
+    :type user_name: str
+
+    :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
+    :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
+    :rtype: bool
+    """
+    # Construct path to the collection of the datarequest
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+
+    # Query iCAT for the username of the owner of the data request
+    rows = row_iterator(["DATA_OWNER_NAME"],
+                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path)),
+                        AS_DICT, ctx)
+
+    # If there is not exactly 1 resulting row, something went terribly wrong
+    if rows.total_rows() != 1:
+        raise error.UUError("No or ambiguous data owner")
+
+    # There is only a single row containing the owner of the data request
+    return list(rows)[0]["DATA_OWNER_NAME"] == user_name
+
+
+@api.make()
+def api_datarequest_is_reviewer(ctx, request_id):
+    return datarequest_is_reviewer(ctx, request_id)
+
+
+def datarequest_is_reviewer(ctx, request_id):
+    """Check if a user is assigned as reviewer to a data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Boolean indicating if the user is assigned as reviewer
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Get username
+    username = user.name(ctx)
+
+    # Reviewers are stored in one or more assignedForReview attributes on
+    # the data request, so our first step is to query the metadata of our
+    # data request file for these attributes
+
+    # Declare variables needed for retrieving the list of reviewers
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    reviewers = []
+
+    # Retrieve list of reviewers
+    rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
+                        AS_DICT, ctx)
+    for row in rows:
+        reviewers.append(row['META_DATA_ATTR_VALUE'])
+
+    # Check if the reviewers list contains the current user
+    is_reviewer = username in reviewers
+
+    # Return the is_reviewer boolean
+    return is_reviewer
+
+
+@api.make()
+def api_datarequest_is_bod_member(ctx):
+    """Check if given user is BOD member
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_BOD)
+
+
+@api.make()
+def api_datarequest_is_dmc_member(ctx):
+    """Check if given user is BOD member
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_DMC)
+
+
+@api.make()
+def api_datarequest_is_datamanager(ctx):
+    """Check if given user is BOD member
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: True if user is BOD member else False
+    :rtype bool
+    """
+    return user.is_member_of(ctx, GROUP_DM)
+
+
+@api.make()
+def api_datarequest_schema_get(ctx, schema_name):
+    return datarequest_schema_get(ctx, schema_name)
+
+
+def datarequest_schema_get(ctx, schema_name):
+    """Get schema and UI schema of a datarequest form
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param schema_name: Name of schema
+
+    :returns: Dict with schema and UI schema
+    """
+    # Define paths to schema and uischema
+    coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
+    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
+    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
+
+    # Retrieve and read schema and uischema
+    try:
+        schema = jsonutil.read(ctx, schema_path)
+        uischema = jsonutil.read(ctx, uischema_path)
+    except error.UUFileNotExistError:
+        return api.Error("file_read_error", "Could not read schema because it doesn't exist.")
+
+    # Return JSON with schema and uischema
+    return {"schema": schema, "uischema": uischema}
+
+
+def datarequest_data_valid(ctx, data, schema_name):
+    """Check if form data contains no errors
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param data:        The form data to validate
+    :param schema_name: Name of JSON schema against which to validate the form data
+
+    :returns: Boolean indicating if datarequest is valid or API error
+    """
+    try:
+        schema = datarequest_schema_get(ctx, schema_name)['schema']
+
+        validator = jsonschema.Draft7Validator(schema)
+
+        errors = list(validator.iter_errors(data))
+
+        return len(errors) == 0
+    except error.UUJsonValidationError as e:
+        # File may be missing or not valid JSON
+        return api.Error("validation_error",
+                         "{} form data could not be validated against its schema.".format(schema_name))
+
+
+@api.make()
 def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10):
     """Get paginated datarequests, including size/modify date information.
 
@@ -270,58 +452,6 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     return OrderedDict([('total', qcoll.total_rows()),
                         ('items', colls)])
-
-
-@api.make()
-def api_datarequest_schema_get(ctx, schema_name):
-    return datarequest_schema_get(ctx, schema_name)
-
-
-def datarequest_schema_get(ctx, schema_name):
-    """Get schema and UI schema of a datarequest form
-
-    :param ctx:         Combined type of a callback and rei struct
-    :param schema_name: Name of schema
-
-    :returns: Dict with schema and UI schema
-    """
-    # Define paths to schema and uischema
-    coll_path = "/{}{}".format(user.zone(ctx), SCHEMACOLLECTION)
-    schema_path = "{}/{}/{}".format(coll_path, schema_name, SCHEMA + JSON_EXT)
-    uischema_path = "{}/{}/{}".format(coll_path, schema_name, UISCHEMA + JSON_EXT)
-
-    # Retrieve and read schema and uischema
-    try:
-        schema = jsonutil.read(ctx, schema_path)
-        uischema = jsonutil.read(ctx, uischema_path)
-    except error.UUFileNotExistError:
-        return api.Error("file_read_error", "Could not read schema because it doesn't exist.")
-
-    # Return JSON with schema and uischema
-    return {"schema": schema, "uischema": uischema}
-
-
-def datarequest_data_valid(ctx, data, schema_name):
-    """Check if form data contains no errors
-
-    :param ctx:         Combined type of a callback and rei struct
-    :param data:        The form data to validate
-    :param schema_name: Name of JSON schema against which to validate the form data
-
-    :returns: Boolean indicating if datarequest is valid or API error
-    """
-    try:
-        schema = datarequest_schema_get(ctx, schema_name)['schema']
-
-        validator = jsonschema.Draft7Validator(schema)
-
-        errors = list(validator.iter_errors(data))
-
-        return len(errors) == 0
-    except error.UUJsonValidationError as e:
-        # File may be missing or not valid JSON
-        return api.Error("validation_error",
-                         "{} form data could not be validated against its schema.".format(schema_name))
 
 
 @api.make()
@@ -687,135 +817,6 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     return datamanager_review_json
 
-
-@api.make()
-def api_datarequest_is_owner(ctx, request_id):
-    """Check if the invoking user is also the owner of a given data request
-
-    This function is a wrapper for datarequest_is_owner.
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-    :type request_id: str
-
-    :returns: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-    :rtype: bool
-    """
-
-    is_owner = False
-
-    try:
-        is_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    except error.UUError as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e))
-
-    return is_owner
-
-
-def datarequest_is_owner(ctx, request_id, user_name):
-    """Check if the invoking user is also the owner of a given data request
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-    :type request_id: str
-    :param user_name: Username of the user whose ownership is checked
-    :type user_name: str
-
-    :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
-    :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-    :rtype: bool
-    """
-    # Construct path to the collection of the datarequest
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-
-    # Query iCAT for the username of the owner of the data request
-    rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path)),
-                        AS_DICT, ctx)
-
-    # If there is not exactly 1 resulting row, something went terribly wrong
-    if rows.total_rows() != 1:
-        raise error.UUError("No or ambiguous data owner")
-
-    # There is only a single row containing the owner of the data request
-    return list(rows)[0]["DATA_OWNER_NAME"] == user_name
-
-
-@api.make()
-def api_datarequest_is_reviewer(ctx, request_id):
-    return datarequest_is_reviewer(ctx, request_id)
-
-
-def datarequest_is_reviewer(ctx, request_id):
-    """Check if a user is assigned as reviewer to a data request
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-
-    :returns: Boolean indicating if the user is assigned as reviewer
-    """
-    # Force conversion of request_id to string
-    request_id = str(request_id)
-
-    # Get username
-    username = user.name(ctx)
-
-    # Reviewers are stored in one or more assignedForReview attributes on
-    # the data request, so our first step is to query the metadata of our
-    # data request file for these attributes
-
-    # Declare variables needed for retrieving the list of reviewers
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    reviewers = []
-
-    # Retrieve list of reviewers
-    rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
-                        AS_DICT, ctx)
-    for row in rows:
-        reviewers.append(row['META_DATA_ATTR_VALUE'])
-
-    # Check if the reviewers list contains the current user
-    is_reviewer = username in reviewers
-
-    # Return the is_reviewer boolean
-    return is_reviewer
-
-
-@api.make()
-def api_datarequest_is_bod_member(ctx):
-    """Check if given user is BOD member
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is BOD member else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_BOD)
-
-
-@api.make()
-def api_datarequest_is_dmc_member(ctx):
-    """Check if given user is BOD member
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is BOD member else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_DMC)
-
-
-@api.make()
-def api_datarequest_is_datamanager(ctx):
-    """Check if given user is BOD member
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is BOD member else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_DM)
 
 
 @api.make()
