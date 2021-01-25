@@ -16,6 +16,7 @@ def can_set_datarequest_status(ctx, obj_name, status_to):
     except error.UUError:
         return policy.fail('Could not get current datarequest status')
 
+    # Check if transition is valid.
     transition = (datarequest.status(status_from),
                   datarequest.status(status_to))
     if transition not in datarequest.status_transitions:
