@@ -181,8 +181,8 @@ def metadata_set(ctx, request_id, key, value):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-    :param key:        Key of the metdata field
-    :param value:      Value of the meta field
+    :param key:        Key of the metadata field
+    :param value:      Value of the metadata field
     """
 
     # Construct path to the collection of the data request
@@ -200,11 +200,7 @@ def metadata_set(ctx, request_id, key, value):
 
 
 @api.make()
-def api_datarequest_browse(ctx,
-                           sort_on='name',
-                           sort_order='asc',
-                           offset=0,
-                           limit=10):
+def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10):
     """Get paginated datarequests, including size/modify date information.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1055,7 +1051,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     ctx.adminDatarequestActions()
 
     # If there are no reviewers left, change the status of the proposal to
-    # 'reviewed' and send an email to the board of directors members
+    # 'reviewed' and send an email to the Board of Directors members
     # informing them that the proposal is ready to be evaluated by them.
     if len(reviewers) < 1:
         status_set(ctx, request_id, status.REVIEWED)
