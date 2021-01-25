@@ -41,6 +41,11 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
 
+
+###################################################
+#                    Constants                    #
+###################################################
+
 DATAREQUESTSTATUSATTRNAME = "status"
 
 YODA_PORTAL_FQDN  = config.yoda_portal_fqdn
@@ -65,6 +70,10 @@ EVALUATION        = "evaluation"
 DTA_FILENAME      = "dta.pdf"
 SIGDTA_FILENAME   = "dta_signed.pdf"
 
+
+###################################################
+#          Datarequest status functions           #
+###################################################
 
 # List of valid datarequest statuses
 class status(Enum):
@@ -175,6 +184,9 @@ def status_get(ctx, request_id):
         raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
 
 
+###################################################
+#                 Helper functions                #
+###################################################
 
 def metadata_set(ctx, request_id, key, value):
     """Set an arbitrary metadata field on a data request
@@ -380,6 +392,10 @@ def datarequest_data_valid(ctx, data, schema_name):
         return api.Error("validation_error",
                          "{} form data could not be validated against its schema.".format(schema_name))
 
+
+###################################################
+#          Datarequest workflow API calls         #
+###################################################
 
 @api.make()
 def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10):
@@ -1217,6 +1233,10 @@ def api_datarequest_data_ready(ctx, request_id):
     status_set(ctx, request_id, status.DATA_READY)
 
 
+###################################################
+#                   Email logic                   #
+###################################################
+
 def send_emails(ctx, obj_name, status_to):
     # Get request ID
     temp, _ = pathutil.chop(obj_name)
@@ -1420,6 +1440,10 @@ def data_ready_emails(ctx, request_id):
     # Send email
     mail_data_ready(ctx, researcher['email'], researcher['name'], request_id)
 
+
+###################################################
+#                 Email templates                 #
+###################################################
 
 def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
