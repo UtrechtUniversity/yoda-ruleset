@@ -138,7 +138,8 @@ def status_get_from_path(ctx, path):
 
     :returns: Status of given data request
     """
-    _, request_id = pathutil.chop(path)
+    temp, _ = pathutil.chop(path)
+    _, request_id = pathutil.chop(temp)
 
     return status_get(ctx, request_id)
 

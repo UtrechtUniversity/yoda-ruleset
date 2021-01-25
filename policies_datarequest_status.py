@@ -12,7 +12,7 @@ def can_set_datarequest_status(ctx, obj_name, status_to):
 
     # Get current status.
     try:
-        status_from = datarequest.status_get_from_path(ctx, path)
+        status_from = datarequest.status_get_from_path(ctx, obj_name)
     except error.UUError:
         return policy.fail('Could not get current datarequest status')
 
