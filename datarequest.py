@@ -1330,7 +1330,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
     bod_member_emails   = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
     datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
-                              datamanager_review else "")
+                           datamanager_review else "")
 
     # Send emails
     for bod_member_email in bod_member_emails:
@@ -1394,7 +1394,7 @@ def evaluation_submit_emails(ctx, request_id, datarequest_status):
     researcher              = datarequest['researchers']['contacts'][0]
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
-                                  evaluation else "")
+                               evaluation else "")
     datamanager_emails      = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
 
     # Send emails

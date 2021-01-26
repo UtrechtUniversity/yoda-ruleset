@@ -24,7 +24,8 @@ def can_set_datarequest_status(ctx, obj_name, status_to):
 
     return policy.succeed()
 
+
 def post_status_transition(ctx, obj_name, value):
 
-     # Send emails
-     datarequest.send_emails(ctx, obj_name, value)
+    # Send emails
+    datarequest.send_emails(ctx, obj_name, value)
