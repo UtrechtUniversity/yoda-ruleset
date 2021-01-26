@@ -49,6 +49,25 @@ def api_meta_form_save(user, collection):
     assert http_status == 200
 
 
+@given('metadata JSON exists in "<clone_collection>"')
+def metadata_removed(user, clone_collection):
+    http_status, body = api_request(
+        user,
+        "browse_folder",
+        {"coll": clone_collection}
+    )
+
+    assert http_status == 200
+
+    # Check if yoda-metadata.json is in browse results of collection.
+    found = False
+    for item in body['data']['items']:
+        if item["name"] == "yoda-metadata.json":
+            found = True
+
+    assert found
+
+
 @given('subcollection "<target_coll>" exists')
 def subcollection_exists(user, target_coll):
     http_status, _ = api_request(
@@ -71,12 +90,12 @@ def subcollection_exists(user, target_coll):
         assert True
 
 
-@given('the Yoda meta remove API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_meta_remove(user, collection):
+@given('the Yoda meta remove API is queried with metadata and "<clone_collection>"', target_fixture="api_response")
+def api_meta_remove(user, clone_collection):
     return api_request(
         user,
         "meta_remove",
-        {"coll": collection}
+        {"coll": clone_collection}
     )
 
 
@@ -95,12 +114,12 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@then('metadata JSON is removed from "<collection>"')
-def metadata_removed(user, collection):
+@then('metadata JSON is removed from "<clone_collection>"')
+def metadata_removed_collection(user, clone_collection):
     http_status, body = api_request(
         user,
         "browse_folder",
-        {"coll": collection}
+        {"coll": clone_collection}
     )
 
     assert http_status == 200
