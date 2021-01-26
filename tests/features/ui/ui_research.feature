@@ -1,5 +1,14 @@
 Feature: Research UI
 
+    Examples:
+        | collection                       |
+        | /tempZone/home/research-initial  |
+
+    Background:
+        Given user "researcher" is authenticated
+        And collection "<collection>" exists
+        And "<collection>" is unlocked
+
     Scenario: Adding a folder
         Given user "researcher" is logged in
         And module "research" is shown

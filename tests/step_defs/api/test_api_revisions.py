@@ -1,7 +1,7 @@
 # coding=utf-8
 """Revisions API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -82,10 +82,9 @@ def api_restore_revision(user, revision_id, coll_target, new_filename):
 
 @then('revision is restored successfully')
 def api_response_revision_successfully_restored(api_response):
-    _, body = api_response
+    http_status, _ = api_response
 
-    # proc_status is an indication from the backend that the process went ok
-    assert body['status'] == 'ok' and body['data']['proc_status'] == 'ok'
+    assert http_status == 200
 
 
 @then(parsers.parse('the response status code is "{code:d}"'))
