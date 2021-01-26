@@ -158,3 +158,51 @@ def ui_login(browser, user):
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
+
+
+@given('collection "<collection>" exists')
+def collection_exists(user, collection):
+    http_status, _ = api_request(
+        user,
+        "browse_folder",
+        {"coll": collection}
+    )
+    assert http_status == 200
+
+
+@given('"<collection>" is unlocked')
+def collection_is_unlocked(user, collection):
+    _, body = api_request(
+        user,
+        "research_collection_details",
+        {"path": collection}
+    )
+
+    if body["data"]["status"] == "LOCKED":
+        http_status, _ = api_request(
+            user,
+            "folder_unlock",
+            {"coll": collection}
+        )
+        assert http_status == 200
+    else:
+        assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED"
+
+
+@given('"<collection>" is locked')
+def collection_is_locked(user, collection):
+    _, body = api_request(
+        user,
+        "research_collection_details",
+        {"path": collection}
+    )
+
+    if body["data"]["status"] != "LOCKED":
+        http_status, _ = api_request(
+            user,
+            "folder_lock",
+            {"coll": collection}
+        )
+        assert http_status == 200
+    else:
+        assert body["data"]["status"] == "LOCKED"

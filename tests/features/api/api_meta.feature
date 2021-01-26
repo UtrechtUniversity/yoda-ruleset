@@ -1,5 +1,14 @@
 Feature: Meta API
 
+    Examples:
+        | collection                       |
+        | /tempZone/home/research-initial  |
+
+    Background:
+        Given user "researcher" is authenticated
+        And collection "<collection>" exists
+        And "<collection>" is unlocked
+
     Scenario: Meta clone file
         Given user "researcher" is authenticated
         And metadata JSON exists in "<collection>"
@@ -9,17 +18,16 @@ Feature: Meta API
         And metadata JSON is cloned into "<target_coll>"
 
         Examples:
-            | collection                      | target_coll                           |
-            | /tempZone/home/research-initial | /tempZone/home/research-initial/clone |
+            | target_coll                           |
+            | /tempZone/home/research-initial/clone |
 
     Scenario: Meta remove
         Given user "researcher" is authenticated
-        And metadata JSON exists in "<collection>"
-        And the Yoda meta remove API is queried with metadata and "<collection>"
+        And metadata JSON exists in "<clone_collection>"
+        And the Yoda meta remove API is queried with metadata and "<clone_collection>"
         Then the response status code is "200"
-        And metadata JSON is removed from "<collection>"
+        And metadata JSON is removed from "<clone_collection>"
 
         Examples:
-            | collection                            |
+            | clone_collection                      |
             | /tempZone/home/research-initial/clone |
-            | /tempZone/home/research-initial       |
