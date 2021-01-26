@@ -113,7 +113,7 @@ def api_intake_count_total_files(ctx, coll):
 
     count = 0
     for row in iter:
-        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in constants.INTAKE_FILE_EXCLUSION_PATTERNS)
+        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in INTAKE_FILE_EXCLUSION_PATTERNS)
         if not exclusion_matched:
             log.write(ctx, row[0] + '/' + row[1])
             count += 1
@@ -152,7 +152,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
     files = []
     for row in iter:
         # Check whether object type is within exclusion pattern
-        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in constants.INTAKE_FILE_EXCLUSION_PATTERNS)
+        exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in INTAKE_FILE_EXCLUSION_PATTERNS)
         if not exclusion_matched:
             # Error is hardcoded! (like in the original) and initialize attributes already as empty strings.
             file_data = {"name": row[1],
