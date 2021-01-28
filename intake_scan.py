@@ -132,9 +132,10 @@ def object_is_locked(ctx, path, is_collection):
         parent_coll = pathutil.dirname(path)
         iter = genquery.row_iterator(
             "META_DATA_ATTR_NAME",
-            "COLL_NAME = '" + parent_coll + "'",
+            "COLL_NAME = '" + parent_coll + "' AND DATA_NAME = '" + pathutil.basename(path) + "'",
             genquery.AS_LIST, ctx
         )
+        # return locked_state
         for row in iter:
             if row[0] in ['to_vault_lock', 'to_vault_freeze']:
                 locked_state['locked'] = True

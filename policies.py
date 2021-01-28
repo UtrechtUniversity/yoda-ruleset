@@ -116,7 +116,7 @@ def can_data_delete(ctx, actor, path):
             return policy.fail('Folder is locked')
 
     if pathutil.info(path).space is pathutil.Space.INTAKE:
-        if policies_intake.data_part_of_locked_dataset(ctx, user.user_and_zone(ctx), path):
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), path):
             return policy.fail('Data part of a locked dataset')
 
     return policy.succeed()
