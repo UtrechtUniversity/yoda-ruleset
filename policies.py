@@ -11,6 +11,7 @@ import session_vars
 import datarequest
 import folder
 import policies_datapackage_status
+import policies_datarequest_status
 import policies_folder_status
 from util import *
 
@@ -361,8 +362,12 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
             return policy.fail('Folder is locked')
 
     elif space is pathutil.Space.DATAREQUEST and attr == datarequest.DATAREQUESTSTATUSATTRNAME:
+        # Check if user is permitted to change the status
+        if not user.is_admin(ctx, actor):
+            return policy.fail('No permission to change datarequest status')
+
         # Datarequest status change. Validate.
-        return policies_datarequest_status.can_set_datarequest_status(ctx, actor, obj_name, value)
+        return policies_datarequest_status.can_set_datarequest_status(ctx, obj_name, value)
 
     else:
         # Allow metadata operations in general if they do not affect reserved
@@ -418,6 +423,10 @@ def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, val
 
     elif attr == constants.IIVAULTSTATUSATTRNAME and info.space is pathutil.Space.VAULT:
         policies_datapackage_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), value)
+
+    # Send emails after datarequest status transition if appropriate
+    elif attr == datarequest.DATAREQUESTSTATUSATTRNAME and info.space is pathutil.Space.DATAREQUEST:
+        policies_datarequest_status.post_status_transition(ctx, obj_name, value)
 
 
 # }}}
