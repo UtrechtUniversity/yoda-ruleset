@@ -1,3 +1,4 @@
+@oidc
 Feature: Login OIDC UI
 
     Scenario: Login using OIDC
