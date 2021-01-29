@@ -49,25 +49,53 @@ def api_meta_form_save(user, collection):
     assert http_status == 200
 
 
-@given('subcollection "<target_coll>" exists')
-def subcollection_exists(user, target_coll):
-    x = target_coll.split('/')
-
-    http_status, _ = api_request(
+@given('metadata JSON exists in "<clone_collection>"')
+def metadata_removed(user, clone_collection):
+    http_status, body = api_request(
         user,
-        "research_folder_add",
-        {"coll": "/".join(x[:-1]), "new_folder_name": x[-1]}
+        "browse_folder",
+        {"coll": clone_collection}
     )
 
     assert http_status == 200
 
+    # Check if yoda-metadata.json is in browse results of collection.
+    found = False
+    for item in body['data']['items']:
+        if item["name"] == "yoda-metadata.json":
+            found = True
 
-@given('the Yoda meta remove API is queried with metadata and "<collection>"', target_fixture="api_response")
-def api_meta_remove(user, collection):
+    assert found
+
+
+@given('subcollection "<target_coll>" exists')
+def subcollection_exists(user, target_coll):
+    http_status, _ = api_request(
+        user,
+        "research_collection_details",
+        {"path": target_coll}
+    )
+
+    if http_status == 400:
+        x = target_coll.split('/')
+
+        http_status, _ = api_request(
+            user,
+            "research_folder_add",
+            {"coll": "/".join(x[:-1]), "new_folder_name": x[-1]}
+        )
+
+        assert http_status == 200
+    else:
+        assert True
+
+
+@given('the Yoda meta remove API is queried with metadata and "<clone_collection>"', target_fixture="api_response")
+def api_meta_remove(user, clone_collection):
     return api_request(
         user,
         "meta_remove",
-        {"coll": collection}
+        {"coll": clone_collection}
     )
 
 
@@ -86,12 +114,12 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@then('metadata JSON is removed from "<collection>"')
-def metadata_removed(user, collection):
+@then('metadata JSON is removed from "<clone_collection>"')
+def metadata_removed_collection(user, clone_collection):
     http_status, body = api_request(
         user,
         "browse_folder",
-        {"coll": collection}
+        {"coll": clone_collection}
     )
 
     assert http_status == 200

@@ -1,7 +1,7 @@
 # coding=utf-8
 """Research API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request, post_form_data
 
-scenarios('../../features/api/api_research.feature')
+scenarios('../../features/api/api_research.feature', '../../features/api/api_research_locked.feature')
 
 
 @given('the Yoda research folder add API is queried with "<folder>" and "<collection>"', target_fixture="api_response")
@@ -136,9 +136,24 @@ def file_exists(user, file, collection):
     assert object_exists(user, file, collection)
 
 
+@then('file "<file>" does not exist in "<collection>"')
+def file_not_exist(user, file, collection):
+    assert not object_exists(user, file, collection)
+
+
 @then('file "<copy>" exists in "<collection>"')
 def file_copy_exists(user, copy, collection):
     assert object_exists(user, copy, collection)
+
+
+@then('file "<copy>" does not exist in "<collection>"')
+def file_copy_not_exist(user, copy, collection):
+    assert not object_exists(user, copy, collection)
+
+
+@then('folder "<copy>" does not exists in "<collection>"')
+def folder_copy_not_exists(user, folder, collection):
+    assert not object_exists(user, folder, collection)
 
 
 @then('file "<file_renamed>" exists in "<collection>"')
@@ -146,6 +161,6 @@ def file_renamed_exists(user, file_renamed, collection):
     assert object_exists(user, file_renamed, collection)
 
 
-@then('file "<file>" does not exist in "<collection>"')
-def file_not_exist(user, file, collection):
-    assert not object_exists(user, file, collection)
+@then('file "<file_renamed>" does not exist in "<collection>"')
+def file_renamed_not_exist(user, file_renamed, collection):
+    assert not object_exists(user, file_renamed, collection)

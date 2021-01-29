@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 
+import pytest
 import requests
 import urllib3
 from pytest_bdd import (
@@ -20,19 +21,23 @@ api_url = "https://portal.yoda.test/api"
 password = "test"
 users = ['researcher',
          'datamanager',
-         'technicaladmin',
-         'bodmember',
-         'dmcmember',
-         'groupmanager']
+         'groupmanager',
+         'technicaladmin']
 user_cookies = {}
+datarequest = False
 
 
 def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test/")
     parser.addoption("--password", action="store", default="test")
+    parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
 
 
 def pytest_configure(config):
+    config.addinivalue_line(
+        "markers", "datarequest: Run datarequest tests"
+    )
+
     global portal_url
     portal_url = config.getoption("--url")
 
@@ -42,10 +47,27 @@ def pytest_configure(config):
     global password
     password = config.getoption("--password")
 
+    global datarequest
+    datarequest = config.getoption("--datarequest")
+
+    global users
+    if datarequest:
+        users = users + ['bodmember', 'dmcmember']
+
     # Store cookies for each user.
     for user in users:
         csrf, session = login(user, password)
         user_cookies[user] = (csrf, session)
+
+
+def pytest_bdd_apply_tag(tag, function):
+    if tag == 'datarequest' and not datarequest:
+        marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    else:
+        # Fall back to pytest-bdd's default behavior
+        return None
 
 
 def login(user, password):
@@ -136,3 +158,51 @@ def ui_login(browser, user):
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
+
+
+@given('collection "<collection>" exists')
+def collection_exists(user, collection):
+    http_status, _ = api_request(
+        user,
+        "browse_folder",
+        {"coll": collection}
+    )
+    assert http_status == 200
+
+
+@given('"<collection>" is unlocked')
+def collection_is_unlocked(user, collection):
+    _, body = api_request(
+        user,
+        "research_collection_details",
+        {"path": collection}
+    )
+
+    if body["data"]["status"] == "LOCKED":
+        http_status, _ = api_request(
+            user,
+            "folder_unlock",
+            {"coll": collection}
+        )
+        assert http_status == 200
+    else:
+        assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED"
+
+
+@given('"<collection>" is locked')
+def collection_is_locked(user, collection):
+    _, body = api_request(
+        user,
+        "research_collection_details",
+        {"path": collection}
+    )
+
+    if body["data"]["status"] != "LOCKED":
+        http_status, _ = api_request(
+            user,
+            "folder_lock",
+            {"coll": collection}
+        )
+        assert http_status == 200
+    else:
+        assert body["data"]["status"] == "LOCKED"
