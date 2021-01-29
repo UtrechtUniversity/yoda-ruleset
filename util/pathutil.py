@@ -117,6 +117,7 @@ def info(path):
             (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',        Space.VAULT)
             or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
             or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
+            or test('^/([^/]+)/home/(datarequests-[^/]+)(?:/(.+))?$', Space.DATAREQUEST)
             or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
             or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
             or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
