@@ -3,7 +3,7 @@
 
 # (ideally this module would be named 'path', but name conflicts cause too much pain)
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -22,6 +22,7 @@ class Space(Enum):
     VAULT       = 2
     DATAMANAGER = 3
     DATAREQUEST = 4
+    INTAKE      = 5
 
     def __repr__(self):
         return 'Space.' + self.name
@@ -117,6 +118,7 @@ def info(path):
             (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',        Space.VAULT)
             or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
             or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
+            or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',  Space.INTAKE)
             or test('^/([^/]+)/home/(datarequests-[^/]+)(?:/(.+))?$', Space.DATAREQUEST)
             or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
             or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)

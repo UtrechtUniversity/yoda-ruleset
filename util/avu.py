@@ -40,6 +40,12 @@ def of_group(ctx, group):
                                      "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
+def set_on_data(ctx, path, a, v):
+    """Set key/value metadata on a data object."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
+
+
 def set_on_coll(ctx, coll, a, v):
     """Set key/value metadata on a collection."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
@@ -50,6 +56,12 @@ def set_on_resource(ctx, resource, a, v):
     """Set key/value metadata on a resource."""
     x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
     msi.set_key_value_pairs_to_obj(ctx, x['arguments'][1], resource, '-R')
+
+
+def associate_to_data(ctx, path, a, v):
+    """Associate key/value metadata to a data object."""
+    x = msi.string_2_key_val_pair(ctx, '{}={}'.format(a, v), irods_types.BytesBuf())
+    msi.associate_key_value_pairs_to_obj(ctx, x['arguments'][1], path, '-d')
 
 
 def associate_to_coll(ctx, coll, a, v):

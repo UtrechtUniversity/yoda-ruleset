@@ -13,6 +13,7 @@ import folder
 import policies_datapackage_status
 import policies_datarequest_status
 import policies_folder_status
+import policies_intake
 from util import *
 
 
@@ -33,12 +34,13 @@ def can_coll_create(ctx, actor, coll):
     """Disallow creating collections in locked folders."""
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
-    if pathutil.info(coll).space is not pathutil.Space.RESEARCH:
-        # Lock policy only holds for research folders.
-        return policy.succeed()
+    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+        if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_admin(ctx, actor):
+            return policy.fail('Parent folder is locked')
 
-    if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_admin(ctx, actor):
-        return policy.fail('Parent folder is locked')
+    if pathutil.info(coll).space is pathutil.Space.INTAKE:
+        if policies_intake.is_coll_in_locked_dataset(ctx, user.user_and_zone(ctx), pathutil.chop(coll)[0]):
+            return policy.fail('Collection part of a locked dataset')
 
     return policy.succeed()
 
@@ -53,6 +55,10 @@ def can_coll_delete(ctx, actor, coll):
     if pathutil.info(coll).space is pathutil.Space.RESEARCH:
         if folder.has_locks(ctx, coll) and not user.is_admin(ctx, actor):
             return policy.fail('Folder or subfolder is locked')
+
+    if pathutil.info(coll).space is pathutil.Space.INTAKE:
+        if policies_intake.coll_in_path_of_locked_dataset(ctx, user.user_and_zone(ctx), coll):
+            return policy.fail('Collection part of a locked dataset')
 
     return policy.succeed()
 
@@ -79,6 +85,10 @@ def can_data_create(ctx, actor, path):
             if not user.is_admin(ctx, actor):
                 return policy.fail('Destination is locked')
 
+    if pathutil.info(path).space is pathutil.Space.INTAKE:
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), path):
+            return policy.fail('Data part of a locked dataset')
+
     return policy.succeed()
 
 
@@ -90,6 +100,11 @@ def can_data_write(ctx, actor, path):
         if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
             return policy.fail('Data object is locked')
 
+    # Disallow writing to locked datasets in intake.
+    if pathutil.info(path).space is pathutil.Space.INTAKE:
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), path):
+            return policy.fail('Data part of a locked dataset')
+
     return policy.succeed()
 
 
@@ -100,6 +115,10 @@ def can_data_delete(ctx, actor, path):
     if pathutil.info(path).space is pathutil.Space.RESEARCH:
         if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
             return policy.fail('Folder is locked')
+
+    if pathutil.info(path).space is pathutil.Space.INTAKE:
+        if policies_intake.is_data_in_locked_dataset(ctx, user.user_and_zone(ctx), path):
+            return policy.fail('Data part of a locked dataset')
 
     return policy.succeed()
 
@@ -281,6 +300,7 @@ def pep_api_data_obj_create_and_stat_pre(ctx, instance_name, rs_comm, data_obj_i
 #         return can_coll_move(ctx, user.user_and_zone(ctx),
 #                              str(data_obj_rename_inp.srcDataObjInp.objPath),
 #                              str(data_obj_rename_inp.destDataObjInp.objPath))
+
 
 @policy.require()
 def pep_api_data_obj_trim_pre(ctx, instance_name, rs_comm, data_obj_inp):

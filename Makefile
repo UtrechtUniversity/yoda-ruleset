@@ -28,7 +28,7 @@
 
 # Input files. Exclude all test rules in ./tests
 PYRULE_FILES ?= $(sort $(wildcard uu*.py ii*.py))
-RULE_FILES   ?= $(sort $(wildcard uu*.r  ii*.r))
+RULE_FILES   ?= $(sort $(wildcard uu*.r  ii*.r yc*.r))
 
 # Output files.
 RULESET_NAME   ?= rules-uu.re
