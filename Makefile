@@ -20,14 +20,12 @@
 # - For the 'install' make target to work, you should place this ruleset
 #   directory in the folder '/etc/irods/'. Don't forget to
 #   append the ruleset name ($RULESET_NAME minus the '.re' extension) to the
-#   rulesets in /etc/irods/server_config.json, and to add the python ruleset
-#   name to core.py.
+#   rulesets in /etc/irods/server_config.json.
 #
 # make update  - pull changes from git remote, updates .r files
 # make install - install ruleset (concatenated .r files) into the parent directory
 
 # Input files. Exclude all test rules in ./tests
-PYRULE_FILES ?= $(sort $(wildcard uu*.py ii*.py))
 RULE_FILES   ?= $(sort $(wildcard uu*.r  ii*.r yc*.r))
 
 # Output files.
