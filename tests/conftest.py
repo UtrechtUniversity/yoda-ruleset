@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Yoda tests configuration."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -16,7 +16,7 @@ from pytest_bdd import (
 )
 
 
-portal_url = "https://portal.yoda.test/"
+portal_url = "https://portal.yoda.test"
 api_url = "https://portal.yoda.test/api"
 password = "test"
 users = ['researcher',
@@ -25,12 +25,14 @@ users = ['researcher',
          'technicaladmin']
 user_cookies = {}
 datarequest = False
+login_oidc = False
 
 
 def pytest_addoption(parser):
-    parser.addoption("--url", action="store", default="https://portal.yoda.test/")
+    parser.addoption("--url", action="store", default="https://portal.yoda.test")
     parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
+    parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
 
 
 def pytest_configure(config):
@@ -50,6 +52,9 @@ def pytest_configure(config):
     global datarequest
     datarequest = config.getoption("--datarequest")
 
+    global login_oidc
+    login_oidc = config.getoption("--oidc")
+
     global users
     if datarequest:
         users = users + ['bodmember', 'dmcmember']
@@ -63,6 +68,10 @@ def pytest_configure(config):
 def pytest_bdd_apply_tag(tag, function):
     if tag == 'datarequest' and not datarequest:
         marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    elif tag == 'oidc' and not login_oidc:
+        marker = pytest.mark.skip(reason="Skip login OIDC")
         marker(function)
         return True
     else:
@@ -151,6 +160,12 @@ def ui_login(browser, user):
 
     # Find and click the 'Sign in' button
     browser.find_by_id('f-login-submit').click()
+
+
+@given('user is not logged in')
+def ui_logout(browser):
+    url = "{}/user/login".format(portal_url)
+    browser.visit(url)
 
 
 @given(parsers.parse('module "{module}" is shown'))

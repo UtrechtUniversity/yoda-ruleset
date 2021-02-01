@@ -36,3 +36,8 @@ Datarequest tests are disabled by default, enable using `--datarequest`:
 ```bash
 $ pytest -k api --datarequest
 ```
+
+Login OIDC tests are disabled by default, enable using `--oidc`:
+```bash
+$ pytest -k ui --oidc
+```
