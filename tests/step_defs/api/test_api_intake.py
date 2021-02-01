@@ -1,7 +1,7 @@
 # coding=utf-8
 """Intake API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import api_request
 
-scenarios('../features/api_intake.feature')
+scenarios('../../features/api/api_intake.feature')
 
 
 @given('the Yoda intake list studies API is queried', target_fixture="api_response")
