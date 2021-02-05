@@ -194,6 +194,17 @@
                     <div class="group">
                         {% endif %}
 
+                        {% if funder.Funder_Reference %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Funder reference</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ funder.Funder_Reference }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Funder</label>
@@ -204,12 +215,24 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-2">
-                                <label class="indented">Award Number</label>
+                                <label class="indented">Award/grant Number</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ funder.Award_Number }}</span>
                             </div>
                         </div>
+
+                        {% if funder.Award_Name %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Award/grant name</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ funder.Award_Name }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
 
                         {% if loop.last %}
                     </div>
@@ -357,6 +380,64 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contributor.Affiliation %}
+                                            {{ affiliation }}{{ ",&nbsp;" if not loop.last }}
+                                        {% endfor %}
+                                        </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% for contact in contact_persons %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Name</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ contact.Name.Family_Name }}, {{ contact.Name.Given_Name }}</span>
+                            </div>
+                        </div>
+
+                        {% if contact.Position %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Name</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ contact.Position }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if contact.Email %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>E-mail</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{{ contact.Email }}</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label class="indented">Person Identifier</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>
+                                            {% for id in contact.Person_Identifier %}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ",&nbsp;" if not loop.last }}
+                                            {% endfor %}
+                                        </span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label class="indented">Affiliation</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>
+                                        {% for affiliation in contact.Affiliation %}
                                             {{ affiliation }}{{ ",&nbsp;" if not loop.last }}
                                         {% endfor %}
                                         </span>
