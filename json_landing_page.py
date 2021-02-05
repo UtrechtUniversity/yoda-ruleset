@@ -113,9 +113,9 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         contributors = []
 
     try:
-        contact_persons = dictJsonData['Contact_Person']
+        contacts = dictJsonData['Contact']
     except KeyError:
-        contact_persons = []
+        contacts = []
 
     try:
         funding_reference = dictJsonData['Funding_Reference']
@@ -152,7 +152,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         tags=tags,
         creators=creators,
         contributors=contributors,
-        contact_persons = contact_persons,
+        contacts = contacts,
         publication_date=publication_date,
         data_access_restriction=data_access_restriction,
         license=license,
