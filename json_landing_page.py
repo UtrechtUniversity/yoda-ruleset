@@ -152,7 +152,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         tags=tags,
         creators=creators,
         contributors=contributors,
-        contacts = contacts,
+        contacts=contacts,
         publication_date=publication_date,
         data_access_restriction=data_access_restriction,
         license=license,
