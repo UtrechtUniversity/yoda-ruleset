@@ -93,6 +93,131 @@
                                 </span>
                             </div>
                         </div>
+                        {% if apparatus %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Apparatus</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in apparatus %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if main_setting %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Main setting</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in main_setting %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if process_hazard %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Process hazard</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in process_hazard %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if geological_structure %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Geological structure</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in geological_structure %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if geomorphical_feature %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Geomorphical feature</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in geomorphical_feature %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if material %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Material</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in material %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if monitoring %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Monitoring device</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in monitoring %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if software %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Software</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in software %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if measured_property %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Measured property</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for item in measured_property %}
+                                               {{ item }}{{ ",&nbsp;" if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-sm-2">
@@ -215,7 +340,7 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-2">
-                                <label class="indented">Award/grant Number</label>
+                                <label>Award/grant Number</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ funder.Award_Number }}</span>
@@ -400,7 +525,7 @@
                         {% if contact.Position %}
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>Name</label>
+                                <label class="indented">Position</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ contact.Position }}</span>
@@ -410,7 +535,7 @@
                         {% if contact.Email %}
                         <div class="row">
                             <div class="col-sm-2">
-                                <label>E-mail</label>
+                                <label class="indented">E-mail</label>
                             </div>
                             <div class="col-sm-10">
                                 <span>{{ contact.Email }}</span>

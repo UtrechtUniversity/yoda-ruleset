@@ -98,6 +98,51 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         tags = []
 
     try:
+        apparatus = dictJsonData['Apparatus']
+    except KeyError:
+        apparatus = []
+
+    try:
+        main_setting = dictJsonData['Main_Setting']
+    except KeyError:
+        main_setting = []
+
+    try:
+        process_hazard = dictJsonData['Process_Hazard']
+    except KeyError:
+        process_hazard = []
+
+    try:
+        geological_structure = dictJsonData['Geological_Structure']
+    except KeyError:
+        geological_structure = []
+
+    try:
+        geomorphical_feature = dictJsonData['Geomorphical_Feature']
+    except KeyError:
+        geomorphical_feature = []
+
+    try:
+        material = dictJsonData['Material']
+    except KeyError:
+        material = []
+
+    try:
+        monitoring = dictJsonData['Monitoring']
+    except KeyError:
+        monitoring = []
+
+    try:
+        software = dictJsonData['Software']
+    except KeyError:
+        software = []
+
+    try:
+        measured_property = dictJsonData['Measured_Property']
+    except KeyError:
+        measured_property = []
+
+    try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
     except KeyError:
         related_datapackages = []
@@ -150,6 +195,15 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         version=version,
         language=language,
         tags=tags,
+        apparatus=apparatus,
+        main_setting=main_setting,
+        process_hazard=process_hazard,
+        geological_structure=geological_structure,
+        geomorphical_feature=geomorphical_feature,
+        material=material,
+        monitoring=monitoring,
+        software=software,
+        measured_property=measured_property,
         creators=creators,
         contributors=contributors,
         contacts=contacts,
