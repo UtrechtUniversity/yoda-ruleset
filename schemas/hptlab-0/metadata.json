@@ -2223,6 +2223,7 @@
     "Data_Type",
     "Data_Classification",
     "Creator",
+    "Contact",
     "License",
     "Data_Access_Restriction"
   ],
