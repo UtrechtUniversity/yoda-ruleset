@@ -14,7 +14,17 @@
   },
   "Discipline": {
     "items": {
-      "ui:help": "Categorize your research to a (sub)discipline"
+      "ui:help": "A part of a domain distinguished from adjacent parts by a distinctive feature or characteristic."
+    }
+  },
+  "Lab": {
+    "items": {
+      "ui:help": "Facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. The laboratory is mentioned in the pre-defined vocabulary of laboratories."
+    }
+  },
+  "Additional_Lab": {
+    "items": {
+      "ui:help": "facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. This laboratory has a minor role compared to the originating laboratory or is not mentioned in the pre-defined vocabulary of laboratories."
     }
   },
   "Version": {
@@ -39,6 +49,59 @@
       }
     }
   },
+  "Main_Setting": {
+    "items": {
+      "ui:help": "The geologic, hydrologic, and geochemical systems of the region in which a geologic repository operations area is or may be located."
+    }
+  },
+  "Process_Hazard": {
+    "items": {
+      "ui:help": "A natural process whereby geological features are modified. Geologic processes become geologic hazards when they pose a threat to human life and/or property or in threatening populations of species."
+    }
+  },
+  "Geological_Structure": {
+    "items": {
+      "ui:help": "The result of the powerful tectonic forces that occur within the earth. These forces fold and break rocks, form deep faults, and build mountains. Repeated applications of force—the folding of already folded rocks or the faulting and offsetting of already faulted rocks—can create a very complex geologic picture that is difficult to interpret. Most of these forces are related to plate tectonic activity. Some of the natural resources we depend on, such as metallic ores and petroleum, often form along or near geologic structures. Thus, understanding the origin of these structures is critical to discovering more reserves of our nonrenewable resources."
+    }
+  },
+  "Geomorphical_Feature": {
+    "items": {
+      "ui:help": "Topographic and bathymetric landforms on the Earth's surface."
+    }
+  },
+
+  "Material": {
+    "items": {
+      "ui:help": "Naturally occurring matter derived from or consisting of rock and sediment."
+    }
+  },
+
+  "Apparatus": {
+    "items": {
+      "ui:help": "Any instrument or apparatus which, by reason of its objective technical characteristics and the results which it makes it possible to obtain, is mainly or exclusively suited to scientific activities."
+    }
+  },
+
+  "Monitoring": {
+    "items": {
+      "ui:help": "Display produced by a device that takes signals and displays them on a television screen or a computer monitor."
+    }
+  },
+
+  "Software": {
+    "items": {
+      "ui:help": "The instructions that control what a computer does; computer programs"
+    }
+  },
+
+  "Measured_Property": {
+    "items": {
+      "ui:help": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
+    }
+  },
+
+
+
   "Tag": {
     "items": {
       "ui:help": "Free text field for adding (searchable) key words to your data package"
