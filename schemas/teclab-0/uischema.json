@@ -28,7 +28,7 @@
     "ui:help": "The language of the data package"
   },
   "Collected": {
-    "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "ui:description": "Indicate when collecting the data for this data package started and ended",
     "Start_Date": {
       "ui:help": "Indicate when you've started collecting the data for this data package"
     },
@@ -48,7 +48,7 @@
     "ui:description": "The geologic, hydrologic, and geochemical systems of the region in which a geologic repository operations area is or may be located."
   },
   "Process_Hazard": {
-    "ui:ui:description": "A natural process whereby geological features are modified. Geologic processes become geologic hazards when they pose a threat to human life and/or property or in threatening populations of species."
+    "ui:description": "A natural process whereby geological features are modified. Geologic processes become geologic hazards when they pose a threat to human life and/or property or in threatening populations of species."
   },
   "Geological_Structure": {
     "ui:description": "The result of the powerful tectonic forces that occur within the earth. These forces fold and break rocks, form deep faults, and build mountains. Repeated applications of force—the folding of already folded rocks or the faulting and offsetting of already faulted rocks—can create a very complex geologic picture that is difficult to interpret. Most of these forces are related to plate tectonic activity. Some of the natural resources we depend on, such as metallic ores and petroleum, often form along or near geologic structures. Thus, understanding the origin of these structures is critical to discovering more reserves of our nonrenewable resources."
