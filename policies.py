@@ -481,7 +481,7 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
 
 @rule.make()
 def pep_resource_modified_post(ctx, instance_name, _ctx, out):
-    if instance_name not in config.resource_primary:
+    if instance_name not in config.resource_primary or not config.resource_replica:
         return
 
     path = _ctx.map()['logical_path']
