@@ -274,7 +274,6 @@
         "Nuclear Magnetic Resonance",
         "X-Ray Diffractometer",
         "X.Ray Fluorescence Spectrometer",
-        "Accelerator Mass Spectrometry",
         "Rotary Shear",
         "Hydrostatic Press"
       ],
@@ -323,7 +322,6 @@
         "Nuclear Magnetic Resonance",
         "X-Ray Diffractometer",
         "X.Ray Fluorescence Spectrometer",
-        "Accelerator Mass Spectrometry",
         "Rotary Shear",
         "Hydrostatic Press"
       ]
@@ -823,7 +821,6 @@
         "rutile",
         "salt",
         "samarium",
-        "sand",
         "sand-and-gravel",
         "sandstone",
         "saponite",
@@ -842,7 +839,6 @@
         "sillimanite",
         "silver",
         "sinhalite",
-        "slate",
         "smokey-quartz",
         "soda-ash",
         "sodalite",
@@ -894,7 +890,6 @@
         "zircon-gemstone",
         "zirconia",
         "zirconium",
-        "Concrete",
         "Analogue Material"
       ],
       "enumNames": [
@@ -1390,7 +1385,6 @@
         "rutile",
         "salt",
         "samarium",
-        "sand",
         "sand-and-gravel",
         "sandstone",
         "saponite",
@@ -1409,7 +1403,6 @@
         "sillimanite",
         "silver",
         "sinhalite",
-        "slate",
         "smokey-quartz",
         "soda-ash",
         "sodalite",
@@ -1461,7 +1454,6 @@
         "zircon-gemstone",
         "zirconia",
         "zirconium",
-        "Concrete",
         "Analogue Material"
       ]
     },
@@ -1548,7 +1540,6 @@
         "Deposition",
         "Sublimation",
         "Recombination",
-        "Sublimation",
         "Ionization",
         "Deionization",
         "Electrical Conductivity",
@@ -1605,7 +1596,6 @@
         "Deposition",
         "Sublimation",
         "Recombination",
-        "Sublimation",
         "Ionization",
         "Deionization",
         "Electrical Conductivity",
@@ -2223,6 +2213,7 @@
     "Data_Type",
     "Data_Classification",
     "Creator",
+    "Contact",
     "License",
     "Data_Access_Restriction"
   ],
