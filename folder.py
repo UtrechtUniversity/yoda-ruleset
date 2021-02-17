@@ -450,7 +450,15 @@ def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL
 @api.make()
 def api_folder_get_locks(ctx, coll):
     """Return a list of locks on a collection."""
-    return get_locks(ctx, coll)
+    locks = []
+
+    for lock in get_locks(ctx, coll):
+        _, _, path, subpath = pathutil.info(lock)
+        if subpath != '':
+            path = path + "/" + subpath
+        locks.append("/{}".format(path))
+
+    return locks
 
 
 def has_locks(ctx, coll, org_metadata=None):
