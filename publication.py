@@ -1073,6 +1073,28 @@ def update_publication(ctx, vault_package):
     if publication_state["status"] in ["Unrecoverable", "Retry"]:
         return publication_state["status"]
 
+    # Generate DataCite XML
+    try:
+        generate_datacite_xml(ctx, publication_config, publication_state)
+    except msi.Error as e:
+        publication_state["status"] = "Unrecoverable"
+
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        return publication_state["status"]
+
+    # Send DataCite XML to metadata end point
+    try:
+        post_metadata_to_datacite(ctx, publication_config, publication_state)
+    except msi.Error as e:
+        publication_state["status"] = "Retry"
+
+    save_publication_state(ctx, vault_package, publication_state)
+
+    if publication_state["status"] in ["Unrecoverable", "Retry"]:
+        return publication_state["status"]
+
     # Create landing page
     try:
         generate_landing_page(ctx, publication_config, publication_state, "publish")
