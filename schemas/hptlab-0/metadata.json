@@ -2248,27 +2248,30 @@
     "Discipline": {
       "type": "array",
       "minItems": 1,
+      "title": "Disciplines",
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
-        "title": "Subdomain",
+        "title": "Discipline",
         "default": "Rock and melt physical properties"
       }
     },
     "Lab": {
       "type": "array",
       "minItems": 1,
+      "title": "Originating laboratory",
       "items": {
         "$ref": "#/definitions/optionsLabs",
-        "title": "Originating labs",
+        "title": "Originating laboratory",
         "default": "aa45f98e5c098237d0c57b58e5f953e1"
       }
     },
     "Additional_Lab": {
       "type": "array",
       "minItems": 1,
+      "title": "Additional laboratory",
       "items": {
         "$ref": "#/definitions/stringNormalNullable",
-        "title": "Additional labs",
+        "title": "Additional laboratory",
         "default": ""
       }
     },
@@ -2400,9 +2403,10 @@
     "Tag": {
       "type": "array",
       "minItems": 1,
+      "title": "Tags",
       "items": {
         "$ref": "#/definitions/stringNormal",
-        "title": "Tags",
+        "title": "Tag",
         "default": ""
       }
     },
