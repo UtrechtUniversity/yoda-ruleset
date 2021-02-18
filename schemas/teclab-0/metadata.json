@@ -1674,10 +1674,10 @@
     "Discipline": {
       "type": "array",
       "minItems": 1,
-      "title": "Subdomain",
+      "title": "Disciplines",
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
-        "title": "Subdomain",
+        "title": "Discipline",
         "default": "Analogue modelling of geologic processes"
       }
     },
@@ -1879,10 +1879,10 @@
     "Tag": {
       "type": "array",
       "minItems": 1,
-      "title": "Free keywords",
+      "title": "Tags",
       "items": {
         "$ref": "#/definitions/stringNormalNullable",
-        "title": "Free keywords",
+        "title": "Tag",
         "default": ""
       }
     },
