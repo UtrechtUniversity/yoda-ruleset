@@ -228,7 +228,7 @@
       ]
     },
     "optionsMainSetting": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "basin plain setting",
@@ -305,7 +305,7 @@
       ]
     },
     "optionsProcessHazard": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "deformation",
@@ -384,7 +384,7 @@
       ]
     },
     "optionsGeologicalStructure": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "fault",
@@ -507,7 +507,7 @@
       ]
     },
     "optionsGeomorphicalFeature": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "alluvial and fluvial features",
@@ -592,7 +592,7 @@
       ]
     },
     "optionsMaterial": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Air",
@@ -687,7 +687,7 @@
       ]
     },
     "optionsApparatus": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "2D Convection box",
@@ -788,7 +788,7 @@
       ]
     },
     "optionsMonitoring": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Conductivity measuring system",
@@ -847,7 +847,7 @@
       ]
     },
     "optionsSoftware": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "CloudCompare",
@@ -974,7 +974,7 @@
       ]
     },
     "optionsMeasuredProperty": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Bulk modulus",

@@ -228,7 +228,7 @@
       ]
     },
     "optionsApparatus": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Uniaxial",
@@ -327,7 +327,7 @@
       ]
     },
     "optionsMaterial": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Rock",
@@ -1458,7 +1458,7 @@
       ]
     },
     "optionsMonitoring": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Strain gauge",
@@ -1493,7 +1493,7 @@
       ]
     },
     "optionsMeasuredProperty": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Hardness",
