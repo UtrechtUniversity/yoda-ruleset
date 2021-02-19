@@ -838,11 +838,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Get the outcome of the assignment (accepted/rejected)
     decision = assignment['decision']
 
-    # If the data request has been accepted for DMC review, get the assignees
-    assignees = json.dumps(assignment['assign_to'])
-
     # Update the status of the data request
     if decision == "Accepted for DMC review":
+        assignees = json.dumps(assignment['assign_to'])
         assign_request(ctx, assignees, request_id)
         status_set(ctx, request_id, status.UNDER_REVIEW)
     elif decision == "Rejected":
