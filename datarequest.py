@@ -844,7 +844,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         assign_request(ctx, assignees, request_id)
         status_set(ctx, request_id, status.UNDER_REVIEW)
     elif decision == "Rejected":
-        status_set(ctx, request_id, status.REJECT_AFTER_DATAMANAGER_REVIEW)
+        status_set(ctx, request_id, status.REJECTED_AFTER_DATAMANAGER_REVIEW)
     elif decision == "Rejected (resubmit)":
         status_set(ctx, request_id, status.RESUBMIT_AFTER_DATAMANAGER_REVIEW)
     else:
