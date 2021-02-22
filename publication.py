@@ -10,6 +10,7 @@ import json_landing_page
 import mail
 import meta
 import provenance
+import schema
 import vault
 from util import *
 
@@ -439,6 +440,10 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     randomId = publication_state["randomId"]
     vaultPackage = publication_state["vaultPackage"]
 
+    json_schema = schema.get_active_schema(ctx, vaultPackage)
+
+    log.write(ctx, json_schema)
+
     temp_coll, coll = pathutil.chop(combiJsonPath)
     landing_page_path = temp_coll + "/" + randomId + ".html"
 
@@ -447,7 +452,7 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     else:
         template_name = 'emptylandingpage.html.j2'
 
-    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath)
+    landing_page_html = json_landing_page.json_landing_page_create_json_landing_page(ctx, user.zone(ctx), template_name, combiJsonPath, json_schema)
 
     data_object.write(ctx, landing_page_path, landing_page_html)
 

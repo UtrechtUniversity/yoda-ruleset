@@ -93,6 +93,32 @@
                                 </span>
                             </div>
                         </div>
+                        {% if labs %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Originating laboratories</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for lab in labs %}
+                                               {{ lab }}{{ ", " if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if additional_labs %}
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <label>Additional laboratories</label>
+                            </div>
+                            <div class="col-sm-10">
+                                <span>{% for lab in additional_labs %}
+                                               {{ lab }}{{ ", " if not loop.last }}
+                                           {% endfor %}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
                         {% if apparatus %}
                         <div class="row">
                             <div class="col-sm-2">
