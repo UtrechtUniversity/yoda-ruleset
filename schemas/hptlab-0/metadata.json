@@ -680,7 +680,7 @@
         "erbium",
         "euclase",
         "europium",
-        "evaporite",
+        "evaporite (industrial mineral)",
         "feldspar",
         "feldspar-gemstone",
         "ferrous-metal",
@@ -890,8 +890,7 @@
         "zircon",
         "zircon-gemstone",
         "zirconia",
-        "zirconium",
-        "Analogue Material"
+        "zirconium"
       ],
       "enumNames": [
         " ",
@@ -1245,7 +1244,7 @@
         "erbium",
         "euclase",
         "europium",
-        "evaporite",
+        "evaporite (industrial mineral)",
         "feldspar",
         "feldspar-gemstone",
         "ferrous-metal",
@@ -1455,8 +1454,7 @@
         "zircon",
         "zircon-gemstone",
         "zirconia",
-        "zirconium",
-        "Analogue Material"
+        "zirconium"
       ]
     },
     "optionsMonitoring": {
