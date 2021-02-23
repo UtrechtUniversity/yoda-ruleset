@@ -228,45 +228,8 @@
       ]
     },
     "optionsMainSetting": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
-        null,
-        "basin plain setting",
-        "earth interior setting",
-        "crustal setting",
-        "continental-crustal setting",
-        "collisional setting",
-        "foreland setting",
-        "upper continental crustal setting",
-        "oceanic-crustal setting",
-        "upper continental crustal setting",
-        "mantle setting",
-        "earth surface settting",
-        "hillslope setting",
-        "shoreline setting",
-        "terrestrial setting",
-        "river plain system setting",
-        "subaqueus setting",
-        "marine setting",
-        "deltaic system setting",
-        "graben",
-        "tectonically defined setting",
-        "back arc setting",
-        "extended terrane setting",
-        "continental rift setting",
-        "hot spot setting",
-        "intraplate tectonic setting",
-        "passive continental margin setting",
-        "plate margin setting",
-        "active continental margin setting",
-        "active spreading center setting",
-        "forearc setting",
-        "subduction zone setting",
-        "volcanic arc setting",
-        "transform plate boundary setting",
-        "plate spreading center setting"
-      ],
-      "enumNames": [
         " ",
         "basin plain setting",
         "earth interior setting",
@@ -276,7 +239,7 @@
         "foreland setting",
         "upper continental crustal setting",
         "oceanic-crustal setting",
-        "upper continental crustal setting",
+        "upper oceanic crustal setting",
         "mantle setting",
         "earth surface settting",
         "hillslope setting",
@@ -305,7 +268,7 @@
       ]
     },
     "optionsProcessHazard": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "deformation",
@@ -332,14 +295,14 @@
         "tectonic process",
         "accretion",
         "continental breakup",
-        "rifting",
+        "continental breakup - rifting",
         "continental collision",
         "obduction",
         "orogenic process",
         "spreading",
         "subduction",
         "transform faulting",
-        " weathering",
+        "weathering",
         "rifting",
         "isostatic uplift",
         "tectonic uplift"
@@ -370,21 +333,21 @@
         "tectonic process",
         "accretion",
         "continental breakup",
-        "rifting",
+        "continental breakup - rifting",
         "continental collision",
         "obduction",
         "orogenic process",
         "spreading",
         "subduction",
         "transform faulting",
-        " weathering",
+        "weathering",
         "rifting",
         "isostatic uplift",
         "tectonic uplift"
       ]
     },
     "optionsGeologicalStructure": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "fault",
@@ -507,7 +470,7 @@
       ]
     },
     "optionsGeomorphicalFeature": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "alluvial and fluvial features",
@@ -592,7 +555,7 @@
       ]
     },
     "optionsMaterial": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Air",
@@ -687,7 +650,7 @@
       ]
     },
     "optionsApparatus": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "2D Convection box",
@@ -788,7 +751,7 @@
       ]
     },
     "optionsMonitoring": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Conductivity measuring system",
@@ -847,7 +810,7 @@
       ]
     },
     "optionsSoftware": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "CloudCompare",
@@ -857,7 +820,7 @@
         "GeoPIV",
         "Matlab code",
         "MatPIV",
-        "MicMac",
+        "PIV - MicMac",
         "PIVlab",
         "StrainMaster (La Vision GmbH)",
         "TecPIV",
@@ -896,7 +859,7 @@
         "3DF Zephyr (3Dflow)",
         "Apero",
         "Metashape",
-        "MicMac",
+        "SfM - MicMac",
         "OpenMVS Open Multiple View Stereovision",
         "Other SFM based software",
         "Photoscan (Agisoft)",
@@ -919,7 +882,7 @@
         "GeoPIV",
         "Matlab code",
         "MatPIV",
-        "MicMac",
+        "PIV - MicMac",
         "PIVlab",
         "StrainMaster (La Vision GmbH)",
         "TecPIV",
@@ -958,7 +921,7 @@
         "3DF Zephyr (3Dflow)",
         "Apero",
         "Metashape",
-        "MicMac",
+        "SfM - MicMac",
         "OpenMVS Open Multiple View Stereovision",
         "Other SFM based software",
         "Photoscan (Agisoft)",
@@ -974,7 +937,7 @@
       ]
     },
     "optionsMeasuredProperty": {
-      "type": ["string", "null"],
+      "type": "string",
       "enum": [
         null,
         "Bulk modulus",
@@ -1797,7 +1760,7 @@
       "items": {
         "$ref": "#/definitions/optionsMainSetting",
         "title": "Main setting",
-        "default": null
+        "default": " "
       }
     },
     "Process_Hazard": {
