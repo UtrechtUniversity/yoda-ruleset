@@ -133,4 +133,5 @@ def folder_status(user, folder, status):
 @then('folder locks contains "<folder>"')
 def folder_locks(api_response, folder):
     _, body = api_response
-    assert folder in body["data"]
+    x = folder.split('/')
+    assert "/{}".format(x[-1]) in body["data"]
