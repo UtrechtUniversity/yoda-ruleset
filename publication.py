@@ -441,9 +441,6 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     vaultPackage = publication_state["vaultPackage"]
 
     json_schema = schema.get_active_schema(ctx, vaultPackage)
-
-    log.write(ctx, json_schema)
-
     temp_coll, coll = pathutil.chop(combiJsonPath)
     landing_page_path = temp_coll + "/" + randomId + ".html"
 
