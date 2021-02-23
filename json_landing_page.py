@@ -55,7 +55,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         schema_labnames = json_schema['definitions']['optionsLabs']['enumNames']
         for id in labids:
             index = schema_labids.index(id)
-            labs.append(schema_labnames[index]) 
+            labs.append(schema_labnames[index])
     except KeyError:
         labs = []
 
@@ -64,8 +64,6 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         additional_labs = dictJsonData['Additional_Lab']  # niet verplicht
     except KeyError:
         additional_labs = []
-
-
 
     try:
         disciplines = dictJsonData['Discipline']  # niet verplicht
