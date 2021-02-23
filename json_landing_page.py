@@ -8,30 +8,15 @@ import jinja2
 
 from util import *
 
-__all__ = ['rule_json_landing_page_create_json_landing_page']
 
-
-def rule_json_landing_page_create_json_landing_page(rule_args, callback, rei):
-    """ Get the landing page of published YoDa metadata as a string.
-
-    :param rule_args: [0] Zone name
-                      [1] Name of landingpage template
-                      [2] Path to Yoda metadata JSON
-                      [3] Output HTML landing page
-    :param callback:  Callback to rule Language
-    :param rei:       The rei struct
-    """
-    rodsZone, template_name, combiJsonPath, receiveLandingPage = rule_args[0:4]
-    rule_args[3] = json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath)
-
-
-def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath):
+def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
     """Get the landing page of published YoDa metadata as a string.
 
     :param callback:      Callback to rule Language
     :param rodsZone:      Zone name
     :param template_name: Name of landingpage template
     :param combiJsonPath: path to Yoda metadata JSON
+    :param json_schema:   Dict holding entire contents of metadata.json for the category involved
 
     :return: Output HTML landing page
     """
@@ -61,6 +46,24 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     # Gather all metadata.
     title = dictJsonData['Title']
     description = dictJsonData['Description']
+
+    # Geo specific lab handling
+    try:
+        labids = dictJsonData['Lab']
+        labs = []
+        schema_labids = json_schema['definitions']['optionsLabs']['enum']
+        schema_labnames = json_schema['definitions']['optionsLabs']['enumNames']
+        for id in labids:
+            index = schema_labids.index(id)
+            labs.append(schema_labnames[index])
+    except KeyError:
+        labs = []
+
+    # Geo specific additional lab handling
+    try:
+        additional_labs = dictJsonData['Additional_Lab']  # niet verplicht
+    except KeyError:
+        additional_labs = []
 
     try:
         disciplines = dictJsonData['Discipline']  # niet verplicht
@@ -191,6 +194,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     landing_page = tm.render(
         title=title,
         description=description,
+        labs=labs,
+        additional_labs=additional_labs,
         disciplines=disciplines,
         version=version,
         language=language,
