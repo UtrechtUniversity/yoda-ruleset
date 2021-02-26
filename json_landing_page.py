@@ -26,6 +26,10 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     #                               UTF-8, as that will trip up jinja2.
     dictJsonData = jsonutil.read(callback, combiJsonPath, want_bytes=False)
 
+    # Remove empty lists, empty dicts, or None elements
+    # to prevent empty fields on landingpage.
+    dictJsonData = jsonutil.remove_empty(dictJsonData)
+
     # Load the Jinja template.
     landingpage_template_path = '/' + rodsZone + '/yoda/templates/' + template_name
     template = data_object.read(callback, landingpage_template_path)
