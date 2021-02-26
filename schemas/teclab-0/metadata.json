@@ -1540,7 +1540,6 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "title": "Funding reference",
         "yoda:structure": "subproperties",
         "properties": {
           "Funder_Reference": {
@@ -1739,6 +1738,7 @@
     "Contact": {
       "type": "array",
       "minItems": 1,
+      "title": "Contact person",
       "items": {
         "type": "object",
         "additionalProperties": false,
