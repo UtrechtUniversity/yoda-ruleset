@@ -204,7 +204,7 @@ def metadata_set(ctx, request_id, key, value):
     response_status = ""
     response_status_info = ""
     ctx.requestDatarequestMetadataChange(coll_path, key,
-                                         value, 0, response_status,
+                                         value, "0", response_status,
                                          response_status_info)
 
     # Trigger the processing of delayed rules
