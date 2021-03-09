@@ -1719,6 +1719,7 @@
       }
     },
     "Related_Datapackage": {
+      "title": "Related datapackage",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -1971,7 +1972,6 @@
           "Name": {
             "type": "object",
             "additionalProperties": false,
-            "title": "Contact for datapackage",
             "yoda:structure": "compound",
             "required": [
               "Given_Name",
