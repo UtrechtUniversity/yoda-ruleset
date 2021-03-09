@@ -1838,7 +1838,6 @@
           "Name": {
             "type": "object",
             "additionalProperties": false,
-            "title": "Creator of datapackage",
             "yoda:structure": "compound",
             "required": [
               "Given_Name",
@@ -1903,7 +1902,6 @@
           "Name": {
             "type": "object",
             "additionalProperties": false,
-            "title": "Contributor to datapackage",
             "yoda:structure": "compound",
             "required": [
               "Given_Name",
