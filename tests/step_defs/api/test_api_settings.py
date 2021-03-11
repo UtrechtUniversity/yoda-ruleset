@@ -21,7 +21,7 @@ def api_settings_save(user):
     return api_request(
         user,
         "settings_save",
-        {}
+        {"settings": {"mail_notifications": True}}
     )
 
 
