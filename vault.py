@@ -13,15 +13,15 @@ import irods_types
 
 import folder
 import group
+import intake_lock
+import intake_scan
+
 import mail
 import meta
 import meta_form
 import policies_datapackage_status
 from util import *
 
-# nog toevoegen:
-import intake_lock
-import intake_scan
 
 __all__ = ['api_vault_submit',
            'api_vault_approve',
@@ -81,7 +81,7 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
 
             # Dataset frozen, now move to vault and remove from intake area
             status = dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root)
-            if status==0:
+            if status == 0:
                 datasets_moved += 1
 
     # TYPE B:
@@ -149,7 +149,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
         collection.create(ctx, vault_parent, "1")
     except Exception as e:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_parent)
-        return 2 
+        return 2
 
     # variable for treewalk interface
     buffer = {}
@@ -160,7 +160,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
 
     # reset buffer
     buffer = {}
-    if status==0:
+    if status == 0:
         # stamip the vault dataset collection with additional metadata
         date_created = datetime.now()
         avu.add_to_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
@@ -183,7 +183,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
 def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root):
     """Move intake datasets consisting of data objects to the vault
     :param ctx:           Combined type of a callback and rei struct
-    
+
     return status
     """
     status = 0
@@ -241,7 +241,7 @@ def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dat
         for row in iter:
             intake_path = topLevel_collection + "/" + row[0]
             # Now remove data object in intake
-            try: 
+            try:
                 data_object.remove(ctx, intake_path)
             except Exception as e:
                 log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
@@ -290,8 +290,8 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
 
         for row in iter:
             avu.set_on_data(ctx, vault_path, "submitted_by=", row[0] + '#' + row[1])
-            avu.set_on_data(ctx, vault_path, "submitted_date",row[2])
-    else: 
+            avu.set_on_data(ctx, vault_path, "submitted_date", row[2])
+    else:
         # CREATE COLLECTION
         try:
             collection.create(ctx, vault_path, "1")
@@ -315,7 +315,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
 
         for row in iter:
             avu.set_on_coll(ctx, vault_path, "submitted_by=", row[0] + '#' + row[1])
-            avu.set_on_coll(ctx, vault_path, "submitted_date",row[2])
+            avu.set_on_coll(ctx, vault_path, "submitted_date", row[2])
 
     return 0
 
@@ -337,17 +337,17 @@ def vault_walk_ingest_object(ctx, item_parent, item_name, is_collection, buffer)
     source_path = item_parent + '/' + item_name
     dest_path = buffer["destination"]
     if source_path != buffer["source"]:
-         # rewrite path to copy objects that are located underneath the toplevel collection
-         source_length = len(source_path)
-         relative_path = source_path[(len(buffer["source"]) + 1): source_length]
-         dest_path = buffer["destination"] + '/' + relative_path 
-        
+        # rewrite path to copy objects that are located underneath the toplevel collection
+        source_length = len(source_path)
+        relative_path = source_path[(len(buffer["source"]) + 1): source_length]
+        dest_path = buffer["destination"] + '/' + relative_path 
+ 
     return vault_ingest_object(ctx, source_path, is_collection, dest_path)
 
 
 def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
     """
-    Walk a subtree and perfom 'rule_to_process' per item. 
+    Walk a subtree and perfom 'rule_to_process' per item.
 
     :param path
     :param buffer            (exclusively to be used by the rule we will can)
@@ -358,28 +358,28 @@ def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
     error = 0
     # first deal with any subcollections within this collection
     iter = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_PARENT_NAME = '" + path + "' ",
-            genquery.AS_LIST, ctx)
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '" + path + "' ",
+        genquery.AS_LIST, ctx)
     for row in iter:
         error = vault_tree_walk_collection(ctx, row[0], buffer, rule_to_process)
         if error:
             break
 
     # when done then process the dataobjects directly located within this collection
-    if error==0:
+    if error == 0:
         iter = genquery.row_iterator(
-                "DATA_NAME",
-                "COLL_NAME = '" + path + "' ",
-                genquery.AS_LIST, ctx)
+            "DATA_NAME",
+            "COLL_NAME = '" + path + "' ",
+            genquery.AS_LIST, ctx)
         for row in iter:
             error = rule_to_process(ctx, path, row[0], False, buffer)
             if error:
                 break
 
     # and lastly process the collection itself
-    if error==0:
-         error = rule_to_process(ctx, parent_collection, collection, True, buffer)
+    if error == 0:
+        error = rule_to_process(ctx, parent_collection, collection, True, buffer)
 
     return error
 
@@ -415,7 +415,7 @@ def get_dataset_path(root, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
     # Beware! extra 'ver' before version from orginal code: *wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
     wepv = id_components["wave"] + "_" + id_components["experiment_type"] + "_" + id_components["pseudocode"] + "_ver" + id_components["version"]
-    
+
     return root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv
 
 

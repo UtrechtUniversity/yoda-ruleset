@@ -165,8 +165,6 @@ def intake_dataset_melt(ctx, collection, dataset_id):
             avu.rmw_from_data(ctx, tl_object, "to_vault_freeze", "%")
 
 
-
-
 def intake_dataset_object_get_status(ctx, path):
     """Get the status of an object in a dataset.
 
