@@ -7,11 +7,11 @@ __license__   = 'GPLv3, see LICENSE'
 import fnmatch
 import time
 
-import intake_dataset
 import intake_lock
 import intake_scan
-
 from util import *
+
+import intake_dataset
 
 __all__ = ['api_intake_list_studies',
            'api_intake_list_dm_studies',
