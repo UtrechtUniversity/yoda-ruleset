@@ -24,7 +24,11 @@ def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, re
     """
     # 1. Change status on this collection.
     if remove:
-        avu.rmw_from_coll(ctx, collection, status, "%")
+        try:
+            avu.rmw_from_coll(ctx, collection, status, "%")
+        except msi.Error as e:
+            log.write(ctx, 'ERROR REMOVE')
+            log.write(ctx, e)
     else:
         log.write(ctx, 'step1 . set_on_col')
         avu.set_on_coll(ctx, collection, status, timestamp)

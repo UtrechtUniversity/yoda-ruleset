@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from datetime import datetime
 import itertools
 import os
 import time
@@ -145,7 +146,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
 
     vault_parent = pathutil.chop(vault_path)[0]
     try:
-        collection.create(ctx, vault_parent)
+        collection.create(ctx, vault_parent, "1")
     except Exception as e:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_parent)
         return 2 
@@ -155,7 +156,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
     buffer["source"] = toplevel_collection
     buffer["destination"] = vault_path
 
-    status = vault_tree_walk_collection(toplevel_collection, "vault_walk_ingest_object", buffer)
+    status = vault_tree_walk_collection(ctx, toplevel_collection, buffer, vault_walk_ingest_object)
 
     # reset buffer
     buffer = {}
@@ -174,7 +175,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
         # move failed (partially), cleanup vault
         # NB: keep the dataset in the vault queue so we can retry some other time
         log.write("ERROR: Ingest failed for " + dataset_id + ", error = " + status)
-        status = vault_tree_walk_collection(vault_path, "vault_walk_remove_object", buffer)
+        status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
 
     return status
 
@@ -250,7 +251,7 @@ def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dat
 
                 # reset buffer interface
                 buffer = {}
-                status = vault_tree_walk_collection(vault_path, "vault_walk_remove_object", buffer)
+                status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
 
     # Finally return status
     return status
@@ -270,11 +271,11 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         except msi.Error as e:
             return 1
 
-        collection, dataname = pathutil.chop(object_path)
+        coll, dataname = pathutil.chop(object_path)
 
         iter = genquery.row_iterator(
             "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
-            "COLL_NAME = '" + collection + "' AND DATA_NAME = '" + dataname + "' ",
+            "COLL_NAME = '" + coll + "' AND DATA_NAME = '" + dataname + "' ",
             genquery.AS_LIST, ctx)
 
         for row in iter:
@@ -284,7 +285,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         # add metadata found in system info
         iter = genquery.row_iterator(
             "DATA_OWNER_NAME, DATA_OWNER_ZONE, DATA_CREATE_TIME",
-            "COLL_NAME = '" + collection + "' AND DATA_NAME = '" + dataname + "' ",
+            "COLL_NAME = '" + coll + "' AND DATA_NAME = '" + dataname + "' ",
             genquery.AS_LIST, ctx)
 
         for row in iter:
@@ -293,13 +294,13 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
     else: 
         # CREATE COLLECTION
         try:
-            collection.create(ctx, vault_path)
+            collection.create(ctx, vault_path, "1")
         except msi.Error as e:
             return 1
 
         iter = genquery.row_iterator(
             "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + collection + "' ",
+            "COLL_NAME = '" + object_path + "' ",
             genquery.AS_LIST, ctx)
 
         for row in iter:
@@ -309,7 +310,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         # add metadata found in system info
         iter = genquery.row_iterator(
             "COLL_OWNER_NAME, COLL_OWNER_ZONE, COLL_CREATE_TIME",
-            "COLL_NAME = '" + collection + "' ",
+            "COLL_NAME = '" + object_path + "' ",
             genquery.AS_LIST, ctx)
 
         for row in iter:
@@ -352,7 +353,7 @@ def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
     :param buffer            (exclusively to be used by the rule we will can)
     :param rule_to_process   name of the rule to be executed in the context of a tree-item
     """
-    parent_collection, collection = pathutil.chop(ctx, path)
+    parent_collection, collection = pathutil.chop(path)
 
     error = 0
     # first deal with any subcollections within this collection
@@ -372,13 +373,13 @@ def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
                 "COLL_NAME = '" + path + "' ",
                 genquery.AS_LIST, ctx)
         for row in iter:
-            error = rule_to_process(path, row[0], False, buffer)
+            error = rule_to_process(ctx, path, row[0], False, buffer)
             if error:
                 break
 
     # and lastly process the collection itself
     if error==0:
-         error = rule_to_process(parent_collection, collection, True, buffer)
+         error = rule_to_process(ctx, parent_collection, collection, True, buffer)
 
     return error
 
