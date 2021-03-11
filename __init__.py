@@ -39,6 +39,7 @@ from epic                   import *
 from publication            import *
 from policies               import *
 from revisions              import *
+from settings               import *
 
 # Import certain modules only when enabled.
 from .util.config import config
