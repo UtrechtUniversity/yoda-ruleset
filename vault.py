@@ -10,12 +10,11 @@ import os
 import time
 
 import irods_types
-import intake_lock
 
 import folder
 import group
+import intake_lock
 import intake_scan
-
 import mail
 import meta
 import meta_form
