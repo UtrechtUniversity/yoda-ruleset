@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
-from datetime import datetime
 import time
+from datetime import datetime
 
 import irods_types
 
