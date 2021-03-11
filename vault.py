@@ -4,16 +4,16 @@
 __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from datetime import datetime
 import itertools
+from datetime import datetime
 import os
 import time
 
 import irods_types
+import intake_lock
 
 import folder
 import group
-import intake_lock
 import intake_scan
 
 import mail
@@ -340,8 +340,8 @@ def vault_walk_ingest_object(ctx, item_parent, item_name, is_collection, buffer)
         # rewrite path to copy objects that are located underneath the toplevel collection
         source_length = len(source_path)
         relative_path = source_path[(len(buffer["source"]) + 1): source_length]
-        dest_path = buffer["destination"] + '/' + relative_path 
- 
+        dest_path = buffer["destination"] + '/' + relative_path
+
     return vault_ingest_object(ctx, source_path, is_collection, dest_path)
 
 
