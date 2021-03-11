@@ -5,8 +5,8 @@ __copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
-from datetime import datetime
 import os
+from datetime import datetime
 import time
 
 import irods_types
