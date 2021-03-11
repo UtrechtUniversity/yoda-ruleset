@@ -418,7 +418,7 @@ def get_dataset_path(root, dataset_id):
     return root + '/' + id_components["wave"] + "/" + id_components["experiment_type"] + "/" + id_components["pseudocode"] + "/" + wepv
 
 
-api.make()
+@api.make()
 def api_vault_submit(ctx, coll):
     """Submit data package for publication.
 
