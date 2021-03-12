@@ -162,7 +162,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
     if status == 0:
         # stamip the vault dataset collection with additional metadata
         date_created = datetime.now()
-        avu.add_to_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
+        avu.set_on_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
 
         # and finally remove the dataset original in the intake area
         try:
