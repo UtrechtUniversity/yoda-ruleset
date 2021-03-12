@@ -10,6 +10,7 @@ from util.query import Query
 __all__ = ['api_settings_load',
            'api_settings_save']
 
+# Allowed user settings should be synced with uuUserPolicyCanUserModify.
 USER_SETTINGS = {"mail_notifications": {"default": True, "values": [True, False]}}
 
 
@@ -45,7 +46,7 @@ def api_settings_save(ctx, settings):
     try:
         for a, v in settings.items():
             if a in USER_SETTINGS and v in USER_SETTINGS[a]["values"]:
-                ctx.uuUserModify(coll, a, v, '', '')
+                ctx.uuUserModify(user.full_name(ctx), a, str(v), '', '')
 
         return api.Result.ok()
     except Exception as e:

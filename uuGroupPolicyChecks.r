@@ -442,13 +442,7 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *value, *allowed, *reas
 	*reason  = "";
 
 	if (*actor == *userName) {
-		if (*attribute == "category") {
-            *allowed = 1;
-		} else if (*attribute == "subcategory") {
-            *allowed = 1;
-		} else if (*attribute == "description") {
-			*allowed = 1;
-		} else if (*attribute == "data_classification") {
+        if (*attribute == "mail_notifications") {
             *allowed = 1;
 		} else {
 			*reason = "Invalid user attribute name.";
