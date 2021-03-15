@@ -10,6 +10,7 @@ from util.query import Query
 __all__ = ['api_settings_load',
            'api_settings_save']
 
+# Allowed settings should be synchronised with uuUserPolicyCanUserModify.
 USER_SETTINGS = {"mail_notifications": {"default": "True", "values": ["True", "False"]}}
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
