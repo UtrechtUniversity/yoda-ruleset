@@ -49,6 +49,5 @@ def api_settings_save(ctx, settings):
             try:
                 ctx.uuUserModify(user.full_name(ctx), "{}{}".format(SETTINGS_KEY, a), str(v), '', '')
             except Exception as e:
-                return api.Error('internal', 'Saving settings failed. Please try again')
-
+                return api.Error('internal', 'Saving settings failed. If the problem persists after a few tries, please contact a Yoda administrator.')
     return api.Result.ok()
