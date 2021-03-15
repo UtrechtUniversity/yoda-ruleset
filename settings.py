@@ -30,7 +30,7 @@ def api_settings_load(ctx):
     # Add defaults for missing settings.
     for setting in USER_SETTINGS:
         if setting not in settings:
-            settings.append((setting, USER_SETTINGS[setting]["default"]))
+            settings[setting] = USER_SETTINGS[setting]["default"]
 
     return settings
 
