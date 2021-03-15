@@ -16,12 +16,13 @@ from conftest import api_request
 scenarios('../../features/api/api_settings.feature')
 
 
-@given('the Yoda settings save API is queried', target_fixture="api_response")
-def api_settings_save(user):
+@given('the Yoda settings save API is queried with "<attribute>" and "<value>"', target_fixture="api_response")
+def api_settings_save(user, attribute, value):
+    settings = {attribute: value}
     return api_request(
         user,
         "settings_save",
-        {"settings": {"mail_notifications": True}}
+        {"settings": settings}
     )
 
 
@@ -38,3 +39,9 @@ def api_settings_load(user):
 def api_response_code(api_response, code):
     http_status, _ = api_response
     assert http_status == code
+
+
+@then('"<attribute>" contains "<value>"')
+def api_attribute_value(api_response, attribute, value):
+    _, body = api_response
+    assert body["data"][attribute] == value

@@ -10,8 +10,8 @@ from util.query import Query
 __all__ = ['api_settings_load',
            'api_settings_save']
 
-# Allowed user settings should be synced with uuUserPolicyCanUserModify.
-USER_SETTINGS = {"mail_notifications": {"default": True, "values": [True, False]}}
+USER_SETTINGS = {"mail_notifications": {"default": "True", "values": ["True", "False"]}}
+SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
 
 @api.make()
@@ -20,11 +20,11 @@ def api_settings_load(ctx):
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: List with all settings
+    :returns: Dict with all settings
     """
-    settings = [(a, v) for a, v
-                in Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                              "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}'".format(user.name(ctx), "org_settings_"))]
+    settings = dict([(a.replace(SETTINGS_KEY, ""), v) for a, v
+                     in Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+                                   "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}%%'".format(user.name(ctx), SETTINGS_KEY))])
 
     # Add defaults for missing settings.
     for setting in USER_SETTINGS:
@@ -39,15 +39,15 @@ def api_settings_save(ctx, settings):
     """Save user settings.
 
     :param ctx:      Combined type of a callback and rei struct
-    :param settings: List with settings to be saved
+    :param settings: Dict with settings to be saved
 
     :returns: API status
     """
-    try:
-        for a, v in settings.items():
-            if a in USER_SETTINGS and v in USER_SETTINGS[a]["values"]:
-                ctx.uuUserModify(user.full_name(ctx), a, str(v), '', '')
+    for a, v in settings.items():
+        if a in USER_SETTINGS and v in USER_SETTINGS[a]["values"]:
+            try:
+                ctx.uuUserModify(user.full_name(ctx), "{}{}".format(SETTINGS_KEY, a), str(v), '', '')
+            except Exception as e:
+                return api.Error('internal', 'Saving settings failed. Please try again')
 
-        return api.Result.ok()
-    except Exception as e:
-        return api.Error('internal', 'Saving settings failed. Please try again')
+    return api.Result.ok()
