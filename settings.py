@@ -23,9 +23,9 @@ def api_settings_load(ctx):
 
     :returns: Dict with all settings
     """
-    settings = dict([(a.replace(SETTINGS_KEY, ""), v) for a, v
-                     in Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
-                                   "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}%%'".format(user.name(ctx), SETTINGS_KEY))])
+    settings = {a.replace(SETTINGS_KEY, ""): v for a, v
+                in Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+                              "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}%%'".format(user.name(ctx), SETTINGS_KEY))}
 
     # Add defaults for missing settings.
     for setting in USER_SETTINGS:
