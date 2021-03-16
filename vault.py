@@ -216,7 +216,7 @@ def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dat
     # copy data objects to the vault
     iter = genquery.row_iterator(
         "DATA_NAME",
-        "COLL_NAME = '" + topLevel_collection + "' "
+        "COLL_NAME = '" + toplevel_collection + "' "
         "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
         "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
         genquery.AS_LIST, ctx)
@@ -232,13 +232,13 @@ def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dat
         # this will also melt/unfreeze etc because metadata is removed too
         iter = genquery.row_iterator(
             "DATA_NAME",
-            "COLL_NAME = '" + topLevel_collection + "' "
+            "COLL_NAME = '" + toplevel_collection + "' "
             "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
             "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
             genquery.AS_LIST, ctx)
 
         for row in iter:
-            intake_path = topLevel_collection + "/" + row[0]
+            intake_path = toplevel_collection + "/" + row[0]
             # Now remove data object in intake
             try:
                 data_object.remove(ctx, intake_path)
