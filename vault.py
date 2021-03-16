@@ -390,7 +390,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
 
     keys = ["wave", "experiment_type", "pseudocode", "version", "dataset_date_created"]
     for key in keys:
-        try
+        try:
             avu.set_on_data(ctx, vault_path, key, id_components[key])
         Exception as e:
             avu.set_on_coll(ctx, vault_path, key, id_components[key])
