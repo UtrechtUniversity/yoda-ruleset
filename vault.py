@@ -160,7 +160,7 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
     # reset buffer
     buffer = {}
     if status == 0:
-        # stamip the vault dataset collection with additional metadata
+        # stamp the vault dataset collection with additional metadata
         date_created = datetime.now()
         avu.set_on_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
 
@@ -201,7 +201,7 @@ def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dat
 
     # create path to and including the toplevel collection (will create in-between levels)
     try:
-        collection.create(ctx, vault_path)
+        collection.create(ctx, vault_path, "1")
     except Exception as e:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_path)
         return 2
@@ -390,8 +390,10 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
 
     keys = ["wave", "experiment_type", "pseudocode", "version", "dataset_date_created"]
     for key in keys:
-        # ??? Dit kan ook een collection zijn!
-        avu.set_on_data(ctx, vault_path, key, id_components[key])
+        try
+            avu.set_on_data(ctx, vault_path, key, id_components[key])
+        Exception as e:
+            avu.set_on_coll(ctx, vault_path, key, id_components[key])
 
 
 def vault_dataset_exists(ctx, vault_root, dataset_id):
