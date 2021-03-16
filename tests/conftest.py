@@ -98,15 +98,16 @@ def login(user, password):
     client = requests.session()
 
     # Retrieve the CSRF token first
-    csrf = client.get(url, verify=False).cookies['csrf_yoda']
+    # csrf = client.get(url, verify=False).cookies['csrf_yoda']
+    csrf = ""
 
     # Login as user.
-    login_data = dict(csrf_yoda=csrf, username=user, password=password, next='/home')
+    login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
     client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
     client.close()
 
     # Return CSRF and session cookies.
-    return client.cookies['csrf_yoda'], client.cookies['yoda_session']
+    return csrf, client.cookies['session']
 
 
 def api_request(user, request, data):
@@ -118,9 +119,8 @@ def api_request(user, request, data):
 
     # Make API request.
     url = api_url + "/" + request
-    files = {'csrf_yoda': (None, csrf), 'data': (None, json.dumps(data))}
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
-
+    files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
+    cookies = {'session': session}
     response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
 
     # Remove debug info from response body.
@@ -140,8 +140,8 @@ def post_form_data(user, request, files):
 
     # Make POST request.
     url = portal_url + "/" + request
-    files['csrf_yoda'] = (None, csrf)
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
+    files['csrf_token'] = (None, csrf)
+    cookies = {'csrf_token': csrf, 'session': session}
 
     response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
 
