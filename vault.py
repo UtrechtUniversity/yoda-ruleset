@@ -392,7 +392,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
     for key in keys:
         try:
             avu.set_on_data(ctx, vault_path, key, id_components[key])
-        Except Exception as e:
+        except Exception as e:
             avu.set_on_coll(ctx, vault_path, key, id_components[key])
 
 
