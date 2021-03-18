@@ -52,7 +52,7 @@
               },
               "work_address": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Address"
+                "title": "Work address"
               },
               "email": {
                 "$ref": "#/definitions/stringNormal",
