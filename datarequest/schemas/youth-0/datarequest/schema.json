@@ -29,7 +29,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "first_name": {
+              "given_name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "First name"
               },
@@ -64,7 +64,8 @@
               }
             },
             "required": [
-              "name",
+              "given_name",
+              "family_name",
               "institution",
               "department",
               "academic_role",
