@@ -29,9 +29,13 @@
           "items": {
             "type": "object",
             "properties": {
-              "name": {
+              "first_name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "Name"
+                "title": "First name"
+              },
+              "family_name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Family name"
               },
               "institution": {
                 "$ref": "#/definitions/stringNormal",
