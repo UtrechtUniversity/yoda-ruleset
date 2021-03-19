@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Rules for sending e-mails."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import email
@@ -9,6 +9,7 @@ import re
 import smtplib
 from email.mime.text import MIMEText
 
+import settings
 from util import *
 
 __all__ = ['rule_mail_new_package_published',
@@ -40,6 +41,10 @@ def send(ctx, to, actor, subject, body):
     if '@' not in to:
         log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
+
+    if settings.load(ctx, 'mail_notifications', username=to) == "False":
+        log.write(ctx, '[EMAIL] User <{}> disabled mail notifications'.format(to))
+        return
 
     log.write(ctx, '[EMAIL] Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 

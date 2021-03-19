@@ -15,6 +15,33 @@ USER_SETTINGS = {"mail_notifications": {"default": "True", "values": ["True", "F
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
 
+def load(ctx, setting, username=None):
+    """Load user setting.
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param setting:  Name of setting to retrieve
+    :param username: Optional username to retrieve setting from
+
+    :raises UUNotAuthorized: Only admins can retrieve settings of other users
+
+    :returns: User setting or setting default
+    """
+    # Only admins can retrieve settings for other users.
+    if username is not None and not user.is_admin(ctx):
+        raise error.UUNotAuthorized
+    else:
+        username = user.name(ctx)
+
+    settings = {a.replace(SETTINGS_KEY, ""): v for a, v
+                in Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
+                              "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}%%'".format(username, SETTINGS_KEY))}
+
+    if setting in settings:
+        return settings[setting]
+    else:
+        return USER_SETTINGS[setting]["default"]
+
+
 @api.make()
 def api_settings_load(ctx):
     """Load user settings.
