@@ -442,7 +442,7 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *value, *allowed, *reas
 	*reason  = "";
 
 	if (*actor == *userName) {
-        if (*attribute == "mail_notifications") {
+        if (*attribute == "org_settings_mail_notifications") {
             *allowed = 1;
 		} else {
 			*reason = "Invalid user attribute name.";
