@@ -55,7 +55,8 @@
                 "title": "Work address"
               },
               "email": {
-                "$ref": "#/definitions/stringNormal",
+                "type": "string",
+                "format": "email",
                 "title": "Email"
               },
               "phone": {
