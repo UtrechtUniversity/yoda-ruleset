@@ -9,7 +9,7 @@ from datetime import datetime
 import meta_form
 from util import *
 
-__all__ = ['api_resource_groups_dm',
+__all__ = ['api_resource_list_groups',
            'api_resource_monthly_stats_dm',
            'api_resource_monthly_category_stats_export_dm',
            'api_resource_monthly_stats',
@@ -18,7 +18,6 @@ __all__ = ['api_resource_groups_dm',
            'api_resource_get_tiers',
            'api_resource_save_tier',
            'api_resource_user_get_type',
-           'api_resource_user_research_groups',
            'api_resource_user_is_datamanager',
            'api_resource_full_year_group_data',
            'rule_resource_store_monthly_storage_statistics']
@@ -101,8 +100,8 @@ def api_resource_user_get_type(ctx):
 
 
 @api.make()
-def api_resource_user_research_groups(ctx):
-    """Get the research groups a user is member of."""
+def api_resource_list_groups(ctx):
+    """Get the research groups a user is member or datamanager of."""
     groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
@@ -118,7 +117,11 @@ def api_resource_user_research_groups(ctx):
             groups.append(row[0])
 
     groups.sort()
-    return groups
+
+    categories = get_categories_datamanager(ctx)
+    groups_dm = get_groups_on_categories(ctx, categories)
+
+    return groups + groups_dm
 
 
 @api.make()
@@ -201,19 +204,9 @@ def api_resource_monthly_stats(ctx):
 @api.make()
 def api_resource_monthly_stats_dm(ctx):
     """Collect storage data for a datamanager."""
-    datamanager = user.full_name(ctx)
-    categories = get_categories_datamanager(ctx, datamanager)
+    categories = get_categories_datamanager(ctx)
 
     return getMonthlyCategoryStorageStatistics(ctx, categories)
-
-
-@api.make()
-def api_resource_groups_dm(ctx):
-    """Get all groups for all categories a person is datamanager of."""
-    datamanager = user.full_name(ctx)
-    categories = get_categories_datamanager(ctx, datamanager)
-
-    return get_groups_on_categories(ctx, categories)
 
 
 @api.make()
@@ -231,8 +224,7 @@ def api_resource_monthly_category_stats_export_dm(ctx):
 
     :returns: API status
     """
-    datamanager = user.full_name(ctx)
-    categories = get_categories_datamanager(ctx, datamanager)
+    categories = get_categories_datamanager(ctx)
     allStorage = []
 
     # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
@@ -394,11 +386,10 @@ def get_groups_on_categories(ctx, categories):
     return groups
 
 
-def get_categories_datamanager(ctx, datamanagerName):
+def get_categories_datamanager(ctx):
     """Get all categories for current datamanager.
 
-    :param ctx:             Combined type of a callback and rei struct
-    :param datamanagerName: Datamanager involved
+    :param ctx: Combined type of a callback and rei struct
 
     :returns: All categories for current datamanager
     """
