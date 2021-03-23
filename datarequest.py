@@ -1385,13 +1385,11 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
 
         # Send emails
         if datarequest_status   == status.PRELIMINARY_RESUBMIT:
-            mail_preliminary_review_resubmit(ctx, researcher['email'], researcher['name'],
-                                             feedback_for_researcher, datamanager_emails[0],
-                                             request_id)
+            mail_resubmit(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                          datamanager_emails[0], request_id)
         elif datarequest_status == status.PRELIMINARY_REJECT:
-            mail_preliminary_review_rejected(ctx, researcher['email'], researcher['name'],
-                                             feedback_for_researcher, datamanager_emails[0],
-                                             request_id)
+            mail_rejected(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                          datamanager_emails[0], request_id)
 
 
 def datamanager_review_emails(ctx, request_id, datarequest_status):
@@ -1432,16 +1430,18 @@ def assignment_submit_emails(ctx, request_id, datarequest_status):
 
     elif datarequest_status in (status.RESUBMIT_AFTER_DATAMANAGER_REVIEW,
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
-        # Get additional email input parameter
+        # Get additional email input parameters
         feedback_for_researcher = assignment['feedback_for_researcher']
+        datamanager_emails      = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM,
+                                                                         "")['arguments'][1])
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
-            mail_assignment_resubmit(ctx, researcher['email'], researcher['name'], request_id,
-                                     feedback_for_researcher)
+            mail_resubmit(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                          datamanager_emails[0], request_id)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
-            mail_assignment_rejected(ctx, researcher['email'], researcher['name'], request_id,
-                                     feedback_for_researcher)
+            mail_rejected(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                          datamanager_emails[0], request_id)
 
 
 def review_submit_emails(ctx, request_id):
@@ -1474,11 +1474,11 @@ def evaluation_submit_emails(ctx, request_id, datarequest_status):
             if not datamanager_email == "rods":
                 mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id)
     elif datarequest_status == status.RESUBMIT:
-        mail_evaluation_resubmit(ctx, researcher['email'], researcher['name'],
-                                 feedback_for_researcher, datamanager_emails[0], request_id)
+        mail_resubmit(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                      datamanager_emails[0], request_id)
     elif datarequest_status == status.REJECTED:
-        mail_evaluation_rejected(ctx, researcher['email'], researcher['name'],
-                                 feedback_for_researcher, datamanager_emails[0], request_id)
+        mail_rejected(ctx, researcher['email'], researcher['name'], feedback_for_researcher,
+                      datamanager_emails[0], request_id)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -1574,46 +1574,6 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_preliminary_review_resubmit(ctx, researcher_email, researcher_name,
-                                     feedback_for_researcher, datamanager_email, request_id):
-    return mail.send(ctx,
-                     to=researcher_email,
-                     actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected (resubmit)".format(request_id),
-                     body="""Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-You are however allowed to resubmit your data request. You may do so using this link: https://{}/datarequest/add/{}.
-
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, datamanager_email))
-
-
-def mail_preliminary_review_rejected(ctx, researcher_email, researcher_name,
-                                     feedback_for_researcher, datamanager_email, request_id):
-    return mail.send(ctx,
-                     to=researcher_email,
-                     actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected".format(request_id),
-                     body="""Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, datamanager_email))
-
-
 def mail_datamanager_review_accepted(ctx, bodmember_email, request_id):
     return mail.send(ctx,
                      to=bodmember_email,
@@ -1698,46 +1658,6 @@ YOUth
 """.format(request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_assignment_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                             request_id):
-    return mail.send(ctx,
-                     to=researcher_email,
-                     actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected (resubmit)".format(request_id),
-                     body="""Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-You are however allowed to resubmit your data request. You may do so using this link: https://{}/datarequest/add/{}.
-
-If you wish to object against this rejection, please contact the YOUth data manager.
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id))
-
-
-def mail_assignment_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                             request_id):
-    return mail.send(ctx,
-                     to=researcher_email,
-                     actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected".format(request_id),
-                     body="""Dear {},
-
-Your data request has been rejected for the following reason(s):
-
-{}
-
-If you wish to object against this rejection, please contact the YOUth data manager.
-
-With kind regards,
-YOUth
-""".format(researcher_name, feedback_for_researcher))
-
-
 def mail_review_researcher(ctx, researcher_email, researcher_name, request_id):
     return mail.send(ctx,
                      to=researcher_email,
@@ -1803,8 +1723,8 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_evaluation_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                             datamanager_email, request_id):
+def mail_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
+                  datamanager_email, request_id):
     return mail.send(ctx,
                      to=researcher_email,
                      actor=user.full_name(ctx),
@@ -1826,8 +1746,8 @@ YOUth
 """.format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, datamanager_email, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_evaluation_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                             datamanager_email, request_id):
+def mail_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
+                  datamanager_email, request_id):
     return mail.send(ctx,
                      to=researcher_email,
                      actor=user.full_name(ctx),
