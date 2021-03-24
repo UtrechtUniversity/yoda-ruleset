@@ -17,7 +17,6 @@ __all__ = ['api_resource_list_groups',
            'api_resource_tier',
            'api_resource_get_tiers',
            'api_resource_save_tier',
-           'api_resource_user_get_type',
            'api_resource_user_is_datamanager',
            'api_resource_full_year_group_data',
            'rule_resource_store_monthly_storage_statistics']
@@ -94,34 +93,27 @@ def api_resource_full_year_group_data(ctx, group_name, current_month):
 
 
 @api.make()
-def api_resource_user_get_type(ctx):
-    """Get current user type"""
-    return user.user_type(ctx)
-
-
-@api.make()
 def api_resource_list_groups(ctx):
     """Get the research groups a user is member or datamanager of."""
-    groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-
-    iter = genquery.row_iterator(
-        "USER_GROUP_NAME",
-        "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        if row[0].startswith('research-'):
-            groups.append(row[0])
-
-    groups.sort()
 
     categories = get_categories_datamanager(ctx)
     groups_dm = get_groups_on_categories(ctx, categories)
 
-    return groups + groups_dm
+    groups_member = [a for a
+                     in Query(ctx, "USER_GROUP_NAME",
+                                   "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+
+    groups = list(set(groups_member + groups_dm))
+    groups.sort()
+
+    group_list = []
+    for group in groups:
+        data_size = get_group_data_size(ctx, group)
+        group_list.append((group, data_size))
+
+    return group_list
 
 
 @api.make()
@@ -358,30 +350,17 @@ def get_groups_on_categories(ctx, categories):
     :returns: All groups belonging to all given categories
     """
     groups = []
-    metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
 
     for category in categories:
         iter = genquery.row_iterator(
             "USER_NAME",
-            "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            "USER_GROUP_NAME like 'research-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
 
         for row in iter:
             groupName = row[0]
-            if groupName.startswith('research-'):
-                iter2 = genquery.row_iterator(
-                    "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
-                    "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + groupName + "'",
-                    genquery.AS_LIST, ctx
-                )
-
-                data_size = 0
-                for row in iter2:
-                    data = row[0]
-                    temp = jsonutil.parse(data)
-                    data_size = data_size + int(float(temp[2]))  # no construction for summation required in this case
-                groups.append([groupName, data_size])
+            groups.append(groupName)
 
     return groups
 
@@ -629,3 +608,21 @@ def get_resources(ctx):
         resources.append(row[0])
 
     return resources
+
+
+def get_group_data_size(ctx, group_name):
+    metadataAttrNameRefMonth = constants.UUMETADATASTORAGEMONTH + '%0*d' % (2, datetime.now().month)
+
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
+        "META_USER_ATTR_NAME = '" + metadataAttrNameRefMonth + "' AND USER_NAME = '" + group_name + "'",
+        genquery.AS_LIST, ctx
+    )
+
+    data_size = 0
+    for row in iter:
+        data = row[0]
+        temp = jsonutil.parse(data)
+        data_size = data_size + int(float(temp[2]))  # no construction for summation required in this case
+
+    return data_size
