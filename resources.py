@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
 
 import meta_form
 from util import *
+from util.query import Query
 
 __all__ = ['api_resource_list_groups',
            'api_resource_monthly_stats_dm',
