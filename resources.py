@@ -112,7 +112,7 @@ def api_resource_list_groups(ctx):
     group_list = []
     for group in groups:
         data_size = get_group_data_size(ctx, group)
-        group_list.append((group, data_size))
+        group_list.append((group, misc.human_readable_size(data_size)))
 
     return group_list
 
