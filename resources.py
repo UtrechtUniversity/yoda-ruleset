@@ -49,7 +49,7 @@ def api_resource_full_year_group_data(ctx, group_name):
     """Get a full year of monthly storage data starting from current month and look back one year.
 
     :param ctx:           Combined type of a callback and rei struct
-    :param group_name:    group that is searched for storage data
+    :param group_name:    Group that is searched for storage data
 
     :returns: API status
     """
@@ -63,7 +63,7 @@ def api_resource_full_year_group_data(ctx, group_name):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 
-    current_month = '%0*d' % (2, datetime.now().month)
+    current_month = int('%0*d' % (2, datetime.now().month))
     full_year_data = {}  # all tiers with storage size per month
     total_storage = 0
 
@@ -86,8 +86,8 @@ def api_resource_full_year_group_data(ctx, group_name):
         for row in iter:
             data = jsonutil.parse(row[0])
             tierName = data[1]
-            data_size = data[2]
-            total_storage += data_size
+            total_storage += data[2]
+            data_size = round(data[2] / 1000000000000, 1) # bytes to terabytes
             try:
                 full_year_data[tierName][referenceMonth] = data_size
             except KeyError:
@@ -95,11 +95,11 @@ def api_resource_full_year_group_data(ctx, group_name):
                 full_year_data[tierName][referenceMonth] = data_size
 
     # Supporting info for the frontend.
-    months_order = []
-    for i in [range(1, 13)]:
-        storage_month = current_month - i
+    months_order = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    for i in range(0, 12):
+        storage_month = int(current_month - i)
         # reverse the order of months
-        # months_order[11 - i] = 10 if storage_month + 12 < 1 else storage_month
+        months_order[11 - i] = storage_month + 12 if storage_month < 1 else storage_month
 
     return {'tiers': full_year_data, 'months': months_order, 'total_storage': total_storage}
 
