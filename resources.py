@@ -111,16 +111,21 @@ def api_resource_list_groups(ctx):
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
-    categories = get_categories_datamanager(ctx)
-    groups_dm = get_groups_on_categories(ctx, categories)
+    if user.is_admin(ctx):
+        groups = [a for a
+                  in Query(ctx, "USER_GROUP_NAME",
+                                "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+    else:
+        categories = get_categories_datamanager(ctx)
+        groups_dm = get_groups_on_categories(ctx, categories)
 
-    groups_member = [a for a
-                     in Query(ctx, "USER_GROUP_NAME",
-                                   "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_member = [a for a
+                         in Query(ctx, "USER_GROUP_NAME",
+                                       "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
 
-    groups = list(set(groups_member + groups_dm))
+        groups = list(set(groups_member + groups_dm))
+
     groups.sort()
-
     group_list = []
     for group in groups:
         data_size = get_group_data_size(ctx, group)
