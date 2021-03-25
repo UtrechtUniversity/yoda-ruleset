@@ -45,15 +45,15 @@ def api_resource_save_tier(ctx, resource_name, tier_name):
 
 
 @api.make()
-def api_resource_full_year_group_data(ctx, group_name, current_month):
+def api_resource_full_year_group_data(ctx, group_name):
     """Get a full year of monthly storage data starting from current month and look back one year.
 
     :param ctx:           Combined type of a callback and rei struct
     :param group_name:    group that is searched for storage data
-    :param current_month: Month passed that is supposed to be the month to look back from
 
     :returns: API status
     """
+
     # Check permissions for this function
     # Member of this group?
     member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
@@ -63,7 +63,9 @@ def api_resource_full_year_group_data(ctx, group_name, current_month):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 
-    allStorage = []  # list of all month-tier combinations present including their storage size
+    current_month = '%0*d' % (2, datetime.now().month)
+    full_year_data = {}  # all tiers with storage size per month
+    total_storage = 0
 
     # per month gather month/tier/storage information from metadata:
     # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
@@ -83,14 +85,23 @@ def api_resource_full_year_group_data(ctx, group_name, current_month):
 
         for row in iter:
             data = jsonutil.parse(row[0])
-
             tierName = data[1]
-            data_size = data[2]  # no construction for summation required in this case
+            data_size = data[2]
+            total_storage += data_size
+            try:
+                full_year_data[tierName][referenceMonth] = data_size
+            except KeyError:
+                full_year_data[tierName] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                full_year_data[tierName][referenceMonth] = data_size
 
-            key = 'month=' + str(referenceMonth) + '-tier=' + tierName
-            allStorage.append({key: data_size})
+    # Supporting info for the frontend.
+    months_order = []
+    for i in [range(1, 13)]:
+        storage_month = current_month - i
+        # reverse the order of months
+        # months_order[11 - i] = 10 if storage_month + 12 < 1 else storage_month
 
-    return allStorage
+    return {'tiers': full_year_data, 'months': months_order, 'total_storage': total_storage}
 
 
 @api.make()
