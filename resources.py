@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
+from math import ceil
 
 import meta_form
 from util import *
@@ -87,7 +88,7 @@ def api_resource_full_year_group_data(ctx, group_name):
             data = jsonutil.parse(row[0])
             tierName = data[1]
             total_storage += data[2]
-            data_size = round(data[2] / 1000000000000, 1) # bytes to terabytes
+            data_size = ceil((data[2] / 1000000000000.0) * 10) / 10  # bytes to terabytes
             try:
                 full_year_data[tierName][referenceMonth] = data_size
             except KeyError:
