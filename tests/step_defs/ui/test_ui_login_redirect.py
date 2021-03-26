@@ -39,12 +39,6 @@ def ui_login_directly(browser, user):
     browser.find_by_id('f-login-submit').click()
 
 
-@when('user clicks login with OIDC')
-def ui_login_oidc(browser):
-    # Find and click the 'OIDC Sign in' button
-    browser.find_by_css('.btn-secondary').click()
-
-
 @then('the user is redirected to the login page')
 def ui_login_assert_login_page(browser):
     assert "{}/user/login".format(portal_url) in browser.url
