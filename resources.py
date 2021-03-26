@@ -201,13 +201,60 @@ def api_resource_resource_and_tier_data(ctx):
 
 @api.make()
 def api_resource_category_stats(ctx):
-    """Collect category storage statistics."""
+    """Collect storage stats of last month for categories.
+
+    Storage is summed up for each category/tier combination.
+    Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
+
+    :param ctx:      Combined type of a callback and rei struct
+
+    :returns: Storage stats of last month for a list of categories
+    """
     if user.is_admin(ctx):
         categories = get_categories(ctx)
     else:
         categories = get_categories_datamanager(ctx)
 
-    return getMonthlyCategoryStorageStatistics(ctx, categories)
+    month = '%0*d' % (2, datetime.now().month)
+    metadataName = constants.UUMETADATASTORAGEMONTH + month
+
+    storageDict = {}
+
+    for category in categories:
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
+            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            # hier wordt door alle groepen gezocht, geordend van een category.
+            # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
+            attrValue = row[0]
+
+            temp = jsonutil.parse(attrValue)
+            category = temp[0]
+            tier = temp[1]
+            storage = ceil((temp[2] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+
+            try:
+                storageDict[category][tier] = storageDict[category][tier] + storage
+            except KeyError:
+                # if key error, can be either category or category/tier combination is missing
+                try:
+                    storageDict[category][tier] = storage
+                except KeyError:
+                    storageDict[category] = {tier: storage}
+
+    # prepare for json output, convert storageDict into dict with keys
+    allStorage = []
+
+    for category in storageDict:
+        for tier in storageDict[category]:
+            allStorage.append({'category': category,
+                               'tier': tier,
+                               'storage': str(storageDict[category][tier])})
+
+    return allStorage
 
 
 @api.make()
@@ -295,59 +342,6 @@ def get_group_category_info(ctx, groupName):
             subcategory = attrValue
 
     return {'category': category, 'subcategory': subcategory}
-
-
-def getMonthlyCategoryStorageStatistics(ctx, categories):
-    """Collect storage stats of last month for a list of categories.
-
-    Storage is summed up for each category/tier combination.
-    Example: Array ( [0] => Array ( [category] => initial [tier] => Standard [storage] => 15777136 )
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param categories: List of categories to collect storage data for
-
-    :returns: Storage stats of last month for a list of categories
-    """
-    month = '%0*d' % (2, datetime.now().month)
-    metadataName = constants.UUMETADATASTORAGEMONTH + month
-
-    storageDict = {}
-
-    for category in categories:
-        iter = genquery.row_iterator(
-            "META_USER_ATTR_VALUE, META_USER_ATTR_NAME, USER_NAME, USER_GROUP_NAME",
-            "META_USER_ATTR_VALUE like '[\"" + category + "\",%' AND META_USER_ATTR_NAME = '" + metadataName + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            # hier wordt door alle groepen gezocht, geordend van een category.
-            # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
-            attrValue = row[0]
-
-            temp = jsonutil.parse(attrValue)
-            category = temp[0]
-            tier = temp[1]
-            storage = int(float(temp[2]))
-
-            try:
-                storageDict[category][tier] = storageDict[category][tier] + storage
-            except KeyError:
-                # if key error, can be either category or category/tier combination is missing
-                try:
-                    storageDict[category][tier] = storage
-                except KeyError:
-                    storageDict[category] = {tier: storage}
-
-    # prepare for json output, convert storageDict into dict with keys
-    allStorage = []
-
-    for category in storageDict:
-        for tier in storageDict[category]:
-            allStorage.append({'category': category,
-                               'tier': tier,
-                               'storage': str(storageDict[category][tier])})
-
-    return allStorage
 
 
 def get_groups_on_categories(ctx, categories):
