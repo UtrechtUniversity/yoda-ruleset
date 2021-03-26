@@ -12,9 +12,8 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_resource_list_groups',
-           'api_resource_monthly_stats_dm',
            'api_resource_monthly_category_stats_export_dm',
-           'api_resource_monthly_stats',
+           'api_resource_category_stats',
            'api_resource_resource_and_tier_data',
            'api_resource_tier',
            'api_resource_get_tiers',
@@ -201,20 +200,12 @@ def api_resource_resource_and_tier_data(ctx):
 
 
 @api.make()
-def api_resource_monthly_stats(ctx):
-    """As rodsadmin collect monthly statistics"""
-    if user.user_type(ctx) != 'rodsadmin':
-        return api.Error('not_allowed', 'Insufficient permissions')
-
-    categories = get_categories(ctx)
-
-    return getMonthlyCategoryStorageStatistics(ctx, categories)
-
-
-@api.make()
-def api_resource_monthly_stats_dm(ctx):
-    """Collect storage data for a datamanager."""
-    categories = get_categories_datamanager(ctx)
+def api_resource_category_stats(ctx):
+    """Collect category storage statistics."""
+    if user.is_admin(ctx):
+        categories = get_categories(ctx)
+    else:
+        categories = get_categories_datamanager(ctx)
 
     return getMonthlyCategoryStorageStatistics(ctx, categories)
 
