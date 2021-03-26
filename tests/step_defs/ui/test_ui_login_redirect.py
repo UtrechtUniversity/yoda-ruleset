@@ -11,23 +11,18 @@ from pytest_bdd import (
     when,
 )
 
+from conftest import password, portal_url
+
+
 scenarios('../../features/ui/ui_login_redirect.feature')
 
-restricted_page = "{}/group".format(portal_url)
-
-@given('homepage is shown')
-def ui_homepage():
-    browser.is_text_present("Welcome to Yoda!")
+restricted_page = "{}/test".format(portal_url)
 
 
-@given('login page is shown')
-def ui_login(browser):
-    browser.is_text_present("Login to Yoda")
-
-
-@when('the user navigates to a restricted page')
-def ui_login_visit_groupmngr(browser):
-    browser.visit(restricted_page)
+@given('the user navigates to "<page>"')
+@when('the user navigates to "<page>"')
+def ui_login_visit_groupmngr(browser, page):
+    browser.visit("{}{}".format(portal_url, page))
 
 
 @when('user "<user>" logs in after being redirected')
@@ -52,19 +47,11 @@ def ui_login_oidc(browser):
 
 @then('the user is redirected to the login page')
 def ui_login_assert_login_page(browser):
-    assert browser.url == "{}/user/login".format(portal_url)
+    assert "{}/user/login".format(portal_url) in browser.url
+
 
 @then('the user is redirected to "<page>"')
-def ui_user_redirected(browser, page)
-    target = ''
-
-    if page == 'homepage':
-        target = portal_url
-    elif page == 'groupmanager':
-        target = "{}/group".format(portal_url)    
+def ui_user_redirected(browser, page):
+    target = "{}{}".format(portal_url, page)
 
     assert browser.url == target
-
-@then('the user is redirected to the original restricted page')
-def ui_redirected_after_login(browser):
-    assert browser.url == restricted_page
