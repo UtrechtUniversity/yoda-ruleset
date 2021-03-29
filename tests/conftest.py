@@ -157,6 +157,7 @@ def api_user_authenticated(user):
 
 @given('user "<user>" is logged in')
 @given(parsers.parse('user "{user}" is logged in'))
+@when('user "<user>" logs in')
 def ui_login(browser, user):
     url = "{}/user/login".format(portal_url)
     browser.visit(url)
@@ -173,7 +174,7 @@ def ui_login(browser, user):
 
 @given('user is not logged in')
 def ui_logout(browser):
-    url = "{}/user/login".format(portal_url)
+    url = "{}/user/logout".format(portal_url)
     browser.visit(url)
 
 
