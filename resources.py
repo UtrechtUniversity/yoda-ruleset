@@ -12,7 +12,7 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_resource_list_groups',
-           'api_resource_monthly_category_stats_export_dm',
+           'api_resource_monthly_category_stats',
            'api_resource_category_stats',
            'api_resource_resource_and_tier_data',
            'api_resource_tier',
@@ -258,7 +258,7 @@ def api_resource_category_stats(ctx):
 
 
 @api.make()
-def api_resource_monthly_category_stats_export_dm(ctx):
+def api_resource_monthly_category_stats(ctx):
     """Collect storage stats for all twelve months based upon categories a user is datamanager of.
 
     Statistics gathered:
