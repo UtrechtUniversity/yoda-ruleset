@@ -13,9 +13,13 @@
     "ui:widget": "textarea"
   },
   "Discipline": {
-    "items": {
-      "ui:help": "Categorize your research to a (sub)discipline"
-    }
+    "ui:description": "A part of a domain distinguished from adjacent parts by a distinctive feature or characteristic."
+  },
+  "Lab": {
+    "ui:description": "Facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. The laboratory is mentioned in the pre-defined vocabulary of laboratories."
+  },
+  "Additional_Lab": {
+    "ui:description": "facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. This laboratory has a minor role compared to the originating laboratory or is not mentioned in the pre-defined vocabulary of laboratories."
   },
   "Version": {
     "ui:help": "A version number for the data package"
@@ -33,16 +37,31 @@
     }
   },
   "GeoLocation": {
+    "ui:description": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
     "items": {
+      "ui:help": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
       "geoLocationBox": {
         "ui:field": "geo"
       }
     }
   },
+  "Apparatus": {
+    "ui:description": "Any instrument or apparatus which, by reason of its objective technical characteristics and the results which it makes it possible to obtain, is mainly or exclusively suited to scientific activities."
+  },
+  "Material": {
+    "ui:description": "Naturally occurring matter derived from or consisting of rock and sediment."
+  },
+
+  "Measured_Property": {
+    "ui:description": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
+  },
+
+  "Monitoring": {
+    "ui:description": "Display produced by a device that takes signals and displays them on a television screen or a computer monitor."
+  },
+
   "Tag": {
-    "items": {
-      "ui:help": "Free text field for adding (searchable) key words to your data package"
-    }
+    "ui:description": "Free text field for adding (searchable) key words to your data package"
   },
   "Related_Datapackage": {
     "items": {
@@ -90,9 +109,9 @@
     "ui:help": "If there is an embargo on the data package; when will it end?"
   },
   "Creator": {
+    "ui:description": "The person(s) who created (a version of) the data package.",
     "items": {
       "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package.",
         "Given_Name": {
           "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
         },
@@ -101,13 +120,11 @@
         }
       },
       "Affiliation": {
-        "items": {
-          "ui:help": "The organizational or institutional affiliation of the creator"
-        }
+        "ui:description": "The organizational or institutional affiliation of the creator"
       },
       "Person_Identifier": {
+        "ui:description": "Person identifier of creator of the data package",
         "items": {
-          "ui:help": "Person identifier of creator of the data package",
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
@@ -119,6 +136,7 @@
     }
   },
   "Contributor": {
+    "ui:description": "The person(s) who have contributed to this data package",
     "items": {
       "Name": {
         "ui:help": "The name(s) of the persons who have contributed to this data package",
@@ -133,13 +151,46 @@
         "ui:help": "The type of contributor. List of values is derived from DataCite"
       },
       "Affiliation": {
-        "items": {
-          "ui:help": "The organizational or institutional affiliation of the creator"
-        }
+        "ui:description": "The organizational or institutional affiliation of the contributor"
       },
       "Person_Identifier": {
+        "ui:description": "Person identifier of contributor of the data package",
         "items": {
-          "ui:help": "Person identifier of contributor to this data package",
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "Contact": {
+    "ui:description": "The person(s) who act as point of contact for this data package",
+    "items": {
+      "Name": {
+        "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who has contributed to (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who has contributed to (a version of) the data package"
+        }
+      },
+      "Position": {
+        "ui:help": "The position the contact person holds within the organization"
+      },
+      "Email": {
+        "ui:help": "The e-mail of the contact person"
+      },
+
+      "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the contributor"
+      },
+      "Person_Identifier": {
+        "ui:description": "Person identifier of contributor of the data package",
+        "items": {
           "Name_Identifier_Scheme": {
             "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
           },
