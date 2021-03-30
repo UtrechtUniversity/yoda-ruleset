@@ -272,8 +272,9 @@ def api_resource_monthly_category_stats(ctx):
 
     :returns: API status
     """
+    current_month = int('%0*d' % (2, datetime.now().month))
     categories = get_categories_datamanager(ctx)
-    allStorage = []
+    storageDict = {}
 
     # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
     # There always is a maximum of one year of history of storage data
@@ -289,7 +290,7 @@ def api_resource_monthly_category_stats(ctx):
         for row in iter:
             attrValue = row[0]
             month = row[1]
-            month = str(int(month[-2:]))  # the month storage data is about, is taken from the attr_name of the AVU
+            month = int(month[-2:])  # the month storage data is about, is taken from the attr_name of the AVU
             groupName = row[3]
 
             # Determine subcategory on groupName
@@ -305,12 +306,37 @@ def api_resource_monthly_category_stats(ctx):
             tier = temp[1]
             storage = int(float(temp[2]))
 
-            allStorage.append({'category': category,
-                               'subcategory': subcategory,
-                               'groupname': groupName,
-                               'tier': tier,
-                               'month': month,
-                               'storage': str(storage)})
+            referenceMonth = current_month - month
+            if referenceMonth < 0:
+                referenceMonth = referenceMonth + 12
+            log.write(ctx, str(referenceMonth))
+
+            try:
+                storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
+            except KeyError:
+                storageDict[category] = {}
+                storageDict[category][subcategory] = {}
+                storageDict[category][subcategory][groupName] = {}
+                storageDict[category][subcategory][groupName][tier] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
+
+    # prepare for json output, convert storageDict into dict with keys
+    allStorage = []
+
+    log.write(ctx, str(storageDict))
+    for category in storageDict:
+        log.write(ctx, category)
+        for subcategory in storageDict[category]:
+            log.write(ctx, subcategory)
+            for groupName in storageDict[category][subcategory]:
+                log.write(ctx, groupName)
+                for tier in storageDict[category][subcategory][groupName]:
+                    log.write(ctx, tier)
+                    allStorage.append({'category': category,
+                                       'subcategory': subcategory,
+                                       'groupname': groupName,
+                                       'tier': tier,
+                                       'storage': storageDict[category][subcategory][groupName][tier]})
 
     return allStorage
 
