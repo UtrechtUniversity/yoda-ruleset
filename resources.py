@@ -18,7 +18,6 @@ __all__ = ['api_resource_list_groups',
            'api_resource_tier',
            'api_resource_get_tiers',
            'api_resource_save_tier',
-           'api_resource_user_is_datamanager',
            'api_resource_full_year_group_data',
            'rule_resource_store_monthly_storage_statistics']
 
@@ -115,7 +114,7 @@ def api_resource_list_groups(ctx):
                   in Query(ctx, "USER_GROUP_NAME",
                                 "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
     else:
-        categories = get_categories_datamanager(ctx)
+        categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories)
 
         groups_member = [a for a
@@ -131,23 +130,6 @@ def api_resource_list_groups(ctx):
         group_list.append((group, misc.human_readable_size(data_size)))
 
     return group_list
-
-
-@api.make()
-def api_resource_user_is_datamanager(ctx):
-    """Check whether current user is datamanager of group."""
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        group_name = row[0]
-        if group.exists(ctx, group_name) and user.is_member_of(ctx, group_name):
-            return 'yes'
-
-    return 'no'
 
 
 @api.make()
@@ -210,11 +192,7 @@ def api_resource_category_stats(ctx):
 
     :returns: Storage stats of last month for a list of categories
     """
-    if user.is_admin(ctx):
-        categories = get_categories(ctx)
-    else:
-        categories = get_categories_datamanager(ctx)
-
+    categories = get_categories(ctx)
     month = '%0*d' % (2, datetime.now().month)
     metadataName = constants.UUMETADATASTORAGEMONTH + month
 
@@ -273,7 +251,7 @@ def api_resource_monthly_category_stats(ctx):
     :returns: API status
     """
     current_month = int('%0*d' % (2, datetime.now().month))
-    categories = get_categories_datamanager(ctx)
+    categories = get_categories(ctx)
     storageDict = {}
 
     # Select a full year by not limiting constants.UUMETADATASTORAGEMONTH to a perticular month. But only on its presence.
@@ -390,32 +368,6 @@ def get_groups_on_categories(ctx, categories):
             groups.append(groupName)
 
     return groups
-
-
-def get_categories_datamanager(ctx):
-    """Get all categories for current datamanager.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: All categories for current datamanager
-    """
-    categories = []
-
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        datamanagerGroupname = row[0]
-
-        if user.is_member_of(ctx, datamanagerGroupname):
-            # Example: 'datamanager-initial' is groupname of datamanager, second part is category
-            temp = '-'.join(datamanagerGroupname.split('-')[1:])
-            categories.append(temp)
-
-    return categories
 
 
 def get_tier_by_resource_name(ctx, res_name):
@@ -592,17 +544,37 @@ def get_all_tiers(ctx):
 
 
 def get_categories(ctx):
-    """Get all categories currently present."""
+    """Get all categories for current user.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: All categories for current user
+    """
     categories = []
 
-    iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE",
-        "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
-        genquery.AS_LIST, ctx
-    )
+    if user.is_admin(ctx):
+        iter = genquery.row_iterator(
+            "META_USER_ATTR_VALUE",
+            "USER_TYPE = 'rodsgroup' AND  META_USER_ATTR_NAME  = 'category'",
+            genquery.AS_LIST, ctx
+        )
 
-    for row in iter:
-        categories.append(row[0])
+        for row in iter:
+            categories.append(row[0])
+    else:
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+            genquery.AS_LIST, ctx
+        )
+
+        for row in iter:
+            datamanagerGroupname = row[0]
+
+            if user.is_member_of(ctx, datamanagerGroupname):
+                # Example: 'datamanager-initial' is groupname of datamanager, second part is category
+                temp = '-'.join(datamanagerGroupname.split('-')[1:])
+                categories.append(temp)
 
     return categories
 
