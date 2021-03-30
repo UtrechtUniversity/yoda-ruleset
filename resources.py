@@ -307,15 +307,19 @@ def api_resource_monthly_category_stats(ctx):
             storage = int(float(temp[2]))
 
             referenceMonth = current_month - month
-            if referenceMonth < 0:
-                referenceMonth = referenceMonth + 12
+            if referenceMonth <= 0:
+                referenceMonth = referenceMonth + 11
+
+            if not storageDict.get(category):
+                storageDict[category] = {}
+            if not storageDict[category].get(subcategory):
+                storageDict[category][subcategory] = {}
+            if not storageDict[category][subcategory].get(groupName):
+                storageDict[category][subcategory][groupName] = {}
 
             try:
                 storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
             except KeyError:
-                storageDict[category] = {}
-                storageDict[category][subcategory] = {}
-                storageDict[category][subcategory][groupName] = {}
                 storageDict[category][subcategory][groupName][tier] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
 
