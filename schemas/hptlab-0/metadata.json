@@ -1574,7 +1574,7 @@
       "items": {
         "$ref": "#/definitions/optionsLabs",
         "title": "Originating laboratory",
-        "default": "aa45f98e5c098237d0c57b58e5f953e1"
+        "default": "e3a4f5d02528d02c516dbea19c20b32c"
       }
     },
     "Additional_Lab": {
