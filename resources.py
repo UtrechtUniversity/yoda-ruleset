@@ -309,7 +309,6 @@ def api_resource_monthly_category_stats(ctx):
             referenceMonth = current_month - month
             if referenceMonth < 0:
                 referenceMonth = referenceMonth + 12
-            log.write(ctx, str(referenceMonth))
 
             try:
                 storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
@@ -323,15 +322,10 @@ def api_resource_monthly_category_stats(ctx):
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []
 
-    log.write(ctx, str(storageDict))
     for category in storageDict:
-        log.write(ctx, category)
         for subcategory in storageDict[category]:
-            log.write(ctx, subcategory)
             for groupName in storageDict[category][subcategory]:
-                log.write(ctx, groupName)
                 for tier in storageDict[category][subcategory][groupName]:
-                    log.write(ctx, tier)
                     allStorage.append({'category': category,
                                        'subcategory': subcategory,
                                        'groupname': groupName,
