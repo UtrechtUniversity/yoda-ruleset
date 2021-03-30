@@ -29,6 +29,10 @@ def api_notifications_load(ctx):
 
     :returns: Dict with all notifications
     """
-    return {v for v
-            in Query(ctx, "META_USER_ATTR_VALUE",
-                          "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME = '{}'".format(user.name(ctx), NOTIFICATION_KEY))}
+    notifications = {v for v
+                     in Query(ctx, "META_USER_ATTR_VALUE",
+                                   "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME = '{}'".format(user.name(ctx), NOTIFICATION_KEY))}
+
+    if notifications:
+        return notifications
+    return {}
