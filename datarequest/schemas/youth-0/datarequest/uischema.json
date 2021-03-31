@@ -9,62 +9,8 @@
       }
     }
   },
-  "research_context": {
-    "background": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 20
-      }
-    },
-    "research_question": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 5
-      }
-    },
-    "requested_data_summary": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 5
-      }
-    },
-    "references": {
-      "ui:widget": "textarea"
-    }
-  },
-  "hypotheses": {
-    "hypotheses": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    }
-  },
-  "methods": {
-    "design": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 10
-      }
-    },
-    "preparation": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    },
-    "processing": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    },
-    "additional_methodological_aspects": {
-      "ui:widget": "textarea"
-    }
-  },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "data_lock_notification", "publication_approval", "private_request_explanation" ],
+    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "data_lock_notification", "publication_approval", "private_request_explanation", "research_context", "hypotheses", "methods", "contribution" ],
     "data": {
       "ui:field": "DataSelection"
     },
@@ -88,20 +34,74 @@
     },
     "private_request_explanation": {
       "ui:widget": "textarea"
-    }
-  },
   "person": {
     "d_contribution_type": {
       "ui:widget": "checkboxes"
     }
   },
-  "contribution": {
-    "ui:order": [ "contribution_time", "contribution_time_type", "contribution_time_type_other", "contribution_time_specification", "contribution_financial", "contribution_financial_amount", "contribution_favor", "contribution_favor_description" ],
-    "contribution_time_specification": {
-      "ui:widget": "textarea"
     },
-    "contribution_favor_description": {
-      "ui:widget": "textarea"
+    "hypotheses": {
+      "hypotheses": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      }
+    },
+    "research_context": {
+      "background": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 20
+        }
+      },
+      "research_question": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 5
+        }
+      },
+      "requested_data_summary": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 5
+        }
+      },
+      "references": {
+        "ui:widget": "textarea"
+      }
+    },
+    "methods": {
+      "design": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 10
+        }
+      },
+      "preparation": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      },
+      "processing": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      },
+      "additional_methodological_aspects": {
+        "ui:widget": "textarea"
+      }
+    },
+    "contribution": {
+      "ui:order": [ "contribution_time", "contribution_time_type", "contribution_time_type_other", "contribution_time_specification", "contribution_financial", "contribution_financial_amount", "contribution_favor", "contribution_favor_description" ],
+      "contribution_time_specification": {
+        "ui:widget": "textarea"
+      },
+      "contribution_favor_description": {
+        "ui:widget": "textarea"
+      }
     }
   }
 }

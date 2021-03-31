@@ -2,6 +2,20 @@
   "evaluation_rationale": {
     "ui:widget": "textarea"
   },
+  "biological_samples": {
+    "ui:widget": "select",
+    "ui:disabled": true
+  },
+  "biological_samples_volume": {
+    "ui:widget": "textarea"
+  },
+  "biological_samples_committee_approval": {
+    "ui:widget": "textarea"
+  },
+  "for_publishing": {
+    "ui:widget": "select",
+    "ui:disabled": true
+  },
   "contribution": {
     "ui:widget": "textarea"
   },
@@ -23,10 +37,13 @@
   "researcher_expertise": {
     "ui:widget": "textarea"
   },
-  "biological_samples_volume": {
-    "ui:widget": "textarea"
-  },
-  "biological_samples_committee_approval": {
-    "ui:widget": "textarea"
-  }
+  "ui:order": [
+    "evaluation",
+    "evaluation_rationale",
+    "biological_samples",
+    "biological_samples_volume",
+    "biological_samples_committee_approval",
+    "for_publishing",
+    "*"
+  ]
 }
