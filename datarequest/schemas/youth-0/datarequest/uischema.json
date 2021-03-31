@@ -34,11 +34,6 @@
     },
     "private_request_explanation": {
       "ui:widget": "textarea"
-  "person": {
-    "d_contribution_type": {
-      "ui:widget": "checkboxes"
-    }
-  },
     },
     "hypotheses": {
       "hypotheses": {
