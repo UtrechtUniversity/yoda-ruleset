@@ -26,3 +26,13 @@ Feature: Browse API
             | user        | collection                      | result   | notresult          |
             | researcher  | /tempZone/home/research-initial | testdata | yoda-metadata.json |
             | datamanager | /tempZone/home/research-initial | testdata | yoda-metadata.json |
+
+    Scenario: Download data object content
+        Given user "<user>" is authenticated
+        And the Yoda download API is queried with "<path>"
+        Then the response status code is "200"
+        And the download result has size "<size>"
+
+        Examples:
+            | user        | path                                               | size |
+            | researcher  | /tempZone/home/research-initial/testdata/lorem.txt | 100  |

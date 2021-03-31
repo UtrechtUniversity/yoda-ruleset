@@ -33,6 +33,13 @@ def api_browse_collections(user, collection):
         {"coll": collection}
     )
 
+@given('the Yoda download API is queried with "<path>"', target_fixture="api_response")
+def api_browse_collections(user, pai):
+    return api_request(
+        user,
+        "get_content",
+        {"path": path}
+    )
 
 @then(parsers.parse('the response status code is "{code:d}"'))
 def api_response_code(api_response, code):
@@ -66,3 +73,12 @@ def api_response_not_contain(api_response, notresult):
             found = False
 
     assert found
+
+
+@then('the download result had size "<size>"')
+def api_download_result_contains(api_response, size):
+    _, body = api_response
+
+    assert ['data']['size'] == size
+
+    assert len(['data']['content']) == size
