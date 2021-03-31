@@ -4,6 +4,9 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+import time
+
 from util import *
 from util.query import Query
 
@@ -12,13 +15,26 @@ __all__ = ['api_notifications_load']
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
-def set(ctx, notification):
-    """Save user settings.
+def set(ctx, receiver, message):
+    """Save user notification.
 
-    :param ctx:          Combined type of a callback and rei struct
-    :param notification: Notification message for user
+    :param ctx:      Combined type of a callback and rei struct
+    :param receiver: Receiver of notification message
+    :param message:  Notification message for user
     """
-    ctx.uuUserModify(user.full_name(ctx), NOTIFICATION_KEY, str(notification), '', '')
+    notification = {"timestamp": str(int(time.time())), "message": message}
+    ctx.uuUserModify(receiver, NOTIFICATION_KEY, json.dumps(notification), '', '')
+
+
+@rule.make(inputs=[0, 1], outputs=[2])
+def rule_notification_set(ctx, receiver, message):
+    """Rule interface for setting notification (testing only).
+
+    :param ctx:      Combined type of a callback and rei struct
+    :param receiver: Receiver of notification message
+    :param message:  Notification message for user
+    """
+    set(ctx, receiver, message)
 
 
 @api.make()
