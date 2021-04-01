@@ -404,11 +404,8 @@ uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *
                 # We do not use / allow the unit field here.
                 fail;
             }
-            if (*value == "") {
-                # Empty metadata values trigger iRODS bugs.
-                # If a field is allowed to be empty (currently only
-                # 'description', it should be set to '.' instead.
-                # This should of course be hidden by query functions.
+            if (*value != "") {
+                # We do not use / allow the value field here.
                 fail;
             }
             uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);

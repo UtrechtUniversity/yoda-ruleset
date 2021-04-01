@@ -862,7 +862,7 @@ uuUserMetaRemove(*userName, *property, *status, *message) {
 	*status  = 1;
 	*message = "An internal error occured.";
 
-    *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "", *property, "%", "", ""));
+    *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "wildcards", *property, "", "", ""));
     if (*status == 0) {
 		*message = "";
 	} else {
