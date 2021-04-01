@@ -4,13 +4,16 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+
 import json
 import time
+from datetime import datetime
 
 from util import *
 from util.query import Query
 
-__all__ = ['api_notifications_load']
+__all__ = ['api_notifications_load',
+           'rule_notification_set']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -22,8 +25,9 @@ def set(ctx, receiver, message):
     :param receiver: Receiver of notification message
     :param message:  Notification message for user
     """
-    notification = {"timestamp": str(int(time.time())), "message": message}
-    ctx.uuUserModify(receiver, NOTIFICATION_KEY, json.dumps(notification), '', '')
+    timestamp = int(time.time())
+    notification = {"timestamp": timestamp, "message": message}
+    ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
 
 
 @rule.make(inputs=[0, 1], outputs=[2])
@@ -45,11 +49,29 @@ def api_notifications_load(ctx):
 
     :returns: Dict with all notifications
     """
-    result = [v for v
-              in Query(ctx, "META_USER_ATTR_VALUE",
-                            "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME = '{}'".format(user.name(ctx), NOTIFICATION_KEY))]
+    results = [v for v
+               in Query(ctx, "META_USER_ATTR_VALUE",
+                             "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}_%%'".format(user.name(ctx), NOTIFICATION_KEY))]
+
     notifications = []
-    for notification in result:
-        notifications.append(jsonutil.parse(notification))
+    for result in results:
+        try:
+            notification = jsonutil.parse(result)
+            notification["datetime"] = (datetime.fromtimestamp(notification["timestamp"])).strftime('%Y-%m-%d %H:%M')
+            notifications.append(notification)
+        except Exception:
+            continue
 
     return notifications
+
+
+@api.make()
+def api_notifications_dismiss(ctx, identifier):
+    """Dismiss user notification.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param identifier: Identifier of notification message
+    """
+    key = "{}_{}".format(NOTIFICATION_KEY, str(identifier))
+    user_name = user.full_name(ctx)
+    ctx.uuUserMetaRemove(user_name, key, '', '')

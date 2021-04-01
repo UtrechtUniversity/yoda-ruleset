@@ -844,7 +844,29 @@ uuUserModify(*userName, *property, *value, *status, *message) {
 	if (*status == 0) {
 		*message = "";
 	} else {
-		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *value, *allowed, *reason);
+		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
+}
+
+# \brief Remove user metadata.
+#
+# \param[in]  userName
+# \param[in]  property  the property to remove
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuUserMetaRemove(*userName, *property, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
+    *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "", *property, "%", "", ""));
+    if (*status == 0) {
+		*message = "";
+	} else {
+		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
