@@ -285,8 +285,10 @@ def api_resource_monthly_category_stats(ctx):
             storage = int(float(temp[2]))
 
             referenceMonth = current_month - month
-            if referenceMonth <= 0:
-                referenceMonth = referenceMonth + 11
+            if referenceMonth < 0:
+                referenceMonth = abs(referenceMonth)
+            else:
+                referenceMonth = abs(referenceMonth - 12)
 
             if not storageDict.get(category):
                 storageDict[category] = {}
@@ -296,10 +298,10 @@ def api_resource_monthly_category_stats(ctx):
                 storageDict[category][subcategory][groupName] = {}
 
             try:
-                storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
+                storageDict[category][subcategory][groupName][tier][referenceMonth - 1] = storage
             except KeyError:
                 storageDict[category][subcategory][groupName][tier] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                storageDict[category][subcategory][groupName][tier][referenceMonth] = storage
+                storageDict[category][subcategory][groupName][tier][referenceMonth - 1] = storage
 
     # prepare for json output, convert storageDict into dict with keys
     allStorage = []
