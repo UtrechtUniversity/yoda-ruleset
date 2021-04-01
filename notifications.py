@@ -13,6 +13,7 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_notifications_load',
+           'api_notifications_dismiss',
            'rule_notification_set']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
