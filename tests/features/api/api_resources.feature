@@ -1,6 +1,5 @@
 Feature: Resources API
 
-
     Scenario: Get the research groups a user is member or datamanager of
         Given user "<user>" is authenticated
         And the Yoda resources API is queried for all research groups
@@ -44,7 +43,6 @@ Feature: Resources API
             | user           |
             | technicaladmin |
 			| datamanager    |
-
 
     Scenario: List of all resources and corresponding tier data.
         Given user "<user>" is authenticated
