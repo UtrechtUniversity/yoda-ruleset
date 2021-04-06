@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -79,7 +79,7 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
             intake_lock.intake_dataset_freeze(ctx, toplevel_collection, dataset_id)
 
             # Dataset frozen, now move to vault and remove from intake area
-            status = dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root)
+            status = dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_root)
             if status == 0:
                 datasets_moved += 1
 
@@ -113,7 +113,7 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
             intake_lock.intake_dataset_freeze(ctx, toplevel_collection, dataset_id)
 
             # Dataset frozen, now move to fault and remove from intake area
-            status = dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root)
+            status = dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vault_root)
             if status == 0:
                 datasets_moved += 1
 
@@ -123,12 +123,15 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
     return 0
 
 
-def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root):
+def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_root):
     """Move intake datasets consisting of collections to the vault
 
-    :param ctx:           Combined type of a callback and rei struct
+    :param ctx:                 Combined type of a callback and rei struct
+    :param toplevel_collection: Toplevel collection
+    :param dataset_id:          Identifier of dataset
+    :param vault_root:          Root path of vault
 
-    :return status
+    :returns: Status
     """
     status = 0
     if vault_dataset_exists(ctx, vault_root, dataset_id):
@@ -179,11 +182,15 @@ def dataset_collection_move_2_vault(ctx, intake_root, toplevel_collection, datas
     return status
 
 
-def dataset_objects_only_move_2_vault(ctx, intake_root, toplevel_collection, dataset_id, vault_root):
+def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vault_root):
     """Move intake datasets consisting of data objects to the vault
-    :param ctx:           Combined type of a callback and rei struct
 
-    return status
+    :param ctx:                 Combined type of a callback and rei struct
+    :param toplevel_collection: Toplevel collection
+    :param dataset_id:          Identifier of dataset
+    :param vault_root:          Root path of vault
+
+    :returns: Status
     """
     status = 0
     if vault_dataset_exists(ctx, vault_root, dataset_id):
@@ -345,12 +352,14 @@ def vault_walk_ingest_object(ctx, item_parent, item_name, is_collection, buffer)
 
 
 def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
-    """
-    Walk a subtree and perfom 'rule_to_process' per item.
+    """Walk a subtree and perfom 'rule_to_process' per item.
 
-    :param path
-    :param buffer            (exclusively to be used by the rule we will can)
-    :param rule_to_process   name of the rule to be executed in the context of a tree-item
+    :param ctx:             Combined type of a callback and rei struct
+    :param path:            Path of collection to treewalk
+    :param buffer:          Exclusively to be used by the rule we will can
+    :param rule_to_process: Name of the rule to be executed in the context of a tree-item
+
+    :returns: Error status
     """
     parent_collection, collection = pathutil.chop(path)
 
@@ -407,8 +416,9 @@ def vault_dataset_exists(ctx, vault_root, dataset_id):
         "COLL_NAME = '" + dataset_path + "' ",
         genquery.AS_LIST, ctx)
 
-    for row in iter:
+    for _row in iter:
         return True
+
     return False
 
 
