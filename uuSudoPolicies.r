@@ -158,6 +158,12 @@ acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 	}
 }
 
+acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
+	ON (*objType == "-u") {
+		uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv);
+	}
+}
+
 # }}}
 # Implementation 4: Deny everything and cut. {{{
 

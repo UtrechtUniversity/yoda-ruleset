@@ -430,11 +430,10 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 # \param[in]  actor     the user whose privileges are checked
 # \param[in]  userName  the user name
 # \param[in]  attribute the user attribute to set
-# \param[in]  value     the new value
 # \param[out] allowed   whether the action is allowed
 # \param[out] reason    the reason why the action was disallowed, set if allowed is false
 #
-uuUserPolicyCanUserModify(*actor, *userName, *attribute, *value, *allowed, *reason) {
+uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
 
@@ -443,6 +442,8 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *value, *allowed, *reas
 
 	if (*actor == *userName) {
         if (*attribute == "org_settings_mail_notifications") {
+            *allowed = 1;
+        } else if (trimr(*attribute, "_") == "org_notification") {
             *allowed = 1;
 		} else {
 			*reason = "Invalid user attribute name.";

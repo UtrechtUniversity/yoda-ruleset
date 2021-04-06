@@ -386,13 +386,35 @@ uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv
 				# This should of course be hidden by query functions.
 				fail;
 			}
-			uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *value, *allowed, *reason);
+			uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
 			if (*allowed == 1) {
 				succeed;
 			}
 		}
 	}
 	fail;
+}
+
+uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
+
+    if (*objType == "-u") {
+        uuGetUserType(*objName, *targetUserType);
+        if (*targetUserType == "rodsuser") {
+            if (*unit != "") {
+                # We do not use / allow the unit field here.
+                fail;
+            }
+            if (*value != "") {
+                # We do not use / allow the value field here.
+                fail;
+            }
+            uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
+            if (*allowed == 1) {
+                succeed;
+            }
+        }
+    }
+    fail;
 }
 
 # }}}
