@@ -642,11 +642,9 @@ def get_resources(ctx):
     return resources
 
 
-@rule.make(outputs=[0])
-def rule_resource_research(ctx):
-    return config.resource_research
+def rule_resource_research(rule_args, callback, rei):
+    rule_args[0] = config.resource_research
 
 
-@rule.make(outputs=[0])
-def rule_resource_vault(ctx):
-    return config.resource_vault
+def rule_resource_vault(rule_args, callback, rei):
+    rule_args[0] = config.resource_vault
