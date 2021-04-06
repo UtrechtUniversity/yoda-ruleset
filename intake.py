@@ -8,7 +8,6 @@ import fnmatch
 import time
 
 import intake_dataset
-
 import intake_lock
 import intake_scan
 from util import *
