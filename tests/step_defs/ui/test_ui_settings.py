@@ -9,7 +9,6 @@ from pytest_bdd import (
     then,
     when,
 )
-from selenium.webdriver.common.keys import Keys
 
 scenarios('../../features/ui/ui_settings.feature')
 
