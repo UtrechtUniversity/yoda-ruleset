@@ -438,3 +438,5 @@ def rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json(r
             "<PLUSET>%ds</PLUSET>" % delay,
             "rule_vault_xml_to_json_check_vault_metadata_xml_for_transformation_to_json('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
+    else:
+        log.write(callback, "[METADATA] Finished updating vault metadata.xml to JSON format")

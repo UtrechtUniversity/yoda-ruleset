@@ -1,4 +1,6 @@
 updatePublications() {
+    writeLine("stdout", "[UPDATE PUBLICATIONS] Start scan");
+
 	# Scan for published vault packages.
 	*ContInxOld = 1;
 	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ2Inp);
@@ -28,6 +30,7 @@ updatePublications() {
 		}
 	}
 	msiCloseGenQuery(*GenQ2Inp, *GenQ2Out);
+    writeLine("stdout", "[UPDATE PUBLICATIONS] Finished scan");
 }
 input null
 output ruleExecOut

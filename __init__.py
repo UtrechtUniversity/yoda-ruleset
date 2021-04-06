@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Yoda core ruleset containing iRODS and Python rules and policies useful for all Yoda environments."""
 
-__version__   = '1.6.3'
-__copyright__ = 'Copyright (c) 2015-2020, Utrecht University'
+__version__   = '1.7.0'
+__copyright__ = 'Copyright (c) 2015-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Felix Croes'
@@ -40,6 +40,11 @@ from publication            import *
 from policies               import *
 from revisions              import *
 
-from datarequest            import *
+# Import certain modules only when enabled.
+from .util.config import config
 
-from intake                 import *
+if config.enable_intake:
+    from intake import *
+
+if config.enable_datarequest:
+    from datarequest import *

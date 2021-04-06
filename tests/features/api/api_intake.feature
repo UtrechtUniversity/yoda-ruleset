@@ -1,3 +1,4 @@
+@intake
 Feature: Intake API
 
     Scenario: Find all studies a user is involved with

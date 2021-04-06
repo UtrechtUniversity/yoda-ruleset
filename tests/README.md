@@ -2,7 +2,7 @@
 
 ## Requirements
 - pip
-- Yoda environment (running on https://portal.yoda.test)
+- Yoda environment
 
 ## Installation
 Install pip requirements for tests:
@@ -37,7 +37,16 @@ Datarequest tests are disabled by default, enable using `--datarequest`:
 $ pytest -k api --datarequest
 ```
 
+Intake tests are disabled by default, enable using `--intake`:
+```bash
+$ pytest -k api --intake
+```
+
 Login OIDC tests are disabled by default, enable using `--oidc`:
 ```bash
 $ pytest -k ui --oidc
 ```
+
+## Development
+- Tests are written with Pytest-BDD: https://pytest-bdd.readthedocs.io/en/latest/
+- UI tests use Splinter to automate browser actions: https://splinter.readthedocs.io/en/latest/index.html

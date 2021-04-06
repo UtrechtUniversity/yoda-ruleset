@@ -204,7 +204,7 @@ def metadata_set(ctx, request_id, key, value):
     response_status = ""
     response_status_info = ""
     ctx.requestDatarequestMetadataChange(coll_path, key,
-                                         value, 0, response_status,
+                                         value, "0", response_status,
                                          response_status_info)
 
     # Trigger the processing of delayed rules
@@ -504,7 +504,7 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     # Set the previous request ID as metadata if defined
     if previous_request_id:
-        metadata_set(ctx, request_id, "previous_request_id", previous_request_id)
+        metadata_set(ctx, request_id, "previous_request_id", str(previous_request_id))
 
     # Set the proposal fields as AVUs on the proposal JSON file
     avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
