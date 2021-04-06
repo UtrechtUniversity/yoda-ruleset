@@ -205,8 +205,7 @@ def api_resource_category_stats(ctx):
             genquery.AS_LIST, ctx
         )
         for row in iter:
-            # hier wordt door alle groepen gezocht, geordend van een category.
-            # per tier moet worden gesommeerd om totale hoeveelheid storage op een tier te verkrijgen.
+            # Loop through groups per category and sum per tier the storage data.
             attrValue = row[0]
 
             temp = jsonutil.parse(attrValue)
