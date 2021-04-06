@@ -146,7 +146,9 @@
                       "title": "Title of the data request"
                     }
                   },
-                  "required": ["title"]
+                  "required": [
+                    "title"
+                  ]
                 }
               }
             },
@@ -194,7 +196,12 @@
                       "description": "Optional"
                     }
                   },
-                  "required": ["title", "background", "research_question", "requested_data_summary"]
+                  "required": [
+                    "title",
+                    "background",
+                    "research_question",
+                    "requested_data_summary"
+                  ]
                 },
                 "hypotheses": {
                   "type": "object",
@@ -234,7 +241,11 @@
                       "description": "Optional"
                     }
                   },
-                  "required": ["design", "preparation", "processing"]
+                  "required": [
+                    "design",
+                    "preparation",
+                    "processing"
+                  ]
                 },
                 "contribution": {
                   "type": "object",
@@ -450,7 +461,9 @@
         }
       },
       "required": [
-        "data", "purpose", "publication_approval"
+        "data",
+        "purpose",
+        "publication_approval"
       ]
     }
   }
