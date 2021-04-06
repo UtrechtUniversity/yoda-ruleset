@@ -205,7 +205,10 @@
                       "$ref": "#/definitions/stringLong",
                       "title": "Hypotheses"
                     }
-                  }
+                  },
+                  "required": [
+                    "hypotheses"
+                  ]
                 },
                 "methods": {
                   "type": "object",
