@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -21,7 +21,9 @@ __all__ = ['api_resource_groups_dm',
            'api_resource_user_research_groups',
            'api_resource_user_is_datamanager',
            'api_resource_full_year_group_data',
-           'rule_resource_store_monthly_storage_statistics']
+           'rule_resource_store_monthly_storage_statistics',
+           'rule_resource_research',
+           'rule_resource_vault']
 
 
 @api.make()
@@ -638,3 +640,11 @@ def get_resources(ctx):
         resources.append(row[0])
 
     return resources
+
+
+def rule_resource_research(rule_args, callback, rei):
+    rule_args[0] = config.resource_research
+
+
+def rule_resource_vault(rule_args, callback, rei):
+    rule_args[0] = config.resource_vault
