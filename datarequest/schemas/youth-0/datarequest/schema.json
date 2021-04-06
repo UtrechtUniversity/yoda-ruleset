@@ -121,11 +121,6 @@
             "Analyses for data assessment only (results will not be published)"
           ]
         },
-        "data_lock_notification": {
-          "type": "boolean",
-          "title": "Would you like to be notified when a new data lock is available?",
-          "enumNames": [ "Yes", "No" ]
-        },
         "publication_approval": {
           "type": "boolean",
           "title": "Do you agree with publishing the complete request on our researcher’s website after it is approved?",
@@ -452,7 +447,7 @@
         }
       },
       "required": [
-        "data", "purpose", "data_lock_notification", "publication_approval"
+        "data", "purpose", "publication_approval"
       ]
     }
   }

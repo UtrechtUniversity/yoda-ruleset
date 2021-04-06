@@ -65,7 +65,6 @@ def api_datarequest_submit(user):
                     }]
                 },
                 "purpose": "Analyses for data assessment only (results will not be published)",
-                "data_lock_notification": True,
                 "publication_approval": True
             },
             "research_context": {

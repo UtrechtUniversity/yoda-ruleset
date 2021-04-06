@@ -10,7 +10,7 @@
     }
   },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "data_lock_notification", "publication_approval", "private_request_explanation", "research_context", "hypotheses", "methods", "contribution" ],
+    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "research_context", "hypotheses", "methods", "contribution" ],
     "data": {
       "ui:field": "DataSelection"
     },
@@ -25,9 +25,6 @@
     },
     "other_remarks": {
       "ui:widget": "textarea"
-    },
-    "data_lock_notification": {
-      "ui:widget": "radio"
     },
     "publication_approval": {
       "ui:widget": "radio"
