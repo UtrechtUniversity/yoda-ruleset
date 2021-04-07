@@ -399,7 +399,7 @@ def cc_email_addresses_get(contact_object):
     try:
         cc = datarequest['contact']['cc_email_addresses']
         return cc.replace(' ', '')
-    except:
+    except Exception:
         return None
 
 
