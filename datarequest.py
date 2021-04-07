@@ -1380,6 +1380,7 @@ def datarequest_submit_emails(ctx, request_id):
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
+    bod_member_emails   = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
 
     # Email datamanager
@@ -1401,10 +1402,10 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         # Send emails
         if datarequest_status   == status.PRELIMINARY_RESUBMIT:
             mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id, cc)
+                          bod_member_emails[0], request_id, cc)
         elif datarequest_status == status.PRELIMINARY_REJECT:
             mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id, cc)
+                          bod_member_emails[0], request_id, cc)
 
 
 def datamanager_review_emails(ctx, request_id, datarequest_status):
@@ -1448,16 +1449,15 @@ def assignment_submit_emails(ctx, request_id, datarequest_status):
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
         # Get additional email input parameters
         feedback_for_researcher = assignment['feedback_for_researcher']
-        datamanager_emails      = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM,
-                                                                         "")['arguments'][1])
+        bod_member_emails       = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
             mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id, cc)
+                          bod_member_emails[0], request_id, cc)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
             mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id, cc)
+                          bod_member_emails[0], request_id, cc)
 
 
 def review_submit_emails(ctx, request_id):
@@ -1483,6 +1483,7 @@ def evaluation_submit_emails(ctx, request_id, datarequest_status):
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
     datamanager_emails      = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
+    bod_member_emails       = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
 
     # Send emails
     if datarequest_status == status.APPROVED:
@@ -1493,10 +1494,10 @@ def evaluation_submit_emails(ctx, request_id, datarequest_status):
                 mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                      datamanager_emails[0], request_id, cc)
+                      bod_member_emails[0], request_id, cc)
     elif datarequest_status == status.REJECTED:
         mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                      datamanager_emails[0], request_id, cc)
+                      bod_member_emails[0], request_id, cc)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -1748,7 +1749,7 @@ YOUth
 
 
 def mail_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                  datamanager_email, request_id, cc):
+                  bod_member_email, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
@@ -1762,17 +1763,17 @@ Your data request has been rejected for the following reason(s):
 
 You are however allowed to resubmit your data request. You may do so using this link: https://{}/datarequest/add/{}.
 
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
+If you wish to object against this rejection, please contact the YOUth Board of Directors ({}).
 
 The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, datamanager_email, YODA_PORTAL_FQDN, request_id))
+""".format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, bod_member_email, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                  datamanager_email, request_id, cc):
+                  bod_member_email, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
@@ -1784,13 +1785,13 @@ Your data request has been rejected for the following reason(s):
 
 {}
 
-If you wish to object against this rejection, please contact the YOUth data manager ({}).
+If you wish to object against this rejection, please contact the YOUth Board of Directors ({}).
 
 The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(researcher_name, feedback_for_researcher, datamanager_email, YODA_PORTAL_FQDN, request_id))
+""".format(researcher_name, feedback_for_researcher, bod_member_email, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_dta(ctx, researcher_email, researcher_name, request_id, cc):
