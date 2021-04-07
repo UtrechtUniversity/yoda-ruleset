@@ -1277,6 +1277,11 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     except error.UUError:
         return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the data managers group.")
 
+    try:
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, "{}/{}".format(coll_path, SIGDTA_FILENAME))
+    except error.UUError:
+        return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the board of directors group.")
+
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
 
