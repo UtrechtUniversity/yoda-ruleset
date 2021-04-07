@@ -490,6 +490,18 @@ def api_datarequest_submit(ctx, data, previous_request_id):
 
     :returns: API status
     """
+    # Check if user is allowed to submit a datarequest. BoD members and
+    # data managers are not allowed to submit proposals.
+    try:
+        isboardmember = user.is_member_of(ctx, GROUP_BOD)
+        isdatamanager = user.is_member_of(ctx, GROUP_DM)
+
+        if (isboardmember or isdatamanager):
+            return api.Error("permission_error", "User is not authorized to submit a data request.")
+    except error.UUError as e:
+        return api.Error("permission_error",
+                         "Something went wrong during permission checking: {}.".format(e))
+
     timestamp = datetime.now()
     request_id = str(timestamp.strftime('%s'))
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
