@@ -395,6 +395,14 @@ def datarequest_data_valid(ctx, data, schema_name):
                          "{} form data could not be validated against its schema.".format(schema_name))
 
 
+def cc_email_addresses_get(contact_object):
+    try:
+        cc = datarequest['contact']['cc_email_addresses']
+        return cc.replace(' ', '')
+    except:
+        return None
+
+
 ###################################################
 #          Datarequest workflow API calls         #
 ###################################################
@@ -1349,13 +1357,14 @@ def send_emails(ctx, obj_name, status_to):
 def datarequest_submit_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['researchers']['contacts'][0]
+    researcher        = datarequest['contact']
+    cc                = cc_email_addresses_get(researcher)
     research_context  = datarequest['datarequest']['research_context']
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
     timestamp         = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
     # Send email to researcher and Board of Directors member(s)
-    mail_datarequest_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id)
+    mail_datarequest_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
             mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher['given_name'] + ' ' + researcher['family_name'],
@@ -1379,17 +1388,18 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
     elif datarequest_status in (status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT):
         # Get additional (source data for) email input parameters
         datarequest             = json.loads(datarequest_get(ctx, request_id))
-        researcher              = datarequest['researchers']['contacts'][0]
+        researcher              = datarequest['contact']
+        cc                      = cc_email_addresses_get(researcher)
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
         # Send emails
         if datarequest_status   == status.PRELIMINARY_RESUBMIT:
             mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id)
+                          datamanager_emails[0], request_id, cc)
         elif datarequest_status == status.PRELIMINARY_REJECT:
             mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id)
+                          datamanager_emails[0], request_id, cc)
 
 
 def datamanager_review_emails(ctx, request_id, datarequest_status):
@@ -1415,7 +1425,8 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
 def assignment_submit_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datarequest             = json.loads(datarequest_get(ctx, request_id))
-    researcher              = datarequest['researchers']['contacts'][0]
+    researcher              = datarequest['contact']
+    cc                      = cc_email_addresses_get(researcher)
     research_context        = datarequest['datarequest']['research_context']
     assignment              = json.loads(datarequest_assignment_get(ctx, request_id))
     assignees               = assignment['assign_to']
@@ -1423,7 +1434,7 @@ def assignment_submit_emails(ctx, request_id, datarequest_status):
     # Send emails
     if datarequest_status == status.UNDER_REVIEW:
         mail_assignment_accepted_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'],
-                                            request_id)
+                                            request_id, cc)
         for assignee_email in assignees:
             mail_assignment_accepted_assignee(ctx, assignee_email, research_context['title'],
                                               request_id)
@@ -1438,20 +1449,21 @@ def assignment_submit_emails(ctx, request_id, datarequest_status):
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
             mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id)
+                          datamanager_emails[0], request_id, cc)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
             mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                          datamanager_emails[0], request_id)
+                          datamanager_emails[0], request_id, cc)
 
 
 def review_submit_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['researchers']['contacts'][0]
+    researcher        = datarequest['contact']
+    cc                = cc_email_addresses_get(researcher)
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
 
     # Send emails
-    mail_review_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id)
+    mail_review_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
             mail_review_bodmember(ctx, bodmember_email, request_id)
@@ -1460,7 +1472,8 @@ def review_submit_emails(ctx, request_id):
 def evaluation_submit_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datarequest             = json.loads(datarequest_get(ctx, request_id))
-    researcher              = datarequest['researchers']['contacts'][0]
+    researcher              = datarequest['contact']
+    cc                      = cc_email_addresses_get(researcher)
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
@@ -1469,25 +1482,26 @@ def evaluation_submit_emails(ctx, request_id, datarequest_status):
     # Send emails
     if datarequest_status == status.APPROVED:
         mail_evaluation_approved_researcher(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'],
-                                            request_id)
+                                            request_id, cc)
         for datamanager_email in datamanager_emails:
             if not datamanager_email == "rods":
                 mail_evaluation_approved_datamanager(ctx, datamanager_email, request_id)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                      datamanager_emails[0], request_id)
+                      datamanager_emails[0], request_id, cc)
     elif datarequest_status == status.REJECTED:
         mail_rejected(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], feedback_for_researcher,
-                      datamanager_emails[0], request_id)
+                      datamanager_emails[0], request_id, cc)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest = json.loads(datarequest_get(ctx, request_id))
-    researcher  = datarequest['researchers']['contacts'][0]
+    researcher  = datarequest['contact']
+    cc          = cc_email_addresses_get(researcher)
 
     # Send email
-    mail_dta(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id)
+    mail_dta(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
 
 
 def signed_dta_post_upload_actions_emails(ctx, request_id):
@@ -1503,20 +1517,22 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
 def data_ready_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['researchers']['contacts'][0]
+    researcher        = datarequest['contact']
+    cc                = cc_email_addresses_get(researcher)
     datamanager_email = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])[0]
 
     # Send email
-    mail_data_ready(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], datamanager_email, request_id)
+    mail_data_ready(ctx, researcher['email'], researcher['given_name'] + ' ' + researcher['family_name'], datamanager_email, request_id, cc)
 
 
 ###################################################
 #                 Email templates                 #
 ###################################################
 
-def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: submitted".format(request_id),
                      body="""Dear {},
@@ -1626,9 +1642,10 @@ YOUth
 """.format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: assigned".format(request_id),
                      body="""Dear {},
@@ -1658,9 +1675,10 @@ YOUth
 """.format(request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_review_researcher(ctx, researcher_email, researcher_name, request_id):
+def mail_review_researcher(ctx, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: reviewed".format(request_id),
                      body="""Dear {},
@@ -1691,9 +1709,10 @@ YOUth
 
 
 def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
-                                        request_id):
+                                        request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: approved".format(request_id),
                      body="""Dear {},
@@ -1724,9 +1743,10 @@ YOUth
 
 
 def mail_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                  datamanager_email, request_id):
+                  datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: rejected (resubmit)".format(request_id),
                      body="""Dear {},
@@ -1747,9 +1767,10 @@ YOUth
 
 
 def mail_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher,
-                  datamanager_email, request_id):
+                  datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: rejected".format(request_id),
                      body="""Dear {},
@@ -1767,9 +1788,10 @@ YOUth
 """.format(researcher_name, feedback_for_researcher, datamanager_email, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_dta(ctx, researcher_email, researcher_name, request_id):
+def mail_dta(ctx, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: DTA ready".format(request_id),
                      body="""Dear {},
@@ -1803,9 +1825,10 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_data_ready(ctx, researcher_email, researcher_name, datamanager_email, request_id):
+def mail_data_ready(ctx, researcher_email, researcher_name, datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: data ready".format(request_id),
                      body="""Dear {},

@@ -17,64 +17,49 @@
       "title": "Introduction",
       "description": "The information you provide here will be used by the YOUth Executive Board, the Data Manager, and the Data Management Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the Data Access Protocol.<br/><br/>All data requests will be published on the YOUth researcher’s website in order to provide a searchable overview of past, current, and pending data requests. By default, the publication of submitted and pending data requests includes the names and institutions of the contact person and participating researchers as well as a broad description of the research context.</br></br>After approval of a data request, the complete request (including hypotheses and proposed analyses) will be published. If an applicant has reasons to object to the publication of their complete data request, they should notify the Project Manager, who will evaluate the objection   with the other members of the Executive Board and the Data Management Committee. If the objection is rejected, the researcher may decide to withdraw his or her data request."
     },
-    "researchers": {
+    "contact": {
       "type": "object",
-      "title": "Researchers",
-      "description": "In this section, please provide information about the researchers involved with this data request.</br><ul><li>Name, affiliation and contact information of the contact person</li><li>Name and details of participating researchers (e.g. intended co-authors)</li><li>Name and details of the contact person within YOUth (if any)</li></ul>",
+      "title": "Contact",
+      "description": "In this section, please provide the necessary contact information.</br><ul><li>Your own contact details</li><li>Email addresses of contacts that should receive CCs of email communication addressed to you (if any)</li><li>Name and details of the contact person within YOUth (if any)</li></ul>",
       "properties": {
-        "contacts": {
-          "type": "array",
-          "title": "Contact person(s) for the proposed study",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "properties": {
-              "given_name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "First name"
-              },
-              "family_name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Family name"
-              },
-              "institution": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Institution"
-              },
-              "department": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Department"
-              },
-              "academic_role": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Academic role",
-                "description": "E.g. Professor, Associate professor, PhD student"
-              },
-              "work_address": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Work address"
-              },
-              "email": {
-                "type": "string",
-                "format": "email",
-                "title": "Email"
-              },
-              "phone": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Phone"
-              }
-            },
-            "required": [
-              "given_name",
-              "family_name",
-              "institution",
-              "department",
-              "academic_role",
-              "work_address",
-              "email",
-              "phone"
-            ]
-	  }
+        "given_name": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "First name"
+        },
+        "family_name": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Family name"
+        },
+        "institution": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Institution"
+        },
+        "department": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Department"
+        },
+        "academic_role": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Academic role",
+          "description": "E.g. Professor, Associate professor, PhD student"
+        },
+        "work_address": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Work address"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "title": "Email"
+        },
+        "phone": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "Phone"
+        },
+        "cc_email_addresses": {
+          "$ref": "#/definitions/stringNormal",
+          "title": "CC email addresses",
+          "description": "A comma-separated list of email addresses which should receive a CC of all email correspondence addressed to the main contact (i.e. the researcher submitting this request). For example a superior or a colleague."
         },
         "dmc_contact": {
           "type": "string",
@@ -91,7 +76,17 @@
             "Prof. Dr. W.A.M. Vollebergh / Utrecht University / Social Sciences / W.A.M.Vollebergh@uu.nl"
           ]
         }
-      }
+      },
+      "required": [
+        "given_name",
+        "family_name",
+        "institution",
+        "department",
+        "academic_role",
+        "work_address",
+        "email",
+        "phone"
+      ]
     },
     "datarequest": {
       "type": "object",

@@ -16,7 +16,7 @@ __all__ = ['rule_mail_new_package_published',
            'rule_mail_test']
 
 
-def send(ctx, to, actor, subject, body):
+def send(ctx, to, actor, subject, body, cc=None):
     """Send an e-mail with specified recipient, subject and body.
 
     The originating address and mail server credentials are taken from the
@@ -27,6 +27,7 @@ def send(ctx, to, actor, subject, body):
     :param actor:   Actor of the mail
     :param subject: Subject of mail
     :param body:    Body of mail
+    :param cc:      Comma-separated list of CC recipient(s) of email (optional)
 
     :returns: API status
     """
@@ -91,8 +92,14 @@ def send(ctx, to, actor, subject, body):
     msg['To'] = to
     msg['Subject'] = subject
 
+    if cc is not None:
+        msg['Cc'] = cc
+
     try:
-        smtp.sendmail(cfg['from'], [to], msg.as_string())
+        if cc is not None:
+            smtp.sendmail(cfg['from'], [to] + cc.split(','), msg.as_string())
+        else:
+            smtp.sendmail(cfg['from'], [to], msg.as_string())
     except Exception as e:
         log.write(ctx, '[EMAIL] Could not send mail: {}'.format(e))
         return api.Error('internal', 'Mail configuration error')

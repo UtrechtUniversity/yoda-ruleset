@@ -2,13 +2,6 @@
   "title": {
     "ui:autofocus": true
   },
-  "researchers": {
-    "contacts": {
-      "ui:options": {
-        "orderable": false
-      }
-    }
-  },
   "datarequest": {
     "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "research_context", "hypotheses", "methods", "contribution" ],
     "data": {
