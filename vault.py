@@ -171,7 +171,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.
-        research_group_access = collection.exists(ctx, '/' + parts[0] + '/' + parts[1] + '/' + parts[2])
+        research_group_access = collection.exists(ctx, '/' + parts[1] + '/' + parts[2] + '/' + parts[3])
 
         if not research_group_access:
             return api.Error('NoPermissions', 'Insufficient rights to perform this action')

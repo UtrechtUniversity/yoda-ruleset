@@ -12,8 +12,7 @@ from util.query import Query
 
 __all__ = ['api_browse_folder',
            'api_browse_collections',
-           'api_search',
-           'api_get_content']
+           'api_search']
 
 
 @api.make()
@@ -272,15 +271,3 @@ def api_search(ctx,
 
     return OrderedDict([('total', qdata.total_rows()),
                         ('items', datas)])
-
-
-@api.make()
-def api_get_content(ctx, path):
-    """Return content and size of data_object as a dict.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path to data object
-
-    """
-    return {'size':  data_object.size(ctx, path),
-            'content': data_object.read(ctx, path)}
