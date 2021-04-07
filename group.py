@@ -9,7 +9,6 @@ import requests
 from util import *
 
 __all__ = ['api_group_data',
-           'api_group_data_filtered',
            'api_group_categories',
            'api_group_subcategories',
            'rule_group_provision_external_user',
@@ -162,25 +161,66 @@ def getSubcategories(ctx, category):
 
 @api.make()
 def api_group_data(ctx):
-    """Retrieve group data for all users."""
-    return getGroupData(ctx)
+    """Retrieve group data as hierarchy for user.
 
+    The structure of the group hierarchy parameter is as follows:
+    {
+      'CATEGORY_NAME': {
+        'SUBCATEGORY_NAME': {
+          'GROUP_NAME': {
+            'description': 'GROUP_DESCRIPTION',
+            'data-classification': 'GROUP_DATA_CLASSIFICATION',
+            'members': {
+              'USER_NAME': {
+                'access': (reader | normal | manager)
+              }, ...
+            }
+          }, ...
+        }, ...
+      }, ...
+    }
 
-@api.make()
-def api_group_data_filtered(ctx, username, zone_name):
-    """Retrieve group data for a single user.
+    :param ctx: Combined type of a ctx and rei struct
 
-    :param ctx:       Combined type of a ctx and rei struct
-    :param username: User to retrieve group data for
-    :param zone_name: Zone name of user
-
-    :returns: Group data for a single user
+    :returns: Group hierarchy, user type and user zone
     """
-    groups    = getGroupData(ctx)
-    full_name = '{}#{}'.format(username, zone_name)
+    if user.is_admin(ctx):
+        groups = getGroupData(ctx)
+    else:
+        groups    = getGroupData(ctx)
+        full_name = user.full_name(ctx)
+        # Filter groups (only return groups user is part of), convert to json and write to stdout.
+        groups = list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
-    # Filter groups (only return groups user is part of), convert to json and write to stdout.
-    return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
+    group_hierarchy = {}
+    for group in groups:
+        members = {}
+
+        # Normal users
+        for member in group['members']:
+            members[member] = {'access': 'normal'}
+
+        # Managers
+        for member in group['managers']:
+            members[member] = {'access': 'manager'}
+
+        # Read users
+        for member in group['read']:
+            members[member] = {'access': 'reader'}
+
+        if not group_hierarchy.get(group['category']):
+            group_hierarchy[group['category']] = {}
+
+        if not group_hierarchy[group['category']].get(group['subcategory']):
+            group_hierarchy[group['category']][group['subcategory']] = {}
+
+        group_hierarchy[group['category']][group['subcategory']][group['name']] = {
+            'description': '',
+            'data_classification': '',
+            'members': members
+        }
+
+    return {'group_hierarchy': group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
