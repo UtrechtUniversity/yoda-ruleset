@@ -23,7 +23,7 @@ def send(ctx, to, actor, subject, body, cc=None):
     ruleset configuration file.
 
     :param ctx:     Combined type of a callback and rei struct
-    :param to:      Recipient of them mail
+    :param to:      Recipient of the mail
     :param actor:   Actor of the mail
     :param subject: Subject of mail
     :param body:    Body of mail
