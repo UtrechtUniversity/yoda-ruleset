@@ -1350,7 +1350,7 @@ def datarequest_submit_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
     researcher        = datarequest['researchers']['contacts'][0]
-    research_context  = datarequest['research_context']
+    research_context  = datarequest['datarequest']['research_context']
     bod_member_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_BOD, "")['arguments'][1])
     timestamp         = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
@@ -1416,7 +1416,7 @@ def assignment_submit_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datarequest             = json.loads(datarequest_get(ctx, request_id))
     researcher              = datarequest['researchers']['contacts'][0]
-    research_context        = datarequest['research_context']
+    research_context        = datarequest['datarequest']['research_context']
     assignment              = json.loads(datarequest_assignment_get(ctx, request_id))
     assignees               = assignment['assign_to']
 
