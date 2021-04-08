@@ -215,7 +215,7 @@ def api_group_data(ctx):
             group_hierarchy[group['category']][group['subcategory']] = {}
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
-            'description': group['desription'] if 'desription' in group else '',
+            'description': group['description'] if 'description' in group else '',
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
