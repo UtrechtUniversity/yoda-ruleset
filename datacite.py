@@ -50,11 +50,11 @@ def rule_register_doi_url(ctx, doi, url):
     return register_doi_url(ctx, doi, url)
 
 
-def register_doi_url(ctx, doi, url):
+def register_doi_url(ctx, doi, landingpage_url):
     """Register DOI url with DataCite."""
     url = "{}/doi/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
-    payload = "doi={}\nurl={}".format(doi, url)
+    payload = "doi={}\nurl={}".format(doi, landingpage_url)
     headers = {'content-type': 'text/plain', 'charset': 'UTF-8'}
 
     response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
