@@ -25,15 +25,6 @@ def api_group_data(user):
     )
 
 
-@given('the Yoda group data filtered API is queried with "<user>" and "<zone>"', target_fixture="api_response")
-def api_group_data_filtered(user, zone):
-    return api_request(
-        user,
-        "group_data_filtered",
-        {"username": user, "zone_name": zone}
-    )
-
-
 @given('the Yoda group categories API is queried', target_fixture="api_response")
 def api_group_categories(user):
     return api_request(
