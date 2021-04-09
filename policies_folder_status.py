@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
 import meta
+import notifications
 import provenance
 from util import *
 
@@ -96,8 +97,17 @@ def post_status_transition(ctx, path, actor, status):
     if status is constants.research_package_state.SUBMITTED:
         provenance.log_action(ctx, actor, path, "submitted for vault")
 
-        # Set status to accepted if group has no datamanager.
-        if not folder.datamanager_exists(ctx, path):
+        # Store actor of submitted for vault.
+        folder.set_submitter(ctx, path, actor)
+
+        if folder.datamanager_exists(ctx, path):
+            # Send notifications to datamanagers
+            datamanagers = folder.get_datamanagers(ctx, path)
+            message = "User {} submitted data package {} for vault".format(actor, path)
+            for datamanager in datamanagers:
+                notifications.set(ctx, datamanager, message)
+        else:
+            # Set status to accepted if group has no datamanager.
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
@@ -106,6 +116,14 @@ def post_status_transition(ctx, path, actor, status):
             actor = "system"
 
         provenance.log_action(ctx, actor, path, "accepted for vault")
+
+        # Store actor of accepted for vault
+        folder.set_accepter(ctx, path, actor)
+
+        # Send notifications to submitter
+        submitter = folder.get_submitter(ctx, path)
+        message = "User {} accepted data package {} for vault".format(actor, path)
+        notifications.set(ctx, submitter, message)
 
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
@@ -126,6 +144,18 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.research_package_state.REJECTED:
         provenance.log_action(ctx, actor, path, "rejected for vault")
 
+        # Send notifications to submitter
+        submitter = folder.get_submitter(ctx, path)
+        message = "User {} rejected data package {} for vault".format(actor, path)
+        notifications.set(ctx, submitter, message)
+
     elif status is constants.research_package_state.SECURED:
         actor = "system"
         provenance.log_action(ctx, actor, path, "secured in vault")
+
+        # Send notifications to submitter and accepter
+        submitter = folder.get_submitter(ctx, path)
+        accepter = folder.get_accepter(ctx, path)
+        message = "Data package {} is secured in vault".format(path)
+        notifications.set(ctx, submitter, message)
+        notifications.set(ctx, accepter, message)
