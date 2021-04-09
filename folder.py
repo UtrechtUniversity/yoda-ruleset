@@ -532,7 +532,7 @@ def set_submitter(ctx, path, actor):
 def get_submitter(ctx, path):
     """Set submitter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
-    org_metadata = get_org_metadata(ctx, path)
+    org_metadata = dict(get_org_metadata(ctx, path))
 
     if attribute in org_metadata:
         return org_metadata[attribute]
@@ -549,7 +549,7 @@ def set_accepter(ctx, path, actor):
 def get_accepter(ctx, path):
     """Set accepter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
-    org_metadata = get_org_metadata(ctx, path)
+    org_metadata = dict(get_org_metadata(ctx, path))
 
     if attribute in org_metadata:
         return org_metadata[attribute]

@@ -105,6 +105,7 @@ def post_status_transition(ctx, path, actor, status):
             datamanagers = folder.get_datamanagers(ctx, path)
             message = "User {} submitted data package {} for vault".format(actor, path)
             for datamanager in datamanagers:
+                datamanager = '{}#{}'.format(*datamanager)
                 notifications.set(ctx, datamanager, message)
         else:
             # Set status to accepted if group has no datamanager.

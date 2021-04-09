@@ -13,8 +13,7 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_notifications_load',
-           'api_notifications_dismiss',
-           'rule_notification_set']
+           'api_notifications_dismiss']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -26,20 +25,10 @@ def set(ctx, receiver, message):
     :param receiver: Receiver of notification message
     :param message:  Notification message for user
     """
-    timestamp = int(time.time())
-    notification = {"timestamp": timestamp, "message": message}
-    ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
-
-
-@rule.make(inputs=[0, 1], outputs=[2])
-def rule_notification_set(ctx, receiver, message):
-    """Rule interface for setting notification (testing only).
-
-    :param ctx:      Combined type of a callback and rei struct
-    :param receiver: Receiver of notification message
-    :param message:  Notification message for user
-    """
-    set(ctx, receiver, message)
+    if user.exists(ctx, receiver):
+        timestamp = int(time.time())
+        notification = {"timestamp": timestamp, "message": message}
+        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
 
 
 @api.make()
@@ -63,7 +52,8 @@ def api_notifications_load(ctx):
         except Exception:
             continue
 
-    return notifications
+    # Return notifications sorted on timestamp
+    return sorted(notifications, key=lambda k: k['timestamp'], reverse=True)
 
 
 @api.make()
