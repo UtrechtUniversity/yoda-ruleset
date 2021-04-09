@@ -19,7 +19,9 @@ __all__ = ['api_resource_list_groups',
            'api_resource_get_tiers',
            'api_resource_save_tier',
            'api_resource_full_year_group_data',
-           'rule_resource_store_monthly_storage_statistics']
+           'rule_resource_store_monthly_storage_statistics',
+           'rule_resource_research',
+           'rule_resource_vault']
 
 
 @api.make()
@@ -626,3 +628,11 @@ def get_group_data_size(ctx, group_name):
         data_size = data_size + int(float(temp[2]))  # no construction for summation required in this case
 
     return data_size
+
+
+def rule_resource_research(rule_args, callback, rei):
+    rule_args[0] = config.resource_research
+
+
+def rule_resource_vault(rule_args, callback, rei):
+    rule_args[0] = config.resource_vault

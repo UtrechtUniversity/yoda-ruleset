@@ -1520,6 +1520,7 @@
     "Material",
     "Apparatus",
     "Monitoring",
+    "Tag",
     "Measured_Property",
     "Related_Datapackage",
     "Retention_Period",
