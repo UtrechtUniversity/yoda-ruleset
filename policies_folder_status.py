@@ -103,7 +103,7 @@ def post_status_transition(ctx, path, actor, status):
         if folder.datamanager_exists(ctx, path):
             # Send notifications to datamanagers
             datamanagers = folder.get_datamanagers(ctx, path)
-            message = "Data package submitted data package"
+            message = "Data package submitted for the vault"
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
                 notifications.set(ctx, actor, datamanager, path, message)
@@ -118,10 +118,10 @@ def post_status_transition(ctx, path, actor, status):
 
         provenance.log_action(ctx, actor, path, "accepted for vault")
 
-        # Store actor of accepted for vault
+        # Store actor of accepted for vault.
         folder.set_accepter(ctx, path, actor)
 
-        # Send notifications to submitter
+        # Send notifications to submitter.
         submitter = folder.get_submitter(ctx, path)
         message = "Data package accepted for vault"
         notifications.set(ctx, actor, submitter, path, message)
