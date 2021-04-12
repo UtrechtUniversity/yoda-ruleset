@@ -56,10 +56,10 @@ def api_notifications_load(ctx):
             space, _, group, subpath = pathutil.info(notification["target"])
             if space is pathutil.Space.RESEARCH:
                 notification["data_package"] = pathutil.basename(subpath)
-                notification["link"] = "/research?dir={}/{}".format(group, subpath)
+                notification["link"] = "/research?dir=/{}/{}".format(group, subpath)
             elif space is pathutil.Space.VAULT:
                 notification["data_package"] = pathutil.basename(subpath)
-                notification["link"] = "/vault?dir={}/{}".format(group, subpath)
+                notification["link"] = "/vault?dir=/{}/{}".format(group, subpath)
 
             notifications.append(notification)
         except Exception:
