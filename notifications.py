@@ -18,16 +18,18 @@ __all__ = ['api_notifications_load',
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
-def set(ctx, receiver, message):
+def set(ctx, actor, receiver, target, message):
     """Save user notification.
 
     :param ctx:      Combined type of a callback and rei struct
-    :param receiver: Receiver of notification message
+    :param actor:    Actor of notification message
+    :param receiver: Receiving user of notification message
+    :param target:   Target path of the notification
     :param message:  Notification message for user
     """
     if user.exists(ctx, receiver):
         timestamp = int(time.time())
-        notification = {"timestamp": timestamp, "message": message}
+        notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
         ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
 
 

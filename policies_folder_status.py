@@ -103,10 +103,10 @@ def post_status_transition(ctx, path, actor, status):
         if folder.datamanager_exists(ctx, path):
             # Send notifications to datamanagers
             datamanagers = folder.get_datamanagers(ctx, path)
-            message = "User {} submitted data package {} for vault".format(actor, path)
+            message = "Data package submitted data package"
             for datamanager in datamanagers:
                 datamanager = '{}#{}'.format(*datamanager)
-                notifications.set(ctx, datamanager, message)
+                notifications.set(ctx, actor, datamanager, path, message)
         else:
             # Set status to accepted if group has no datamanager.
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
@@ -123,8 +123,8 @@ def post_status_transition(ctx, path, actor, status):
 
         # Send notifications to submitter
         submitter = folder.get_submitter(ctx, path)
-        message = "User {} accepted data package {} for vault".format(actor, path)
-        notifications.set(ctx, submitter, message)
+        message = "Data package accepted for vault"
+        notifications.set(ctx, actor, submitter, path, message)
 
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
@@ -147,8 +147,8 @@ def post_status_transition(ctx, path, actor, status):
 
         # Send notifications to submitter
         submitter = folder.get_submitter(ctx, path)
-        message = "User {} rejected data package {} for vault".format(actor, path)
-        notifications.set(ctx, submitter, message)
+        message = "Data package rejected for vault"
+        notifications.set(ctx, actor, submitter, path, message)
 
     elif status is constants.research_package_state.SECURED:
         actor = "system"
@@ -157,6 +157,6 @@ def post_status_transition(ctx, path, actor, status):
         # Send notifications to submitter and accepter
         submitter = folder.get_submitter(ctx, path)
         accepter = folder.get_accepter(ctx, path)
-        message = "Data package {} is secured in vault".format(path)
-        notifications.set(ctx, submitter, message)
-        notifications.set(ctx, accepter, message)
+        message = "Data package secured in vault"
+        notifications.set(ctx, actor, submitter, path, message)
+        notifications.set(ctx, actor, accepter, path, message)
