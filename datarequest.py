@@ -80,6 +80,7 @@ SIGDTA_FILENAME   = "dta_signed.pdf"
 # List of valid datarequest statuses
 class status(Enum):
     IN_SUBMISSION                     = 'IN_SUBMISSION'
+    DAO_SUBMITTED                     = 'DAO_SUBMITTED'
     SUBMITTED                         = 'SUBMITTED'
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
     PRELIMINARY_REJECT                = 'PRELIMINARY_REJECT'
@@ -103,6 +104,10 @@ class status(Enum):
 status_transitions = [(status(x),
                        status(y))
                       for x, y in [('IN_SUBMISSION',        'SUBMITTED'),
+                                   ('IN_SUBMISSION',        'DAO_SUBMITTED'),
+                                   ('DAO_SUBMITTED',        'APPROVED'),
+                                   ('DAO_SUBMITTED',        'REJECTED'),
+                                   ('DAO_SUBMITTED',        'RESUBMIT'),
                                    ('SUBMITTED',            'PRELIMINARY_ACCEPT'),
                                    ('SUBMITTED',            'PRELIMINARY_REJECT'),
                                    ('SUBMITTED',            'PRELIMINARY_RESUBMIT'),
@@ -555,8 +560,11 @@ def api_datarequest_submit(ctx, data, previous_request_id):
     except SetACLError:
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
-    # Set the status metadata field to "submitted"
-    status_set(ctx, request_id, status.SUBMITTED)
+    # Set the status metadata field
+    if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
+        status_set(ctx, request_id, status.DAO_SUBMITTED)
+    else:
+        status_set(ctx, request_id, status.SUBMITTED)
 
 
 @api.make()
@@ -1356,7 +1364,10 @@ def send_emails(ctx, obj_name, status_to):
     datarequest_status = status_get(ctx, request_id)
 
     # Determine and invoke the appropriate email routine
-    if datarequest_status == status.SUBMITTED:
+    if datarequest_status == status.DAO_SUBMITTED:
+        datarequest_submit_emails(ctx, request_id, dao = True)
+
+    elif datarequest_status == status.SUBMITTED:
         datarequest_submit_emails(ctx, request_id)
 
     elif datarequest_status in (status.PRELIMINARY_ACCEPT, status.PRELIMINARY_REJECT,
@@ -1387,7 +1398,7 @@ def send_emails(ctx, obj_name, status_to):
         data_ready_emails(ctx, request_id)
 
 
-def datarequest_submit_emails(ctx, request_id):
+def datarequest_submit_emails(ctx, request_id, dao = False):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
     researcher        = datarequest['contact']
@@ -1398,13 +1409,22 @@ def datarequest_submit_emails(ctx, request_id):
     timestamp         = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
     # Send email to researcher and Board of Directors member(s)
-    mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
+    mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' ' +
+                                researcher['family_name'], request_id, cc, dao)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
-            mail_datarequest_bodmember(ctx, bodmember_email, request_id, researcher['given_name'] + ' ' + researcher['family_name'],
-                                       researcher_email, researcher['institution'],
-                                       researcher['department'], timestamp,
-                                       research_context['title'])
+            if dao:
+                mail_datarequest_dao_bodmember(ctx, bodmember_email, request_id,
+                                               researcher['given_name'] + ' ' +
+                                               researcher['family_name'], researcher_email,
+                                               researcher['institution'], researcher['department'],
+                                               timestamp, research_context['title'])
+            else:
+                mail_datarequest_bodmember(ctx, bodmember_email, request_id,
+                                               researcher['given_name'] + ' ' +
+                                               researcher['family_name'], researcher_email,
+                                               researcher['institution'], researcher['department'],
+                                               timestamp, research_context['title'])
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
@@ -1570,12 +1590,14 @@ def data_ready_emails(ctx, request_id):
 #                 Email templates                 #
 ###################################################
 
-def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao):
+    subject =  "YOUth data request {} (data assessment only): submitted".format(request_id) if dao else "YOUth data request {}: submitted".format(request_id)
+
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: submitted".format(request_id),
+                     subject=subject,
                      body="""Dear {},
 
 Your data request has been submitted.
@@ -1607,6 +1629,30 @@ Request ID: {}
 Proposal title: {}
 
 The following link will take you to the preliminary review form: https://{}/datarequest/preliminaryreview/{}.
+
+With kind regards,
+YOUth
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+
+
+def mail_datarequest_dao_bodmember(ctx, bodmember_email, request_id, researcher_name, researcher_email,
+                               researcher_institution, researcher_department, submission_date,
+                               proposal_title):
+    return mail.send(ctx,
+                     to=bodmember_email,
+                     actor=user.full_name(ctx),
+                     subject="YOUth data request {} (data assessment only): submitted".format(request_id),
+                     body="""Dear Board of Directors member,
+
+A new data request (for the purpose of data assessment only) has been submitted.
+
+Submitted by: {} ({})
+Affiliation: {}, {}
+Date: {}
+Request ID: {}
+Proposal title: {}
+
+The following link will take you to the evaluation form: https://{}/datarequest/dao_evaluate/{}.
 
 With kind regards,
 YOUth
