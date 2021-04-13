@@ -242,20 +242,22 @@ def datarequest_is_owner(ctx, request_id, user_name):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-    :type request_id: str
-    :param user_name: Username of the user whose ownership is checked
-    :type user_name: str
+    :type  request_id: str
+    :param user_name:  Username of the user whose ownership is checked
+    :type  user_name:  str
 
     :raises UUError: It was not possible to unambiguously determine the owner of the data request (either 0 or > 1 results for the data request)
-    :return: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-    :rtype: bool
+    :return:           `True` if ``user_name`` matches that of the owner of the data request with
+                       id ``request_id``, `False` otherwise
+    :rtype:            bool
     """
     # Construct path to the collection of the datarequest
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Query iCAT for the username of the owner of the data request
     rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path)),
+                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT,
+                                                                           coll_path)),
                         AS_DICT, ctx)
 
     # If there is not exactly 1 resulting row, something went terribly wrong
@@ -1442,12 +1444,12 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
 
 def assignment_submit_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
-    datarequest             = json.loads(datarequest_get(ctx, request_id))
-    researcher              = datarequest['contact']
-    cc                      = cc_email_addresses_get(researcher)
-    research_context        = datarequest['datarequest']['research_context']
-    assignment              = json.loads(datarequest_assignment_get(ctx, request_id))
-    assignees               = assignment['assign_to']
+    datarequest      = json.loads(datarequest_get(ctx, request_id))
+    researcher       = datarequest['contact']
+    cc               = cc_email_addresses_get(researcher)
+    research_context = datarequest['datarequest']['research_context']
+    assignment       = json.loads(datarequest_assignment_get(ctx, request_id))
+    assignees        = assignment['assign_to']
 
     # Send emails
     if datarequest_status == status.UNDER_REVIEW:
