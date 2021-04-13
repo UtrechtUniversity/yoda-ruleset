@@ -1270,6 +1270,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+    :param filename:   Filename of DTA
 
     :returns: API status
     """
@@ -1339,6 +1340,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+    :param filename:   Filename of signed DTA
 
     :returns: API status
     """
