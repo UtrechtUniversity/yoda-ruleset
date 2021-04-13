@@ -39,6 +39,7 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_evaluation_submit',
            'api_datarequest_feedback_get',
            'api_datarequest_dta_post_upload_actions',
+           'api_datarequest_filename_get',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_data_ready']
 
@@ -69,6 +70,7 @@ REVIEW            = "review"
 ASSIGNMENT        = "assignment"
 EVALUATION        = "evaluation"
 FEEDBACK          = "feedback"
+FILENAMES         = "filenames"
 DTA_FILENAME      = "dta.pdf"
 SIGDTA_FILENAME   = "dta_signed.pdf"
 
@@ -391,6 +393,44 @@ def datarequest_schema_get(ctx, schema_name):
 
     # Return JSON with schema and uischema
     return {"schema": schema, "uischema": uischema}
+
+
+@api.make()
+def api_datarequest_filename_get(ctx, request_id, key):
+    """Get filename of document
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param key:        Document name of which the filename is requested
+
+    :returns:          Filename of document
+    :rtype:            string
+    """
+    # Get all filenames
+    filenames = datarequest_filenames_get(ctx, request_id)
+
+    # Return requested filename
+    try:
+        return filenames[key]
+    except error.UUError as e:
+        return api.Error("ReadError", "Could not get filename: {}.".format(e))
+
+
+def datarequest_filenames_get(ctx, request_id):
+    """Get filenames document of a given data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:        Dictionary of filenames of documents
+    :rtype:          dict
+    """
+    # Construct path to filename document
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path = "{}/{}".format(coll_path, FILENAMES + JSON_EXT)
+
+    # Get contents of filename document
+    return jsonutil.read(ctx, file_path)
 
 
 def datarequest_data_valid(ctx, data, schema_name):
@@ -1225,7 +1265,7 @@ def api_datarequest_feedback_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_dta_post_upload_actions(ctx, request_id):
+def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1270,17 +1310,31 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id):
 
     request_owner_username = request_owner_username[0]
 
+    # Write filename to file
     try:
-        msi.set_acl(ctx, "default", "read", request_owner_username, "{}/{}".format(coll_path, DTA_FILENAME))
+        filenames = {}
+        filenames['dta'] = filename
+        filenames_path = coll_path + "/" + FILENAMES + JSON_EXT
+        jsonutil.write(ctx, filenames_path, filenames)
+    except error.UUError:
+        return api.Error("PermissionError", "Could not write filename to file.")
+
+    # Set permissions
+    try:
+        msi.set_acl(ctx, "default", "read", request_owner_username, "{}/{}".format(coll_path, filename))
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the DTA to the data request owner.")
+    try:
+        msi.set_acl(ctx, "default", "write", request_owner_username, "{}/{}".format(coll_path, FILENAMES + JSON_EXT))
+    except error.UUError:
+        return api.Error("PermissionError", "Could not grant read permissions on the filenames document to the data request owner.")
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
 
 
 @api.make()
-def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
+def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     """Grant read permissions on the signed DTA to the datamanagers group.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -1308,13 +1362,22 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id):
     # Construct path to the collection of the datarequest
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
+    # Write filename to file
     try:
-        msi.set_acl(ctx, "default", "read", GROUP_DM, "{}/{}".format(coll_path, SIGDTA_FILENAME))
+        filenames = datarequest_filenames_get(ctx, request_id)
+        filenames['dta_signed'] = filename
+        filenames_path = coll_path + "/" + FILENAMES + JSON_EXT
+        jsonutil.write(ctx, filenames_path, filenames)
+    except error.UUError as e:
+        return api.Error("PermissionError", "Could not write filename to file{}.".format(e))
+
+    # Set permissions
+    try:
+        msi.set_acl(ctx, "default", "read", GROUP_DM, "{}/{}".format(coll_path, filename))
     except error.UUError:
         return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the data managers group.")
-
     try:
-        msi.set_acl(ctx, "default", "read", GROUP_BOD, "{}/{}".format(coll_path, SIGDTA_FILENAME))
+        msi.set_acl(ctx, "default", "read", GROUP_BOD, "{}/{}".format(coll_path, filename))
     except error.UUError:
         return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the board of directors group.")
 
