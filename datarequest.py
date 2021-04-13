@@ -1640,7 +1640,7 @@ def mail_datamanager_review_accepted(ctx, bodmember_email, request_id):
 
 Data request {} has been accepted by the data manager.
 
-You are now asked to assign the data request for review to one or more DMC members. To do so, please navigate to the assignment form using this link: https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please either reject the data request or assign it for review to one or more DMC members. To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
