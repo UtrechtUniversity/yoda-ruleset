@@ -47,11 +47,6 @@
           "$ref": "#/definitions/stringNormal",
           "title": "Work address"
         },
-        "email": {
-          "type": "string",
-          "format": "email",
-          "title": "Email"
-        },
         "phone": {
           "$ref": "#/definitions/stringNormal",
           "title": "Phone"
@@ -84,7 +79,6 @@
         "department",
         "academic_role",
         "work_address",
-        "email",
         "phone"
       ]
     },
