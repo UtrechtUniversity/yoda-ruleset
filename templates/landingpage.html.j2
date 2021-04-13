@@ -466,6 +466,7 @@
 
                     <div class="group">
                         {% for creator in creators %}
+                        {% if 'Name' in creator %}
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Name</label>
@@ -474,6 +475,7 @@
                                 <span>{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}</span>
                             </div>
                         </div>
+                        {% endif %}
                         <div class="row">
                             <div class="col-sm-2">
                                 <label class="indented">Person Identifier</label>
@@ -502,6 +504,7 @@
                         {% endfor %}
 
                         {% for contributor in contributors %}
+                        {% if 'Name' in contributor %}
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Name</label>
@@ -510,6 +513,7 @@
                                 <span>{{ contributor.Name.Family_Name }}, {{ contributor.Name.Given_Name }}</span>
                             </div>
                         </div>
+                        {% endif %}
 
                         <div class="row">
                             <div class="col-sm-2">
@@ -539,6 +543,7 @@
                         {% endfor %}
 
                         {% for contact in contacts %}
+                        {% if 'Name' in contact %}
                         <div class="row">
                             <div class="col-sm-2">
                                 <label>Name</label>
@@ -547,6 +552,7 @@
                                 <span>{{ contact.Name.Family_Name }}, {{ contact.Name.Given_Name }}</span>
                             </div>
                         </div>
+                        {% endif %}
 
                         {% if contact.Position %}
                         <div class="row">
