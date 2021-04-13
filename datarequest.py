@@ -1365,7 +1365,7 @@ def send_emails(ctx, obj_name, status_to):
 
     # Determine and invoke the appropriate email routine
     if datarequest_status == status.DAO_SUBMITTED:
-        datarequest_submit_emails(ctx, request_id, dao = True)
+        datarequest_submit_emails(ctx, request_id, dao=True)
 
     elif datarequest_status == status.SUBMITTED:
         datarequest_submit_emails(ctx, request_id)
@@ -1398,7 +1398,7 @@ def send_emails(ctx, obj_name, status_to):
         data_ready_emails(ctx, request_id)
 
 
-def datarequest_submit_emails(ctx, request_id, dao = False):
+def datarequest_submit_emails(ctx, request_id, dao=False):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
     researcher        = datarequest['contact']
@@ -1409,22 +1409,22 @@ def datarequest_submit_emails(ctx, request_id, dao = False):
     timestamp         = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
     # Send email to researcher and Board of Directors member(s)
-    mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' ' +
-                                researcher['family_name'], request_id, cc, dao)
+    mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+                                + researcher['family_name'], request_id, cc, dao)
     for bodmember_email in bod_member_emails:
         if not bodmember_email == "rods":
             if dao:
                 mail_datarequest_dao_bodmember(ctx, bodmember_email, request_id,
-                                               researcher['given_name'] + ' ' +
-                                               researcher['family_name'], researcher_email,
+                                               researcher['given_name'] + ' '
+                                               + researcher['family_name'], researcher_email,
                                                researcher['institution'], researcher['department'],
                                                timestamp, research_context['title'])
             else:
                 mail_datarequest_bodmember(ctx, bodmember_email, request_id,
-                                               researcher['given_name'] + ' ' +
-                                               researcher['family_name'], researcher_email,
-                                               researcher['institution'], researcher['department'],
-                                               timestamp, research_context['title'])
+                                           researcher['given_name'] + ' '
+                                           + researcher['family_name'], researcher_email,
+                                           researcher['institution'], researcher['department'],
+                                           timestamp, research_context['title'])
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
@@ -1591,7 +1591,7 @@ def data_ready_emails(ctx, request_id):
 ###################################################
 
 def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao):
-    subject =  "YOUth data request {} (data assessment only): submitted".format(request_id) if dao else "YOUth data request {}: submitted".format(request_id)
+    subject = "YOUth data request {} (data assessment only): submitted".format(request_id) if dao else "YOUth data request {}: submitted".format(request_id)
 
     return mail.send(ctx,
                      to=researcher_email,
@@ -1635,9 +1635,9 @@ YOUth
 """.format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_dao_bodmember(ctx, bodmember_email, request_id, researcher_name, researcher_email,
-                               researcher_institution, researcher_department, submission_date,
-                               proposal_title):
+def mail_datarequest_dao_bodmember(ctx, bodmember_email, request_id, researcher_name,
+                                   researcher_email, researcher_institution, researcher_department,
+                                   submission_date, proposal_title):
     return mail.send(ctx,
                      to=bodmember_email,
                      actor=user.full_name(ctx),
