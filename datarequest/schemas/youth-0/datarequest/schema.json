@@ -109,11 +109,6 @@
             "Analyses in order to publish",
             "Analyses for data assessment only (results will not be published)"
           ]
-        },
-        "publication_approval": {
-          "type": "boolean",
-          "title": "Do you agree with publishing the complete request on our researcher’s website after it is approved?",
-          "enumNames": [ "Yes", "No (please provide a rationale)" ]
         }
       },
       "dependencies": {
@@ -147,6 +142,11 @@
                   "enum": [
                     "Analyses in order to publish"
                   ]
+                },
+                "publication_approval": {
+                  "type": "boolean",
+                  "title": "Do you agree with publishing the complete request on our researcher’s website after it is approved?",
+                  "enumNames": [ "Yes", "No (please provide a rationale)" ]
                 },
                 "publication_type": {
                   "type": "string",
@@ -414,7 +414,8 @@
 
               },
               "required": [
-                "publication_type"
+                "publication_type",
+                "publication_approval"
               ]
             }
           ]
@@ -451,8 +452,7 @@
       },
       "required": [
         "data",
-        "purpose",
-        "publication_approval"
+        "purpose"
       ]
     }
   }
