@@ -63,6 +63,7 @@ GROUP_DMC         = "datarequests-research-data-management-committee"
 GROUP_BOD         = "datarequests-research-board-of-directors"
 
 DRCOLLECTION      = "home/datarequests-research"
+TIMESTAMPS        = "timestamps"
 DATAREQUEST       = "datarequest"
 PR_REVIEW         = "preliminary_review"
 DM_REVIEW         = "datamanager_review"
@@ -148,6 +149,7 @@ def status_set(ctx, request_id, status):
     :param status:     The status to which the data request should be set
     """
     metadata_set(ctx, request_id, "status", status.value)
+    datarequest_timestamp_write(ctx, request_id, status)
 
 
 def status_get_from_path(ctx, path):
@@ -395,6 +397,40 @@ def datarequest_schema_get(ctx, schema_name):
     return {"schema": schema, "uischema": uischema}
 
 
+def datarequest_timestamp_write(ctx, request_id, request_status):
+    """Write the timestamp of a status transition to a timestamp log file
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param request_id:     Unique identifier of the data request
+    :param request_status: Status of which to write a timestamp
+
+    :returns:              Nothing
+    """
+    # Check if status parameter is valid
+    if request_status not in status:
+        return api.Error("input_error", "Invalid status parameter supplied: {}.".format(request_status.value))
+
+    # Construct path to timestamps file
+    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
+
+    # Get timestamps
+    timestamps = jsonutil.read(ctx, timestamps_path)
+
+    # Check if there isn't already a timestamp for the given status
+    if request_status.value in timestamps:
+        return api.Error("input_error", "Status ({}) has already been timestamped.".format(request_status.value))
+
+    # Add timestamp
+    timestamps[request_status.value] = str(datetime.now().strftime('%s'))
+
+    # Write timestamp
+    try:
+        jsonutil.write(ctx, timestamps_path, timestamps)
+    except error.UUError as e:
+        return api.Error("write_error", "Could not write timestamp to file: {}.".format(e))
+
+
 @api.make()
 def api_datarequest_filename_get(ctx, request_id, key):
     """Get filename of document
@@ -563,10 +599,11 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         return api.Error("permission_error",
                          "Something went wrong during permission checking: {}.".format(e))
 
-    timestamp = datetime.now()
-    request_id = str(timestamp.strftime('%s'))
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    timestamp       = datetime.now()
+    request_id      = str(timestamp.strftime('%s'))
+    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path       = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
 
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
@@ -578,6 +615,12 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         collection.create(ctx, coll_path)
     except error.UUError as e:
         return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
+
+    # Create timestamps file
+    try:
+        jsonutil.write(ctx, timestamps_path, {})
+    except error.UUError as e:
+        return api.Error("write_error", "Could not create timestamps file: {}.".format(e))
 
     # Write data request data to disk
     try:
