@@ -16,9 +16,10 @@ Feature: Research API
         And folder "<folder>" exists in "<collection>"
 
         Examples:
-            | folder           |
-            | api_test_folder1 |
-            | api_test_folder2 |
+            | folder                      |
+            | api_test_folder1            |
+            | api_test_folder2            |
+            | api_test_'`~!@#$%^&()+=[]{} |
 
     Scenario: Research folder rename
         Given user "researcher" is authenticated
@@ -37,9 +38,10 @@ Feature: Research API
         And folder "<folder>" does not exists in "<collection>"
 
         Examples:
-            | folder                   |
-            | api_test_folder1_renamed |
-            | api_test_folder2         |
+            | folder                      |
+            | api_test_folder1_renamed    |
+            | api_test_folder2            |
+            | api_test_'`~!@#$%^&()+=[]{} |
 
     Scenario: Research file copy
         Given user "researcher" is authenticated
