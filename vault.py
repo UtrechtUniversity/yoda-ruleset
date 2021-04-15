@@ -582,12 +582,12 @@ def api_grant_read_access_research_group(ctx, coll):
     # coll = '/' + user.zone(ctx) + '/home' + coll
     log.write(ctx, coll)
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists','Datapackage does not exist')
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection','Invalid datapackage collection')
- 
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
     vault_group_name = coll_parts[3]
 
     # Find category
@@ -603,13 +603,12 @@ def api_grant_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs','Error setting ACLs by datamanager')
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
     else:
-        return api.Error('NoDatamanager','Actor must be a datamanager for granting access')
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
 
     return {'status': 'Success',
             'statusInfo': ''}
-
 
 
 @api.make()
@@ -626,11 +625,11 @@ def api_revoke_read_access_research_group(ctx, coll):
     log.write(ctx, coll)
 
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists','Datapackage does not exist')
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection','Invalid datapackage collection')
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
 
     vault_group_name = coll_parts[3]
 
@@ -647,9 +646,9 @@ def api_revoke_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs','Error setting ACLs by datamanager')
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
     else:
-        return api.Error('NoDatamanager','Actor must be a datamanager for revoking access')
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
 
     return {'status': 'Success',
             'statusInfo': ''}
