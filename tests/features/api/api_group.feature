@@ -12,18 +12,6 @@ Feature: Group API
             | researcher  | research-initial1   |
             | datamanager | datamanager-initial |
 
-    Scenario: Group data filtered
-        Given user "<user>" is authenticated
-        And the Yoda group data filtered API is queried with "<user>" and "<zone>"
-        Then the response status code is "200"
-        And group "<group>" exists
-
-        Examples:
-            | user        | zone     | group               |
-            | researcher  | tempZone | research-initial    |
-            | researcher  | tempZone | research-initial1   |
-            | datamanager | tempZone | datamanager-initial |
-
     Scenario: Group categories
         Given user "<user>" is authenticated
         And the Yoda group categories API is queried

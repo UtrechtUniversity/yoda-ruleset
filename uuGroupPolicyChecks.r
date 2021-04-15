@@ -440,15 +440,17 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
 	*allowed = 0;
 	*reason  = "";
 
-	if (*actor == *userName) {
-        if (*attribute == "org_settings_mail_notifications") {
+    # User setting: mail notifications
+    if (*attribute == "org_settings_mail_notifications") {
+        if (*actor == *userName) {
             *allowed = 1;
-        } else if (trimr(*attribute, "_") == "org_notification") {
-            *allowed = 1;
-		} else {
-			*reason = "Invalid user attribute name.";
-		}
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User notifications
+    } else if (trimr(*attribute, "_") == "org_notification") {
+        *allowed = 1;
 	} else {
-		*reason = "Cannot modify attributes of other user.";
+		*reason = "Invalid user attribute name.";
 	}
 }
