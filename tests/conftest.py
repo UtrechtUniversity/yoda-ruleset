@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import re
 
 import pytest
 import requests
@@ -97,17 +98,24 @@ def login(user, password):
 
     client = requests.session()
 
-    # Retrieve the CSRF token first
-    # csrf = client.get(url, verify=False).cookies['csrf_yoda']
-    csrf = ""
+    # Retrieve the login CSRF token.
+    content = client.get(url, verify=False).content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
 
     # Login as user.
     login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
-    client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    session = client.cookies['session']
     client.close()
 
+    # Retrieve the authenticated CSRF token.
+    content = response.content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
+
     # Return CSRF and session cookies.
-    return csrf, client.cookies['session']
+    return csrf, session
 
 
 def api_request(user, request, data):
@@ -121,7 +129,8 @@ def api_request(user, request, data):
     url = api_url + "/" + request
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'session': session}
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    headers = {'referer': 'https://portal.yoda.test/group'}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     # Remove debug info from response body.
     body = response.json()
