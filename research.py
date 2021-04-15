@@ -187,7 +187,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # Collection exists?
     if not collection.exists(ctx, coll_target):
-        return api.Error('invalid_target', 'The selected folder to add a new folder to does not exist')
+        return api.Error('invalid_target', 'The folder to delete does not exist')
 
     # Folder empty?
     if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target) > 0:
@@ -219,7 +219,7 @@ def api_research_file_copy(ctx, copy, coll, file):
     try:
         validate_filename(copy.decode('utf-8'))
     except Exception:
-        return api.Error('missing_filename', 'Missing filename. Please add a file name')
+        return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
 
     # Same name makes no sense
     if copy == file:
@@ -360,9 +360,9 @@ def api_research_file_delete(ctx, coll, file_name):
     if folder.is_locked(ctx, coll):
         return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be deleted')
 
-    # Collection exists?
+    # Data object exists?
     if not data_object.exists(ctx, path_target):
-        return api.Error('invalid_target', 'The selected folder to add a new folder to does not exist')
+        return api.Error('invalid_target', 'The data object to delete does not exist')
 
     # All requirements OK
     try:
