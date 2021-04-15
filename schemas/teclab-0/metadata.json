@@ -1348,6 +1348,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
+        "title": "Geo Location",
         "yoda:structure": "subproperties",
         "properties": {
           "geoLocationBox": {
@@ -1498,6 +1499,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
+        "title": "Related datapackage",
         "yoda:structure": "subproperties",
         "properties": {
           "Relation_Type": {
@@ -1604,6 +1606,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
+        "title": "Creator of datapackage",
         "yoda:structure": "subproperties",
         "required": [
           "Name",
@@ -1677,6 +1680,7 @@
           "Name": {
             "type": "object",
             "additionalProperties": false,
+            "title": "Contributor to datapackage",
             "yoda:structure": "compound",
             "required": [
               "Given_Name",
@@ -1741,6 +1745,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
+        "title": "Contact person",
         "yoda:structure": "subproperties",
         "properties": {
           "Name": {
