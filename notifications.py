@@ -55,10 +55,10 @@ def api_notifications_load(ctx):
             # Get data package and link from target path for research and vault packages.
             space, _, group, subpath = pathutil.info(notification["target"])
             if space is pathutil.Space.RESEARCH:
-                notification["data_package"] = pathutil.basename(subpath)
+                notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
                 notification["link"] = "/research?dir=/{}/{}".format(group, subpath)
             elif space is pathutil.Space.VAULT:
-                notification["data_package"] = pathutil.basename(subpath)
+                notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
                 notification["link"] = "/vault?dir=/{}/{}".format(group, subpath)
 
             notifications.append(notification)
