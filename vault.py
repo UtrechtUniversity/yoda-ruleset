@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -985,3 +985,37 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_approver(ctx, path, actor):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_approver(ctx, path):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
