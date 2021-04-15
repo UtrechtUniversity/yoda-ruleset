@@ -36,17 +36,17 @@ Feature: Vault UI
         Given user "datamanager" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
-        And user waits for status "Published"  ??? 
-        And user selects depublication
-        Then the data package status is "Approved for publication" ??
+        And user waits for status "Published"  ????????????????????
+        And user approves the data package for depublication
+        Then the data package status is "Depublication pending"
 
-    Scenario: Vault redepublish publication
+    Scenario: Vault republish publication
         Given user "datamanager" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
-        And user waits for status "Depublished" ???
+        And user waits for status "Depublished" ?????????????????????
         And user selects republication
-        Then the data package status is "Approved for republication" ??
+        Then the data package status is "Republication pending"
 
     Scenario: Vault views metadata form [LAATSTE STAP NOG]
         Given user "datamanager" is logged in
