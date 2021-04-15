@@ -184,7 +184,3 @@ Feature: Datarequest API
         And the datarequest data ready API is queried with request id
         Then the response status code is "200"
         And request status is "DATA_READY"
-
-#    Scenario: Datarequest resubmit
-#        Given the Yoda datarequest submit API is queried with <data> and <previous_request_id>
-#        Then the response status code is "200"

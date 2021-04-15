@@ -1,4 +1,7 @@
 {
+  "previous_request_id": {
+    "ui:widget": "hidden"
+  },
   "title": {
     "ui:autofocus": true
   },

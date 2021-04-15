@@ -12,6 +12,9 @@
   },
   "type": "object",
   "properties": {
+    "previous_request_id": {
+      "type": "number"
+    },
     "introduction": {
       "type": "object",
       "title": "Introduction",

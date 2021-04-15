@@ -85,7 +85,7 @@ def api_datarequest_submit(user):
                 "contribution_favor": "No",
                 "contribution_financial_amount": 9000
             }
-        }, "previous_request_id": None,
+        }
         })
 
 

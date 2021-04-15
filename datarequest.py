@@ -83,6 +83,7 @@ SIGDTA_FILENAME   = "dta_signed.pdf"
 # List of valid datarequest statuses
 class status(Enum):
     IN_SUBMISSION                     = 'IN_SUBMISSION'
+    DRAFT                             = 'DRAFT'
     DAO_SUBMITTED                     = 'DAO_SUBMITTED'
     SUBMITTED                         = 'SUBMITTED'
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
@@ -106,8 +107,11 @@ class status(Enum):
 # List of valid datarequest status transitions (source, destination)
 status_transitions = [(status(x),
                        status(y))
-                      for x, y in [('IN_SUBMISSION',        'SUBMITTED'),
+                      for x, y in [('IN_SUBMISSION',        'DRAFT'),
                                    ('IN_SUBMISSION',        'DAO_SUBMITTED'),
+                                   ('IN_SUBMISSION',        'SUBMITTED'),
+                                   ('DRAFT',                'DAO_SUBMITTED'),
+                                   ('DRAFT',                'SUBMITTED'),
                                    ('DAO_SUBMITTED',        'APPROVED'),
                                    ('DAO_SUBMITTED',        'REJECTED'),
                                    ('DAO_SUBMITTED',        'RESUBMIT'),
@@ -418,11 +422,19 @@ def datarequest_timestamp_write(ctx, request_id, request_status):
     timestamps = jsonutil.read(ctx, timestamps_path)
 
     # Check if there isn't already a timestamp for the given status
-    if request_status.value in timestamps:
+    if request_status.value in timestamps and request_status != status.DRAFT:
         return api.Error("input_error", "Status ({}) has already been timestamped.".format(request_status.value))
 
     # Add timestamp
-    timestamps[request_status.value] = str(datetime.now().strftime('%s'))
+    current_time = str(datetime.now().strftime('%s'))
+    # Special case for drafts, as this status can be set multiple times
+    if request_status == status.DRAFT:
+        if request_status.value not in timestamps:
+            timestamps[request_status.value] = [current_time]
+        else:
+            timestamps[request_status.value].append(current_time)
+    else:
+        timestamps[request_status.value] = current_time
 
     # Write timestamp
     try:
@@ -578,12 +590,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
 
 @api.make()
-def api_datarequest_submit(ctx, data, previous_request_id):
+def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     """Persist a data request to disk.
 
-    :param ctx:                 Combined type of a callback and rei struct
-    :param data:                Contents of the data request
-    :param previous_request_id: Unique identifier of previous data request
+    :param ctx:              Combined type of a callback and rei struct
+    :param data:             Contents of the data request
+    :param draft:            Boolean specifying whether the data request should be saved as draft
+    :param draft_request_id: Request ID of the draft data request
 
     :returns: API status
     """
@@ -599,41 +612,51 @@ def api_datarequest_submit(ctx, data, previous_request_id):
         return api.Error("permission_error",
                          "Something went wrong during permission checking: {}.".format(e))
 
-    timestamp       = datetime.now()
-    request_id      = str(timestamp.strftime('%s'))
-    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path       = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
-    timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
-    # Create collection
-    try:
-        collection.create(ctx, coll_path)
-    except error.UUError as e:
-        return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
+    # If we're not working with a draft, create a new request ID
+    request_id = draft_request_id if draft_request_id else str(datetime.now().strftime('%s'))
 
-    # Create timestamps file
-    try:
-        jsonutil.write(ctx, timestamps_path, {})
-    except error.UUError as e:
-        return api.Error("write_error", "Could not create timestamps file: {}.".format(e))
+    # Construct path to data request collection and file
+    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path       = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
-    # Write data request data to disk
+    # If we're not working with a draft, initialize the data request collection
+    if not draft_request_id:
+        # Create collection
+        try:
+            collection.create(ctx, coll_path)
+        except error.UUError as e:
+            return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
+
+        # Create timestamps file
+        timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
+        try:
+            jsonutil.write(ctx, timestamps_path, {})
+        except error.UUError as e:
+            return api.Error("write_error", "Could not create timestamps file: {}.".format(e))
+
+    # Write data request to disk
     try:
         jsonutil.write(ctx, file_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write datarequest to disk')
 
-    # Set the previous request ID as metadata if defined
-    if previous_request_id:
-        metadata_set(ctx, request_id, "previous_request_id", str(previous_request_id))
-
     # Set the proposal fields as AVUs on the proposal JSON file
     avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
+
+    # If draft, set status
+    if draft:
+        status_set(ctx, request_id, status.DRAFT)
+        # If new draft, return request ID of draft data request
+        if not draft_request_id:
+            return {"requestId": request_id}
+        # If update of existing draft, return nothing
+        else:
+            return
 
     # Set permissions for certain groups on the subcollection
     try:
