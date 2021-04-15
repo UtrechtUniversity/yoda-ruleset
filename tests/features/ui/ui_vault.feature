@@ -25,18 +25,29 @@ Feature: Vault UI
         And user submits the data package for publication
         Then the data package status is "Submitted for publication"
 
-    Scenario: Vault approve
+    Scenario: Vault publication approve
         Given user "datamanager" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
         And user approves the data package for publication
         Then the data package status is "Approved for publication"
 
+    Scenario: Vault depublish publication
+        Given user "datamanager" is logged in
+        And module "vault" is shown
+        When user browses to data package in "<vault>"
+        And user waits for status "Published"  ??? 
+        And user selects depublication
+        Then the data package status is "Approved for publication" ??
 
-# DEPUBLICATION
-# REPUBLICATION
+    Scenario: Vault redepublish publication
+        Given user "datamanager" is logged in
+        And module "vault" is shown
+        When user browses to data package in "<vault>"
+        And user waits for status "Depublished" ???
+        And user selects republication
+        Then the data package status is "Approved for republication" ??
 
-###############
     Scenario: Vault views metadata form [LAATSTE STAP NOG]
         Given user "datamanager" is logged in
         And module "vault" is shown
@@ -74,14 +85,14 @@ Feature: Vault UI
         Then action menu holds option to revoke access from research group
 
 ####
-    Scenario: Copy datapackage to research space ##
+    Scenario: Copy datapackage to research space [Laatste stap]
         Given user "datamanager" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
         And user clicks action menu to go to research
-        And user chooses research folder
+        And user chooses research folder corresponding to "<vault>"
         And user presses copy package button
-        Then ... #the data package status is "Approved for publication"
+        Then package is copied to research area
 
 ####
     Scenario: Check datapackage compliancy with policy [OK]
@@ -98,4 +109,4 @@ Feature: Vault UI
         And module "vault" is shown
         When user browses to data package in "<vault>"
         And user clicks action menu go to research
-        Then research module is active
+        Then module "research" is shown
