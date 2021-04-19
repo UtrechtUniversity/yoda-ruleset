@@ -10,8 +10,8 @@ import time
 import intake_dataset
 import intake_lock
 import intake_scan
-
 from util import *
+
 
 __all__ = ['api_intake_list_studies',
            'api_intake_list_dm_studies',
