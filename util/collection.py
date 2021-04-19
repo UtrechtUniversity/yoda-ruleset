@@ -113,18 +113,19 @@ def data_objects(ctx, path, recursive=False):
     return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
 
 
-def create(ctx, path):
+def create(ctx, path, entire_tree=''):
     """Create new collection.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path including new collection
+    :param ctx:         Combined type of a callback and rei struct
+    :param path:        Path including new collection
+    :param entire_tree: Flag specifying parent collections will be created too
 
     This may raise a error.UUError if the file does not exist, or when the user
     does not have write permission.
     """
     msi.coll_create(ctx,
                     path,
-                    '',
+                    entire_tree,
                     irods_types.BytesBuf())
 
 
