@@ -350,11 +350,11 @@ def api_datarequest_is_project_manager(ctx):
 
 @api.make()
 def api_datarequest_is_dmc_member(ctx):
-    """Check if given user is BOD member
+    """Check if given user is DMC member
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: True if user is BOD member else False
+    :returns: True if user is DMC member else False
     :rtype bool
     """
     return user.is_member_of(ctx, GROUP_DMC)
@@ -362,11 +362,11 @@ def api_datarequest_is_dmc_member(ctx):
 
 @api.make()
 def api_datarequest_is_datamanager(ctx):
-    """Check if given user is BOD member
+    """Check if given user is data manager
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: True if user is BOD member else False
+    :returns: True if user is data manager else False
     :rtype bool
     """
     return user.is_member_of(ctx, GROUP_DM)
@@ -753,7 +753,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         if not is_pm:
             return api.Error("PermissionError", "User is not a project manager.")
     except error.UUError:
-        return api.Error("PermissionError", "Something went wrong during permissen checking")
+        return api.Error("PermissionError", "Something went wrong during permission checking.")
 
     # Construct path to collection of the evaluation
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -805,7 +805,7 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     try:
         is_pm         = user.is_member_of(ctx, GROUP_PM)
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
-        isreviewer = datarequest_is_reviewer(ctx, request_id)
+        isreviewer    = datarequest_is_reviewer(ctx, request_id)
 
         if not (is_pm or isdatamanager or isreviewer):
             return api.Error("PermissionError", "User is not authorized to view this preliminary review.")
@@ -911,7 +911,7 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     try:
         is_pm         = user.is_member_of(ctx, GROUP_PM)
         isdatamanager = user.is_member_of(ctx, GROUP_DM)
-        isreviewer = datarequest_is_reviewer(ctx, request_id)
+        isreviewer    = datarequest_is_reviewer(ctx, request_id)
 
         if not (is_pm or isdatamanager or isreviewer):
             return api.Error("PermissionError", "User is not authorized to view this data manager review.")
@@ -1691,7 +1691,8 @@ def dta_post_upload_actions_emails(ctx, request_id):
     cc               = cc_email_addresses_get(researcher)
 
     # Send email
-    mail_dta(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
+    mail_dta(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'],
+             request_id, cc)
 
 
 def signed_dta_post_upload_actions_emails(ctx, request_id):
@@ -1713,7 +1714,8 @@ def data_ready_emails(ctx, request_id):
     datamanager_email = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])[0]
 
     # Send email
-    mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'], datamanager_email, request_id, cc)
+    mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' '
+                    + researcher['family_name'], datamanager_email, request_id, cc)
 
 
 ###################################################
@@ -1742,8 +1744,8 @@ YOUth
 
 
 def mail_datarequest_pm(ctx, pm_email, request_id, researcher_name, researcher_email,
-                               researcher_institution, researcher_department, submission_date,
-                               proposal_title):
+                        researcher_institution, researcher_department, submission_date,
+                        proposal_title):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
@@ -1762,7 +1764,8 @@ The following link will take you to the preliminary review form: https://{}/data
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
+                         submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher_name, researcher_email,
@@ -1786,7 +1789,8 @@ The following link will take you to the evaluation form: https://{}/datarequest/
 
 With kind regards,
 YOUth
-""".format(researcher_name, researcher_email, researcher_institution, researcher_department, submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+""".format(researcher_name, researcher_email, researcher_institution, researcher_department,
+                         submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_preliminary_review_accepted(ctx, datamanager_email, request_id):
@@ -1981,7 +1985,7 @@ The following link will take you directly to your data request: https://{}/datar
 With kind regards,
 YOUth
 """.format(researcher_name, feedback_for_researcher, YODA_PORTAL_FQDN, request_id, pm_email,
-           YODA_PORTAL_FQDN, request_id))
+                         YODA_PORTAL_FQDN, request_id))
 
 
 def mail_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher, pm_email,
