@@ -121,11 +121,11 @@ def api_datarequest_is_datamanager(user):
     )
 
 
-@given('the Yoda datarequest is BoD member API is queried', target_fixture="api_response")
-def api_datarequest_is_bod_member(user):
+@given('the Yoda datarequest is project manager API is queried', target_fixture="api_response")
+def api_datarequest_is_project_manager(user):
     return api_request(
         user,
-        "datarequest_is_bod_member",
+        "datarequest_is_project_manager",
         {}
     )
 

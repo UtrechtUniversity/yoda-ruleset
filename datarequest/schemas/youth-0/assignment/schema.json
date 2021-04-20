@@ -34,11 +34,11 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "bodmember",
+                  "projectmanager",
                   "dmcmember"
                 ],
                 "enumNames": [
-                  "Prof. Dr. B.O.D. Member / Utrecht University / Dev / bodmember",
+                  "Prof. Dr. P. Manager / Utrecht University / Dev / projectmanager",
                   "Prof. Dr. D.M.C. Member / Utrecht University / Dev / dmcmember"
                 ]
               },

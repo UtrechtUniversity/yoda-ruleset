@@ -33,11 +33,11 @@ Feature: Datarequest API
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | True   |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | False  |
+            | user           | result |
+            | researcher     | True   |
+            | datamanager    | False  |
+            | projectmanager | False  |
+            | dmcmember      | False  |
 
     Scenario: Datarequest is datamanager
         Given user "<user>" is authenticated
@@ -46,24 +46,24 @@ Feature: Datarequest API
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | True   |
-            | bodmember   | False  |
-            | dmcmember   | False  |
+            | user           | result |
+            | researcher     | False  |
+            | datamanager    | True   |
+            | projectmanager | False  |
+            | dmcmember      | False  |
 
-    Scenario: Datarequest is BoD member
+    Scenario: Datarequest is project manager
         Given user "<user>" is authenticated
-        And the Yoda datarequest is BoD member API is queried
+        And the Yoda datarequest is project manager API is queried
         Then the response status code is "200"
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | True   |
-            | dmcmember   | False  |
+            | user           | result |
+            | researcher     | False  |
+            | datamanager    | False  |
+            | projectmanager | True   |
+            | dmcmember      | False  |
 
     Scenario: Datarequest is DMC member
         Given user "<user>" is authenticated
@@ -72,11 +72,11 @@ Feature: Datarequest API
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | True   |
+            | user           | result |
+            | researcher     | False  |
+            | datamanager    | False  |
+            | projectmanager | False  |
+            | dmcmember      | True   |
 
     Scenario: Datarequest get
         Given user "researcher" is authenticated
@@ -86,14 +86,14 @@ Feature: Datarequest API
         And request status is "SUBMITTED"
 
     Scenario: Datarequest preliminary review submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest preliminary review submit API is queried with request id
         Then the response status code is "200"
         And request status is "PRELIMINARY_ACCEPT"
 
     Scenario: Datarequest preliminary review get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest preliminary review get API is queried with request id
         Then the response status code is "200"
@@ -106,20 +106,20 @@ Feature: Datarequest API
         And request status is "DATAMANAGER_ACCEPT"
 
     Scenario: Datarequest datamanager review get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest datamanager review get API is queried with request id
         Then the response status code is "200"
 
     Scenario: Datarequest assignment submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the datarequest assignment submit API is queried with request id
         Then the response status code is "200"
         And request status is "UNDER_REVIEW"
 
     Scenario: Datarequest assignment get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest assignment get API is queried with request id
         Then the response status code is "200"
@@ -132,11 +132,11 @@ Feature: Datarequest API
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | True   |
+            | user           | result |
+            | researcher     | False  |
+            | datamanager    | False  |
+            | projectmanager | False  |
+            | dmcmember      | True   |
 
     Scenario: Datarequest review submit
         Given user "dmcmember" is authenticated
@@ -146,13 +146,13 @@ Feature: Datarequest API
         And request status is "REVIEWED"
 
     Scenario: Datarequest reviews get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest reviews get API is queried with request id
         Then the response status code is "200"
 
     Scenario: Datarequest evaluation submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the datarequest evaluation submit API is queried with request id
         Then the response status code is "200"
