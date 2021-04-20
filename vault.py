@@ -996,7 +996,7 @@ def set_submitter(ctx, path, actor):
 def get_submitter(ctx, path):
     """Set submitter of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
-    org_metadata = dict(get_org_metadata(ctx, path))
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
 
     if attribute in org_metadata:
         return org_metadata[attribute]
@@ -1013,7 +1013,7 @@ def set_approver(ctx, path, actor):
 def get_approver(ctx, path):
     """Set approver of data package for publication."""
     attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
-    org_metadata = dict(get_org_metadata(ctx, path))
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
 
     if attribute in org_metadata:
         return org_metadata[attribute]

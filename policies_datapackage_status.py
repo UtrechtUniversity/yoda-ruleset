@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for data package status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import folder
 import meta
+import notifications
 import provenance
 import vault
 from util import *
