@@ -91,28 +91,39 @@ SIGDTA_FILENAME   = "dta_signed.pdf"
 # List of valid datarequest statuses
 class status(Enum):
     IN_SUBMISSION                     = 'IN_SUBMISSION'
+
     DRAFT                             = 'DRAFT'
+
     DAO_SUBMITTED                     = 'DAO_SUBMITTED'
     SUBMITTED                         = 'SUBMITTED'
+
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
     PRELIMINARY_REJECT                = 'PRELIMINARY_REJECT'
     PRELIMINARY_RESUBMIT              = 'PRELIMINARY_RESUBMIT'
+
     DATAMANAGER_ACCEPT                = 'DATAMANAGER_ACCEPT'
     DATAMANAGER_REJECT                = 'DATAMANAGER_REJECT'
     DATAMANAGER_RESUBMIT              = 'DATAMANAGER_RESUBMIT'
+
     DATAMANAGER_REVIEW_ACCEPTED       = 'DATAMANAGER_REVIEW_ACCEPTED'
     REJECTED_AFTER_DATAMANAGER_REVIEW = 'REJECTED_AFTER_DATAMANAGER_REVIEW'
     RESUBMIT_AFTER_DATAMANAGER_REVIEW = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW'
+
     CONTRIBUTION_ACCEPTED             = 'CONTRIBUTION_ACCEPTED'
     CONTRIBUTION_REJECTED             = 'CONTRIBUTION_REJECTED'
     CONTRIBUTION_RESUBMIT             = 'CONTRIBUTION_RESUBMIT'
+
     UNDER_REVIEW                      = 'UNDER_REVIEW'
+
     REVIEWED                          = 'REVIEWED'
+
     APPROVED                          = 'APPROVED'
     REJECTED                          = 'REJECTED'
     RESUBMIT                          = 'RESUBMIT'
+
     CONTRIBUTION_CONFIRMED            = 'CONTRIBUTION_CONFIRMED'
     DAO_APPROVED                      = 'DAO_APPROVED'
+
     DTA_READY                         = 'DTA_READY'
     DTA_SIGNED                        = 'DTA_SIGNED'
     DATA_READY                        = 'DATA_READY'
@@ -551,7 +562,7 @@ def datarequest_data_valid(ctx, data, schema_name):
 
 def cc_email_addresses_get(contact_object):
     try:
-        cc = datarequest['contact']['cc_email_addresses']
+        cc = contact_object['cc_email_addresses']
         return cc.replace(' ', '')
     except Exception:
         return None
@@ -645,27 +656,27 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
     :returns: API status
     """
-    # Check if user is allowed to submit a datarequest. Project managers and data managers are not
-    # allowed to submit proposals
-    try:
-        is_pm         = user.is_member_of(ctx, GROUP_PM)
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
-
-        if (is_pm or is_ed or isdatamanager):
-            return api.Error("permission_error", "User is not authorized to submit a data request.")
-    except error.UUError as e:
-        return api.Error("permission_error",
-                         "Something went wrong during permission checking: {}.".format(e))
-
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
+    # User permission check
+    try:
+        is_pm = user.is_member_of(ctx, GROUP_PM)
+        is_ed = user.is_member_of(ctx, GROUP_ED)
+        is_dm = user.is_member_of(ctx, GROUP_DM)
+
+        if (is_pm or is_ed or is_dm):
+            return api.Error("permission_error", "User is not authorized to submit a data request.")
+    except error.UUError as e:
+        return api.Error("permission_error",
+                         "Something went wrong during permission checking: {}.".format(e))
+
     # If we're not working with a draft, create a new request ID
     request_id = draft_request_id if draft_request_id else str(datetime.now().strftime('%s'))
 
-    # Construct path to data request collection and file
+    # Construct path to collection
     coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path       = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
@@ -684,7 +695,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         except error.UUError as e:
             return api.Error("write_error", "Could not create timestamps file: {}.".format(e))
 
-    # Write data request to disk
+    # Write form data to disk
     try:
         jsonutil.write(ctx, file_path, data)
     except error.UUError:
@@ -703,7 +714,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         else:
             return
 
-    # Set permissions for certain groups on the subcollection
+    # Grant permissions
     try:
         msi.set_acl(ctx, "recursive", "write", GROUP_DM, coll_path)
         msi.set_acl(ctx, "recursive", "write", GROUP_ED, coll_path)
@@ -712,7 +723,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     except SetACLError:
         return api.Error("permission_error", "Could not set permissions on subcollection.")
 
-    # Set the status metadata field
+    # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
         status_set(ctx, request_id, status.DAO_SUBMITTED)
     else:
@@ -734,13 +745,13 @@ def api_datarequest_get(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        is_pm          = user.is_member_of(ctx, GROUP_PM)
-        isdatamanager  = user.is_member_of(ctx, GROUP_DM)
-        is_ed          = user.is_member_of(ctx, GROUP_ED)
-        isdmcmember    = user.is_member_of(ctx, GROUP_DMC)
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+        is_pm            = user.is_member_of(ctx, GROUP_PM)
+        is_dm            = user.is_member_of(ctx, GROUP_DM)
+        is_ed            = user.is_member_of(ctx, GROUP_ED)
+        is_dmc_member    = user.is_member_of(ctx, GROUP_DMC)
+        is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
-        if not (is_pm or isdatamanager or is_ed or isdmcmember or isrequestowner):
+        if not (is_pm or is_dm or is_ed or is_dmc_member or is_request_owner):
             return api.Error("permission_error", "User is not authorized to view this data request.")
     except error.UUError as e:
         return api.Error("permission_error", "Something went wrong during permission checking: {}.".format(e))
@@ -786,14 +797,11 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.PRELIMINARY_ACCEPT):
         return api.Error("transition", "Status transition not allowed.")
 
-    # Read data into a dictionary
-    preliminary_review = data
-
-    # Check if user is a project manager. If not, do not allow submission of the preliminary review
+    # User permission check
     try:
         is_pm = user.is_member_of(ctx, GROUP_PM)
 
@@ -802,17 +810,17 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except error.UUError:
         return api.Error("PermissionError", "Something went wrong during permission checking.")
 
-    # Construct path to collection of the evaluation
+    # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Write preliminary review data to disk
+    # Write form data to disk
     try:
         preliminary_review_path = "{}/{}".format(coll_path, PR_REVIEW + JSON_EXT)
         jsonutil.write(ctx, preliminary_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write preliminary review data to disk')
 
-    # Grant read permissions on the preliminary review
+    # Grant permissions
     try:
         msi.set_acl(ctx, "default", "read", GROUP_PM, preliminary_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_ED, preliminary_review_path)
@@ -821,10 +829,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the preliminary review file.")
 
-    # Get the outcome of the preliminary review (accepted/rejected)
-    decision = preliminary_review['preliminary_review']
+    # Get decision
+    decision = data['preliminary_review']
 
-    # Update the status of the data request
+    # Update data request status
     if decision == "Accepted for data manager review":
         status_set(ctx, request_id, status.PRELIMINARY_ACCEPT)
     elif decision == "Rejected":
@@ -851,12 +859,12 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
     # Check if user is authorized. If not, return PermissionError
     try:
-        is_pm         = user.is_member_of(ctx, GROUP_PM)
-        is_ed         = user.is_member_of(ctx, GROUP_ED)
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
-        isreviewer    = datarequest_is_reviewer(ctx, request_id)
+        is_pm       = user.is_member_of(ctx, GROUP_PM)
+        is_ed       = user.is_member_of(ctx, GROUP_ED)
+        is_dm       = user.is_member_of(ctx, GROUP_DM)
+        is_reviewer = datarequest_is_reviewer(ctx, request_id)
 
-        if not (is_pm or is_ed or isdatamanager or isreviewer):
+        if not (is_pm or is_ed or is_dm or is_reviewer):
             return api.Error("PermissionError", "User is not authorized to view this preliminary review.")
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
@@ -895,46 +903,42 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_ACCEPT):
         api.Error("transition", "Status transition not allowed.")
 
-    # Read datamanager review into a dictionary
-    datamanager_review = data
-
-    # Check if user is a data manager. If not, do not the user to assign the
-    # request
+    # User permission check
     try:
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
+        is_dm = user.is_member_of(ctx, GROUP_DM)
 
-        if not isdatamanager:
+        if not is_dm:
             return api.Error("PermissionError", "User is not a data manager.")
     except error.UUerror as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
-    # Construct path to collection of the evaluation
+    # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Write data manager review data to disk
+    # Write form data to disk
     try:
         datamanager_review_path = "{}/{}".format(coll_path, DM_REVIEW + JSON_EXT)
         jsonutil.write(ctx, datamanager_review_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
 
-    # Grant read permissions on the data manager review
+    # Grant permissions
     try:
         msi.set_acl(ctx, "default", "read", GROUP_PM, datamanager_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_ED, datamanager_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, datamanager_review_path)
         msi.set_acl(ctx, "default", "read", GROUP_DMC, datamanager_review_path)
     except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the preliminary review file.")
+        return api.Error("PermissionsError", "Could not grant read permissions on the data manager review file.")
 
-    # Get the outcome of the data manager review (accepted/rejected)
-    decision = datamanager_review['datamanager_review']
+    # Get decision
+    decision = data['datamanager_review']
 
-    # Update the status of the data request
+    # Update data request status
     if decision == "Accepted":
         status_set(ctx, request_id, status.DATAMANAGER_ACCEPT)
     elif decision == "Rejected":
@@ -959,12 +963,12 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
     # Check if user is authorized. If not, return PermissionError
     try:
-        is_pm         = user.is_member_of(ctx, GROUP_PM)
-        is_ed         = user.is_member_of(ctx, GROUP_ED)
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
-        isreviewer    = datarequest_is_reviewer(ctx, request_id)
+        is_pm       = user.is_member_of(ctx, GROUP_PM)
+        is_ed       = user.is_member_of(ctx, GROUP_ED)
+        is_dm       = user.is_member_of(ctx, GROUP_DM)
+        is_reviewer = datarequest_is_reviewer(ctx, request_id)
 
-        if not (is_pm or is_ed or isdatamanager or isreviewer):
+        if not (is_pm or is_ed or is_dm or is_reviewer):
             return api.Error("PermissionError", "User is not authorized to view this data manager review.")
     except error.UUError:
         return api.Error("PermissionError", "Something went wrong during permission checking.")
@@ -1177,14 +1181,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.UNDER_REVIEW):
         api.Error("transition", "Status transition not allowed.")
 
-    # Read assignment into dictionary
-    assignment = data
-
-    # Check if user is a project manager. If not, do not allow assignment
+    # User permission check
     try:
         is_pm = user.is_member_of(ctx, GROUP_PM)
 
@@ -1193,17 +1194,17 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
-    # Construct path to collection of the evaluation
+    # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Write assignment data to disk
+    # Write form data to disk
     try:
         assignment_path = "{}/{}".format(coll_path, ASSIGNMENT + JSON_EXT)
         jsonutil.write(ctx, assignment_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
 
-    # Grant read permissions on the assignment
+    # Grant permissions
     try:
         msi.set_acl(ctx, "default", "read", GROUP_PM, assignment_path)
         msi.set_acl(ctx, "default", "read", GROUP_ED, assignment_path)
@@ -1301,31 +1302,30 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
         return api.Error("transition", "Status transition not allowed.")
 
-    # Check if the user has been assigned as a reviewer. If not, do not
-    # allow submission of the review
+    # User permission check
     try:
-        isreviewer = datarequest_is_reviewer(ctx, request_id)
+        is_reviewer = datarequest_is_reviewer(ctx, request_id)
     except error.UUError:
-        isreviewer = false
+        is_reviewer = false
 
-    if not isreviewer:
+    if not is_reviewer:
         return api.Error("PermissionDenied", "User is not assigned as a reviewer to this request.")
 
-    # Construct path to collection of review
+    # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Write review data to disk
+    # Write form data to disk
     try:
         review_path = "{}/review_{}.json".format(coll_path, user.name(ctx))
         jsonutil.write(ctx, review_path, data)
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
 
-    # Grant read permission on the review
+    # Grant permissions
     try:
         msi.set_acl(ctx, "default", "read", GROUP_PM, review_path)
     except error.UUError:
@@ -1357,9 +1357,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
                                          status_code, status_info)
     ctx.adminDatarequestActions()
 
-    # If there are no reviewers left, change the status of the proposal to 'reviewed' and send an
-    # email to the project manager informing them that the proposal is ready to be evaluated by
-    # them.
+    # If there are no reviewers left, update data request status
     if len(reviewers) < 1:
         status_set(ctx, request_id, status.REVIEWED)
 
@@ -1422,14 +1420,11 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.APPROVED):
         api.Error("transition", "Status transition not allowed.")
 
-    # Read evaluation into dictionary
-    evaluation = data
-
-    # Check if user is a project manager. If not, do not allow submission of the evaluation
+    # User permission check
     try:
         is_pm = user.is_member_of(ctx, GROUP_PM)
 
@@ -1438,20 +1433,20 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.")
 
-    # Construct path to collection of the evaluation
+    # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
-    # Write evaluation data to disk
+    # Write form data to disk
     try:
         evaluation_path = "{}/{}".format(coll_path, EVALUATION + JSON_EXT)
         jsonutil.write(ctx, evaluation_path, data)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
-    # Get outcome of evaluation
-    decision = evaluation['evaluation']
+    # Get decision
+    decision = data['evaluation']
 
-    # Update the status of the data request
+    # Update data request status
     if decision == "Approved":
         if status_get(ctx, request_id) == status.DAO_SUBMITTED:
             status_set(ctx, request_id, status.DAO_APPROVED)
@@ -1592,9 +1587,9 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
+        is_dm = user.is_member_of(ctx, GROUP_DM)
 
-        if not isdatamanager:
+        if not is_dm:
             return api.Error("PermissionError", "User is not authorized to grant read permissions on the DTA.")
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
@@ -1662,9 +1657,9 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isrequestowner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+        is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
-        if not isrequestowner:
+        if not is_request_owner:
             return api.Error("PermissionError", "User is not authorized to grant read permissions on the signed DTA.")
     except error.UUError:
         return api.Error("PermissionError", "Something went wrong during permission checking.")
@@ -1697,7 +1692,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_data_ready(ctx, request_id):
-    """Set the status of a submitted datarequest to "Data ready".
+    """Set the status of a submitted datarequest to DATA_READY.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
@@ -1714,9 +1709,9 @@ def api_datarequest_data_ready(ctx, request_id):
     # Check if user is allowed to view to proposal. If not, return
     # PermissionError
     try:
-        isdatamanager = user.is_member_of(ctx, GROUP_DM)
+        is_dm = user.is_member_of(ctx, GROUP_DM)
 
-        if not isdatamanager:
+        if not is_dm:
             return api.Error("PermissionError", "User is not authorized to mark the data as ready.")
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
@@ -1743,11 +1738,13 @@ def send_emails(ctx, obj_name, status_to):
     elif datarequest_status == status.SUBMITTED:
         datarequest_submit_emails(ctx, request_id)
 
-    elif datarequest_status in (status.PRELIMINARY_ACCEPT, status.PRELIMINARY_REJECT,
+    elif datarequest_status in (status.PRELIMINARY_ACCEPT,
+                                status.PRELIMINARY_REJECT,
                                 status.PRELIMINARY_RESUBMIT):
         preliminary_review_emails(ctx, request_id, datarequest_status)
 
-    elif datarequest_status in (status.DATAMANAGER_ACCEPT, status.DATAMANAGER_REJECT,
+    elif datarequest_status in (status.DATAMANAGER_ACCEPT,
+                                status.DATAMANAGER_REJECT,
                                 status.DATAMANAGER_RESUBMIT):
         datamanager_review_emails(ctx, request_id, datarequest_status)
 
@@ -1817,7 +1814,6 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
-    pm_emails          = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])
     datamanager_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_DM, "")['arguments'][1])
 
     # Email datamanager
@@ -1834,17 +1830,18 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         researcher              = datarequest['contact']
         researcher_email        = datarequest_owner_get(ctx, request_id)
         cc                      = cc_email_addresses_get(researcher)
+        pm_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])[0]
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
         # Send emails
         if datarequest_status == status.PRELIMINARY_RESUBMIT:
             mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_emails[0],
+                          + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
         elif datarequest_status == status.PRELIMINARY_REJECT:
             mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_emails[0],
+                          + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
 
 
@@ -1892,16 +1889,16 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
         # Get additional email input parameters
         feedback_for_researcher = dmr_review['feedback_for_researcher']
-        pm_emails               = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])
+        pm_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])[0]
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
             mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_emails[0],
+                          + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
             mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_emails[0],
+                          + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
 
 
@@ -1947,7 +1944,7 @@ def assignment_emails(ctx, request_id):
                                           request_id)
 
 
-def review_submit_emails(ctx, request_id):
+def review_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest       = json.loads(datarequest_get(ctx, request_id))
     researcher        = datarequest['contact']
@@ -1956,7 +1953,8 @@ def review_submit_emails(ctx, request_id):
     pm_emails         = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])
 
     # Send emails
-    mail_review_researcher(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'], request_id, cc)
+    mail_review_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+                           + researcher['family_name'], request_id, cc)
     for pm_email in pm_emails:
         if not pm_email == "rods":
             mail_review_pm(ctx, pm_email, request_id)
@@ -1971,21 +1969,22 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
+    pm_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])[0]
     ed_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_ED, "")['arguments'][1])[0]
 
     # Send emails
     if datarequest_status == status.APPROVED:
-        mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'],
-                                            request_id, cc)
+        mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+                                            + researcher['family_name'], request_id, cc)
         mail_evaluation_approved_ed(ctx, ed_email, request_id)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
-                      + researcher['family_name'], feedback_for_researcher, pm_emails[0],
-                      request_id, cc)
+                      + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
+                      cc)
     elif datarequest_status == status.REJECTED:
         mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
-                      + researcher['family_name'], feedback_for_researcher, pm_emails[0],
-                      request_id, cc)
+                      + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
+                      cc)
 
 
 def contribution_confirm_emails(ctx, request_id):
@@ -2097,7 +2096,7 @@ Date: {}
 Request ID: {}
 Proposal title: {}
 
-The following link will take you to the preliminary review form: https://{}/datarequest/preliminaryreview/{}.
+The following link will take you to the preliminary review form: https://{}/datarequest/preliminary_review/{}.
 
 With kind regards,
 YOUth
@@ -2122,7 +2121,7 @@ Date: {}
 Request ID: {}
 Proposal title: {}
 
-The following link will take you to the evaluation form: https://{}/datarequest/dao_evaluate/{}.
+The following link will take you to the evaluation form: https://{}/datarequest/evaluate/{}.
 
 With kind regards,
 YOUth
@@ -2141,7 +2140,7 @@ Data request {} has been approved for review by the YOUth project manager.
 
 You are now asked to review the data request for any potential problems concerning the requested data and to submit your recommendation (accept, resubmit, or reject) to the YOUth project manager.
 
-The following link will take you directly to the review form: https://{}/datarequest/datamanagerreview/{}.
+The following link will take you directly to the review form: https://{}/datarequest/datamanager_review/{}.
 
 With kind regards,
 YOUth
