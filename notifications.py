@@ -13,7 +13,8 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_notifications_load',
-           'api_notifications_dismiss']
+           'api_notifications_dismiss',
+           'api_notifications_dismiss_all']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -77,5 +78,16 @@ def api_notifications_dismiss(ctx, identifier):
     :param identifier: Identifier of notification message
     """
     key = "{}_{}".format(NOTIFICATION_KEY, str(identifier))
+    user_name = user.full_name(ctx)
+    ctx.uuUserMetaRemove(user_name, key, '', '')
+
+
+@api.make()
+def api_notifications_dismiss_all(ctx):
+    """Dismiss all user notifications.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    key = "{}_%".format(NOTIFICATION_KEY)
     user_name = user.full_name(ctx)
     ctx.uuUserMetaRemove(user_name, key, '', '')
