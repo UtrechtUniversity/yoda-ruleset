@@ -1,0 +1,8 @@
+{
+  "feedback_for_researcher": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  }
+}

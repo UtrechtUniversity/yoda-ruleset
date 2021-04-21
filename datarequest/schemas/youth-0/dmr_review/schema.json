@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "object",
+  "title": "Datamanager review review",
+  "description": "Please consider carefully the remarks of the data manager, if any.",
+  "properties": {
+    "decision": {
+      "type": "string",
+      "title": "This data request is:",
+      "enum": [
+        "Accepted for review",
+        "Rejected (resubmit)",
+        "Rejected"
+      ]
+    },
+    "response_to_dm_remarks": {
+      "type": "string",
+      "title": "Response to data manager remarks (if any)"
+    }
+  },
+  "dependencies": {
+    "decision": {
+      "oneOf": [
+        {
+          "properties": {
+            "decision": {
+              "enum": [
+                "Accepted for review"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "decision": {
+              "enum": [
+                "Rejected (resubmit)",
+                "Rejected"
+              ]
+            },
+            "feedback_for_researcher": {
+              "type": "string",
+              "title": "Feedback for researcher",
+              "description": "Please provide feedback to the researcher in case of rejection here. This feedback will be included in the rejection email."
+            }
+          },
+          "required": [
+            "feedback_for_researcher"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "decision"
+  ]
+}
