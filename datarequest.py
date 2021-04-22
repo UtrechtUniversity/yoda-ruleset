@@ -1791,7 +1791,7 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     researcher       = datarequest['contact']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
-    research_context = datarequest['datarequest']['research_context']
+    study_title      = datarequest['datarequest']['study_information']['title']
     pm_emails        = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])
     timestamp        = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
@@ -1804,12 +1804,12 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
                 mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
                                         + researcher['family_name'], researcher_email,
                                         researcher['institution'], researcher['department'],
-                                        timestamp, research_context['title'])
+                                        timestamp, study_title)
             else:
                 mail_datarequest_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
                                     + researcher['family_name'], researcher_email,
                                     researcher['institution'], researcher['department'], timestamp,
-                                    research_context['title'])
+                                    study_title)
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
@@ -1871,7 +1871,7 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
     researcher       = datarequest['contact']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
-    research_context = datarequest['datarequest']['research_context']
+    study_title      = datarequest['datarequest']['study_information']['title']
     dmr_review       = json.loads(datarequest_dmr_review_get(ctx, request_id))
 
     # Send emails
@@ -1882,7 +1882,7 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
         # Send emails
         mail_dmr_review_accepted_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        mail_dmr_review_accepted_executive_director(ctx, ed_email, research_context['title'],
+        mail_dmr_review_accepted_executive_director(ctx, ed_email, study_title,
                                                     request_id)
 
     elif datarequest_status in (status.RESUBMIT_AFTER_DATAMANAGER_REVIEW,
@@ -1932,7 +1932,7 @@ def assignment_emails(ctx, request_id):
     researcher       = datarequest['contact']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
-    research_context = datarequest['datarequest']['research_context']
+    study_title      = datarequest['datarequest']['study_information']['title']
     assignment       = json.loads(datarequest_assignment_get(ctx, request_id))
     assignees        = assignment['assign_to']
 
@@ -1940,7 +1940,7 @@ def assignment_emails(ctx, request_id):
     mail_assignment_accepted_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                         + researcher['family_name'], request_id, cc)
     for assignee_email in assignees:
-        mail_assignment_accepted_assignee(ctx, assignee_email, research_context['title'],
+        mail_assignment_accepted_assignee(ctx, assignee_email, study_title,
                                           request_id)
 
 
