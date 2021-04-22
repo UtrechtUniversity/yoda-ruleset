@@ -11,7 +11,9 @@ __all__ = ['api_settings_load',
            'api_settings_save']
 
 # Allowed settings should be synchronised with uuUserPolicyCanUserModify.
-USER_SETTINGS = {"mail_notifications": {"default": "True", "values": ["True", "False"]}}
+USER_SETTINGS = {"mail_notifications": {"default": "False", "values": ["True", "False"]},
+                 "mail_notifications_type": {"default": "DAILY", "values": ["IMMEDIATE", "DAILY", "WEEKLY"]}}
+
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
 
