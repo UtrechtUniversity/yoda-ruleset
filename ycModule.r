@@ -1,8 +1,63 @@
-# \file
-# \brief     Youth Cohort - Intake check functions.
-# \author    Chris Smeele
-# \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
+# \file      ycModule.r
+# \brief     Youth Cohort module
+# \copyright Copyright (c) 2016-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE
+
+
+# \brief move all locked datasets to the vault
+#
+# \param[in]  intakeCollection  pathname root of intake area
+# \param[in]  vaultCollection   pathname root of vault area
+# \param[out] status            result of operation either "ok" or "error"
+#
+uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
+    *status = 0;
+    rule_intake_to_vault(*intakeRoot, *vaultRoot);
+}
+
+
+# \brief (over)write data object with a list of vault object checksums
+#
+# \param[in]  vaultRoot          root collection to be indexed
+# \param[in]  destinationObject  dataobject that will be written to
+# \param[out] status             0 = success,  nonzero is error
+uuYcGenerateDatasetsIndex(*vaultRoot, *destinationObject, *status) {
+   *status = 0;
+   msiDataObjCreate(*destinationObject, "forceFlag=", *FHANDLE);
+
+   foreach (*row in SELECT COLL_NAME, DATA_NAME, DATA_CHECKSUM, DATA_SIZE
+                    WHERE COLL_NAME = "*vaultRoot" ) {
+      *checksum = *row."DATA_CHECKSUM";
+      *name     = *row."DATA_NAME";
+      *col      = *row."COLL_NAME";
+      *size     = *row."DATA_SIZE";
+      uuChopChecksum(*checksum, *type, *checksumOut);
+      *textLine = "*type *checksumOut *size *col/*name\n";
+      msiStrlen(*textLine, *length);
+      msiStrToBytesBuf(*textLine, *buffer);
+      msiDataObjWrite(*FHANDLE, *buffer, *bytesWritten);
+      if (int(*length) != *bytesWritten) then {
+         *status = 1;
+      }
+   }
+   foreach (*row in SELECT COLL_NAME, DATA_NAME, DATA_CHECKSUM, DATA_SIZE
+                    WHERE COLL_NAME like '*vaultRoot/%' ) {
+      *checksum = *row."DATA_CHECKSUM";
+      *name     = *row."DATA_NAME";
+      *col      = *row."COLL_NAME";
+      *size     = *row."DATA_SIZE";
+      uuChopChecksum(*checksum, *type, *checksumOut);
+      *textLine = "*type *checksumOut *size *col/*name\n";
+      msiStrlen(*textLine, *length);
+      msiStrToBytesBuf(*textLine, *buffer);
+      msiDataObjWrite(*FHANDLE, *buffer, *bytesWritten);
+      if (int(*length) != *bytesWritten) then {
+         *status = 1;
+      }
+   }
+   msiDataObjClose(*FHANDLE, *status2);
+   *status;
+}
 
 # \brief Add a dataset warning to all given dataset toplevels.
 #

@@ -24,7 +24,11 @@ def intake_dataset_treewalk_change_status(ctx, collection, status, timestamp, re
     """
     # 1. Change status on this collection.
     if remove:
-        avu.rmw_from_coll(ctx, collection, status, "%")
+        try:
+            avu.rmw_from_coll(ctx, collection, status, "%")
+        except msi.Error as e:
+            log.write(ctx, 'ERROR REMOVE')
+            log.write(ctx, e)
     else:
         log.write(ctx, 'step1 . set_on_col')
         avu.set_on_coll(ctx, collection, status, timestamp)
@@ -116,21 +120,49 @@ def intake_dataset_unlock(ctx, collection, dataset_id):
 
 
 def intake_dataset_freeze(ctx, collection, dataset_id):
-    timestamp = str(int(time.time()))
-    top_collection = ""
-    is_collection = ""
-    ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
+    # timestamp = str(int(time.time()))
+    # top_collection = ""
+    # is_collection = ""
+    # ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
 
-    intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_freeze", timestamp, False)
+    # intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_freeze", timestamp, False)
+
+    timestamp = str(int(time.time()))
+
+    tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    is_collection = tl_info['is_collection']
+    tl_objects = tl_info['objects']
+    log.write(ctx, tl_info)
+
+    if is_collection:
+        intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_freeze", timestamp, False)
+    else:
+        # Dataset based on
+        for tl_object in tl_objects:
+            avu.set_on_data(ctx, tl_object, "to_vault_freeze", timestamp)
 
 
 def intake_dataset_melt(ctx, collection, dataset_id):
-    timestamp = str(int(time.time()))
-    top_collection = ""
-    is_collection = ""
-    ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
+    # timestamp = str(int(time.time()))
+    # top_collection = ""
+    # is_collection = ""
+    # ctx.uuYcDatasetGetTopLevel(collection, dataset_id, top_collection, is_collection)
 
-    intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_freeze", timestamp, True)
+    # intake_dataset_change_status(ctx, top_collection, is_collection, dataset_id, "to_vault_freeze", timestamp, True)
+
+    timestamp = str(int(time.time()))
+
+    tl_info = intake.get_dataset_toplevel_objects(ctx, collection, dataset_id)
+    is_collection = tl_info['is_collection']
+    tl_objects = tl_info['objects']
+
+    # It is possible that the status of the dataset status has moved on.
+    if is_collection:
+        intake_dataset_change_status(ctx, tl_objects[0], is_collection, dataset_id, "to_vault_freeze", timestamp, True)
+    else:
+        # Dataset based on data objects
+        for tl_object in tl_objects:
+            avu.rmw_from_data(ctx, tl_object, "to_vault_freeze", "%")
 
 
 def intake_dataset_object_get_status(ctx, path):

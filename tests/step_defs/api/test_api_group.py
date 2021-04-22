@@ -25,15 +25,6 @@ def api_group_data(user):
     )
 
 
-@given('the Yoda group data filtered API is queried with "<user>" and "<zone>"', target_fixture="api_response")
-def api_group_data_filtered(user, zone):
-    return api_request(
-        user,
-        "group_data_filtered",
-        {"username": user, "zone_name": zone}
-    )
-
-
 @given('the Yoda group categories API is queried', target_fixture="api_response")
 def api_group_categories(user):
     return api_request(
@@ -185,14 +176,17 @@ def then_users_found_match(api_response, users):
 def group_exists(api_response, group):
     _, body = api_response
 
-    assert len(body['data']) > 0
+    assert len(body['data']['group_hierarchy']) > 0
+    hierarchy = body['data']['group_hierarchy']
 
-    # Check if expected result is in group results.
+    # Check if expected result is in group hierarchy.
     found = False
-    for group_data in body['data']:
-        if group_data['name'] == group:
-            found = True
-            break
+    for category in hierarchy:
+        for subcategory in hierarchy[category]:
+            for group_name in hierarchy[category][subcategory]:
+                if group_name == group:
+                    found = True
+                    break
 
     assert found
 

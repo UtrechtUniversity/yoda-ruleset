@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -31,7 +31,9 @@ __all__ = ['api_vault_submit',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_copy_to_research',
-           'api_vault_get_publication_terms']
+           'api_vault_get_publication_terms',
+           'api_grant_read_access_research_group',
+           'api_revoke_read_access_research_group']
 
 
 @api.make()
@@ -568,6 +570,90 @@ def api_vault_get_publication_terms(ctx):
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
 
 
+@api.make()
+def api_grant_read_access_research_group(ctx, coll):
+    """Grant read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, coll)
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
+
+
+@api.make()
+def api_revoke_read_access_research_group(ctx, coll):
+    """Revoke read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, 'HARM')
+    log.write(ctx, coll)
+
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
+
+
 def copy_folder_to_vault(ctx, folder, target):
     """Copy folder and all its contents to target in vault.
 
@@ -985,3 +1071,37 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_approver(ctx, path, actor):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_approver(ctx, path):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
