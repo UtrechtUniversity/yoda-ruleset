@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -173,7 +173,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.
-        research_group_access = collection.exists(ctx, '/' + parts[1] + '/' + parts[2] + '/' + parts[3])
+        research_group_access = collection.exists(ctx, coll_origin)
 
         if not research_group_access:
             return api.Error('NoPermissions', 'Insufficient rights to perform this action')
@@ -1071,3 +1071,37 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_approver(ctx, path, actor):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_approver(ctx, path):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None

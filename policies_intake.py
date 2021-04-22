@@ -6,7 +6,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 import intake_scan
-
 from util import *
 
 

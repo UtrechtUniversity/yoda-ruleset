@@ -47,6 +47,7 @@ from .util.config import config
 
 if config.enable_intake:
     from intake import *
+    from intake_vault import *
 
 if config.enable_datarequest:
     from datarequest import *

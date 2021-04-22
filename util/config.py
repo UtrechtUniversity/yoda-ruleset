@@ -74,6 +74,8 @@ class Config(object):
 config = Config(environment=None,
                 resource_primary=[],
                 resource_replica=None,
+                resource_research=None,
+                resource_vault=None,
                 notifications_enabled=False,
                 notifications_sender_email=None,
                 notifications_sender_name=None,
