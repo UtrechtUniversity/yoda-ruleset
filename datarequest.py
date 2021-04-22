@@ -69,7 +69,7 @@ GROUP_PM          = "datarequests-research-project-managers"
 GROUP_ED          = "datarequests-research-executive-directors"
 
 DRCOLLECTION      = "home/datarequests-research"
-TIMESTAMPS        = "timestamps"
+PROVENANCE        = "provenance"
 DATAREQUEST       = "datarequest"
 PR_REVIEW         = "preliminary_review"
 DM_REVIEW         = "datamanager_review"
@@ -197,7 +197,6 @@ def status_set(ctx, request_id, status):
     :param status:     The status to which the data request should be set
     """
     metadata_set(ctx, request_id, "status", status.value)
-    datarequest_timestamp_write(ctx, request_id, status)
 
 
 def status_get_from_path(ctx, path):
@@ -457,8 +456,8 @@ def datarequest_schema_get(ctx, schema_name):
     return {"schema": schema, "uischema": uischema}
 
 
-def datarequest_timestamp_write(ctx, request_id, request_status):
-    """Write the timestamp of a status transition to a timestamp log file
+def datarequest_provenance_write(ctx, request_id, request_status):
+    """Write the timestamp of a status transition to a provenance log
 
     :param ctx:            Combined type of a callback and rei struct
     :param request_id:     Unique identifier of the data request
@@ -466,16 +465,20 @@ def datarequest_timestamp_write(ctx, request_id, request_status):
 
     :returns:              Nothing
     """
+    # Check if request ID is valid
+    if re.search("^\d{10}$", request_id) is None:
+        return api.Error("input_error", "Invalid request ID supplied: {}.".format(request_id))
+
     # Check if status parameter is valid
     if request_status not in status:
         return api.Error("input_error", "Invalid status parameter supplied: {}.".format(request_status.value))
 
-    # Construct path to timestamps file
+    # Construct path to provenance log
     coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
+    provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
 
     # Get timestamps
-    timestamps = jsonutil.read(ctx, timestamps_path)
+    timestamps = jsonutil.read(ctx, provenance_path)
 
     # Check if there isn't already a timestamp for the given status
     if request_status.value in timestamps and request_status != status.DRAFT:
@@ -492,11 +495,11 @@ def datarequest_timestamp_write(ctx, request_id, request_status):
     else:
         timestamps[request_status.value] = current_time
 
-    # Write timestamp
+    # Write timestamp to provenance log
     try:
-        jsonutil.write(ctx, timestamps_path, timestamps)
+        jsonutil.write(ctx, provenance_path, timestamps)
     except error.UUError as e:
-        return api.Error("write_error", "Could not write timestamp to file: {}.".format(e))
+        return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
 @api.make()
@@ -688,12 +691,9 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         except error.UUError as e:
             return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
 
-        # Create timestamps file
-        timestamps_path = "{}/{}".format(coll_path, TIMESTAMPS + JSON_EXT)
-        try:
-            jsonutil.write(ctx, timestamps_path, {})
-        except error.UUError as e:
-            return api.Error("write_error", "Could not create timestamps file: {}.".format(e))
+        provenance_path     = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
+        jsonutil.write(ctx, provenance_path, {})
+        msi.set_acl(ctx, "default", "null", user.full_name(ctx), provenance_path)
 
     # Write form data to disk
     try:
