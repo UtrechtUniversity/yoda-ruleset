@@ -481,19 +481,12 @@ def datarequest_provenance_write(ctx, request_id, request_status):
     timestamps = jsonutil.read(ctx, provenance_path)
 
     # Check if there isn't already a timestamp for the given status
-    if request_status.value in timestamps and request_status != status.DRAFT:
+    if request_status.value in timestamps:
         return api.Error("input_error", "Status ({}) has already been timestamped.".format(request_status.value))
 
     # Add timestamp
     current_time = str(datetime.now().strftime('%s'))
-    # Special case for drafts, as this status can be set multiple times
-    if request_status == status.DRAFT:
-        if request_status.value not in timestamps:
-            timestamps[request_status.value] = [current_time]
-        else:
-            timestamps[request_status.value].append(current_time)
-    else:
-        timestamps[request_status.value] = current_time
+    timestamps[request_status.value] = current_time
 
     # Write timestamp to provenance log
     try:
