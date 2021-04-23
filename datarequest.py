@@ -262,8 +262,7 @@ def metadata_set(ctx, request_id, key, value):
     # Add delayed rule to update data request status
     response_status = ""
     response_status_info = ""
-    ctx.requestDatarequestMetadataChange(coll_path, key,
-                                         value, "0", response_status,
+    ctx.requestDatarequestMetadataChange(coll_path, key, value, "0", response_status,
                                          response_status_info)
 
     # Trigger the processing of delayed rules
@@ -701,7 +700,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     try:
         jsonutil.write(ctx, file_path, data)
     except error.UUError:
-        return api.Error('write_error', 'Could not write datarequest to disk')
+        return api.Error('write_error', 'Could not write datarequest to disk.')
 
     # Set the proposal fields as AVUs on the proposal JSON file
     avu_json.set_json_to_obj(ctx, file_path, "-d", "root", json.dumps(data))
@@ -1500,12 +1499,11 @@ def api_datarequest_contribution_confirm(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.CONTRIBUTION_CONFIRMED):
         return api.Error("transition", "Status transition not allowed.")
 
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
+    # User permission check
     try:
         is_ed = user.is_member_of(ctx, GROUP_ED)
 
@@ -1563,12 +1561,11 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_READY):
         return api.Error("transition", "Status transition not allowed.")
 
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
+    # User permission check
     try:
         is_dm = user.is_member_of(ctx, GROUP_DM)
 
@@ -1606,12 +1603,11 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
+    # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_SIGNED):
         return api.Error("transition", "Status transition not allowed.")
 
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
+    # User permission check
     try:
         is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
 
