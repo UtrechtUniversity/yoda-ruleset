@@ -86,6 +86,13 @@ adminDatarequestActions() {
 }
 
 
+# \brief Grant or revoke temporary write permission
+adminTempWritePermission(*path, *permission) {
+        *argv = uuClientFullName ++ " *path *permission";
+        msiExecCmd("admin-datarequest-temp-write-permission.sh", *argv, "", "", 0, *out);
+}
+
+
 # \brief Process request to change data request metadata
 #
 # \param[in] requestColl                   Collection of the data request whose

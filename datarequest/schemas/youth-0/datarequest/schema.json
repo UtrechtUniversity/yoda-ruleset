@@ -15,6 +15,9 @@
     "previous_request_id": {
       "type": "number"
     },
+    "owner": {
+      "type": "string"
+    },
     "introduction": {
       "type": "object",
       "title": "Introduction",

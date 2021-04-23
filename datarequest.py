@@ -43,9 +43,11 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_evaluation_submit',
            'api_datarequest_feedback_get',
            'api_datarequest_contribution_confirm',
+           'api_datarequest_dta_upload_permission',
            'api_datarequest_dta_post_upload_actions',
-           'api_datarequest_filename_get',
+           'api_datarequest_dta_path_get',
            'api_datarequest_signed_dta_post_upload_actions',
+           'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready']
 
 
@@ -79,9 +81,8 @@ REVIEW            = "review"
 ASSIGNMENT        = "assignment"
 EVALUATION        = "evaluation"
 FEEDBACK          = "feedback"
-FILENAMES         = "filenames"
-DTA_FILENAME      = "dta.pdf"
-SIGDTA_FILENAME   = "dta_signed.pdf"
+DTA_PATHNAME      = "dta"
+SIGDTA_PATHNAME   = "signed_dta"
 
 
 ###################################################
@@ -316,26 +317,15 @@ def datarequest_owner_get(ctx, request_id):
     :param request_id: Unique identifier of the data request
     :type  request_id: str
 
-    :raises UUError:   It was not possible to unambiguously determine the owner of the data request
-                       (either 0 or > 1 results for the data request)
     :return:           Account name of data request owner
     :rtype:            string
     """
-    # Construct path to the collection of the datarequest
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    # Construct path to the data request
+    file_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DATAREQUEST
+                                      + JSON_EXT)
 
-    # Query iCAT for the username of the owner of the data request
-    rows = row_iterator(["DATA_OWNER_NAME"],
-                        ("DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT,
-                                                                           coll_path)),
-                        AS_DICT, ctx)
-
-    # If there is not exactly 1 resulting row, something went terribly wrong
-    if rows.total_rows() != 1:
-        raise error.UUError("No or ambiguous data owner")
-
-    # There is only a single row containing the owner of the data request
-    return list(rows)[0]["DATA_OWNER_NAME"]
+    # Get and return data request owner
+    return jsonutil.read(ctx, file_path)['owner']
 
 
 @api.make()
@@ -495,44 +485,6 @@ def datarequest_provenance_write(ctx, request_id, request_status):
         return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
-@api.make()
-def api_datarequest_filename_get(ctx, request_id, key):
-    """Get filename of document
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-    :param key:        Document name of which the filename is requested
-
-    :returns:          Filename of document
-    :rtype:            string
-    """
-    # Get all filenames
-    filenames = datarequest_filenames_get(ctx, request_id)
-
-    # Return requested filename
-    try:
-        return filenames[key]
-    except error.UUError as e:
-        return api.Error("ReadError", "Could not get filename: {}.".format(e))
-
-
-def datarequest_filenames_get(ctx, request_id):
-    """Get filenames document of a given data request
-
-    :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-
-    :returns:        Dictionary of filenames of documents
-    :rtype:          dict
-    """
-    # Construct path to filename document
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path = "{}/{}".format(coll_path, FILENAMES + JSON_EXT)
-
-    # Get contents of filename document
-    return jsonutil.read(ctx, file_path)
-
-
 def datarequest_data_valid(ctx, data, schema_name):
     """Check if form data contains no errors
 
@@ -641,6 +593,33 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
                         ('items', colls)])
 
 
+def file_write_and_lock(ctx, coll_path, filename, data, readers):
+    """Grant temporary write permission and write file to disk.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param coll_path: Path to collection of file
+    :param filename:  Name of file
+    :param data:      The data to be written to disk
+    :param readers:   Array of user names that should be given read access to the file
+    """
+
+    file_path = "{}/{}".format(coll_path, filename)
+
+    # Grant temporary write permission
+    ctx.adminTempWritePermission(coll_path, "grant")
+
+    # Write
+    jsonutil.write(ctx, file_path, data)
+
+    # Grant read permission to readers
+    for reader in readers:
+        msi.set_acl(ctx, "default", "read", reader, file_path)
+
+    # Revoke temporary write permission
+    msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
+    ctx.adminTempWritePermission(coll_path, "revoke")
+
+
 @api.make()
 def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     """Persist a data request to disk.
@@ -652,6 +631,9 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
     :returns: API status
     """
+    # Set request owner in form data
+    data['owner'] = user.name(ctx)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
@@ -672,21 +654,48 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # If we're not working with a draft, create a new request ID
     request_id = draft_request_id if draft_request_id else str(datetime.now().strftime('%s'))
 
-    # Construct path to collection
-    coll_path       = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    file_path       = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
+    # Construct paths
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
     # If we're not working with a draft, initialize the data request collection
     if not draft_request_id:
-        # Create collection
+        # Create collections
         try:
+            dta_path    = "{}/{}".format(coll_path, DTA_PATHNAME)
+            sigdta_path = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
+
             collection.create(ctx, coll_path)
+            collection.create(ctx, dta_path)
+            collection.create(ctx, sigdta_path)
         except error.UUError as e:
             return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
 
-        provenance_path     = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
+        # Grant permissions on collections
+        msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_ED, coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DMC, coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+        msi.set_acl(ctx, "default", "own", "rods", coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, dta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, dta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), dta_path)
+        msi.set_acl(ctx, "default", "own", "rods", dta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, sigdta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, sigdta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), sigdta_path)
+        msi.set_acl(ctx, "default", "own", "rods", sigdta_path)
+
+        # Create provenance log
+        provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
         jsonutil.write(ctx, provenance_path, {})
+
+        # Write data request
+        jsonutil.write(ctx, file_path, data)
+
+        # Apply initial permission restrictions to researcher
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), provenance_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), coll_path)
 
     # Write form data to disk
     try:
@@ -707,14 +716,14 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         else:
             return
 
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "recursive", "write", GROUP_DM, coll_path)
-        msi.set_acl(ctx, "recursive", "write", GROUP_ED, coll_path)
-        msi.set_acl(ctx, "recursive", "write", GROUP_DMC, coll_path)
-        msi.set_acl(ctx, "recursive", "write", GROUP_PM, coll_path)
-    except SetACLError:
-        return api.Error("permission_error", "Could not set permissions on subcollection.")
+    # Grant read permissions on data request
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_ED, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+
+    # Revoke write permission
+    msi.set_acl(ctx, "default", "read", user.full_name(ctx), file_path)
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
@@ -808,19 +817,10 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        preliminary_review_path = "{}/{}".format(coll_path, PR_REVIEW + JSON_EXT)
-        jsonutil.write(ctx, preliminary_review_path, data)
-    except error.UUError:
-        return api.Error('write_error', 'Could not write preliminary review data to disk')
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, preliminary_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_ED, preliminary_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DM, preliminary_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, preliminary_review_path)
-    except error.UUError:
-        return api.Error("PermissionError", "Could not grant read permissions on the preliminary review file.")
+        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
+                                                                         GROUP_ED, GROUP_DMC])
+    except error.UUError as e:
+        return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
 
     # Get decision
     decision = data['preliminary_review']
@@ -914,19 +914,10 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        datamanager_review_path = "{}/{}".format(coll_path, DM_REVIEW + JSON_EXT)
-        jsonutil.write(ctx, datamanager_review_path, data)
+        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
+                                                                         GROUP_ED, GROUP_DMC])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, datamanager_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_ED, datamanager_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DM, datamanager_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, datamanager_review_path)
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the data manager review file.")
 
     # Get decision
     decision = data['datamanager_review']
@@ -1019,19 +1010,10 @@ def api_datarequest_dmr_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        dmr_review_path = "{}/{}".format(coll_path, DMR_REVIEW + JSON_EXT)
-        jsonutil.write(ctx, dmr_review_path, data)
+        file_write_and_lock(ctx, coll_path, DMR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
+                                                                          GROUP_ED, GROUP_DMC])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review review data to disk.')
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, dmr_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_ED, dmr_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DM, dmr_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, dmr_review_path)
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the data manager review review file.")
 
     # Get decision
     decision = data['decision']
@@ -1126,19 +1108,10 @@ def api_datarequest_contribution_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        contrib_review_path = "{}/{}".format(coll_path, CONTRIB_REVIEW + JSON_EXT)
-        jsonutil.write(ctx, contrib_review_path, data)
+        file_write_and_lock(ctx, coll_path, CONTRIB_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
+                                                                              GROUP_ED, GROUP_DMC])
     except error.UUError:
         return api.Error('write_error', 'Could not write contribution review data to disk.')
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, contrib_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_ED, contrib_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DM, contrib_review_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, contrib_review_path)
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the contribution review file.")
 
     # Get decision
     decision = data['decision']
@@ -1192,19 +1165,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        assignment_path = "{}/{}".format(coll_path, ASSIGNMENT + JSON_EXT)
-        jsonutil.write(ctx, assignment_path, data)
+        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, [GROUP_DM, GROUP_PM,
+                                                                          GROUP_ED, GROUP_DMC])
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, assignment_path)
-        msi.set_acl(ctx, "default", "read", GROUP_ED, assignment_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DM, assignment_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, assignment_path)
-    except error.UUError as e:
-        return api.Error("PermissionsError", "Could not grant read permissions on the assignment file: {}.".format(e))
 
     # Update data request status
     assignees = json.dumps(data['assign_to'])
@@ -1313,16 +1277,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        review_path = "{}/review_{}.json".format(coll_path, user.name(ctx))
-        jsonutil.write(ctx, review_path, data)
+        file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data,
+                            [GROUP_PM])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
-
-    # Grant permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, review_path)
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the review file to the project manager.")
 
     # Remove the assignedForReview attribute of this user by first fetching
     # the list of reviewers ...
@@ -1431,8 +1389,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        evaluation_path = "{}/{}".format(coll_path, EVALUATION + JSON_EXT)
-        jsonutil.write(ctx, evaluation_path, data)
+        file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, [GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
@@ -1561,6 +1518,39 @@ def api_datarequest_contribution_confirm(ctx, request_id):
 
 
 @api.make()
+def api_datarequest_dta_upload_permission(ctx, request_id, action):
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("revoke")
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Status and user permission check
+    is_dm            = user.is_member_of(ctx, GROUP_DM)
+    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    request_status   = status_get(ctx, request_id)
+    if not ((request_status in [status.CONTRIBUTION_CONFIRMED, status.DAO_APPROVED] and is_dm)
+            or (request_status == status.DTA_READY and is_request_owner)):
+        return api.Error("PermissionError", "User not authorized.")
+
+    # Check if action is valid
+    if action not in ["grant", "revoke"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Determine if DTA or signed DTA will be uploaded
+    dta_path = DTA_PATHNAME if is_dm else SIGDTA_PATHNAME
+
+    # Grant/revoke temporary write permissions
+    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, dta_path)
+    ctx.adminTempWritePermission(dta_coll_path, action)
+
+
+@api.make()
 def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     """Grant read permissions on the DTA to the owner of the associated data request.
 
@@ -1587,47 +1577,20 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     except error.UUError as e:
         return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
-    # Construct path to the collection of the datarequest
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-
-    # Query iCAT for the username of the owner of the data request
-    rows = row_iterator(["DATA_OWNER_NAME"],
-                        "DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path),
-                        AS_DICT, ctx)
-
-    # Extract username from query results
-    request_owner_username = []
-    for row in rows:
-        request_owner_username.append(row["DATA_OWNER_NAME"])
-
-    # Check if exactly 1 owner was found. If not, wipe
-    # requestOwnerUserName list and set error status code
-    if len(request_owner_username) != 1:
-        return api.Error("MoreThanOneOwner", "Not exactly 1 owner found. Something is very wrong.")
-
-    request_owner_username = request_owner_username[0]
-
-    # Write filename to file
-    try:
-        filenames = {}
-        filenames['dta'] = filename
-        filenames_path = coll_path + "/" + FILENAMES + JSON_EXT
-        jsonutil.write(ctx, filenames_path, filenames)
-    except error.UUError:
-        return api.Error("PermissionError", "Could not write filename to file.")
-
     # Set permissions
-    try:
-        msi.set_acl(ctx, "default", "read", request_owner_username, "{}/{}".format(coll_path, filename))
-    except error.UUError:
-        return api.Error("PermissionError", "Could not grant read permissions on the DTA to the data request owner.")
-    try:
-        msi.set_acl(ctx, "default", "write", request_owner_username, "{}/{}".format(coll_path, FILENAMES + JSON_EXT))
-    except error.UUError:
-        return api.Error("PermissionError", "Could not grant read permissions on the filenames document to the data request owner.")
+    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
+
+
+@api.make()
+def api_datarequest_dta_path_get(ctx, request_id):
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
+    return list(collection.data_objects(ctx, coll_path))[0]
 
 
 @api.make()
@@ -1654,33 +1617,23 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
         if not is_request_owner:
             return api.Error("PermissionError", "User is not authorized to grant read permissions on the signed DTA.")
-    except error.UUError:
-        return api.Error("PermissionError", "Something went wrong during permission checking.")
-
-    # Construct path to the collection of the datarequest
-    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-
-    # Write filename to file
-    try:
-        filenames = datarequest_filenames_get(ctx, request_id)
-        filenames['dta_signed'] = filename
-        filenames_path = coll_path + "/" + FILENAMES + JSON_EXT
-        jsonutil.write(ctx, filenames_path, filenames)
     except error.UUError as e:
-        return api.Error("PermissionError", "Could not write filename to file{}.".format(e))
+        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
 
     # Set permissions
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_DM, "{}/{}".format(coll_path, filename))
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the data managers group.")
-    try:
-        msi.set_acl(ctx, "default", "read", GROUP_PM, "{}/{}".format(coll_path, filename))
-    except error.UUError:
-        return api.Error("PermissionsError", "Could not grant read permissions on the signed DTA to the project manager.")
+    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
+
+
+@api.make()
+def api_datarequest_signed_dta_path_get(ctx, request_id):
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    return list(collection.data_objects(ctx, coll_path))[0]
 
 
 @api.make()

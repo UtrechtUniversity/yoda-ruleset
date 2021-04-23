@@ -1,4 +1,7 @@
 {
+  "owner": {
+    "ui:widget": "hidden"
+  },
   "previous_request_id": {
     "ui:widget": "hidden"
   },
