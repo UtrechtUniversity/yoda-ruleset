@@ -40,6 +40,7 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_dmr_review_submit',
            'api_datarequest_dmr_review_get',
            'api_datarequest_contribution_review_submit',
+           'api_datarequest_contribution_review_get',
            'api_datarequest_assignment_submit',
            'api_datarequest_assignment_get',
            'api_datarequest_review_submit',
@@ -1265,6 +1266,30 @@ def api_datarequest_contribution_review_submit(ctx, data, request_id):
         status_set(ctx, request_id, status.CONTRIBUTION_RESUBMIT)
     else:
         return api.Error("InvalidData", "Invalid value for 'decision' key in contribution review JSON data.")
+
+
+@api.make()
+def api_datarequest_contribution_review_get(ctx, request_id):
+    """Retrieve contribution review.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Contribution review JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = CONTRIB_REVIEW + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name)
+
+    # Get the contents of the contribution review JSON file
+    try:
+        return data_object.read(ctx, file_path)
+    except error.UUError:
+        return api.Error("ReadError", "Could not get contribution review data.")
 
 
 @api.make()
