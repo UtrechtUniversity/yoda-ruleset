@@ -46,6 +46,7 @@ __all__ = ['api_datarequest_is_role',
            'api_datarequest_dta_upload_permission',
            'api_datarequest_dta_post_upload_actions',
            'api_datarequest_dta_path_get',
+           'api_datarequest_signed_dta_upload_permission',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
            'api_datarequest_data_ready']
@@ -1722,6 +1723,31 @@ def api_datarequest_dta_path_get(ctx, request_id):
 
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
+
+
+@api.make()
+def api_datarequest_signed_dta_upload_permission(ctx, request_id, action):
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("revoke")
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+
+    # Check if action is valid
+    if action not in ["grant", "revoke"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    ctx.adminTempWritePermission(dta_coll_path, action)
 
 
 @api.make()
