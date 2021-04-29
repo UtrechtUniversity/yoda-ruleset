@@ -166,6 +166,7 @@
                 "study_information": {
                   "type": "object",
                   "title": "Study information",
+                  "description": "Only fields marked with an asterisk are required.",
                   "properties": {
                     "title": {
                       "$ref": "#/definitions/stringNormal",
