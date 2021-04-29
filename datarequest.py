@@ -1578,11 +1578,8 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
     if action not in ["grant", "revoke"]:
         return api.Error("InputError", "Invalid action input parameter.")
 
-    # Determine if DTA or signed DTA will be uploaded
-    dta_path = DTA_PATHNAME if is_dm else SIGDTA_PATHNAME
-
     # Grant/revoke temporary write permissions
-    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, dta_path)
+    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     ctx.adminTempWritePermission(dta_coll_path, action)
 
 
