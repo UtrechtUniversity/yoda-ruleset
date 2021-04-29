@@ -1196,6 +1196,9 @@ def api_datarequest_contribution_review_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"], None)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = CONTRIB_REVIEW + JSON_EXT
@@ -1255,16 +1258,6 @@ def assign_request(ctx, assignees, request_id):
 
     :returns: A JSON dict with status info for the front office
     """
-    # Check if user is a data manager. If not, do not the user to assign the
-    # request
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-    except error.UUError:
-        is_pm = false
-
-    if not is_pm:
-        return api.Error("PermissionDenied", "User is not a data manager.")
-
     # Construct data request collection path
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
@@ -1294,6 +1287,9 @@ def api_datarequest_assignment_get(ctx, request_id):
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], None)
 
     return datarequest_assignment_get(ctx, request_id)
 
@@ -1622,6 +1618,9 @@ def api_datarequest_dta_path_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
 
@@ -1681,6 +1680,9 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 def api_datarequest_signed_dta_path_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
 
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
