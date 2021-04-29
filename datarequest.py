@@ -792,6 +792,9 @@ def api_datarequest_get(ctx, request_id):
 
 
 def datarequest_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DATAREQUEST + JSON_EXT
@@ -930,13 +933,13 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, PR_REVIEW):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(PR_REVIEW))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.PRELIMINARY_ACCEPT):
@@ -1005,6 +1008,9 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
 
 def datarequest_preliminary_review_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = PR_REVIEW + JSON_EXT
@@ -1027,13 +1033,13 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DM_REVIEW):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DM_REVIEW))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_ACCEPT):
@@ -1101,6 +1107,9 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
 
 def datarequest_datamanager_review_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DM_REVIEW + JSON_EXT
@@ -1123,13 +1132,13 @@ def api_datarequest_dmr_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DMR_REVIEW):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DMR_REVIEW))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_REVIEW_ACCEPTED):
@@ -1199,6 +1208,9 @@ def api_datarequest_dmr_review_get(ctx, request_id):
 
 
 def datarequest_dmr_review_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DMR_REVIEW + JSON_EXT
@@ -1221,13 +1233,13 @@ def api_datarequest_contribution_review_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, CONTRIB_REVIEW):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(CONTRIB_REVIEW))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.CONTRIBUTION_ACCEPTED):
@@ -1302,13 +1314,13 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, ASSIGNMENT):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.UNDER_REVIEW):
@@ -1392,6 +1404,9 @@ def api_datarequest_assignment_get(ctx, request_id):
 
 
 def datarequest_assignment_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = ASSIGNMENT + JSON_EXT
@@ -1414,13 +1429,13 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     :returns: A JSON dict with status info for the front office
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, REVIEW):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(REVIEW))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
@@ -1526,13 +1541,13 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     :returns: API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, EVALUATION):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(EVALUATION))
-
-    # Force conversion of request_id to string
-    request_id = str(request_id)
 
     # Status transition permission check
     if not status_transition_allowed(ctx, status_get(ctx, request_id), status.APPROVED):
@@ -1576,6 +1591,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
 
 def datarequest_evaluation_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = EVALUATION + JSON_EXT
@@ -1597,6 +1615,9 @@ def datarequest_feedback_write(ctx, request_id, feedback):
 
     :returns:          API status
     """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     # Construct path to feedback file
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     feedback_path = "{}/{}".format(coll_path, FEEDBACK + JSON_EXT)
@@ -1639,6 +1660,9 @@ def api_datarequest_feedback_get(ctx, request_id):
                       status.REJECTED_AFTER_DATAMANAGER_REVIEW,
                       status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, status.REJECTED, status.RESUBMIT]:
         return api.Error("StatusError", "Inappropriate data request status.")
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1750,6 +1774,9 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_dta_path_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
 
@@ -1792,6 +1819,9 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_signed_dta_path_get(ctx, request_id):
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
 
