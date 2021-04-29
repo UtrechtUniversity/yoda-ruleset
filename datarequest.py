@@ -23,6 +23,10 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_schema_get',
            'api_datarequest_submit',
            'api_datarequest_get',
+           'api_datarequest_attachment_upload_permission',
+           'api_datarequest_attachment_post_upload_actions',
+           'api_datarequest_attachments_get',
+           'api_datarequest_attachments_submit',
            'api_datarequest_is_owner',
            'api_datarequest_is_project_manager',
            'api_datarequest_is_executive_director',
@@ -70,19 +74,20 @@ GROUP_DMC         = "datarequests-research-data-management-committee"
 GROUP_PM          = "datarequests-research-project-managers"
 GROUP_ED          = "datarequests-research-executive-directors"
 
-DRCOLLECTION      = "home/datarequests-research"
-PROVENANCE        = "provenance"
-DATAREQUEST       = "datarequest"
-PR_REVIEW         = "preliminary_review"
-DM_REVIEW         = "datamanager_review"
-DMR_REVIEW        = "dmr_review"
-CONTRIB_REVIEW    = "contribution_review"
-REVIEW            = "review"
-ASSIGNMENT        = "assignment"
-EVALUATION        = "evaluation"
-FEEDBACK          = "feedback"
-DTA_PATHNAME      = "dta"
-SIGDTA_PATHNAME   = "signed_dta"
+DRCOLLECTION         = "home/datarequests-research"
+PROVENANCE           = "provenance"
+DATAREQUEST          = "datarequest"
+ATTACHMENTS_PATHNAME = "attachments"
+PR_REVIEW            = "preliminary_review"
+DM_REVIEW            = "datamanager_review"
+DMR_REVIEW           = "dmr_review"
+CONTRIB_REVIEW       = "contribution_review"
+REVIEW               = "review"
+ASSIGNMENT           = "assignment"
+EVALUATION           = "evaluation"
+FEEDBACK             = "feedback"
+DTA_PATHNAME         = "dta"
+SIGDTA_PATHNAME      = "signed_dta"
 
 
 ###################################################
@@ -96,6 +101,7 @@ class status(Enum):
     DRAFT                             = 'DRAFT'
 
     DAO_SUBMITTED                     = 'DAO_SUBMITTED'
+    PENDING_ATTACHMENTS               = 'PENDING_ATTACHMENTS'
     SUBMITTED                         = 'SUBMITTED'
 
     PRELIMINARY_ACCEPT                = 'PRELIMINARY_ACCEPT'
@@ -134,11 +140,15 @@ class status(Enum):
 status_transitions = [(status(x),
                        status(y))
                       for x, y in [('IN_SUBMISSION',               'DRAFT'),
+                                   ('IN_SUBMISSION',               'PENDING_ATTACHMENTS'),
                                    ('IN_SUBMISSION',               'DAO_SUBMITTED'),
                                    ('IN_SUBMISSION',               'SUBMITTED'),
 
+                                   ('DRAFT',                       'PENDING_ATTACHMENTS'),
                                    ('DRAFT',                       'DAO_SUBMITTED'),
                                    ('DRAFT',                       'SUBMITTED'),
+
+                                   ('PENDING_ATTACHMENTS',         'SUBMITTED'),
 
                                    ('DAO_SUBMITTED',               'DAO_APPROVED'),
                                    ('DAO_SUBMITTED',               'REJECTED'),
@@ -661,10 +671,12 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     if not draft_request_id:
         # Create collections
         try:
-            dta_path    = "{}/{}".format(coll_path, DTA_PATHNAME)
-            sigdta_path = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
+            dta_path         = "{}/{}".format(coll_path, DTA_PATHNAME)
+            sigdta_path      = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
+            attachments_path = "{}/{}".format(coll_path, ATTACHMENTS_PATHNAME)
 
             collection.create(ctx, coll_path)
+            collection.create(ctx, attachments_path)
             collection.create(ctx, dta_path)
             collection.create(ctx, sigdta_path)
         except error.UUError as e:
@@ -676,6 +688,12 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         msi.set_acl(ctx, "default", "read", GROUP_DMC, coll_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
         msi.set_acl(ctx, "default", "own", "rods", coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, attachments_path)
+        msi.set_acl(ctx, "default", "read", GROUP_ED, attachments_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DMC, attachments_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, attachments_path)
+        msi.set_acl(ctx, "default", "own", "rods", attachments_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), attachments_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, dta_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, dta_path)
         msi.set_acl(ctx, "default", "read", user.full_name(ctx), dta_path)
@@ -728,7 +746,12 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
         status_set(ctx, request_id, status.DAO_SUBMITTED)
     else:
-        status_set(ctx, request_id, status.SUBMITTED)
+        if data['datarequest']['study_information']['attachments'] == "Yes":
+            status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
+            return {"pendingAttachments": True, "requestId": request_id}
+        else:
+            status_set(ctx, request_id, status.SUBMITTED)
+            return
 
 
 @api.make()
@@ -778,6 +801,122 @@ def datarequest_get(ctx, request_id):
         return data_object.read(ctx, file_path)
     except error.UUError as e:
         return api.Error("datarequest_read_fail", "Could not get contents of datarequest JSON file: {}.".format(e))
+
+
+@api.make()
+def api_datarequest_attachment_upload_permission(ctx, request_id, action):
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("revoke")
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Status and user permission check
+    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    request_status   = status_get(ctx, request_id)
+    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
+        return api.Error("PermissionError", "User not authorized.")
+
+    # Check if action is valid
+    if action not in ["grant", "grantread"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    attachments_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
+                                             ATTACHMENTS_PATHNAME)
+    ctx.adminTempWritePermission(attachments_path, action)
+    return
+
+
+@api.make()
+def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
+    """Grant read permissions on the attachment to the owner of the associated data request.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param filename:   Filename of attachment
+
+    :returns: API status
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Status and user permission check
+    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    request_status   = status_get(ctx, request_id)
+    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
+        return api.Error("PermissionError", "User not authorized.")
+
+    # Set permissions
+    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
+                                                     ATTACHMENTS_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_ED, file_path)
+
+
+@api.make()
+def api_datarequest_attachments_get(ctx, request_id):
+    """Get all attachments of a given data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          List of attachment filenames
+    """
+
+    def get_filename(file_path):
+        return file_path.split('/')[-1]
+
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Status and user permission check
+    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    is_pm            = user.is_member_of(ctx, GROUP_PM)
+    is_ed            = user.is_member_of(ctx, GROUP_ED)
+    is_dm            = user.is_member_of(ctx, GROUP_DM)
+    is_dmc           = user.is_member_of(ctx, GROUP_DMC)
+    request_status   = status_get(ctx, request_id)
+    if not (is_request_owner or is_pm or is_ed or is_dm or is_dmc):
+        return api.Error("PermissionError", "User not authorized.")
+
+    # Return list of attachment filepaths
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
+    return map(get_filename, list(collection.data_objects(ctx, coll_path)))
+
+
+@api.make()
+def api_datarequest_attachments_submit(ctx, request_id):
+    """Finalize the submission of uploaded attachments
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Status and user permission check
+    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
+    request_status   = status_get(ctx, request_id)
+    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
+        return api.Error("PermissionError", "User not authorized.")
+
+    # Revoke ownership and write access
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
+    for attachment_path in list(collection.data_objects(ctx, coll_path)):
+        msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), attachment_path)
+
+    # Set status to dta_ready
+    status_set(ctx, request_id, status.SUBMITTED)
 
 
 @api.make()

@@ -2,6 +2,8 @@ processTempWritePermission() {
 
 	if (*permission == "grant") {
 		msiSetACL("default", "write", *actor, *path);
+        } else if (*permission == "grantread") {
+                msiSetACL("default", "read", *actor, *path);
 	} else if (*permission == "revoke") {
 		msiSetACL("default", "null", *actor, *path);
 	} else {
