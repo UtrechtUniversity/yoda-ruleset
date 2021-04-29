@@ -280,6 +280,15 @@ def metadata_set(ctx, request_id, key, value):
 @api.make()
 def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
     """Wrapper around datarequest_action_permitted
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DMC, OWN, REV)
+    :param statuses:     Array of permitted current data request statuses or None (check skipped)
+
+    :returns:            True if permitted, False if not
+    :rtype:              Boolean
     """
 
     # Convert statuses to list of status enumeration elements
@@ -337,7 +346,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
 
 @api.make()
-def api_datarequest_is_role(ctx, role, request_id = None):
+def api_datarequest_is_role(ctx, role, request_id=None):
     """Check if invoking user has given role
 
     :param ctx:        Combined type of a callback and rei struct
@@ -833,8 +842,6 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of attachment
-
-    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -882,8 +889,6 @@ def api_datarequest_attachments_submit(ctx, request_id):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-
-    :returns:          Nothing
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1095,8 +1100,8 @@ def api_datarequest_dmr_review_submit(ctx, data, request_id):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM"], [status.DATAMANAGER_ACCEPT,
-                                                       status.DATAMANAGER_REJECT,
-                                                       status.DATAMANAGER_RESUBMIT])
+                                                           status.DATAMANAGER_REJECT,
+                                                           status.DATAMANAGER_RESUBMIT])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1260,7 +1265,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"],
-                             [status.CONTRIBUTION_ACCEPTED])
+                                 [status.CONTRIBUTION_ACCEPTED])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1284,8 +1289,6 @@ def assign_request(ctx, assignees, request_id):
     :param ctx:        Combined type of a callback and rei struct
     :param assignees:  JSON-formatted array of DMC members
     :param request_id: Unique identifier of the data request
-
-    :returns: A JSON dict with status info for the front office
     """
     # Construct data request collection path
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1560,9 +1563,9 @@ def api_datarequest_feedback_get(ctx, request_id):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["OWN"],
-                             [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
-                              status.REJECTED_AFTER_DATAMANAGER_REVIEW,
-                              status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, REJECTED, RESUBMIT])
+                                 [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
+                                  status.REJECTED_AFTER_DATAMANAGER_REVIEW,
+                                  status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, REJECTED, RESUBMIT])
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1581,8 +1584,6 @@ def api_datarequest_contribution_confirm(ctx, request_id):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-
-    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1608,7 +1609,7 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.CONTRIBUTION_CONFIRMED,
-                                                       status.DAO_APPROVED])
+                                                           status.DAO_APPROVED])
 
     # Check if action is valid
     if action not in ["grant", "revoke"]:
@@ -1626,15 +1627,13 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of DTA
-
-    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.CONTRIBUTION_CONFIRMED,
-                                                       status.DAO_APPROVED])
+                                                           status.DAO_APPROVED])
 
     # Set permissions
     file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
@@ -1697,8 +1696,6 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param filename:   Filename of signed DTA
-
-    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
@@ -1741,8 +1738,6 @@ def api_datarequest_data_ready(ctx, request_id):
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-
-    :returns: API status
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
