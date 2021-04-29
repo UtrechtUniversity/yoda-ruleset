@@ -304,20 +304,16 @@ def api_datarequest_is_owner(ctx, request_id):
     return is_owner
 
 
-def datarequest_is_owner(ctx, request_id, user_name):
+def datarequest_is_owner(ctx, request_id):
     """Check if the invoking user is also the owner of a given data request
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
-    :type  request_id: str
-    :param user_name:  Username of the user whose ownership is checked
-    :type  user_name:  str
 
-    :return:           `True` if ``user_name`` matches that of the owner of the data request with
-                       id ``request_id``, `False` otherwise
+    :return:           True if user_name is owner of specified data request else False
     :rtype:            bool
     """
-    return datarequest_owner_get(ctx, request_id) == user_name
+    return datarequest_owner_get(ctx, request_id) == user.name(ctx)
 
 
 def datarequest_owner_get(ctx, request_id):
