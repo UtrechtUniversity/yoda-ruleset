@@ -777,6 +777,13 @@ def api_datarequest_get(ctx, request_id):
 
 
 def datarequest_get(ctx, request_id):
+    """Retrieve a data request.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Datarequest JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -958,6 +965,13 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
 
 
 def datarequest_preliminary_review_get(ctx, request_id):
+    """Retrieve a preliminary review.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Preliminary review JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1038,6 +1052,13 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
 
 
 def datarequest_datamanager_review_get(ctx, request_id):
+    """Retrieve a data manager review.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Datamanager review JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1122,6 +1143,13 @@ def api_datarequest_dmr_review_get(ctx, request_id):
 
 
 def datarequest_dmr_review_get(ctx, request_id):
+    """Retrieve datamanager review review
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Datamanager review review JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1295,6 +1323,13 @@ def api_datarequest_assignment_get(ctx, request_id):
 
 
 def datarequest_assignment_get(ctx, request_id):
+    """Retrieve an assignment
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Assignment JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1612,6 +1647,13 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_dta_path_get(ctx, request_id):
+    """Get path to DTA
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          Path to DTA
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1675,6 +1717,13 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_signed_dta_path_get(ctx, request_id):
+    """Get path to signed DTA
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          Path to signed DTA
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
