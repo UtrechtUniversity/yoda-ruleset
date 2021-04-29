@@ -20,6 +20,7 @@ from util import *
 from util.query import Query
 
 __all__ = ['api_datarequest_is_role',
+           'api_datarequest_action_permitted',
            'api_datarequest_browse',
            'api_datarequest_schema_get',
            'api_datarequest_submit',
@@ -274,6 +275,65 @@ def metadata_set(ctx, request_id, key, value):
 
     # Trigger the processing of delayed rules
     ctx.adminDatarequestActions()
+
+
+@api.make()
+def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
+    """Wrapper around datarequest_action_permitted
+    """
+
+    # Convert statuses to list of status enumeration elements
+    if statuses is not None:
+        def get_status(stat):
+            return status[stat]
+        statuses = map(get_status, statuses)
+
+    return datarequest_action_permitted(ctx, request_id, roles, statuses)
+
+
+def datarequest_action_permitted(ctx, request_id, roles, statuses):
+    """Check if current user and data request status meet specified restrictions
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param request_id:   Unique identifier of the data request
+    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DMC, OWN, REV)
+    :param statuses:     Array of permitted current data request statuses or None (check skipped)
+
+    :returns:            True if permitted, False if not
+    :rtype:              Boolean
+    """
+    try:
+        # Force conversion of request_id to string
+        request_id = str(request_id)
+
+        # Check status
+        if ((statuses is not None) and (status_get(ctx, request_id) not in statuses)):
+            return api.Error("permission_error", "Action not permitted.")
+
+        # Get current user roles
+        current_user_roles = []
+        if user.is_member_of(ctx, GROUP_PM):
+            current_user_roles.append("PM")
+        if user.is_member_of(ctx, GROUP_ED):
+            current_user_roles.append("ED")
+        if user.is_member_of(ctx, GROUP_DM):
+            current_user_roles.append("DM")
+        if user.is_member_of(ctx, GROUP_DMC):
+            current_user_roles.append("DMC")
+        if datarequest_is_owner(ctx, request_id):
+            current_user_roles.append("OWN")
+        if datarequest_is_reviewer(ctx, request_id):
+            current_user_roles.append("REV")
+
+        # Check user permissions (i.e. if at least 1 of the user's roles is on the permitted roles
+        # list)
+        if len(set(current_user_roles) & set(roles)) < 1:
+            return api.Error("permission_error", "Action not permitted.")
+
+        # If both checks pass, user is permitted to perform action
+        return True
+    except error.UUError as e:
+        return api.Error("internal_error", "Something went wrong during permission checking.")
 
 
 @api.make()
@@ -593,17 +653,9 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
-    # User permission check
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-        is_ed = user.is_member_of(ctx, GROUP_ED)
-        is_dm = user.is_member_of(ctx, GROUP_DM)
-
-        if (is_pm or is_ed or is_dm):
-            return api.Error("permission_error", "User is not authorized to submit a data request.")
-    except error.UUError as e:
-        return api.Error("permission_error",
-                         "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    if (user.is_member_of(ctx, GROUP_PM) or user.is_member_of(ctx, GROUP_DM) or user.is_member_of(ctx, GROUP_ED)):
+        return api.Error("permission_error", "Action not permitted.")
 
     # If we're not working with a draft, create a new request ID
     request_id = draft_request_id if draft_request_id else str(datetime.now().strftime('%s'))
@@ -711,19 +763,8 @@ def api_datarequest_get(ctx, request_id):
     # Convert request_id to string if it isn't already
     request_id = str(request_id)
 
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
-    try:
-        is_pm            = user.is_member_of(ctx, GROUP_PM)
-        is_dm            = user.is_member_of(ctx, GROUP_DM)
-        is_ed            = user.is_member_of(ctx, GROUP_ED)
-        is_dmc_member    = user.is_member_of(ctx, GROUP_DMC)
-        is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-
-        if not (is_pm or is_dm or is_ed or is_dmc_member or is_request_owner):
-            return api.Error("permission_error", "User is not authorized to view this data request.")
-    except error.UUError as e:
-        return api.Error("permission_error", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "DMC", "OWN"], None)
 
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
@@ -764,11 +805,8 @@ def api_datarequest_attachment_upload_permission(ctx, request_id, action):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status and user permission check
-    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    request_status   = status_get(ctx, request_id)
-    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
-        return api.Error("PermissionError", "User not authorized.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
     # Check if action is valid
     if action not in ["grant", "grantread"]:
@@ -794,11 +832,8 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status and user permission check
-    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    request_status   = status_get(ctx, request_id)
-    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
-        return api.Error("PermissionError", "User not authorized.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
     # Set permissions
     file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
@@ -825,15 +860,8 @@ def api_datarequest_attachments_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status and user permission check
-    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    is_pm            = user.is_member_of(ctx, GROUP_PM)
-    is_ed            = user.is_member_of(ctx, GROUP_ED)
-    is_dm            = user.is_member_of(ctx, GROUP_DM)
-    is_dmc           = user.is_member_of(ctx, GROUP_DMC)
-    request_status   = status_get(ctx, request_id)
-    if not (is_request_owner or is_pm or is_ed or is_dm or is_dmc):
-        return api.Error("PermissionError", "User not authorized.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "DMC", "OWN"], None)
 
     # Return list of attachment filepaths
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
@@ -852,11 +880,8 @@ def api_datarequest_attachments_submit(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status and user permission check
-    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    request_status   = status_get(ctx, request_id)
-    if not (request_status == status.PENDING_ATTACHMENTS and is_request_owner):
-        return api.Error("PermissionError", "User not authorized.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
     # Revoke ownership and write access
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
@@ -885,18 +910,8 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(PR_REVIEW))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.PRELIMINARY_ACCEPT):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-
-        if not is_pm:
-            return api.Error("PermissionError", "User is not a project manager.")
-    except error.UUError:
-        return api.Error("PermissionError", "Something went wrong during permission checking.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.SUBMITTED])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -936,17 +951,8 @@ def api_datarequest_preliminary_review_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if user is authorized. If not, return PermissionError
-    try:
-        is_pm       = user.is_member_of(ctx, GROUP_PM)
-        is_ed       = user.is_member_of(ctx, GROUP_ED)
-        is_dm       = user.is_member_of(ctx, GROUP_DM)
-        is_reviewer = datarequest_is_reviewer(ctx, request_id)
-
-        if not (is_pm or is_ed or is_dm or is_reviewer):
-            return api.Error("PermissionError", "User is not authorized to view this preliminary review.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"], None)
 
     return datarequest_preliminary_review_get(ctx, request_id)
 
@@ -985,18 +991,8 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DM_REVIEW))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_ACCEPT):
-        api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_dm = user.is_member_of(ctx, GROUP_DM)
-
-        if not is_dm:
-            return api.Error("PermissionError", "User is not a data manager.")
-    except error.UUerror as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["DM"], [status.PRELIMINARY_ACCEPT])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1034,17 +1030,8 @@ def api_datarequest_datamanager_review_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if user is authorized. If not, return PermissionError
-    try:
-        is_pm       = user.is_member_of(ctx, GROUP_PM)
-        is_ed       = user.is_member_of(ctx, GROUP_ED)
-        is_dm       = user.is_member_of(ctx, GROUP_DM)
-        is_reviewer = datarequest_is_reviewer(ctx, request_id)
-
-        if not (is_pm or is_ed or is_dm or is_reviewer):
-            return api.Error("PermissionError", "User is not authorized to view this data manager review.")
-    except error.UUError:
-        return api.Error("PermissionError", "Something went wrong during permission checking.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"], None)
 
     # Retrieve and return datamanager review
     return datarequest_datamanager_review_get(ctx, request_id)
@@ -1084,18 +1071,10 @@ def api_datarequest_dmr_review_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DMR_REVIEW))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATAMANAGER_REVIEW_ACCEPTED):
-        api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-
-        if not is_pm:
-            return api.Error("PermissionError", "User is not a project manager.")
-    except error.UUerror as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.DATAMANAGER_ACCEPT,
+                                                       status.DATAMANAGER_REJECT,
+                                                       status.DATAMANAGER_RESUBMIT])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1135,17 +1114,8 @@ def api_datarequest_dmr_review_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if user is authorized. If not, return PermissionError
-    try:
-        is_pm       = user.is_member_of(ctx, GROUP_PM)
-        is_ed       = user.is_member_of(ctx, GROUP_ED)
-        is_dm       = user.is_member_of(ctx, GROUP_DM)
-        is_reviewer = datarequest_is_reviewer(ctx, request_id)
-
-        if not (is_pm or is_ed or is_dm or is_reviewer):
-            return api.Error("PermissionError", "User is not authorized to view this data manager review review.")
-    except error.UUError:
-        return api.Error("PermissionError", "Something went wrong during permission checking.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"], None)
 
     # Retrieve and return datamanager review
     return datarequest_dmr_review_get(ctx, request_id)
@@ -1185,18 +1155,8 @@ def api_datarequest_contribution_review_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(CONTRIB_REVIEW))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.CONTRIBUTION_ACCEPTED):
-        api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_ed = user.is_member_of(ctx, GROUP_ED)
-
-        if not is_ed:
-            return api.Error("PermissionError", "User is not executive director.")
-    except error.UUerror as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["ED"], [status.DATAMANAGER_REVIEW_ACCEPTED])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1266,18 +1226,9 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.UNDER_REVIEW):
-        api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-
-        if not is_pm:
-            return api.Error("PermissionError", "User is not a project manager.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "REV"],
+                             [status.CONTRIBUTION_ACCEPTED])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1381,18 +1332,8 @@ def api_datarequest_review_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(REVIEW))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.REVIEWED):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_reviewer = datarequest_is_reviewer(ctx, request_id)
-    except error.UUError:
-        is_reviewer = false
-
-    if not is_reviewer:
-        return api.Error("PermissionDenied", "User is not assigned as a reviewer to this request.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.UNDER_REVIEW])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1447,14 +1388,8 @@ def api_datarequest_reviews_get(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if user is authorized. If not, return PermissionError
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-
-        if not is_pm:
-            return api.Error("PermissionError", "User is not authorized to view this review.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "REV"], None)
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1493,18 +1428,8 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(EVALUATION))
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.APPROVED):
-        api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_pm = user.is_member_of(ctx, GROUP_PM)
-
-        if not is_pm:
-            return api.Error("PermissionError", "User is not a project manager.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.REVIEWED])
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1598,15 +1523,14 @@ def api_datarequest_feedback_get(ctx, request_id):
 
     :returns:          JSON-foramtted string containing feedback for researcher
     """
-    # Check if data request status is appropriate
-    status = status_get(ctx, request_id)
-    if status not in [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
-                      status.REJECTED_AFTER_DATAMANAGER_REVIEW,
-                      status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, status.REJECTED, status.RESUBMIT]:
-        return api.Error("StatusError", "Inappropriate data request status.")
     # Force conversion of request_id to string
     request_id = str(request_id)
 
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"],
+                             [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
+                              status.REJECTED_AFTER_DATAMANAGER_REVIEW,
+                              status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, REJECTED, RESUBMIT])
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
@@ -1631,18 +1555,8 @@ def api_datarequest_contribution_confirm(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.CONTRIBUTION_CONFIRMED):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_ed = user.is_member_of(ctx, GROUP_ED)
-
-        if not is_ed:
-            return api.Error("PermissionError", "User is not authorized to mark the contribution as confirmed.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["ED"], [status.APPROVED])
 
     status_set(ctx, request_id, status.CONTRIBUTION_CONFIRMED)
 
@@ -1660,13 +1574,9 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status and user permission check
-    is_dm            = user.is_member_of(ctx, GROUP_DM)
-    is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    request_status   = status_get(ctx, request_id)
-    if not ((request_status in [status.CONTRIBUTION_CONFIRMED, status.DAO_APPROVED] and is_dm)
-            or (request_status == status.DTA_READY and is_request_owner)):
-        return api.Error("PermissionError", "User not authorized.")
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["DM"], [status.CONTRIBUTION_CONFIRMED,
+                                                       status.DAO_APPROVED])
 
     # Check if action is valid
     if action not in ["grant", "revoke"]:
@@ -1693,18 +1603,9 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_READY):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_dm = user.is_member_of(ctx, GROUP_DM)
-
-        if not is_dm:
-            return api.Error("PermissionError", "User is not authorized to grant read permissions on the DTA.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["DM"], [status.CONTRIBUTION_CONFIRMED,
+                                                       status.DAO_APPROVED])
 
     # Set permissions
     file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
@@ -1763,18 +1664,8 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Status transition permission check
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DTA_SIGNED):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # User permission check
-    try:
-        is_request_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-
-        if not is_request_owner:
-            return api.Error("PermissionError", "User is not authorized to grant read permissions on the signed DTA.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
     # Set permissions
     file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
@@ -1807,19 +1698,8 @@ def api_datarequest_data_ready(ctx, request_id):
     # Force conversion of request_id to string
     request_id = str(request_id)
 
-    # Check if status transition allowed
-    if not status_transition_allowed(ctx, status_get(ctx, request_id), status.DATA_READY):
-        return api.Error("transition", "Status transition not allowed.")
-
-    # Check if user is allowed to view to proposal. If not, return
-    # PermissionError
-    try:
-        is_dm = user.is_member_of(ctx, GROUP_DM)
-
-        if not is_dm:
-            return api.Error("PermissionError", "User is not authorized to mark the data as ready.")
-    except error.UUError as e:
-        return api.Error("PermissionError", "Something went wrong during permission checking: {}.".format(e))
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["DM"], [status.DTA_SIGNED])
 
     status_set(ctx, request_id, status.DATA_READY)
 
