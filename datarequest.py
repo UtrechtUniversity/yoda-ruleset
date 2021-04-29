@@ -19,7 +19,8 @@ import mail
 from util import *
 from util.query import Query
 
-__all__ = ['api_datarequest_browse',
+__all__ = ['api_datarequest_is_role',
+           'api_datarequest_browse',
            'api_datarequest_schema_get',
            'api_datarequest_submit',
            'api_datarequest_get',
@@ -27,12 +28,6 @@ __all__ = ['api_datarequest_browse',
            'api_datarequest_attachment_post_upload_actions',
            'api_datarequest_attachments_get',
            'api_datarequest_attachments_submit',
-           'api_datarequest_is_owner',
-           'api_datarequest_is_project_manager',
-           'api_datarequest_is_executive_director',
-           'api_datarequest_is_dmc_member',
-           'api_datarequest_is_datamanager',
-           'api_datarequest_is_reviewer',
            'api_datarequest_preliminary_review_submit',
            'api_datarequest_preliminary_review_get',
            'api_datarequest_datamanager_review_submit',
@@ -281,27 +276,32 @@ def metadata_set(ctx, request_id, key, value):
 
 
 @api.make()
-def api_datarequest_is_owner(ctx, request_id):
-    """Check if the invoking user is also the owner of a given data request
-
-    This function is a wrapper for datarequest_is_owner.
+def api_datarequest_is_role(ctx, role, request_id = None):
+    """Check if invoking user has given role
 
     :param ctx:        Combined type of a callback and rei struct
-    :param request_id: Unique identifier of the data request
-    :type request_id: str
+    :param role:       String of role to check (possible values: PM, ED, DM, DMC, OWN, REV)
+    :param request_id: Unique identifier of the data request (mandatory for OWN, REV)
 
-    :returns: `True` if ``user_name`` matches that of the owner of the data request with id ``request_id``, `False` otherwise
-    :rtype: bool
+    :returns:          True if invoking user has given role else False
+    :rtype:            Boolean
     """
-
-    is_owner = False
-
-    try:
-        is_owner = datarequest_is_owner(ctx, request_id, user.name(ctx))
-    except error.UUError as e:
-        return api.Error('logical_error', 'Could not determine datarequest owner: {}'.format(e))
-
-    return is_owner
+    if role == "PM":
+        return user.is_member_of(ctx, GROUP_PM)
+    elif role == "ED":
+        return user.is_member_of(ctx, GROUP_ED)
+    elif role == "DM":
+        return user.is_member_of(ctx, GROUP_DM)
+    elif role == "DMC":
+        return user.is_member_of(ctx, GROUP_DMC)
+    elif role == "OWN":
+        if request_id is None:
+            return api.Error("parameter_error", "Missing required parameter request_id.")
+        return datarequest_is_owner(ctx, request_id)
+    elif role == "REV":
+        if request_id is None:
+            return api.Error("parameter_error", "Missing required parameter request_id.")
+        return datarequest_is_reviewer(ctx, request_id)
 
 
 def datarequest_is_owner(ctx, request_id):
@@ -332,11 +332,6 @@ def datarequest_owner_get(ctx, request_id):
 
     # Get and return data request owner
     return jsonutil.read(ctx, file_path)['owner']
-
-
-@api.make()
-def api_datarequest_is_reviewer(ctx, request_id):
-    return datarequest_is_reviewer(ctx, request_id)
 
 
 def datarequest_is_reviewer(ctx, request_id):
@@ -373,54 +368,6 @@ def datarequest_is_reviewer(ctx, request_id):
 
     # Return the is_reviewer boolean
     return is_reviewer
-
-
-@api.make()
-def api_datarequest_is_project_manager(ctx):
-    """Check if given user is project manager
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is project manager else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_PM)
-
-
-@api.make()
-def api_datarequest_is_executive_director(ctx):
-    """Check if given user is executive director
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is executive director else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_ED)
-
-
-@api.make()
-def api_datarequest_is_dmc_member(ctx):
-    """Check if given user is DMC member
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is DMC member else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_DMC)
-
-
-@api.make()
-def api_datarequest_is_datamanager(ctx):
-    """Check if given user is data manager
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: True if user is data manager else False
-    :rtype bool
-    """
-    return user.is_member_of(ctx, GROUP_DM)
 
 
 @api.make()
