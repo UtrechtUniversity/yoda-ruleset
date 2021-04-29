@@ -641,7 +641,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     :param ctx:              Combined type of a callback and rei struct
     :param data:             Contents of the data request
     :param draft:            Boolean specifying whether the data request should be saved as draft
-    :param draft_request_id: Request ID of the draft data request
+    :param draft_request_id: Unique identifier of the draft data request
 
     :returns: API status
     """
@@ -760,7 +760,7 @@ def api_datarequest_get(ctx, request_id):
 
     :returns: Dict with request JSON and status or API error on failure
     """
-    # Convert request_id to string if it isn't already
+    # Force conversion of request_id to string
     request_id = str(request_id)
 
     # Permission check
@@ -871,7 +871,8 @@ def api_datarequest_attachments_get(ctx, request_id):
     datarequest_action_permitted(ctx, request_id, ["PM", "ED", "DM", "DMC", "OWN"], None)
 
     # Return list of attachment filepaths
-    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, ATTACHMENTS_PATHNAME)
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
+                                      ATTACHMENTS_PATHNAME)
     return map(get_filename, list(collection.data_objects(ctx, coll_path)))
 
 
