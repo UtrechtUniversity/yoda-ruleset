@@ -7,7 +7,6 @@ __license__   = 'GPLv3, see LICENSE'
 import datacite
 import json_datacite41
 import json_landing_page
-import mail
 import meta
 import provenance
 import schema
@@ -749,12 +748,6 @@ def process_publication(ctx, vault_package):
         doi = publication_state["yodaDOI"]
 
         sender = user.full_name(ctx)
-
-        # Send datamanager publication notification.
-        mail.mail_new_package_published(ctx, datamanager, sender, title, doi)
-
-        # Send researcher publication notification.
-        mail.mail_your_package_published(ctx, researcher, sender, title, doi)
     else:
         # The publication was a success
         publication_state["status"] = "OK"
