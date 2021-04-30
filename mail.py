@@ -121,8 +121,8 @@ def notification(ctx, to, actor, message):
                     body="""
 You received a new notification: {}
 
-Login to view all your notifications: {}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: {}/user/settings
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
 
 Best regards,
 Yoda system
@@ -138,8 +138,8 @@ def rule_mail_notification_report(ctx, to, actor, message):
                     body="""
 You have {} notification(s).
 
-Login to view all your notifications: {}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: {}/user/settings
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
 
 Best regards,
 Yoda system
