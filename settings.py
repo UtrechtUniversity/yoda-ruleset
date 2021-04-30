@@ -11,10 +11,9 @@ __all__ = ['api_settings_load',
            'api_settings_save']
 
 # Allowed settings should be synchronised with policies and portal:
-# Policies: uuUserPolicyCanUserModify in irods-ruleset-uu/uuPolicies.r
+# Policies: uuUserPolicyCanUserModify in irods-ruleset-uu/uuGroupPolicyChecks.r
 # Portal: settings in yoda-portal/user/user.py
-USER_SETTINGS = {"mail_notifications":      {"default": "off",   "values": ["on", "off"]},
-                 "mail_notifications_type": {"default": "DAILY", "values": ["IMMEDIATE", "DAILY", "WEEKLY"]}}
+USER_SETTINGS = {"mail_notifications": {"default": "OFF", "values": ["OFF", "IMMEDIATE", "DAILY", "WEEKLY"]}}
 
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
