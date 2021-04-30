@@ -2,8 +2,7 @@ Feature: Settings API
 
     Examples:
         | attribute               | value |
-        | mail_notifications      | off   |
-        | mail_notifications_type | DAILY |
+        | mail_notifications      | OFF   |
 
     Scenario: Settings Save
         Given user "researcher" is authenticated

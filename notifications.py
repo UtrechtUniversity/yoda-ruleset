@@ -37,8 +37,7 @@ def set(ctx, actor, receiver, target, message):
 
         # Send mail notification if immediate notifications are on.
         mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
-        mail_notifications_type = settings.load(ctx, 'mail_notifications_type', username=receiver)
-        if mail_notifications == "on" and mail_notifications_type == "IMMEDIATE":
+        if mail_notifications == "IMMEDIATE":
             address = user.from_str(ctx, receiver)[0]
             mail.notification(ctx, address, actor, message)
 

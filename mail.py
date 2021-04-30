@@ -38,7 +38,7 @@ def send(ctx, to, actor, subject, body):
         log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
-    if settings.load(ctx, 'mail_notifications', username=to) == "off":
+    if settings.load(ctx, 'mail_notifications', username=to) == "OFF":
         log.write(ctx, '[EMAIL] User <{}> disabled mail notifications'.format(to))
         return
 
@@ -129,11 +129,14 @@ Yoda system
 """.format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
-@rule.make(inputs=range(3), outputs=range(3, 5))
-def rule_mail_notification_report(ctx, to, actor, notifications):
+@rule.make(inputs=range(2), outputs=range(2, 4))
+def rule_mail_notification_report(ctx, to, notifications):
+    if not user.is_admin(ctx):
+        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
+
     return _wrapper(ctx,
                     to=to,
-                    actor=actor,
+                    actor='system',
                     subject='[Yoda] {} notification(s)'.format(notifications),
                     body="""
 You have {} notification(s).
