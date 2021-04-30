@@ -19,7 +19,7 @@ import mail
 from util import *
 from util.query import Query
 
-__all__ = ['api_datarequest_is_role',
+__all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
            'api_datarequest_browse',
            'api_datarequest_schema_get',
@@ -346,32 +346,30 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
 
 @api.make()
-def api_datarequest_is_role(ctx, role, request_id=None):
-    """Check if invoking user has given role
+def api_datarequest_roles_get(ctx, request_id=None):
+    """Get roles of invoking user
 
     :param ctx:        Combined type of a callback and rei struct
-    :param role:       String of role to check (possible values: PM, ED, DM, DMC, OWN, REV)
-    :param request_id: Unique identifier of the data request (mandatory for OWN, REV)
+    :param request_id: Unique identifier of the data request (OWN and REV roles will not be checked
+                       if this parameter is missing)
 
-    :returns:          True if invoking user has given role else False
-    :rtype:            Boolean
+    :returns:          Array of user roles
+    :rtype:            Array
     """
-    if role == "PM":
-        return user.is_member_of(ctx, GROUP_PM)
-    elif role == "ED":
-        return user.is_member_of(ctx, GROUP_ED)
-    elif role == "DM":
-        return user.is_member_of(ctx, GROUP_DM)
-    elif role == "DMC":
-        return user.is_member_of(ctx, GROUP_DMC)
-    elif role == "OWN":
-        if request_id is None:
-            return api.Error("parameter_error", "Missing required parameter request_id.")
-        return datarequest_is_owner(ctx, request_id)
-    elif role == "REV":
-        if request_id is None:
-            return api.Error("parameter_error", "Missing required parameter request_id.")
-        return datarequest_is_reviewer(ctx, request_id)
+    roles = []
+    if user.is_member_of(ctx, GROUP_PM):
+        roles.append("PM")
+    if user.is_member_of(ctx, GROUP_ED):
+        roles.append("ED")
+    if user.is_member_of(ctx, GROUP_DM):
+        roles.append("DM")
+    if user.is_member_of(ctx, GROUP_DMC):
+        roles.append("DMC")
+    if request_id is not None and datarequest_is_owner(ctx, request_id):
+        roles.append("OWN")
+    if request_id is not None and datarequest_is_reviewer(ctx, request_id):
+        roles.append("REV")
+    return roles
 
 
 def datarequest_is_owner(ctx, request_id):
