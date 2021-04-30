@@ -10,6 +10,7 @@ import time
 from datetime import datetime
 
 import mail
+import settings
 from util import *
 from util.query import Query
 
