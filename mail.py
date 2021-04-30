@@ -130,11 +130,11 @@ Yoda system
 
 
 @rule.make(inputs=range(3), outputs=range(3, 5))
-def rule_mail_notification_report(ctx, to, actor, message):
+def rule_mail_notification_report(ctx, to, actor, notifications):
     return _wrapper(ctx,
                     to=to,
                     actor=actor,
-                    subject='[Yoda] {} notification(s)'.format(message),
+                    subject='[Yoda] {} notification(s)'.format(notifications),
                     body="""
 You have {} notification(s).
 
@@ -143,7 +143,7 @@ If you do not want to receive these emails, you can change your notification pre
 
 Best regards,
 Yoda system
-""".format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
+""".format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
