@@ -26,14 +26,9 @@ def load(ctx, setting, username=None):
     :param setting:  Name of setting to retrieve
     :param username: Optional username to retrieve setting from
 
-    :raises UUNotAuthorized: Only admins can retrieve settings of other users
-
     :returns: User setting or setting default
     """
-    # Only admins can retrieve settings for other users.
-    if username is not None and not user.is_admin(ctx):
-        raise error.UUNotAuthorized
-    else:
+    if username is None:
         username = user.name(ctx)
 
     settings = {a.replace(SETTINGS_KEY, ""): v for a, v

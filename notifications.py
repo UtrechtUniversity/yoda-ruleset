@@ -9,6 +9,8 @@ import json
 import time
 from datetime import datetime
 
+import mail
+import settings
 from util import *
 from util.query import Query
 
@@ -20,7 +22,7 @@ NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
 def set(ctx, actor, receiver, target, message):
-    """Save user notification.
+    """Set user notification and send mail notification when configured.
 
     :param ctx:      Combined type of a callback and rei struct
     :param actor:    Actor of notification message
@@ -32,6 +34,13 @@ def set(ctx, actor, receiver, target, message):
         timestamp = int(time.time())
         notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
         ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
+
+        # Send mail notification if immediate notifications are on.
+        mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
+        mail_notifications_type = settings.load(ctx, 'mail_notifications_type', username=receiver)
+        if mail_notifications == "on" and mail_notifications_type == "IMMEDIATE":
+            address = user.from_str(ctx, receiver)[0]
+            mail.notification(ctx, address, actor, message)
 
 
 @api.make()
