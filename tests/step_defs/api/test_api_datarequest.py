@@ -34,58 +34,76 @@ def api_datarequest_schema_get(user, schema_name):
     )
 
 
-@given('the Yoda datarequest submit API is queried with data', target_fixture="api_response")
-def api_datarequest_submit(user):
+@given('the Yoda datarequest submit API is queried with a data request to save as draft', target_fixture="api_response")
+def api_datarequest_save(user):
     return api_request(
         user,
         "datarequest_submit",
-        {"data": {
-            "introduction": {},
-            "researchers": {
-                "contacts": [{
-                    "name": "test",
+        {
+            "data": {
+                "introduction": {},
+                "contact": {
+                    "given_name": "test",
+                    "family_name": "test",
                     "institution": "test",
                     "department": "test",
                     "academic_role": "test",
                     "work_address": "test",
-                    "email": "test",
                     "phone": "test"
-                }]
-            },
-            "datarequest": {
-                "data": {
-                    "selectedRows": [{
-                        "expId": 1,
-                        "expCohort": 1,
-                        "expWave": 7,
-                        "expType": 0,
-                        "expSubject": 0,
-                        "expName": "Blood",
-                        "expInfo": ""
-                    }]
                 },
-                "purpose": "Analyses for data assessment only (results will not be published)",
-                "publication_approval": True
+                "datarequest": {
+                    "data": {
+                        "selectedRows": [
+                            {
+                                "expId": 2,
+                                "expCohort": 1,
+                                "expWave": 8,
+                                "expType": 0,
+                                "expSubject": 0,
+                                "expName": 5,
+                                "expInfo": "",
+                                "expAdditionalRemarks": ""
+                            }
+                        ]
+                    },
+                    "study_information": {
+                        "title": "test",
+                        "attachments": "Yes",
+                        "research_questions": "test",
+                        "hypotheses": "test"
+                    },
+                    "variables": {
+                        "variables": "test",
+                        "unit_of_analysis": "test",
+                        "missing_data": "test",
+                        "statistical_outliers": "test"
+                    },
+                    "knowledge_of_data": {
+                        "prior_publication": "test",
+                        "prior_knowledge": "test"
+                    },
+                    "analyses": {
+                        "statistical_models": "test",
+                        "effect_size": "test",
+                        "statistical_power": "test",
+                        "inference_criteria": "test",
+                        "assumption_violation": "test",
+                        "reliability_and_robustness_testing": "test",
+                        "exploratory_analysis": "test"
+                    },
+                    "contribution": {
+                        "contribution_time": "No",
+                        "contribution_financial": "No",
+                        "contribution_favor": "Yes",
+                        "contribution_favor_description": "test"
+                    },
+                    "purpose": "Analyses in order to publish",
+                    "publication_type": "Article or report",
+                    "publication_approval": True
+                },
+                "owner": "researcher"
             },
-            "research_context": {
-                "title": "test",
-                "background": "test",
-                "research_question": "test",
-                "requested_data_summary": "test"
-            },
-            "hypotheses": {},
-            "methods": {
-                "design": "test",
-                "preparation": "test",
-                "processing": "test"
-            },
-            "contribution": {
-                "contribution_time": "No",
-                "contribution_financial": "Yes",
-                "contribution_favor": "No",
-                "contribution_financial_amount": 9000
-            }
-        }
+            "draft": True
         })
 
 
@@ -103,47 +121,103 @@ def datarequest_exists(user):
     return body["data"]["items"][0]["id"]
 
 
-@given('the Yoda datarequest is owner API is queried with request id', target_fixture="api_response")
-def api_datarequest_is_owner(user, datarequest_id):
+@given('the Yoda datarequest submit API is queried with a draft data request to submit', target_fixture="api_response")
+def api_datarequest_submit(user, datarequest_id):
     return api_request(
         user,
-        "datarequest_is_owner",
+        "datarequest_submit",
+        {
+            "data": {
+                "introduction": {},
+                "contact": {
+                    "given_name": "test",
+                    "family_name": "test",
+                    "institution": "test",
+                    "department": "test",
+                    "academic_role": "test",
+                    "work_address": "test",
+                    "phone": "test"
+                },
+                "datarequest": {
+                    "data": {
+                        "selectedRows": [
+                            {
+                                "expId": 2,
+                                "expCohort": 1,
+                                "expWave": 8,
+                                "expType": 0,
+                                "expSubject": 0,
+                                "expName": 5,
+                                "expInfo": "",
+                                "expAdditionalRemarks": ""
+                            }
+                        ]
+                    },
+                    "study_information": {
+                        "title": "test",
+                        "attachments": "Yes",
+                        "research_questions": "test",
+                        "hypotheses": "test"
+                    },
+                    "variables": {
+                        "variables": "test",
+                        "unit_of_analysis": "test",
+                        "missing_data": "test",
+                        "statistical_outliers": "test"
+                    },
+                    "knowledge_of_data": {
+                        "prior_publication": "test",
+                        "prior_knowledge": "test"
+                    },
+                    "analyses": {
+                        "statistical_models": "test",
+                        "effect_size": "test",
+                        "statistical_power": "test",
+                        "inference_criteria": "test",
+                        "assumption_violation": "test",
+                        "reliability_and_robustness_testing": "test",
+                        "exploratory_analysis": "test"
+                    },
+                    "contribution": {
+                        "contribution_time": "No",
+                        "contribution_financial": "No",
+                        "contribution_favor": "Yes",
+                        "contribution_favor_description": "test"
+                    },
+                    "purpose": "Analyses in order to publish",
+                    "publication_type": "Article or report",
+                    "publication_approval": True
+                },
+                "owner": "researcher"
+            },
+            "draft": False,
+            "draft_request_id": datarequest_id
+        })
+
+
+@given('the Yoda datarequest roles get API is queried with request id', target_fixture="api_response")
+def api_datarequest_roles_get(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_roles_get",
         {"request_id": datarequest_id}
     )
 
 
-@given('the Yoda datarequest is datamanager API is queried', target_fixture="api_response")
-def api_datarequest_is_datamanager(user):
-    return api_request(
+@given('attachment is uploaded', target_fixture="api_response")
+def api_datarequest_attachment_upload(user, datarequest_id):
+    return post_form_data(
         user,
-        "datarequest_is_datamanager",
-        {}
+        "/datarequest/upload_attachment/{}".format(datarequest_id),
+        {"file": ("attachment.pdf", "test")}
     )
 
 
-@given('the Yoda datarequest is project manager API is queried', target_fixture="api_response")
-def api_datarequest_is_project_manager(user):
+@given('attachments are submitted', target_fixture="api_response")
+def api_datarequest_attachments_submit(user, datarequest_id):
     return api_request(
         user,
-        "datarequest_is_project_manager",
-        {}
-    )
-
-
-@given('the Yoda datarequest is DMC member API is queried', target_fixture="api_response")
-def api_datarequest_is_dmc_member(user):
-    return api_request(
-        user,
-        "datarequest_is_dmc_member",
-        {}
-    )
-
-
-@given('the Yoda datarequest is reviewer API is queried with request id', target_fixture="api_response")
-def api_datarequest_is_reviewer(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_is_reviewer",
+        "datarequest_attachments_submit",
         {"request_id": datarequest_id}
     )
 
@@ -185,10 +259,46 @@ def api_datarequest_datamanager_review_submit(user, datarequest_id):
 
 
 @given('the Yoda datarequest datamanager review get API is queried with request id', target_fixture="api_response")
-def api_datarequest_review_get(user, datarequest_id):
+def api_datarequest_datamanager_review_get(user, datarequest_id):
     return api_request(
         user,
         "datarequest_datamanager_review_get",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest dmr review submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_dmr_review_submit(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_dmr_review_submit",
+        {"data": {"decision": "Accepted for review", "response_to_dm_remarks": "test"}, "request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest dmr review get API is queried with request id', target_fixture="api_response")
+def api_datarequest_dmr_review_get(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_dmr_review_get",
+        {"request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest contribution review submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_contribution_review_submit(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_contribution_review_submit",
+        {"data": {"decision": "Accepted"}, "request_id": datarequest_id}
+    )
+
+
+@given('the Yoda datarequest contribution review get API is queried with request id', target_fixture="api_response")
+def api_datarequest_contribution_review_get(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_contribution_review_get",
         {"request_id": datarequest_id}
     )
 
@@ -198,7 +308,7 @@ def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"decision": "Accepted for DMC review", "response_to_dm_remarks": "test", "assign_to": ["dmcmember"]}, "request_id": datarequest_id}
+        {"data": {"assign_to": ["dmcmember"]}, "request_id": datarequest_id}
     )
 
 
@@ -216,7 +326,7 @@ def api_datarequest_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_review_submit",
-        {"data": {"biological_samples": "No", "evaluation": "Approve", "contribution": "test", "informed_consent_fit": "test", "research_question_answerability": "test", "study_quality": "test", "logistical_feasibility": "test", "study_value": "test", "researcher_expertise": "test", "username": "functionaladminpriv"}, "request_id": datarequest_id}
+        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "contribution": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dmcmember"}, "request_id": datarequest_id}
     )
 
 
@@ -238,6 +348,15 @@ def api_datarequest_evaluation_submit(user, datarequest_id):
     )
 
 
+@given('the datarequest contribution confirm API is queried with request id', target_fixture="api_response")
+def api_datarequest_contribution_confirm(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_contribution_confirm",
+        {"request_id": datarequest_id}
+    )
+
+
 @given('the datarequest feedback get API is queried with request id', target_fixture="api_response")
 def api_datarequest_feedback_get(user, datarequest_id):
     return api_request(
@@ -251,8 +370,8 @@ def api_datarequest_feedback_get(user, datarequest_id):
 def api_datarequest_dta_upload(user, datarequest_id):
     return post_form_data(
         user,
-        "/datarequest/datarequest/upload_dta/{}".format(datarequest_id),
-        {"data": ("dta.pdf", "test")}
+        "/datarequest/upload_dta/{}".format(datarequest_id),
+        {"file": ("dta.pdf", "test")}
     )
 
 
@@ -261,8 +380,7 @@ def api_datarequest_signed_dta_upload(user, datarequest_id):
     return post_form_data(
         user,
         "/datarequest/datarequest/upload_signed_dta/{}".format(datarequest_id),
-        {"data": ("signed_dta.pdf", "test")}
-
+        {"file": ("signed_dta.pdf", "test")}
     )
 
 
