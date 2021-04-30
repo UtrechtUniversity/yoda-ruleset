@@ -39,7 +39,8 @@ def set(ctx, actor, receiver, target, message):
         mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
         mail_notifications_type = settings.load(ctx, 'mail_notifications_type', username=receiver)
         if mail_notifications == "on" and mail_notifications_type == "IMMEDIATE":
-            mail.notification(ctx, receiver, actor, message)
+            address = user.from_str(ctx, receiver)[0]
+            mail.notification(ctx, address, actor, message)
 
 
 @api.make()
