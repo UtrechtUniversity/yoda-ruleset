@@ -15,7 +15,7 @@ scenarios('../../features/ui/ui_settings.feature')
 
 @when('user checks mail notifications checkbox')
 def ui_settings_check_mail_notifications(browser):
-    browser.find_by_css('input#mail_notifications').check()
+    browser.find_by_css('.custom-control-label').check()
 
 
 @when('clicks the save button')
