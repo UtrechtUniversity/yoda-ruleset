@@ -4,11 +4,10 @@ Feature: Login Redirects
         Given user is not logged in
         When the user navigates to "<page>"
         Then the user is redirected to the login page
-        
+
         Examples:
         | page       |
-        | /test      |
-
+        | /research/ |
 
     Scenario: After direct login redirected to homepage
         Given user is not logged in
@@ -27,5 +26,5 @@ Feature: Login Redirects
         Then the user is redirected to "<page>"
 
         Examples:
-        | user          | page     |
-        | researcher    | /test    |
+        | user          | page       |
+        | researcher    | /research/ |
