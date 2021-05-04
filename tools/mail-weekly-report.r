@@ -1,10 +1,10 @@
-mail_daily_report
+mail_weekly_report
 {
     # Scan for all users with mail notifications enabled.
     *ContInxOld = 1;
     msiAddSelectFieldToGenQuery("USER_NAME", "", *GenQInp);
     msiAddConditionToGenQuery("META_USER_ATTR_NAME", "=", "org_settings_mail_notifications", *GenQInp);
-    msiAddConditionToGenQuery("META_USER_ATTR_VALUE", "=", "DAILY", *GenQInp);
+    msiAddConditionToGenQuery("META_USER_ATTR_VALUE", "=", "WEEKLY", *GenQInp);
 
     msiExecGenQuery(*GenQInp, *GenQOut);
     msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
