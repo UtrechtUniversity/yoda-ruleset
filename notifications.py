@@ -36,10 +36,10 @@ def set(ctx, actor, receiver, target, message):
         ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
 
         # Send mail notification if immediate notifications are on.
+        receiver = user.from_str(ctx, receiver)[0]
         mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
         if mail_notifications == "IMMEDIATE":
-            address = user.from_str(ctx, receiver)[0]
-            mail.notification(ctx, address, actor, message)
+            mail.notification(ctx, receiver, actor, message)
 
 
 @api.make()
