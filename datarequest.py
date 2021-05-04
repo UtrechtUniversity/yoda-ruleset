@@ -812,7 +812,7 @@ def api_datarequest_attachment_upload_permission(ctx, request_id, action):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
     :param action:     String specifying whether write permission must be granted ("grant") or
-                       revoked ("revoke")
+                       revoked ("grantread" or "revoke")
 
     :returns:          Nothing
     """
@@ -1563,7 +1563,8 @@ def api_datarequest_feedback_get(ctx, request_id):
     datarequest_action_permitted(ctx, request_id, ["OWN"],
                                  [status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT,
                                   status.REJECTED_AFTER_DATAMANAGER_REVIEW,
-                                  status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, REJECTED, RESUBMIT])
+                                  status.RESUBMIT_AFTER_DATAMANAGER_REVIEW, status.REJECTED,
+                                  status.RESUBMIT])
 
     # Construct filename
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
