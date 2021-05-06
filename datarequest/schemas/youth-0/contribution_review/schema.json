@@ -1,39 +1,34 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
-  "required": [
-    "evaluation"
-  ],
+  "title": "Contribution review",
+  "description": "Please consider carefully whether this data request should be accepted, rejected (with the possibility of resubmission) or rejected outright given the contribution specified therein.<br/><br/>The specified contribution can be found at the bottom of the datarequest form (i.e. at the bottom of this page).<br/><br/>",
   "properties": {
-    "evaluation": {
+    "decision": {
       "type": "string",
-      "title": "This data request is:",
+      "title": "In light of the specified contribution, this data request is:",
       "enum": [
-        "Approved",
+        "Accepted",
         "Rejected (resubmit)",
         "Rejected"
       ]
-    },
-    "internal_remarks": {
-      "type": "string",
-      "title": "Internal remarks, if any. Mandatory if data request is rejected. The researcher cannot read these remarks."
     }
   },
   "dependencies": {
-    "evaluation": {
+    "decision": {
       "oneOf": [
         {
           "properties": {
-            "evaluation": {
+            "decision": {
               "enum": [
-                "Approved"
+                "Accepted"
               ]
             }
           }
         },
         {
           "properties": {
-            "evaluation": {
+            "decision": {
               "enum": [
                 "Rejected (resubmit)",
                 "Rejected"
@@ -46,10 +41,13 @@
             }
           },
           "required": [
-            "internal_remarks", "feedback_for_researcher"
+            "feedback_for_researcher"
           ]
         }
       ]
     }
-  }
+  },
+  "required": [
+    "decision"
+  ]
 }

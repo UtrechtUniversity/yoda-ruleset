@@ -62,7 +62,7 @@ def pytest_configure(config):
 
     global users
     if datarequest:
-        users = users + ['bodmember', 'dmcmember']
+        users = users + ['projectmanager', 'executivedirector', 'dmcmember']
 
     # Store cookies for each user.
     for user in users:
