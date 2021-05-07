@@ -52,45 +52,45 @@ def ui_data_package_approve(browser):
     browser.find_by_css('a.action-approve-for-publication').click()
 
 
-@then(parsers.parse('the data package status is "{status}"'))
-def ui_data_package_status(browser, status):
-    browser.is_text_present(status, wait_time=10)
-
-
-# Scenario: Vault depublish publication
-@when('user approves the data package for depublication')
+@when('user requests depublication of data package')
 def ui_data_package_depublish(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-depublish-publication').click()
-    # And confirm depublication
-    browser.find_by_css('action-confirm-depublish-publication').click()
+    browser.find_by_css('.action-confirm-depublish-publication').click()
 
 
-# Scenario: Vault redepublish publication
-@when('user approves the data package for republication')
+@when('user requests republication of data package')
 def ui_data_package_republish(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-republish-publication').click()
     # And confirm republication
-    browser.find_by_css('action-confirm-republish-publication').click()
+    browser.find_by_css('.action-confirm-republish-publication').click()
 
 
-# Scenario: Vault views metadata form
+@then(parsers.parse('the data package status is "{status}"'))
+def ui_data_package_status(browser, status):
+    for _i in range(25):
+        if browser.is_text_present(status, wait_time=3):
+            return True
+        browser.reload()
+
+    raise AssertionError()
+
+
 @when('user clicks metatadata button')
 def ui_data_package_click_metadata_button(browser):
     browser.find_by_css('button.metadata-form').click()
 
 
-@then('system metadata is visible')
+@then('metadata form is visible')
 def ui_data_package_metadata_form_is_visible(browser):
-    # opens new browser, so perhaps wait
-    assert browser.is_element_visible_by_css('.BLABLABLA', wait_time=10)
+    assert browser.is_element_visible_by_css('.metadata-form', wait_time=3)
 
 
-# Scenario: Views system metadata ##
 @when('user clicks system metadata icon')
 def ui_data_package_click_system_metadata_icon(browser):
-    browser.find_by_css('i.system-metadata-icon').click()
+    browser.is_element_visible_by_css('.system-metadata', wait_time=3)
+    browser.find_by_css('.system-metadata-icon').click()
 
 
 @then('system metadata is visible')
@@ -98,10 +98,10 @@ def ui_data_package_system_metadata_is_visible(browser):
     assert browser.is_element_visible_by_css('.system-metadata')
 
 
-# Scenario: Views provenance information ##
 @when('user clicks provenance icon')
 def ui_data_package_click_provenance_icon(browser):
-    browser.find_by_css('i.actionlog-icon').click()
+    browser.is_element_visible_by_css('.actionlog-icon', wait_time=3)
+    browser.find_by_css('.actionlog-icon').click()
 
 
 @then('provenance information is visible')
