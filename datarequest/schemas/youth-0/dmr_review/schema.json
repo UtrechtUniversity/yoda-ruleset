@@ -1,39 +1,38 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
-  "required": [
-    "evaluation"
-  ],
+  "title": "Datamanager review review",
+  "description": "Please consider carefully the remarks of the data manager, if any.",
   "properties": {
-    "evaluation": {
+    "decision": {
       "type": "string",
       "title": "This data request is:",
       "enum": [
-        "Approved",
+        "Accepted for review",
         "Rejected (resubmit)",
         "Rejected"
       ]
     },
-    "internal_remarks": {
+    "response_to_dm_remarks": {
       "type": "string",
-      "title": "Internal remarks, if any. Mandatory if data request is rejected. The researcher cannot read these remarks."
+      "title": "Response to data manager remarks (if any)"
     }
   },
   "dependencies": {
-    "evaluation": {
+    "decision": {
       "oneOf": [
         {
           "properties": {
-            "evaluation": {
+            "decision": {
               "enum": [
-                "Approved"
+                "Accepted for review"
               ]
             }
           }
         },
         {
           "properties": {
-            "evaluation": {
+            "decision": {
               "enum": [
                 "Rejected (resubmit)",
                 "Rejected"
@@ -46,10 +45,13 @@
             }
           },
           "required": [
-            "internal_remarks", "feedback_for_researcher"
+            "feedback_for_researcher"
           ]
         }
       ]
     }
-  }
+  },
+  "required": [
+    "decision"
+  ]
 }

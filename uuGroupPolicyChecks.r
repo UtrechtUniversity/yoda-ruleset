@@ -441,8 +441,7 @@ uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
 	*reason  = "";
 
     # User setting: mail notifications
-    if (*attribute == "org_settings_mail_notifications" ||
-        *attribute == "org_settings_mail_notifications_type") {
+    if (*attribute == "org_settings_mail_notifications") {
         if (*actor == *userName) {
             *allowed = 1;
         } else {

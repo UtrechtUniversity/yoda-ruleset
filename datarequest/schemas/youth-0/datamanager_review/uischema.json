@@ -1,5 +1,8 @@
 {
   "datamanager_remarks": {
-    "ui:widget": "textarea"
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
   }
 }

@@ -2,14 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "required": [
+    "for_publishing",
     "evaluation",
-    "contribution",
-    "informed_consent_fit",
-    "research_question_answerability",
-    "study_quality",
-    "logistical_feasibility",
-    "study_value",
-    "researcher_expertise",
     "biological_samples"
   ],
   "properties": {
@@ -27,42 +21,14 @@
       "title": "Please provide a brief rationale for your evaluation.",
       "description": "This is mandatory if the data request is rejected."
     },
-    "contribution": {
-      "type": "string",
-      "title": "How much did the applicant involved contribute to YOUth with respect to recruitment, setup, and continuation of YOUth?"
-    },
-    "informed_consent_fit": {
-      "type": "string",
-      "title": "How does the research question fit with the provided informed consent of the participants of YOUth?"
-    },
-    "research_question_answerability": {
-      "type": "string",
-      "title": "Can the research question be answered with the requested YOUth data?"
-    },
-    "study_quality": {
-      "type": "string",
-      "title": "Is the quality of the proposal good? Is the study design correct?"
-    },
-    "logistical_feasibility": {
-      "type": "string",
-      "title": "Is the proposal logistically feasible?"
-    },
-    "study_value": {
-      "type": "string",
-      "title": "Is the study valuable?"
-    },
-    "researcher_expertise": {
-      "type": "string",
-      "title": "Does the researcher have the expertise necessary to correctly analyze and report on the research question at hand?"
-    },
     "biological_samples": {
-      "type": "string",
+      "type": "boolean",
       "title": "Will biological samples be used?",
-      "enum": [
-        "No",
-        "Yes"
-      ],
-      "default": "No"
+      "default": false
+    },
+    "for_publishing": {
+      "type": "boolean",
+      "title": "Data request for publishing?"
     }
   },
   "dependencies": {
@@ -98,7 +64,7 @@
           "properties": {
             "biological_samples": {
               "enum": [
-                "No"
+                false
               ]
             }
           }
@@ -107,7 +73,7 @@
           "properties": {
             "biological_samples": {
               "enum": [
-                "Yes"
+                true
               ]
             },
             "biological_samples_volume": {
@@ -122,6 +88,65 @@
           "required": [
             "biological_samples_volume",
             "biological_samples_committee_approval"
+          ]
+        }
+      ]
+    },
+    "for_publishing": {
+      "oneOf": [
+        {
+          "properties": {
+            "for_publishing": {
+              "enum": [
+                false
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "for_publishing": {
+              "enum": [
+                true
+              ]
+            },
+            "contribution": {
+              "type": "string",
+              "title": "How much did the applicant involved contribute to YOUth with respect to recruitment, setup, and continuation of YOUth?"
+            },
+            "informed_consent_fit": {
+              "type": "string",
+              "title": "How does the research question fit with the provided informed consent of the participants of YOUth? (If in doubt please confer with the data manager and a privacy officer.)"
+            },
+            "research_question_answerability": {
+              "type": "string",
+              "title": "Can the research question be answered with the requested YOUth data?"
+            },
+            "study_quality": {
+              "type": "string",
+              "title": "Is the quality of the proposal good? Is the study design correct?"
+            },
+            "logistical_feasibility": {
+              "type": "string",
+              "title": "Is the proposal logistically feasible?"
+            },
+            "study_value": {
+              "type": "string",
+              "title": "Is the study valuable?"
+            },
+            "researcher_expertise": {
+              "type": "string",
+              "title": "Does the researcher have the expertise necessary to correctly analyze and report on the research question at hand?"
+            }
+          },
+          "required": [
+            "contribution",
+            "informed_consent_fit",
+            "research_question_answerability",
+            "study_quality",
+            "logistical_feasibility",
+            "study_value",
+            "researcher_expertise"
           ]
         }
       ]

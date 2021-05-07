@@ -12,22 +12,22 @@ from email.mime.text import MIMEText
 import settings
 from util import *
 
-__all__ = ['rule_mail_new_package_published',
-           'rule_mail_your_package_published',
+__all__ = ['rule_mail_notification_report',
            'rule_mail_test']
 
 
-def send(ctx, to, actor, subject, body):
+def send(ctx, to, actor, subject, body, cc=None):
     """Send an e-mail with specified recipient, subject and body.
 
     The originating address and mail server credentials are taken from the
     ruleset configuration file.
 
     :param ctx:     Combined type of a callback and rei struct
-    :param to:      Recipient of them mail
+    :param to:      Recipient of the mail
     :param actor:   Actor of the mail
     :param subject: Subject of mail
     :param body:    Body of mail
+    :param cc:      Comma-separated list of CC recipient(s) of email (optional)
 
     :returns: API status
     """
@@ -35,14 +35,11 @@ def send(ctx, to, actor, subject, body):
         log.write(ctx, '[EMAIL] Notifications are disabled')
         return
 
-    if not user.is_admin(ctx):
-        return api.Error('not_allowed', 'Only rodsadmin can send mail')
-
     if '@' not in to:
         log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
 
-    if settings.load(ctx, 'mail_notifications', username=to) == "False":
+    if settings.load(ctx, 'mail_notifications', username=to) == "OFF":
         log.write(ctx, '[EMAIL] User <{}> disabled mail notifications'.format(to))
         return
 
@@ -96,8 +93,14 @@ def send(ctx, to, actor, subject, body):
     msg['To'] = to
     msg['Subject'] = subject
 
+    if cc is not None:
+        msg['Cc'] = cc
+
     try:
-        smtp.sendmail(cfg['from'], [to], msg.as_string())
+        if cc is not None:
+            smtp.sendmail(cfg['from'], [to] + cc.split(','), msg.as_string())
+        else:
+            smtp.sendmail(cfg['from'], [to], msg.as_string())
     except Exception as e:
         log.write(ctx, '[EMAIL] Could not send mail: {}'.format(e))
         return api.Error('internal', 'Mail configuration error')
@@ -117,67 +120,47 @@ def _wrapper(ctx, to, actor, subject, body):
     return '0', ''
 
 
-# @rule.make(inputs=range(4), outputs=range(4, 6))
-def mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, collection):
+def notification(ctx, to, actor, message):
     return _wrapper(ctx,
-                    to=datamanager,
-                    actor=submitter,
-                    subject='[Yoda] Datapackage submitted for publication acceptance: {}'.format(collection),
-                    body="""
-Dear {},
-{} submitted a datapackage to be accepted for publication.
-
-Datapackage: {}
-
-Best regards,
-Yoda system
-""".format(datamanager, submitter, collection))
-
-
-@rule.make(inputs=range(4), outputs=range(4, 6))
-def rule_mail_new_package_published(ctx, datamanager, actor, title, doi):
-    return mail_new_package_published(ctx, datamanager, actor, title, doi)
-
-
-def mail_new_package_published(ctx, datamanager, actor, title, doi):
-    return _wrapper(ctx,
-                    to=datamanager,
+                    to=to,
                     actor=actor,
-                    subject='[Yoda] New package is published with DOI: {}'.format(doi),
+                    subject='[Yoda] {}'.format(message),
                     body="""
-Congratulations, your data has been published.
+You received a new notification: {}
 
-Title: {}
-DOI:   {} (https://doi.org/{})
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
 
 Best regards,
 Yoda system
-""".format(title, doi, doi))
+""".format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
-@rule.make(inputs=range(4), outputs=range(4, 6))
-def rule_mail_your_package_published(ctx, researcher, actor, title, doi):
-    return mail_your_package_published(ctx, researcher, actor, title, doi)
+@rule.make(inputs=range(2), outputs=range(2, 4))
+def rule_mail_notification_report(ctx, to, notifications):
+    if not user.is_admin(ctx):
+        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
 
-
-def mail_your_package_published(ctx, researcher, actor, title, doi):
     return _wrapper(ctx,
-                    to=researcher,
-                    actor=actor,
-                    subject='[Yoda] Your package is published with DOI: {}'.format(doi),
+                    to=to,
+                    actor='system',
+                    subject='[Yoda] {} notification(s)'.format(notifications),
                     body="""
-Congratulations, your data has been published.
+You have {} notification(s).
 
-Title: {}
-DOI:   {} (https://doi.org/{})
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
 
 Best regards,
 Yoda system
-""".format(title, doi, doi))
+""".format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_mail_test(ctx, to):
+    if not user.is_admin(ctx):
+        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
+
     return _wrapper(ctx,
                     to=to,
                     actor='None',
