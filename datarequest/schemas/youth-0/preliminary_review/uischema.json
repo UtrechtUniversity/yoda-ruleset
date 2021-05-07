@@ -1,8 +1,14 @@
 {
   "internal_remarks": {
-    "ui:widget": "textarea"
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
   },
   "feedback_for_researcher": {
-    "ui:widget": "textarea"
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
   }
 }

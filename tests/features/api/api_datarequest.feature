@@ -12,71 +12,56 @@ Feature: Datarequest API
         Then the response status code is "200"
 
         Examples:
-            | schema_name        |
-            | datarequest        |
-            | preliminary_review |
-            | datamanager_review |
-            | review             |
-            | assignment         |
-            | evaluation         |
+            | schema_name         |
+            | datarequest         |
+            | preliminary_review  |
+            | datamanager_review  |
+            | dmr_review          |
+            | contribution_review |
+            | review              |
+            | assignment          |
+            | evaluation          |
 
-    Scenario: Datarequest submit
+    Scenario: Datarequest save
         Given user "researcher" is authenticated
-        And the Yoda datarequest submit API is queried with data
+        And the Yoda datarequest submit API is queried with a data request to save as draft
         Then the response status code is "200"
 
-    Scenario: Datarequest is owner
+    Scenario: Draft datarequest submit
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And the Yoda datarequest submit API is queried with a draft data request to submit
+        Then the response status code is "200"
+        And request status is "PENDING_ATTACHMENTS"
+
+    Scenario: Confirm that the users have appropriate roles
         Given user "<user>" is authenticated
         And datarequest exists
-        And the Yoda datarequest is owner API is queried with request id
+        And the Yoda datarequest roles get API is queried with request id
         Then the response status code is "200"
         And the result is "<result>"
 
         Examples:
-            | user        | result |
-            | researcher  | True   |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | False  |
+            | user              | result  |
+            | researcher        | ['OWN'] |
+            | projectmanager    | ['PM']  |
+            | executivedirector | ['ED']  |
+            | datamanager       | ['DM']  |
+            | dmcmember         | ['DMC'] |
 
-    Scenario: Datarequest is datamanager
-        Given user "<user>" is authenticated
-        And the Yoda datarequest is datamanager API is queried
+    Scenario: Upload attachments
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And attachment is uploaded
         Then the response status code is "200"
-        And the result is "<result>"
+        And request status is "PENDING_ATTACHMENTS"
 
-        Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | True   |
-            | bodmember   | False  |
-            | dmcmember   | False  |
-
-    Scenario: Datarequest is BoD member
-        Given user "<user>" is authenticated
-        And the Yoda datarequest is BoD member API is queried
+    Scenario: Submit attachments
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And attachments are submitted
         Then the response status code is "200"
-        And the result is "<result>"
-
-        Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | True   |
-            | dmcmember   | False  |
-
-    Scenario: Datarequest is DMC member
-        Given user "<user>" is authenticated
-        And the Yoda datarequest is DMC member API is queried
-        Then the response status code is "200"
-        And the result is "<result>"
-
-        Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | True   |
+        And request status is "SUBMITTED"
 
     Scenario: Datarequest get
         Given user "researcher" is authenticated
@@ -86,14 +71,14 @@ Feature: Datarequest API
         And request status is "SUBMITTED"
 
     Scenario: Datarequest preliminary review submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest preliminary review submit API is queried with request id
         Then the response status code is "200"
         And request status is "PRELIMINARY_ACCEPT"
 
     Scenario: Datarequest preliminary review get
-        Given user "bodmember" is authenticated
+        Given user "datamanager" is authenticated
         And datarequest exists
         And the Yoda datarequest preliminary review get API is queried with request id
         Then the response status code is "200"
@@ -106,37 +91,49 @@ Feature: Datarequest API
         And request status is "DATAMANAGER_ACCEPT"
 
     Scenario: Datarequest datamanager review get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest datamanager review get API is queried with request id
         Then the response status code is "200"
 
+    Scenario: Datarequest datamanager review review submit
+        Given user "projectmanager" is authenticated
+        And datarequest exists
+        And the Yoda datarequest dmr review submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "DATAMANAGER_REVIEW_ACCEPTED"
+
+    Scenario: Datarequest datamanager review review get
+        Given user "executivedirector" is authenticated
+        And datarequest exists
+        And the Yoda datarequest dmr review get API is queried with request id
+        Then the response status code is "200"
+
+    Scenario: Datarequest contribution review submit
+        Given user "executivedirector" is authenticated
+        And datarequest exists
+        And the Yoda datarequest contribution review submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "CONTRIBUTION_ACCEPTED"
+
+    Scenario: Datarequest contribution review get
+        Given user "projectmanager" is authenticated
+        And datarequest exists
+        And the Yoda datarequest contribution review get API is queried with request id
+        Then the response status code is "200"
+
     Scenario: Datarequest assignment submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the datarequest assignment submit API is queried with request id
         Then the response status code is "200"
         And request status is "UNDER_REVIEW"
 
     Scenario: Datarequest assignment get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest assignment get API is queried with request id
         Then the response status code is "200"
-
-    Scenario: Datarequest is reviewer
-        Given user "<user>" is authenticated
-        And datarequest exists
-        And the Yoda datarequest is reviewer API is queried with request id
-        Then the response status code is "200"
-        And the result is "<result>"
-
-        Examples:
-            | user        | result |
-            | researcher  | False  |
-            | datamanager | False  |
-            | bodmember   | False  |
-            | dmcmember   | True   |
 
     Scenario: Datarequest review submit
         Given user "dmcmember" is authenticated
@@ -146,17 +143,30 @@ Feature: Datarequest API
         And request status is "REVIEWED"
 
     Scenario: Datarequest reviews get
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the Yoda datarequest reviews get API is queried with request id
         Then the response status code is "200"
 
     Scenario: Datarequest evaluation submit
-        Given user "bodmember" is authenticated
+        Given user "projectmanager" is authenticated
         And datarequest exists
         And the datarequest evaluation submit API is queried with request id
         Then the response status code is "200"
         And request status is "APPROVED"
+
+    Scenario: Datarequest contribution confirm
+        Given user "projectmanager" is authenticated
+        And datarequest exists
+        And the datarequest contribution confirm API is queried with request id
+        Then the response status code is "200"
+        And request status is "CONTRIBUTION_CONFIRMED"
+
+    Scenario: Datarequest feedback get
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And the datarequest feedback get API is queried with request id
+        Then the response status code is "400"
 
     Scenario: Datarequest datamanager upload DTA
         Given user "datamanager" is authenticated
@@ -178,7 +188,3 @@ Feature: Datarequest API
         And the datarequest data ready API is queried with request id
         Then the response status code is "200"
         And request status is "DATA_READY"
-
-#    Scenario: Datarequest resubmit
-#        Given the Yoda datarequest submit API is queried with <data> and <previous_request_id>
-#        Then the response status code is "200"
