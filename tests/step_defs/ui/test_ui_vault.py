@@ -64,7 +64,7 @@ def ui_data_package_depublish(browser):
     browser.find_by_css('a.action-depublish-publication').click()
     # And confirm depublication
     browser.find_by_css('action-confirm-depublish-publication').click()
-        
+
 
 # Scenario: Vault redepublish publication
 @when('user approves the data package for republication')
@@ -78,18 +78,19 @@ def ui_data_package_republish(browser):
 # Scenario: Vault views metadata form
 @when('user clicks metatadata button')
 def ui_data_package_click_metadata_button(browser):
-    browser.find_by_css('button.metadata-form').click() 
+    browser.find_by_css('button.metadata-form').click()
 
 
 @then('system metadata is visible')
 def ui_data_package_metadata_form_is_visible(browser):
-    # opens new browser, so perhaps wait 
+    # opens new browser, so perhaps wait
     assert browser.is_element_visible_by_css('.BLABLABLA', wait_time=10)
+
 
 # Scenario: Views system metadata ##
 @when('user clicks system metadata icon')
 def ui_data_package_click_system_metadata_icon(browser):
-    browser.find_by_css('i.system-metadata-icon').click() 
+    browser.find_by_css('i.system-metadata-icon').click()
 
 
 @then('system metadata is visible')
@@ -100,7 +101,7 @@ def ui_data_package_system_metadata_is_visible(browser):
 # Scenario: Views provenance information ##
 @when('user clicks provenance icon')
 def ui_data_package_click_provenance_icon(browser):
-    browser.find_by_css('i.actionlog-icon').click() 
+    browser.find_by_css('i.actionlog-icon').click()
 
 
 @then('provenance information is visible')
@@ -112,7 +113,7 @@ def ui_data_package_provenance_information_is_visible(browser):
 @when('user clicks action menu to revoke access')
 def ui_data_package_revoke_vault_access(browser):
     browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-revoke-vault-access').click() 
+    browser.find_by_css('a.action-revoke-vault-access').click()
 
 
 @then('action menu holds option to grant access to research group')
@@ -121,10 +122,10 @@ def ui_data_package_grant_option_present(browser):
     assert browser.is_element_present_by_css('.action-grant-vault-access')
 
 
-# Scenario: Grant read access to research group 
+# Scenario: Grant read access to research group
 def ui_data_package_grant_vault_access(browser):
     browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-grant-vault-access').click() 
+    browser.find_by_css('a.action-grant-vault-access').click()
 
 
 @then('action menu holds option to grant access to research group')
@@ -137,9 +138,9 @@ def ui_data_package_revoke_option_present(browser):
 @when('user clicks action menu to go to research')
 def ui_data_package_copy_to_resarch(browser):
     browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.action-copy-vault-package-to-research').click() 
-        
-        
+    browser.find_by_css('a.action-copy-vault-package-to-research').click()
+
+
 @when('user chooses research folder corresponding to "<vault>"')
 def ui_browse_research_to_copy_data_package_to(browser, vault):
     research = vault.replace("vault-", "research-")
@@ -153,14 +154,14 @@ def ui_browse_research_to_copy_data_package_to(browser, vault):
 
 
 @when('user presses copy package button')
-def ui_data_package_revoke_option_present(browser):
+def ui_user_presses_copy_package_button(browser):
     browser.find_by_id('btn-copy-package').click()
 
 
 @then('package is copied to research area')
 def ui_data_package_is_copied_to_research(browser):
     ##
-    assert ???
+    assert 0
 
 
 # Scenario: Check datapackage compliancy with policy
@@ -173,7 +174,7 @@ def ui_data_package_check_compliancy(browser):
 @when('user chooses policy')
 def ui_data_package_choose_policy(browser):
     browser.find_by_id('file-formats-list').click()
-    browser.find_option_by_text('DANS').click() 
+    browser.find_option_by_text('DANS').click()
 
 
 @then('compliancy result is presented')
