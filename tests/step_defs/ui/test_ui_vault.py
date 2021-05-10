@@ -1,7 +1,7 @@
 # coding=utf-8
 """Vault UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -84,12 +84,12 @@ def ui_data_package_click_metadata_button(browser):
 
 @then('metadata form is visible')
 def ui_data_package_metadata_form_is_visible(browser):
-    assert browser.is_element_visible_by_css('.metadata-form', wait_time=3)
+    assert browser.is_element_visible_by_css('.metadata-form', wait_time=5)
 
 
 @when('user clicks system metadata icon')
 def ui_data_package_click_system_metadata_icon(browser):
-    browser.is_element_visible_by_css('.system-metadata', wait_time=3)
+    browser.is_element_visible_by_css('.system-metadata', wait_time=5)
     browser.find_by_css('.system-metadata-icon').click()
 
 
@@ -100,7 +100,7 @@ def ui_data_package_system_metadata_is_visible(browser):
 
 @when('user clicks provenance icon')
 def ui_data_package_click_provenance_icon(browser):
-    browser.is_element_visible_by_css('.actionlog-icon', wait_time=3)
+    browser.is_element_visible_by_css('.actionlog-icon', wait_time=5)
     browser.find_by_css('.actionlog-icon').click()
 
 
@@ -109,7 +109,6 @@ def ui_data_package_provenance_information_is_visible(browser):
     assert browser.is_element_visible_by_css('.actionlog')
 
 
-# Scenario: Revoke read access to research group
 @when('user clicks action menu to revoke access')
 def ui_data_package_revoke_vault_access(browser):
     browser.find_by_id('actionMenu').click()
@@ -122,20 +121,19 @@ def ui_data_package_grant_option_present(browser):
     assert browser.is_element_present_by_css('.action-grant-vault-access')
 
 
-# Scenario: Grant read access to research group
+@when('clicks action menu to grant access')
 def ui_data_package_grant_vault_access(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-grant-vault-access').click()
 
 
-@then('action menu holds option to grant access to research group')
+@then('action menu holds option to revoke access from research group')
 def ui_data_package_revoke_option_present(browser):
     browser.find_by_id('actionMenu').click()
     assert browser.is_element_present_by_css('.action-revoke-vault-access')
 
 
-# Scenario: Copy datapackage to research space
-@when('user clicks action menu to go to research')
+@when('user clicks action menu to copy data package to research')
 def ui_data_package_copy_to_resarch(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-copy-vault-package-to-research').click()
@@ -144,9 +142,10 @@ def ui_data_package_copy_to_resarch(browser):
 @when('user chooses research folder corresponding to "<vault>"')
 def ui_browse_research_to_copy_data_package_to(browser, vault):
     research = vault.replace("vault-", "research-")
+    href = "?dir=%2F{}".format(research)
     link = []
     while len(link) == 0:
-        link = browser.links.find_by_text(research)
+        link = browser.links.find_by_href(href)
         if len(link) > 0:
             link.click()
         else:
@@ -158,23 +157,22 @@ def ui_user_presses_copy_package_button(browser):
     browser.find_by_id('btn-copy-package').click()
 
 
-@then('package is copied to research area')
+@then('data package is copied to research area')
 def ui_data_package_is_copied_to_research(browser):
-    ##
-    assert 0
+    browser.find_by_id('actionMenu').click()
+    browser.is_element_present_by_css('.action-revoke-vault-access')
 
 
-# Scenario: Check datapackage compliancy with policy
 @when('user clicks clicks action menu to check compliancy')
 def ui_data_package_check_compliancy(browser):
     browser.find_by_id('actionMenu').click()
-    browser.find_by_css('a.check-for-unpreservable-files').click()
+    browser.find_by_css('a.action-check-for-unpreservable-files').click()
 
 
 @when('user chooses policy')
 def ui_data_package_choose_policy(browser):
     browser.find_by_id('file-formats-list').click()
-    browser.find_option_by_text('DANS').click()
+    browser.find_option_by_value('DANS').click()
 
 
 @then('compliancy result is presented')
@@ -182,8 +180,13 @@ def ui_data_package_compliancy_is_presented(browser):
     assert browser.find_by_css('p.help')
 
 
-# Scenario: Go to research environment
 @when('user clicks action menu go to research')
 def ui_data_package_go_to_research(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-go-to-research').click()
+
+
+@then('the research space of "<vault>" is shown')
+def ui_vault_research_space(browser, vault):
+    research = vault.replace("vault-", "research-")
+    assert browser.is_text_present(research, wait_time=3)
