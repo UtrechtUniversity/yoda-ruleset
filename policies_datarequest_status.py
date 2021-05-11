@@ -4,6 +4,8 @@
 __copyright__ = "Copyright (c) 2019-2020, Utrecht University"
 __license__   = "GPLv3, see LICENSE"
 
+import re
+
 import datarequest
 from util import *
 
@@ -26,6 +28,11 @@ def can_set_datarequest_status(ctx, obj_name, status_to):
 
 
 def post_status_transition(ctx, obj_name, value):
+
+    # Write timestamp to provenance log
+    request_id = re.sub(r"^[^0-9]*/(\d+).*", r"\1", obj_name)
+    status     = datarequest.status[value]
+    datarequest.datarequest_provenance_write(ctx, request_id, status)
 
     # Send emails
     datarequest.send_emails(ctx, obj_name, value)

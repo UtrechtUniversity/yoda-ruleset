@@ -1,5 +1,5 @@
 {
-  "internal_remarks": {
+  "response_to_dm_remarks": {
     "ui:widget": "textarea",
     "ui:options": {
       "rows": 12

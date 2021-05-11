@@ -9,17 +9,20 @@ import json
 import time
 from datetime import datetime
 
+import mail
+import settings
 from util import *
 from util.query import Query
 
 __all__ = ['api_notifications_load',
-           'api_notifications_dismiss']
+           'api_notifications_dismiss',
+           'api_notifications_dismiss_all']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
 def set(ctx, actor, receiver, target, message):
-    """Save user notification.
+    """Set user notification and send mail notification when configured.
 
     :param ctx:      Combined type of a callback and rei struct
     :param actor:    Actor of notification message
@@ -31,6 +34,12 @@ def set(ctx, actor, receiver, target, message):
         timestamp = int(time.time())
         notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
         ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
+
+        # Send mail notification if immediate notifications are on.
+        receiver = user.from_str(ctx, receiver)[0]
+        mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
+        if mail_notifications == "IMMEDIATE":
+            mail.notification(ctx, receiver, actor, message)
 
 
 @api.make()
@@ -77,5 +86,16 @@ def api_notifications_dismiss(ctx, identifier):
     :param identifier: Identifier of notification message
     """
     key = "{}_{}".format(NOTIFICATION_KEY, str(identifier))
+    user_name = user.full_name(ctx)
+    ctx.uuUserMetaRemove(user_name, key, '', '')
+
+
+@api.make()
+def api_notifications_dismiss_all(ctx):
+    """Dismiss all user notifications.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    key = "{}_%".format(NOTIFICATION_KEY)
     user_name = user.full_name(ctx)
     ctx.uuUserMetaRemove(user_name, key, '', '')

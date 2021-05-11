@@ -1,70 +1,15 @@
 {
+  "owner": {
+    "ui:widget": "hidden"
+  },
+  "previous_request_id": {
+    "ui:widget": "hidden"
+  },
   "title": {
     "ui:autofocus": true
   },
-  "researchers": {
-    "contacts": {
-      "ui:options": {
-        "orderable": false
-      }
-    }
-  },
-  "research_context": {
-    "background": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 20
-      }
-    },
-    "research_question": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 5
-      }
-    },
-    "requested_data_summary": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 5
-      }
-    },
-    "references": {
-      "ui:widget": "textarea"
-    }
-  },
-  "hypotheses": {
-    "hypotheses": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    }
-  },
-  "methods": {
-    "design": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 10
-      }
-    },
-    "preparation": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    },
-    "processing": {
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 8
-      }
-    },
-    "additional_methodological_aspects": {
-      "ui:widget": "textarea"
-    }
-  },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "data_lock_notification", "publication_approval", "private_request_explanation" ],
+    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "methods", "contribution" ],
     "data": {
       "ui:field": "DataSelection"
     },
@@ -80,28 +25,187 @@
     "other_remarks": {
       "ui:widget": "textarea"
     },
-    "data_lock_notification": {
-      "ui:widget": "radio"
-    },
     "publication_approval": {
       "ui:widget": "radio"
     },
     "private_request_explanation": {
       "ui:widget": "textarea"
-    }
-  },
-  "person": {
-    "d_contribution_type": {
-      "ui:widget": "checkboxes"
-    }
-  },
-  "contribution": {
-    "ui:order": [ "contribution_time", "contribution_time_type", "contribution_time_type_other", "contribution_time_specification", "contribution_financial", "contribution_financial_amount", "contribution_favor", "contribution_favor_description" ],
-    "contribution_time_specification": {
-      "ui:widget": "textarea"
     },
-    "contribution_favor_description": {
-      "ui:widget": "textarea"
+    "hypotheses": {
+      "hypotheses": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      }
+    },
+    "study_information": {
+      "research_questions": {
+        "ui:widget": "textarea",
+        "ui:options": {
+            "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nRQ1 = Are more religious people more prosocial than less religious people?\nRQ2 = Does the relationship between religiosity and prosociality differ for people with different religious affiliations?"
+      },
+      "hypotheses": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 20
+        },
+        "ui:placeholder": "Example:\n\nWe expect that religiosity is associated with prosocial behavior in our sample as well. To assess this prediction, we will use the following hypotheses:\n\nH0(1) = In men and women who graduated from Wisconsin high schools in 1957, there is no association between religiosity and prosociality.\nH1(1) = In men and women who graduated from Wisconsin high schools in 1957, there is an association between religiosity and prosociality.\n\nIt is possible that these mechanisms are stronger for some religions than for others and prosocial behavior differs for the different religions in our sample. To answer this question, we will test the following hypotheses:\n\nH0(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 does not differ for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants).\nH1(2) = The relationship between religiosity and prosociality in men and women who graduated from Wisconsin high schools in 1957 differs for people with different religious affiliations (i.e., Roman Catholics, Lutheran, Methodists, Presbyterians, United Church of Christ, and Protestants)."
+      }
+    },
+    "variables": {
+      "variables": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 28
+        },
+        "ui:placeholder": "Example:\n\nThe following example is shortened. Please see https://psyarxiv.com/hvfmr/ for complete details.\n\nReligiosity (IV): Religiosity is measured using a newly created scale with a subset of items from the Religion and Spirituality module of the 2004 mail survey. The scale includes general questions about how religious/spiritual the individual is and how important religion/spirituality is to them. The specific variables are as follows:\n\nil001rer: How religious are you?\nil002rer: How spiritual are you?\nil003rer: How important is religion in your life?\nil004rer: How important is spirituality in your life?\nil005rer: How important was it, or would it have been if you had children, to send your children for religious or spiritual instruction?\nil006rer: How closely do you identify with being a member of a religious group?\n\nThe levels of all of these variables are indicated by a Likert scale with the following options: (1) Not at all; (2) Not very; (3) Somewhat; (4) Very; (5) Extremely, as well as ‘System Missing’ (the participant did not provide an answer) and ‘Refused’ (the participant refused to answer the question). Variable il006rer additionally includes the option ‘Don’t know’ (the participant stated that they did not know how to answer the question). We will use the average score (after omitting non-numeric and ‘Don’t know’ responses) on the variables as a measure of religiosity. \n\nProsociality (DV): We will use three measures of prosociality that measure three aspects of engagement in other oriented activities. The prosociality variables come from the Volunteering module of the 2004 phone survey. \n\ngv103re: Did the graduate do volunteer work in the last 12 months? \n\nThis dichotomous variable assesses whether or not the participant has engaged in any volunteering activities in the last 12 months. The levels of this variable are yes/no. Yes will be coded as ‘1’, no will be coded as ‘0’."
+      },
+      "unit_of_analysis": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nInitially, the WLS consisted of 10,317 participants. As we are not interested in a specific group of Wisconsin people, we will not exclude any participants from our analyses. However, only 7,265 participants filled out the questions on prosociality and the number of siblings in the phone survey and only 6,845 filled out the religiosity items in the mail survey (Herd et al., 2014). This corresponds to a response rate of 73% and 69% respectively. Because we do not know whether the participants that did the mail survey also did the phone survey, our minimum expected sample size is 10,317 * 0.73 * 0.69 = 5,297."
+      },
+      "missing_data": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nThe WLS provides a documented set of missing codes. Reasons for missing data include: ‘System missing’ refers to the number of participants that did not or could not complete the questionnaire. ‘Partial interview’ refers to the number of participants that did not get that particular question because they were only partially interviewed. The rest of the codes include ‘inappropriate,’ ‘refused,’ and ‘could not code.’"
+      },
+      "statistical_outliers": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 12
+        },
+        "ui:placeholder": "Example:\n\nThe dataset probably does not involve any invalid data since the dataset has been previously cleaned by the WLS data controllers and any clearly unreasonably low or high values have been removed from the dataset. However, to be sure we will create a box and whisker plot for all continuous variables (the dependent variables gv109re and gv111re, the covariate gk067ss, and the scale for religiosity) and remove any data point that appears to be more than 1.5 times the IQR away from the 25th and 75th percentile. Based on normally distributed data, we expect that 2.1% of the data points will be removed this way, leaving 1,358 out of 1,387 participants for the binary regression with gv103re as the outcome variable and 1,086 out of 1,109 participants, and 1,041 out of 1,063 participants for the linear regressions with gv109re and gv111re as the outcome variables, respectively."
+      }
+    },
+    "knowledge_of_data": {
+      "prior_publication": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 12
+        },
+        "ui:placeholder": "Example:\n\nBoth authors (PS and JC) have previously used the Graduates 2003-2005 wave to assess the link between Big Five personality traits and prosociality. The variables we used to measure the Big Five personality traits were ih001rei (extraversion), ih009rei (agreeableness), ih017rei (conscientiousness), ih025rei (neuroticism), and ih032rei (openness). The variables we used to measure prosociality were ih013rer (“To what extent do you agree that you see yourself as someone who is generally trusting?”), ih015rer (“To what extent do you agree that you see yourself as someone who is considerate to almost everyone?”), and ih016rer (“To what extent do you agree that you see yourself as someone who likes to cooperate with others?). We presented the results at the ARP conference in St. Louis in 2013 and we are currently finalizing a manuscript based on these results."
+      },
+      "prior_knowledge": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nIn a previous study we used three prosociality variables (ih013rer, ih015rer, and ih016rer) that may be related to the prosociality variables we use in this study. We found that ih013rer, ih015rer, and ih016rer are positively associated with agreeableness (ih009rec). Because previous research (on other datasets) shows a positive association between agreeableness and religiosity (Saroglou, 2002) there may be an effect of the agreeableness variable on our hypothesized association between religiosity and prosociality. To account for this effect we will include agreeableness in our analysis as a control variable. We did not find any associations between prosociality and the other Big Five variables."
+      }
+    },
+    "analyses": {
+      "statistical_models": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 20
+        },
+        "ui:placeholder": "Example:\n\nOur first hypothesis will be tested using three analyses since we use three variables to measure prosociality. For each, we will run a directional null hypothesis significance test to see whether a positive effect exists of religiosity on prosociality. For the first outcome (gv103re: Did the graduate do volunteer work in the last 12 months?) we will run a logistic regression with religiosity, the number of siblings, agreeableness, religious affiliation, and the interaction between religiosity and religious affiliation as predictors.\n\nFor the second and third outcomes (gv109re: Number of graduate’s other volunteer activities in the past 12 months; gv111re: How many hours did the graduate volunteer during a typical month in the last 12 months?) we will run two separate linear regressions with religiosity, the number of siblings, agreeableness, religious affiliation, and the interaction between religiosity and religious affiliation as predictors.\n\nIf the regression coefficient of the interaction between religiosity and religious affiliation is statistically significant from zero in any of the regressions, we will also carry out subgroup analyses for those particular regressions in line with our second hypothesis. This subgroup analysis involves running the regressions separately for each of the following groups: Roman Catholics, Lutherans, Methodists, Presbyterians, and followers of the United Church of Christ.\n\nThe code we will use for all these analyses can be found at https://osf.io/e3htr"
+      },
+      "effect_size": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 12
+        },
+        "ui:placeholder": "Example:\n\nFor the logistic regression with ‘Did the graduate do volunteer work in the last 12 months?’ as the outcome variable, our minimum effect size of interest is an odds of 1.05. This means that a one-unit increase on the religiosity scale would be associated with a 1.05 factor change in odds of having done volunteering work in the last 12 months versus not having done so.\n\nFor the linear regressions with ‘The number of graduate’s volunteer activities in the last 12 months”, and “How many hours did the graduate volunteer during a typical month in the last 12 months?’ as the outcome variables, the minimum regression coefficients of interest of the religiosity variables are 0.05 and 0.5, respectively. This means that a one-unit increase in the religiosity scale would be associated with 0.05 extra volunteering activities in the last 12 months and with 0.5 more hours of volunteering work in the last 12 months.\n\nAll of these smallest effect sizes of interest are based on our own intuition."
+      },
+      "statistical_power": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nThe sample size after updating for missing data and outliers is 1,358 for the logistic regression with gv103re as the outcome variable, and 1,086 and 1,041 for the linear regressions with gv109re and gv111re as the outcome variables, respectively. For all three analyses this corresponds to a statistical power of approximately 1.00 when assuming our minimum effect sizes of interest. For the linear regressions we additionally assumed the variance explained by the predictor to be 0.2 and the residual variance to be 1.0. For the logistic regression we assumed intercept of -1.56 corresponding to a situation where half of the participants have done volunteer work in the last year (see the R-code for the full power analysis at https://osf.io/f96rn)."
+      },
+      "inference_criteria": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nWe will make inferences about the association between religiosity and prosociality based on the p-values and the size of the regression coefficients of the religiosity variable in the three main regressions. We will conclude that a regression analysis supports our hypothesis if both the p-value is smaller than .01 and the regression coefficient is larger than our minimum effect size of interest.\n\nWith regard to the second research question, we will conclude that religious groups differ in the association between religiosity and prosociality if we find a statistically significant coefficient using a two-tailed test of religious affiliation in at least one of the regressions.\n\nWe will not use any inference criteria about the follow-up analyses per religious group because we are not going to draw any conclusions based on these analyses."
+      },
+      "assumption_violation": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nWhen the distribution of the number of volunteering hours (gv111re) is significantly non-normal according to the Kolmogorov-Smirnov test and/or (b) the linearity assumption is violated (i.e., the points are asymmetrically distributed around the diagonal line when plotting observed versus the predicted values), we will log-transform the variable."
+      },
+      "reliability_and_robustness_testing": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nTo assess the sensitivity of our results to our selection criterion for outliers, we will run an additional analysis without removing any outliers."
+      },
+      "exploratory_analysis": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        },
+        "ui:placeholder": "Example:\n\nAs an exploratory analysis, we will test the relationship between scores on the religiosity scale and prosociality after adjusting for a variety of social, educational, and cognitive covariates that are available in the dataset. We have no specific hypotheses about which covariates will attenuate the religiosity-prosociality relation most substantially, but we will use this exploratory analysis to generate hypotheses to test in other, independent datasets."
+      }
+    },
+    "research_context": {
+      "background": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 20
+        }
+      },
+      "research_question": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 5
+        }
+      },
+      "requested_data_summary": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 5
+        }
+      },
+      "references": {
+        "ui:widget": "textarea"
+      }
+    },
+    "methods": {
+      "design": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 10
+        }
+      },
+      "preparation": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      },
+      "processing": {
+        "ui:widget": "textarea",
+        "ui:options": {
+          "rows": 8
+        }
+      },
+      "additional_methodological_aspects": {
+        "ui:widget": "textarea"
+      }
+    },
+    "contribution": {
+      "ui:order": [ "contribution_time", "contribution_time_type", "contribution_time_type_other", "contribution_time_specification", "contribution_financial", "contribution_financial_amount", "contribution_favor", "contribution_favor_description" ],
+      "contribution_time_specification": {
+        "ui:widget": "textarea"
+      },
+      "contribution_favor_description": {
+        "ui:widget": "textarea"
+      }
     }
   }
 }

@@ -12,7 +12,6 @@ import irods_types
 
 import folder
 import group
-import mail
 import meta
 import meta_form
 import policies_datapackage_status
@@ -31,7 +30,9 @@ __all__ = ['api_vault_submit',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_copy_to_research',
-           'api_vault_get_publication_terms']
+           'api_vault_get_publication_terms',
+           'api_grant_read_access_research_group',
+           'api_revoke_read_access_research_group']
 
 
 @api.make()
@@ -568,6 +569,90 @@ def api_vault_get_publication_terms(ctx):
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
 
 
+@api.make()
+def api_grant_read_access_research_group(ctx, coll):
+    """Grant read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, coll)
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
+
+
+@api.make()
+def api_revoke_read_access_research_group(ctx, coll):
+    """Revoke read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, 'HARM')
+    log.write(ctx, coll)
+
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
+
+
 def copy_folder_to_vault(ctx, folder, target):
     """Copy folder and all its contents to target in vault.
 
@@ -807,8 +892,6 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     # Set new status
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
-        if new_coll_status == str(constants.vault_package_state.SUBMITTED_FOR_PUBLICATION):
-            send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
     except msi.Error as e:
         current_coll_status = get_coll_vault_status(ctx, coll).value
@@ -844,48 +927,6 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
                         return ['1', 'DOI is missing']
 
     return ['Success', '']
-
-
-def send_datamanagers_publication_request_mail(ctx, coll):
-    """All involved datamanagers will receive an email notification regarding a publication request by a researcher.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Vault package with publication request
-    """
-    # Find group
-    coll_parts = coll.split('/')
-    vault_group_name = coll_parts[3]
-    group_parts = vault_group_name.split('-')
-
-    # Create the research equivalent in order to get the category.
-    group_name = 'research-' + '-'.join(group_parts[1:])
-
-    # Find category.
-    category = group.get_category(ctx, group_name)
-
-    # Get the submitter.
-    submitter = 'Unknown'
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        submitter = row[0].split('#')[0]
-
-    # Find the datamanagers of the category and inform them of data to be accepted to vault
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_GROUP_NAME = 'datamanager-" + category + "' "
-        "AND USER_ZONE = '" + user.zone(ctx) + "' "
-        "AND USER_TYPE != 'rodsgroup'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        datamanager = row[0]
-        # coll split off zone / home
-        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
 
 
 def vault_request_status_transitions(ctx, coll, new_vault_status):

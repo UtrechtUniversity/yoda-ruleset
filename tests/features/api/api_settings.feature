@@ -1,8 +1,8 @@
 Feature: Settings API
 
     Examples:
-        | attribute          | value |
-        | mail_notifications | True  |
+        | attribute               | value |
+        | mail_notifications      | OFF   |
 
     Scenario: Settings Save
         Given user "researcher" is authenticated

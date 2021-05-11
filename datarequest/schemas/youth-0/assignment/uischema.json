@@ -1,11 +1,5 @@
 {
-  "response_to_dm_remarks": {
-    "ui:widget": "textarea"
-  },
   "assign_to": {
     "ui:widget": "checkboxes"
-  },
-  "feedback_for_researcher": {
-    "ui:widget": "textarea"
   }
 }

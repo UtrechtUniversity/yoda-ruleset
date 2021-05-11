@@ -10,8 +10,11 @@ from util.query import Query
 __all__ = ['api_settings_load',
            'api_settings_save']
 
-# Allowed settings should be synchronised with uuUserPolicyCanUserModify.
-USER_SETTINGS = {"mail_notifications": {"default": "True", "values": ["True", "False"]}}
+# Allowed settings should be synchronised with policies and portal:
+# Policies: uuUserPolicyCanUserModify in irods-ruleset-uu/uuGroupPolicyChecks.r
+# Portal: settings in yoda-portal/user/user.py
+USER_SETTINGS = {"mail_notifications": {"default": "OFF", "values": ["OFF", "IMMEDIATE", "DAILY", "WEEKLY"]}}
+
 SETTINGS_KEY = constants.UUORGMETADATAPREFIX + "settings_"
 
 
@@ -22,14 +25,9 @@ def load(ctx, setting, username=None):
     :param setting:  Name of setting to retrieve
     :param username: Optional username to retrieve setting from
 
-    :raises UUNotAuthorized: Only admins can retrieve settings of other users
-
     :returns: User setting or setting default
     """
-    # Only admins can retrieve settings for other users.
-    if username is not None and not user.is_admin(ctx):
-        raise error.UUNotAuthorized
-    else:
+    if username is None:
         username = user.name(ctx)
 
     settings = {a.replace(SETTINGS_KEY, ""): v for a, v
