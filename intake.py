@@ -19,13 +19,13 @@ __all__ = ['api_intake_list_studies',
            'api_intake_list_unrecognized_files',
            'api_intake_list_datasets',
            'api_intake_scan_for_datasets',
-           'api_intake_lock_dataset',   # DM OK # ERROR RETURN ??
-           'api_intake_unlock_dataset', # DM OK # ERROR RETURN ??
+           'api_intake_lock_dataset',
+           'api_intake_unlock_dataset',
            'api_intake_dataset_get_details',
            'api_intake_dataset_add_comment',
-           'api_intake_report_vault_dataset_counts_per_study',  #DM OK # ERROR RETURN??
-           'api_intake_report_vault_aggregated_info', # DM OK # ERROR RETURN ??
-           'api_intake_report_export_study_data'] # DM OK # ERROR RETURN ??
+           'api_intake_report_vault_dataset_counts_per_study',
+           'api_intake_report_vault_aggregated_info',
+           'api_intake_report_export_study_data']
 
 INTAKE_FILE_EXCLUSION_PATTERNS = ['*.abc', '*.PNG']
 """ List of file patterns not to take into account within INTAKE module."""

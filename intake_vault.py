@@ -139,9 +139,6 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
     buffer = {}
     if status == 0:
         # stamp the vault dataset collection with additional metadata
-        # date_created = datetime.now()
-        # avu.set_on_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
-
         avu.set_on_coll(ctx, vault_path, "dataset_date_created", str(int(time.time())))
 
         # and finally remove the dataset original in the intake area
