@@ -52,8 +52,14 @@ def intake_report_export_study_data(ctx, study_id):
                                            "COLL_NAME like '{}%'".format(set_path),
                                            genquery.AS_LIST, ctx)
             for row in result:
+                log.write(ctx, 'export')
+                log.write(ctx, row[0])
+                log.write(ctx, row[1])
                 real_datasets[set_path]['totalFiles'] = int(row[0]) / 2
-                real_datasets[set_path]['totalFileSize'] = int(row[1]) / 2
+                totalFileSize = 0
+                if row[1]:
+                    totalFileSize = int(row[1])
+                real_datasets[set_path]['totalFileSize'] = totalFileSize / 2
 
     return real_datasets
 
@@ -178,7 +184,12 @@ def vault_aggregated_info(ctx, study_id):
             # if version in ['raw', 'processed']:
             dataset_count[version] += 1
 
-            date_created = int(datasets[dataset]['dataset_date_created'])
+            try:
+                date_created = int(datasets[dataset]['dataset_date_created'])
+            except Exception:
+                # This is nonsense and arose from an erroneous situation
+                date_created = last_month
+
             if date_created - last_month >= 0:
                 dataset_growth[version] += 1
 

@@ -19,13 +19,13 @@ __all__ = ['api_intake_list_studies',
            'api_intake_list_unrecognized_files',
            'api_intake_list_datasets',
            'api_intake_scan_for_datasets',
-           'api_intake_lock_dataset',
-           'api_intake_unlock_dataset',
+           'api_intake_lock_dataset',   # DM OK # ERROR RETURN ??
+           'api_intake_unlock_dataset', # DM OK # ERROR RETURN ??
            'api_intake_dataset_get_details',
            'api_intake_dataset_add_comment',
-           'api_intake_report_vault_dataset_counts_per_study',
-           'api_intake_report_vault_aggregated_info',
-           'api_intake_report_export_study_data']
+           'api_intake_report_vault_dataset_counts_per_study',  #DM OK # ERROR RETURN??
+           'api_intake_report_vault_aggregated_info', # DM OK # ERROR RETURN ??
+           'api_intake_report_export_study_data'] # DM OK # ERROR RETURN ??
 
 INTAKE_FILE_EXCLUSION_PATTERNS = ['*.abc', '*.PNG']
 """ List of file patterns not to take into account within INTAKE module."""
@@ -157,7 +157,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
             # Error is hardcoded! (like in the original) and initialize attributes already as empty strings.
             file_data = {"name": row[1],
                          "path": row[0],
-                         "date": row[2],
+                         "date": time.strftime('%Y-%m-%d', time.localtime(int(row[2]))),
                          "creator": row[3],
                          "error": 'Experiment type, wave or pseudocode is missing from path',
                          "experiment_type": '',
@@ -274,7 +274,7 @@ def get_dataset_details(ctx, dataset_id, path):
         )
         for row in iter:
             dataset['datasetCreateName'] = row[1]
-            dataset['datasetCreateDate'] = row[2]
+            dataset['datasetCreateDate'] =  time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
 
         iter = genquery.row_iterator(
             "COLL_NAME, META_COLL_ATTR_NAME, count(META_COLL_ATTR_VALUE)",
@@ -327,7 +327,7 @@ def get_dataset_details(ctx, dataset_id, path):
                 )
                 for row in iter:
                     dataset['datasetCreateName'] = row[0]
-                    dataset['datasetCreateDate'] = row[1]
+                    dataset['datasetCreateDate'] =  time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
 
             iter = genquery.row_iterator(
                 "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
@@ -443,11 +443,11 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
-        return 'NOK'
+        return {"proc_status": "NOK"}
 
     intake_lock.intake_dataset_lock(ctx, path, dataset_id)
 
-    return 'OK'
+    return {"proc_status": "OK"}
 
 
 @api.make()
@@ -469,24 +469,28 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to unlock dataset")
-        return 'NOK'
+        return {"proc_status": "NOK"}
 
     intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
 
-    return 'OK'
+    return {"proc_status": "OK"}
 
 
 @api.make()
-def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
+def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     """Add a comment to a dataset.
 
     :param ctx:        Combined type of a callback and rei struct
-    :param coll:       Collection to add comment to
+    :param study_id:   Id of the study given dataset belongs to
     :param dataset_id: Identifier of the dataset to add a comment to
     :param comment:    Comment as added by user
 
     :returns: indication correct
     """
+    coll = '/' + user.zone(ctx) + '/home/grp-intake-' + study_id
+    log.write(ctx, 'INTAKE COLLECTION')
+    log.write(ctx, coll)
+
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
@@ -504,13 +508,15 @@ def api_intake_dataset_add_comment(ctx, coll, dataset_id, comment):
 
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
 
+    log.write(ctx, comment_data)
+
     for tl in tl_objects:
         if is_collection:
             avu.associate_to_coll(ctx, tl, 'comment', comment_data)
         else:
             avu.associate_to_data(ctx, tl, 'comment', comment_data)
 
-    return 'COMMENT OK'
+    return {'user': user.name(ctx), 'timestamp': time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(timestamp)), 'comment': comment}
 
 
 @api.make()

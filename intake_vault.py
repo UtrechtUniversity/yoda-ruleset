@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
+import time
 
 import intake_lock
 import intake_scan
@@ -138,8 +139,10 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
     buffer = {}
     if status == 0:
         # stamp the vault dataset collection with additional metadata
-        date_created = datetime.now()
-        avu.set_on_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
+        # date_created = datetime.now()
+        # avu.set_on_coll(ctx, vault_path, "dataset_date_created", date_created.strftime('%Y-%m-%dT%H:%M:%S.%f%z'))
+
+        avu.set_on_coll(ctx, vault_path, "dataset_date_created", str(int(time.time())))
 
         # and finally remove the dataset original in the intake area
         try:
@@ -368,8 +371,10 @@ def vault_tree_walk_collection(ctx, path, buffer, rule_to_process):
 
 def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
     id_components = intake_scan.dataset_parse_id(dataset_id)
-    my_date = datetime.now()
-    id_components["dataset_date_created"] = my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    # my_date = datetime.now()
+    # id_components["dataset_date_created"] = my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
+    id_components["dataset_date_created"] = str(int(time.time()))
+
 
     keys = ["wave", "experiment_type", "pseudocode", "version", "dataset_date_created"]
     for key in keys:
