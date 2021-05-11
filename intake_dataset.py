@@ -52,9 +52,6 @@ def intake_report_export_study_data(ctx, study_id):
                                            "COLL_NAME like '{}%'".format(set_path),
                                            genquery.AS_LIST, ctx)
             for row in result:
-                log.write(ctx, 'export')
-                log.write(ctx, row[0])
-                log.write(ctx, row[1])
                 real_datasets[set_path]['totalFiles'] = int(row[0]) / 2
                 totalFileSize = 0
                 if row[1]:
