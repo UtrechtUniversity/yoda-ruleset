@@ -274,7 +274,7 @@ def get_dataset_details(ctx, dataset_id, path):
         )
         for row in iter:
             dataset['datasetCreateName'] = row[1]
-            dataset['datasetCreateDate'] =  time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
+            dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
 
         iter = genquery.row_iterator(
             "COLL_NAME, META_COLL_ATTR_NAME, count(META_COLL_ATTR_VALUE)",
@@ -327,7 +327,7 @@ def get_dataset_details(ctx, dataset_id, path):
                 )
                 for row in iter:
                     dataset['datasetCreateName'] = row[0]
-                    dataset['datasetCreateDate'] =  time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
+                    dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
 
             iter = genquery.row_iterator(
                 "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",

@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from datetime import datetime
 import time
 
 import intake_lock
@@ -371,7 +370,6 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
     # my_date = datetime.now()
     # id_components["dataset_date_created"] = my_date.strftime('%Y-%m-%dT%H:%M:%S.%f%z')
     id_components["dataset_date_created"] = str(int(time.time()))
-
 
     keys = ["wave", "experiment_type", "pseudocode", "version", "dataset_date_created"]
     for key in keys:
