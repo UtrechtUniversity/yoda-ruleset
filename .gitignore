@@ -5,3 +5,17 @@
 /rules_uu.py
 /rules-uu.re.debug
 /rules_uu.cfg
+
+# Local/Editor files
+.DS_Store
+.DS_STORE
+Thumbs.db
+activate.bat
+activate.sh
+.idea/
+.pytest_cache/
+
+# Github defaults for Python
+# https://github.com/github/gitignore/blob/master/Python.gitignore
+__pycache__/
+*.py[cod]
