@@ -35,7 +35,6 @@ def ui_metadata_save(browser):
 def ui_metadata_delete(browser):
     browser.find_by_css('.yodaButtons .btn-danger').click()
     browser.find_by_css('.confirm').click()
-    browser.find_by_css('.btn-light').click()
 
 
 @then('metadata form is saved as yoda-metadata.json')
@@ -45,4 +44,4 @@ def ui_metadata_saved(browser):
 
 @then('metadata is deleted from folder')
 def ui_metadata_deleted(browser):
-    assert browser.is_text_present("Deleted metadata of folder </research-initial>")
+    browser.is_text_present("Deleted metadata of folder </research-initial>", wait_time=3)

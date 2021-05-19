@@ -129,7 +129,7 @@ def api_request(user, request, data):
     url = api_url + "/" + request
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'session': session}
-    headers = {'referer': 'https://portal.yoda.test/group'}
+    headers = {'referer': 'https://portal.yoda.test/'}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     # Remove debug info from response body.
@@ -150,9 +150,9 @@ def post_form_data(user, request, files):
     # Make POST request.
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
-    cookies = {'csrf_token': csrf, 'session': session}
-
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    cookies = {'session': session}
+    headers = {'referer': 'https://portal.yoda.test/'}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
 
