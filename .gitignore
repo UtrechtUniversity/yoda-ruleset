@@ -10,10 +10,12 @@
 .DS_Store
 .DS_STORE
 Thumbs.db
-activate.bat
-activate.sh
 .idea/
 .pytest_cache/
+
+#pytest folders
+tests.step_defs.*
+geckodriver.log
 
 # Github defaults for Python
 # https://github.com/github/gitignore/blob/master/Python.gitignore
