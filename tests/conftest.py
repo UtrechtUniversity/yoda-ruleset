@@ -189,14 +189,11 @@ def ui_logout(browser):
 
 @given(parsers.parse('module "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
+@given(parsers.parse('page "{module}" is shown'))
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
 
-@given(parsers.parse('page "{page}" is shown'))
-def ui_page_shown(browser, page):
-    url = "{}/{}".format(portal_url, page)
-    browser.visit(url)
 
 @given('collection "<collection>" exists')
 def collection_exists(user, collection):
