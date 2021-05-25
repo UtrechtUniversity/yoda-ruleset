@@ -15,82 +15,86 @@ scenarios('../../features/ui/ui_intake.feature')
 
 
 ########################## GENERIC FUNCTIONS
-def get_unscanned_from_error_area_text():
+def get_unscanned_from_error_area_text(browser):
     # Unrecognised and unscanned (17) files or Unrecognised (12) and unscanned (-) files
     error_area_text = browser.find_by_id('scan_result_text')
-    parts = error_area.value.split(' and ')
-    s = parts[0]
+    parts = error_area_text.value.split(' and ')
+    s = parts[1]
     return s[s.find("(")+1:s.find(")")]
 
 
-def get_unrecognized_from_error_area_text():
+def get_unrecognized_from_error_area_text(browser):
     error_area_text = browser.find_by_id('scan_result_text')
-    parts = error_area.value.split(' and ')
-    s = parts[1]
+    parts = error_area_text.value.split(' and ')
+    s = parts[0]
     first_bracket = s.find("(")
     if first_bracket == -1:
-	    return ""
+	    return "0"
     return s[first_bracket + 1:s.find(")")]
 
 
 ####################### SCENARIOS ##################
 # SCENARIO 1 
-	#	And study "<study>" is active - hierin switchen als niet actief is
-@when('activate "<study>"')
+@when(parsers.parse('activate "{study}"'))
 def ui_intake_activate_study(browser, study):
-	study = study # NU FF NIKS DOEN
+    dropdown = browser.find_by_id('dropdown-select-study')
+    dropdown.click()
+    table = browser.find_by_id('select-study')
+    tbody = table.find_by_tag('tbody')
+    rows = table.find_by_tag('tr')
+    for row in rows:
+        if row.has_class('ta-' + study):
+            row.find_by_tag('td').click()
+            return
+    # if not found 
+    assert False		
 
-	
-@when('total datasets is "{dataset_count}"') # text is hardcoded in feature -> NOT variable
+@when(parsers.parse('total datasets is "{dataset_count}"'))
 def ui_intake_total_dataset_count(browser, dataset_count):
-    dataset_count_area = browser.find_by_id('datatable_info')   # => 'No datasets present'
-    assert dataset_count_area.value == "<span>" + dataset_count + "</span>"   # Dit moet mooier??
+    dataset_count_area = browser.find_by_id('datatable_info')
+    if dataset_count == '0':
+        assert dataset_count_area.value == 'No datasets present'
+    else:
+        assert dataset_count_area.value == "Total datasets: " + dataset_count
 
 		
 @when('unscanned files are present')  # ben ik hier niet de prerequisite aan het testen???
 def ui_intake_unscanned_files_present(browser):
-	assert int(get_unscanned_from_error_area_text()) > 0
+	assert int(get_unscanned_from_error_area_text(browser)) > 0
 
 
 @when('scanned for datasets')
 def ui_intake_scanned_for_datasets(browser):
-    browser.find_by_id('#btn-start-scan').click()
+    browser.find_by_id('btn-start-scan').click()
 
 
-@when('scan button is disabled')
+@then('scan button is disabled')
 def ui_intake_scan_button_is_disabled(browser):
-    assert not browser.find_by_id('#btn-start-scan').is_enabled()
+    assert browser.find_by_id('btn-start-scan').has_class('disabled')
 
 
-@then('Then scanning for datasets is successfull')
+@when('scanning for datasets is successfull')
 def ui_intake_scanning_is_successfull(browser):
 	      ## browser.is_element_visible_by_css('.system-metadata', wait_time=5)
 	      #.alert alert-success
-	assert browser.is_text_present('Successfully scanned for datasets.', wait_time=10)
-
-
-@then('datasets are present')
-def ui_intake_datasets_are_present(browser):
-    browser.find_by_css('dataTables_info')
-    dataset_count_area = browser.find_by_id('datatable_info')  # => 'No datasets present'
-    assert dataset_count_area.value == "<span>" + dataset_count + "</span>"   # Dit moet mooier?? OPLOSSEN
+	assert browser.is_text_present('Successfully scanned for datasets.', wait_time=20)
 
 
 @when('unrecognized files are present')
 def ui_intake_unrecognized_files_are_present(browser):
-#	total_error_count = browser.find_by_id('datatable_unrecognised_info')
-    assert int(get_unrecognized_from_error_area_text()) > 0
+    assert int(get_unrecognized_from_error_area_text(browser)) > 0
 
-	
+
 @when('click for details of first dataset row')
 def ui_intake_click_for_details_of_first_dataset_row(browser):
-    browser.find_by_css('details-control')[0].first.click()
+    # browser.find_by_css('.detailrow')[1].click()
+	browser.find_by_id('datatable')[0].click()
 
 
-@when('add "{comments}" to comment field and press comment button')
+@when(parsers.parse('add "{comments}" to comment field and press comment button'))
 def ui_intake_add_comments_to_dataset(browser, comments):
 	browser.find_by_name('comments').fill(comments)
-	browser.find_by_css("btn-add-comment").click()
+	browser.find_by_css(".btn-add-comment").click()
 
 
 @when('check first dataset for locking')
@@ -98,10 +102,14 @@ def ui_check_first_dataset_for_locking(browser):
     browser.find_by_css('.cbDataSet')[0].click()
 
 
-@when('lock and unlock buttons are "{enabled_state}"')
+@when(parsers.parse('lock and unlock buttons are "{enabled_state}"'))
 def ui_intake_lock_and_unlock_buttons_are(browser, enabled_state):
-	browser.find_by_id('#btn-unlock')
-	browser.find_by_id('#btn-lock')
+    if enabled_state == 'enabled':
+        assert not browser.find_by_id('btn-unlock').has_class('disabled')
+        assert not browser.find_by_id('btn-lock').has_class('disabled')
+    else:
+        assert browser.find_by_id('btn-unlock').has_class('disabled')
+        assert browser.find_by_id('btn-lock').has_class('disabled')
 
 
 @when('uncheck first dataset for locking')
@@ -112,43 +120,46 @@ def ui_uncheck_first_dataset_for_locking(browser):
 
 @when('check all datasets for locking')
 def ui_check_all_datasets_for_locking(browser):
-    browser.find_by_css('#control-all-cbDataSets').click()
+    browser.find_by_css('.control-all-cbDataSets').click()
 
 
-@when('click lock button')
+@then('click lock button')
 def ui_intake_click_lock_button(browser):
     browser.find_by_id("btn-lock").click()
 
 		
 @when('wait for all datasets to be in locked state successfully')
 def ui_intake_wait_all_datasets_in_locked_state(browser):		
-    browser.is_text_present('Successfully locked the selected dataset(s).', wait_time=30)
+    assert browser.is_text_present('Successfully locked the selected dataset(s).', wait_time=30)
 
-    assert   browser.is_element_present_by_css('datasetstatus_locked')
+    #table = browser.find_by_id('datatable')
+    # table.find_by_css('.detailrow').click()
+    # table.find_by_tag('tr')[2].click()
+	# browser.execute_script("return document.getElementById('yourElementID').scrollIntoView();")
+    # assert browser.find_by_css('datasetstatus_locked')
 
 
 # SCENARIO 2
 @when('open intake reporting area')
 def ui_intake_open_intake_reporting_area(browser):
-    browser.find_by_css('btn-goto-reports').click()
+    browser.find_by_css('.btn-goto-reports').click()
 
 
 @when('check reporting result')
 def ui_intake_check_reporting_result(browser):
     # classes are part of rows in result table.
-    assert len(browser.find_by_css('dataset-type-counts-raw')) > 0
-    assert len(browser.find_by_css('dataset-type-counts-processed')) > 0
-    assert len(browser.find_by_css('dataset-aggregated-version-raw')) > 0
-    assert len(browser.find_by_css('dataset-aggregated-version-processed')) > 0
-    assert len(browser.find_by_css('dataset-aggregated-version-total')) > 0
+    assert len(browser.find_by_css('.dataset-type-counts-raw')) > 0
+    assert len(browser.find_by_css('.dataset-type-counts-processed')) > 0
+    assert len(browser.find_by_css('.dataset-aggregated-version-raw')) > 0
+    assert len(browser.find_by_css('.dataset-aggregated-version-processed')) > 0
+    assert len(browser.find_by_css('.dataset-aggregated-version-total')) > 0
 
 
 @when('export all data and download file')
 def ui_intake_export_all_data_and_download_file(browser):
-    browser.find_by_css('btn-export-data').click()
+    browser.find_by_css('.btn-export-data').click()
 
 
 @when('return to intake area')
 def ui_intake_return_to_intake_area(browser):
-    browser.find_by_css('btn-goto-intake').click()
-
+    browser.find_by_css('.btn-goto-intake').click()
