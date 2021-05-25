@@ -14,13 +14,13 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_intake.feature')
 
 
-########################## GENERIC FUNCTIONS
+# GENERIC FUNCTIONS
 def get_unscanned_from_error_area_text(browser):
     # Unrecognised and unscanned (17) files or Unrecognised (12) and unscanned (-) files
     error_area_text = browser.find_by_id('scan_result_text')
     parts = error_area_text.value.split(' and ')
     s = parts[1]
-    return s[s.find("(")+1:s.find(")")]
+    return s[s.find("(") + 1:s.find(")")]
 
 
 def get_unrecognized_from_error_area_text(browser):
@@ -29,12 +29,11 @@ def get_unrecognized_from_error_area_text(browser):
     s = parts[0]
     first_bracket = s.find("(")
     if first_bracket == -1:
-	    return "0"
+        return "0"
     return s[first_bracket + 1:s.find(")")]
 
 
-####################### SCENARIOS ##################
-# SCENARIO 1 
+# SCENARIO 1
 @when(parsers.parse('activate "{study}"'))
 def ui_intake_activate_study(browser, study):
     dropdown = browser.find_by_id('dropdown-select-study')
@@ -45,9 +44,9 @@ def ui_intake_activate_study(browser, study):
     for row in rows:
         if row.has_class('ta-' + study):
             row.find_by_tag('td').click()
-            return
-    # if not found 
-    assert False		
+            return True
+    assert False
+
 
 @when(parsers.parse('total datasets is "{dataset_count}"'))
 def ui_intake_total_dataset_count(browser, dataset_count):
@@ -57,10 +56,10 @@ def ui_intake_total_dataset_count(browser, dataset_count):
     else:
         assert dataset_count_area.value == "Total datasets: " + dataset_count
 
-		
+
 @when('unscanned files are present')  # ben ik hier niet de prerequisite aan het testen???
 def ui_intake_unscanned_files_present(browser):
-	assert int(get_unscanned_from_error_area_text(browser)) > 0
+    assert int(get_unscanned_from_error_area_text(browser)) > 0
 
 
 @when('scanned for datasets')
@@ -75,9 +74,7 @@ def ui_intake_scan_button_is_disabled(browser):
 
 @when('scanning for datasets is successfull')
 def ui_intake_scanning_is_successfull(browser):
-	      ## browser.is_element_visible_by_css('.system-metadata', wait_time=5)
-	      #.alert alert-success
-	assert browser.is_text_present('Successfully scanned for datasets.', wait_time=20)
+    assert browser.is_text_present('Successfully scanned for datasets.', wait_time=20)
 
 
 @when('unrecognized files are present')
@@ -87,14 +84,13 @@ def ui_intake_unrecognized_files_are_present(browser):
 
 @when('click for details of first dataset row')
 def ui_intake_click_for_details_of_first_dataset_row(browser):
-    # browser.find_by_css('.detailrow')[1].click()
-	browser.find_by_id('datatable')[0].click()
+    browser.find_by_id('datatable')[0].click()
 
 
 @when(parsers.parse('add "{comments}" to comment field and press comment button'))
 def ui_intake_add_comments_to_dataset(browser, comments):
-	browser.find_by_name('comments').fill(comments)
-	browser.find_by_css(".btn-add-comment").click()
+    browser.find_by_name('comments').fill(comments)
+    browser.find_by_css(".btn-add-comment").click()
 
 
 @when('check first dataset for locking')
@@ -115,7 +111,7 @@ def ui_intake_lock_and_unlock_buttons_are(browser, enabled_state):
 @when('uncheck first dataset for locking')
 def ui_uncheck_first_dataset_for_locking(browser):
     # if not checkbox.is_selected() meenemen hier
-    browser.find_by_css('.cbDataSet')[0].click() # click again
+    browser.find_by_css('.cbDataSet')[0].click()
 
 
 @when('check all datasets for locking')
@@ -127,16 +123,10 @@ def ui_check_all_datasets_for_locking(browser):
 def ui_intake_click_lock_button(browser):
     browser.find_by_id("btn-lock").click()
 
-		
+	
 @when('wait for all datasets to be in locked state successfully')
 def ui_intake_wait_all_datasets_in_locked_state(browser):		
     assert browser.is_text_present('Successfully locked the selected dataset(s).', wait_time=30)
-
-    #table = browser.find_by_id('datatable')
-    # table.find_by_css('.detailrow').click()
-    # table.find_by_tag('tr')[2].click()
-	# browser.execute_script("return document.getElementById('yourElementID').scrollIntoView();")
-    # assert browser.find_by_css('datasetstatus_locked')
 
 
 # SCENARIO 2
