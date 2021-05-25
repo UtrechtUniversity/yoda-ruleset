@@ -1,5 +1,4 @@
 # coding=utf-8
-"""Homepage tests"""
 
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
@@ -11,11 +10,8 @@ from pytest_bdd import (
     # when,
 )
 
-# from conftest import portal_url
-
 scenarios('../../features/ui/ui_homepage.feature')
 
-
 @then('username "<user>" is shown')
-def ui_username_is_shown(browser, user):
+def ui_homepage_logged_in(browser, user):
     assert browser.is_text_present("You are logged in as {}".format(user))
