@@ -14,6 +14,7 @@ from pytest_bdd import (
     given,
     parsers,
     when,
+    then,
 )
 
 
@@ -193,10 +194,19 @@ def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
 
+
 @given(parsers.parse('page "{page}" is shown'))
 def ui_page_shown(browser, page):
     url = "{}/{}".format(portal_url, page)
     browser.visit(url)
+
+
+@given(parsers.parse('text "{text}" is shown'))
+@when(parsers.parse('text "{text}" is shown'))
+@then(parsers.parse('text "{text}" is shown'))
+def ui_text_shown(browser, text):
+    assert browser.is_text_present("".format(text))
+
 
 @given('collection "<collection>" exists')
 def collection_exists(user, collection):
