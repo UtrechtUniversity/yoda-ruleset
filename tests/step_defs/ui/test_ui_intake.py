@@ -123,9 +123,9 @@ def ui_check_all_datasets_for_locking(browser):
 def ui_intake_click_lock_button(browser):
     browser.find_by_id("btn-lock").click()
 
-	
+
 @when('wait for all datasets to be in locked state successfully')
-def ui_intake_wait_all_datasets_in_locked_state(browser):		
+def ui_intake_wait_all_datasets_in_locked_state(browser):
     assert browser.is_text_present('Successfully locked the selected dataset(s).', wait_time=30)
 
 
