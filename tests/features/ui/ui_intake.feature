@@ -1,9 +1,5 @@
 Feature: INTAKE UI
 
-    Examples:
-        | study1 | study2  |
-        | test   | initial |
-
     Scenario: Intake scan only and find datasets and unrecognized files
         Given user "datamanager" is logged in
         And module "intake" is shown
