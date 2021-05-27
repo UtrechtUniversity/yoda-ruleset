@@ -1,4 +1,4 @@
-Feature: Homepage Loggedin
+Feature: Homepage logged in
 
     Scenario: Viewing homepage logged in
         Given user "<user>" is logged in
