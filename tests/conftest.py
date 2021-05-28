@@ -13,8 +13,8 @@ import urllib3
 from pytest_bdd import (
     given,
     parsers,
-    when,
     then,
+    when,
 )
 
 
@@ -200,7 +200,7 @@ def ui_module_shown(browser, module):
 @when(parsers.parse('text "{text}" is shown'))
 @then(parsers.parse('text "{text}" is shown'))
 def ui_text_shown(browser, text):
-    assert browser.is_text_present("".format(text))
+    assert browser.is_text_present(text)
 
 
 @given('collection "<collection>" exists')
