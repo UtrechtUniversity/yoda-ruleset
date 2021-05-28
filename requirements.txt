@@ -1,10 +1,12 @@
+setuptools==44.0.0
+MarkupSafe==1.1.1
 enum34==1.1.10
-Jinja2==2.10.1
-requests==2.21.0
+Jinja2==2.11.3
+requests==2.25.1
 pyrsistent==0.16.1
-jsonschema==3.0.2
+jsonschema==3.2.0
 pathvalidate==0.29.1
 xmltodict==0.12.0
-lxml==4.3.2
+lxml==4.6.2
 requests_cache==0.5.2
-irods-avu-json==2.0.0
+irods-avu-json==2.2.0
