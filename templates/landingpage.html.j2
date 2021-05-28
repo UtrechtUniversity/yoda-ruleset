@@ -6,7 +6,8 @@
     <meta name="description" content="Data Publication platform of Utrecht University" />
     <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI"/>
     <meta name="DC.title" content="{{ title }}"/>
-    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}"/>{% endfor %}
+    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}"/>
+    {% endfor %}
     <meta name="DC.publisher" content="Utrecht University"/>
     <meta name="DC.date" content="{{ publication_date }}" scheme="DCTERMS.W3CDTF">
     <meta name="DC.type" content="Dataset"/>
