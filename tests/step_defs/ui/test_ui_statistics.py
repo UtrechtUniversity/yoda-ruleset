@@ -27,7 +27,7 @@ def ui_statistics_export(browser):
     # For now prevent downloading on windows platforn
     if os.name == "nt":
         return
-    # Only click when not in Windows 
+    # Only click when not in Windows
     browser.find_by_css('a.btn.btn-primary.btn-sm').click()
 
 
