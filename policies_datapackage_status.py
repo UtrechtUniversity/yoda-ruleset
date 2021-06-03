@@ -57,7 +57,11 @@ def post_status_transition(ctx, path, actor, status):
     status = constants.vault_package_state(status)
     actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]
 
-    if status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
+    if status is constants.vault_package_state.UNPUBLISHED:
+        actor = "system"
+        provenance.log_action(ctx, actor, path, "secured in vault")
+
+    elif status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "submitted for publication")
 
         # Store actor of publication submission.
