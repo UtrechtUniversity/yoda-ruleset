@@ -95,7 +95,21 @@ def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, n
     create_new_tier = ''
     if tier_action == 'create':
         create_new_tier = ' (create)'
-    browser.find_by_text(new_tier + create_new_tier, wait_time=10).click()
+    browser.find_by_text(new_tier + create_new_tier).click()
 
     # Click update tier button
     browser.find_by_css('.update-resource-properties-btn').click()
+
+
+@then('"<resource_name>" has tier "<new_tier>"')
+def ui_resource_has_tier(browser, resource_name, new_tier):
+    # Find index of resource_name in resource table
+    index = 0
+    for resource in browser.find_by_css('.resource'):
+        if resource.value.find(resource_name) >= 0:
+            break
+        index = index + 1
+
+    # Check if tier is set correctly
+    assert (browser.find_by_css('.resource', wait_time=30)[index].value.find(new_tier) >= 0)
+    # assert(browser.find_by_css('.resource-tier')[index].value.find('Standard') >= 0)

@@ -37,6 +37,7 @@ Feature: Statistics UI
         When module "stats" is shown
         Then resource view is shown
         When user updates "<resource_name>" from "<old_tier>" to "<new_tier>" and "<tier_action>" tier
+		Then "<resource_name>" has tier "<new_tier>"
 		
         Examples:
             | user           | resource_name | old_tier | new_tier | tier_action  |
