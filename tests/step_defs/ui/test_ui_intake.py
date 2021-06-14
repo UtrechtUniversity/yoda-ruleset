@@ -34,7 +34,7 @@ def get_unrecognized_from_error_area_text(browser):
 
 
 # SCENARIO 1
-@when(parsers.parse('activate "{study}"'))
+@when(parsers.parse('activate study "{study}"'))
 def ui_intake_activate_study(browser, study):
     dropdown = browser.find_by_id('dropdown-select-study')
     dropdown.click()
@@ -72,8 +72,8 @@ def ui_intake_scan_button_is_disabled(browser):
     assert browser.find_by_id('btn-start-scan').has_class('disabled')
 
 
-@when('scanning for datasets is successfull')
-def ui_intake_scanning_is_successfull(browser):
+@when('scanning for datasets is successful')
+def ui_intake_scanning_is_successful(browser):
     assert browser.is_text_present('Successfully scanned for datasets.', wait_time=20)
 
 

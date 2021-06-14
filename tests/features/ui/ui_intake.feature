@@ -3,14 +3,14 @@ Feature: INTAKE UI
     Scenario: Intake scan only and find datasets and unrecognized files
         Given user "datamanager" is logged in
         And module "intake" is shown
-        When activate "test"
+        When activate study "test"
         And total datasets is "0"
-        When activate "initial"
+        When activate study "initial"
         And total datasets is "0"
         And unscanned files are present
         When scanned for datasets
         Then scan button is disabled
-        When scanning for datasets is successfull
+        When scanning for datasets is successful
         And total datasets is "3"
         And unrecognized files are present
 
