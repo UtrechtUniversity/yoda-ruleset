@@ -51,3 +51,5 @@ if config.enable_intake:
 
 if config.enable_datarequest:
     from datarequest import *
+
+from deposit import *
