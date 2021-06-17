@@ -28,6 +28,7 @@ users = ['researcher',
 user_cookies = {}
 
 datarequest = False
+deposit = False
 intake = False
 login_oidc = False
 
@@ -36,12 +37,14 @@ def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test")
     parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
+    parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
+    config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
 
     global portal_url
@@ -55,6 +58,9 @@ def pytest_configure(config):
 
     global datarequest
     datarequest = config.getoption("--datarequest")
+
+    global deposit
+    datarequest = config.getoption("--deposit")
 
     global intake
     intake = config.getoption("--intake")
@@ -75,6 +81,10 @@ def pytest_configure(config):
 def pytest_bdd_apply_tag(tag, function):
     if tag == 'datarequest' and not datarequest:
         marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    elif tag == 'deposit' and not deposit:
+        marker = pytest.mark.skip(reason="Skip deposit")
         marker(function)
         return True
     elif tag == 'intake' and not intake:

@@ -1,4 +1,5 @@
-Feature: Deposit page viewable
+@deposit
+Feature: Deposit UI
 
     Scenario: Viewing deposit page logged in
         Given user "<user>" is logged in
