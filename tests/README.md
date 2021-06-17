@@ -37,6 +37,11 @@ Datarequest tests are disabled by default, enable using `--datarequest`:
 $ pytest -k api --datarequest
 ```
 
+Deposit tests are disabled by default, enable using `--deposit`:
+```bash
+$ pytest -k api --deposit
+```
+
 Intake tests are disabled by default, enable using `--intake`:
 ```bash
 $ pytest -k api --intake
