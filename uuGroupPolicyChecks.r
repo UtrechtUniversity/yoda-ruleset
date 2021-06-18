@@ -2,7 +2,8 @@
 # \brief     Group operation policy check rules.
 # \author    Chris Smeele
 # \author    Ton Smeele
-# \copyright Copyright (c) 2015 - 2017, Utrecht University. All rights reserved
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2015 - 2021, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 # For every Group Management action (GroupAdd, GroupUserChangeRole, etc.) there
@@ -421,5 +422,35 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 		}
 	} else {
 		*reason = "'*member' is not a member of group *groupName.";
+	}
+}
+
+# \brief User Policy: Can the user set a certain user attribute to a certain value?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  userName  the user name
+# \param[in]  attribute the user attribute to set
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
+	*allowed = 0;
+	*reason  = "";
+
+    # User setting: mail notifications
+    if (*attribute == "org_settings_mail_notifications") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User notifications
+    } else if (trimr(*attribute, "_") == "org_notification") {
+        *allowed = 1;
+	} else {
+		*reason = "Invalid user attribute name.";
 	}
 }

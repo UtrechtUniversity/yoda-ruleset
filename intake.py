@@ -102,8 +102,6 @@ def api_intake_count_total_files(ctx, coll):
 
     :returns: Total file count
     """
-
-    log.write(ctx, coll)
     # Include coll name as equal names do occur and genquery delivers distinct results.
     iter = genquery.row_iterator(
         "COLL_NAME, DATA_NAME",
@@ -115,7 +113,6 @@ def api_intake_count_total_files(ctx, coll):
     for row in iter:
         exclusion_matched = any(fnmatch.fnmatch(row[1], p) for p in INTAKE_FILE_EXCLUSION_PATTERNS)
         if not exclusion_matched:
-            log.write(ctx, row[0] + '/' + row[1])
             count += 1
 
     return count
@@ -200,7 +197,6 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        log.write(ctx, 'DATASET COLL: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
@@ -211,7 +207,6 @@ def api_intake_list_datasets(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        log.write(ctx, 'DATASET DATA: ' + row[1])
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 

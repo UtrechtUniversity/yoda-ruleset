@@ -136,7 +136,7 @@ Feature: Intake API
             | user        | study_id |
             | datamanager | initial  |
 
-    Scenario: Get vault data required for export for a study
+    Scenario: Get vault data for export of a study
         Given user "<user>" is authenticated
         And the Yoda intake report export study data API is queried with study id "<study_id>"
         Then the response status code is "200"

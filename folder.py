@@ -513,3 +513,45 @@ def datamanager_exists(ctx, coll):
     category = group.get_category(ctx, group_name)
 
     return group.exists(ctx, "datamanager-" + category)
+
+
+def get_datamanagers(ctx, coll):
+    """Retrieve datamanagers for a given collection."""
+    group_name = collection_group_name(ctx, coll)
+    category = group.get_category(ctx, group_name)
+
+    return group.members(ctx, "datamanager-" + category)
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Set submitter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_accepter(ctx, path, actor):
+    """Set accepter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_accepter(ctx, path):
+    """Set accepter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None

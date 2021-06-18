@@ -1,7 +1,8 @@
 # \file      uuGroupPolicies.r
 # \brief     Sudo microservices policy implementations for group manager.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # This file contains Group Manager implementations of pre- and postproc rules
@@ -367,6 +368,53 @@ uuGroupPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, 
 		}
 	}
 	fail;
+}
+
+uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
+
+	if (*objType == "-u") {
+		uuGetUserType(*objName, *targetUserType);
+		if (*targetUserType == "rodsuser") {
+			if (*unit != "") {
+				# We do not use / allow the unit field here.
+				fail;
+			}
+			if (*value == "") {
+				# Empty metadata values trigger iRODS bugs.
+				# If a field is allowed to be empty (currently only
+				# 'description', it should be set to '.' instead.
+				# This should of course be hidden by query functions.
+				fail;
+			}
+			uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
+			if (*allowed == 1) {
+				succeed;
+			}
+		}
+	}
+	fail;
+}
+
+uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
+
+    if (*objType == "-u") {
+        uuGetUserType(*objName, *targetUserType);
+        if (*targetUserType == "rodsuser") {
+            if (*unit != "") {
+                # We do not use / allow the unit field here.
+                fail;
+            }
+            if (*value != "") {
+                # We do not use / allow the value field here.
+                fail;
+            }
+            uuUserPolicyCanUserModify(uuClientFullName, *objName, *attribute, *allowed, *reason);
+            if (*allowed == 1) {
+                succeed;
+            }
+        }
+    }
+    fail;
 }
 
 # }}}

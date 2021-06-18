@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import re
 
 import pytest
 import requests
@@ -12,6 +13,7 @@ import urllib3
 from pytest_bdd import (
     given,
     parsers,
+    then,
     when,
 )
 
@@ -26,6 +28,7 @@ users = ['researcher',
 user_cookies = {}
 
 datarequest = False
+deposit = False
 intake = False
 login_oidc = False
 
@@ -34,12 +37,14 @@ def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test")
     parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
+    parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
+    config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
 
     global portal_url
@@ -53,6 +58,9 @@ def pytest_configure(config):
 
     global datarequest
     datarequest = config.getoption("--datarequest")
+
+    global deposit
+    datarequest = config.getoption("--deposit")
 
     global intake
     intake = config.getoption("--intake")
@@ -73,6 +81,10 @@ def pytest_configure(config):
 def pytest_bdd_apply_tag(tag, function):
     if tag == 'datarequest' and not datarequest:
         marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    elif tag == 'deposit' and not deposit:
+        marker = pytest.mark.skip(reason="Skip deposit")
         marker(function)
         return True
     elif tag == 'intake' and not intake:
@@ -97,16 +109,24 @@ def login(user, password):
 
     client = requests.session()
 
-    # Retrieve the CSRF token first
-    csrf = client.get(url, verify=False).cookies['csrf_yoda']
+    # Retrieve the login CSRF token.
+    content = client.get(url, verify=False).content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
 
     # Login as user.
-    login_data = dict(csrf_yoda=csrf, username=user, password=password, next='/home')
-    client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
+    response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    session = client.cookies['session']
     client.close()
 
+    # Retrieve the authenticated CSRF token.
+    content = response.content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
+
     # Return CSRF and session cookies.
-    return client.cookies['csrf_yoda'], client.cookies['yoda_session']
+    return csrf, session
 
 
 def api_request(user, request, data):
@@ -118,10 +138,10 @@ def api_request(user, request, data):
 
     # Make API request.
     url = api_url + "/" + request
-    files = {'csrf_yoda': (None, csrf), 'data': (None, json.dumps(data))}
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
-
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
+    cookies = {'session': session}
+    headers = {'referer': 'https://portal.yoda.test/'}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     # Remove debug info from response body.
     body = response.json()
@@ -140,10 +160,10 @@ def post_form_data(user, request, files):
 
     # Make POST request.
     url = portal_url + "/" + request
-    files['csrf_yoda'] = (None, csrf)
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
-
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    files['csrf_token'] = (None, csrf)
+    cookies = {'session': session}
+    headers = {'referer': 'https://portal.yoda.test/'}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
 
@@ -157,6 +177,7 @@ def api_user_authenticated(user):
 
 @given('user "<user>" is logged in')
 @given(parsers.parse('user "{user}" is logged in'))
+@when('user "<user>" logs in')
 def ui_login(browser, user):
     url = "{}/user/login".format(portal_url)
     browser.visit(url)
@@ -173,15 +194,23 @@ def ui_login(browser, user):
 
 @given('user is not logged in')
 def ui_logout(browser):
-    url = "{}/user/login".format(portal_url)
+    url = "{}/user/logout".format(portal_url)
     browser.visit(url)
 
 
 @given(parsers.parse('module "{module}" is shown'))
+@given(parsers.parse('page "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)
+
+
+@given(parsers.parse('text "{text}" is shown'))
+@when(parsers.parse('text "{text}" is shown'))
+@then(parsers.parse('text "{text}" is shown'))
+def ui_text_shown(browser, text):
+    assert browser.is_text_present(text)
 
 
 @given('collection "<collection>" exists')

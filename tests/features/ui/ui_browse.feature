@@ -25,3 +25,8 @@ Feature: Browse UI
             | researcher  | vault-default-1 |
             | datamanager | vault-core-0    |
             | datamanager | vault-default-1 |
+
+    Scenario: Browsing to a non existing page
+        Given user "researcher" is logged in
+        When module "nonexisting" is shown
+        Then the 404 error page is shown

@@ -3,7 +3,7 @@
 # \author    Ton Smeele
 # \author    Chris Smeele
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2015-2019 Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2021 Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Get the user type for a given user
@@ -804,6 +804,69 @@ uuGroupRemove(*groupName, *status, *message) {
 		*message = "";
 	} else {
 		uuGroupPolicyCanGroupRemove(uuClientFullName, *groupName, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
+}
+
+# \brief Modify a user.
+#
+# This is mostly a shortcut for setting single-value attributes on a user
+# object.
+#
+# \param[in]  userName
+# \param[in]  property  the property to change
+# \param[in]  value     the new property value
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuUserModify(*userName, *property, *value, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
+	*kv.'.' = ".";
+
+	if (*value == "") {
+		# XXX This exact workaround exists in the `uuGroupAdd` rule as well.
+		#     If you change this block, change it there too.
+
+		# Work around an iRODS bug that causes errors when changing metadata
+		# values to an empty string in specific situations.
+		# 'description' is currently the only property that can be set to empty
+		# by the user, and we handle that case here.
+		*value = ".";
+		# This dot must be treated specially (as an empty string) in query
+		# functions.
+	}
+
+	*status = errorcode(msiSudoObjMetaSet(*userName, "-u", *property, *value, "", *kv));
+	if (*status == 0) {
+		*message = "";
+	} else {
+		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *allowed, *reason);
+		if (*allowed == 0) {
+			*message = *reason;
+		}
+	}
+}
+
+# \brief Remove user metadata.
+#
+# \param[in]  userName
+# \param[in]  property  the property to remove
+# \param[out] status    zero on success, non-zero on failure
+# \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
+#
+uuUserMetaRemove(*userName, *property, *status, *message) {
+	*status  = 1;
+	*message = "An internal error occured.";
+
+    *status = errorcode(msiSudoObjMetaRemove(*userName, "-u", "wildcards", *property, "", "", ""));
+    if (*status == 0) {
+		*message = "";
+	} else {
+		uuUserPolicyCanUserModify(uuClientFullName, *userName, *property, *allowed, *reason);
 		if (*allowed == 0) {
 			*message = *reason;
 		}
