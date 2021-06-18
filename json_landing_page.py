@@ -150,8 +150,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         measured_property = []
 
     # Route all domain specific keywords to tag area of landingpage
-    all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure +
-                     geomorphical_feature + material + monitoring + software + measured_property)
+    all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure
+                     + geomorphical_feature + material + monitoring + software + measured_property)
 
     try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory

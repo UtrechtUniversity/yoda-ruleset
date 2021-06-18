@@ -4,7 +4,7 @@
 __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json 
+import json
 import os
 import time
 from pathlib import Path
