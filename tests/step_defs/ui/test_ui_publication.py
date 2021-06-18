@@ -4,7 +4,9 @@
 __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json, os, time
+import json 
+import os
+import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -21,7 +23,7 @@ scenarios('../../features/ui/ui_publication.feature')
 def ui_pub_download_relevant_files(browser):
     # License file and yoda-metadata.json are present at toplevel
     assert len(browser.find_by_css('.fa-file-o')) == 2
-	
+
     # Download each file - only yoda-metadata is required for testing purposes
     # But for some reason it was impossible to distinghuish one from the other.
     browser.find_by_css('.fa-ellipsis-h')[0].click()
@@ -157,4 +159,3 @@ def ui_browse_folder(browser, folder):
     browser.find_by_css('.sorting_asc').click()
 
     browser.links.find_by_partial_text(folder)[0].click()
-
