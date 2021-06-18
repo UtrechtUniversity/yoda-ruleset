@@ -4,8 +4,7 @@
 __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import time # for folder status mutations
-import json, os
+import json, os, time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -20,11 +19,11 @@ scenarios('../../features/ui/ui_publication.feature')
 
 @then('user downloads relevant files of datapackage')
 def ui_pub_download_relevant_files(browser):
-	# License file and yoda-metadata.json are present at toplevel
+    # License file and yoda-metadata.json are present at toplevel
     assert len(browser.find_by_css('.fa-file-o')) == 2
 	
-	# Download each file - only yoda-metadata is required for testing purposes
-	# But for some reason it was impossible to distinghuish one from the other.
+    # Download each file - only yoda-metadata is required for testing purposes
+    # But for some reason it was impossible to distinghuish one from the other.
     browser.find_by_css('.fa-ellipsis-h')[0].click()
     browser.links.find_by_partial_text('Download')[0].click()
 
@@ -33,9 +32,9 @@ def ui_pub_download_relevant_files(browser):
 
 
 @then('user opens landingpage through system metadata')
-def ui_pub_open_system_metadata(browser):	
+def ui_pub_open_system_metadata(browser):
     browser.find_by_css('.system-metadata-icon')[0].click()
-	
+
     link = browser.links.find_by_partial_text('allinone')
     link.click()
 
@@ -43,10 +42,7 @@ def ui_pub_open_system_metadata(browser):
 @then('user checks landingpage content')
 def ui_pub_check_landingpage_content(browser, tmpdir):
     tags = browser.find_by_css('.tag')
-    assert len(tags)==10  # schema dependant
-    # hoe kom ik hier aan de inhoud van yoda-metadata.json ???	
-    assert tags[0].text == 'TAG'
-    assert tags[1].text == '2D Convection box'
+    assert len(tags) == 10  # schema dependant
 
     # Build list with tag values
     landingpage_tag_values = []
@@ -59,7 +55,7 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
         download_dir = root_dir.joinpath("pytest-splinter0/splinter/download/")
     else:
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
-	
+
     for child in download_dir.iterdir():
         if str(child)[-5:] == ".json":
 
@@ -74,11 +70,10 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
                         assert False
             assert True
             return
-        
-    raise AssertionError()
-	
 
-## GENERIC
+    raise AssertionError()
+
+
 @when('user browses to data package in "<vault>"')
 def ui_browse_data_package(browser, vault):
     link = []
@@ -96,7 +91,7 @@ def ui_browse_data_package(browser, vault):
     data_packages.click()
 
 
-# folder	
+# folder
 @when('user submits the folder')
 def ui_folder_submit(browser):
     browser.find_by_id('actionMenu').click()
@@ -118,9 +113,9 @@ def ui_folder_status(browser, status):
     if status in ["Unlocked", "Unsubmitted"]:
         assert badge.value == ""
     else:
-        assert badge.value == status	
-		
-		
+        assert badge.value == status
+
+
 # vault
 @when('user submits the data package for publication')
 def ui_data_package_submit(browser):
@@ -162,3 +157,4 @@ def ui_browse_folder(browser, folder):
     browser.find_by_css('.sorting_asc').click()
 
     browser.links.find_by_partial_text(folder)[0].click()
+
