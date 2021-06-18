@@ -523,7 +523,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     if folder == 'self':
                         whereClause = "COLL_NAME = '" + path + "'"
                     else:
-                        whereClause = "COLL_NAME like '" + path + "%'"
+                        whereClause = "COLL_NAME like '" + path + "/%'"
 
                     iter = genquery.row_iterator(
                         "SUM(DATA_SIZE), RESC_NAME",
