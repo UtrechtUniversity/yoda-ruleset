@@ -515,7 +515,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                 if step == 'research':
                     path = '/' + zone + '/home/' + group
                 else:
-                    path = '/' + zone + '/home/vault/' + group.replace('research-', 'vault-', 1)
+                    path = '/' + zone + '/home/' + group.replace('research-', 'vault-', 1)
 
                 # Per group two statements are required to gather all data
                 # 1) data in folder itself
