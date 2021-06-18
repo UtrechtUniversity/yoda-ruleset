@@ -1,4 +1,4 @@
-urllib3==1.24.2
+urllib3==1.26.5
 requests==2.25.0
 pytest-splinter==3.2.0
 pytest_bdd==4.0.1
