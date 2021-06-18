@@ -43,12 +43,10 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
             subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope)
 
             if intake_tokens_identify_dataset(subscope):
-                log.write(ctx, "IS DATASET")
                 # We found a top-level dataset data object.
                 subscope["dataset_directory"] = row[1]
                 apply_dataset_metadata(ctx, path, subscope, False, True)
             else:
-                log.write(ctx, "IS NO DATASET")
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
