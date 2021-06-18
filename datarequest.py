@@ -317,7 +317,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
         # Check status
         if ((statuses is not None) and (status_get(ctx, request_id) not in statuses)):
-            return api.Error("permission_error", "Action not permitted.")
+            return api.Error("permission_error", "Action not permitted: illegal status transition.")
 
         # Get current user roles
         current_user_roles = []
@@ -337,7 +337,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
         # Check user permissions (i.e. if at least 1 of the user's roles is on the permitted roles
         # list)
         if len(set(current_user_roles) & set(roles)) < 1:
-            return api.Error("permission_error", "Action not permitted.")
+            return api.Error("permission_error", "Action not permitted: insufficient user permissions.")
 
         # If both checks pass, user is permitted to perform action
         return True
