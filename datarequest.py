@@ -1905,13 +1905,14 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
     # Send emails
     if datarequest_status == status.DATAMANAGER_REVIEW_ACCEPTED:
         # Get additional email input parameters
-        ed_email = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_ED, "")['arguments'][1])[0]
+        ed_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_ED, "")['arguments'][1])
 
         # Send emails
         mail_dmr_review_accepted_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        mail_dmr_review_accepted_executive_director(ctx, ed_email, study_title,
-                                                    request_id)
+        for ed_email in ed_emails:
+            mail_dmr_review_accepted_executive_director(ctx, ed_email, study_title,
+                                                        request_id)
 
     elif datarequest_status in (status.RESUBMIT_AFTER_DATAMANAGER_REVIEW,
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
@@ -1932,11 +1933,13 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
 
 def contribution_review_emails(ctx, request_id, datarequest_status):
     # Get parameters
-    pm_email = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])[0]
+    pm_emails = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])
+    pm_email = pm_emails[0]
 
     # Send emails
     if datarequest_status == status.CONTRIBUTION_ACCEPTED:
-        mail_contribution_review_accepted(ctx, pm_email, request_id)
+        for pm_email in pm_emails:
+            mail_contribution_review_accepted(ctx, pm_email, request_id)
     elif datarequest_status in (status.CONTRIBUTION_REJECTED,
                                 status.CONTRIBUTION_RESUBMIT):
         # Get additional parameters
@@ -1998,13 +2001,14 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
     pm_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_PM, "")['arguments'][1])[0]
-    ed_email                = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_ED, "")['arguments'][1])[0]
+    ed_emails               = json.loads(ctx.uuGroupGetMembersAsJson(GROUP_ED, "")['arguments'][1])
 
     # Send emails
     if datarequest_status == status.APPROVED:
         mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        mail_evaluation_approved_ed(ctx, ed_email, request_id)
+        for ed_email in ed_emails:
+            mail_evaluation_approved_ed(ctx, ed_email, request_id)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
