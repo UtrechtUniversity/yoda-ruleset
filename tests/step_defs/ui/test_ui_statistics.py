@@ -112,4 +112,3 @@ def ui_resource_has_tier(browser, resource_name, new_tier):
 
     # Check if tier is set correctly
     assert (browser.find_by_css('.resource', wait_time=30)[index].value.find(new_tier) >= 0)
-    # assert(browser.find_by_css('.resource-tier')[index].value.find('Standard') >= 0)
