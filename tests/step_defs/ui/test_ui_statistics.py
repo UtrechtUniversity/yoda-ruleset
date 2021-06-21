@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+import time
 from pathlib import Path
 
 from pytest_bdd import (
@@ -77,6 +78,7 @@ def ui_resource_view_is_shown(browser):
 def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, new_tier, tier_action):
     # Find index of resource_name in resource table
     index = 0
+    # time.sleep(10)
     for resource in browser.find_by_css('.resource'):
         if resource.value.find(resource_name) >= 0:
             break
@@ -95,7 +97,11 @@ def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, n
     create_new_tier = ''
     if tier_action == 'create':
         create_new_tier = ' (create)'
-    browser.find_by_text(new_tier + create_new_tier).click()
+        browser.find_by_text(new_tier + create_new_tier)[0].click()
+    else:
+        # click on already present option
+        time.sleep(5)
+        browser.find_by_css('.select2-results__option').click()
 
     # Click update tier button
     browser.find_by_css('.update-resource-properties-btn').click()
@@ -104,8 +110,10 @@ def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, n
 @then('"<resource_name>" has tier "<new_tier>"')
 def ui_resource_has_tier(browser, resource_name, new_tier):
     # Find index of resource_name in resource table
+    browser.visit(browser.url)
+    time.sleep(10)
     index = 0
-    for resource in browser.find_by_css('.resource'):
+    for resource in browser.find_by_css('.resource', wait_time=30):
         if resource.value.find(resource_name) >= 0:
             break
         index = index + 1
