@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+import argparse
 import os
+import subprocess
 import sys
 import atexit
 
@@ -13,6 +15,15 @@ import atexit
 
 NAME          = os.path.basename(sys.argv[0])
 LOCKFILE_PATH = '/tmp/irods-{}.lock'.format(NAME)
+
+
+def get_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(description='Yoda replication and revision job')
+    parser.add_argument('--verbose', '-v', action='store_const', default="0", const="1",
+                    help='Log more information in rodsLog for troubleshooting purposes')
+    return parser.parse_args()
+
 
 def lock_or_die():
     """Prevent running multiple instances of this job simultaneously"""
@@ -32,16 +43,17 @@ def lock_or_die():
     # Remove lock no matter how we exit.
     atexit.register(lambda: os.unlink(LOCKFILE_PATH))
 
+
 if 'replicate' in NAME:
-    rule_name = 'uuReplicateBatch'
+    rule_name = 'uuReplicateBatch(*verbose)'
 elif 'revision' in NAME:
-    rule_name = 'uuRevisionBatch'
+    rule_name = 'uuRevisionBatch(*verbose)'
 else:
     print('bad command "{}"'.format(NAME), file=sys.stderr)
     exit(1)
 
+args = get_args()
 lock_or_die()
-
-import subprocess
-
-subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-irods_rule_language-instance', rule_name, 'null', 'ruleExecOut'])
+rule_options = "*verbose=" + args.verbose
+subprocess.call(['irule', '-r', 'irods_rule_engine_plugin-irods_rule_language-instance',
+    rule_name, rule_options, 'ruleExecOut'])

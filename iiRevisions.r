@@ -62,11 +62,13 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 #      maximum_size_for_single_buffer_in_megabytes (32) or larger due to an iRODS PREP bug.
 #      https://github.com/irods/irods_rule_engine_plugin_python/issues/54
 #
-uuRevisionBatch() {
+# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+uuRevisionBatch(*verbose) {
     writeLine("serverLog", "Batch revision job started");
     *count        = 0;
     *countOk      = 0;
     *countIgnored = 0;
+    *printVerbose = bool(*verbose);
 
     *attr      = UUORGMETADATAPREFIX ++ "revision_scheduled";
     *errorattr = UUORGMETADATAPREFIX ++ "revision_failed";
@@ -79,13 +81,22 @@ uuRevisionBatch() {
         *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
         *resc  = *row."META_DATA_ATTR_VALUE";
         *size  = *row."DATA_SIZE";
-        *revstatus = errorcode(iiRevisionCreate(*resc, *path, UUMAXREVISIONSIZE, *id));
+
+        if (*printVerbose) {
+            writeLine("serverLog", "Batch revision: creating revision for *path on resc *resc");
+        }
+
+        *revstatus = errorcode(iiRevisionCreate(*resc, *path, UUMAXREVISIONSIZE, *verbose, *id));
 
         *kv.*attr = *resc;
 
         # Remove revision_scheduled flag no matter if it succeeded or not.
         # rods should have been given own access via policy to allow AVU
         # changes.
+
+        if (*printVerbose) {
+            writeLine("serverLog", "Batch revision: removing AVU for *path");
+        }
 
         *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
         if (*rmstatus != 0) {
@@ -136,13 +147,15 @@ uuRevisionBatch() {
 
 # \brief Create a revision of a dataobject in a revision folder.  ## BLIJFT ##
 #
-# \param[in] resource		resource to retreive original from
+# \param[in] resource		resource to retrieve original from
 # \param[in] path		path of data object to create a revision for
 # \param[in] maxSize		max size of files in bytes
+# \param[in] verbose		whether to print messages for troubleshooting to log (1: yes, 0: no)
 # \param[out] id		object id of revision
 #
-iiRevisionCreate(*resource, *path, *maxSize, *id) {
+iiRevisionCreate(*resource, *path, *maxSize, *verbose, *id) {
     *id = "";
+    *printVerbose = bool(*verbose);
     uuChopPath(*path, *parent, *basename);
     *objectId = 0;
     *found = false;
@@ -207,6 +220,11 @@ iiRevisionCreate(*resource, *path, *maxSize, *id) {
         }
 
         *revPath = *revColl ++ "/" ++ *revFileName;
+
+        if ( *printVerbose ) {
+            writeLine("serverLog", "iiRevisionCreate: creating revision *path -> *revPath" );
+        }
+
         *err = errorcode(msiDataObjCopy(*path, *revPath, "verifyChksum=", *msistatus));
         if (*err < 0) {
             if (*err == -312000) {
