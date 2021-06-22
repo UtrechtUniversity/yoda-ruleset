@@ -147,7 +147,7 @@ iiGenericSecureCopy(*argv, *origin_path, *err) {
 #
 iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "An internal error occured";
+	*statusInfo = "An internal error occurred";
 
 	# Vault packages start four directories deep
 	*pathElems = split(*path, "/");
@@ -188,7 +188,7 @@ iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
 #
 iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
 	*status = "Unknown";
-	*statusInfo = "An internal error occured";
+	*statusInfo = "An internal error occurred";
 
 	*pathElems = split(*path, "/");
 	if (size(*pathElems) != 4) {
