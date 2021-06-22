@@ -109,12 +109,6 @@ def api_response(user, folder):
     assert http_status == 200
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then(parsers.parse('folder "<folder>" status is "{status}"'))
 def folder_status(user, folder, status):
     # Status FOLDER is empty.

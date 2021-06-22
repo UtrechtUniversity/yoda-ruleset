@@ -35,12 +35,6 @@ def api_settings_load(user):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then('"<attribute>" contains "<value>"')
 def api_attribute_value(api_response, attribute, value):
     _, body = api_response

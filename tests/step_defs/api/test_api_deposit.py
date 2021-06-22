@@ -24,11 +24,6 @@ def api_deposit_path(user):
         {}
     )
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, body = api_response
-    assert http_status == code
-
 
 # @then('metadata is returned for "<collection>"')
 # def metadata_returned(api_response, collection):

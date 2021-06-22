@@ -34,12 +34,6 @@ def api_browse_collections(user, collection):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then('the browse result contains "<result>"')
 def api_response_contains(api_response, result):
     _, body = api_response

@@ -138,12 +138,6 @@ def dataset_exists(user):
     return "dataset id"
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then('study "<study>" is returned')
 def study_returned(api_response, study):
     _, body = api_response

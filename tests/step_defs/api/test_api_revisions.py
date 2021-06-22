@@ -86,9 +86,3 @@ def api_response_revision_successfully_restored(api_response):
 
     assert http_status == 200
 
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-
-    assert http_status == code

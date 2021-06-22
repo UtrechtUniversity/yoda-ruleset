@@ -213,6 +213,12 @@ def ui_text_shown(browser, text):
     assert browser.is_text_present(text)
 
 
+@then(parsers.parse('the response status code is "{code:d}"'))
+def api_response_code(api_response, code):
+    http_status, _ = api_response
+    assert http_status == code
+
+
 @given('collection "<collection>" exists')
 def collection_exists(user, collection):
     http_status, _ = api_request(

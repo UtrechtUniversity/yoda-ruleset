@@ -97,12 +97,6 @@ def api_research_collection_details(user, collection):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, body = api_response
-    assert http_status == code
-
-
 def object_exists(user, object, collection):
     http_status, body = api_request(
         user,

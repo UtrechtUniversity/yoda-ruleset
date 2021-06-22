@@ -157,12 +157,6 @@ def api_group_delete_user(user, new_user, group_name):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then('the result is equal to "<users>"')
 def then_users_found_match(api_response, users):
     _, body = api_response

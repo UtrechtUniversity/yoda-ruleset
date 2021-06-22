@@ -197,9 +197,3 @@ def api_response_full_year_storage(api_response):
         assert 'month=' in key
         break
 
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-
-    assert http_status == code

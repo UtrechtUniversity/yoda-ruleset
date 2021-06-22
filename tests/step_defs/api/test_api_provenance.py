@@ -25,12 +25,6 @@ def api_provenance_log(user, collection):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then('provenance log is returned')
 def api_response_contents(api_response):
     _, body = api_response

@@ -56,12 +56,6 @@ def api_meta_form_load(user, collection):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, body = api_response
-    assert http_status == code
-
-
 @then('file "<file>" exists in "<collection>"')
 def file_exists(user, file, collection):
     http_status, body = api_request(

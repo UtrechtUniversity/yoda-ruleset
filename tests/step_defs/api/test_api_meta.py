@@ -108,12 +108,6 @@ def api_response(user, target_coll):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, body = api_response
-    assert http_status == code
-
-
 @then('metadata JSON is removed from "<clone_collection>"')
 def metadata_removed_collection(user, clone_collection):
     http_status, body = api_request(
