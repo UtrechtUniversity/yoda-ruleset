@@ -537,8 +537,8 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                         tier_storage[the_tier] += int(row[0])
 
             # 3) Revision erea
-            revision_path = '/' + zone + '/' + constants.UUREVISIONCOLLECTION + '/' + group
-            whereClause = "COLL_NAME like '" + revision_path + "%'"
+            revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
+            whereClause = "COLL_NAME like '" + revision_path + "/%'"
             iter = genquery.row_iterator(
                 "SUM(DATA_SIZE), RESC_NAME",
                 whereClause,
