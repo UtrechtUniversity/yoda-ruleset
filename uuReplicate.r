@@ -39,10 +39,12 @@ uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
 #      transfer_buffer_size_for_parallel_transfer_in_megabytes (4) due to an iRODS PREP bug.
 #      https://github.com/irods/irods_rule_engine_plugin_python/issues/54
 #
-uuReplicateBatch() {
+# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+uuReplicateBatch(*verbose) {
     writeLine("serverLog", "Batch replication job started");
     *count   = 0;
     *countOk = 0;
+    *printVerbose = bool(*verbose);
 
     *attr      = UUORGMETADATAPREFIX ++ "replication_scheduled";
     *errorattr = UUORGMETADATAPREFIX ++ "replication_failed";
@@ -59,6 +61,11 @@ uuReplicateBatch() {
             *from = elem(*xs, 0);
             *to   = elem(*xs, 1);
             *opts = "rescName=*from++++destRescName=*to++++irodsAdmin=++++verifyChksum=";
+
+            if (*printVerbose) {
+                writeLine("serverLog", "Batch replication: copying *path from *from to *to ...");
+            }
+
             *replstatus = errorcode(msiDataObjRepl(*path, *opts, *s));
 
             *kv.*attr = "*from,*to";
