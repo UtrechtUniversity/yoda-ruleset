@@ -32,7 +32,7 @@ iiScheduleCopyToVault() {
 # \param[in] folder
 # \param[out] newFolderStatus Status to set as datamanager. Either ACCEPTED or REJECTED
 # \param[out] status          status of the action
-# \param[out] statusInfo      Informative message when action was not successfull
+# \param[out] statusInfo      Informative message when action was not successful
 #
 iiFolderDatamanagerAction(*folder, *newFolderStatus, *status, *statusInfo) {
 	*status = "Unknown";
