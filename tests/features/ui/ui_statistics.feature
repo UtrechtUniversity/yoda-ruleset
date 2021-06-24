@@ -31,3 +31,15 @@ Feature: Statistics UI
             | user           |
             | technicaladmin |
             | datamanager    |
+
+    Scenario: Viewing resources and managing tiers as a technicaladmin
+        Given user "<user>" is logged in
+        When module "stats" is shown
+        Then resource view is shown
+        When user updates "<resource_name>" from "<old_tier>" to "<new_tier>" and "<tier_action>" tier
+        Then "<resource_name>" has tier "<new_tier>"
+
+        Examples:
+            | user           | resource_name | old_tier | new_tier | tier_action  |
+            | technicaladmin | demoResc      | Standard | NEWTIER  | create       |
+            | technicaladmin | demoResc      | NEWTIER  | Standard | use_existing |
