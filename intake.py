@@ -420,14 +420,14 @@ def api_intake_scan_for_datasets(ctx, coll):
 
 
 @api.make()
-def api_intake_lock_dataset(ctx, path, dataset_id):
-    """Lock a dataset to mark as an indication it can be 'frozen' for it to progress to vault.
+def api_intake_lock_dataset(ctx, path, dataset_ids):
+    """Lock datasets as an indication it can be 'frozen' for it to progress to vault.
 
     Lock = datamanager only
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param path:       Collection for which to lock a specific dataset id
-    :param dataset_id: Identifier of the dataset to be locked
+    :param ctx:         Combined type of a callback and rei struct
+    :param path:        Collection for which to lock a specific dataset id
+    :param dataset_ids: Comma separated identifiers of datasets to be locked
 
     :returns: indication correct
     """
@@ -440,20 +440,21 @@ def api_intake_lock_dataset(ctx, path, dataset_id):
         log.write(ctx, "No permissions to lock dataset")
         return {"proc_status": "NOK"}
 
-    intake_lock.intake_dataset_lock(ctx, path, dataset_id)
+    for dataset_id in dataset_ids.split(','):
+        intake_lock.intake_dataset_lock(ctx, path, dataset_id)
 
     return {"proc_status": "OK"}
 
 
 @api.make()
-def api_intake_unlock_dataset(ctx, path, dataset_id):
+def api_intake_unlock_dataset(ctx, path, dataset_ids):
     """Unlock a dataset to remove the indication so it can be 'frozen' for it to progress to vault
 
     Unlock = datamanager only
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param path:       Collection for which to lock a specific dataset id
-    :param dataset_id: Identifier of the dataset to be unlocked
+    :param ctx:         Combined type of a callback and rei struct
+    :param path:        Collection for which to lock a specific dataset id
+    :param dataset_ids: Comma separated identifiers of datasets to be locked
 
     :returns: indication correct
     """
@@ -466,7 +467,8 @@ def api_intake_unlock_dataset(ctx, path, dataset_id):
         log.write(ctx, "No permissions to unlock dataset")
         return {"proc_status": "NOK"}
 
-    intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
+    for dataset_id in dataset_ids.split(','):
+        intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
 
     return {"proc_status": "OK"}
 
