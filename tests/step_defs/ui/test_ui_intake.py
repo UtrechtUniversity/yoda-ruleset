@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 from pytest_bdd import (
     parsers,
     scenarios,
@@ -124,9 +126,44 @@ def ui_intake_click_lock_button(browser):
     browser.find_by_id("btn-lock").click()
 
 
-@when('wait for all datasets to be in locked state successfully')
+@then('wait for all datasets to be in locked state successfully')
 def ui_intake_wait_all_datasets_in_locked_state(browser):
     assert browser.is_text_present('Successfully locked the selected dataset(s).', wait_time=30)
+
+    assert len(browser.find_by_css('.datasetstatus_locked', wait_time=30)) == 2
+
+
+@then('wait for all datasets to be in frozen state')
+def ui_intake_wait_all_datasets_in_frozen_state(browser):
+    i = 0
+    no_more_locked_datasets_present = False
+    while i < 20:
+        time.sleep(20)
+        browser.visit(browser.url)
+        # if there are no longer datasets in locked state -> frozen or error
+        if len(browser.find_by_css('.datasetstatus_locked', wait_time=5)) == 0:  # .datasetstatus_frozen
+            no_more_locked_datasets_present = True
+            # either datasets are frozen now. Or have been marked errorenous
+            break
+        i = i + 1
+    assert no_more_locked_datasets_present
+
+
+@then('wait for frozen sets to be added to vault')
+def ui_intake_wait_frozen_datasets_to_vault(browser):
+    # When all frozen datasets have been moved to the vault only 1 will remain with dataset_status_scanned
+    i = 0
+    no_more_frozen_datasets_present = False
+    while i < 20:
+        time.sleep(20)
+        browser.visit(browser.url)
+        # if there are no longer datasets in locked state -> frozen or error
+        if len(browser.find_by_css('.datasetstatus_scanned', wait_time=5)) == 3:  # .datasetstatus_frozen
+            no_more_frozen_datasets_present = True
+            # either datasets are frozen now. Or have been marked errorenous
+            break
+        i = i + 1
+    assert no_more_frozen_datasets_present
 
 
 # SCENARIO 2
@@ -139,7 +176,7 @@ def ui_intake_open_intake_reporting_area(browser):
 def ui_intake_check_reporting_result(browser):
     # classes are part of rows in result table.
     assert len(browser.find_by_css('.dataset-type-counts-raw')) > 0
-    assert len(browser.find_by_css('.dataset-type-counts-processed')) > 0
+    assert len(browser.find_by_css('.dataset-type-counts-processed')) == 0
     assert len(browser.find_by_css('.dataset-aggregated-version-raw')) > 0
     assert len(browser.find_by_css('.dataset-aggregated-version-processed')) > 0
     assert len(browser.find_by_css('.dataset-aggregated-version-total')) > 0
