@@ -9,7 +9,7 @@ Feature: Meta API
         And collection "<collection>" exists
         And "<collection>" is unlocked
 
-    Scenario: Meta clone file
+    Scenario Outline: Meta clone file
         Given user "researcher" is authenticated
         And metadata JSON exists in "<collection>"
         And subcollection "<target_coll>" exists
@@ -21,7 +21,7 @@ Feature: Meta API
             | target_coll                           |
             | /tempZone/home/research-initial/clone |
 
-    Scenario: Meta remove
+    Scenario Outline: Meta remove
         Given user "researcher" is authenticated
         And metadata JSON exists in "<clone_collection>"
         And the Yoda meta remove API is queried with metadata and "<clone_collection>"

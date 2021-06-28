@@ -1,6 +1,6 @@
 Feature: Browse API
 
-    Scenario: Browse folder
+    Scenario Outline: Browse folder
         Given user "<user>" is authenticated
         And the Yoda browse folder API is queried with "<collection>"
         Then the response status code is "200"
@@ -15,7 +15,7 @@ Feature: Browse API
             | datamanager | /tempZone/home/research-initial/testdata | lorem.txt                    |
             | datamanager | /tempZone/home/research-initial/testdata | SIPI_Jelly_Beans_4.1.07.tiff |
 
-    Scenario: Browse collections
+    Scenario Outline: Browse collections
         Given user "<user>" is authenticated
         And the Yoda browse collections API is queried with "<collection>"
         Then the response status code is "200"

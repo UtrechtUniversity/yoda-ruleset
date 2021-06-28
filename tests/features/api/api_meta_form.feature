@@ -10,7 +10,7 @@ Feature: Meta form API
         And collection "<collection>" exists
         And "<collection>" is unlocked
 
-    Scenario: Meta form save
+    Scenario Outline: Meta form save
         Given user "researcher" is authenticated
         And the Yoda meta form save API is queried with metadata and "<collection>"
         Then the response status code is "200"

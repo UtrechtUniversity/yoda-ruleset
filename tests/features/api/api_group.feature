@@ -1,6 +1,6 @@
 Feature: Group API
 
-    Scenario: Group data
+    Scenario Outline: Group data
         Given user "<user>" is authenticated
         And the Yoda group data API is queried
         Then the response status code is "200"
@@ -12,7 +12,7 @@ Feature: Group API
             | researcher  | research-initial1   |
             | datamanager | datamanager-initial |
 
-    Scenario: Group categories
+    Scenario Outline: Group categories
         Given user "<user>" is authenticated
         And the Yoda group categories API is queried
         Then the response status code is "200"
@@ -23,7 +23,7 @@ Feature: Group API
             | researcher  | initial  |
             | datamanager | initial  |
 
-    Scenario: Group subcategories
+    Scenario Outline: Group subcategories
         Given user "<user>" is authenticated
         And the Yoda group subcategories API is queried with "<category>"
         Then the response status code is "200"
@@ -34,7 +34,7 @@ Feature: Group API
             | researcher  | initial  |
             | datamanager | initial  |
 
-    Scenario: Group search users
+    Scenario Outline: Group search users
         Given user "<user>" is authenticated
         And the user searches for users matching "<pattern>"
         Then the response status code is "200"
