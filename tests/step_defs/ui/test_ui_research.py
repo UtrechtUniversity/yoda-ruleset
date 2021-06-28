@@ -23,12 +23,13 @@ def ui_research_click_rename_file(browser, file_name):
     found = False
     for file_row_class in ['.even', '.odd']:
         row = browser.find_by_css(file_row_class)[0]
-        if not found and row.find_by_css('.sorting_1')[0].value==file_name:
+        if not found and row.find_by_css('.sorting_1')[0].value == file_name:
             found = True
             row.find_by_css('.dropdown-toggle')[0].click()
-            row.find_by_css('.file-rename').click() 
+            row.find_by_css('.file-rename').click()
     # file name must be present in browser
     assert found
+
 
 @when('user renames file to "<new_file_name>"')
 def ui_research_rename_file(browser, new_file_name):
@@ -43,7 +44,7 @@ def ui_research_new_file_name_is_present(browser, new_file_name):
     time.sleep(10)
     for file_row_class in ['.even', '.odd']:
         row = browser.find_by_css(file_row_class)[0]
-        if row.find_by_css('.sorting_1')[0].value==new_file_name:
+        if row.find_by_css('.sorting_1')[0].value == new_file_name:
             found = True
             break
     # renamed file must be present in file browser
@@ -57,7 +58,7 @@ def ui_browse_subfolder(browser, subfolder):
     time.sleep(10)
 
 
-#########
+# Copied functions
 @when('user browses to folder "<folder>"')
 def ui_browse_folder(browser, folder):
     time.sleep(5)
