@@ -465,7 +465,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                 if step == 'research':
                     path = '/' + zone + '/home/' + group
                 else:
-                    path = '/' + zone + '/home/vault/' + group.replace('research-', 'vault-', 1)
+                    path = '/' + zone + '/home/' + group.replace('research-', 'vault-', 1)
 
                 # Per group two statements are required to gather all data
                 # 1) data in folder itself
@@ -475,7 +475,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     if folder == 'self':
                         whereClause = "COLL_NAME = '" + path + "'"
                     else:
-                        whereClause = "COLL_NAME like '" + path + "%'"
+                        whereClause = "COLL_NAME like '" + path + "/%'"
 
                     iter = genquery.row_iterator(
                         "SUM(DATA_SIZE), RESC_NAME",
@@ -489,8 +489,8 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                         tier_storage[the_tier] += int(row[0])
 
             # 3) Revision erea
-            revision_path = '/' + zone + '/' + constants.UUREVISIONCOLLECTION + '/' + group
-            whereClause = "COLL_NAME like '" + revision_path + "%'"
+            revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
+            whereClause = "COLL_NAME like '" + revision_path + "/%'"
             iter = genquery.row_iterator(
                 "SUM(DATA_SIZE), RESC_NAME",
                 whereClause,
