@@ -11,7 +11,8 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request, post_form_data
+from test_api_research import file_exists, object_exists         # noqa: I201 I202
+from conftest import api_request, post_form_data    # noqa: I201 I202
 
 scenarios('../../features/api/api_deposit.feature')
 
@@ -25,19 +26,21 @@ def api_deposit_path(user):
     )
 
 
-# @given('a file "<file>" is uploaded in "<folder>"', target_fixture="api_response")
-# def api_deposit_file_upload(user, file, folder):
-#     return post_form_data(
-#         user,
-#         "research/browse/upload",
-#         {"file": (file, "test"), "filepath": (None, folder)}
-#         # {"file": "upload_test_file.txt", "filepath": "/research-initial1"}
-#     )
+@given('a file "<file>" is uploaded in "<folder>"', target_fixture="api_response")
+def api_deposit_file_upload(user, file, folder):
+
+    return post_form_data(
+        user,
+        "research/browse/upload",
+        {"file": (file, "test"), "filepath": (None, folder)}
+    )
+
 
 # @then('metadata is returned for "<collection>"')
 # def metadata_returned(api_response, collection):
 #     http_status, body = api_response
 #     assert http_status == 200
+
 
 # @then('deposit path is returned')
 # def api_response_contents(api_response):
