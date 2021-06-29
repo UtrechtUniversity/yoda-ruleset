@@ -199,8 +199,9 @@ def ui_logout(browser):
 
 
 @given(parsers.parse('module "{module}" is shown'))
-@given(parsers.parse('page "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
+@given(parsers.parse('page "{module}" is shown'))
+@when(parsers.parse('page "{module}" is shown'))
 def ui_module_shown(browser, module):
     url = "{}/{}".format(portal_url, module)
     browser.visit(url)

@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -196,4 +196,3 @@ def api_response_full_year_storage(api_response):
     for key in storage_month_data:
         assert 'month=' in key
         break
-

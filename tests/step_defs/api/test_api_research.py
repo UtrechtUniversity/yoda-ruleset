@@ -6,13 +6,14 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
 
 from conftest import api_request, post_form_data
 
+# Tests for unlocked and locked research folders
 scenarios('../../features/api/api_research.feature', '../../features/api/api_research_locked.feature')
 
 

@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -85,4 +85,3 @@ def api_response_revision_successfully_restored(api_response):
     http_status, _ = api_response
 
     assert http_status == 200
-
