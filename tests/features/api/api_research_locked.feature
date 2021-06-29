@@ -9,7 +9,7 @@ Feature: Research API locked
         And collection "<collection>" exists
         And "<collection>" is locked
 
-    Scenario: Research folder add in locked collection
+    Scenario Outline: Research folder add in locked collection
         Given user "researcher" is authenticated
         And the Yoda research folder add API is queried with "<folder>" and "<collection>"
         Then the response status code is "400"
@@ -19,7 +19,7 @@ Feature: Research API locked
             | folder                 |
             | api_test_folder_locked |
 
-    Scenario: Research folder rename in locked collection
+    Scenario Outline: Research folder rename in locked collection
         Given user "researcher" is authenticated
         And the Yoda research folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"
         Then the response status code is "400"
@@ -29,7 +29,7 @@ Feature: Research API locked
             | folder_old             | folder                         |
             | api_test_folder_locked | api_test_folder_locked_renamed |
 
-    Scenario: Research folder delete in locked collection
+    Scenario Outline: Research folder delete in locked collection
         Given user "researcher" is authenticated
         And the Yoda research folder delete API is queried with "<folder>" and "<collection>"
         Then the response status code is "400"
@@ -38,7 +38,7 @@ Feature: Research API locked
             | folder                  |
             | api_test_folder_locked  |
 
-    Scenario: Research file copy in locked collection
+    Scenario Outline: Research file copy in locked collection
         Given user "researcher" is authenticated
         And the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"
         Then the response status code is "400"
@@ -49,7 +49,7 @@ Feature: Research API locked
             | file               | copy                      |
             | yoda-metadata.json | yoda-metadata_locked.json |
 
-    Scenario: Research file rename in locked collection
+    Scenario Outline: Research file rename in locked collection
         Given user "researcher" is authenticated
         And the Yoda research file rename API is queried with "<file>", "<file_renamed>" and "<collection>"
         Then the response status code is "400"
@@ -60,17 +60,17 @@ Feature: Research API locked
             | file               | file_renamed              |
             | yoda-metadata.json | yoda-metadata_locked.json |
 
-    Scenario: Research file upload in locked collection
-        Given user "researcher" is authenticated
-        And a file "<file>" is uploaded in "<folder>"
-        Then the response status code is "200"
-        And file "<file>" does not exist in "<collection>"
+#    Scenario Outline: Research file upload in locked collection
+#        Given user "researcher" is authenticated
+#        And a file "<file>" is uploaded in "<folder>"
+#        Then the response status code is "200"
+#        And file "<file>" does not exist in "<collection>"
+#
+#        Examples:
+#            | file                 | folder            |
+#            | upload_test_file.txt | /research-initial |
 
-        Examples:
-            | file                 | folder            |
-            | upload_test_file.txt | /research-initial |
-
-    Scenario: Research file delete in locked collection
+    Scenario Outline: Research file delete in locked collection
         Given user "researcher" is authenticated
         And the Yoda research file delete API is queried with "<file>" and "<collection>"
         Then the response status code is "400"

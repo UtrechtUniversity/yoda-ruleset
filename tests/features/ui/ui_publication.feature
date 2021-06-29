@@ -1,8 +1,8 @@
 Feature: Publication of geo data
 
 		
-    Scenario: Publication of teclab datapackage and test landing page output
-#ui_vault:
+    Scenario Outline: Publication of teclab datapackage and test landing page output
+        #ui_vault:
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"

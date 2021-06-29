@@ -9,7 +9,7 @@ Feature: Research UI
         And collection "<collection>" exists
         And "<collection>" is unlocked
 
-    Scenario: Adding a folder
+    Scenario Outline: Adding a folder
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"
@@ -21,7 +21,7 @@ Feature: Research UI
             | research-initial | ui_test_folder1 |
             | research-initial | ui_test_folder2 |
 
-    Scenario: Renaming a folder
+    Scenario Outline: Renaming a folder
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"
@@ -33,7 +33,7 @@ Feature: Research UI
             | research-initial | ui_test_folder1 | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2 | ui_test_folder2_renamed |
 
-    Scenario: Deleting a folder
+    Scenario Outline: Deleting a folder
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"
@@ -45,7 +45,7 @@ Feature: Research UI
             | research-initial | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2_renamed |
 
-    Scenario: Renaming a file and rename it again to guarentee equal start situation for new tests
+    Scenario Outline: Renaming a file and rename it again to guarentee equal start situation for new tests
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"

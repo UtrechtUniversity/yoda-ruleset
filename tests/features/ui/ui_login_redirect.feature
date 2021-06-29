@@ -1,6 +1,6 @@
 Feature: Login Redirects
 
-    Scenario: Redirected to login page
+    Scenario Outline: Redirected to login page
         Given user is not logged in
         When the user navigates to "<page>"
         Then the user is redirected to the login page
@@ -9,7 +9,7 @@ Feature: Login Redirects
         | page       |
         | /research/ |
 
-    Scenario: After direct login redirected to homepage
+    Scenario Outline: After direct login redirected to homepage
         Given user is not logged in
         When user "<user>" logs in
         Then the user is redirected to "<page>"
@@ -19,7 +19,7 @@ Feature: Login Redirects
         | researcher    | /         |
 
 
-    Scenario: After redirected login redirected to original target
+    Scenario Outline: After redirected login redirected to original target
         Given user is not logged in
         And the user navigates to "<page>"
         When user "<user>" logs in after being redirected

@@ -1,6 +1,6 @@
 Feature: Statistics UI
 
-    Scenario: Viewing storage details of research group
+    Scenario Outline: Viewing storage details of research group
         Given user "<user>" is logged in
         And module "stats" is shown
         When user views statistics of group "research-initial"
@@ -11,7 +11,7 @@ Feature: Statistics UI
             | researcher     |
             | datamanager    |
 
-    Scenario: Viewing category storage details as a technicaladmin or datamanager
+    Scenario Outline: Viewing category storage details as a technicaladmin or datamanager
         Given user "<user>" is logged in
         When module "stats" is shown
         Then storage for "<storage_type>" is shown
@@ -21,7 +21,7 @@ Feature: Statistics UI
             | technicaladmin | Storage (RodsAdmin)   |
             | datamanager    | Storage (Datamanager) |
 
-    Scenario: Export category storage details as a technicaladmin or datamanager
+    Scenario Outline: Export category storage details as a technicaladmin or datamanager
         Given user "<user>" is logged in
         And module "stats" is shown
         When export statistics button is clicked
@@ -32,7 +32,7 @@ Feature: Statistics UI
             | technicaladmin |
             | datamanager    |
 
-    Scenario: Viewing resources and managing tiers as a technicaladmin
+    Scenario Outline: Viewing resources and managing tiers as a technicaladmin
         Given user "<user>" is logged in
         When module "stats" is shown
         Then resource view is shown

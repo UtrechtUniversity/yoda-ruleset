@@ -1,7 +1,7 @@
 @oidc
 Feature: Login OIDC UI
 
-    Scenario: Login using OIDC
+    Scenario Outline: Login using OIDC
         Given user is not logged in
         And login page is shown
         When user clicks login with OIDC

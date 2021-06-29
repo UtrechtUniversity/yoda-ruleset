@@ -9,7 +9,7 @@ Feature: Meta UI
         And collection "<collection>" exists
         And "<collection>" is unlocked
 
-    Scenario: Save metadata
+    Scenario Outline: Save metadata
         Given user "researcher" is logged in
         And module "research" is shown
         When user opens metadata form of folder "<folder>"
@@ -21,7 +21,7 @@ Feature: Meta UI
             | folder           |
             | research-initial |
 
-    Scenario: Delete metadata
+    Scenario Outline: Delete metadata
         Given user "researcher" is logged in
         And module "research" is shown
         When user opens metadata form of folder "<folder>"
