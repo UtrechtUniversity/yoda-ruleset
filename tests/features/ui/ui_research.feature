@@ -44,3 +44,17 @@ Feature: Research UI
             | folder           | folder_delete           |
             | research-initial | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2_renamed |
+
+    Scenario: Renaming a file and rename it again to guarentee equal start situation for new tests
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user browses to subfolder "<subfolder>"
+        And user clicks rename file for file "<file_name>"
+        When user renames file to "<new_file_name>"
+        And new file name "<new_file_name>" is present in folder
+        Examples:
+            | folder           | subfolder | file_name         | new_file_name     |
+            | research-initial | testdata  | lorem.txt         | renamed_lorem.txt |
+            | research-initial | testdata  | renamed_lorem.txt | lorem.txt         |
+            
