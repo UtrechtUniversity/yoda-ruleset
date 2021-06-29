@@ -6,13 +6,13 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
 
-from test_api_research import file_exists, object_exists         # noqa: I201 I202
-from conftest import api_request, post_form_data    # noqa: I201 I202
+from test_api_research import file_exists, object_exists    # noqa: I201, I202
+from conftest import api_request, post_form_data            # noqa: I201, I202
 
 scenarios('../../features/api/api_deposit.feature')
 
