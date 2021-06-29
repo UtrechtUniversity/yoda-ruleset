@@ -18,7 +18,7 @@ scenarios('../../features/ui/ui_research.feature')
 @when('user clicks rename file for file "<file_name>"')
 def ui_research_click_rename_file(browser, file_name):
     # Pre condition - only two file rows present  (lorem.txt and SIPI_Jelly_Beans_4.1.07.tiff)
-    time.sleep(5)
+    ## time.sleep(5)
 
     found = False
     for file_row_class in ['.even', '.odd']:
@@ -33,7 +33,7 @@ def ui_research_click_rename_file(browser, file_name):
 
 @when('user renames file to "<new_file_name>"')
 def ui_research_rename_file(browser, new_file_name):
-    time.sleep(2)
+    ## time.sleep(2)
     browser.find_by_id('file-rename-name').fill(new_file_name)
     browser.find_by_css('.btn-confirm-file-rename').click()
 
@@ -41,7 +41,7 @@ def ui_research_rename_file(browser, new_file_name):
 @when('new file name "<new_file_name>" is present in folder')
 def ui_research_new_file_name_is_present(browser, new_file_name):
     found = False
-    time.sleep(10)
+    time.sleep(15)
     for file_row_class in ['.even', '.odd']:
         row = browser.find_by_css(file_row_class)[0]
         if row.find_by_css('.sorting_1')[0].value == new_file_name:
@@ -55,7 +55,6 @@ def ui_research_new_file_name_is_present(browser, new_file_name):
 def ui_browse_subfolder(browser, subfolder):
     time.sleep(5)
     browser.links.find_by_partial_text(subfolder).click()
-    time.sleep(10)
 
 
 # Copied functions
