@@ -14,7 +14,7 @@ Do not run it on untrusted codebases.
 """
 from __future__ import print_function
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Chris Smeele')
@@ -242,7 +242,7 @@ def gen_fn_spec(name, fn):
           # Not in line with the current portal,
           # but provides the best documentation value.
           #
-          O(('multipart/form-data',
+          O(('application/json',
             O(('schema', dataspec))))))),
         ('responses',
         O(('200',
