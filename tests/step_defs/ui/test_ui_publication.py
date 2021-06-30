@@ -23,13 +23,12 @@ scenarios('../../features/ui/ui_publication.feature')
 def ui_check_provenance_research(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct research folder already
-	# This test can be executed repeatedly as always the n top statuses of the package in research will be checked
+    # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
     # eventhough the folder is used several times in a different test run
-    time.sleep(10)
+    time.sleep(10)  # This sleep cannot be added to next line as wait_time -> it doesn't work then
     browser.find_by_css('.actionlog-icon')[0].click()
-    time.sleep(10)
     action_log_rows = browser.find_by_css('.list-group-item-action')
-    # Chronological (backwards) status changes 
+    # Chronological (backwards) status changes
     prov_statuses = ['Secured in vault', 'Accepted for vault', 'Submitted for vault']
     for index in range(0, len(prov_statuses)):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
@@ -39,11 +38,10 @@ def ui_check_provenance_research(browser):
 def ui_check_provenance_vault(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct vault folder (highest level datapackage) already
-    time.sleep(10)
+    time.sleep(10)  # This sleep cannot be added to next line as wait_time -> it doesn't work then
     browser.find_by_css('.actionlog-icon')[0].click()
-    time.sleep(10)
     action_log_rows = browser.find_by_css('.list-group-item-action')
-    # Chronological (backward) status changes 
+    # Chronological (backward) status changes
     prov_statuses = ['Published', 'Approved for publication', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
     for index in range(0, len(prov_statuses)):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
