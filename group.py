@@ -397,26 +397,61 @@ def api_group_search_users(ctx, pattern):
 
 @api.make()
 def api_group_exists(ctx, group_name):
+    """Check if group exists.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group to check for existence
+
+    :returns: Boolean indicating if group exists
+    """
     return group.exists(ctx, group_name)
 
 
 @api.make()
 def api_group_create(ctx, group_name, category, subcategory, description, data_classification):
+    """Create a new group.
+
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param group_name:          Name of the group to create
+    :param category:            Category of the group to create
+    :param subcategory:         Subcategory of the group to create
+    :param description:         Description of the group to create
+    :param data_classification: Data classification of the group to create
+    """
     ruleResult = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
 
 
 @api.make()
 def api_group_update(ctx, group_name, property_name, property_value):
+    """Update group property.
+
+    :param ctx:            Combined type of a ctx and rei struct
+    :param group_name:     Name of the group to update property of
+    :param property_name:  Name of the property to update
+    :param property_value: Value of the property to update
+    """
     ruleResult = ctx.uuGroupModify(group_name, property_name, property_value, '', '')
 
 
 @api.make()
 def api_group_delete(ctx, group_name):
+    """Delete a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group to delete
+    """
     ruleResult = ctx.uuGroupRemove(group_name, '', '')
 
 
 @api.make()
 def api_group_get_description(ctx, group_name):
+    """Retrieve description of a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Name of the group
+
+    :returns: Description of the group
+    """
     ruleResult = ctx.uuGroupGetDescription(group_name, '')
 
     description = ruleResult["arguments"][1]
@@ -425,21 +460,50 @@ def api_group_get_description(ctx, group_name):
 
 @api.make()
 def api_group_user_is_member(ctx, username, group_name):
+    """Check if user is member of a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: Boolean indicating if user is member of the group
+    """
     return group_user_exists(ctx, group_name, username, True)
 
 
 @api.make()
 def api_group_user_add(ctx, username, group_name):
+    """Add a user to a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+    """
     ruleResult = ctx.uuGroupUserAdd(group_name, username, '', '')
 
 
 @api.make()
 def api_group_user_update_role(ctx, username, group_name, new_role):
+    """Update role of a user in a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+    :param new_role:   New role of the user
+    """
     ruleResult = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
 
 
 @api.make()
 def api_group_get_user_role(ctx, username, group_name):
+    """Get role of a user in a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+
+    :returns: Role of the user
+    """
     ruleResult = ctx.uuGroupGetMemberType(group_name, username, '')
 
     role = ruleResult["arguments"][2]
@@ -448,4 +512,10 @@ def api_group_get_user_role(ctx, username, group_name):
 
 @api.make()
 def api_group_remove_user_from_group(ctx, username, group_name):
+    """Remove a user from a group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param username:   Name of the user
+    :param group_name: Name of the group
+    """
     ruleResult = ctx.uuGroupUserRemove(group_name, username, '', '')
