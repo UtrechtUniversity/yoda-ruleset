@@ -19,6 +19,36 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_publication.feature')
 
 
+@when('user checks provenance info research')
+def ui_check_provenance_research(browser):
+    # Check presence and chronological order of provenance
+    # precondition is that in the correct research folder already
+	# This test can be executed repeatedly as always the n top statuses of the package in research will be checked
+    # eventhough the folder is used several times in a different test run
+    time.sleep(10)
+    browser.find_by_css('.actionlog-icon')[0].click()
+    time.sleep(10)
+    action_log_rows = browser.find_by_css('.list-group-item-action')
+    # Chronological (backwards) status changes 
+    prov_statuses = ['Secured in vault', 'Accepted for vault', 'Submitted for vault']
+    for index in range(0, len(prov_statuses)):
+        assert action_log_rows[index].value.find(prov_statuses[index]) != -1
+
+
+@when('user checks provenance info vault')
+def ui_check_provenance_vault(browser):
+    # Check presence and chronological order of provenance
+    # precondition is that in the correct vault folder (highest level datapackage) already
+    time.sleep(10)
+    browser.find_by_css('.actionlog-icon')[0].click()
+    time.sleep(10)
+    action_log_rows = browser.find_by_css('.list-group-item-action')
+    # Chronological (backward) status changes 
+    prov_statuses = ['Published', 'Approved for publication', 'Submitted for publication', 'Secured in vault', 'Accepted for vault', 'Submitted for vault']
+    for index in range(0, len(prov_statuses)):
+        assert action_log_rows[index].value.find(prov_statuses[index]) != -1
+
+
 @then('user downloads relevant files of datapackage')
 def ui_pub_download_relevant_files(browser):
     # License file and yoda-metadata.json are present at toplevel
@@ -87,7 +117,7 @@ def ui_browse_data_package(browser, vault):
             browser.find_by_id('file-browser_next').click()
 
     browser.find_by_css('.sorting_asc').click()
-
+    time.sleep(10)
     research = vault.replace("vault-", "research-")
     data_packages = browser.links.find_by_partial_text(research)
     data_packages.click()
