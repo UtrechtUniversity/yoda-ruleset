@@ -25,8 +25,8 @@ def ui_reset_notifcations(browser):
     browser.links.find_by_partial_text('Notifications')[0].click()
 
     time.sleep(5)
-	
-	# reset all present notifications if any present
+
+    # reset all present notifications if any present
     if len(browser.find_by_css('.list-group-item-action')) > 0:
         browser.find_by_id('notifications_dismiss_all').click()
 
@@ -34,7 +34,7 @@ def ui_reset_notifcations(browser):
 @when(parsers.parse('user checks and clears notifications for status "{status}"'))
 def ui_notifications(browser, status):
     status_text = {'Submitted': ['Data package submitted'],
-	               'Accepted': ['Data package secured', 'Data package accepted for vault'],
+                   'Accepted': ['Data package secured', 'Data package accepted for vault'],
                    'Submitted for publication': ['Data package submitted for publication', 'Data package secured'],
                    'Approved for publication': ['Data package published', 'Data package approved for publication']}
 
@@ -42,14 +42,14 @@ def ui_notifications(browser, status):
     browser.links.find_by_partial_text('Notifications')[0].click()
 
     time.sleep(5)
-	
+
     assert len(browser.find_by_css('.list-group-item-action')) == len(status_text[status])
 
     index = 0
     for status_item in status_text[status]:
         assert browser.find_by_css('.list-group-item-action')[index].value.find(status_item) != -1
         index = index + 1
-	
+
     browser.find_by_id('notifications_dismiss_all').click()
 
     time.sleep(5)
