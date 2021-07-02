@@ -19,6 +19,45 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_publication.feature')
 
 
+@when('all notifications are reset')
+def ui_reset_notifcations(browser):
+    browser.find_by_id('userDropdown').click()
+    browser.links.find_by_partial_text('Notifications')[0].click()
+
+    time.sleep(5)
+
+    # reset all present notifications if any present
+    if len(browser.find_by_css('.list-group-item-action')) > 0:
+        browser.find_by_id('notifications_dismiss_all').click()
+
+
+@when(parsers.parse('user checks and clears notifications for status "{status}"'))
+def ui_notifications(browser, status):
+    status_text = {'Submitted': ['Data package submitted'],
+                   'Accepted': ['Data package secured', 'Data package accepted for vault'],
+                   'Submitted for publication': ['Data package submitted for publication', 'Data package secured'],
+                   'Approved for publication': ['Data package published', 'Data package approved for publication']}
+
+    browser.find_by_id('userDropdown').click()
+    browser.links.find_by_partial_text('Notifications')[0].click()
+
+    time.sleep(5)
+
+    assert len(browser.find_by_css('.list-group-item-action')) == len(status_text[status])
+
+    index = 0
+    for status_item in status_text[status]:
+        assert browser.find_by_css('.list-group-item-action')[index].value.find(status_item) != -1
+        index = index + 1
+
+    browser.find_by_id('notifications_dismiss_all').click()
+
+    time.sleep(5)
+
+    # Check whether all notifications were cleared
+    assert len(browser.find_by_css('.list-group-item-action')) == 0
+
+
 @when('user checks provenance info research')
 def ui_check_provenance_research(browser):
     # Check presence and chronological order of provenance
@@ -72,7 +111,7 @@ def ui_pub_open_system_metadata(browser):
 @then('user checks landingpage content')
 def ui_pub_check_landingpage_content(browser, tmpdir):
     tags = browser.find_by_css('.tag')
-    assert len(tags) == 10  # schema dependant
+    assert len(tags) == 10  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
 
     # Build list with tag values
     landingpage_tag_values = []
@@ -138,7 +177,7 @@ def ui_folder_accept(browser):
 # folder
 @then(parsers.parse('the folder status is "{status}"'))
 def ui_folder_status(browser, status):
-    time.sleep(10)
+    time.sleep(20)
     badge = browser.find_by_id('statusBadge')
     if status in ["Unlocked", "Unsubmitted"]:
         assert badge.value == ""
