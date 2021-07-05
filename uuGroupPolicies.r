@@ -525,14 +525,14 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		}
 	}
 
-    # No inheritance for deposit groups
-    if (*groupName like regex "deposit-.*") {
-        succeed;
-    } else {
-        # Put the group name in the policyKv to assist the acl policy.
-        *aclKv."forGroup" = *groupName;
+    # Put the group name in the policyKv to assist the acl policy.
+    *aclKv."forGroup" = *groupName;
 
-        # Enable inheritance for the new group, no inheritance for deposit groups.
+    if (*groupName like regex "deposit-.*") {
+        # Disable inheritance for deposit group.
+        msiSudoObjAclSet("recursive", "noinherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+    } else {
+        # Enable inheritance for the new group.
         msiSudoObjAclSet("recursive", "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
     }
 }
