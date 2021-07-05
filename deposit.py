@@ -9,7 +9,7 @@ from util import *
 
 __all__ = ['api_deposit_path']
 
-DEPOSIT_GROUP = "deposit-intial"
+DEPOSIT_GROUP = "deposit-test"
 
 
 def determine_deposit_path(ctx):
