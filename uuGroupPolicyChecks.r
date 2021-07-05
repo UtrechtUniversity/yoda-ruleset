@@ -275,7 +275,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		#                           v  These groups are user-removable  v
-		if (*groupName like regex "(grp|intake|research|vault)-.*") {
+		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*") {
 			# NB: Only rodsadmin can remove datamanager groups.
 			#     Even datamanager group managers cannot remove their own group.
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
