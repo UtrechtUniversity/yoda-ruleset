@@ -32,7 +32,7 @@ def determine_deposit_path(ctx):
         base_name = '-'.join(parts[1:])
 
         parts = coll.split('/')
-        datapackage_name = pathutil.basename(ctx, coll)
+        datapackage_name = pathutil.basename(coll)
 
         if len(datapackage_name) > 235:
             datapackage_name = datapackage_name[0:235]
@@ -50,7 +50,7 @@ def determine_deposit_path(ctx):
 
         collection.create(ctx, deposit_path)
 
-    return pathutil.basename(ctx, deposit_path)
+    return pathutil.basename(deposit_path)
 
 
 @api.make()
