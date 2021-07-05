@@ -156,7 +156,7 @@ def api_meta_form_load(ctx, coll):
 
     # - What kind of collection path is this?
     space, zone, group, subpath = pathutil.info(coll)
-    if space not in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
+    if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
         return {}
 
     category = group_category(ctx, group)
@@ -171,7 +171,7 @@ def api_meta_form_load(ctx, coll):
     # (needed both for research and vault packages)
     org_metadata = folder.get_org_metadata(ctx, coll)
 
-    if space is pathutil.Space.RESEARCH:
+    if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         can_edit = is_member and not folder.is_locked(ctx, coll, org_metadata)
 
         # Analyze a possibly existing metadata JSON/XML file.
