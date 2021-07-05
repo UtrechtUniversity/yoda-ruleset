@@ -286,7 +286,7 @@ uuUserGetGroups(*user, *includeRo, *groups) {
 	}
 }
 
-# \brief Map 'read-|vault-' groups to their 'intake-|research-' counterparts.
+# \brief Map 'read-|vault-' groups to their 'intake-|research-|deposit-' counterparts.
 #
 # If no base group exists, the input *groupName is returned as *baseGroup.
 #
@@ -305,7 +305,7 @@ uuGetBaseGroup(*groupName, *baseGroup) {
 				 WHERE  USER_GROUP_NAME LIKE '%-*baseName'){
 
 			*baseLikeGroup = *row.'USER_GROUP_NAME';
-			if (*baseLikeGroup like regex "(intake|research)-*baseName") {
+			if (*baseLikeGroup like regex "(intake|research|deposit)-*baseName") {
 				*baseGroup = *baseLikeGroup;
 				break;
 			}

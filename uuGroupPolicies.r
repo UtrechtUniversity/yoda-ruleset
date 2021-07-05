@@ -435,7 +435,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		# taken after automatic creation of vault groups.
 
 	} else {
-		# This is a group manager managed group (i.e. 'research-', 'grp-', 'intake-', 'priv-', 'datamanager-').
+		# This is a group manager managed group (i.e. 'research-', 'deposit-','grp-', 'intake-', 'priv-', 'datamanager-').
 		# Add the creator as a member.
 
 		errorcode(msiSudoGroupMemberAdd(*groupName, uuClientFullName, ""));
@@ -443,9 +443,7 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		# Perform group prefix-dependent actions (e.g. create vaults for intake/research groups).
 
 		if (*groupName like regex "(intake|research)-.*") {
-
 			# Create a corresponding RO group.
-
 			uuChop(*groupName, *_, *baseName, "-", true);
 			*roGroupName = "read-*baseName";
 			msiSudoGroupAdd(*roGroupName, "", "", "", "");
@@ -454,18 +452,23 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 			msiSudoObjAclSet("recursive", "read", *roGroupName, "/$rodsZoneClient/home/*groupName", "");
 
 			# Create vault group.
-
 			uuChop(*groupName, *_, *baseName, "-", true);
 			*vaultGroupName = "vault-*baseName";
 			msiSudoGroupAdd(*vaultGroupName, "", "", "", "");
 			# Add rods to the vault group.
 			msiSudoGroupMemberAdd(*vaultGroupName, "rods#$rodsZoneClient", "");
 
-		} else if (*groupName like "datamanager-*") {
+        } else if (*groupName like regex "deposit-.*") {
+            # Create vault group.
+            uuChop(*groupName, *_, *baseName, "-", true);
+            *vaultGroupName = "vault-*baseName";
+            msiSudoGroupAdd(*vaultGroupName, "", "", "", "");
+            # Add rods to the vault group.
+            msiSudoGroupMemberAdd(*vaultGroupName, "rods#$rodsZoneClient", "");
 
+		} else if (*groupName like "datamanager-*") {
 			# Give the newly created datamanager group read access to all
 			# existing intake/research home dirs and vaults in its category.
-
 			*category = *policyKv."category";
 
 			foreach (
@@ -483,6 +486,16 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 					*aclKv."forGroup" = *catGroup;
 					msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
 
+					uuChop(*catGroup, *_, *catGroupBase, "-", true);
+					*vaultGroupName = "vault-*catGroupBase";
+
+					uuGroupExists(*vaultGroupName, *vaultExists);
+					if (*vaultExists) {
+						*aclKv."forGroup" = *vaultGroupName;
+						msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
+					}
+				} else if (*catGroup like regex "deposit-.*") {
+                    # Only read access to deposit vault groups.
 					uuChop(*catGroup, *_, *catGroupBase, "-", true);
 					*vaultGroupName = "vault-*catGroupBase";
 
@@ -515,8 +528,10 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 	# Put the group name in the policyKv to assist the acl policy.
 	*aclKv."forGroup" = *groupName;
 
-	# Enable inheritance for the new group.
-	msiSudoObjAclSet("recursive", "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+	# Enable inheritance for the new group, no inheritance for deposit groups.
+    if (*groupName not like regex "deposit-.*") {
+	   msiSudoObjAclSet("recursive", "inherit", "", "/$rodsZoneClient/home/*groupName", *aclKv);
+    }
 }
 
 uuPostSudoGroupRemove(*groupName, *policyKv) {
@@ -534,7 +549,14 @@ uuPostSudoGroupRemove(*groupName, *policyKv) {
 		# vault, and thus cannot check whether the vault is empty.
 		# This will also remove the orphan revision collection, if it exists.
 		uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
-	}
+	} else 	if (*groupName like regex "deposit-.*") {
+    	# Remove the vault group if it is empty.
+    	# We need a msiExecCmd here because the user removing this
+    	# deposit group does not necessarily have read access to the
+    	# vault, and thus cannot check whether the vault is empty.
+    	# This will also remove the orphan revision collection, if it exists.
+    	uuGroupRemoveOrphanVaultIfEmpty("vault-*baseName");
+    }
 }
 
 #uuPostSudoGroupMemberAdd(*groupName, *userName, *policyKv) { }

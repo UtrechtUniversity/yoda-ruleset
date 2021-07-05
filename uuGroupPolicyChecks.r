@@ -38,7 +38,7 @@ uuUserNameIsValid(*name)
 #
 # Group names must:
 #
-# - be prefixed with 'intake-' or 'research-'
+# - be prefixed with 'intake-' or 'research-' or 'deposit-'
 # - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
@@ -51,7 +51,7 @@ uuUserNameIsValid(*name)
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a category name is valid.
 #
@@ -150,7 +150,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-' or 'research-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-' or 'research-' or 'deposit-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
