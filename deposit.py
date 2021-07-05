@@ -50,7 +50,9 @@ def determine_deposit_path(ctx):
 
         collection.create(ctx, deposit_path)
 
-    return pathutil.basename(deposit_path)
+    space, zone, group, subpath = pathutil.info(deposit_path)
+
+    return "{}/{}".format(group, subpath)
 
 
 @api.make()

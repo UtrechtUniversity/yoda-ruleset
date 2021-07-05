@@ -23,6 +23,7 @@ class Space(Enum):
     DATAMANAGER = 3
     DATAREQUEST = 4
     INTAKE      = 5
+    DEPOSIT     = 6
 
     def __repr__(self):
         return 'Space.' + self.name
@@ -115,13 +116,14 @@ def info(path):
     from collections import namedtuple
 
     return (namedtuple('PathInfo', 'space zone group subpath'.split())
-            (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',        Space.VAULT)
-            or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
-            or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
-            or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',  Space.INTAKE)
+            (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',         Space.VAULT)
+            or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',     Space.RESEARCH)
+            or test('^/([^/]+)/home/(deposit-[^/]+)(?:/(.+))?$',      Space.DEPOSIT)
+            or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$',  Space.DATAMANAGER)
+            or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',   Space.INTAKE)
             or test('^/([^/]+)/home/(datarequests-[^/]+)(?:/(.+))?$', Space.DATAREQUEST)
-            or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
-            or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
+            or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',              Space.OTHER)
+            or test('^/([^/]+)()(?:/(.+))?$',                         Space.OTHER)
             or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
 
 
