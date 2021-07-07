@@ -84,7 +84,11 @@ def api_deposit_status(ctx):
 
     data = False
     if not collection.empty(ctx, coll):
-        data = True
+        if collection.data_count(ctx, coll) == 1 and data_object.exists(ctx, meta_path):
+            # Only file is yoda-metadata.json.
+            data = False
+        else:
+            data = True
 
     metadata = False
     if data_object.exists(ctx, meta_path) and meta.is_json_metadata_valid(ctx, meta_path):
