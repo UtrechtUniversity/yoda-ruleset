@@ -87,14 +87,10 @@ def api_deposit_status(ctx):
         data = True
 
     metadata = False
-    if data_object.exists(ctx, meta_path):
+    if data_object.exists(ctx, meta_path) and meta.is_json_metadata_valid(ctx, meta_path):
         metadata = True
 
-    metadata_valid = False
-    if not meta.is_json_metadata_valid(ctx, meta_path):
-        metadata_valid = True
-
-    return {"data": data, "metadata": metadata, "metadata_valid": metadata_valid}
+    return {"data": data, "metadata": metadata}
 
 
 @api.make()
