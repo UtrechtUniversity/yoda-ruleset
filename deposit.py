@@ -8,6 +8,7 @@ import folder
 from util import *
 
 __all__ = ['api_deposit_path',
+           'api_deposit_status',
            'api_deposit_submit']
 
 DEPOSIT_GROUP = "deposit-test"
@@ -69,6 +70,33 @@ def api_deposit_path(ctx):
 
 
 @api.make()
+def api_deposit_status(ctx):
+    """Retrieve status of deposit.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Deposit status
+    """
+    deposit_path = determine_deposit_path(ctx)
+    coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
+    meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+
+    data = False
+    if not collection.empty(ctx, coll):
+        data = True
+
+    metadata = False
+    if data_object.exists(ctx, meta_path):
+        metadata = True
+
+    metadata_valid = False
+    if not meta.is_json_metadata_valid(ctx, meta_path):
+        metadata_valid = True
+
+    return {"data": data, "metadata": metadata, "metadata_valid": metadata_valid}
+
+
+@api.make()
 def api_deposit_submit(ctx):
     """Submit deposit collection.
 
@@ -78,5 +106,4 @@ def api_deposit_submit(ctx):
     """
     deposit_path = determine_deposit_path(ctx)
     coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
-
     return folder.set_status(ctx, coll, constants.research_package_state.SUBMITTED)
