@@ -288,7 +288,7 @@ def folder_secure(ctx, coll, target):
     # Set vault permissions for new vault package.
     group = collection_group_name(ctx, coll)
     if group == '':
-        log.write(ctx, "folder_secure: Cannot determine which research group <{}> belongs to".format(coll))
+        log.write(ctx, "folder_secure: Cannot determine which deposit or research group <{}> belongs to".format(coll))
         return '1'
 
     vault.set_vault_permissions(ctx, group, coll, target)
@@ -354,7 +354,7 @@ def determine_vault_target(ctx, folder):
 
     group = collection_group_name(ctx, folder)
     if group == '':
-        log.write(ctx, "Cannot determine which research group " + + " ibelongs to")
+        log.write(ctx, "Cannot determine which deposit or research group " + + " belongs to")
         return ""
 
     parts = group.split('-')
@@ -404,8 +404,8 @@ def collection_group_name(callback, coll):
         for row2 in iter2:
             group_name = row2[0]
 
-            # Check if group is a research or intake group.
-            if group_name.startswith("research-") or group_name.startswith("intake-"):
+            # Check if group is a research, deposit or intake group.
+            if group_name.startswith("research-") or group_name.startswith("deposit-") or group_name.startswith("intake-"):
                 return group_name
 
     for row in iter:

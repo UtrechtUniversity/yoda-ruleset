@@ -60,12 +60,13 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
     elif status_to in [constants.research_package_state.ACCEPTED,
                        constants.research_package_state.REJECTED]:
 
-        grp = pathutil.info(coll).group
-        cat = group.get_category(ctx, grp)
-        dmgrp = 'datamanager-' + cat
+        if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+            grp = pathutil.info(coll).group
+            cat = group.get_category(ctx, grp)
+            dmgrp = 'datamanager-' + cat
 
-        if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
-            return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
+            if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
+                return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
 
     elif status_to is constants.research_package_state.SECURED:
         actor = user.user_and_zone(ctx)
@@ -108,12 +109,12 @@ def post_status_transition(ctx, path, actor, status):
                 datamanager = '{}#{}'.format(*datamanager)
                 notifications.set(ctx, actor, datamanager, path, message)
         else:
-            # Set status to accepted if group has no datamanager.
+            # Set status to accepted for deposit groups or if research group has no datamanager.
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
-        # Actor is system if group has no datamanager.
-        if not folder.datamanager_exists(ctx, path):
+        # Actor is system for deposit groups or if research group has no datamanager.
+        if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
             actor = "system"
 
         provenance.log_action(ctx, actor, path, "accepted for vault")
