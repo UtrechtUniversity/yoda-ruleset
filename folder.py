@@ -563,7 +563,7 @@ def get_accepter(ctx, path):
 def set_vault_data_package(ctx, path, vault):
     """Set vault data package for deposit."""
     attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
-    avu.set_on_coll(ctx, path, attribute, actor)
+    avu.set_on_coll(ctx, path, attribute, vault)
 
 
 def get_vault_data_package(ctx, path):

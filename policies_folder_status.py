@@ -163,3 +163,7 @@ def post_status_transition(ctx, path, actor, status):
         message = "Data package secured in vault"
         notifications.set(ctx, actor, submitter, data_package, message)
         notifications.set(ctx, actor, accepter, data_package, message)
+
+        # Remove deposit folder after secure in vault.
+        if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            collection.remove(ctx, path)
