@@ -123,9 +123,10 @@ def post_status_transition(ctx, path, actor, status):
         folder.set_accepter(ctx, path, actor)
 
         # Send notifications to submitter.
-        submitter = folder.get_submitter(ctx, path)
-        message = "Data package accepted for vault"
-        notifications.set(ctx, actor, submitter, path, message)
+        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+            submitter = folder.get_submitter(ctx, path)
+            message = "Data package accepted for vault"
+            notifications.set(ctx, actor, submitter, path, message)
 
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
@@ -156,8 +157,9 @@ def post_status_transition(ctx, path, actor, status):
         provenance.log_action(ctx, actor, path, "secured in vault")
 
         # Send notifications to submitter and accepter
+        data_package = folder.get_vault_data_package(ctx, path)
         submitter = folder.get_submitter(ctx, path)
         accepter = folder.get_accepter(ctx, path)
         message = "Data package secured in vault"
-        notifications.set(ctx, actor, submitter, path, message)
-        notifications.set(ctx, actor, accepter, path, message)
+        notifications.set(ctx, actor, submitter, data_package, message)
+        notifications.set(ctx, actor, accepter, data_package, message)

@@ -313,6 +313,9 @@ def folder_secure(ctx, coll, target):
     # Vault package is ready, set vault package state to UNPUBLISHED.
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
 
+    # Save vault package for notification.
+    set_vault_data_package(ctx, coll, target)
+
     # Everything is done, set research folder state to SECURED.
     try:
         msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
@@ -530,7 +533,7 @@ def set_submitter(ctx, path, actor):
 
 
 def get_submitter(ctx, path):
-    """Set submitter of folder for the vault."""
+    """Get submitter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
     org_metadata = dict(get_org_metadata(ctx, path))
 
@@ -547,8 +550,25 @@ def set_accepter(ctx, path, actor):
 
 
 def get_accepter(ctx, path):
-    """Set accepter of folder for the vault."""
+    """Get accepter of folder for the vault."""
     attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_vault_data_package(ctx, path, vault):
+    """Set vault data package for deposit."""
+    attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_vault_data_package(ctx, path):
+    """Get vault data package for deposit."""
+    attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
     org_metadata = dict(get_org_metadata(ctx, path))
 
     if attribute in org_metadata:
