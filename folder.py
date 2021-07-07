@@ -338,7 +338,6 @@ def folder_secure(ctx, coll, target):
         msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
     except msi.Error:
         log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-        return '1'
 
     parent, chopped_coll = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":

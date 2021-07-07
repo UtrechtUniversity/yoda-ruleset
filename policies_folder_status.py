@@ -166,4 +166,7 @@ def post_status_transition(ctx, path, actor, status):
 
         # Remove deposit folder after secure in vault.
         if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            parent, _ = pathutil.chop(path)
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
+            msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
             collection.remove(ctx, path)
