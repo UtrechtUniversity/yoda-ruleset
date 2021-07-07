@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
+import meta
 from util import *
 
 __all__ = ['api_deposit_path',
