@@ -100,7 +100,7 @@ def post_status_transition(ctx, path, actor, status):
         # Store actor of submitted for vault.
         folder.set_submitter(ctx, path, actor)
 
-        if folder.datamanager_exists(ctx, path):
+        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
             # Send notifications to datamanagers
             datamanagers = folder.get_datamanagers(ctx, path)
             message = "Data package submitted for the vault"
