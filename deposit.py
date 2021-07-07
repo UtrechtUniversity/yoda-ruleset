@@ -7,7 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import folder
 from util import *
 
-__all__ = ['api_deposit_path']
+__all__ = ['api_deposit_path',
+           'api_deposit_submit']
 
 DEPOSIT_GROUP = "deposit-test"
 
