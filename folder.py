@@ -313,9 +313,6 @@ def folder_secure(ctx, coll, target):
     # Vault package is ready, set vault package state to UNPUBLISHED.
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
 
-    # Save vault package for notification.
-    set_vault_data_package(ctx, coll, target)
-
     # Everything is done, set research folder state to SECURED.
     try:
         msi.set_acl(ctx, "recursive", "admin:write", user.full_name(ctx), coll)
@@ -331,6 +328,10 @@ def folder_secure(ctx, coll, target):
             log.write(ctx, "Could not set ACL on " + parent)
         parent, chopped_coll = pathutil.chop(parent)
 
+    # Save vault package for notification.
+    set_vault_data_package(ctx, coll, target)
+
+    # Set folder status to SECURED.
     avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
 
     try:
