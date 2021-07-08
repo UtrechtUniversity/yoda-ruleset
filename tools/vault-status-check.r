@@ -1,3 +1,8 @@
+#!/usr/bin/irule -r irods_rule_engine_plugin-python-instance -F
+#
+# Generate a report on the status, metadata version and metadata filetype of all
+# vault packages 
+#
 import genquery
 
 def main(rule_args, callback, rei):
