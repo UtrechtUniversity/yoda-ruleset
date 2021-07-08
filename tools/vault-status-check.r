@@ -39,7 +39,8 @@ def main(rule_args, callback, rei):
                     meta_ext = 'XML'
 
         callback.writeLine("stdout", "---------------------------")
-        callback.writeLine("stdout", "Vault Package: {}".format(coll))
+        callback.writeLine("stdout", "Vault package: {}".format(coll))
+        callback.writeLine("stdout", "Vault status: {}".format(status))
         callback.writeLine("stdout", "Metadata type: {}".format(meta_ext))
         callback.writeLine("stdout", "Metadata version: {}".format(meta_version))
 
