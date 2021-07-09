@@ -1544,7 +1544,7 @@ def api_datarequest_feedback_get(ctx, request_id):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :returns:          JSON-foramtted string containing feedback for researcher
+    :returns:          JSON-formatted string containing feedback for researcher
     """
     # Force conversion of request_id to string
     request_id = str(request_id)
