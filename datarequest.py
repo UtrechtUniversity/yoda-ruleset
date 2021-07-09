@@ -1522,26 +1522,16 @@ def datarequest_feedback_write(ctx, request_id, feedback):
 
     # Construct path to feedback file
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
-    feedback_path = "{}/{}".format(coll_path, FEEDBACK + JSON_EXT)
 
-    # Write data to feedback file
-    jsonutil.write(ctx, feedback_path, feedback)
-
-    # Get the username of the owner of the data request from iCAT
-    rows = row_iterator(["DATA_OWNER_NAME"],
-                        "DATA_NAME = '{}' and COLL_NAME like '{}'".format(DATAREQUEST + JSON_EXT, coll_path),
-                        AS_DICT, ctx)
-    request_owner_username = []
-    for row in rows:
-        request_owner_username.append(row["DATA_OWNER_NAME"])
-    # Check if exactly 1 owner was found. If not, return error
-    if len(request_owner_username) != 1:
-        return api.Error("MoreThanOneOwner", "Not exactly 1 owner found. Something is very wrong.")
-    request_owner_username = request_owner_username[0]
+    # Write form data to disk
+    try:
+        file_write_and_lock(ctx, coll_path, FEEDBACK + JSON_EXT, feedback, [GROUP_PM])
+    except error.UUError:
+        return api.Error('write_error', 'Could not write feedback data to disk.')
 
     # Grant researcher read permissions
     try:
-        msi.set_acl(ctx, "default", "read", request_owner_username,
+        msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id),
                     "{}/{}".format(coll_path, FEEDBACK + JSON_EXT))
     except error.UUError:
         return api.Error("PermissionError", "Could not grant read permissions on the feedback file to the data request owner.")
