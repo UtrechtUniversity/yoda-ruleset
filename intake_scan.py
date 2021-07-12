@@ -240,7 +240,8 @@ def intake_extract_tokens(ctx, string):
                  # 16-Apr-2019 fbyoda email request new exp type:
                  "chdualet",
                  # 15-Feb-2021 fbyoda email request new exp type:
-                 "functionalmriscan"]
+                 "functionalmriscan",
+                 "infdualet"]
 
     str_lower = string.lower()
     str_upper = string.upper()
