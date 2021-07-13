@@ -1519,7 +1519,6 @@
     "Collected",
     "Material",
     "Apparatus",
-    "Monitoring",
     "Tag",
     "Measured_Property",
     "Related_Datapackage",
@@ -1704,7 +1703,6 @@
     },
     "Monitoring": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "$ref": "#/definitions/optionsMonitoring",
         "title": "Monitoring device"

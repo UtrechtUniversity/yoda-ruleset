@@ -1236,7 +1236,6 @@
     "Geomorphical_Feature",
     "Material",
     "Apparatus",
-    "Monitoring",
     "Software",
     "Measured_Property",
     "Tag",
@@ -1456,7 +1455,6 @@
     },
     "Monitoring": {
       "type": "array",
-      "minItems": 1,
       "items": {
         "$ref": "#/definitions/optionsMonitoring",
         "title": "Monitoring",
