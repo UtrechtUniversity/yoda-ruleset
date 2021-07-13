@@ -387,6 +387,10 @@ def determine_vault_target(ctx, folder):
 
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
+
+    if pathutil.info(coll).space is pathutil.Space.DEPOSIT:
+        coll, _ = pathutil.chop(coll)
+
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
