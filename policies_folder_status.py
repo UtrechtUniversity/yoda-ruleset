@@ -136,7 +136,7 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.
         provenance_log = provenance.get_provenance_log(ctx, path)
-        if provenance_log[-1][1] == "submitted for vault":
+        if provenance_log[0][1] == "submitted for vault":
             provenance.log_action(ctx, actor, path, "unsubmitted for vault")
         else:
             provenance.log_action(ctx, actor, path, "unlocked")
