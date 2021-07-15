@@ -129,7 +129,7 @@ def login(user, password):
     return csrf, session
 
 
-def api_request(user, request, data):
+def api_request(user, request, data, timeout=10):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -141,7 +141,7 @@ def api_request(user, request, data):
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'session': session}
     headers = {'referer': 'https://portal.yoda.test/'}
-    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
     # Remove debug info from response body.
     body = response.json()
