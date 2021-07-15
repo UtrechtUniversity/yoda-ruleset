@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 from pytest_bdd import (
     parsers,
     scenarios,
@@ -75,6 +77,32 @@ def ui_data_package_status(browser, status):
         browser.reload()
 
     raise AssertionError()
+
+
+@then(parsers.parse('provenance log includes "{status}"'))
+def ui_provenance_log(browser, status):
+    # Check presence of provenance log item.
+    # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
+    # eventhough the folder is used several times in a different test run
+    browser.find_by_css('.actionlog-icon')[0].click()
+    prov_statuses = {"Unpublished": "Secured in vault",
+                     "Submitted for publication": "Submitted for publication",
+                     "Approved for publication": "Approved for publication",
+                     "Published": "Published",
+                     "Depublication pending": "Requested depublication",
+                     "Depublished": "Depublication",
+                     "Republication pending": "Requested republication"}
+
+    for _i in range(25):
+        if len(browser.find_by_css('.list-group-item-action')):
+            action_log_rows = browser.find_by_css('.list-group-item-action')
+            break
+        else:
+            time.sleep(1)
+
+    for index in range(0, len(prov_statuses)):
+        if action_log_rows[index].value.find(prov_statuses[status]) != -1:
+            return True
 
 
 @when('user clicks metatadata button')

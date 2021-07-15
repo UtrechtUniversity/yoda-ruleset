@@ -3,7 +3,7 @@ MarkupSafe==1.1.1
 enum34==1.1.10
 Jinja2==2.11.3
 requests==2.25.1
-pyrsistent==0.16.1
+pyrsistent==0.15.7
 configparser==4.0.2
 zipp==1.2.0
 importlib-metadata==2.1.1

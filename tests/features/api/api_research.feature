@@ -65,15 +65,15 @@ Feature: Research API
             | file                    | file_renamed               |
             | yoda-metadata_copy.json | yoda-metadata_renamed.json |
 
-#    Scenario Outline: Research file upload
-#        Given user "researcher" is authenticated
-#        And a file "<file>" is uploaded in "<folder>"
-#        Then the response status code is "200"
-#        And file "<file>" exists in "<collection>"
-#
-#        Examples:
-#            | file                 | folder            |
-#            | upload_test_file.txt | /research-initial |
+    Scenario Outline: Research file upload
+        Given user "researcher" is authenticated
+        And a file "<file>" is uploaded in "<folder>"
+        Then the response status code is "200"
+        And file "<file>" exists in "<collection>"
+
+        Examples:
+            | file                 | folder            |
+            | upload_test_file.txt | /research-initial |
 
     Scenario Outline: Research file delete
         Given user "researcher" is authenticated

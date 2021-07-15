@@ -151,6 +151,35 @@ def api_request(user, request, data, timeout=10):
     return (response.status_code, body)
 
 
+def upload_data(user, file, folder):
+    # Retrieve user cookies.
+    csrf, session = user_cookies[user]
+
+    # Disable unsecure connection warning.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    # Make POST request.
+    url = portal_url + "/research/upload"
+
+    files = {"csrf_token": (None, csrf),
+             "filepath": (None, folder),
+             "flowChunkNumber": (None, "1"),
+             "flowChunkSize": (None, "10485760"),
+             "flowCurrentChunkSize": (None, "4"),
+             "flowTotalSize": (None, "4"),
+             "flowIdentifier": (None, "4-{}".format(file)),
+             "flowFilename": (None, file),
+             "flowRelativePath": (None, file),
+             "flowTotalChunks": (None, "1"),
+             "file": (file, "test")}
+
+    cookies = {'session': session}
+    headers = {'referer': 'https://portal.yoda.test/'}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
+
+    return (response.status_code, response)
+
+
 def post_form_data(user, request, files):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]

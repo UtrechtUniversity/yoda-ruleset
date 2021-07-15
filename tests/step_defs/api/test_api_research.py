@@ -11,7 +11,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request, post_form_data
+from conftest import api_request, upload_data
 
 # Tests for unlocked and locked research folders
 scenarios('../../features/api/api_research.feature', '../../features/api/api_research_locked.feature')
@@ -64,10 +64,10 @@ def api_research_file_rename(user, file, file_renamed, collection):
 
 @given('a file "<file>" is uploaded in "<folder>"', target_fixture="api_response")
 def api_research_file_upload(user, file, folder):
-    return post_form_data(
+    return upload_data(
         user,
-        "research/browse/upload",
-        {"file": (file, "test"), "filepath": (None, folder)}
+        file,
+        folder
     )
 
 
