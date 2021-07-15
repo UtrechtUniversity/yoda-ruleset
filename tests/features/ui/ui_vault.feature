@@ -10,6 +10,7 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user submits the data package for publication
         Then the data package status is "Submitted for publication"
+        And provenance log includes "Submitted for publication"
 
     Scenario: Vault cancel
         Given user "researcher" is logged in
@@ -17,6 +18,7 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user cancels publication of the data package
         Then the data package status is "Unpublished"
+        And provenance log includes "Unpublished"
 
     Scenario: Vault submit after cancel
         Given user "researcher" is logged in
@@ -24,6 +26,7 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user submits the data package for publication
         Then the data package status is "Submitted for publication"
+        And provenance log includes "Submitted for publication"
 
     Scenario: Vault publication approve
         Given user "datamanager" is logged in
@@ -31,12 +34,14 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user approves the data package for publication
         Then the data package status is "Approved for publication"
+        And provenance log includes "Approved for publication"
 
     Scenario: Vault publication published
         Given user "researcher" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
         Then the data package status is "Published"
+        And provenance log includes "Published"
 
     Scenario: Vault depublish publication
         Given user "datamanager" is logged in
@@ -44,12 +49,14 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user requests depublication of data package
         Then the data package status is "Depublication pending"
+        And provenance log includes "Depublication pending"
 
     Scenario: Vault publication depublished
         Given user "researcher" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
         Then the data package status is "Depublished"
+        And provenance log includes "Depublished"
 
     Scenario: Vault republish publication
         Given user "datamanager" is logged in
@@ -57,12 +64,14 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And user requests republication of data package
         Then the data package status is "Republication pending"
+        And provenance log includes "Republication pending"
 
     Scenario: Vault publication republished
         Given user "researcher" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"
         Then the data package status is "Published"
+        And provenance log includes "Published"
 
     Scenario: Vault view metadata form
         Given user "datamanager" is logged in
@@ -98,7 +107,6 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         And clicks action menu to grant access
         Then action menu holds option to revoke access from research group
-
 
     Scenario: Copy datapackage to research space
         Given user "datamanager" is logged in

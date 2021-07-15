@@ -42,6 +42,7 @@ Feature: Folder UI
         When user browses to folder "<folder>"
         And user submits the folder
         Then the folder status is "Submitted"
+        And provenance log includes "Submitted"
 
     Scenario: Folder reject
         Given user "datamanager" is logged in
