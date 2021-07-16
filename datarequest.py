@@ -1848,7 +1848,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         researcher              = datarequest['contact']
         researcher_email        = datarequest_owner_get(ctx, request_id)
         cc                      = cc_email_addresses_get(researcher)
-        pm_email                = group.members(ctx, GROUP_PM)[0]
+        pm_email, _             = group.members(ctx, GROUP_PM).first()
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
@@ -1909,7 +1909,7 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
         # Get additional email input parameters
         feedback_for_researcher = dmr_review['feedback_for_researcher']
-        pm_email                = group.members(ctx, GROUP_PM)[0]
+        pm_email, _             = group.members(ctx, GROUP_PM).first()
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
@@ -1925,7 +1925,7 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
 def contribution_review_emails(ctx, request_id, datarequest_status):
     # Get parameters
     pm_members  = group.members(ctx, GROUP_PM)
-    pm_email, _ = pm_members[0]
+    pm_email, _ = pm_members.first()
 
     # Send emails
     if datarequest_status == status.CONTRIBUTION_ACCEPTED:
@@ -1992,7 +1992,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
-    pm_email                = group.members(ctx, GROUP_PM)[0]
+    pm_email, _             = group.members(ctx, GROUP_PM).first()
     ed_members              = group.members(ctx, GROUP_ED)
 
     # Send emails
