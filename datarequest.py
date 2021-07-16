@@ -1810,13 +1810,14 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     study_title      = datarequest['datarequest']['study_information']['title']
-    pm_emails        = group.members(ctx, GROUP_PM)
+    pm_members       = group.members(ctx, GROUP_PM)
     timestamp        = datetime.fromtimestamp(int(request_id)).strftime('%c')
 
     # Send email to researcher and project manager
     mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                 + researcher['family_name'], request_id, cc, dao)
-    for pm_email in pm_emails:
+    for pm_member in pm_members:
+        pm_email, _ = pm_member
         if dao:
             mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
                                     + researcher['family_name'], researcher_email,
@@ -1831,11 +1832,12 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
-    datamanager_emails = group.members(ctx, GROUP_DM)
+    datamanager_members = group.members(ctx, GROUP_DM)
 
     # Email datamanager
     if datarequest_status == status.PRELIMINARY_ACCEPT:
-        for datamanager_email in datamanager_emails:
+        for datamanager_member in datamanager_members:
+            datamanager_email, _ = datamanager_member
             mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
         return
 
@@ -1863,13 +1865,14 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
 
 def datamanager_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
-    pm_emails           = group.members(ctx, GROUP_PM)
+    pm_members          = group.members(ctx, GROUP_PM)
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
     datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
                            datamanager_review else "")
 
     # Send emails
-    for pm_email in pm_emails:
+    for pm_member in pm_members:
+        pm_email, _ = pm_member
         if datarequest_status   == status.DATAMANAGER_ACCEPT:
             mail_datamanager_review_accepted(ctx, pm_email, request_id)
         elif datarequest_status == status.DATAMANAGER_RESUBMIT:
@@ -1892,12 +1895,13 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
     # Send emails
     if datarequest_status == status.DATAMANAGER_REVIEW_ACCEPTED:
         # Get additional email input parameters
-        ed_emails = group.members(ctx, GROUP_ED)
+        ed_members = group.members(ctx, GROUP_ED)
 
         # Send emails
         mail_dmr_review_accepted_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        for ed_email in ed_emails:
+        for ed_member in ed_members:
+            ed_email, _ = ed_member
             mail_dmr_review_accepted_executive_director(ctx, ed_email, study_title,
                                                         request_id)
 
@@ -1920,12 +1924,13 @@ def dmr_review_emails(ctx, request_id, datarequest_status):
 
 def contribution_review_emails(ctx, request_id, datarequest_status):
     # Get parameters
-    pm_emails = group.members(ctx, GROUP_PM)
-    pm_email = pm_emails[0]
+    pm_members  = group.members(ctx, GROUP_PM)
+    pm_email, _ = pm_members[0]
 
     # Send emails
     if datarequest_status == status.CONTRIBUTION_ACCEPTED:
-        for pm_email in pm_emails:
+        for pm_member in pm_members:
+            pm_email, _ = pm_member
             mail_contribution_review_accepted(ctx, pm_email, request_id)
     elif datarequest_status in (status.CONTRIBUTION_REJECTED,
                                 status.CONTRIBUTION_RESUBMIT):
@@ -1968,12 +1973,13 @@ def review_emails(ctx, request_id):
     researcher        = datarequest['contact']
     researcher_email  = datarequest_owner_get(ctx, request_id)
     cc                = cc_email_addresses_get(researcher)
-    pm_emails         = group.members(ctx, GROUP_PM)
+    pm_members        = group.members(ctx, GROUP_PM)
 
     # Send emails
     mail_review_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                            + researcher['family_name'], request_id, cc)
-    for pm_email in pm_emails:
+    for pm_member in pm_members:
+        pm_email, _ = pm_member
         mail_review_pm(ctx, pm_email, request_id)
 
 
@@ -1987,13 +1993,14 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
     pm_email                = group.members(ctx, GROUP_PM)[0]
-    ed_emails               = group.members(ctx, GROUP_ED)
+    ed_members              = group.members(ctx, GROUP_ED)
 
     # Send emails
     if datarequest_status == status.APPROVED:
         mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        for ed_email in ed_emails:
+        for ed_member in ed_members:
+            ed_email, _ = ed_member
             mail_evaluation_approved_ed(ctx, ed_email, request_id)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
@@ -2007,31 +2014,33 @@ def evaluation_emails(ctx, request_id, datarequest_status):
 
 def contribution_confirm_emails(ctx, request_id):
     # Get parameters
-    datarequest        = json.loads(datarequest_get(ctx, request_id))
-    researcher         = datarequest['contact']
-    researcher_email   = datarequest_owner_get(ctx, request_id)
-    cc                 = cc_email_addresses_get(researcher)
-    datamanager_emails = group.members(ctx, GROUP_DM)
+    datarequest         = json.loads(datarequest_get(ctx, request_id))
+    researcher          = datarequest['contact']
+    researcher_email    = datarequest_owner_get(ctx, request_id)
+    cc                  = cc_email_addresses_get(researcher)
+    datamanager_members = group.members(ctx, GROUP_DM)
 
     # Send emails
     mail_contribution_confirm_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                          + researcher['family_name'], request_id, cc)
-    for datamanager_email in datamanager_emails:
+    for datamanager_member in datamanager_members:
+        datamanager_email, _ = datamanager_member
         mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
 
 
 def dao_approved_emails(ctx, request_id):
     # Get parameters
-    datarequest        = json.loads(datarequest_get(ctx, request_id))
-    researcher         = datarequest['contact']
-    researcher_email   = datarequest_owner_get(ctx, request_id)
-    cc                 = cc_email_addresses_get(researcher)
-    datamanager_emails = group.members(ctx, GROUP_DM)
+    datarequest         = json.loads(datarequest_get(ctx, request_id))
+    researcher          = datarequest['contact']
+    researcher_email    = datarequest_owner_get(ctx, request_id)
+    cc                  = cc_email_addresses_get(researcher)
+    datamanager_members = group.members(ctx, GROUP_DM)
 
     # Send emails
     mail_dao_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                  + researcher['family_name'], request_id, cc)
-    for datamanager_email in datamanager_emails:
+    for datamanager_member in datamanager_members:
+        datamanager_email, _ = datamanager_member
         mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
 
 
@@ -2049,10 +2058,11 @@ def dta_post_upload_actions_emails(ctx, request_id):
 
 def signed_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datamanager_emails = group.members(ctx, GROUP_DM)
+    datamanager_members = group.members(ctx, GROUP_DM)
 
     # Send email
-    for datamanager_email in datamanager_emails:
+    for datamanager_member in datamanager_members:
+        datamanager_email, _ = datamanager_member
         mail_signed_dta(ctx, datamanager_email, request_id)
 
 
