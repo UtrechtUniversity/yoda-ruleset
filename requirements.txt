@@ -6,6 +6,7 @@ requests==2.25.1
 pyrsistent==0.16.1
 configparser==4.0.2
 zipp==1.2.0
+contextlib2==0.6.0.post1
 importlib-metadata==2.1.1
 jsonschema==3.2.0
 pathvalidate==0.29.1
