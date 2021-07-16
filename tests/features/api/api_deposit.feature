@@ -1,3 +1,4 @@
+@deposit
 Feature: Deposit API
 
     Examples:

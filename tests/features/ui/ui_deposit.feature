@@ -1,3 +1,4 @@
+@deposit
 Feature: Deposit UI
 
   Scenario: Deposit page home
