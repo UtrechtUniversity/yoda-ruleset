@@ -1817,17 +1817,16 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                 + researcher['family_name'], request_id, cc, dao)
     for pm_email in pm_emails:
-        if not pm_email == "rods":
-            if dao:
-                mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
-                                        + researcher['family_name'], researcher_email,
-                                        researcher['institution'], researcher['department'],
-                                        timestamp, study_title)
-            else:
-                mail_datarequest_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
+        if dao:
+            mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
                                     + researcher['family_name'], researcher_email,
-                                    researcher['institution'], researcher['department'], timestamp,
-                                    study_title)
+                                    researcher['institution'], researcher['department'],
+                                    timestamp, study_title)
+        else:
+            mail_datarequest_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
+                                + researcher['family_name'], researcher_email,
+                                researcher['institution'], researcher['department'], timestamp,
+                                study_title)
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
@@ -1837,8 +1836,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
     # Email datamanager
     if datarequest_status == status.PRELIMINARY_ACCEPT:
         for datamanager_email in datamanager_emails:
-            if not datamanager_email == "rods":
-                mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
+            mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
         return
 
     # Email researcher with feedback and call to action
@@ -1872,15 +1870,14 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
 
     # Send emails
     for pm_email in pm_emails:
-        if not pm_email == "rods":
-            if datarequest_status   == status.DATAMANAGER_ACCEPT:
-                mail_datamanager_review_accepted(ctx, pm_email, request_id)
-            elif datarequest_status == status.DATAMANAGER_RESUBMIT:
-                mail_datamanager_review_resubmit(ctx, pm_email, datamanager_remarks,
-                                                 request_id)
-            elif datarequest_status == status.DATAMANAGER_REJECT:
-                mail_datamanager_review_rejected(ctx, pm_email, datamanager_remarks,
-                                                 request_id)
+        if datarequest_status   == status.DATAMANAGER_ACCEPT:
+            mail_datamanager_review_accepted(ctx, pm_email, request_id)
+        elif datarequest_status == status.DATAMANAGER_RESUBMIT:
+            mail_datamanager_review_resubmit(ctx, pm_email, datamanager_remarks,
+                                             request_id)
+        elif datarequest_status == status.DATAMANAGER_REJECT:
+            mail_datamanager_review_rejected(ctx, pm_email, datamanager_remarks,
+                                             request_id)
 
 
 def dmr_review_emails(ctx, request_id, datarequest_status):
@@ -1977,8 +1974,7 @@ def review_emails(ctx, request_id):
     mail_review_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                            + researcher['family_name'], request_id, cc)
     for pm_email in pm_emails:
-        if not pm_email == "rods":
-            mail_review_pm(ctx, pm_email, request_id)
+        mail_review_pm(ctx, pm_email, request_id)
 
 
 def evaluation_emails(ctx, request_id, datarequest_status):
@@ -2021,8 +2017,7 @@ def contribution_confirm_emails(ctx, request_id):
     mail_contribution_confirm_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                          + researcher['family_name'], request_id, cc)
     for datamanager_email in datamanager_emails:
-        if not datamanager_email == "rods":
-            mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
+        mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
 
 
 def dao_approved_emails(ctx, request_id):
@@ -2037,8 +2032,7 @@ def dao_approved_emails(ctx, request_id):
     mail_dao_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                  + researcher['family_name'], request_id, cc)
     for datamanager_email in datamanager_emails:
-        if not datamanager_email == "rods":
-            mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
+        mail_contribution_confirm_dm(ctx, datamanager_email, request_id)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -2059,8 +2053,7 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
 
     # Send email
     for datamanager_email in datamanager_emails:
-        if not datamanager_email == "rods":
-            mail_signed_dta(ctx, datamanager_email, request_id)
+        mail_signed_dta(ctx, datamanager_email, request_id)
 
 
 def data_ready_emails(ctx, request_id):
