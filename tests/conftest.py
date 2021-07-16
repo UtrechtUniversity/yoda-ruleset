@@ -60,7 +60,7 @@ def pytest_configure(config):
     datarequest = config.getoption("--datarequest")
 
     global deposit
-    datarequest = config.getoption("--deposit")
+    deposit = config.getoption("--deposit")
 
     global intake
     intake = config.getoption("--intake")
