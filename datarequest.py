@@ -2068,11 +2068,11 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
 
 def data_ready_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['contact']
-    researcher_email  = datarequest_owner_get(ctx, request_id)
-    cc                = cc_email_addresses_get(researcher)
-    datamanager_email = group.members(ctx, GROUP_DM)[0]
+    datarequest          = json.loads(datarequest_get(ctx, request_id))
+    researcher           = datarequest['contact']
+    researcher_email     = datarequest_owner_get(ctx, request_id)
+    cc                   = cc_email_addresses_get(researcher)
+    datamanager_email, _ = group.members(ctx, GROUP_DM).first()
 
     # Send email
     mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' '
