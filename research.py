@@ -189,10 +189,6 @@ def api_research_folder_delete(ctx, coll, folder_name):
     if not collection.exists(ctx, coll_target):
         return api.Error('invalid_target', 'The folder to delete does not exist')
 
-    # Folder empty?
-    if not collection.empty(ctx, coll_target) or collection.collection_count(ctx, coll_target) > 0:
-        return api.Error('not_empty', 'The selected folder is not empty and can therefore not be deleted. Please delete entire content first')
-
     # All requirements OK
     try:
         collection.remove(ctx, coll_target)
