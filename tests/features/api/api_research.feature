@@ -31,18 +31,6 @@ Feature: Research API
             | folder_old       | folder                   |
             | api_test_folder1 | api_test_folder1_renamed |
 
-    Scenario Outline: Research folder delete
-        Given user "researcher" is authenticated
-        And the Yoda research folder delete API is queried with "<folder>" and "<collection>"
-        Then the response status code is "200"
-        And folder "<folder>" does not exists in "<collection>"
-
-        Examples:
-            | folder                      |
-            | api_test_folder1_renamed    |
-            | api_test_folder2            |
-            | api_test_'`~!@#$%^&()+=[]{} |
-
     Scenario Outline: Research file copy
         Given user "researcher" is authenticated
         And the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"
@@ -72,8 +60,9 @@ Feature: Research API
         And file "<file>" exists in "<collection>"
 
         Examples:
-            | file                 | folder            |
-            | upload_test_file.txt | /research-initial |
+            | file                 | folder                                        |
+            | upload_test_file.txt | /research-initial                             |
+            | upload_test_file.txt | /research-initial/api_test_'`~!@#$%^&()+=[]{} |
 
     Scenario Outline: Research file delete
         Given user "researcher" is authenticated
@@ -85,3 +74,15 @@ Feature: Research API
             | file                       |
             | yoda-metadata_renamed.json |
             | upload_test_file.txt       |
+
+    Scenario Outline: Research folder delete
+        Given user "researcher" is authenticated
+        And the Yoda research folder delete API is queried with "<folder>" and "<collection>"
+        Then the response status code is "200"
+        And folder "<folder>" does not exists in "<collection>"
+
+        Examples:
+            | folder                      |
+            | api_test_folder1_renamed    |
+            | api_test_folder2            |
+            | api_test_'`~!@#$%^&()+=[]{} |
