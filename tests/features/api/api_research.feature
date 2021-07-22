@@ -85,7 +85,6 @@ Feature: Research API
 
         Examples:
             | file                       |
-            | yoda-metadata_renamed.json |
             | upload_test_file.txt       |
 
     Scenario Outline: Research folder delete
