@@ -9,7 +9,7 @@
     "ui:autofocus": true
   },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "methods" ],
+    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "methods", "attachments" ],
     "data": {
       "ui:field": "DataSelection"
     },

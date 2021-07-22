@@ -720,7 +720,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
         status_set(ctx, request_id, status.DAO_SUBMITTED)
     else:
-        if data['datarequest']['study_information']['attachments'] == "Yes":
+        if data['datarequest']['attachments']['attachments'] == "Yes":
             status_set(ctx, request_id, status.PENDING_ATTACHMENTS)
             return {"pendingAttachments": True, "requestId": request_id}
         else:

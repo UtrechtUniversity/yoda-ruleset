@@ -161,15 +161,6 @@
                       "$ref": "#/definitions/stringNormal",
                       "title": "Title of the study"
                     },
-                    "attachments": {
-                      "title": "Add attachments",
-                      "description": "Please indicate whether you would like to add one or more attachments to your data request. You will be prompted to upload your attachments after you have submitted your data request, but you may of course already refer to attachments in the study information fields below (e.g. \"see experimental_setup_images.zip\").",
-                      "type": "string",
-                      "enum": [
-                        "Yes",
-                        "No"
-                      ]
-                    },
                     "research_questions": {
                       "$ref": "#/definitions/stringLong",
                       "title": "Research questions",
@@ -183,7 +174,6 @@
                   },
                   "required": [
                     "title",
-                    "attachments",
                     "research_questions",
                     "hypotheses"
                   ]
@@ -278,6 +268,24 @@
                   },
                   "required": [
                     "statistical_models"
+                  ]
+                },
+                "attachments": {
+                  "type": "object",
+                  "title": "Attachments",
+                  "properties": {
+                    "attachments": {
+                      "title": "Add attachments",
+                      "description": "Please indicate whether you would like to add one or more attachments to your data request. You will be prompted to upload your attachments after you have submitted your data request, but you may of course already refer to attachments in the study information fields above (e.g. \"see experimental_setup_images.zip\").",
+                      "type": "string",
+                      "enum": [
+                        "Yes",
+                        "No"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "attachments"
                   ]
                 }
               },
