@@ -40,14 +40,15 @@ Feature: Research API locked
 
     Scenario Outline: Research file copy in locked collection
         Given user "researcher" is authenticated
-        And the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"
+        And the Yoda research file copy API is queried with "<file>", "<copy>", "<copy_collection>" and "<collection>"
         Then the response status code is "400"
         And file "<file>" exists in "<collection>"
         And file "<copy>" does not exist in "<collection>"
 
         Examples:
-            | file               | copy                      |
-            | yoda-metadata.json | yoda-metadata_locked.json |
+            | file               | copy                    | copy_collection                 |
+            | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial |
+
 
     Scenario Outline: Research file rename in locked collection
         Given user "researcher" is authenticated

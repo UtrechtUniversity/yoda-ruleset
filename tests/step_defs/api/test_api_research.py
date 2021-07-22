@@ -44,12 +44,12 @@ def api_research_folder_delete(user, folder, collection):
     )
 
 
-@given('the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"', target_fixture="api_response")
-def api_research_file_copy(user, file, copy, collection):
+@given('the Yoda research file copy API is queried with "<file>", "<copy>", "<copy_collection>" and "<collection>"', target_fixture="api_response")
+def api_research_file_copy(user, file, copy, copy_collection, collection):
     return api_request(
         user,
         "research_file_copy",
-        {"coll": collection, "file": file, "copy": copy}
+        {"filepath": collection + "/" + file, "new_filepath": copy_collection + "/" + copy}
     )
 
 
@@ -136,9 +136,9 @@ def file_not_exist(user, file, collection):
     assert not object_exists(user, file, collection)
 
 
-@then('file "<copy>" exists in "<collection>"')
-def file_copy_exists(user, copy, collection):
-    assert object_exists(user, copy, collection)
+@then('file "<copy>" exists in "<copy_collection>"')
+def file_copy_exists(user, copy, copy_collection):
+    assert object_exists(user, copy, copy_collection)
 
 
 @then('file "<copy>" does not exist in "<collection>"')

@@ -199,40 +199,39 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
 
 @api.make()
-def api_research_file_copy(ctx, copy, coll, file):
+def api_research_file_copy(ctx, filepath, new_filepath):
     """Copy a file in a research folder.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param copy: New file name
-    :param coll: Parent collection of file
-    :param file: Current name of the file
+    :param ctx:          Combined type of a callback and rei struct
+    :param filepath:     Path to the file to copy
+    :param new_filepath: Path to the new copy of the file
 
     :returns: Dict with API status result
     """
-    if len(copy) == 0:
-        return api.Error('missing_filename', 'Missing filename. Please add a file name')
+    if len(new_filepath) == 0:
+        return api.Error('missing_filepath', 'Missing file path. Please add a file path')
 
+    # Same filepath makes no sense.
+    if filepath == new_filepath:
+        return api.Error('invalid_filepath', 'Origin and copy file paths are equal. Please choose another destination')
+
+    coll = pathutil.chop(new_filepath)[0]
+    data_name = pathutil.chop(new_filepath)[1]
     try:
-        validate_filename(copy.decode('utf-8'))
+        validate_filename(data_name.decode('utf-8'))
     except Exception:
         return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
-
-    # Same name makes no sense
-    if copy == file:
-        return api.Error('invalid_filename', 'Origin and copy file names are equal. Please choose another name')
-
-    path_target = coll + '/' + copy
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(coll.split('/')) > 2:
         return api.Error('invalid_destination', 'It is not possible to copy files at this location')
 
     # Name should not contain '\\' or '/'
-    if '/' in copy or '\\' in copy:
+    if '/' in data_name or '\\' in data_name:
         return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
 
     # in vault?
-    target_group_name = path_target.split('/')[3]
+    target_group_name = new_filepath.split('/')[3]
     if target_group_name.startswith('vault-'):
         return api.Error('invalid_destination', 'It is not possible to copy files in the vault')
 
@@ -246,16 +245,16 @@ def api_research_file_copy(ctx, copy, coll, file):
         return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be copied')
 
     # Does org file exist?
-    if not data_object.exists(ctx, coll + '/' + file):
-        return api.Error('invalid_source', 'The original file ' + file + ' can not be found')
+    if not data_object.exists(ctx, filepath):
+        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
 
     # new filename already exists?
-    if data_object.exists(ctx, path_target):
-        return api.Error('invalid_destination', 'The selected filename ' + copy + ' already exists')
+    if data_object.exists(ctx, new_filepath):
+        return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
 
     # All requirements OK
     try:
-        data_object.copy(ctx, coll + '/' + file, coll + '/' + copy)
+        data_object.copy(ctx, filepath, new_filepath)
     except msi.Error as e:
         return api.Error('internal', 'Something went wrong. Please try again')
 

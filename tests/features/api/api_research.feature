@@ -17,8 +17,8 @@ Feature: Research API
 
         Examples:
             | folder                      |
-            | api_test_folder1            |
-            | api_test_folder2            |
+            | api_test_folder             |
+            | api_test_copy               |
             | api_test_'`~!@#$%^&()+=[]{} |
 
     Scenario Outline: Research folder rename
@@ -29,18 +29,20 @@ Feature: Research API
 
         Examples:
             | folder_old       | folder                   |
-            | api_test_folder1 | api_test_folder1_renamed |
+            | api_test_folder  | api_test_folder_renamed |
 
     Scenario Outline: Research file copy
         Given user "researcher" is authenticated
-        And the Yoda research file copy API is queried with "<file>", "<copy>" and "<collection>"
+        And the Yoda research file copy API is queried with "<file>", "<copy>", "<copy_collection>" and "<collection>"
         Then the response status code is "200"
         And file "<file>" exists in "<collection>"
-        And file "<copy>" exists in "<collection>"
+        And file "<copy>" exists in "<copy_collection>"
 
         Examples:
-            | file               | copy                    |
-            | yoda-metadata.json | yoda-metadata_copy.json |
+            | file               | copy                    | copy_collection                               |
+            | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial               |
+            | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial/api_test_copy |
+
 
     Scenario Outline: Research file rename
         Given user "researcher" is authenticated
@@ -83,6 +85,6 @@ Feature: Research API
 
         Examples:
             | folder                      |
-            | api_test_folder1_renamed    |
-            | api_test_folder2            |
+            | api_test_folder_renamed     |
+            | api_test_copy               |
             | api_test_'`~!@#$%^&()+=[]{} |
