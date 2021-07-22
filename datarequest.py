@@ -1638,7 +1638,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         researcher              = datarequest['contact']
         researcher_email        = datarequest_owner_get(ctx, request_id)
         cc                      = cc_email_addresses_get(researcher)
-        pm_email, _             = group.members(ctx, GROUP_PM).first()
+	pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
 
@@ -1732,7 +1732,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
-    pm_email, _             = group.members(ctx, GROUP_PM).first()
+    pm_email, _             = filter(lambda x : x[0] != "rods", group.members(ctx, GROUP_PM))[0]
 
     # Send emails
     if datarequest_status == status.APPROVED:
@@ -1796,7 +1796,7 @@ def data_ready_emails(ctx, request_id):
     researcher           = datarequest['contact']
     researcher_email     = datarequest_owner_get(ctx, request_id)
     cc                   = cc_email_addresses_get(researcher)
-    datamanager_email, _ = group.members(ctx, GROUP_DM).first()
+    datamanager_email, _ = filter(lambda x : x[0] != "rods", group.members(ctx, GROUP_DM))[0]
 
     # Send email
     mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' '
