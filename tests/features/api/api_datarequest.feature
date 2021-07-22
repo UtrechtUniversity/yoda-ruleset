@@ -16,8 +16,6 @@ Feature: Datarequest API
             | datarequest         |
             | preliminary_review  |
             | datamanager_review  |
-            | dmr_review          |
-            | contribution_review |
             | review              |
             | assignment          |
             | evaluation          |
@@ -45,7 +43,6 @@ Feature: Datarequest API
             | user              | result  |
             | researcher        | ['OWN'] |
             | projectmanager    | ['PM']  |
-            | executivedirector | ['ED']  |
             | datamanager       | ['DM']  |
             | dmcmember         | ['DMC'] |
 
@@ -96,32 +93,6 @@ Feature: Datarequest API
         And the Yoda datarequest datamanager review get API is queried with request id
         Then the response status code is "200"
 
-    Scenario: Datarequest datamanager review review submit
-        Given user "projectmanager" is authenticated
-        And datarequest exists
-        And the Yoda datarequest dmr review submit API is queried with request id
-        Then the response status code is "200"
-        And request status is "DATAMANAGER_REVIEW_ACCEPTED"
-
-    Scenario: Datarequest datamanager review review get
-        Given user "executivedirector" is authenticated
-        And datarequest exists
-        And the Yoda datarequest dmr review get API is queried with request id
-        Then the response status code is "200"
-
-    Scenario: Datarequest contribution review submit
-        Given user "executivedirector" is authenticated
-        And datarequest exists
-        And the Yoda datarequest contribution review submit API is queried with request id
-        Then the response status code is "200"
-        And request status is "CONTRIBUTION_ACCEPTED"
-
-    Scenario: Datarequest contribution review get
-        Given user "projectmanager" is authenticated
-        And datarequest exists
-        And the Yoda datarequest contribution review get API is queried with request id
-        Then the response status code is "200"
-
     Scenario: Datarequest assignment submit
         Given user "projectmanager" is authenticated
         And datarequest exists
@@ -154,13 +125,6 @@ Feature: Datarequest API
         And the datarequest evaluation submit API is queried with request id
         Then the response status code is "200"
         And request status is "APPROVED"
-
-    Scenario: Datarequest contribution confirm
-        Given user "projectmanager" is authenticated
-        And datarequest exists
-        And the datarequest contribution confirm API is queried with request id
-        Then the response status code is "200"
-        And request status is "CONTRIBUTION_CONFIRMED"
 
     Scenario: Datarequest feedback get
         Given user "researcher" is authenticated
