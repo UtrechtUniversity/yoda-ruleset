@@ -15,6 +15,7 @@ __all__ = ['api_research_folder_add',
            'api_research_folder_rename',
            'api_research_file_copy',
            'api_research_file_rename',
+           'api_research_file_move',
            'api_research_file_delete',
            'api_research_system_metadata',
            'api_research_collection_details']
