@@ -110,10 +110,6 @@
                 true
               ]
             },
-            "contribution": {
-              "type": "string",
-              "title": "How much did the applicant involved contribute to YOUth with respect to recruitment, setup, and continuation of YOUth?"
-            },
             "informed_consent_fit": {
               "type": "string",
               "title": "How does the research question fit with the provided informed consent of the participants of YOUth? (If in doubt please confer with the data manager and a privacy officer.)"
@@ -140,7 +136,6 @@
             }
           },
           "required": [
-            "contribution",
             "informed_consent_fit",
             "research_question_answerability",
             "study_quality",

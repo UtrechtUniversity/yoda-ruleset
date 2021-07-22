@@ -1,5 +1,24 @@
 {
+  "response_to_dm_remarks": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  },
+  "feedback_for_researcher": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  },
   "assign_to": {
     "ui:widget": "checkboxes"
-  }
+  },
+  "ui:order": [
+    "decision",
+    "assign_to",
+    "response_to_dm_remarks",
+    "feedback_for_researcher",
+    "*"
+  ]
 }

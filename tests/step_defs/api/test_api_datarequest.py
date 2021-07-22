@@ -91,12 +91,6 @@ def api_datarequest_save(user):
                         "reliability_and_robustness_testing": "test",
                         "exploratory_analysis": "test"
                     },
-                    "contribution": {
-                        "contribution_time": "No",
-                        "contribution_financial": "No",
-                        "contribution_favor": "Yes",
-                        "contribution_favor_description": "test"
-                    },
                     "purpose": "Analyses in order to publish",
                     "publication_type": "Article or report",
                     "publication_approval": True
@@ -177,12 +171,6 @@ def api_datarequest_submit(user, datarequest_id):
                         "assumption_violation": "test",
                         "reliability_and_robustness_testing": "test",
                         "exploratory_analysis": "test"
-                    },
-                    "contribution": {
-                        "contribution_time": "No",
-                        "contribution_financial": "No",
-                        "contribution_favor": "Yes",
-                        "contribution_favor_description": "test"
                     },
                     "purpose": "Analyses in order to publish",
                     "publication_type": "Article or report",
@@ -267,48 +255,12 @@ def api_datarequest_datamanager_review_get(user, datarequest_id):
     )
 
 
-@given('the Yoda datarequest dmr review submit API is queried with request id', target_fixture="api_response")
-def api_datarequest_dmr_review_submit(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_dmr_review_submit",
-        {"data": {"decision": "Accepted for review", "response_to_dm_remarks": "test"}, "request_id": datarequest_id}
-    )
-
-
-@given('the Yoda datarequest dmr review get API is queried with request id', target_fixture="api_response")
-def api_datarequest_dmr_review_get(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_dmr_review_get",
-        {"request_id": datarequest_id}
-    )
-
-
-@given('the Yoda datarequest contribution review submit API is queried with request id', target_fixture="api_response")
-def api_datarequest_contribution_review_submit(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_contribution_review_submit",
-        {"data": {"decision": "Accepted"}, "request_id": datarequest_id}
-    )
-
-
-@given('the Yoda datarequest contribution review get API is queried with request id', target_fixture="api_response")
-def api_datarequest_contribution_review_get(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_contribution_review_get",
-        {"request_id": datarequest_id}
-    )
-
-
 @given('the datarequest assignment submit API is queried with request id', target_fixture="api_response")
 def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"assign_to": ["dmcmember"]}, "request_id": datarequest_id}
+        {"data": {"decision": "Accepted for review", "assign_to": ["dmcmember"]}, "request_id": datarequest_id}
     )
 
 
@@ -326,7 +278,7 @@ def api_datarequest_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_review_submit",
-        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "contribution": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dmcmember"}, "request_id": datarequest_id}
+        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dmcmember"}, "request_id": datarequest_id}
     )
 
 
@@ -345,15 +297,6 @@ def api_datarequest_evaluation_submit(user, datarequest_id):
         user,
         "datarequest_evaluation_submit",
         {"data": {"evaluation": "Approved"}, "request_id": datarequest_id}
-    )
-
-
-@given('the datarequest contribution confirm API is queried with request id', target_fixture="api_response")
-def api_datarequest_contribution_confirm(user, datarequest_id):
-    return api_request(
-        user,
-        "datarequest_contribution_confirm",
-        {"request_id": datarequest_id}
     )
 
 
