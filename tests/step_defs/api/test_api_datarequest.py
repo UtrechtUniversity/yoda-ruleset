@@ -149,7 +149,6 @@ def api_datarequest_submit(user, datarequest_id):
                     },
                     "study_information": {
                         "title": "test",
-                        "attachments": "Yes",
                         "research_questions": "test",
                         "hypotheses": "test"
                     },
@@ -171,6 +170,9 @@ def api_datarequest_submit(user, datarequest_id):
                         "assumption_violation": "test",
                         "reliability_and_robustness_testing": "test",
                         "exploratory_analysis": "test"
+                    },
+                    "attachments": {
+                        "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
                     "publication_type": "Article or report",
