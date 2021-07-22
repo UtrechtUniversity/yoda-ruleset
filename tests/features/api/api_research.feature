@@ -19,6 +19,7 @@ Feature: Research API
             | folder                      |
             | api_test_folder             |
             | api_test_copy               |
+            | api_test_move               |
             | api_test_'`~!@#$%^&()+=[]{} |
 
     Scenario Outline: Research folder rename
@@ -43,7 +44,6 @@ Feature: Research API
             | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial               |
             | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial/api_test_copy |
 
-
     Scenario Outline: Research file rename
         Given user "researcher" is authenticated
         And the Yoda research file rename API is queried with "<file>", "<file_renamed>" and "<collection>"
@@ -54,6 +54,17 @@ Feature: Research API
         Examples:
             | file                    | file_renamed               |
             | yoda-metadata_copy.json | yoda-metadata_renamed.json |
+
+    Scenario Outline: Research file move
+        Given user "researcher" is authenticated
+        And the Yoda research file move API is queried with "<file>", "<move_collection>" and "<collection>"
+        Then the response status code is "200"
+        And file "<file>" exists in "<move_collection>"
+        And file "<file>" does not exist in "<collection>"
+
+        Examples:
+            | file                       | move_collection                               |
+            | yoda-metadata_renamed.json | /tempZone/home/research-initial/api_test_move |
 
     Scenario Outline: Research file upload
         Given user "researcher" is authenticated
@@ -87,4 +98,5 @@ Feature: Research API
             | folder                      |
             | api_test_folder_renamed     |
             | api_test_copy               |
+            | api_test_move               |
             | api_test_'`~!@#$%^&()+=[]{} |

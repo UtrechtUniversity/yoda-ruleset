@@ -326,6 +326,69 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
 
 @api.make()
+def api_research_file_move(ctx, filepath, new_filepath):
+    """Move a file in a research folder.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param filepath:     Path to the file to move
+    :param new_filepath: Path to the new location of the file
+
+    :returns: Dict with API status result
+    """
+    if len(new_filepath) == 0:
+        return api.Error('missing_filepath', 'Missing file path. Please add a file path')
+
+    # Same filepath makes no sense.
+    if filepath == new_filepath:
+        return api.Error('invalid_filepath', 'Origin and move file paths are equal. Please choose another destination')
+
+    coll = pathutil.chop(new_filepath)[0]
+    data_name = pathutil.chop(new_filepath)[1]
+    try:
+        validate_filename(data_name.decode('utf-8'))
+    except Exception:
+        return api.Error('invalid_filename', 'This is not a valid file name. Please choose another name')
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(coll.split('/')) > 2:
+        return api.Error('invalid_destination', 'It is not possible to move files to this location')
+
+    # Name should not contain '\\' or '/'
+    if '/' in data_name or '\\' in data_name:
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in the new name of a file')
+
+    # in vault?
+    target_group_name = new_filepath.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('invalid_destination', 'It is not possible to move files in the vault')
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected file')
+
+    # Folder not locked?
+    if folder.is_locked(ctx, coll):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the indicated file can not be moved')
+
+    # Does org file exist?
+    if not data_object.exists(ctx, filepath):
+        return api.Error('invalid_source', 'The original file ' + data_name + ' can not be found')
+
+    # new filename already exists?
+    if data_object.exists(ctx, new_filepath):
+        return api.Error('invalid_destination', 'The file ' + data_name + ' already exists')
+
+    # All requirements OK
+    try:
+        data_object.rename(ctx, filepath, new_filepath)
+    except msi.Error as e:
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
+
+
+@api.make()
 def api_research_file_delete(ctx, coll, file_name):
     """Delete a file in a research folder.
 

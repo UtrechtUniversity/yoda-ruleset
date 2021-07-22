@@ -62,6 +62,15 @@ def api_research_file_rename(user, file, file_renamed, collection):
     )
 
 
+@given('the Yoda research file move API is queried with "<file>", "<move_collection>" and "<collection>"', target_fixture="api_response")
+def api_research_file_move(user, file, move_collection, collection):
+    return api_request(
+        user,
+        "research_file_move",
+        {"filepath": collection + "/" + file, "new_filepath": move_collection + "/" + file}
+    )
+
+
 @given('a file "<file>" is uploaded in "<folder>"', target_fixture="api_response")
 def api_research_file_upload(user, file, folder):
     return upload_data(
@@ -159,3 +168,8 @@ def file_renamed_exists(user, file_renamed, collection):
 @then('file "<file_renamed>" does not exist in "<collection>"')
 def file_renamed_not_exist(user, file_renamed, collection):
     assert not object_exists(user, file_renamed, collection)
+
+
+@then('file "<file>" exists in "<move_collection>"')
+def file_move_exists(user, file, move_collection):
+    assert object_exists(user, file, move_collection)
