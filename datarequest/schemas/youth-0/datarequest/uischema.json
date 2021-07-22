@@ -9,7 +9,7 @@
     "ui:autofocus": true
   },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "methods", "contribution" ],
+    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "methods" ],
     "data": {
       "ui:field": "DataSelection"
     },
@@ -195,15 +195,6 @@
         }
       },
       "additional_methodological_aspects": {
-        "ui:widget": "textarea"
-      }
-    },
-    "contribution": {
-      "ui:order": [ "contribution_time", "contribution_time_type", "contribution_time_type_other", "contribution_time_specification", "contribution_financial", "contribution_financial_amount", "contribution_favor", "contribution_favor_description" ],
-      "contribution_time_specification": {
-        "ui:widget": "textarea"
-      },
-      "contribution_favor_description": {
         "ui:widget": "textarea"
       }
     }
