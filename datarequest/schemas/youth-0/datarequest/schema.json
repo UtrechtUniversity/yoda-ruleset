@@ -63,19 +63,8 @@
           "description": "A comma-separated list of email addresses which should receive a CC of all email correspondence addressed to the main contact (i.e. the researcher submitting this request). For example a superior or a colleague."
         },
         "dmc_contact": {
-          "type": "string",
-          "title": "Contact person in YOUth Data Management Committee (if any)",
-          "enum": [
-            "Prof. Dr. M.J.N.L. Benders / Wilhelmina Children's Hospital, UMCU / Neonatology / m.benders@umcutrecht.nl",
-            "Prof. Dr. M. Dekovic / Utrecht University / Clinical Child and Family Studies / M.Dekovic@uu.nl",
-            "Prof. Dr. S. Durston / UMCU / Psychiatry / s.durston@umcutrecht.nl",
-            "Prof. Dr. H.E. Hulshoff Pol / UMCU / Psychiatry / h.e.hulshoff@umcutrecht.nl",
-            "Prof. Dr. R.W.J. Kager / Utrecht University / Utrecht Institute of Linguistics OTS / R.W.J.Kager@uu.nl",
-            "Prof. Dr. R. Kahn / Icahn School of Medicine, Mount Sinai, NY / Psychiatry / rkahn@umcutrecht.nl",
-            "Prof. Dr. C. Kemner / Utrecht University / Developmental Psychology / C.Kemner@uu.nl",
-            "Prof. Dr. P.M. Valkenburg / University of Amsterdam / Media, Youth and Society / P.M.Valkenburg@uva.nl",
-            "Prof. Dr. W.A.M. Vollebergh / Utrecht University / Social Sciences / W.A.M.Vollebergh@uu.nl"
-          ]
+          "$ref": "#/definitions/stringNormal",
+          "title": "Contact person in YOUth Data Management Committee (if any)"
         }
       },
       "required": [
