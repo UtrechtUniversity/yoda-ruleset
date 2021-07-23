@@ -11,6 +11,7 @@ import irods_types
 import jsonschema
 
 import avu_json
+import provenance
 import publication
 import schema as schema_
 import vault
@@ -359,7 +360,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # As user rods, we validate the metadata, and if successful, copy it, timestamped, into the vault.
     # Necessary log & provenance info is recorded, and a publication update is triggered if necessary.
     # An AVU update is triggered via policy during the copy action.
-
+    ctx = rule.Context(callback, rei)
     json_path = rule_args[0]
     rule_args[1:3] = 'UnknownError', ''
 
@@ -370,7 +371,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     def set_result(msg_short, msg_long):
         rule_args[1:3] = msg_short, msg_long
         if msg_short != 'Success':
-            log.write(callback, 'rule_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
+            log.write(ctx, 'rule_meta_datamanager_vault_ingest failed: {}'.format(msg_long))
         return
 
     # Parse path to JSON object.
@@ -386,11 +387,11 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     vault_path = '/{}/home/{}'.format(zone, vault_group)
     vault_pkg_path = '{}/{}'.format(vault_path, vault_subpath)
 
-    if not collection.exists(callback, vault_pkg_path):
+    if not collection.exists(ctx, vault_pkg_path):
         set_result('JsonPathInvalid', 'Vault path <{}> does not exist'.format(vault_pkg_path))
         return
 
-    actor = data_object.owner(callback, json_path)
+    actor = data_object.owner(ctx, json_path)
     if actor is None:
         set_result('JsonPathInvalid', 'Json object <{}> does not exist'.format(json_path))
         return
@@ -400,9 +401,9 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     client_full_name = user.get_client_full_name(rei)
 
     try:
-        ret = msi.check_access(callback, json_path, 'modify object', irods_types.BytesBuf())
+        ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
-            msi.set_acl(callback, 'default', 'admin:own', client_full_name, json_path)
+            msi.set_acl(ctx, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError as e:
         set_result('AccessError', 'Couldn\'t grant access to json metadata file')
         return
@@ -410,13 +411,13 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Determine destination filename.
     # FIXME - TOCTOU: also exists in XML version
     #      -> should do this in a loop around msi.data_obj_copy instead.
-    ret = msi.get_icat_time(callback, '', 'unix')
+    ret = msi.get_icat_time(ctx, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
     json_name, json_ext = constants.IIJSONMETADATA.split('.', 1)
     dest = '{}/{}[{}].{}'.format(vault_pkg_path, json_name, timestamp, json_ext)
     i = 0
-    while data_object.exists(callback, dest):
+    while data_object.exists(ctx, dest):
         i += 1
         dest = '{}/{}[{}][{}].{}'.format(vault_pkg_path, json_name, timestamp, i, json_ext)
 
@@ -432,7 +433,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Copy the file, with its ACLs.
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
-        msi.data_obj_copy(callback, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
+        msi.data_obj_copy(ctx, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
     except error.UUError as e:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
                    .format(json_path, dest))
@@ -445,42 +446,42 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Write license file.
-    callback.rule_vault_write_license(vault_pkg_path)
+    vault.vault_write_license(ctx, vault_pkg_path)
 
     # Log actions.
-    callback.rule_provenance_log_action(actor, vault_pkg_path, 'modified metadata')
+    provenance.log_action(ctx, actor, vault_pkg_path, 'modified metadata')
 
     # Cleanup staging area.
     try:
-        data_object.remove(callback, json_path)
+        data_object.remove(ctx, json_path)
     except Exception as e:
         set_result('FailedToRemoveDatamanagerXML', 'Failed to remove <{}>'.format(json_path))
         return
 
     stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)
-    if collection.empty(callback, stage_coll):
+    if collection.empty(ctx, stage_coll):
         try:
             # We may or may not have delete access already.
-            msi.set_acl(callback, 'recursive', 'admin:own', client_full_name, dm_path)
+            msi.set_acl(ctx, 'recursive', 'admin:own', client_full_name, dm_path)
         except error.UUError as e:
             pass
         try:
-            msi.rm_coll(callback, stage_coll, 'forceFlag=', irods_types.BytesBuf())
+            msi.rm_coll(ctx, stage_coll, 'forceFlag=', irods_types.BytesBuf())
         except error.UUError as e:
             set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
             return
 
     # Update publication if package is published.
-    status = vault.get_coll_vault_status(callback, vault_pkg_path)
+    status = vault.get_coll_vault_status(ctx, vault_pkg_path)
     if status is constants.vault_package_state.PUBLISHED:
         # Add publication update status to vault package.
         # Also used in frontend to check if vault package metadata update is pending.
         s = constants.UUORGMETADATAPREFIX + "cronjob_publication_update=" + constants.CRONJOB_STATE['PENDING']
         try:
-            ret = msi.string_2_key_val_pair(callback, s, irods_types.BytesBuf())
+            ret = msi.string_2_key_val_pair(ctx, s, irods_types.BytesBuf())
             kvp = ret['arguments'][1]
-            msi.associate_key_value_pairs_to_obj(callback, kvp, vault_pkg_path, '-C')
-            publication.set_update_publication_state(callback, vault_pkg_path)
+            msi.associate_key_value_pairs_to_obj(ctx, kvp, vault_pkg_path, '-C')
+            publication.set_update_publication_state(ctx, vault_pkg_path)
         except Exception:
             set_result('FailedToSetPublicationUpdateStatus',
                        'Failed to set publication update status on <{}>'.format(vault_pkg_path))
