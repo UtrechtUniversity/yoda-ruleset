@@ -1,7 +1,7 @@
 ingestChangesIntoVault {
 	# First scan for any pending changes in the datamanager area
 	*ContInxOld = 1;
-	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);	
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQInp);
 	msiAddConditionToGenQuery("DATA_NAME", "=", IIJSONMETADATA, *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_vault_ingest", *GenQInp);
 	msiAddConditionToGenQuery("META_DATA_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQInp);
@@ -14,8 +14,8 @@ ingestChangesIntoVault {
 		foreach(*row in *GenQOut) {
 			*collName = *row.COLL_NAME;
 			*metadataPath = *row.COLL_NAME ++ "/" ++ IIJSONMETADATA;
-			
-			if (*collName like regex "/[^/]+/home/datamanager-.*") {	
+
+			if (*collName like regex "/[^/]+/home/datamanager-.*") {
 				# ensure rodsadmin access to the datamanager collection and metadata
 				*status     = "";
 				*statusInfo = "";
@@ -63,22 +63,15 @@ ingestChangesIntoVault {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-				*err = errorcode(iiProcessPublication(*collName, *status));
-				if (*err < 0) {
-					writeLine("stdout", "iiProcessPublication *collName returned errorcode *err");
-				} else {
-				        if (*status == "OK") {
+                                       *status = '';
+                                       *statusInfo = '';
+                                       rule_process_publication(*collName, *status, *statusInfo);
+                                       writeLine("stdout", "rule_process_publication *collName returned with status: *status");
+                                       if (*status == "OK") {
                                            msiString2KeyValPair("", *publicationUpdateKvp);
                                            *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
                                            msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
                                            *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
-					}
-					writeLine("stdout", "iiProcessPublication *collName returned with status: *status");
-					if (*status == "Retry") {
-						delay ("<PLUSET>60s</PLUSET>") {
-							iiScheduledVaultActions();
-						}
-					}
 				}
 			}
 		}
