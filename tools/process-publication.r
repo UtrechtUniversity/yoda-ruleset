@@ -91,6 +91,42 @@ processPublication() {
 		}
 	}
 	msiCloseGenQuery(*GenQ4Inp, *GenQ4Out);
+
+	# Scan for vault packages with a pending publication update.
+	*ContInxOld = 1;
+	msiAddSelectFieldToGenQuery("COLL_NAME", "", *GenQ5Inp);
+	msiAddConditionToGenQuery("COLL_NAME", "like", "%%/home/vault-%%", *GenQ5Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_NAME", "=", UUORGMETADATAPREFIX ++ "cronjob_publication_update", *GenQ5Inp);
+	msiAddConditionToGenQuery("META_COLL_ATTR_VALUE", "=", CRONJOB_PENDING, *GenQ5Inp);
+
+	msiExecGenQuery(*GenQ5Inp, *GenQ5Out);
+	msiGetContInxFromGenQueryOut(*GenQ5Out, *ContInxNew);
+
+	while(*ContInxOld > 0) {
+		foreach(*row in *GenQ5Out) {
+			*collName = *row.COLL_NAME;
+
+			# Check if this really is a vault package
+			if (*collName like regex "/[^/]+/home/vault-.*") {
+                                       *status = '';
+                                       *statusInfo = '';
+                                       rule_update_publication(*collName, *status, *statusInfo);
+                                       writeLine("stdout", "rule_update_publication *collName returned with status: *status");
+                                       if (*status == "OK") {
+                                           msiString2KeyValPair("", *publicationUpdateKvp);
+                                           *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;
+                                           msiString2KeyValPair(*publicationUpdate, *publicationUpdateKvp);
+                                           *err = errormsg(msiRemoveKeyValuePairsFromObj(*publicationUpdateKvp, *collName, "-C"), *msg);
+				}
+			}
+		}
+
+		*ContInxOld = *ContInxNew;
+		if(*ContInxOld > 0) {
+			msiGetMoreRows(*GenQ5Inp, *GenQ5Out, *ContInxNew);
+		}
+	}
+	msiCloseGenQuery(*GenQ5Inp, *GenQ5Out);
 }
 input null
 output ruleExecOut
