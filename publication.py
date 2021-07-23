@@ -760,8 +760,8 @@ def process_publication(ctx, vault_package):
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
-        log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
 
+    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
     return publication_state["status"]
 
 
@@ -1035,7 +1035,7 @@ def update_publication(ctx, vault_package):
     """Routine to update a publication with sanity checks at every step."""
     publication_state = {}
 
-    log.write(ctx, "update_landingpage: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "update_publication: Process vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
