@@ -208,11 +208,12 @@ def api_user_authenticated(user):
 @given(parsers.parse('user "{user}" is logged in'))
 @when('user "<user>" logs in')
 def ui_login(browser, user):
-    url = "{}/user/login".format(portal_url)
+    url = "{}/user/gate".format(portal_url)
     browser.visit(url)
 
     # Fill in username
     browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-submit').click()
 
     # Fill in password
     browser.find_by_id('f-login-password').fill(password)
