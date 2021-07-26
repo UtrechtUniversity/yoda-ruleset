@@ -3,7 +3,7 @@ Feature: Login OIDC UI
 
     Scenario Outline: Login using OIDC
         Given user is not logged in
-        And login page is shown
+        And the user "<user>" can start the OIDC flow
         When user clicks login with OIDC
         And user "<user>" follows OIDC login process
         Then user "<user>" is logged in

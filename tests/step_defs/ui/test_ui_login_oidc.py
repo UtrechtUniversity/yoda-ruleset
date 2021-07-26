@@ -12,11 +12,16 @@ from pytest_bdd import (
 )
 
 scenarios('../../features/ui/ui_login_oidc.feature')
+portal_url = "https://portal.yoda.test"
 
 
-@given('login page is shown')
-def ui_login(browser):
-    browser.is_text_present("Login to Yoda")
+@given('the user "<user>" can start the OIDC flow')
+def ui_login(browser, user):
+    url = "{}/user/gate".format(portal_url)
+    browser.visit(url)
+    input_username = browser.find_by_id('f-login-username')
+    input_username.fill(user)
+    browser.find_by_id('f-login-submit').click()
 
 
 @when('user clicks login with OIDC')
