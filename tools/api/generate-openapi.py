@@ -18,6 +18,7 @@ __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Chris Smeele')
+__author__    =  ('Lazlo Westerhof')
 # (in alphabetical order)
 
 import sys
@@ -33,9 +34,12 @@ import argparse
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('ruleset', metavar='RULESET', type=str,
                     help='a Python module/package name for an iRODS ruleset')
+parser.add_argument('--core', dest='core', action='store_const', const=True, default=False,
+                    help='only generate core API')
 
 args = parser.parse_args()
 ruleset_name = args.ruleset
+core = args.core
 
 
 # Strategy: Import the requested ruleset with an instrumented environment, and
@@ -264,6 +268,12 @@ for name, fn in api.fns:
         continue
 
     name = re.sub('^api_', '', name)
+
+    if core:
+        modules = ['datarequest', 'intake']
+        if name.startswith(tuple(modules)):
+            continue
+
     spec['paths'].update([('/'+name, gen_fn_spec(name, fn))])
 
 print(json.dumps(spec))
