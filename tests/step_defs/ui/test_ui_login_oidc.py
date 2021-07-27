@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from conftest import portal_url
 from pytest_bdd import (
     given,
     scenarios,
@@ -12,16 +13,21 @@ from pytest_bdd import (
 )
 
 scenarios('../../features/ui/ui_login_oidc.feature')
-portal_url = "https://portal.yoda.test"
 
 
 @given('the user "<user>" can start the OIDC flow')
-def ui_login(browser, user):
+def ui_start_oidc(browser, user):
     url = "{}/user/gate".format(portal_url)
     browser.visit(url)
     input_username = browser.find_by_id('f-login-username')
     input_username.fill(user)
     browser.find_by_id('f-login-submit').click()
+
+
+@given('the user is at the login gate')
+def ui_gate(browser):
+    url = "{}/user/gate".format(portal_url)
+    browser.visit(url)
 
 
 @when('user clicks login with OIDC')

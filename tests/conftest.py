@@ -228,6 +228,12 @@ def ui_logout(browser):
     browser.visit(url)
 
 
+@when('user "<user>" enters email address')
+def ui_gate_username(browser, user):
+    browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-submit').click()
+
+
 @given(parsers.parse('module "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
 @given(parsers.parse('page "{module}" is shown'))
