@@ -37,11 +37,11 @@ jobs:
       - name: Create directory for API documentation
         run: |
           mkdir build
+          ln -s . rules_uu
 
       - name: Generate Yoda core API documentation
         run: |
           export PYTHONPATH="${PYTHONPATH}:."
-          ln -s . rules_uu
           python tools/api/generate-openapi.py rules_uu --core > build/api_core.json
 
       - name: Validate Yoda core API documentation
@@ -51,7 +51,6 @@ jobs:
       - name: Generate Yoda module API documentation
         run: |
           export PYTHONPATH="${PYTHONPATH}:."
-          ln -s . rules_uu
           python tools/api/generate-openapi.py rules_uu --module intake > build/api_intake.json
           python tools/api/generate-openapi.py rules_uu --module intake > build/api_datarequest.json
 
