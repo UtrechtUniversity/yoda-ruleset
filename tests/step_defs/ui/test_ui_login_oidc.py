@@ -4,13 +4,14 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from conftest import portal_url
 from pytest_bdd import (
     given,
     scenarios,
     then,
     when,
 )
+
+from conftest import portal_url
 
 scenarios('../../features/ui/ui_login_oidc.feature')
 
