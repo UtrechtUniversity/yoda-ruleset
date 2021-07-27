@@ -52,7 +52,7 @@ jobs:
         run: |
           export PYTHONPATH="${PYTHONPATH}:."
           python tools/api/generate-openapi.py rules_uu --module intake > build/api_intake.json
-          python tools/api/generate-openapi.py rules_uu --module intake > build/api_datarequest.json
+          python tools/api/generate-openapi.py rules_uu --module datarequest > build/api_datarequest.json
 
       - name: Validate Yoda module API documentation
         run: |
