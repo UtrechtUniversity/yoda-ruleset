@@ -45,6 +45,19 @@ jobs:
         run: |
           openapi-spec-validator build/api_core.json
 
+      - name: Generate Yoda module API documentation
+        run: |
+          mkdir build
+          export PYTHONPATH="${PYTHONPATH}:."
+          ln -s . rules_uu
+          python tools/api/generate-openapi.py rules_uu --module intake > build/api_intake.json
+          python tools/api/generate-openapi.py rules_uu --module intake > build/api_datarequest.json
+
+      - name: Validate Yoda module API documentation
+        run: |
+          openapi-spec-validator build/api_intake.json
+          openapi-spec-validator build/api_datarequest.json
+
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
