@@ -44,8 +44,7 @@ def ui_login_directly(browser, user):
 def ui_login_assert_login_page(browser):
     assert (
         "{}/user/login".format(portal_url) in browser.url
-        or
-        "{}/user/gate".format(portal_url) in browser.url)
+        or "{}/user/gate".format(portal_url) in browser.url)
 
 
 @then('the user is redirected to "<page>"')
