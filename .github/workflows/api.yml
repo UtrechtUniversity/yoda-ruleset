@@ -60,8 +60,8 @@ jobs:
           openapi-spec-validator build/api_datarequest.json
 
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@4.1.4
+        uses: JamesIves/github-pages-deploy-action@releases/v3
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
-          branch: gh-pages
-          folder: build
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: build/
