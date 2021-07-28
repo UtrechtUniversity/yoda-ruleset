@@ -12,7 +12,7 @@ from datetime import datetime
 from enum import Enum
 
 import jsonschema
-from genquery import AS_DICT, row_iteratort, Query
+from genquery import AS_DICT, Query, row_iterator
 
 import avu_json
 import mail

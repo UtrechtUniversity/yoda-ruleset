@@ -5,7 +5,6 @@ __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import irods_types
-
 from genquery import Query
 
 import epic
