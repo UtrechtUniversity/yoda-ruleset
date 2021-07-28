@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with AVUs."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 from collections import namedtuple
 
+import genquery
 import irods_types
 
 import msi
 import pathutil
-from query import Query
 
 Avu = namedtuple('Avu', list('avu'))
 Avu.attr  = Avu.a
@@ -22,22 +22,22 @@ Avu.unit  = Avu.u
 def of_coll(ctx, coll):
     """Get (a,v,u) triplets for a given collection."""
     return itertools.imap(lambda x: Avu(*x),
-                          Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
-                                     "COLL_NAME = '{}'".format(coll)))
+                          genquery.Query(ctx, "META_COLL_ATTR_NAME, META_COLL_ATTR_VALUE, META_COLL_ATTR_UNITS",
+                                              "COLL_NAME = '{}'".format(coll)))
 
 
 def of_data(ctx, path):
     """Get (a,v,u) triplets for a given data object."""
     return itertools.imap(lambda x: Avu(*x),
-                          Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                     "COLL_NAME = '{}', DATA_NAME = '{}'".format(*pathutil.chop(path))))
+                          genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
+                                              "COLL_NAME = '{}', DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
 def of_group(ctx, group):
     """Get (a,v,u) triplets for a given group."""
     return itertools.imap(lambda x: Avu(*x),
-                          Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
-                                     "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
+                          genquery.Query(ctx, "META_USER_ATTR_NAME, META_USER_ATTR_VALUE, META_USER_ATTR_UNITS",
+                                              "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup'".format(group)))
 
 
 def set_on_data(ctx, path, a, v):

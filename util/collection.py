@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with collections."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -13,7 +13,6 @@ import genquery
 import irods_types
 
 import msi
-from query import Query
 
 
 def exists(ctx, path):
@@ -169,7 +168,7 @@ def id_from_name(ctx, coll_name):
 
     :returns: Collection id
     """
-    return Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
+    return genquery.Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
 
 
 def name_from_id(ctx, coll_id):
@@ -180,4 +179,4 @@ def name_from_id(ctx, coll_id):
 
     :returns: Collection name
     """
-    return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
+    return genquery.Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
