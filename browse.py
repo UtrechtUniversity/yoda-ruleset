@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
 
+from genquery import Query
+
 from util import *
-from util.query import Query
 
 __all__ = ['api_browse_folder',
            'api_browse_collections',

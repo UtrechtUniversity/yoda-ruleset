@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import irods_types
+
+from genquery import Query
 
 import epic
 import group
@@ -13,7 +15,6 @@ import policies_folder_status
 import provenance
 import vault
 from util import *
-from util.query import Query
 
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',

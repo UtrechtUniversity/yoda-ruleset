@@ -4,8 +4,9 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from genquery import Query
+
 from util import *
-from util.query import Query
 
 __all__ = ['api_settings_load',
            'api_settings_save']

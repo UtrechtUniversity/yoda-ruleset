@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -12,12 +12,11 @@ from datetime import datetime
 from enum import Enum
 
 import jsonschema
-from genquery import AS_DICT, row_iterator
+from genquery import AS_DICT, row_iteratort, Query
 
 import avu_json
 import mail
 from util import *
-from util.query import Query
 
 __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',

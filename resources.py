@@ -7,9 +7,10 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 from math import ceil
 
+from genquery import Query
+
 import meta_form
 from util import *
-from util.query import Query
 
 __all__ = ['api_resource_list_groups',
            'api_resource_monthly_category_stats',

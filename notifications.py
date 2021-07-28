@@ -9,10 +9,11 @@ import json
 import time
 from datetime import datetime
 
+from genquery import Query
+
 import mail
 import settings
 from util import *
-from util.query import Query
 
 __all__ = ['api_notifications_load',
            'api_notifications_dismiss',

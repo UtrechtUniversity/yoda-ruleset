@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """Functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
 import time
 
 import irods_types
+from genquery import Query
 
 import folder
 import meta_form
 from util import *
-from util.query import Query
 
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
