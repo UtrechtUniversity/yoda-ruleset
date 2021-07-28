@@ -7,7 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
-from genquery import Query
+from genquery import AS_DICT, Query
 
 from util import *
 
@@ -77,19 +77,19 @@ def api_browse_folder(ctx,
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
                       "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
                       "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
 
     colls = map(transform, list(qcoll))
 
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
-                  offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=query.AS_DICT)
+                  offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
     datas = map(transform, list(qdata))
 
     if len(colls) + len(datas) == 0:
@@ -163,14 +163,14 @@ def api_browse_collections(ctx,
     if space == str(pathutil.Space.RESEARCH):
         qcoll = Query(ctx, ccols,
                       "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
     elif space == str(pathutil.Space.VAULT):
         qcoll = Query(ctx, ccols,
                       "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
     else:
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
-                      offset=offset, limit=limit, output=query.AS_DICT)
+                      offset=offset, limit=limit, output=AS_DICT)
 
     colls = map(transform, list(qcoll))
 
@@ -266,7 +266,7 @@ def api_search(ctx,
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
 
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
-                  limit=int(limit), case_sensitive=False, output=query.AS_DICT)
+                  limit=int(limit), case_sensitive=False, output=AS_DICT)
 
     datas = map(transform, list(qdata))
 

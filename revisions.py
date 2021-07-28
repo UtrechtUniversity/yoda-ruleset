@@ -8,7 +8,7 @@ import os
 import time
 
 import irods_types
-from genquery import Query
+from genquery import AS_DICT, Query
 
 import folder
 import meta_form
@@ -297,7 +297,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                   "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
                   "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
                   "AND COLL_NAME like '" + startpath + "%' ",
-                  offset=offset, limit=limit, output=query.AS_DICT)
+                  offset=offset, limit=limit, output=AS_DICT)
 
     # step through results and enrich with wanted data
     for rev in list(qdata):
@@ -356,7 +356,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                        "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
                        "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
                        "AND COLL_NAME like '" + startpath + "%' ",
-                       offset=0, limit=None, output=query.AS_DICT)
+                       offset=0, limit=None, output=AS_DICT)
 
     # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
     return {'total': qtotalrows.total_rows() - multiple_counted,
