@@ -7,9 +7,10 @@ __license__   = 'GPLv3, see LICENSE'
 from datetime import datetime
 from math import ceil
 
+import genquery
+
 import meta_form
 from util import *
-from util.query import Query
 
 __all__ = ['api_resource_list_groups',
            'api_resource_monthly_category_stats',
@@ -113,15 +114,15 @@ def api_resource_list_groups(ctx):
 
     if user.is_admin(ctx):
         groups = [a for a
-                  in Query(ctx, "USER_GROUP_NAME",
-                                "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                    "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
     else:
         categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories)
 
         groups_member = [a for a
-                         in Query(ctx, "USER_GROUP_NAME",
-                                       "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+                         in genquery.Query(ctx, "USER_GROUP_NAME",
+                                           "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
 
         groups = list(set(groups_member + groups_dm))
 

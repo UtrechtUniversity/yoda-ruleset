@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """Functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
 import time
 
+import genquery
 import irods_types
 
 import folder
 import meta_form
 from util import *
-from util.query import Query
 
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
@@ -293,11 +293,11 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
-    qdata = Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                  "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                  "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                  "AND COLL_NAME like '" + startpath + "%' ",
-                  offset=offset, limit=limit, output=query.AS_DICT)
+    qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
+                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                           "AND COLL_NAME like '" + startpath + "%' ",
+                           offset=offset, limit=limit, output=genquery.AS_DICT)
 
     # step through results and enrich with wanted data
     for rev in list(qdata):
@@ -351,12 +351,12 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                           'original_coll_name': key,
                           'revision_count': value[0]})
 
-    # Alas an extra Query is required to get the total number of rows
-    qtotalrows = Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                       "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                       "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                       "AND COLL_NAME like '" + startpath + "%' ",
-                       offset=0, limit=None, output=query.AS_DICT)
+    # Alas an extra genquery.Query is required to get the total number of rows
+    qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
+                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                                "AND COLL_NAME like '" + startpath + "%' ",
+                                offset=0, limit=None, output=genquery.AS_DICT)
 
     # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
     return {'total': qtotalrows.total_rows() - multiple_counted,

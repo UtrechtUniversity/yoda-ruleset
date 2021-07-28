@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -12,12 +12,11 @@ from datetime import datetime
 from enum import Enum
 
 import jsonschema
-from genquery import AS_DICT, row_iterator
+from genquery import AS_DICT, Query, row_iterator
 
 import avu_json
 import mail
 from util import *
-from util.query import Query
 
 __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
@@ -560,11 +559,11 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
     qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
-                  offset=offset, limit=limit, output=query.AS_DICT)
+                  offset=offset, limit=limit, output=AS_DICT)
 
     ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
     qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
-                        offset=offset, limit=limit, output=query.AS_DICT)
+                        offset=offset, limit=limit, output=AS_DICT)
 
     colls = map(transform, list(qcoll))
     colls_title = map(transform_title, list(qcoll_title))

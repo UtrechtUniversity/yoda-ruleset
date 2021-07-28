@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 
+import genquery
+
 import intake_lock
 import intake_scan
 from util import *

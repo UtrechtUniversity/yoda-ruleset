@@ -7,8 +7,9 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 import time
 
-import intake
+import genquery
 
+import intake
 from util import *
 
 

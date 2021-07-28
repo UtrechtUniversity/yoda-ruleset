@@ -8,6 +8,7 @@ import itertools
 import os
 import time
 
+import genquery
 import irods_types
 
 import folder

@@ -9,9 +9,9 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from enum import Enum
 
+import genquery
+
 import msi
-import query
-from query import Query
 
 
 class Space(Enum):
@@ -140,8 +140,8 @@ def object_type(ctx, path):
 
 def fs_object_from_id(ctx, obj_id):
     """Return (path, ObjectType) for the given object id, or (None, None) if the ID does not exist."""
-    x = Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), query.AS_DICT).first() \
-        or Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), query.AS_DICT).first()
+    x = genquery.Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), genquery.AS_DICT).first() \
+        or genquery.Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), genquery.AS_DICT).first()
 
     if x is None:  # obj does not exist.
         return None, None

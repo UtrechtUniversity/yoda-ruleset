@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -11,7 +11,6 @@ import constants
 import error
 import msi
 import pathutil
-from query import Query
 
 
 def exists(ctx, path):
@@ -147,6 +146,6 @@ def name_from_id(ctx, data_id):
 
     :returns: Data object name
     """
-    x = Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
+    x = genquery.Query(ctx, "COLL_NAME, DATA_NAME", "DATA_ID = '{}'".format(data_id)).first()
     if x is not None:
         return '/'.join(x)

@@ -12,6 +12,7 @@ import os
 import re
 import time
 
+import genquery
 import irods_types
 import session_vars
 import xmltodict

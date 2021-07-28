@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from collections import namedtuple
 
 import genquery
 import session_vars
-
-from query import Query
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])
@@ -60,7 +58,7 @@ def exists(ctx, user):
     if type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
+    return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
 
 
 def user_type(ctx, user=None):
@@ -78,8 +76,8 @@ def user_type(ctx, user=None):
     elif type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, "USER_TYPE",
-                      "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
+    return genquery.Query(ctx, "USER_TYPE",
+                          "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
 
 
 def is_admin(ctx, user=None):
@@ -94,9 +92,9 @@ def is_member_of(ctx, group, user=None):
     elif type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, 'USER_GROUP_NAME',
-                      "USER_NAME = '{}' AND USER_ZONE = '{}' AND USER_GROUP_NAME = '{}'"
-                      .format(*list(user) + [group])).first() is not None
+    return genquery.Query(ctx, 'USER_GROUP_NAME',
+                          "USER_NAME = '{}' AND USER_ZONE = '{}' AND USER_GROUP_NAME = '{}'"
+                          .format(*list(user) + [group])).first() is not None
 
 
 # TODO: Remove. {{{

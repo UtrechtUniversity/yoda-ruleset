@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 
 import intake_scan
 from util import *

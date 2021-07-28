@@ -5,7 +5,7 @@ This subpackage does not export any callable rules by itself.
 Rather, it provides utility Python functions to other rules.
 """
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 # Make sure that importing * from this package gives (qualified) access to all
@@ -27,8 +27,6 @@ import user
 import group
 import avu
 import misc
-import query
-import genquery  # temporary
 import config
 
 # Config items can be accessed directly as 'config.foo' by any module
