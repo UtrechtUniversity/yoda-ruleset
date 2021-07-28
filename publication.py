@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import genquery
 
 import datacite
 import json_datacite41

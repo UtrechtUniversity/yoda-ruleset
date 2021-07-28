@@ -11,6 +11,7 @@ import time
 from collections import namedtuple
 from enum import Enum
 
+import genquery
 import session_vars
 
 from util import *

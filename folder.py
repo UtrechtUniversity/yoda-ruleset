@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 import irods_types
-from genquery import Query
 
 import epic
 import group
@@ -437,11 +437,11 @@ def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
     return [(k, v) for k, v
-            in Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
-                     "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
-                     + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
-                        if object_type is pathutil.ObjectType.DATA
-                        else " AND COLL_NAME = '{}'".format(path)))]
+            in genquery.Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
+                              "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
+                              + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
+                                 if object_type is pathutil.ObjectType.DATA
+                                 else " AND COLL_NAME = '{}'".format(path)))]
 
 
 def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):

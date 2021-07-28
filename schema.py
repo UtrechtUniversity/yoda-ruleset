@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Functions for finding the active schema."""
 
-__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+
+import genquery
 
 import meta
 from util import *

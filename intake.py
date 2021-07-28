@@ -7,6 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import fnmatch
 import time
 
+import genquery
+
 import intake_dataset
 import intake_lock
 import intake_scan

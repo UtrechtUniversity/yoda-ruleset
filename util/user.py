@@ -8,7 +8,6 @@ from collections import namedtuple
 
 import genquery
 import session_vars
-from genquery import AS_LIST, Query, row_iterator
 
 # User is a tuple consisting of a name and a zone, which stringifies into 'user#zone'.
 User = namedtuple('User', ['name', 'zone'])
@@ -59,7 +58,7 @@ def exists(ctx, user):
     if type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
+    return genquery.Query(ctx, "USER_TYPE", "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first() is not None
 
 
 def user_type(ctx, user=None):
@@ -77,7 +76,7 @@ def user_type(ctx, user=None):
     elif type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, "USER_TYPE",
+    return genquery.Query(ctx, "USER_TYPE",
                           "USER_NAME = '{}' AND USER_ZONE = '{}'".format(*user)).first()
 
 
@@ -93,7 +92,7 @@ def is_member_of(ctx, group, user=None):
     elif type(user) is str:
         user = from_str(ctx, user)
 
-    return Query(ctx, 'USER_GROUP_NAME',
+    return genquery.Query(ctx, 'USER_GROUP_NAME',
                           "USER_NAME = '{}' AND USER_ZONE = '{}' AND USER_GROUP_NAME = '{}'"
                           .format(*list(user) + [group])).first() is not None
 
@@ -114,8 +113,8 @@ def get_client_full_name(rei):
 
 def name_from_id(callback, user_id):
     """Retrieve username from user ID."""
-    for row in row_iterator("USER_NAME",
+    for row in genquery.row_iterator("USER_NAME",
                                      "USER_ID = '{}'".format(user_id),
-                                     AS_LIST, callback):
+                                     genquery.AS_LIST, callback):
         return row[0]
     return ''

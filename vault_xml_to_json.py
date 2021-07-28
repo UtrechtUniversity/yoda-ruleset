@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import time
 
+import genquery
 import xmltodict
 
 from util import *

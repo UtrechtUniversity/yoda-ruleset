@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
+import genquery
 import irods_types
 import jsonschema
 
