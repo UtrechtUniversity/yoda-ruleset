@@ -44,10 +44,11 @@ def set(ctx, actor, receiver, target, message):
 
 
 @api.make()
-def api_notifications_load(ctx):
+def api_notifications_load(ctx, sort_order="desc"):
     """Load user notifications.
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:        Combined type of a callback and rei struct
+    :param sort_order: Sort order of notifications on timestamp ("asc" or "desc", default "desc")
 
     :returns: Dict with all notifications
     """
@@ -76,7 +77,10 @@ def api_notifications_load(ctx):
             continue
 
     # Return notifications sorted on timestamp
-    return sorted(notifications, key=lambda k: k['timestamp'], reverse=True)
+    if sort_order == "asc":
+        return sorted(notifications, key=lambda k: k['timestamp'], reverse=False)
+    else:
+        return sorted(notifications, key=lambda k: k['timestamp'], reverse=True)
 
 
 @api.make()
