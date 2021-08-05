@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+import irods_errors
 import session_vars
 
 import datarequest
@@ -181,7 +182,7 @@ def py_acDataDeletePolicy(ctx):
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
-            else ctx.msiDeleteDisallowed())
+            else irods_errors.SYS_DELETE_DISALLOWED)
 
 
 @policy.require()
