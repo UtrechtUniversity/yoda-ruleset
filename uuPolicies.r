@@ -4,7 +4,7 @@
 # \author    Paul Frederiks
 # \author    Felix Croes
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2015-2018, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # Hook into Python. {{{
@@ -107,3 +107,6 @@ pep_api_auth_request_pre(*instanceName, *comm, *request) {
     *client_addr = *comm.client_addr
     writeLine("serverLog", "Agent process started for puser=*proxy_user_name and cuser=*user_user_name from *client_addr");
 }
+
+# Enforce server to use TLS encryption.
+acPreConnect(*OUT) { *OUT="CS_NEG_REQUIRE"; }
