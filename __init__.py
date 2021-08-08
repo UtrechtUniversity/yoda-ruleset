@@ -41,6 +41,7 @@ from policies               import *
 from revisions              import *
 from settings               import *
 from notifications          import *
+from token                  import *
 
 # Import certain modules only when enabled.
 from .util.config import config
