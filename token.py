@@ -4,12 +4,13 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from util import *
 
-import sqlite3
-import random
-from traceback import print_exc
 from datetime import datetime, timedelta
+import random
+import sqlite3
+from traceback import print_exc
+
+from util import *
 
 __all__ = ['api_generate_token',
            'api_load_tokens',
