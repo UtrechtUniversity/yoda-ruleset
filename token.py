@@ -5,11 +5,10 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from util import *
-from util.query import Query
+
 import sqlite3
-import sys
-from traceback import print_exc
 import random
+from traceback import print_exc
 from datetime import datetime, timedelta
 
 __all__ = ['api_generate_token',
@@ -29,15 +28,15 @@ def api_generate_token(ctx, label=None):
         # correct authentication method can be selected in the PAM stack.
         # Unfortunately there is no way to control all sources of
         # authentication (i.e. iCommands client) so we can't rely on the
-        # prefix to tell us what auth method should be used (because in 
+        # prefix to tell us what auth method should be used (because in
         # the iCommands client example the prefixes could be added manually).
-        # In the PAM stack itself there is no known way of differentiating between 
+        # In the PAM stack itself there is no known way of differentiating between
         # sources for the authentication request: authentication goes through
         # PamAuthReq_In types of messages which do not contain any information
         # about the source, afaik.
         # TODO: actual randomly generated tokens. Simple here for debugging
         # purposes.
-        return user + ':' + label + ':' + str(random.randrange(0,99))
+        return user + ':' + label + ':' + str(random.randrange(0, 99))
 
     user_id = user.name(ctx)
     token = generate_token(user_id, label)
@@ -57,10 +56,10 @@ def api_generate_token(ctx, label=None):
             result = token
     except Exception:
         print_exc()
-        result = api.Error('DatabaseError','Error occurred while writing to database')
+        result = api.Error('DatabaseError', 'Error occurred while writing to database')
 
     # Connection object used as context manager only commits or rollbacks transactions,
-    # so the connection object should be closed manually 
+    # so the connection object should be closed manually
     conn.close()
 
     return result
@@ -73,15 +72,15 @@ def api_load_tokens(ctx):
     result = []
 
     try:
-        with conn: 
+        with conn:
             for row in conn.execute('''SELECT * FROM tokens WHERE user=:user_id''', {"user_id": user_id}):
                 result.append({"label": row[1], "gen_time": row[3], "exp_time": row[4]})
     except Exception:
         print_exc()
-        result = api.Error('DatabaseError', 'Error occurred while reading database') 
+        result = api.Error('DatabaseError', 'Error occurred while reading database')
 
     # Connection object used as context manager only commits or rollbacks transactions,
-    # so the connection object should be closed manually 
+    # so the connection object should be closed manually
     conn.close()
 
     return result
@@ -102,7 +101,7 @@ def api_delete_token(ctx, label):
         result = api.Error('DatabaseError', 'Error during deletion from database')
 
     # Connection object used as context manager only commits or rollbacks transactions,
-    # so the connection object should be closed manually 
+    # so the connection object should be closed manually
     conn.close()
 
     return result
