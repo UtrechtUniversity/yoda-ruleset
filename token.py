@@ -5,8 +5,8 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
-from datetime import datetime, timedelta
 import random
+from datetime import datetime, timedelta
 import sqlite3
 from traceback import print_exc
 
