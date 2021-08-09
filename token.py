@@ -6,8 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 
 
 import random
-from datetime import datetime, timedelta
 import sqlite3
+from datetime import datetime, timedelta
 from traceback import print_exc
 
 from util import *
