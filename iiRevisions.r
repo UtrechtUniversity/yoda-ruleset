@@ -85,8 +85,14 @@ uuRevisionBatch(*verbose) {
                          WHERE  META_DATA_ATTR_NAME = '*attr') {
             *count = *count + 1;
 
-            # Perform scheduled revision creation for one data object.
+            # Stop scheduled revision if stop flag is set.
+            foreach (*row in SELECT DATA_ID
+                             WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_revisions") {
+                writeLine("serverLog", "Batch revision job is stopped");
+                break;
+            }
 
+            # Perform scheduled revision creation for one data object.
             *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
             *resc  = *row."META_DATA_ATTR_VALUE";
             *size  = *row."DATA_SIZE";

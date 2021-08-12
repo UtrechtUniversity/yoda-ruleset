@@ -61,8 +61,14 @@ uuReplicateBatch(*verbose) {
                          WHERE  META_DATA_ATTR_NAME = '*attr') {
             *count = *count + 1;
 
-            # Perform scheduled replication for one data object.
+            # Stop scheduled replication if stop flag is set.
+            foreach (*row in SELECT DATA_ID
+                             WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_replication") {
+                writeLine("serverLog", "Batch replication job is stopped");
+                break;
+            }
 
+            # Perform scheduled replication for one data object.
             *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
             *rescs = *row."META_DATA_ATTR_VALUE";
             *xs    = split(*rescs, ",");
