@@ -2,7 +2,7 @@
 # \brief     Revision management. Each new file or file modification creates
 #            a timestamped backup file in the revision store.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Create revisions on file modifications.
@@ -64,85 +64,101 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 uuRevisionBatch(*verbose) {
-    writeLine("serverLog", "Batch revision job started");
-    *count        = 0;
-    *countOk      = 0;
-    *countIgnored = 0;
-    *printVerbose = bool(*verbose);
-
-    *attr      = UUORGMETADATAPREFIX ++ "revision_scheduled";
-    *errorattr = UUORGMETADATAPREFIX ++ "revision_failed";
-    foreach (*row in SELECT COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE
-                     WHERE  META_DATA_ATTR_NAME = '*attr') {
-        *count = *count + 1;
-
-        # Perform scheduled revision creation for one data object.
-
-        *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
-        *resc  = *row."META_DATA_ATTR_VALUE";
-        *size  = *row."DATA_SIZE";
-
-        if (*printVerbose) {
-            writeLine("serverLog", "Batch revision: creating revision for *path on resc *resc");
-        }
-
-        *revstatus = errorcode(iiRevisionCreate(*resc, *path, UUMAXREVISIONSIZE, *verbose, *id));
-
-        *kv.*attr = *resc;
-
-        # Remove revision_scheduled flag no matter if it succeeded or not.
-        # rods should have been given own access via policy to allow AVU
-        # changes.
-
-        if (*printVerbose) {
-            writeLine("serverLog", "Batch revision: removing AVU for *path");
-        }
-
-        *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
-        if (*rmstatus != 0) {
-            # The object's ACLs may have changed.
-            # Force the ACL and try one more time.
-            errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
-            *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
-
-            if (*rmstatus != 0) {
-                writeLine("serverLog", "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)");
-            }
-        }
-
-        if (*revstatus == 0) {
-            if (*id != "") {
-                writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
-                *countOk = *countOk + 1;
-            } else {
-                *countIgnored = *countIgnored + 1;
-            }
-
-            # Revision creation OK. Remove any existing error indication attribute.
-            *c = *row."COLL_NAME";
-            *d = *row."DATA_NAME";
-            foreach (*x in SELECT DATA_NAME
-                           WHERE  COLL_NAME            = '*c'
-                             AND  DATA_NAME            = '*d'
-                             AND  META_DATA_ATTR_NAME  = '*errorattr'
-                             AND  META_DATA_ATTR_VALUE = 'true') {
-
-                # Only try to remove it if we know for sure it exists,
-                # otherwise we get useless errors in the log.
-                *errorkv.*errorattr = "true";
-                errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
-                break;
-            }
-        } else {
-            # Set error attribute
-
-            writeLine("serverLog", "revision error: Scheduled revision creation of <*path> failed (*revstatus)");
-            *errorkv.*errorattr = "true";
-            errorcode(msiSetKeyValuePairsToObj(*errorkv, *path, "-d"));
-        }
+    *stopped = 0;
+    foreach (*row in SELECT DATA_ID
+                     WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_revisions") {
+        *stopped = 1;
     }
 
-    writeLine("serverLog", "Batch revision job finished. " ++ str(*countOk+*countIgnored) ++ "/*count successfully processed, of which *countOk resulted in new revisions");
+    if (*stopped) {
+        writeLine("serverLog", "Batch revision job is stopped");
+    } else {
+        writeLine("serverLog", "Batch revision job started");
+        *count        = 0;
+        *countOk      = 0;
+        *countIgnored = 0;
+        *printVerbose = bool(*verbose);
+
+        *attr      = UUORGMETADATAPREFIX ++ "revision_scheduled";
+        *errorattr = UUORGMETADATAPREFIX ++ "revision_failed";
+        foreach (*row in SELECT COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE
+                         WHERE  META_DATA_ATTR_NAME = '*attr') {
+            *count = *count + 1;
+
+            # Stop scheduled revision if stop flag is set.
+            foreach (*row in SELECT DATA_ID
+                             WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_revisions") {
+                writeLine("serverLog", "Batch revision job is stopped");
+                break;
+            }
+
+            # Perform scheduled revision creation for one data object.
+            *path  = *row."COLL_NAME" ++ "/" ++ *row."DATA_NAME";
+            *resc  = *row."META_DATA_ATTR_VALUE";
+            *size  = *row."DATA_SIZE";
+
+            if (*printVerbose) {
+                writeLine("serverLog", "Batch revision: creating revision for *path on resc *resc");
+            }
+
+            *revstatus = errorcode(iiRevisionCreate(*resc, *path, UUMAXREVISIONSIZE, *verbose, *id));
+
+            *kv.*attr = *resc;
+
+            # Remove revision_scheduled flag no matter if it succeeded or not.
+            # rods should have been given own access via policy to allow AVU
+            # changes.
+
+            if (*printVerbose) {
+                writeLine("serverLog", "Batch revision: removing AVU for *path");
+            }
+
+            *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+            if (*rmstatus != 0) {
+                # The object's ACLs may have changed.
+                # Force the ACL and try one more time.
+                errorcode(msiSudoObjAclSet("", "own", uuClientFullName, *path, ""));
+                *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kv, *path, "-d"));
+
+                if (*rmstatus != 0) {
+                    writeLine("serverLog", "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)");
+                }
+            }
+
+            if (*revstatus == 0) {
+                if (*id != "") {
+                    writeLine("serverLog", "iiRevisionCreate: Revision created for *path ID=*id");
+                    *countOk = *countOk + 1;
+                } else {
+                    *countIgnored = *countIgnored + 1;
+                }
+
+                # Revision creation OK. Remove any existing error indication attribute.
+                *c = *row."COLL_NAME";
+                *d = *row."DATA_NAME";
+                foreach (*x in SELECT DATA_NAME
+                               WHERE  COLL_NAME            = '*c'
+                                 AND  DATA_NAME            = '*d'
+                                 AND  META_DATA_ATTR_NAME  = '*errorattr'
+                                 AND  META_DATA_ATTR_VALUE = 'true') {
+
+                    # Only try to remove it if we know for sure it exists,
+                    # otherwise we get useless errors in the log.
+                    *errorkv.*errorattr = "true";
+                    errorcode(msiRemoveKeyValuePairsFromObj(*errorkv, *path, "-d"));
+                    break;
+                }
+            } else {
+                # Set error attribute
+
+                writeLine("serverLog", "revision error: Scheduled revision creation of <*path> failed (*revstatus)");
+                *errorkv.*errorattr = "true";
+                errorcode(msiSetKeyValuePairsToObj(*errorkv, *path, "-d"));
+            }
+        }
+
+        writeLine("serverLog", "Batch revision job finished. " ++ str(*countOk+*countIgnored) ++ "/*count successfully processed, of which *countOk resulted in new revisions");
+    }
 }
 
 # \brief Create a revision of a dataobject in a revision folder.  ## BLIJFT ##
@@ -323,4 +339,3 @@ iiRevisionLastBefore(*path, *timestamp, *revisionId) {
                 }
         }
 }
-
