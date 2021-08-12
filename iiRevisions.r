@@ -66,7 +66,7 @@ iiRevisionCreateAsynchronously(*resource, *path, *maxSize) {
 uuRevisionBatch(*verbose) {
     *stopped = 0;
     foreach (*row in SELECT DATA_ID
-                     WHERE  COLL_NAME = '/tempZone/yoda/flags' AND DATA_NAME = 'stop_revisions') {
+                     WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_revisions") {
         *stopped = 1;
     }
 

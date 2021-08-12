@@ -43,7 +43,7 @@ uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
 uuReplicateBatch(*verbose) {
     *stopped = 0;
     foreach (*row in SELECT DATA_ID
-                     WHERE  COLL_NAME = '/tempZone/yoda/flags' AND DATA_NAME = 'stop_replication') {
+                     WHERE  COLL_NAME = "/$rodsZoneClient/yoda/flags" AND DATA_NAME = "stop_replication") {
         *stopped = 1;
     }
 
