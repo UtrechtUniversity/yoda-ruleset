@@ -54,7 +54,7 @@ def can_coll_delete(ctx, actor, coll):
         return policy.fail('Cannot delete or move collections directly under /home')
 
     if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if folder.has_locks(ctx, coll) and not user.is_admin(ctx, actor):
+        if not user.is_admin(ctx, actor) and folder.has_locks(ctx, coll):
             return policy.fail('Folder or subfolder is locked')
 
     if pathutil.info(coll).space is pathutil.Space.INTAKE:
@@ -114,7 +114,7 @@ def can_data_delete(ctx, actor, path):
         return policy.fail('Cannot delete or move data directly under /home')
 
     if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
+        if not user.is_admin(ctx, actor) and folder.is_data_locked(ctx, path):
             return policy.fail('Folder is locked')
 
     if pathutil.info(path).space is pathutil.Space.INTAKE:
