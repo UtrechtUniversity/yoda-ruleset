@@ -33,6 +33,15 @@ def api_deposit_status(user):
     )
 
 
+@given('the Yoda deposit clear API is queried', target_fixture="api_response")
+def api_deposit_clear(user):
+    return api_request(
+        user,
+        "deposit_clear",
+        {}
+    )
+
+
 @then('deposit path is returned')
 def api_deposit_path_return(api_response):
     _, body = api_response
