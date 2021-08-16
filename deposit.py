@@ -12,7 +12,8 @@ from util import *
 
 __all__ = ['api_deposit_path',
            'api_deposit_status',
-           'api_deposit_submit']
+           'api_deposit_submit',
+           'api_deposit_clear']
 
 DEPOSIT_GROUP = "deposit-test"
 
@@ -110,3 +111,22 @@ def api_deposit_submit(ctx):
     deposit_path = determine_deposit_path(ctx)
     coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
     return folder.set_status(ctx, coll, constants.research_package_state.SUBMITTED)
+
+
+@api.make()
+def api_deposit_clear(ctx):
+    """Clear deposit collection.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: API status
+    """
+    deposit_path = determine_deposit_path(ctx)
+    coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
+
+    try:
+        collection.remove(ctx, coll)
+    except msi.Error as e:
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
