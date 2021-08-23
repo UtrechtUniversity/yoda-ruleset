@@ -78,7 +78,7 @@ def _default1_default2(m):
 
     This to enable datapackages to be found more easily.
 
-    Prequisite: 
+    Prequisite:
     Discipline -> should be present in all vault packages before migration
     I.e. discipline must be manually added if not present yet.
     This requires a manual intervention by the responsible datamanager
@@ -97,7 +97,7 @@ def _default1_default2(m):
 
     # Only add default value when Tag not yet present or present as a list with an empty string
     if not m.get('Tag', False) or m['Tag'] == [""]:
-       m['Tag'] = ['yoda']
+        m['Tag'] = ['yoda']
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-2/metadata.json')
 
