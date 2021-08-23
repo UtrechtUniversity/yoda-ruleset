@@ -71,6 +71,39 @@ def _default0_default1(m):
 
     return m
 
+
+def _default1_default2(m):
+    """
+    Metadata fields Discipline, Language and tags have become required fields.
+
+    This to enable datapackages to be found more easily.
+
+    Prequisite: 
+    Discipline -> should be present in all vault packages before migration
+    I.e. discipline must be manually added if not present yet.
+    This requires a manual intervention by the responsible datamanager
+
+    If not present yet Language is set to 'en - English'
+
+    If not present yet a default Tag will be added containing 'yoda'
+
+    :param m: Metadata to transform (default-1)
+
+    :returns: Transformed (default-2) JSON object
+    """
+    # Only add default value when Language not yet present
+    if not m.get('Language', False) or m['Language'] == "":
+        m['Language'] = 'en - English'
+
+    # Only add default value when Tag not yet present or present as a list with an empty string
+    if not m.get('Tag', False) or m['Tag'] == [""]:
+       m['Tag'] = ['yoda']
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-2/metadata.json')
+
+    return m
+
+
 # }}}
 
 
@@ -84,7 +117,9 @@ def get(src_id, dst_id):
     :return: A transformation function, or None if no mapping exists for the given ids
     """
     transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1}}
+                       {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
+                       'https://yoda.uu.nl/schemas/default-1/metadata.json':
+                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2}}
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)
