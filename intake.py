@@ -25,7 +25,8 @@ __all__ = ['api_intake_list_studies',
            'api_intake_dataset_add_comment',
            'api_intake_report_vault_dataset_counts_per_study',
            'api_intake_report_vault_aggregated_info',
-           'api_intake_report_export_study_data']
+           'api_intake_report_export_study_data',
+           'rule_intake_scan_for_datasets']
 
 INTAKE_FILE_EXCLUSION_PATTERNS = ['*.abc', '*.PNG']
 """ List of file patterns not to take into account within INTAKE module."""
@@ -399,15 +400,61 @@ def api_intake_scan_for_datasets(ctx, coll):
 
     :returns: indication correct
     """
-    # check permissions - both researcher and datamanager
+
+    if _intake_check_authorized_to_scan(ctx, coll):
+        _intake_scan_for_datasets(ctx, coll)
+    else:
+        return {}
+
+    return {"proc_status": "OK"}
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_intake_scan_for_datasets(ctx, coll):
+    """The toplevel of a dataset can be determined by attribute 'dataset_toplevel'
+    and can either be a collection or a data_object.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to scan for datasets
+
+    :returns: indication correct
+    """
+    if _intake_check_authorized_to_scan(ctx, coll):
+        _intake_scan_for_datasets(ctx, coll)
+    else:
+        return 1
+
+    return 0
+
+
+def _intake_check_authorized_to_scan(ctx, coll):
+    """Checks that user is authorized to scan intake group, either as
+       a data manager or as an intake group member.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to scan for datasets
+
+    :returns: boolean - whether user is authorized
+    """
+
     parts = coll.split('/')
     group = parts[3]
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
 
-    if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
+    if (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
+        return True
+    else:
         log.write(ctx, "No permissions to scan collection")
-        return {}
+        return False
 
+
+def _intake_scan_for_datasets(ctx, coll):
+    """Internal function for actually running intake scan
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to scan for datasets
+
+    """
     scope = {"wave": "",
              "experiment_type": "",
              "pseudocode": ""}
@@ -415,8 +462,6 @@ def api_intake_scan_for_datasets(ctx, coll):
     intake_scan.intake_scan_collection(ctx, coll, scope, False)
 
     intake_scan.intake_check_datasets(ctx, coll)
-
-    return {"proc_status": "OK"}
 
 
 @api.make()
