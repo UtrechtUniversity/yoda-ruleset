@@ -37,8 +37,8 @@ def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
         msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), revision_store)
         msi.set_acl(ctx, "recursive", "inherit", user.full_name(ctx), revision_store)
 
-    end_of_calender_day = int(endOfCalendarDay)
-    if end_of_calender_day == 0:
+    end_of_calendar_day = int(endOfCalendarDay)
+    if end_of_calendar_day == 0:
         end_of_calendar_day = calculate_end_of_calendar_day(ctx)
 
     # get definition of buckets
