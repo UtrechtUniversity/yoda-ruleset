@@ -40,7 +40,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         if in_dataset:
             apply_dataset_metadata(ctx, path, scope, False, False)
         else:
-            subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope)
+            subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope.copy())
 
             if intake_tokens_identify_dataset(subscope):
                 # We found a top-level dataset data object.
