@@ -74,18 +74,18 @@ def _default0_default1(m):
 
 def _default1_default2(m):
     """
-    Metadata fields Discipline, Language and tags have become required fields.
+    Metadata fields Discipline, Language and Tags have become required fields.
 
-    This to enable datapackages to be found more easily.
+    This to enable datapackages to be filtered and found more easily.
 
-    Prequisite:
-    Discipline -> should be present in all vault packages before migration
-    I.e. discipline must be manually added if not present yet.
-    This requires a manual intervention by the responsible datamanager
-
-    If not present yet Language is set to 'en - English'
+    If not present yet Language is defaulted to 'en - English'
 
     If not present yet a default Tag will be added containing 'yoda'
+
+    Discipline must be present in all vault packages before migration.
+    I.e. discipline must be manually added if not present yet.
+    This requires an intervention by the responsible datamanager beforehand
+
 
     :param m: Metadata to transform (default-1)
 
