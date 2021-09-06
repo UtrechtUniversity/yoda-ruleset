@@ -286,7 +286,6 @@ def remove_dataset_metadata(ctx, path, is_collection):
                        "object_warnings"]
     intake_metadata_set = set(intake_metadata)
 
-
     # Add the following two lines to remove accumulated metadata during testing.
     # "comment"
     # "scanned"]
@@ -308,16 +307,17 @@ def remove_dataset_metadata(ctx, path, is_collection):
         metadata_name = _row[1]
         if metadata_name in intake_metadata_set:
             if is_collection:
-                log.write(ctx, md_key + ' => ' + path)
                 try:
                     avu.rmw_from_coll(ctx, path, metadata_name, '%')
                 except Exception as e:
-                    continue
+                    log.write(ctx, "Warning: unable to remove metadata attr {} from {}".format(metadata_name, path))
+                    log.write(ctx, "Removing metadata failed with exception {}".format(str(e)))
             else:
                 try:
                     avu.rmw_from_data(ctx, path, metadata_name, '%')
                 except Exception as e:
-                    continue
+                    log.write(ctx, "Warning: unable to remove metadata attr {} from {}".format(metadata_name, path))
+                    log.write(ctx, "Removing metadata failed with exception {}".format(str(e)))
 
 
 def scan_mark_scanned(ctx, path, is_collection):
