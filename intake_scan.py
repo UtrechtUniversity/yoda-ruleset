@@ -284,6 +284,8 @@ def remove_dataset_metadata(ctx, path, is_collection):
                        "object_count",
                        "object_errors",
                        "object_warnings"]
+    intake_metadata_set = set(intake_metadata)
+
 
     # Add the following two lines to remove accumulated metadata during testing.
     # "comment"
@@ -303,16 +305,17 @@ def remove_dataset_metadata(ctx, path, is_collection):
         )
 
     for _row in iter:
-        for md_key in intake_metadata:
+        metadata_name = _row[1]
+        if metadata_name in intake_metadata_set:
             if is_collection:
                 log.write(ctx, md_key + ' => ' + path)
                 try:
-                    avu.rmw_from_coll(ctx, path, md_key, '%')
+                    avu.rmw_from_coll(ctx, path, metadata_name, '%')
                 except Exception as e:
                     continue
             else:
                 try:
-                    avu.rmw_from_data(ctx, path, md_key, '%')
+                    avu.rmw_from_data(ctx, path, metadata_name, '%')
                 except Exception as e:
                     continue
 
