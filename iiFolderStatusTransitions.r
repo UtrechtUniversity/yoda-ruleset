@@ -253,7 +253,7 @@ iiFolderSecure(*folder) {
 
 	# Copy to vault
 	iiCopyFolderToVault(*folder, *target);
-	
+
         # From HERE relay to python
         *return = "";
         rule_folder_secure(*folder, *target, *return);
@@ -311,7 +311,7 @@ iiCollectionGroupName(*path, *groupName) {
 		foreach(*group in SELECT USER_GROUP_NAME WHERE USER_GROUP_ID = *id) {
 				*groupName = *group.USER_GROUP_NAME;
 		}
-		if (*groupName like regex "(research|intake)-.*") {
+		if (*groupName like regex "(deposit|research|intake)-.*") {
 			*isfound = true;
 			break;
 		}
@@ -331,8 +331,6 @@ iiCollectionGroupName(*path, *groupName) {
 	}
 	if (!*isfound){
 		# No results found. Not a group folder
-		writeLine("serverLog", "*path does not belong to a research or intake group or is not available to current user");
+		writeLine("serverLog", "*path does not belong to a deposit, research or intake group or is not available to current user");
 	}
 }
-
-
