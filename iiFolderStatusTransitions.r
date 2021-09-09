@@ -300,10 +300,17 @@ iiDetermineVaultTarget(*folder) {
 
 # \brief Return the name of the group a collection belongs to.
 #
-# \param[in]  path
+# \param[in]  folder
 # \param[out] groupName
 #
-iiCollectionGroupName(*path, *groupName) {
+iiCollectionGroupName(*folder, *groupName) {
+	if (*folder like regex "/[^/]+/home/deposit-.[^/]*/.*") {
+		uuChopPath(*folder, *parent, *baseName);
+		*path = *parent;
+	} else {
+		*path = *folder;
+	}
+
 	*isfound = false;
 	*groupName = "";
 	foreach(*accessid in SELECT COLL_ACCESS_USER_ID WHERE COLL_NAME = *path) {

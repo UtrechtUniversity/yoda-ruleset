@@ -34,7 +34,6 @@ iiCopyFolderToVault(*folder, *target) {
 # \param[in/out] error
 #
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
-        writeLine("serverLog", "INGEST OBJECT");
 	*sourcePath = "*itemParent/*itemName";
 	msiCheckAccess(*sourcePath, "read object", *readAccess);
 	if (*readAccess != 1) {
