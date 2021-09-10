@@ -5,7 +5,7 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
-import random
+import secrets
 import sqlite3
 from datetime import datetime, timedelta
 from traceback import print_exc
@@ -37,7 +37,8 @@ def api_generate_token(ctx, label=None):
         # about the source, afaik.
         # TODO: actual randomly generated tokens. Simple here for debugging
         # purposes.
-        return user + ':' + label + ':' + str(random.randrange(0, 99))
+
+        return user + ':' + label + ':' + secrets.token_urlsafe(32)
 
     user_id = user.name(ctx)
     token = generate_token(user_id, label)
