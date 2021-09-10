@@ -349,15 +349,17 @@ def getResourceType(combi):
     """Get string in DataCite format containing Resource type and default handling."""
     typs = {'Dataset':   'Research Data',
             'DataPaper': 'Method Description',
-            'Software':  'Computer code'}
+            'Software':  'Computer code',
+            'Model':     'Model'}
 
     typ = combi.get('Data_Type', 'Text')
     if typ not in typs:
         typ = 'Text'
 
-    descr = {'Dataset': 'Research Data',
+    descr = {'Dataset':   'Research Data',
              'DataPaper': 'Method Description',
-             'Software': 'Computer code'}\
+             'Software':  'Computer code',
+             'Model':     'Model'}\
         .get(typ, 'Other Document')
 
     return El('resourceType', descr, resourceTypeGeneral=typ)

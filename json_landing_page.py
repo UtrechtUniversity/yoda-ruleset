@@ -70,7 +70,13 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         additional_labs = []
 
     try:
-        disciplines = dictJsonData['Discipline']  # niet verplicht
+        discipline_ids = dictJsonData['Discipline']
+        disciplines = []
+        schema_disc_ids = json_schema['definitions']['optionsDiscipline']['enum']
+        schema_disc_names = json_schema['definitions']['optionsDiscipline']['enumNames']
+        for id in discipline_ids:
+            index = schema_disc_ids.index(id)
+            disciplines.append(schema_disc_names[index])
     except KeyError:
         disciplines = []
 
@@ -80,9 +86,24 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         version = ''
 
     try:
-        language = dictJsonData['Language']
+        language = ''
+        language_id = dictJsonData['Language']
+        schema_lang_ids = json_schema['definitions']['optionsLanguage']['enum']
+        schema_lang_names = json_schema['definitions']['optionsLanguage']['enumNames']
+        index = schema_lang_ids.index(language_id)
+        language = schema_lang_names[index]
     except KeyError:
         language = ''
+
+    try:
+        datatype = ''
+        datatype_id = dictJsonData['Data_Type']
+        schema_dt_ids = json_schema['definitions']['optionsDataType']['enum']
+        schema_dt_names = json_schema['definitions']['optionsDataType']['enumNames']
+        index = schema_dt_ids.index(datatype_id)
+        datatype = schema_dt_names[index]
+    except KeyError:
+        datatype = ''
 
     try:
         collected = dictJsonData['Collected']
@@ -202,6 +223,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     landing_page = tm.render(
         title=title,
         description=description,
+        datatype=datatype,
         labs=labs,
         additional_labs=additional_labs,
         disciplines=disciplines,
