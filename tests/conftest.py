@@ -140,7 +140,7 @@ def api_request(user, request, data, timeout=10):
     url = api_url + "/" + request
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
     cookies = {'session': session}
-    headers = {'referer': 'https://portal.yoda.test/'}
+    headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
     # Remove debug info from response body.
@@ -247,7 +247,10 @@ def ui_login_assert_login_page(browser):
 @given(parsers.parse('page "{module}" is shown'))
 @when(parsers.parse('page "{module}" is shown'))
 def ui_module_shown(browser, module):
-    url = "{}/{}".format(portal_url, module)
+    if "/" in module:
+        url = "{}/{}".format(portal_url, module)
+    else:
+        url = "{}/{}/".format(portal_url, module)
     browser.visit(url)
 
 
