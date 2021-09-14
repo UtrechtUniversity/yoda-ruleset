@@ -174,7 +174,7 @@ def upload_data(user, file, folder):
              "file": (file, "test")}
 
     cookies = {'session': session}
-    headers = {'referer': 'https://portal.yoda.test/'}
+    headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
@@ -191,7 +191,7 @@ def post_form_data(user, request, files):
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
     cookies = {'session': session}
-    headers = {'referer': 'https://portal.yoda.test/'}
+    headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
