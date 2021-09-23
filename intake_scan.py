@@ -13,14 +13,18 @@ import intake
 from util import *
 
 
-def intake_scan_collection(ctx, root, scope, in_dataset):
+def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     """Recursively scan a directory in a Youth Cohort intake.
 
     :param ctx:    Combined type of a callback and rei struct
     :param root:   the directory to scan
     :param scope:     a scoped kvlist buffer
     :param in_dataset: whether this collection is within a dataset collection
+    :param found_datasets: collection of subscopes that were found in order to report toplevel datasets in the scanning process
     """
+
+    log.write(ctx, 'SCAN COLLECTION ROOT: ' + root)
+
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -29,6 +33,8 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
     )
     for row in iter:
         path = row[1] + '/' + row[0]
+
+        log.write(ctx, 'SCAN FILE: ' + path)
 
         # Determene lock state for object (no collectoin
         locked_state = object_is_locked(ctx, path, False)
@@ -47,7 +53,11 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                 # We found a top-level dataset data object.
                 subscope["dataset_directory"] = row[1]
                 apply_dataset_metadata(ctx, path, subscope, False, True)
+                # For reporting purposes collect the subscopes
+                found_datasets.append(subscope)
             else:
+                # subscope["dataset_directory"] = row[1]
+                # apply_dataset_metadata(ctx, path, subscope, False, True)
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
@@ -62,6 +72,8 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         path = row[0]
         counter = counter + 1
         dirname = pathutil.basename(path)
+
+        log.write(ctx, 'SCAN COLLECTION: ' + path)
 
         if dirname != '/':
             # get locked /frozen status
@@ -87,10 +99,14 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                         # We found a top-level dataset collection.
                         subscope["dataset_directory"] = path
                         apply_dataset_metadata(ctx, path, subscope, True, True)
+                        # For reporting purposes collect the subscopes
+                        found_datasets.append(subscope)
                     else:
                         apply_partial_metadata(ctx, subscope, path, True)
                 # Go a level deeper
-                intake_scan_collection(ctx, path, subscope, child_in_dataset)
+                found_datasets = intake_scan_collection(ctx, path, subscope, child_in_dataset, found_datasets)
+
+    return found_datasets
 
 
 def scan_filename_is_valid(ctx, name):
@@ -153,12 +169,13 @@ def intake_tokens_identify_dataset(tokens):
     """
     required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
 
-    complete = False
+    missing = 0
     for req_token in required:
         # required tokens must be present and must have a value
         if req_token not in tokens or tokens[req_token] == "":
-            return False
-    return True
+            missing = missing + 1
+
+    return (missing < 3)
 
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
@@ -246,16 +263,18 @@ def intake_extract_tokens(ctx, string):
 
     str_lower = string.lower()
     str_upper = string.upper()
+    str_for_pseudocode_test = string.split('.')[0]
+    str_for_version_test = string.translate(None, ".")
 
     foundKVs = {}
     if re.match('^[0-9]{1,2}[wmy]$', str_lower) is not None:
         # String contains a wave.
         # Wave validity is checked later on in the dataset checks.
         foundKVs["wave"] = str_lower
-    elif re.match('^[bap][0-9]{5}$', str_lower) is not None:
+    elif re.match('^[bap][0-9]{5}$', str_for_pseudocode_test.lower()) is not None:
         # String contains a pseudocode.
-        foundKVs["pseudocode"] = str_upper[0:len(string)]
-    elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', string) is not None:
+        foundKVs["pseudocode"] = str_upper[0:len(str_for_pseudocode_test)]
+    elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', str_for_version_test) is not None:
         foundKVs["version"] = string[3:len(string)]
     else:
         if str_lower in exp_types:
@@ -535,6 +554,11 @@ def intake_check_generic(ctx, root, dataset_id, toplevels, is_collection):
     if components['wave'] not in waves:
         dataset_add_error(ctx, toplevels, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
 
+    if components['experiment_type'] == "":
+        dataset_add_error(ctx, toplevels, is_collection, "Experiment type is missing")
+    if components['pseudocode'] == "":
+        dataset_add_error(ctx, toplevels, is_collection, "Pseudocode is missing")
+
 
 def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
     """Run checks specific to the Echo experiment type.
@@ -725,6 +749,6 @@ def dataset_parse_id(dataset_id):
     dataset['expType'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    dataset['directory'] = dataset_parts[4]  # HIER WORDT NIKS MEE GEDAAN - toch ff zo laten
+    dataset['directory'] = dataset_parts[4]
 
     return dataset
