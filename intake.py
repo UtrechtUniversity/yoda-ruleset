@@ -463,13 +463,13 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
                 version = subscope['version']
             except KeyError:
                 version = 'Raw'
-            ctx.writeLine(tl_datasets_log_target, ("Found dataset toplevel collection: " + 
-                                                  "W<" + subscope['wave'] + 
-                                                  "> E<" + subscope['experiment_type'] + 
-                                                  "> P<" + subscope['pseudocode'] + 
-                                                  "> V<" + version + 
-                                                  "> D<" + subscope['dataset_directory'] + 
-                                                  ">"))
+            ctx.writeLine(tl_datasets_log_target, ("Found dataset toplevel collection: " +
+                                                   "W<" + subscope['wave'] +
+                                                   "> E<" + subscope['experiment_type'] +
+                                                   "> P<" + subscope['pseudocode'] +
+                                                   "> V<" + version +
+                                                   "> D<" + subscope['dataset_directory'] +
+                                                   ">"))
 
     log.write(ctx, 'INTAKE CHECK DATASETS - START')
     intake_scan.intake_check_datasets(ctx, coll)
