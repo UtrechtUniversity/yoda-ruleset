@@ -21,6 +21,8 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     :param scope:     a scoped kvlist buffer
     :param in_dataset: whether this collection is within a dataset collection
     :param found_datasets: collection of subscopes that were found in order to report toplevel datasets in the scanning process
+
+    :returns: Found datasets
     """
 
     log.write(ctx, 'SCAN COLLECTION ROOT: ' + root)
