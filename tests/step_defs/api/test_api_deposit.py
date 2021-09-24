@@ -17,17 +17,29 @@ scenarios('../../features/api/api_deposit.feature')
 
 @given('the Yoda deposit path API is queried', target_fixture="api_response")
 def api_deposit_path(user):
-    return api_request( user, "deposit_path", {} )
+    return api_request(
+        user,
+        "deposit_path",
+        {}
+    )
 
 
 @given('the Yoda deposit status API is queried', target_fixture="api_response")
 def api_deposit_status(user):
-    return api_request( user, "deposit_status", {} )
+    return api_request(
+        user,
+        "deposit_status",
+        {}
+    )
 
 
 @given('the Yoda deposit clear API is queried', target_fixture="api_response")
 def api_deposit_clear(user):
-    return api_request(user, "deposit_clear", {} )
+    return api_request(
+        user,
+        "deposit_clear",
+        {}
+    )
 
 
 @then('deposit path is returned')
