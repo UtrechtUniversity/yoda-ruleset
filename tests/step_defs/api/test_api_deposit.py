@@ -45,13 +45,12 @@ def api_deposit_clear(user):
 @then('deposit path is returned')
 def api_deposit_path_return(api_response):
     _, body = api_response
-
     assert body["data"]["deposit_path"]
 
 
 @then('deposit status is returned')
 def api_deposit_status_return(api_response):
     _, body = api_response
-
+    assert body["data"]
     assert not body["data"]["data"]
     assert not body["data"]["metadata"]
