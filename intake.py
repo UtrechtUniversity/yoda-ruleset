@@ -472,7 +472,7 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
                                                    + ">"))
 
     log.write(ctx, 'INTAKE CHECK DATASETS - START')
-    intake_scan.intake_check_datasets(ctx, coll)
+    # intake_scan.intake_check_datasets(ctx, coll)
     log.write(ctx, 'INTAKE CHECK DATASETS - END')
 
 
