@@ -1,0 +1,75 @@
+{
+  "Title": {
+    "ui:help": "Provide a title or name for your data package"
+  },
+  "Description": {
+    "ui:help": "Describe the data package. Please refer to projects or grants responsible for the data package",
+    "ui:widget": "textarea"
+  },
+  "Research_Group": {
+    "ui:help": "Specify the research group responsible for the data package"
+  },
+  "Data_Type": {
+    "ui:help": "What is the type of your data"
+  },
+  "File_Data_Type": {
+    "items": {
+      "File_name": {
+        "ui:help": "Specify folder and filename"
+      },
+      "File_description": {
+        "ui:help": "Describe the file type (e.g. images or tabular) or format (e.g. JPEG or GIS)"
+      }
+    }
+  },
+  "Data_Classification": {
+    "ui:help": "How is your data classified with regards to information security policy"
+  },
+  "Collected": {
+    "Start_Date": {
+      "ui:help": "Indicate when you've started collecting the data for this data package"
+    },
+    "End_Date": {
+      "ui:help": "Indicate when you've finished collecting the data for this data package"
+    }
+  },
+  "GeoLocation": {
+    "items": {
+      "geoLocationBox": {
+        "ui:field": "geo"
+      }
+    }
+  },
+  "Tag": {
+    "items": {
+      "ui:help": "Give in terms which describes your data package"
+    }
+  },
+  "Personal_Data": {
+    "ui:help": "Indicate whether the data package contains personal information"
+  },
+  "End_Preservation": {
+    "ui:help": "Indicate when the data must be removed (for legal reasons) ***pilot-discussion: should there always be such a date? Should there be a minimal data (for RDM compliance?)***"
+  },
+  "Data_Access_Restriction": {
+    "ui:help": "Archived data is only accessible internally. Specify who may access the data within the faculty"
+  },
+  "Contributor": {
+    "items": {
+      "Name": {
+        "ui:help": "The name of the persons who deposits this data package to the archive"
+      }
+    }
+  },
+  "Creator": {
+    "items": {
+      "Name": {
+        "ui:help": "The name of the person(s) who created (a version of) the data package"
+      }
+    }
+  },
+  "License": {
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+  }
+}
+
