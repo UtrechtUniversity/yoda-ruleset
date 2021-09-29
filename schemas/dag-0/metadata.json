@@ -718,7 +718,7 @@
       ]
     }
   },
-  "title": "Metadata for Geosciences Data Archive",
+  "title": "Metadata for Data Archive Geosciences",
   "type": "object",
   "required": [
     "Title",
@@ -752,7 +752,7 @@
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
         "title": "Discipline",
-        "default": null
+        "default": "Natural Sciences - Earth and related environmental sciences (1.5)"
       }
     },
     "Language": {
