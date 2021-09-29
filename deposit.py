@@ -15,7 +15,7 @@ __all__ = ['api_deposit_path',
            'api_deposit_submit',
            'api_deposit_clear']
 
-DEPOSIT_GROUP = "deposit-test"
+DEPOSIT_GROUP = "deposit-pilot"
 
 
 def determine_deposit_path(ctx):
