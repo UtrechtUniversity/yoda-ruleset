@@ -1711,7 +1711,7 @@ def send_emails(ctx, obj_name, status_to):
         datarequest_approved_emails(ctx, request_id)
 
     elif datarequest_status == status.DAO_APPROVED:
-        datarequest_approved_emails(ctx, request_id, dao = True)
+        datarequest_approved_emails(ctx, request_id, dao=True)
 
     elif datarequest_status == status.DTA_READY:
         dta_post_upload_actions_emails(ctx, request_id)
@@ -1866,10 +1866,10 @@ def evaluation_emails(ctx, request_id, datarequest_status):
 
     # Send emails
     if datarequest_status == status.APPROVED:
-        datarequest_approved_emails(ctx, request_id, dao = False)
+        datarequest_approved_emails(ctx, request_id, dao=False)
     elif datarequest_status == status.APPROVED_PRIVATE:
-            mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name']
-            + ' ' + researcher['family_name'], request_id, cc)
+        mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+                                            + researcher['family_name'], request_id, cc)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
@@ -1886,7 +1886,7 @@ def preregistration_submit_emails(ctx, request_id):
         mail_preregistration_submit(ctx, pm_email, request_id)
 
 
-def datarequest_approved_emails(ctx, request_id, dao = False):
+def datarequest_approved_emails(ctx, request_id, dao=False):
     # Get parameters
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']
@@ -1896,7 +1896,7 @@ def datarequest_approved_emails(ctx, request_id, dao = False):
 
     # Send emails
     mail_datarequest_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
-                                 + researcher['family_name'], request_id, cc, dao)
+                                         + researcher['family_name'], request_id, cc, dao)
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
         mail_datarequest_approved_dm(ctx, datamanager_email, request_id, dao)
@@ -2178,7 +2178,7 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_approved_dm(ctx, datamanager_email, request_id, dao = False):
+def mail_datarequest_approved_dm(ctx, datamanager_email, request_id, dao=False):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
@@ -2194,7 +2194,7 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_approved_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao = False):
+def mail_datarequest_approved_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao=False):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
