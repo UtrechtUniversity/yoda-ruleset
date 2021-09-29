@@ -122,10 +122,6 @@
               "type": "string",
               "title": "How do you evaluate the study design?"
             },
-            "logistical_feasibility": {
-              "type": "string",
-              "title": "Is the proposal logistically feasible?"
-            },
             "study_value": {
               "type": "string",
               "title": "Is the study scientifically valuable?"
@@ -139,7 +135,6 @@
             "informed_consent_fit",
             "research_question_answerability",
             "study_quality",
-            "logistical_feasibility",
             "study_value",
             "researcher_expertise"
           ]
