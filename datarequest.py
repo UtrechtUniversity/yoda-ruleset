@@ -1333,6 +1333,13 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
 
 def datarequest_evaluation_get(ctx, request_id):
+    """Retrieve an evaluation
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Evaluation JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
