@@ -1866,10 +1866,10 @@ def evaluation_emails(ctx, request_id, datarequest_status):
 
     # Send emails
     if datarequest_status == status.APPROVED:
-        datarequest_approved_emails(ctx, request_id, dao=False)
-    elif datarequest_status == status.APPROVED_PRIVATE:
         mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
+    elif datarequest_status == status.APPROVED_PRIVATE:
+        datarequest_approved_emails(ctx, request_id, dao=False)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
@@ -2174,7 +2174,7 @@ def mail_preregistration_submit(ctx, pm_email, request_id):
                      subject="YOUth data request {}: preregistration submitted".format(request_id),
                      body="""Dear project manager,
 
-Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the preregistration confirmation form: https://{}/datarequest/preregistration_confirm/{}.
+Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the data request, where you may confirm the preregistration: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
