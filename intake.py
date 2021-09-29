@@ -263,7 +263,7 @@ def get_dataset_details(ctx, dataset_id, path):
         )
         for row in iter:
             dataset['datasetCreateName'] = row[1]
-            dataset['datasetCreateDate'] =  int(row[2])
+            dataset['datasetCreateDate'] = int(row[2])
             dataset['datasetCreateDateFormatted'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
             dataset['datasetCreatedByWhen'] = row[1] + ':' + row[2]
 
