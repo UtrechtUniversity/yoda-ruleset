@@ -703,6 +703,10 @@
     "optionsLicense": {
       "type": "string",
       "enum": [
+        "Creative Commons Attribution 4.0 International Public License",
+        "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Zero v1.0 Universal",
+        "Open Data Commons Attribution License (ODC-By) v1.0",
         "Custom"
       ]
     },
@@ -874,7 +878,7 @@
       "$ref": "#/definitions/optionsDataType",
       "title": "Data type",
       "default": "Dataset"
-    },	
+    },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
       "title": "Data classification"
@@ -951,13 +955,12 @@
     "License": {
       "$ref": "#/definitions/optionsLicense",
       "title": "License",
-	  "default": "Custom"
+	  "default": "Creative Commons Attribution 4.0 International Public License"
     },
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
       "title": "Data package access",
-      "default": "Closed - Internal access only (faculty)"
+      "default": "Closed"
     }
   }
 }
-

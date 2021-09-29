@@ -52,7 +52,7 @@
     "ui:help": "Indicate when the data must be removed (for legal reasons) ***pilot-discussion: should there always be such a date? Should there be a minimal data (for RDM compliance?)***"
   },
   "Data_Access_Restriction": {
-    "ui:help": "Archived data is only accessible internally. Specify who may access the data within the faculty"
+    "ui:help": "Archived data is only accessible internally."
   },
   "Contributor": {
     "items": {
@@ -72,4 +72,3 @@
     "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
   }
 }
-
