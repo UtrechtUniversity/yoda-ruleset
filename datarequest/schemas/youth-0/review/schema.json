@@ -120,7 +120,7 @@
             },
             "study_quality": {
               "type": "string",
-              "title": "Is the quality of the proposal good? Is the study design correct?"
+              "title": "How do you evaluate the study design?"
             },
             "logistical_feasibility": {
               "type": "string",
