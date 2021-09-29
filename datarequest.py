@@ -1908,6 +1908,9 @@ def dta_post_upload_actions_emails(ctx, request_id):
     researcher       = datarequest['contact']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
+    # (Also) cc project manager
+    pm_email, _      = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    cc               = cc + ',{}'.format(pm_email) if cc else pm_email
 
     # Send email
     mail_dta(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'],
@@ -1917,11 +1920,12 @@ def dta_post_upload_actions_emails(ctx, request_id):
 def signed_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
+    cc, _ = pm_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
 
     # Send email
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_signed_dta(ctx, datamanager_email, request_id)
+        mail_signed_dta(ctx, datamanager_email, request_id, cc)
 
 
 def data_ready_emails(ctx, request_id):
@@ -2276,9 +2280,10 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_signed_dta(ctx, datamanager_email, request_id):
+def mail_signed_dta(ctx, datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=datamanager_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {}: DTA signed".format(request_id),
                      body="""Dear data manager,
