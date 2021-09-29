@@ -1930,11 +1930,10 @@ def data_ready_emails(ctx, request_id):
     researcher           = datarequest['contact']
     researcher_email     = datarequest_owner_get(ctx, request_id)
     cc                   = cc_email_addresses_get(researcher)
-    datamanager_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_DM))[0]
 
     # Send email
     mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' '
-                    + researcher['family_name'], datamanager_email, request_id, cc)
+                    + researcher['family_name'], request_id, cc)
 
 
 ###################################################
@@ -2295,7 +2294,7 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_data_ready(ctx, researcher_email, researcher_name, datamanager_email, request_id, cc):
+def mail_data_ready(ctx, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
@@ -2303,8 +2302,8 @@ def mail_data_ready(ctx, researcher_email, researcher_name, datamanager_email, r
                      subject="YOUth data request {}: data ready".format(request_id),
                      body="""Dear {},
 
-The data you have requested is ready for you to download! For information on how to access the data through Yoda, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda or contact the YOUth data manager ({}).
+The data you have requested has been made available to you within a new folder in Yoda. You can access the data through the webportal in the "research" area or you can connect Yoda as a network drive and access the data through your file explorer. For information on how to access the data, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda
 
 With kind regards,
 YOUth
-""".format(researcher_name, datamanager_email))
+""".format(researcher_name))
