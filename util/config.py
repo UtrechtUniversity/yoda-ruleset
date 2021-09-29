@@ -73,6 +73,7 @@ class Config(object):
 # Note: Must name all valid config items.
 config = Config(environment=None,
                 resource_primary=[],
+                resource_trigger_pol=[],
                 resource_replica=None,
                 resource_research=None,
                 resource_vault=None,
