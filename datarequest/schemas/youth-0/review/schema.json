@@ -128,11 +128,11 @@
             },
             "study_value": {
               "type": "string",
-              "title": "Is the study valuable?"
+              "title": "Is the study scientifically valuable?"
             },
             "researcher_expertise": {
               "type": "string",
-              "title": "Does the researcher have the expertise necessary to correctly analyze and report on the research question at hand?"
+              "title": "Do you believe that the researcher team has the expertise necessary to correctly analyze and report on the research question at hand?"
             }
           },
           "required": [
