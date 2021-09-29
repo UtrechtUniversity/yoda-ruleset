@@ -38,6 +38,9 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_review_submit',
            'api_datarequest_reviews_get',
            'api_datarequest_evaluation_submit',
+           'api_datarequest_preregistration_submit',
+           'api_datarequest_preregistration_get',
+           'api_datarequest_preregistration_confirm',
            'api_datarequest_feedback_get',
            'api_datarequest_dta_upload_permission',
            'api_datarequest_dta_post_upload_actions',
@@ -75,6 +78,7 @@ DM_REVIEW            = "datamanager_review"
 REVIEW               = "review"
 ASSIGNMENT           = "assignment"
 EVALUATION           = "evaluation"
+PREREGISTRATION      = "preregistration"
 FEEDBACK             = "feedback"
 DTA_PATHNAME         = "dta"
 SIGDTA_PATHNAME      = "signed_dta"
@@ -109,9 +113,13 @@ class status(Enum):
     REVIEWED                          = 'REVIEWED'
 
     APPROVED                          = 'APPROVED'
+    APPROVED_PRIVATE                  = 'APPROVED_PRIVATE'
     REJECTED                          = 'REJECTED'
     RESUBMIT                          = 'RESUBMIT'
 
+    PREREGISTRATION_SUBMITTED         = 'PREREGISTRATION_SUBMITTED'
+
+    PREREGISTRATION_CONFIRMED         = 'PREREGISTRATION_CONFIRMED'
     DAO_APPROVED                      = 'DAO_APPROVED'
 
     DTA_READY                         = 'DTA_READY'
@@ -158,10 +166,15 @@ status_transitions = [(status(x),
                                    ('UNDER_REVIEW',                'REVIEWED'),
 
                                    ('REVIEWED',                    'APPROVED'),
+                                   ('REVIEWED',                    'APPROVED_PRIVATE'),
                                    ('REVIEWED',                    'REJECTED'),
                                    ('REVIEWED',                    'RESUBMIT'),
 
-                                   ('APPROVED',                    'DTA_READY'),
+                                   ('APPROVED',                    'PREREGISTRATION_SUBMITTED'),
+                                   ('PREREGISTRATION_SUBMITTED',   'PREREGISTRATION_CONFIRMED'),
+
+                                   ('PREREGISTRATION_CONFIRMED',   'DTA_READY'),
+                                   ('APPROVED_PRIVATE',            'DTA_READY'),
                                    ('DAO_APPROVED',                'DTA_READY'),
 
                                    ('DTA_READY',                   'DTA_SIGNED'),
@@ -611,7 +624,12 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
 
     # Revoke temporary write permission
     msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
-    ctx.adminTempWritePermission(coll_path, "revoke")
+    # If invoking user is request owner, set read permission for this user on the collection again,
+    # else revoke individual user permissions on collection entirely (invoking users will still have
+    # appropriate permissions through group membership, e.g. the project managers group)
+    permission = "read" if user.name(ctx) == datarequest_owner_get(ctx, coll_path.split('/')[-1]) \
+                 else "revoke"
+    ctx.adminTempWritePermission(coll_path, permission)
 
 
 @api.make()
@@ -1298,7 +1316,12 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         if status_get(ctx, request_id) == status.DAO_SUBMITTED:
             status_set(ctx, request_id, status.DAO_APPROVED)
         else:
-            status_set(ctx, request_id, status.APPROVED)
+            # Get privacy of data request
+            public_request = json.loads(datarequest_get(ctx, request_id))['datarequest']['publication_approval']
+            if public_request:
+                status_set(ctx, request_id, status.APPROVED)
+            else:
+                status_set(ctx, request_id, status.APPROVED_PRIVATE)
     elif decision == "Rejected":
         datarequest_feedback_write(ctx, request_id, data['feedback_for_researcher'])
         status_set(ctx, request_id, status.REJECTED)
@@ -1385,6 +1408,97 @@ def api_datarequest_feedback_get(ctx, request_id):
 
 
 @api.make()
+def api_datarequest_preregistration_submit(ctx, data, request_id):
+    """Persist a preregistration to disk.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the preregistration
+    :param request_id: Unique identifier of the data request
+
+    :returns: API status
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, PREREGISTRATION):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(PREREGISTRATION))
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.APPROVED])
+
+    # Construct path to collection
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+
+    # Write form data to disk
+    try:
+        file_write_and_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [GROUP_PM])
+    except error.UUError:
+        return api.Error('write_error', 'Could not write preregistration data to disk')
+
+    # Set status
+    status_set(ctx, request_id, status.PREREGISTRATION_SUBMITTED)
+
+
+@api.make()
+def api_datarequest_preregistration_get(ctx, request_id):
+    """Retrieve a preregistration.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Preregistration JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], None)
+
+    return datarequest_preregistration_get(ctx, request_id)
+
+
+def datarequest_preregistration_get(ctx, request_id):
+    """Retrieve a preregistration.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Preregistration JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = PREREGISTRATION + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name)
+
+    # Get the contents of the review JSON file
+    try:
+        return data_object.read(ctx, file_path)
+    except error.UUError as e:
+        return api.Error("ReadError", "Could not get preregistration data: {}.".format(e))
+
+
+@api.make()
+def api_datarequest_preregistration_confirm(ctx, request_id):
+    """Set the status of a submitted datarequest to CONTRIBUTION_CONFIRMED.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.PREREGISTRATION_SUBMITTED])
+
+    status_set(ctx, request_id, status.PREREGISTRATION_CONFIRMED)
+
+
+@api.make()
 def api_datarequest_dta_upload_permission(ctx, request_id, action):
     """
     :param ctx:        Combined type of a callback and rei struct
@@ -1399,6 +1513,7 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
+                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Check if action is valid
@@ -1423,6 +1538,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
+                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Set permissions
@@ -1576,12 +1692,19 @@ def send_emails(ctx, obj_name, status_to):
         review_emails(ctx, request_id)
 
     elif datarequest_status in (status.APPROVED,
+                                status.APPROVED_PRIVATE,
                                 status.REJECTED,
                                 status.RESUBMIT):
         evaluation_emails(ctx, request_id, datarequest_status)
 
+    elif datarequest_status == status.PREREGISTRATION_SUBMITTED:
+        preregistration_submit_emails(ctx, request_id)
+
+    elif datarequest_status == status.PREREGISTRATION_CONFIRMED:
+        datarequest_approved_emails(ctx, request_id)
+
     elif datarequest_status == status.DAO_APPROVED:
-        dao_approved_emails(ctx, request_id)
+        datarequest_approved_emails(ctx, request_id, dao = True)
 
     elif datarequest_status == status.DTA_READY:
         dta_post_upload_actions_emails(ctx, request_id)
@@ -1736,12 +1859,10 @@ def evaluation_emails(ctx, request_id, datarequest_status):
 
     # Send emails
     if datarequest_status == status.APPROVED:
-        datamanager_members = group.members(ctx, GROUP_DM)
-        mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
-                                            + researcher['family_name'], request_id, cc)
-        for datamanager_member in datamanager_members:
-            datamanager_email, _ = datamanager_member
-            mail_evaluation_approved_dm(ctx, datamanager_email, request_id)
+        datarequest_approved_emails(ctx, request_id, dao = False)
+    elif datarequest_status == status.APPROVED_PRIVATE:
+            mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name']
+            + ' ' + researcher['family_name'], request_id, cc)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
@@ -1752,7 +1873,13 @@ def evaluation_emails(ctx, request_id, datarequest_status):
                       cc)
 
 
-def dao_approved_emails(ctx, request_id):
+def preregistration_submit_emails(ctx, request_id):
+    for pm_member in group.members(ctx, GROUP_PM):
+        pm_email, _ = pm_member
+        mail_preregistration_submit(ctx, pm_email, request_id)
+
+
+def datarequest_approved_emails(ctx, request_id, dao = False):
     # Get parameters
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']
@@ -1761,11 +1888,11 @@ def dao_approved_emails(ctx, request_id):
     datamanager_members = group.members(ctx, GROUP_DM)
 
     # Send emails
-    mail_dao_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
-                                 + researcher['family_name'], request_id, cc)
+    mail_datarequest_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+                                 + researcher['family_name'], request_id, cc, dao)
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_evaluation_approved_dm(ctx, datamanager_email, request_id)
+        mail_datarequest_approved_dm(ctx, datamanager_email, request_id, dao)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -2023,20 +2150,32 @@ def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
                      subject="YOUth data request {}: approved".format(request_id),
                      body="""Dear {},
 
-Congratulations! Your data request has been approved. The YOUth data manager will now prepare a Data Transfer Agreement for you to sign. You will be notified when it is ready.
-
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+Congratulations! Your data request has been approved. You are now asked to preregister your study in the YOUth Open Science Framework preregistry. To do so, please navigate to the preregistration form using this link: https://{}/datarequest/preregister/{}.
 
 With kind regards,
 YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_evaluation_approved_dm(ctx, datamanager_email, request_id):
+def mail_preregistration_submit(ctx, pm_email, request_id):
+    return mail.send(ctx,
+                     to=pm_email,
+                     actor=user.full_name(ctx),
+                     subject="YOUth data request {}: preregistration submitted".format(request_id),
+                     body="""Dear project manager,
+
+Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the preregistration confirmation form: https://{}/datarequest/preregistration_confirm/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
+
+
+def mail_datarequest_approved_dm(ctx, datamanager_email, request_id, dao = False):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: approved".format(request_id),
+                     subject=("YOUth data request {} (data assessment only): approved".format(request_id) if dao else "YOUth data request {}: approved".format(request_id)),
                      body="""Dear data manager,
 
 Data request {} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
@@ -2048,12 +2187,12 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_dao_approved_researcher(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_datarequest_approved_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao = False):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (data assessment only): approved".format(request_id),
+                     subject=("YOUth data request {} (data assessment only): approved".format(request_id) if dao else "YOUth data request {}: approved".format(request_id)),
                      body="""Dear {},
 
 Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
