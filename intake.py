@@ -241,6 +241,7 @@ def get_dataset_details(ctx, dataset_id, path):
     dataset['datasetStatus'] = 'scanned'
     dataset['datasetCreateName'] = '==UNKNOWN=='
     dataset['datasetCreateDate'] = 0
+    dataset['datasetCreateDateFormatted'] = ''
     dataset['datasetErrors'] = 0
     dataset['datasetWarnings'] = 0
     dataset['datasetComments'] = 0
@@ -262,7 +263,8 @@ def get_dataset_details(ctx, dataset_id, path):
         )
         for row in iter:
             dataset['datasetCreateName'] = row[1]
-            dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
+            dataset['datasetCreateDate'] =  int(row[2])
+            dataset['datasetCreateDateFormatted'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
             dataset['datasetCreatedByWhen'] = row[1] + ':' + row[2]
 
         iter = genquery.row_iterator(
@@ -316,7 +318,8 @@ def get_dataset_details(ctx, dataset_id, path):
                 )
                 for row in iter:
                     dataset['datasetCreateName'] = row[0]
-                    dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
+                    dataset['datasetCreateDate'] = int(row[1])
+                    dataset['datasetCreateDateFormatted'] = time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
                     dataset['datasetCreatedByWhen'] = row[0] + ':' + row[1]
 
             iter = genquery.row_iterator(
