@@ -19,9 +19,6 @@
   "contribution": {
     "ui:widget": "textarea"
   },
-  "informed_consent_fit": {
-    "ui:widget": "textarea"
-  },
   "research_question_answerability": {
     "ui:widget": "textarea"
   },
