@@ -28,9 +28,6 @@
   "study_quality": {
     "ui:widget": "textarea"
   },
-  "logistical_feasibility": {
-    "ui:widget": "textarea"
-  },
   "study_value": {
     "ui:widget": "textarea"
   },
