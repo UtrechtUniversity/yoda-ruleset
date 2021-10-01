@@ -583,8 +583,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         # Normal case
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
                       offset=offset, limit=limit, output=query.AS_DICT)
-        ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
-        qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
+        qcoll_title = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
                             offset=offset, limit=limit, output=query.AS_DICT)
     else:
         # DMC member case
@@ -623,8 +622,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
-    return OrderedDict([('total', qcoll.total_rows()),
-                        ('items', colls)])
+    return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
 
 
 def file_write_and_lock(ctx, coll_path, filename, data, readers):
