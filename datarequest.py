@@ -85,8 +85,15 @@ SIGDTA_PATHNAME      = "signed_dta"
 
 
 ###################################################
-#          Datarequest status functions           #
+#           Datarequest info functions            #
 ###################################################
+
+# List of valid datarequest types
+class type(Enum):
+    REGULAR = "REGULAR"
+    PRIVATE = "PRIVATE"
+    DAO     = "DAO"
+
 
 # List of valid datarequest statuses
 class status(Enum):
@@ -239,6 +246,29 @@ def status_get(ctx, request_id):
         return status.IN_SUBMISSION
     else:
         raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
+
+
+def type_get(ctx, request_id):
+    """Get the type of a data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Type of given data request
+    """
+    # Get datarequest
+    datarequest = json.loads(datarequest_get(ctx, request_id))
+
+    # Determine type
+    if datarequest['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
+        datarequest_type = type.DAO
+    elif not datarequest['datarequest']['publication_approval']:
+        datarequest_type = type.PRIVATE
+    else:
+        datarequest_type = type.REGULAR
+
+    # Return datarequest type
+    return datarequest_type
 
 
 ###################################################
@@ -786,6 +816,9 @@ def api_datarequest_get(ctx, request_id):
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DMC", "OWN"], None)
 
+    # Get request type
+    datarequest_type = type_get(ctx, request_id).value
+
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
 
@@ -793,7 +826,8 @@ def api_datarequest_get(ctx, request_id):
     datarequest = datarequest_get(ctx, request_id)
 
     # Return JSON encoded results
-    return {'requestJSON': datarequest, 'requestStatus': datarequest_status}
+    return {'requestJSON': datarequest, 'requestType': datarequest_type,
+            'requestStatus': datarequest_status}
 
 
 def datarequest_get(ctx, request_id):
