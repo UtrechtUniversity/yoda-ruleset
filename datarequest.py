@@ -557,6 +557,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'title':       x['META_DATA_ATTR_VALUE']}
 
+    def transform_status(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        return {'id':          x['COLL_NAME'].split('/')[-1],
+                'status':      x['META_DATA_ATTR_VALUE']}
+
     if sort_on == 'modified':
         # FIXME: Sorting on modify date is borked: There appears to be no
         # reliable way to filter out replicas this way - multiple entries for
@@ -572,22 +579,42 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
-                  offset=offset, limit=limit, output=query.AS_DICT)
-
-    ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
-    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
-                        offset=offset, limit=limit, output=query.AS_DICT)
+    if not user.is_member_of(ctx, GROUP_DMC):
+        # Normal case
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+        ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
+        qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
+                            offset=offset, limit=limit, output=query.AS_DICT)
+    else:
+        # DMC member case
+        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx)),
+                      offset=offset, limit=limit, output=query.AS_DICT)
+        if len(list(qcoll)) > 0:
+            coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
+            qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+            qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+        else:
+            return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
 
     colls = map(transform, list(qcoll))
-    colls_title = map(transform_title, list(qcoll_title))
 
     # Merge datarequest title in results.
+    colls_title = map(transform_title, list(qcoll_title))
     for datarequest_title in colls_title:
         for datarequest in colls:
             if datarequest_title['id'] == datarequest['id']:
                 datarequest['title'] = datarequest_title['title']
                 break
+
+    # Merge datarequest status in results, if applicable:
+    if user.is_member_of(ctx, GROUP_DMC):
+        colls_status = map(transform_status, list(qcoll_status))
+        for datarequest_status in colls_status:
+            for datarequest in colls:
+                if datarequest_title['id'] == datarequest['id']:
+                    datarequest['status'] = datarequest_status['status']
+                    break
 
     if len(colls) == 0:
         # No results at all?
