@@ -268,7 +268,7 @@ def folder_secure(ctx, coll, target):
             if modify_access != b'\x01':
                 try:
                     msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-                except msi.Error as e:
+                except msi.Error:
                     return '1'
 
             avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
@@ -277,7 +277,7 @@ def folder_secure(ctx, coll, target):
             if modify_access != b'\x01':
                 try:
                     msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-                except msi.Error as e:
+                except msi.Error:
                     log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
                     return '1'
 
@@ -508,7 +508,7 @@ def get_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IISTATUSATTRNAME]
         try:
             return constants.research_package_state(x)
-        except Exception as e:
+        except Exception:
             log.write(ctx, 'Invalid folder status <{}>'.format(x))
 
     return constants.research_package_state.FOLDER

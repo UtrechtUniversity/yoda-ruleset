@@ -32,12 +32,6 @@ def determine_deposit_path(ctx):
         deposit_path = row[0]
 
     if deposit_path == "":
-        group = coll
-
-        parts = group.split('-')
-        base_name = '-'.join(parts[1:])
-
-        parts = coll.split('/')
         datapackage_name = pathutil.basename(coll)
 
         if len(datapackage_name) > 235:
@@ -126,7 +120,7 @@ def api_deposit_clear(ctx):
 
     try:
         collection.remove(ctx, coll)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()

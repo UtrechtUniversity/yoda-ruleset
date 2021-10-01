@@ -38,7 +38,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
-    except ValidationError as e:
+    except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # not in home - a groupname must be present ie at least 2!?
@@ -78,7 +78,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     # All requirements OK
     try:
         collection.create(ctx, coll_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -102,7 +102,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
-    except ValidationError as e:
+    except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # Same name makes no sense
@@ -146,7 +146,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     # All requirements OK
     try:
         collection.rename(ctx, coll + '/' + org_folder_name, coll_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -193,7 +193,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
     # All requirements OK
     try:
         collection.remove(ctx, coll_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -256,7 +256,7 @@ def api_research_file_copy(ctx, filepath, new_filepath):
     # All requirements OK
     try:
         data_object.copy(ctx, filepath, new_filepath)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -320,7 +320,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     # All requirements OK
     try:
         data_object.rename(ctx, coll + '/' + org_file_name, path_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -383,7 +383,7 @@ def api_research_file_move(ctx, filepath, new_filepath):
     # All requirements OK
     try:
         data_object.rename(ctx, filepath, new_filepath)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -426,7 +426,7 @@ def api_research_file_delete(ctx, coll, file_name):
     # All requirements OK
     try:
         data_object.remove(ctx, path_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()

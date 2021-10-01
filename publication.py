@@ -113,7 +113,6 @@ def generate_system_json(ctx, publication_config, publication_state):
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
 
-    vaultPackage = publication_state["vaultPackage"]
     randomId = publication_state["randomId"]
     system_json_path = temp_coll + "/" + randomId + "-combi.json"
 
@@ -195,7 +194,7 @@ def save_publication_state(ctx, vault_package, publication_state):
     :param vault_package:     Path to the package in the vault
     :param publication_state: Dict with state of the publication process
     """
-    ret_val = ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
+    ctx.msi_rmw_avu("-C", vault_package, constants.UUORGMETADATAPREFIX + 'publication_%', "%", "%")
     for key in publication_state.keys():
         if publication_state[key] != "":
             avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'publication_' + key, publication_state[key])
@@ -218,9 +217,6 @@ def set_update_publication_state(ctx, vault_package):
     coll_status = vault.get_coll_vault_status(ctx, vault_package).value
     if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
-
-    # get publication configuration
-    config = get_publication_config(ctx)
 
     publication_state = get_publication_state(ctx, vault_package)
     if publication_state["status"] != "OK":
@@ -326,8 +322,6 @@ def generate_datacite_xml(ctx, publication_config, publication_state):
 
     randomId = publication_state["randomId"]
 
-    vaultPackage = publication_state["vaultPackage"]
-
     temp_coll, coll = pathutil.chop(combiJsonPath)
     datacite_xml_path = temp_coll + "/" + randomId + "-dataCite.xml"
 
@@ -417,8 +411,6 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
-    vaultPackage = publication_state["vaultPackage"]
-    yodaDOI = publication_state["yodaDOI"]
     publicVHost = publication_config["publicVHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
@@ -522,9 +514,10 @@ def set_access_restrictions(ctx, vault_package, publication_state):
 
         try:
             msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
             return
+
     # We cannot set "null" as value in a kvp as this will crash msi_json_objops if we ever perform a uuKvp2JSON on it.
     if access_level == "null":
         publication_state["anonymousAccess"] = "no"
@@ -619,7 +612,7 @@ def process_publication(ctx, vault_package):
     if "combiJsonPath" not in publication_state:
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -631,7 +624,7 @@ def process_publication(ctx, vault_package):
     if "dataCiteXmlPath" not in publication_state:
         try:
             generate_datacite_xml(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -643,7 +636,7 @@ def process_publication(ctx, vault_package):
     if "DOIAvailable" not in publication_state:
         try:
             check_doi_availability(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Retry"
 
         if publication_state["status"] == "Retry":
@@ -653,7 +646,7 @@ def process_publication(ctx, vault_package):
     if "dataCiteMetadataPosted" not in publication_state:
         try:
             post_metadata_to_datacite(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -666,7 +659,7 @@ def process_publication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_config, publication_state, "publish")
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -714,49 +707,13 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
-
-        # MAIL datamanager and researcher involved
-        title = ""
-        title_key = constants.UUUSERMETADATAPREFIX + "0_Title"
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + title_key + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            title = row[0]
-
-        datamanager = ""
-        datamanager_key = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + datamanager_key + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            user_name_and_zone = row[0]
-            datamanager = user.from_str(ctx, user_name_and_zone)[0]
-
-        researcher_key = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + vault_package + "' AND META_COLL_ATTR_NAME = '" + researcher_key + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            user_name_and_zone = row[0]
-            researcher = user.from_str(ctx, user_name_and_zone)[0]
-
-        doi = publication_state["yodaDOI"]
-
-        sender = user.full_name(ctx)
     else:
         # The publication was a success
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
+    log.write(ctx, "procpublication_configess_publication: All steps for publication completed <{}>".format(vault_package))
     return publication_state["status"]
 
 
@@ -813,7 +770,7 @@ def process_depublication(ctx, vault_package):
     if "combiJsonPath" not in publication_state:
         try:
             generate_system_json(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -825,7 +782,7 @@ def process_depublication(ctx, vault_package):
     if "dataCiteMetadataPosted" not in publication_state:
         try:
             remove_metadata_from_datacite(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -838,7 +795,7 @@ def process_depublication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_config, publication_state, "depublish")
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -936,7 +893,7 @@ def process_republication(ctx, vault_package):
     if "combiJsonPath" not in publication_state:
         try:
             generate_combi_json(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -948,7 +905,7 @@ def process_republication(ctx, vault_package):
     if "dataCiteXmlPath" not in publication_state:
         try:
             generate_datacite_xml(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -960,7 +917,7 @@ def process_republication(ctx, vault_package):
     if "dataCiteMetadataPosted" not in publication_state:
         try:
             post_metadata_to_datacite(ctx, publication_config, publication_state)
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Retry"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -973,7 +930,7 @@ def process_republication(ctx, vault_package):
         # Create landing page
         try:
             generate_landing_page(ctx, publication_config, publication_state, "publish")
-        except msi.Error as e:
+        except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -1062,7 +1019,7 @@ def update_publication(ctx, vault_package):
     # Generate Combi Json consisting of user and system metadata
     try:
         generate_combi_json(ctx, publication_config, publication_state)
-    except msi.Error as e:
+    except msi.Error:
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1073,7 +1030,7 @@ def update_publication(ctx, vault_package):
     # Generate DataCite XML
     try:
         generate_datacite_xml(ctx, publication_config, publication_state)
-    except msi.Error as e:
+    except msi.Error:
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1084,7 +1041,7 @@ def update_publication(ctx, vault_package):
     # Send DataCite XML to metadata end point
     try:
         post_metadata_to_datacite(ctx, publication_config, publication_state)
-    except msi.Error as e:
+    except msi.Error:
         publication_state["status"] = "Retry"
 
     save_publication_state(ctx, vault_package, publication_state)
@@ -1095,7 +1052,7 @@ def update_publication(ctx, vault_package):
     # Create landing page
     try:
         generate_landing_page(ctx, publication_config, publication_state, "publish")
-    except msi.Error as e:
+    except msi.Error:
         publication_state["status"] = "Unrecoverable"
 
     save_publication_state(ctx, vault_package, publication_state)

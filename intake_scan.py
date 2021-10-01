@@ -153,7 +153,6 @@ def intake_tokens_identify_dataset(tokens):
     """
     required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
 
-    complete = False
     for req_token in required:
         # required tokens must be present and must have a value
         if req_token not in tokens or tokens[req_token] == "":
@@ -552,7 +551,7 @@ def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
             dataset_parent = toplevels[0]
         else:
             dataset_parent = pathutil.dirname(toplevels[0])
-    except Exception as e:
+    except Exception:
         dataset_parent = root
 
     intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.index.jpg', '(.*/)?I[0-9]{7}\.index\.jpe?g', 13, -1)
@@ -582,7 +581,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
             parent_coll = tl_objects[0]
         else:
             parent_coll = pathutil.dirname(tl_objects[0])
-    except Exception as e:
+    except Exception:
         parent_coll = '/'
 
     """

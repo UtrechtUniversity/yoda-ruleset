@@ -246,8 +246,6 @@ def get_dataset_details(ctx, dataset_id, path):
     dataset['experiment_type'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    directory = dataset_parts[4]
-
     dataset['datasetStatus'] = 'scanned'
     dataset['datasetCreateName'] = '==UNKNOWN=='
     dataset['datasetCreateDate'] = 0

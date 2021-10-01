@@ -331,7 +331,7 @@ def vault_write_license(ctx, vault_pkg_coll):
             # Fix ACLs.
             try:
                 ctx.iiCopyACLsFromParent(license_file, 'default')
-            except Exception as e:
+            except Exception:
                 log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
             log.write(ctx, "rule_vault_write_license: License text not available for <{}>".format(license))
@@ -452,7 +452,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IIVAULTSTATUSATTRNAME]
         try:
             return constants.vault_package_state(x)
-        except Exception as e:
+        except Exception:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
 
     return constants.vault_package_state.EMPTY
@@ -496,7 +496,7 @@ def api_vault_collection_details(ctx, path):
     action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
     iter = genquery.row_iterator(
         "COLL_ID",
-        "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+        "META_COLL_ATTR_NAME = '" + action_status + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
         genquery.AS_LIST, ctx
     )
     for _row in iter:
@@ -729,7 +729,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     dest_path = destination
@@ -747,7 +747,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         # CREATE COLLECTION
         try:
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         if markIncomplete:
@@ -757,13 +757,13 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         try:
             # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
             ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     return 0
@@ -775,7 +775,6 @@ def set_vault_permissions(ctx, group_name, folder, target):
     base_name = '-'.join(parts[1:])
 
     parts = folder.split('/')
-    datapackage_name = parts[-1]
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
     # Check if noinherit is set
@@ -818,7 +817,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
             try:
                 msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
                 log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
-            except msi.Error as e:
+            except msi.Error:
                 log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
 
     # Check if vault group has ownership
@@ -894,7 +893,7 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
         return ['Success', '']
-    except msi.Error as e:
+    except msi.Error:
         current_coll_status = get_coll_vault_status(ctx, coll).value
         is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_coll_status, new_coll_status)
         if not is_legal:
@@ -905,7 +904,6 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
                 # landing page and doi have to be present
 
                 # Landingpage URL.
-                landinpage_url = ""
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
@@ -1005,7 +1003,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",
-            "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+            "META_COLL_ATTR_NAME = '" + action_status + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
             genquery.AS_LIST, ctx
         )
         for _row in iter:

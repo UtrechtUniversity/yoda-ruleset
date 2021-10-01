@@ -125,7 +125,7 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
     vault_parent = pathutil.chop(vault_path)[0]
     try:
         collection.create(ctx, vault_parent, "1")
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_parent)
         return 2
 
@@ -145,7 +145,7 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
         # and finally remove the dataset original in the intake area
         try:
             collection.remove(ctx, toplevel_collection)
-        except Exception as e:
+        except Exception:
             log.write(ctx, "ERROR: unable to remove intake collection " + toplevel_collection)
             return 3
     else:
@@ -184,14 +184,14 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
     # create path to and including the toplevel collection (will create in-between levels)
     try:
         collection.create(ctx, vault_path, "1")
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_path)
         return 2
 
     # stamp the vault dataset collection with default metadata
     try:
         vault_dataset_add_default_metadata(ctx, vault_path, dataset_id)
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: default metadata could not be added to " + vault_path)
         return 3
 
@@ -224,7 +224,7 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
             # Now remove data object in intake
             try:
                 data_object.remove(ctx, intake_path)
-            except Exception as e:
+            except Exception:
                 log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
                 # error occurred during ingest, cleanup vault area and relay the error to user
                 # NB: keep the dataset in the vault queue so we can retry some other time
@@ -249,7 +249,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         try:
             ctx.msiDataObjChksum(object_path, "forceChksum=", 0)
             ctx.msiDataObjCopy(object_path, vault_path, 'verifyChksum=', 0)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         coll, dataname = pathutil.chop(object_path)
@@ -276,7 +276,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         # CREATE COLLECTION
         try:
             collection.create(ctx, vault_path, "1")
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         iter = genquery.row_iterator(
@@ -308,7 +308,7 @@ def vault_walk_remove_object(ctx, item_parent, item_name, is_collection):
             collection.remove(ctx, item_parent + '/' + item_name)
         else:
             data_object.remove(ctx, item_parent + '/' + item_name)
-    except Exception as e:
+    except Exception:
         status = 1
 
     return status
@@ -377,7 +377,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
     for key in keys:
         try:
             avu.set_on_data(ctx, vault_path, key, id_components[key])
-        except Exception as e:
+        except Exception:
             avu.set_on_coll(ctx, vault_path, key, id_components[key])
 
 

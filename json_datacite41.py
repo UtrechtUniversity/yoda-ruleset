@@ -393,8 +393,6 @@ def getGeoLocations(combi):
 
     try:
         for geoloc in combi['GeoLocation']:
-            temp_description_start = geoloc['Description_Temporal']['Start_Date']
-            temp_description_end = geoloc['Description_Temporal']['End_Date']
             spatial_description = geoloc['Description_Spatial']
 
             lon0 = str(geoloc['geoLocationBox']['westBoundLongitude'])

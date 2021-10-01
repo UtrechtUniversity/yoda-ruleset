@@ -51,7 +51,7 @@ def checkDataObject(file_path, file_size, file_checksum):
     # Open file and compute checksum.
     try:
         f = open(file_path, 'rb')
-    except OSError as e:
+    except OSError:
         return Status.ACCESS_DENIED
     else:
         # Determine if checksum is md5 or sha256.

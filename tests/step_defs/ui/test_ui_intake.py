@@ -41,7 +41,6 @@ def ui_intake_activate_study(browser, study):
     dropdown = browser.find_by_id('dropdown-select-study')
     dropdown.click()
     table = browser.find_by_id('select-study')
-    tbody = table.find_by_tag('tbody')
     rows = table.find_by_tag('tr')
     for row in rows:
         if row.has_class('ta-' + study):

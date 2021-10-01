@@ -211,7 +211,6 @@ def status_get(ctx, request_id):
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DATAREQUEST + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
 
     # Retrieve current status
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
@@ -315,7 +314,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
         # If both checks pass, user is permitted to perform action
         return True
-    except error.UUError as e:
+    except error.UUError:
         return api.Error("internal_error", "Something went wrong during permission checking.")
 
 
@@ -495,7 +494,7 @@ def datarequest_data_valid(ctx, data, schema_name):
         errors = list(validator.iter_errors(data))
 
         return len(errors) == 0
-    except error.UUJsonValidationError as e:
+    except error.UUJsonValidationError:
         # File may be missing or not valid JSON
         return api.Error("validation_error",
                          "{} form data could not be validated against its schema.".format(schema_name))
@@ -817,11 +816,11 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
-                                                     ATTACHMENTS_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
+                                         ATTACHMENTS_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DMC, coll_path)
 
 
 @api.make()
@@ -1425,10 +1424,10 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
                                                            status.DAO_APPROVED])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), coll_path)
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
@@ -1493,10 +1492,10 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), coll_path)
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)
