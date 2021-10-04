@@ -126,7 +126,7 @@ def _default1_teclab0(m):
     m['Geological_Structure'] = ['fault']
     m['Geomorphical_Feature'] = ['crest']
     m['Material'] = ['Air']
-    m['Apparatus']= ['Densimeter']
+    m['Apparatus'] = ['Densimeter']
     m['Software'] = ['CloudCompare']
     m['Measured_Property'] = ['Cohesion']
 
