@@ -456,9 +456,7 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
              "experiment_type": "",
              "pseudocode": ""}
     found_datasets = []
-    log.write(ctx, 'SCAN COLLECTION - START')
     found_datasets = intake_scan.intake_scan_collection(ctx, coll, scope, False, found_datasets)
-    log.write(ctx, 'SCAN COLLECTION - END')
 
     if tl_datasets_log_target in ['stdout', 'serverLog']:
         for subscope in found_datasets:
@@ -474,9 +472,7 @@ def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
                                                    + "> D<" + subscope['dataset_directory']
                                                    + ">"))
 
-    log.write(ctx, 'INTAKE CHECK DATASETS - START')
-    # intake_scan.intake_check_datasets(ctx, coll)
-    log.write(ctx, 'INTAKE CHECK DATASETS - END')
+    intake_scan.intake_check_datasets(ctx, coll)
 
 
 @api.make()

@@ -24,9 +24,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
 
     :returns: Found datasets
     """
-
-    log.write(ctx, 'SCAN COLLECTION ROOT: ' + root)
-
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -35,8 +32,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     )
     for row in iter:
         path = row[1] + '/' + row[0]
-
-        log.write(ctx, 'SCAN FILE: ' + path)
 
         # Determene lock state for object (no collectoin
         locked_state = object_is_locked(ctx, path, False)
@@ -74,8 +69,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
         path = row[0]
         counter = counter + 1
         dirname = pathutil.basename(path)
-
-        log.write(ctx, 'SCAN COLLECTION: ' + path)
 
         if dirname != '/':
             # get locked /frozen status
