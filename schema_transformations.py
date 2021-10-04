@@ -104,6 +104,97 @@ def _default1_default2(m):
     return m
 
 
+# only in teclab context
+# Fill in the blanks
+def _default1_teclab0(m):
+    # First bring to default2 level
+    m = _default1_default2(m)
+    m['Lab'] = ''
+    m[''] = 
+
+    # Required fields
+    #"Title",
+    #"Description",
+    m['Discipline'] = 'nalogue modelling of geologic processes'
+    m['Lab'] = 'aa45f98e5c098237d0c57b58e5f953e1',
+    # "Version",
+    # "Language",
+    # "Collected",
+
+    m['Main_Setting'] = 'basin plain setting'
+    m['Process_Hazard'] = 'deformation'
+    m['Geological_Structure'] = 'fault'
+    m['Geomorphical_Feature'] = 'crest'
+    m['Material'] = 'Air'
+    m['Apparatus']= 'Densimeter'
+    m['Software'] = 'CloudCompare'
+    m['Measured_Property'] = 'Cohesion'
+    # m['Tag'] = ''
+
+    if not 
+    "Related_Datapackage",
+    if not m.get('Related_Datapackage', False):
+        m['Related_Datapackage'] = [{'Relation_Type': 'bla',
+                                     'Title': '',
+                                     'Persistent_Identifier': {'Identifier_Scheme': '',
+                                                               'Identifier': ''}}]
+
+    "Retention_Period",
+    "Data_Type",
+    "Data_Classification",
+
+    # "Creator",
+
+    m['Contact'] = [{'Name': {'Given_Name': 'Contact given name', 'Family_Name': 'Contact family name'},
+                     'Position': 'Position',
+                     'Email': 'Email',
+                     'Affiliation': 'Affiliation',
+                     'Person_Identifier': {'Name_Identifier_Scheme': '',
+                                           'Name_Identifier': ''}}]
+
+    "License",
+
+    "Data_Access_Restriction"
+
+    return m
+
+
+
+# only in hptlab context
+# Fill in the blanks and take over
+def _default1_hptlab_0(m):
+    # First bring to default2 level
+    m = _default1_default2(m)
+
+    # Required fields
+    m[''] = ''
+    # "Title",
+    # "Description",
+    m['Discipline'] = 'Rock and melt physical properties'
+    m['Lab'] = 'e3a4f5d02528d02c516dbea19c20b32c',
+    # "Version",
+    # "Language",
+    # "Collected",
+
+    m['Material'] = 'Concrete'
+    m['Apparatus'] = 'Uniaxial'
+    m['Measured_Property'] = 'Hardness'
+
+    # m['Tag'] = ['yoda']
+
+    "Related_Datapackage",
+    "Retention_Period",
+    "Data_Type",
+    "Data_Classification",
+    "Creator",
+    "Contact",
+    "License",
+    "Data_Access_Restriction"
+    return m
+
+
+
+
 # }}}
 
 
