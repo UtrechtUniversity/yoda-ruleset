@@ -4,12 +4,11 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-
 import time
 
 import genquery
-import intake
 
+import intake
 from util import *
 
 
