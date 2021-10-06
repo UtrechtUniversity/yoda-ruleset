@@ -49,7 +49,7 @@ class Config(object):
             return super(Config, self).__getattr__(k)
         try:
             return self._items[k]
-        except KeyError as e:
+        except KeyError:
             # py3: should become 'raise ... from e'
             raise AttributeError('Config item <{}> does not exist'.format(k))
 
@@ -73,6 +73,7 @@ class Config(object):
 # Note: Must name all valid config items.
 config = Config(environment=None,
                 resource_primary=[],
+                resource_trigger_pol=[],
                 resource_replica=None,
                 resource_research=None,
                 resource_vault=None,
@@ -121,7 +122,7 @@ try:
             # List-type values are separated by whitespace.
             try:
                 typ = type(getattr(config, m.group(1)))
-            except AttributeError as e:
+            except AttributeError:
                 typ = str
 
             if issubclass(typ, list):

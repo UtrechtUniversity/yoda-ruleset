@@ -213,16 +213,6 @@ def api_intake_list_datasets(ctx, coll):
         dataset = get_dataset_details(ctx, row[0], row[1])
         datasets.append(dataset)
 
-    # 3) extra query for datasets that fall out of above query due to 'like' in query
-    iter = genquery.row_iterator(
-        "META_DATA_ATTR_VALUE, COLL_NAME",
-        "COLL_NAME = '" + coll + "' AND META_DATA_ATTR_NAME = 'dataset_toplevel' ",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        dataset = get_dataset_details(ctx, row[0], row[1])
-        datasets.append(dataset)
-
     return datasets
 
 
@@ -246,11 +236,10 @@ def get_dataset_details(ctx, dataset_id, path):
     dataset['experiment_type'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    directory = dataset_parts[4]
-
     dataset['datasetStatus'] = 'scanned'
     dataset['datasetCreateName'] = '==UNKNOWN=='
     dataset['datasetCreateDate'] = 0
+    dataset['datasetCreateDateFormatted'] = ''
     dataset['datasetErrors'] = 0
     dataset['datasetWarnings'] = 0
     dataset['datasetComments'] = 0
@@ -272,7 +261,9 @@ def get_dataset_details(ctx, dataset_id, path):
         )
         for row in iter:
             dataset['datasetCreateName'] = row[1]
-            dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
+            dataset['datasetCreateDate'] = int(row[2])
+            dataset['datasetCreateDateFormatted'] = time.strftime('%Y-%m-%d', time.localtime(int(row[2])))
+            dataset['datasetCreatedByWhen'] = row[1] + ':' + row[2]
 
         iter = genquery.row_iterator(
             "COLL_NAME, META_COLL_ATTR_NAME, count(META_COLL_ATTR_VALUE)",
@@ -325,7 +316,9 @@ def get_dataset_details(ctx, dataset_id, path):
                 )
                 for row in iter:
                     dataset['datasetCreateName'] = row[0]
-                    dataset['datasetCreateDate'] = time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
+                    dataset['datasetCreateDate'] = int(row[1])
+                    dataset['datasetCreateDateFormatted'] = time.strftime('%Y-%m-%d', time.localtime(int(row[1])))
+                    dataset['datasetCreatedByWhen'] = row[0] + ':' + row[1]
 
             iter = genquery.row_iterator(
                 "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE",
@@ -422,7 +415,7 @@ def rule_intake_scan_for_datasets(ctx, coll):
     :returns: indication correct
     """
     if _intake_check_authorized_to_scan(ctx, coll):
-        _intake_scan_for_datasets(ctx, coll)
+        _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
     else:
         return 1
 
@@ -438,7 +431,6 @@ def _intake_check_authorized_to_scan(ctx, coll):
 
     :returns: boolean - whether user is authorized
     """
-
     parts = coll.split('/')
     group = parts[3]
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
@@ -450,18 +442,33 @@ def _intake_check_authorized_to_scan(ctx, coll):
         return False
 
 
-def _intake_scan_for_datasets(ctx, coll):
+def _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target=''):
     """Internal function for actually running intake scan
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to scan for datasets
+    :param tl_datasets_log_target: If in ['stdout', 'serverLog'] logging of toplevel datasets will take place to the specified target
 
     """
     scope = {"wave": "",
              "experiment_type": "",
              "pseudocode": ""}
+    found_datasets = []
+    found_datasets = intake_scan.intake_scan_collection(ctx, coll, scope, False, found_datasets)
 
-    intake_scan.intake_scan_collection(ctx, coll, scope, False)
+    if tl_datasets_log_target in ['stdout', 'serverLog']:
+        for subscope in found_datasets:
+            try:
+                version = subscope['version']
+            except KeyError:
+                version = 'Raw'
+            ctx.writeLine(tl_datasets_log_target, ("Found dataset toplevel collection: "
+                                                   + "W<" + subscope['wave']
+                                                   + "> E<" + subscope['experiment_type']
+                                                   + "> P<" + subscope['pseudocode']
+                                                   + "> V<" + version
+                                                   + "> D<" + subscope['dataset_directory']
+                                                   + ">"))
 
     intake_scan.intake_check_datasets(ctx, coll)
 
@@ -647,7 +654,14 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
             break
 
     level = '0'
-    files = coll_objects(ctx, level, coll)
+    files = coll_objects(ctx, level, coll, dataset_id)
+
+    log.write(ctx, files)
+
+    if len(scanned.split(':')) != 2:
+        # Retrieve scannedby/when information in a different way
+        dataset = get_dataset_details(ctx, dataset_id, coll)
+        scanned = dataset['datasetCreatedByWhen']
 
     return {"files": files,
             # "is_collection": is_collection,
@@ -658,13 +672,14 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
             "dataset_errors": dataset_errors}
 
 
-def coll_objects(ctx, level, coll):
+def coll_objects(ctx, level, coll, dataset_id):
     """Recursive function to pass entire folder/file structure in such that frontend
     can do something useful with it including errors/warnings on object level
 
     :param ctx:   Combined type of a callback and rei struct
     :param level: Level in hierarchy (tree)
     :param coll:  Collection to collect
+    :param dataset_id: id of the dataset involved
 
     :returns: Tree of collections and files
     """
@@ -675,7 +690,7 @@ def coll_objects(ctx, level, coll):
     # COLLECTIONS
     iter = genquery.row_iterator(
         "COLL_NAME, COLL_ID",
-        "COLL_PARENT_NAME = '{}'".format(coll),
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'dataset_id' AND META_COLL_ATTR_VALUE = '{}'".format(coll, dataset_id),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -702,14 +717,14 @@ def coll_objects(ctx, level, coll):
 
         files[level + "." + str(counter)] = node
 
-        files.update(coll_objects(ctx, level + "." + str(counter), row[0]))
+        files.update(coll_objects(ctx, level + "." + str(counter), row[0], dataset_id))
 
         counter += 1
 
     # DATA OBJECTS
     iter = genquery.row_iterator(
         "DATA_NAME, DATA_ID",
-        "COLL_NAME = '{}'".format(coll),
+        "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = 'dataset_id' AND META_DATA_ATTR_VALUE = '{}'".format(coll, dataset_id),
         genquery.AS_LIST, ctx
     )
     for row in iter:

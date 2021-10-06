@@ -1,9 +1,13 @@
 {
-  "$id": "https://yoda.uu.nl/schemas/core-1/metadata.json",
+  "$id": "https://yoda.uu.nl/schemas/dag-0/metadata.json",
   "$schema": "http://json-schema.org/draft-07/schema",
   "definitions": {
     "stringNormal": {
       "type": "string",
+      "maxLength": 255
+    },
+    "stringNormalNullable": {
+      "type": ["string", "null"],
       "maxLength": 255
     },
     "stringLong": {
@@ -32,41 +36,6 @@
         "Basic",
         "Sensitive",
         "Critical"
-      ]
-    },
-    "optionsCreatorType": {
-      "type": "string",
-      "enum": [
-        "Person",
-        "Organisation"
-      ]
-    },
-    "optionsDataAccessRestriction": {
-      "type": "string",
-      "enum": [
-        "Open - freely retrievable",
-        "Restricted - available upon request",
-        "Closed"
-      ]
-    },
-    "optionsNameIdentifierScheme": {
-      "type": "string",
-      "enum": [
-        "ORCID",
-        "DAI",
-        "Author identifier (Scopus)",
-        "ResearcherID (Web of Science)",
-        "ISNI"
-      ]
-    },
-    "optionsLicense": {
-      "type": "string",
-      "enum": [
-        "Creative Commons Attribution 4.0 International Public License",
-        "Creative Commons Attribution-ShareAlike 4.0 International Public License",
-        "Creative Commons Zero v1.0 Universal",
-        "Open Data Commons Attribution License (ODC-By) v1.0",
-        "Custom"
       ]
     },
     "optionsDiscipline": {
@@ -158,6 +127,97 @@
         "Humanities - Philosophy, ethics and religion (6.3)",
         "Humanities - Art (arts, history of arts, performing arts, music) (6.4)",
         "Humanities - Other humanities (6.5)"
+      ]
+    },
+    "optionsResearch_Group": {
+      "type": "string",
+      "enum": [
+        "Earth sciences - Experimental rock deformation",
+        "Earth sciences - Geochemistry",
+        "Earth sciences - Hydrogeology",
+        "Earth sciences - Mantle dynamics and theoretical geophysics",
+        "Earth sciences - Marine palynology and palaeoceanography",
+        "Earth sciences - Organic geochemistry",
+        "Earth sciences - Paleomagnetism",
+        "Earth sciences - Petrology",
+        "Earth sciences - Sedimentology",
+        "Earth sciences - Seismology",
+        "Earth sciences - Stratigraphy and paleontology",
+        "Earth sciences - Structural geology and EM",
+        "Earth sciences - Technical and Analytical support Earth sciences",
+        "Earth sciences - Tectonics",
+        "Earth sciences - Tectonophysics",
+        "Earth sciences - Geolab",
+        "Physical geography - Biogeomorphology of Rivers and Estuaries",
+        "Physical geography - Global Change Geomorphology",
+        "Physical geography - Palaeoecology",
+        "Physical geography - Earth Surface Processes",
+        "Physical geography - Geographical Hydrology",
+        "Physical geography - Land Degradation and Remote Sensing",
+        "Human geography and spatial planning - Economic Urban Transitions",
+        "Human geography and spatial planning - Education",
+        "Human geography and spatial planning - Urban Geography",
+        "Human geography and spatial planning - Social Urban Transitions",
+        "Sustainable development - Biobased Economy",
+        "Sustainable development - Energy System Analysis",
+        "Sustainable development - Energy, Resources and Technological Change",
+        "Sustainable development - Integration of Intermittent Renewable Energy",
+        "Sustainable development - Integration of Photovoltaic Solar Energy",
+        "Sustainable development - Sustainable Energy",
+        "Sustainable development - Sustainable Energy Supply Systems",
+        "Sustainable development - Dynamics of Innovation Systems",
+        "Sustainable development - Innovation and Sustainability",
+        "Sustainable development - Innovation Studies",
+        "Sustainable development - Environmental Governance",
+        "Sustainable development - Global Sustainability Governance",
+        "Sustainable development - Environmental Sciences",
+        "Sustainable development - Global Ecohydrology and Sustainability",
+        "Sustainable development - Spatial Ecology and Global Change",
+        "Sustainable development - Urban Futures Studio"
+      ],
+      "enumNames": [
+        "Earth sciences - Experimental rock deformation",
+        "Earth sciences - Geochemistry",
+        "Earth sciences - Hydrogeology",
+        "Earth sciences - Mantle dynamics and theoretical geophysics",
+        "Earth sciences - Marine palynology and palaeoceanography",
+        "Earth sciences - Organic geochemistry",
+        "Earth sciences - Paleomagnetism",
+        "Earth sciences - Petrology",
+        "Earth sciences - Sedimentology",
+        "Earth sciences - Seismology",
+        "Earth sciences - Stratigraphy and paleontology",
+        "Earth sciences - Structural geology and EM",
+        "Earth sciences - Technical and Analytical support Earth sciences",
+        "Earth sciences - Tectonics",
+        "Earth sciences - Tectonophysics",
+        "Earth sciences - Geolab",
+        "Physical geography - Biogeomorphology of Rivers and Estuaries",
+        "Physical geography - Global Change Geomorphology",
+        "Physical geography - Palaeoecology",
+        "Physical geography - Earth Surface Processes",
+        "Physical geography - Geographical Hydrology",
+        "Physical geography - Land Degradation and Remote Sensing",
+        "Human geography and spatial planning - Economic Urban Transitions",
+        "Human geography and spatial planning - Education",
+        "Human geography and spatial planning - Urban Geography",
+        "Human geography and spatial planning - Social Urban Transitions",
+        "Sustainable development - Biobased Economy",
+        "Sustainable development - Energy System Analysis",
+        "Sustainable development - Energy, Resources and Technological Change",
+        "Sustainable development - Integration of Intermittent Renewable Energy",
+        "Sustainable development - Integration of Photovoltaic Solar Energy",
+        "Sustainable development - Sustainable Energy",
+        "Sustainable development - Sustainable Energy Supply Systems",
+        "Sustainable development - Dynamics of Innovation Systems",
+        "Sustainable development - Innovation and Sustainability",
+        "Sustainable development - Innovation Studies",
+        "Sustainable development - Environmental Governance",
+        "Sustainable development - Global Sustainability Governance",
+        "Sustainable development - Environmental Sciences",
+        "Sustainable development - Global Ecohydrology and Sustainability",
+        "Sustainable development - Spatial Ecology and Global Change",
+        "Sustainable development - Urban Futures Studio"
       ]
     },
     "optionsISO639-1": {
@@ -595,22 +655,85 @@
         "Yoruba",
         "Zhuang",
         "Zulu"
+       ]
+    },
+    "optionsContributorType": {
+      "type": "string",
+      "enum": [
+        "ContactPerson",
+        "DataCollector",
+        "DataCurator",
+        "DataManager",
+        "Distributor",
+        "Editor",
+        "HostingInstitution",
+        "Producer",
+        "ProjectLeader",
+        "ProjectManager",
+        "ProjectMember",
+        "RegistrationAgency",
+        "RegistrationAuthority",
+        "RelatedPerson",
+        "Researcher",
+        "ResearchGroup",
+        "RightsHolder",
+        "Sponsor",
+        "Supervisor",
+        "WorkPackageLeader"
+      ]
+    },
+    "optionsDataAccessRestriction": {
+      "type": "string",
+      "enum": [
+        "Closed"
+      ]
+    },
+    "optionsNameIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ORCID",
+        "DAI",
+        "Author identifier (Scopus)",
+        "ResearcherID (Web of Science)",
+        "ISNI"
+      ]
+    },
+    "optionsLicense": {
+      "type": "string",
+      "enum": [
+        "Creative Commons Attribution 4.0 International Public License",
+        "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Zero v1.0 Universal",
+        "Open Data Commons Attribution License (ODC-By) v1.0",
+        "Custom"
+      ]
+    },
+    "optionsContainsPersonalData": {
+      "type": "string",
+      "enum": [
+        "yes",
+        "no"
       ]
     }
   },
-  "title": "",
+  "title": "Metadata for Data Archive Geosciences",
   "type": "object",
   "required": [
     "Title",
     "Description",
+    "Research_Group",
+    "Collected",
+    "Tag",
+    "Personal_Data",
+    "End_Preservation",
     "Data_Type",
-    "Data_Classification",
     "Creator",
+    "Contributor",
     "License",
     "Data_Access_Restriction",
+    "Data_Classification",
     "Discipline",
-    "Language",
-    "Tag"
+    "Language"
   ],
   "properties": {
     "Title": {
@@ -627,7 +750,7 @@
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
         "title": "Discipline",
-        "default": ""
+        "default": "Natural Sciences - Earth and related environmental sciences (1.5)"
       }
     },
     "Language": {
@@ -645,6 +768,110 @@
         "default": ""
       }
     },
+    "Research_Group": {
+      "$ref": "#/definitions/optionsResearch_Group",
+      "title": "Research Group"
+    },
+    "Collected": {
+      "type": "object",
+      "additionalProperties": false,
+      "title": "Collection period",
+      "yoda:structure": "compound",
+      "properties": {
+        "Start_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "Start date"
+        },
+        "End_Date": {
+          "type": "string",
+          "format": "date",
+          "title": "End date"
+        }
+      },
+      "dependencies": {
+        "Start_Date": ["End_Date"],
+        "End_Date": ["Start_Date"]
+      }
+    },
+    "GeoLocation": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "geoLocationBox": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Geo Location",
+            "yoda:structure": "geoLocation",
+            "properties": {
+              "northBoundLatitude": {
+                "type": "number"
+              },
+              "westBoundLongitude": {
+                "type": "number"
+              },
+              "southBoundLatitude": {
+                "type": "number"
+              },
+              "eastBoundLongitude": {
+                "type": "number"
+              }
+            }
+          },
+          "Description_Spatial": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Description"
+          }
+        }
+      }
+    },
+    "Tag": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/stringNormal",
+        "title": "keyword",
+        "default": "pilot"
+      }
+    },
+    "Personal_Data": {
+      "$ref": "#/definitions/optionsContainsPersonalData",
+      "title": "Contains personal data"
+    },
+    "End_Preservation": {
+      "type": "string",
+      "format": "date",
+      "title": "End Preservation Date"
+    },
+    "File_Data_Type": {
+      "type": "array",
+      "minItems": 1,
+      "title": "File specification",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "yoda:structure": "subproperties",
+        "title": "File",
+        "required": [
+          "File_name",
+          "File_description"
+        ],
+        "properties": {
+          "File_name": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "File name"
+          },
+          "File_description": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "File layout"
+          }
+        }
+      }
+    },
     "Data_Type": {
       "$ref": "#/definitions/optionsDataType",
       "title": "Data type",
@@ -656,10 +883,10 @@
     },
     "Creator": {
       "type": "array",
+	  "title": "Owner of datapackage",
       "minItems": 1,
       "items": {
         "type": "object",
-        "additionalProperties": false,
         "yoda:structure": "subproperties",
         "required": [
           "Name",
@@ -668,7 +895,6 @@
         "properties": {
           "Name": {
             "type": "object",
-            "additionalProperties": false,
             "yoda:structure": "compound",
             "required": [
               "Given_Name",
@@ -686,36 +912,39 @@
             }
           },
           "Affiliation": {
-            "type": "array",
-            "default": ["Utrecht University"],
-            "items": {
-              "$ref": "#/definitions/stringNormal",
-              "title": "Affiliation",
-              "yoda:required": true
-            }
-          },
-          "Person_Identifier": {
-            "title": "Person identifier",
-            "type": "array",
-            "minItems": 1,
-            "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "yoda:structure": "compound",
-              "properties": {
-                "Name_Identifier_Scheme": {
-                  "$ref": "#/definitions/optionsNameIdentifierScheme",
-                  "title": "Type"
-                },
-                "Name_Identifier": {
-                  "$ref": "#/definitions/stringNormal",
-                  "title": "Identifier"
-                }
+            "type": "string",
+            "default": "Utrecht University"
+          }
+        }
+      }
+    },
+    "Contributor": {
+      "type": "array",
+	  "title": "Depositor of the datapackage",
+      "minItems": 1,
+	  "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Name": {
+            "type": "object",
+            "additionalProperties": false,
+            "yoda:structure": "compound",
+            "properties": {
+              "Given_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Given Name"
               },
-              "dependencies": {
-                "Name_Identifier_Scheme": ["Name_Identifier"],
-                "Name_Identifier": ["Name_Identifier_Scheme"]
+              "Family_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Family Name"
               }
+            },
+            "dependencies": {
+              "Given_Name": ["Family_Name"],
+              "Family_Name": ["Given_Name"]
             }
           }
         }
@@ -723,12 +952,13 @@
     },
     "License": {
       "$ref": "#/definitions/optionsLicense",
-      "title": "License"
+      "title": "License",
+	  "default": "Creative Commons Attribution 4.0 International Public License"
     },
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
       "title": "Data package access",
-      "default": "Restricted - available upon request"
+      "default": "Closed"
     }
   }
 }

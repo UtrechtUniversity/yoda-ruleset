@@ -38,7 +38,6 @@ def register_epic_pid(ctx, target):
     pid = generate_uuid(ctx)
 
     ret = msi.register_epic_pid(ctx, url, pid, '')
-    httpCode = ret['arguments'][2]
 
     return {'url': ret['arguments'][0],
             'pid': ret['arguments'][1],

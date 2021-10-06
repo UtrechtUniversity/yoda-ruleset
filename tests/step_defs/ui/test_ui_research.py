@@ -1,7 +1,7 @@
 # coding=utf-8
 """Research UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -55,13 +55,6 @@ def ui_research_new_file_name_is_present(browser, new_file_name):
 def ui_browse_subfolder(browser, subfolder):
     time.sleep(5)
     browser.links.find_by_partial_text(subfolder).click()
-
-
-# Copied functions
-@when('user browses to folder "<folder>"')
-def ui_browse_folder(browser, folder):
-    time.sleep(5)
-    browser.links.find_by_partial_text(folder).click()
 
 
 @when('user adds a new folder "<folder_new>"')

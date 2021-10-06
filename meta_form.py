@@ -142,14 +142,6 @@ def api_meta_form_load(ctx, coll):
 
     :returns: API status
     """
-    # The information that is returned to the caller, in dict form,
-    # if everything is in order.
-    output_keys = ['can_edit',
-                   'can_clone',
-                   'schema',
-                   'uischema',
-                   'metadata']
-
     # Obtain some context.
     # - Who are we dealing with?
     user_full_name = user.full_name(ctx)
@@ -196,7 +188,7 @@ def api_meta_form_load(ctx, coll):
                 if current_schema_id is None:
                     return api.Error('no_schema_id', 'Please check the structure of this file.',
                                      'schema id missing')
-            except jsonutil.ParseError as e:
+            except jsonutil.ParseError:
                 return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
             except msi.Error as e:
                 return api.Error('internal', 'The metadata file could not be read.', e)
@@ -273,7 +265,7 @@ def api_meta_form_load(ctx, coll):
             if current_schema_id is None:
                 return api.Error('no_schema_id', 'Please check the structure of this file.',
                                  'schema id missing')
-        except jsonutil.ParseError as e:
+        except jsonutil.ParseError:
             return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
         except msi.Error as e:
             return api.Error('internal', 'The metadata file could not be read.', e)
@@ -298,7 +290,11 @@ def api_meta_form_load(ctx, coll):
                              'The metadata file is not compliant with the schema in this category and cannot be transformed. '
                              + 'Please contact your datamanager.')
 
-    return {k: v for k, v in locals().items() if k in output_keys}
+    return {'can_edit': can_edit,
+            'can_clone': can_clone,
+            'schema': schema,
+            'uischema': uischema,
+            'metadata': metadata}
 
 
 @api.make()
@@ -329,7 +325,7 @@ def api_meta_form_save(ctx, coll, metadata):
 
         try:
             msi.coll_create(ctx, tmp_coll, '1', irods_types.BytesBuf())
-        except error.UUError as e:
+        except error.UUError:
             return api.Error('coll_create', 'Failed to create staging area at <{}>'.format(tmp_coll))
 
         # Use staging area instead of trying to write to the vault directly.
@@ -347,5 +343,5 @@ def api_meta_form_save(ctx, coll, metadata):
     # No errors: write out JSON.
     try:
         jsonutil.write(ctx, json_path, metadata)
-    except error.UUError as e:
+    except error.UUError:
         return api.Error('internal', 'Could not save yoda-metadata.json')

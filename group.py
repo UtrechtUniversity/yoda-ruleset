@@ -419,7 +419,7 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
     """
-    ruleResult = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
+    ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
 
 
 @api.make()
@@ -431,7 +431,7 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :param property_name:  Name of the property to update
     :param property_value: Value of the property to update
     """
-    ruleResult = ctx.uuGroupModify(group_name, property_name, property_value, '', '')
+    ctx.uuGroupModify(group_name, property_name, property_value, '', '')
 
 
 @api.make()
@@ -441,7 +441,7 @@ def api_group_delete(ctx, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group to delete
     """
-    ruleResult = ctx.uuGroupRemove(group_name, '', '')
+    ctx.uuGroupRemove(group_name, '', '')
 
 
 @api.make()
@@ -480,7 +480,7 @@ def api_group_user_add(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
     """
-    ruleResult = ctx.uuGroupUserAdd(group_name, username, '', '')
+    ctx.uuGroupUserAdd(group_name, username, '', '')
 
 
 @api.make()
@@ -492,7 +492,7 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
     :param group_name: Name of the group
     :param new_role:   New role of the user
     """
-    ruleResult = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
+    ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
 
 
 @api.make()
@@ -519,4 +519,4 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
     """
-    ruleResult = ctx.uuGroupUserRemove(group_name, username, '', '')
+    ctx.uuGroupUserRemove(group_name, username, '', '')

@@ -1712,7 +1712,7 @@
       "minItems": 1,
       "title": "Tags",
       "items": {
-        "$ref": "#/definitions/stringNormalNullable",
+        "$ref": "#/definitions/stringNormal",
         "title": "Tag",
         "default": ""
       }

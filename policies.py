@@ -480,16 +480,30 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     return policy.fail('No execcmd privileges for this command')
 
 
+# Internal function to determine whether changes to data objects on a particular
+# resource need to trigger policies (e.g. asynchronous replication) by default.
+def resource_should_trigger_policies(resource):
+    if resource in config.resource_primary:
+        return True
+
+    for pattern in config.resource_trigger_pol:
+        if re.match(pattern, resource):
+            return True
+
+    return False
+
+
 @rule.make()
 def pep_resource_modified_post(ctx, instance_name, _ctx, out):
-    if instance_name not in config.resource_primary or not config.resource_replica:
+    if not resource_should_trigger_policies(instance_name):
         return
 
     path = _ctx.map()['logical_path']
     zone = _ctx.map()['user_rods_zone']
     username = _ctx.map()['user_user_name']
 
-    ctx.uuReplicateAsynchronously(path, instance_name, config.resource_replica)
+    if config.resource_replica:
+        ctx.uuReplicateAsynchronously(path, instance_name, config.resource_replica)
 
     info = pathutil.info(path)
 

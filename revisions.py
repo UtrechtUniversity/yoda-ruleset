@@ -94,7 +94,7 @@ def revision_remove(ctx, revision_id):
             revision_path = row[0] + '/' + row[1]
             msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
             return True
-        except msi.Error as e:
+        except msi.Error:
             log.write(ctx, "revision_remove('" + revision_id + "'): Error when deleting.")
             return False
 
@@ -290,7 +290,6 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                 'items': revisions}
 
     originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
-    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
     qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
@@ -390,8 +389,6 @@ def api_revisions_list(ctx, path):
     )
 
     for row in iter:
-        revisionPath = row[1] + '/' + row[2]
-
         iter2 = genquery.row_iterator(
             "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE ",
             "DATA_ID = '" + row[0] + "' ",
@@ -480,7 +477,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
             return api.Error('duplicate_file', 'The file is already present at the indicated location')
 
     elif overwrite in ["restore_overwrite"]:
-        restore_allowed = True
+        pass
 
     else:
         return api.Error('invalid_action', 'Unknown requested action: {}'.format(overwrite))

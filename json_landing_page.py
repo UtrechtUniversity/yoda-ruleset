@@ -106,19 +106,9 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         datatype = ''
 
     try:
-        collected = dictJsonData['Collected']
-    except KeyError:
-        collected = {}
-
-    try:
         covered_geolocation_place = dictJsonData['Covered_Geolocation_Place']
     except KeyError:
         covered_geolocation_place = {}
-
-    try:
-        covered_period = dictJsonData['Covered_Period']
-    except KeyError:
-        covered_period = []
 
     try:
         tags = dictJsonData['Tag']  # not mandatory

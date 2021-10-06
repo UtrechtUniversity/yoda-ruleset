@@ -326,3 +326,14 @@ def ui_user_redirected(browser, page):
     target = "{}{}".format(portal_url, page)
 
     assert browser.url == target
+
+
+@when('user browses to folder "<folder>"')
+def ui_browse_folder(browser, folder):
+    link = []
+    while len(link) == 0:
+        link = browser.links.find_by_partial_text(folder)
+        if len(link) > 0:
+            link.click()
+        else:
+            browser.find_by_id('file-browser_next').click()
