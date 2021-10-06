@@ -551,7 +551,7 @@ def api_vault_get_publication_terms(ctx):
     terms = ""
 
     iter = genquery.row_iterator(
-        "DATA_NAME, order_desc(DATA_MODIFY_TIME)",
+        "DATA_NAME, order_asc(DATA_MODIFY_TIME)",
         "COLL_NAME = '{}'".format(terms_collection),
         genquery.AS_LIST, ctx)
 
