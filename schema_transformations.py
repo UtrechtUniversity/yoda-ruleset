@@ -191,10 +191,25 @@ def _default1_teclab0(m):
         pass
 
     # 3) REMOVE ATTRIBUTES that are not part of teclab-0
-    m.pop('Covered_Geolocation_Place')
-    m.pop('Covered_Period')
-    m.pop('Retention_Information')
-    m.pop('Collection_Name')
+    try:
+        m.pop('Covered_Geolocation_Place')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Covered_Period')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Retention_Information')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Collection_Name')
+    except KeyError:
+        pass
 
     # 4) SET CORRECT META SCHEMA
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/teclab-0/metadata.json')
@@ -284,10 +299,25 @@ def _default1_hptlab0(m):
         pass
 
     # 3) REMOVE ATTRIBUTES that are not part of hptlab-0
-    m.pop('Covered_Geolocation_Place')
-    m.pop('Covered_Period')
-    m.pop('Retention_Information')
-    m.pop('Collection_Name')
+    try:
+        m.pop('Covered_Geolocation_Place')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Covered_Period')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Retention_Information')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Collection_Name')
+    except KeyError:
+        pass
 
     # 4) SET CORRECT META SCHEMA
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/hptlab-0/metadata.json')
