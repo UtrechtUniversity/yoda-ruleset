@@ -130,6 +130,9 @@ def _default1_teclab0(m):
     m['Software'] = ['CloudCompare']
     m['Measured_Property'] = ['Cohesion']
 
+    if not m.get('Data_Type', False):
+        m['Data_Type'] = 'Dataset'
+
     if not m.get('Related_Datapackage', False):
         m['Related_Datapackage'] = [{'Relation_Type': 'IsSupplementTo',
                                      'Title': 'RDP title',
@@ -189,6 +192,11 @@ def _default1_teclab0(m):
                              'Description_Temporal': {'Start_Date': m['Covered_Period']['Start_Date'], 'End_Date': m['Covered_Period']['End_Date']}}]
     except Exception:
         pass
+
+    # Funding reference is not a required field, but if present in def1 then an extra field is required
+    if m.get('Funding_Reference', False):
+        for fun_ref in m['Funding_Reference']:
+            fun_ref['Funder_Reference'] = 'Funder_Reference'
 
     # 3) REMOVE ATTRIBUTES that are not part of teclab-0
     try:
@@ -238,6 +246,9 @@ def _default1_hptlab0(m):
     m['Apparatus'] = ['Uniaxial']
     m['Measured_Property'] = ['Hardness']
 
+    if not m.get('Data_Type', False):
+        m['Data_Type'] = 'Dataset'
+
     if not m.get('Related_Datapackage', False):
         m['Related_Datapackage'] = [{'Relation_Type': 'IsSupplementTo',
                                      'Title': 'RDP title',
@@ -297,6 +308,11 @@ def _default1_hptlab0(m):
                              'Description_Temporal': {'Start_Date': m['Covered_Period']['Start_Date'], 'End_Date': m['Covered_Period']['End_Date']}}]
     except Exception:
         pass
+
+    # Funding reference is not a required field, but if present in def1 then an extra field is required
+    if m.get('Funding_Reference', False):
+        for fun_ref in m['Funding_Reference']:
+            fun_ref['Funder_Reference'] = 'Funder_Reference'
 
     # 3) REMOVE ATTRIBUTES that are not part of hptlab-0
     try:
