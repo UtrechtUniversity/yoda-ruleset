@@ -7,6 +7,11 @@
     "biological_samples"
   ],
   "properties": {
+    "introduction": {
+      "type": "object",
+      "title": "Reviewer instructions",
+      "description": "Please note that your review is permanent and cannot be altered after submission. If you are in doubt, please contact the YOUth project manager first."
+    },
     "evaluation": {
       "type": "string",
       "title": "Would you approve / reject / reject (resubmit) this data request?",

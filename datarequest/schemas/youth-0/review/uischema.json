@@ -32,6 +32,7 @@
     "ui:widget": "textarea"
   },
   "ui:order": [
+    "introduction",
     "evaluation",
     "evaluation_rationale",
     "biological_samples",
