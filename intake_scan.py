@@ -453,9 +453,9 @@ def dataset_get_ids(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection name for which to find dataset-ids
 
-    :returns: Returns ids a list of dataset ids
+    :returns: Returns a set of dataset ids
     """
-    data_ids = []
+    data_ids = set()
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -465,7 +465,7 @@ def dataset_get_ids(ctx, coll):
     )
     for row in iter:
         if row[0]:
-            data_ids.append(row[0])
+            data_ids.add(row[0])
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -474,8 +474,8 @@ def dataset_get_ids(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        if row[0]:  # CHECK FOR DUPLICATES???
-            data_ids.append(row[0])
+        if row[0]:
+            data_ids.add(row[0])
 
     return data_ids
 
