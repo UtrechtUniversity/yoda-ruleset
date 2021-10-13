@@ -142,6 +142,11 @@ def api_meta_form_load(ctx, coll):
 
     :returns: API status
     """
+    can_edit  = False
+    can_clone = False
+    metadata  = None
+    errors    = []
+
     # Obtain some context.
     # - Who are we dealing with?
     user_full_name = user.full_name(ctx)
@@ -167,11 +172,7 @@ def api_meta_form_load(ctx, coll):
         can_edit = is_member and not folder.is_locked(ctx, coll, org_metadata)
 
         # Analyze a possibly existing metadata JSON/XML file.
-
         meta_path = meta.get_collection_metadata_path(ctx, coll)
-        metadata  = None
-        can_clone = False
-        errors    = []
 
         if meta_path is None:
             # If no metadata file exists, check if we can allow the user to
