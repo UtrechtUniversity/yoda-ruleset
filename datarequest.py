@@ -33,6 +33,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_preliminary_review_get',
            'api_datarequest_datamanager_review_submit',
            'api_datarequest_datamanager_review_get',
+           'api_datarequest_dmc_members_get',
            'api_datarequest_assignment_submit',
            'api_datarequest_assignment_get',
            'api_datarequest_review_submit',
@@ -522,17 +523,36 @@ def datarequest_provenance_write(ctx, request_id, request_status):
         return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
-def datarequest_data_valid(ctx, data, schema_name):
+def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
     """Check if form data contains no errors
+
+    Default mode of operation is to provide schema data and the schema name of the schema against
+    which to validate the data.
+
+    A second mode of operation is available in which no schema name is provided, but in which the
+    schema is provided directly (as JSON).
+
+    This second mode of operation is necessary when the default schema has been altered. E.g. for
+    the assignment form, a list of DMC members to which a data request can be assigned for review is
+    fetched dynamically when the form is rendered. To validate schema data generated using this
+    schema, we need to reconstruct the schema by mutating it exactly like we did when we rendered it
+    (i.e. also dynamically fetch the list of DMC members and insert them into the schema).
 
     :param ctx:         Combined type of a callback and rei struct
     :param data:        The form data to validate
     :param schema_name: Name of JSON schema against which to validate the form data
+    :param schema:      JSON schema against which to validate the form data (in case a default
+                        schema doesn't suffice)
 
     :returns: Boolean indicating if datarequest is valid or API error
     """
+    # Check if a schema is specified
+    if not (schema_name or schema):
+        return api.Error("validation_error",
+                         "No schema specified (neither a schema name nor a schema was given).")
+
     try:
-        schema = datarequest_schema_get(ctx, schema_name)['schema']
+        schema = datarequest_schema_get(ctx, schema_name)['schema'] if schema_name else schema
 
         validator = jsonschema.Draft7Validator(schema)
 
@@ -1125,6 +1145,25 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
+def api_datarequest_dmc_members_get(ctx):
+    return datarequest_dmc_members_get(ctx)
+
+
+def datarequest_dmc_members_get(ctx):
+    """Get list of DMC members
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of DMC members
+    """
+    dmc_members = map(lambda member: member[0], group.members(ctx, GROUP_DMC))
+    if "rods" in dmc_members:
+        dmc_members.remove("rods")
+
+    return dmc_members
+
+
+@api.make()
 def api_datarequest_assignment_submit(ctx, data, request_id):
     """Persist an assignment to disk.
 
@@ -1138,7 +1177,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Validate data against schema
-    if not datarequest_data_valid(ctx, data, ASSIGNMENT):
+    dmc_members = datarequest_dmc_members_get(ctx)
+    schema      = datarequest_schema_get(ctx, ASSIGNMENT)
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enum']      = dmc_members
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dmc_members
+    if not datarequest_data_valid(ctx, data, schema=schema):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
 
