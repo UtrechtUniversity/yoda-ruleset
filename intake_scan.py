@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
 import re
 import time
 
@@ -184,20 +185,10 @@ def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffe
 
     :returns: Returns extended scope buffer
     """
-    # chop of extension
-    # base_name = '.'.join(name.split('.'))[:-1]
-    if is_collection:
-        base_name = name
-    else:
-        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald
-        # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
-        # weggehaald met belangrijke beschrijvende info over de dataset.
-        base_name = name  # name.rsplit('.', 1)[0]
-    parts = base_name.split('_')
+    name_without_ext = os.path.splitext(name)[0]
+    parts = re.split("[_-]", name_without_ext)
     for part in parts:
-        subparts = part.split('-')
-        for subpart in subparts:
-            scoped_buffer.update(intake_extract_tokens(ctx, subpart))
+        scoped_buffer.update(intake_extract_tokens(ctx, part))
     return scoped_buffer
 
 
