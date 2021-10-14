@@ -23,6 +23,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
            'api_datarequest_browse',
            'api_datarequest_schema_get',
+           'api_datarequest_resubmission_id_get',
            'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_attachment_upload_permission',
@@ -125,6 +126,8 @@ class status(Enum):
     REJECTED                          = 'REJECTED'
     RESUBMIT                          = 'RESUBMIT'
 
+    RESUBMITTED                       = 'RESUBMITTED'
+
     PREREGISTRATION_SUBMITTED         = 'PREREGISTRATION_SUBMITTED'
 
     PREREGISTRATION_CONFIRMED         = 'PREREGISTRATION_CONFIRMED'
@@ -177,6 +180,10 @@ status_transitions = [(status(x),
                                    ('REVIEWED',                    'APPROVED_PRIVATE'),
                                    ('REVIEWED',                    'REJECTED'),
                                    ('REVIEWED',                    'RESUBMIT'),
+
+                                   ('RESUBMIT',                          'RESUBMITTED'),
+                                   ('PRELIMINARY_RESUBMIT',              'RESUBMITTED'),
+                                   ('RESUBMIT_AFTER_DATAMANAGER_REVIEW', 'RESUBMITTED'),
 
                                    ('APPROVED',                    'PREREGISTRATION_SUBMITTED'),
                                    ('PREREGISTRATION_SUBMITTED',   'PREREGISTRATION_CONFIRMED'),
@@ -482,6 +489,25 @@ def datarequest_schema_get(ctx, schema_name):
 
     # Return JSON with schema and uischema
     return {"schema": schema, "uischema": uischema}
+
+
+@api.make()
+def api_datarequest_resubmission_id_get(ctx, request_id):
+    """Given a request ID, get the request ID of the associated resubmitted data request
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param request_id:     Unique identifier of the data request
+
+    :returns:              String containing the request ID of the resubmitted data request
+    """
+    coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=query.AS_DICT))
+    if len(coll_path) == 1:
+        # We're extracting the request ID from the pathname of the collection as that's the most
+        # straightforward way of getting it, and is also stable.
+        return coll_path[0]['COLL_NAME'].split("/")[-1]
+    else:
+        return api.Error("metadata_read_error", "Not exactly 1 match for when searching for data requests with previous_request_id = {}".format(request_id))
 
 
 def datarequest_provenance_write(ctx, request_id, request_status):
@@ -808,6 +834,11 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
     # Revoke write permission
     msi.set_acl(ctx, "default", "read", user.full_name(ctx), file_path)
+
+    # If submission is a resubmission of a previously rejected data request, set status of previous
+    # request to RESUBMITTED
+    if 'previous_request_id' in data:
+        status_set(ctx, data['previous_request_id'], status.RESUBMITTED)
 
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
