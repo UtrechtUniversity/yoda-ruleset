@@ -141,60 +141,60 @@ class status(Enum):
 # List of valid datarequest status transitions (source, destination)
 status_transitions = [(status(x),
                        status(y))
-                      for x, y in [('IN_SUBMISSION',               'DRAFT'),
-                                   ('IN_SUBMISSION',               'PENDING_ATTACHMENTS'),
-                                   ('IN_SUBMISSION',               'DAO_SUBMITTED'),
-                                   ('IN_SUBMISSION',               'SUBMITTED'),
+                      for x, y in [('IN_SUBMISSION',                     'DRAFT'),
+                                   ('IN_SUBMISSION',                     'PENDING_ATTACHMENTS'),
+                                   ('IN_SUBMISSION',                     'DAO_SUBMITTED'),
+                                   ('IN_SUBMISSION',                     'SUBMITTED'),
 
-                                   ('DRAFT',                       'PENDING_ATTACHMENTS'),
-                                   ('DRAFT',                       'DAO_SUBMITTED'),
-                                   ('DRAFT',                       'SUBMITTED'),
+                                   ('DRAFT',                             'PENDING_ATTACHMENTS'),
+                                   ('DRAFT',                             'DAO_SUBMITTED'),
+                                   ('DRAFT',                             'SUBMITTED'),
 
-                                   ('PENDING_ATTACHMENTS',         'SUBMITTED'),
+                                   ('PENDING_ATTACHMENTS',               'SUBMITTED'),
 
-                                   ('DAO_SUBMITTED',               'DAO_APPROVED'),
-                                   ('DAO_SUBMITTED',               'REJECTED'),
-                                   ('DAO_SUBMITTED',               'RESUBMIT'),
+                                   ('DAO_SUBMITTED',                     'DAO_APPROVED'),
+                                   ('DAO_SUBMITTED',                     'REJECTED'),
+                                   ('DAO_SUBMITTED',                     'RESUBMIT'),
 
-                                   ('SUBMITTED',                   'PRELIMINARY_ACCEPT'),
-                                   ('SUBMITTED',                   'PRELIMINARY_REJECT'),
-                                   ('SUBMITTED',                   'PRELIMINARY_RESUBMIT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_ACCEPT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_REJECT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_RESUBMIT'),
 
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_ACCEPT'),
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_REJECT'),
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_RESUBMIT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_ACCEPT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_REJECT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_RESUBMIT'),
 
-                                   ('DATAMANAGER_ACCEPT',          'UNDER_REVIEW'),
-                                   ('DATAMANAGER_ACCEPT',          'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_ACCEPT',          'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'UNDER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'UNDER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'UNDER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'UNDER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'UNDER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
 
-                                   ('UNDER_REVIEW',                'REVIEWED'),
+                                   ('UNDER_REVIEW',                      'REVIEWED'),
 
-                                   ('REVIEWED',                    'APPROVED'),
-                                   ('REVIEWED',                    'APPROVED_PRIVATE'),
-                                   ('REVIEWED',                    'REJECTED'),
-                                   ('REVIEWED',                    'RESUBMIT'),
+                                   ('REVIEWED',                          'APPROVED'),
+                                   ('REVIEWED',                          'APPROVED_PRIVATE'),
+                                   ('REVIEWED',                          'REJECTED'),
+                                   ('REVIEWED',                          'RESUBMIT'),
 
                                    ('RESUBMIT',                          'RESUBMITTED'),
                                    ('PRELIMINARY_RESUBMIT',              'RESUBMITTED'),
                                    ('RESUBMIT_AFTER_DATAMANAGER_REVIEW', 'RESUBMITTED'),
 
-                                   ('APPROVED',                    'PREREGISTRATION_SUBMITTED'),
-                                   ('PREREGISTRATION_SUBMITTED',   'PREREGISTRATION_CONFIRMED'),
+                                   ('APPROVED',                          'PREREGISTRATION_SUBMITTED'),
+                                   ('PREREGISTRATION_SUBMITTED',         'PREREGISTRATION_CONFIRMED'),
 
-                                   ('PREREGISTRATION_CONFIRMED',   'DTA_READY'),
-                                   ('APPROVED_PRIVATE',            'DTA_READY'),
-                                   ('DAO_APPROVED',                'DTA_READY'),
+                                   ('PREREGISTRATION_CONFIRMED',         'DTA_READY'),
+                                   ('APPROVED_PRIVATE',                  'DTA_READY'),
+                                   ('DAO_APPROVED',                      'DTA_READY'),
 
-                                   ('DTA_READY',                   'DTA_SIGNED'),
+                                   ('DTA_READY',                         'DTA_SIGNED'),
 
-                                   ('DTA_SIGNED',                  'DATA_READY')]]
+                                   ('DTA_SIGNED',                        'DATA_READY')]]
 
 
 def status_transition_allowed(ctx, current_status, new_status):
@@ -1799,15 +1799,15 @@ def api_datarequest_data_ready(ctx, request_id):
 ###################################################
 
 def truncated_title_get(ctx, request_id):
-    datarequest     = json.loads(datarequest_get(ctx, request_id))
-    study_title     = datarequest['datarequest']['study_information']['title']
+    datarequest = json.loads(datarequest_get(ctx, request_id))
+    study_title = datarequest['datarequest']['study_information']['title']
 
     return study_title if len(study_title) < 16 else study_title[0:15] + "..."
 
 
 def send_emails(ctx, obj_name, status_to):
     # Get request ID
-    temp, _ = pathutil.chop(obj_name)
+    temp, _       = pathutil.chop(obj_name)
     _, request_id = pathutil.chop(temp)
 
     # Get datarequest status
@@ -1986,11 +1986,11 @@ def assignment_emails(ctx, request_id, datarequest_status):
 
 def review_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['contact']
-    researcher_email  = datarequest_owner_get(ctx, request_id)
-    cc                = cc_email_addresses_get(researcher)
-    pm_members        = group.members(ctx, GROUP_PM)
+    datarequest      = json.loads(datarequest_get(ctx, request_id))
+    researcher       = datarequest['contact']
+    researcher_email = datarequest_owner_get(ctx, request_id)
+    cc               = cc_email_addresses_get(researcher)
+    pm_members       = group.members(ctx, GROUP_PM)
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send emails
@@ -2087,11 +2087,11 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
 
 def data_ready_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datarequest          = json.loads(datarequest_get(ctx, request_id))
-    researcher           = datarequest['contact']
-    researcher_email     = datarequest_owner_get(ctx, request_id)
-    cc                   = cc_email_addresses_get(researcher)
-    truncated_title      = truncated_title_get(ctx, request_id)
+    datarequest      = json.loads(datarequest_get(ctx, request_id))
+    researcher       = datarequest['contact']
+    researcher_email = datarequest_owner_get(ctx, request_id)
+    cc               = cc_email_addresses_get(researcher)
+    truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
     mail_data_ready(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
@@ -2104,7 +2104,7 @@ def data_ready_emails(ctx, request_id):
 
 def mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
                                 researcher_name, request_id, cc, dao):
-    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else  "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
+    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
 
     return mail.send(ctx,
                      to=researcher_email,
