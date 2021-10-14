@@ -473,8 +473,6 @@ def intake_check_dataset(ctx, root, dataset_id):
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
-    id_components = dataset_parse_id(dataset_id)
-
     for tl in tl_objects:
         # Save the aggregated counts of #objects, #warnings, #errors on object level
 
@@ -518,7 +516,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
             parent_coll = tl_objects[0]
         else:
             parent_coll = pathutil.dirname(tl_objects[0])
-    except Exception as e:
+    except Exception:
         parent_coll = '/'
 
     """
