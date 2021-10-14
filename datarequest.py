@@ -1873,22 +1873,24 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     truncated_title  = truncated_title_get(ctx, request_id)
     pm_members       = group.members(ctx, GROUP_PM)
     timestamp        = datetime.fromtimestamp(int(request_id)).strftime('%c')
+    resubmission     = "previous_request_id" in datarequest
 
     # Send email to researcher and project manager
-    mail_datarequest_researcher(ctx, truncated_title, researcher_email, researcher['given_name']
-                                + ' ' + researcher['family_name'], request_id, cc, dao)
+    mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
+                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                request_id, cc, dao)
     for pm_member in pm_members:
         pm_email, _ = pm_member
         if dao:
-            mail_datarequest_dao_pm(ctx, truncated_title, pm_email, request_id,
+            mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
                                     researcher['given_name'] + ' ' + researcher['family_name'],
                                     researcher_email, researcher['institution'],
                                     researcher['department'], timestamp, study_title)
         else:
-            mail_datarequest_pm(ctx, truncated_title, pm_email, request_id, researcher['given_name']
-                                + ' ' + researcher['family_name'], researcher_email,
-                                researcher['institution'], researcher['department'], timestamp,
-                                study_title)
+            mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id,
+                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                researcher_email, researcher['institution'],
+                                researcher['department'], timestamp, study_title)
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
@@ -2100,8 +2102,9 @@ def data_ready_emails(ctx, request_id):
 #                 Email templates                 #
 ###################################################
 
-def mail_datarequest_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc, dao):
-    subject = "YOUth data request {} (\"{}\") (data assessment only): submitted".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): submitted".format(request_id, truncated_title)
+def mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
+                                researcher_name, request_id, cc, dao):
+    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else  "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
 
     return mail.send(ctx,
                      to=researcher_email,
@@ -2121,13 +2124,13 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_pm(ctx, truncated_title, pm_email, request_id, researcher_name, researcher_email,
-                        researcher_institution, researcher_department, submission_date,
-                        proposal_title):
+def mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id, researcher_name,
+                        researcher_email, researcher_institution, researcher_department,
+                        submission_date, proposal_title):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\"): submitted".format(request_id, truncated_title),
+                     subject="YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
                      body="""Dear project manager,
 
 A new data request has been submitted.
@@ -2146,13 +2149,13 @@ YOUth
                          submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_dao_pm(ctx, truncated_title, pm_email, request_id, researcher_name, researcher_email,
-                            researcher_institution, researcher_department, submission_date,
-                            proposal_title):
+def mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
+                            researcher_name, researcher_email, researcher_institution,
+                            researcher_department, submission_date, proposal_title):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (\"{}\") (data assessment only): submitted".format(request_id, truncated_title),
+                     subject="YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
                      body="""Dear project manager,
 
 A new data request (for the purpose of data assessment only) has been submitted.
