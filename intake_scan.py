@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
 import re
 import time
 
@@ -159,29 +160,17 @@ def intake_tokens_identify_dataset(tokens):
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
     """Extract one or more tokens from a file / directory name and add dataset information as metadata.
-
     :param ctx:           Combined type of a callback and rei struct
     :param path:          Path to object or collection
     :param name:          Name of object or collection
     :param is_collection: Indicates if object or collection
     :param scoped_buffer: Holds dataset buffer with prefilled keys
-
     :returns: Returns extended scope buffer
     """
-    # chop of extension
-    # base_name = '.'.join(name.split('.'))[:-1]
-    if is_collection:
-        base_name = name
-    else:
-        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald
-        # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
-        # weggehaald met belangrijke beschrijvende info over de dataset.
-        base_name = name  # name.rsplit('.', 1)[0]
-    parts = base_name.split('_')
+    name_without_ext = os.path.splitext(name)[0]
+    parts = re.split("[_-]", name_without_ext)
     for part in parts:
-        subparts = part.split('-')
-        for subpart in subparts:
-            scoped_buffer.update(intake_extract_tokens(ctx, subpart))
+        scoped_buffer.update(intake_extract_tokens(ctx, part))
     return scoped_buffer
 
 
@@ -418,13 +407,11 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
 
 def dataset_get_ids(ctx, coll):
     """Find dataset ids under collection.
-
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection name for which to find dataset-ids
-
-    :returns: Returns ids a list of dataset ids
+    :returns: Returns a set of dataset ids
     """
-    data_ids = []
+    data_ids = set()
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -434,7 +421,7 @@ def dataset_get_ids(ctx, coll):
     )
     for row in iter:
         if row[0]:
-            data_ids.append(row[0])
+            data_ids.add(row[0])
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -443,8 +430,8 @@ def dataset_get_ids(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        if row[0]:  # CHECK FOR DUPLICATES???
-            data_ids.append(row[0])
+        if row[0]:
+            data_ids.add(row[0])
 
     return data_ids
 
