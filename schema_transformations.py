@@ -242,9 +242,12 @@ def _default1_hptlab0(m):
     m['Discipline'] = ['Rock and melt physical properties']
     m['Lab'] = ['e3a4f5d02528d02c516dbea19c20b32c']
 
+    # Material, Apparatus and Apparatus might get different default values (email Vincent Brunst 15 oct)
+    # Pore_Fluid list still to be defined
     m['Material'] = ['Concrete']
     m['Apparatus'] = ['Uniaxial']
     m['Measured_Property'] = ['Hardness']
+    m['Pore_Fluid'] = ['Waarde_komt_nog']
 
     if not m.get('Data_Type', False):
         m['Data_Type'] = 'Dataset'

@@ -843,24 +843,6 @@
         "zirconium"
       ]
     },
-    "optionsMonitoring": {
-      "type": "string",
-      "enum": [
-        "Strain gauge",
-        "Axial strain gauge",
-        "Radial strain gauge",
-        "Axial extensometer",
-        "Circumferential extensometer",
-        "Ultrasonic transducer",
-        "P wave transducer",
-        "S wave transducer",
-        "Optic Fiber",
-        "Laser",
-        "Thermocouple",
-        "Video",
-        "Photography"
-      ]
-    },
     "optionsMeasuredProperty": {
       "type": "string",
       "enum": [
@@ -919,6 +901,30 @@
         "Composition"
       ]
     },
+    "optionsAncillaryEquipment": {
+      "type": "string",
+      "enum": [
+        "Option AE 1",
+        "Option AE 2",
+        "Option AE 3"
+      ]
+    },
+    "optionsPoorFluid": {
+      "type": "string",
+      "enum": [
+        "Option PF 1",
+        "Option PF 2",
+        "Option PF 3"
+      ]
+    }, 
+    "optionsInferredDeformationBehaviour": {
+      "type": "string",
+      "enum": [
+        "Option IDB 1",
+        "Option IDB 2",
+        "Option IDB 3"
+      ]
+    }, 
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
@@ -1521,6 +1527,7 @@
     "Apparatus",
     "Tag",
     "Measured_Property",
+    "Pore_Fluid",
     "Related_Datapackage",
     "Retention_Period",
     "Data_Type",
@@ -1695,16 +1702,37 @@
     "Measured_Property": {
       "type": "array",
       "minItems": 1,
+      "title": "Measured property",
       "items": {
         "$ref": "#/definitions/optionsMeasuredProperty",
         "title": "Measured property"
       }
     },
-    "Monitoring": {
+    "Ancillary_Equipment": {
       "type": "array",
+      "minItems": 1,
+      "title": "Ancillary equipment",
       "items": {
-        "$ref": "#/definitions/optionsMonitoring",
-        "title": "Monitoring device"
+        "$ref": "#/definitions/optionsAncillaryEquipment",
+        "title": "Ancillary equipment"
+      }
+    },
+    "Pore_Fluid": {
+      "type": "array",
+      "minItems": 1,
+      "title": "Pore fluid",
+      "items": {
+        "$ref": "#/definitions/optionsPoorFluid",
+        "title": "Pore fluid"
+      }
+    },
+    "Inferred_Deformation_Behaviour": {
+      "type": "array",
+      "minItems": 1,
+      "title": "Inferred deformation behaviour",
+      "items": {
+        "$ref": "#/definitions/optionsInferredDeformationBehaviour",
+        "title": "Inferred deformation behaviour"
       }
     },
     "Tag": {
