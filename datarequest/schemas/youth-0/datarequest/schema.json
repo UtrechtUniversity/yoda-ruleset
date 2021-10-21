@@ -55,7 +55,8 @@
         },
         "phone": {
           "$ref": "#/definitions/stringNormal",
-          "title": "Phone"
+          "title": "Phone",
+          "Preferably use the E.164 international telephone number format: +[country code][area code][phone number] (e.g. +31 30 1234 5678)."
         },
         "cc_email_addresses": {
           "$ref": "#/definitions/stringNormal",
