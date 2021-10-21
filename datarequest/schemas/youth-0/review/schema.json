@@ -83,11 +83,11 @@
             },
             "biological_samples_volume": {
               "type": "string",
-              "title": "Is the volume requested reasonable and does it not seriously deplete the resource?"
+              "title": "Is the volume of biological samples requested reasonable and does it not seriously deplete the resource?"
             },
             "biological_samples_committee_approval": {
               "type": "string",
-              "title": "Does the committee agree to the use of these samples for the specific research question?"
+              "title": "Does the committee agree to the use of these biological samples for the specific research question?"
             }
           },
           "required": [
