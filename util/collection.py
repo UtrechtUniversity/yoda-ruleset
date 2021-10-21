@@ -146,6 +146,24 @@ def copy(ctx, path_org, path_copy):
                    irods_types.BytesBuf())
 
 
+def move(ctx, path_org, path_move):
+    """Move a collection.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path_org:  Collection original path
+    :param path_move: Collection move path
+
+    This may raise a error.UUError if the collection does not exist, or when
+    the user does not have write permission.
+    """
+    msi.coll_rsync(ctx,
+                   path_org,
+                   path_move,
+                   '',
+                   'IRODS_TO_IRODS',
+                   irods_types.BytesBuf())
+
+
 def remove(ctx, path):
     """Delete a collection.
 
