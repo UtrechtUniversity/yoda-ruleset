@@ -3,7 +3,7 @@
     "ui:widget": "textarea"
   },
   "biological_samples": {
-    "ui:widget": "select",
+    "ui:widget": "hidden",
     "ui:disabled": true
   },
   "biological_samples_volume": {
@@ -13,7 +13,7 @@
     "ui:widget": "textarea"
   },
   "for_publishing": {
-    "ui:widget": "select",
+    "ui:widget": "hidden",
     "ui:disabled": true
   },
   "contribution": {
