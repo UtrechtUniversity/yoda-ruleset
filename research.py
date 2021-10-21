@@ -185,7 +185,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
 
     # All requirements OK
     try:
-        collection.copy(ctx, folder_path, new_folder_path)
+        collection.move(ctx, folder_path, new_folder_path)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 

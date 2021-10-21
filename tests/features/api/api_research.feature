@@ -32,11 +32,24 @@ Feature: Research API
         Examples:
             | folder             | copy                    |
             | api_test_copy      | api_test_copy2          |
+            | api_test_copy      | api_test_move1          |
+
+    Scenario Outline: Research folder move
+        Given user "researcher" is authenticated
+        And the Yoda research folder move API is queried with "<folder>", "<move>", and "<collection>"
+        Then the response status code is "200"
+        And folder "<folder>" does not exist in "<collection>"
+        And folder "<move>" exists in "<collection>"
+
+        Examples:
+            | folder             | move                |
+            | api_test_move1     | api_test_move2      |
 
     Scenario Outline: Research folder rename
         Given user "researcher" is authenticated
         And the Yoda research folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"
         Then the response status code is "200"
+        And folder "<folder_old>" does not exist in "<collection>"
         And folder "<folder>" exists in "<collection>"
 
         Examples:
@@ -110,4 +123,5 @@ Feature: Research API
             | api_test_copy               |
             | api_test_copy2              |
             | api_test_move               |
+            | api_test_move2              |
             | api_test_'`~!@#$%^&()+=[]{} |
