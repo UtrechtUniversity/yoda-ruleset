@@ -35,6 +35,15 @@ def api_research_folder_copy(user, folder, copy, collection):
     )
 
 
+@given('the Yoda research folder move API is queried with "<folder>", "<move>", and "<collection>"', target_fixture="api_response")
+def api_research_folder_move(user, folder, move, collection):
+    return api_request(
+        user,
+        "research_folder_move",
+        {"folder_path": collection + "/" + folder, "new_folder_path": collection + "/" + move}
+    )
+
+
 @given('the Yoda research folder rename API is queried with "<folder_old>", "<folder>" and "<collection>"', target_fixture="api_response")
 def api_research_folder_rename(user, folder_old, folder, collection):
     return api_request(
@@ -169,9 +178,19 @@ def folder_copy_exists(user, copy, collection):
     assert object_exists(user, copy, collection)
 
 
-@then('folder "<copy>" does not exists in "<collection>"')
-def folder_copy_not_exists(user, copy, collection):
-    assert not object_exists(user, copy, collection)
+@then('folder "<move>" exists in "<collection>"')
+def folder_move_exists(user, move, collection):
+    assert object_exists(user, move, collection)
+
+
+@then('folder "<folder>" does not exist in "<collection>"')
+def folder_not_exist(user, folder, collection):
+    assert not object_exists(user, folder, collection)
+
+
+@then('folder "<folder_old>" does not exist in "<collection>"')
+def folder_old_not_exist(user, folder_old, collection):
+    assert not object_exists(user, folder_old, collection)
 
 
 @then('file "<file_renamed>" exists in "<collection>"')

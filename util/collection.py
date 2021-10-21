@@ -162,6 +162,10 @@ def move(ctx, path_org, path_move):
                    '',
                    'IRODS_TO_IRODS',
                    irods_types.BytesBuf())
+    msi.rm_coll(ctx,
+                path_org,
+                '',
+                irods_types.BytesBuf())
 
 
 def remove(ctx, path):
