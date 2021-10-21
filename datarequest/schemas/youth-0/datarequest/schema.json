@@ -51,7 +51,8 @@
         },
         "work_address": {
           "$ref": "#/definitions/stringNormal",
-          "title": "Work address"
+          "title": "Work address",
+          "description": "E.g. Leuvenlaan 1 (room 1.04), 3584 CS, Utrecht, the Netherlands"
         },
         "phone": {
           "$ref": "#/definitions/stringNormal",
