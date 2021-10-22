@@ -100,6 +100,7 @@ data_obj_copy,   DataObjCopyError   = make('DataObjCopy',   'Could not copy data
 data_obj_unlink, DataObjUnlinkError = make('DataObjUnlink', 'Could not remove data object')
 data_obj_rename, DataObjRenameError = make('DataObjRename', 'Could not rename data object')
 coll_create,     CollCreateError    = make('CollCreate',    'Could not create collection')
+coll_rsync,      CollRsyncError     = make('CollRsync',     'Could not rsync collection')
 rm_coll,         RmCollError        = make('RmColl',        'Could not remove collection')
 check_access,    CheckAccessError   = make('CheckAccess',   'Could not check access')
 set_acl,         SetACLError        = make('SetACL',        'Could not set ACL')
