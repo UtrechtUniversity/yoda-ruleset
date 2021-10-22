@@ -107,14 +107,14 @@ Feature: Intake API
     Scenario Outline: Add a comment to a dataset
         Given user "<user>" is authenticated
         And dataset exists
-        And the Yoda intake dataset add comment API is queried with dataset id, collection "<collection>" and comment "<comment>"
+        And the Yoda intake dataset add comment API is queried with dataset id, study id "<study_id>" and comment "<comment>"
         Then the response status code is "200"
         # And ...
 
         Examples:
-            | user        | collection                      | comment |
-            | datamanager | /tempZone/yoda/home/grp-initial | initial |
-            | researcher  | /tempZone/yoda/home/grp-initial | initial |
+            | user        | study_id | comment |
+            | datamanager | initial  | initial |
+            | researcher  | initial  | initial |
 
     Scenario Outline: Get vault dataset related counts for reporting for a study
         Given user "<user>" is authenticated
