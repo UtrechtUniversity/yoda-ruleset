@@ -75,7 +75,7 @@ def api_intake_lock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_lock_dataset",
-        {"path": collection, "dataset_id": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id}
     )
 
 
@@ -84,7 +84,7 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_unlock_dataset",
-        {"path": collection, "dataset_id": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id}
     )
 
 
