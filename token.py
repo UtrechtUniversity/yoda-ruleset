@@ -19,7 +19,7 @@ __all__ = ['api_generate_token',
 # Location of the database that contain the tokens
 TOKEN_DB = '/etc/irods/irods-ruleset-uu/tokens.db'
 
-# Lifetime of a token. TODO: Currently NOT actively being checked
+# Lifetime of a token
 TOKEN_LIFETIME = timedelta(hours=72)
 
 # Length of token
@@ -33,10 +33,7 @@ def api_generate_token(ctx, label=None):
 
     user_id = user.name(ctx)
     token = generate_token()
-    # !!! TODO
-    # The timestamps are just for show now; no checking for validity is done
-    # and it should be noted that no thought has been put into the strange
-    # behaviour of datetimes and timezones/daytime savings
+
     gen_time = datetime.now()
     exp_time = gen_time + TOKEN_LIFETIME
     conn = sqlite3.connect(TOKEN_DB)
@@ -66,8 +63,9 @@ def api_load_tokens(ctx):
 
     try:
         with conn:
-            for row in conn.execute('''SELECT * FROM tokens WHERE user=:user_id''', {"user_id": user_id}):
-                result.append({"label": row[1], "gen_time": row[3], "exp_time": row[4]})
+            for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
+                                    {"user_id": user_id, "now": datetime.now()}):
+                result.append({"label": row[0], "exp_time": row[1]})
     except Exception:
         print_exc()
         result = api.Error('DatabaseError', 'Error occurred while reading database')
