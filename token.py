@@ -12,9 +12,9 @@ from traceback import print_exc
 
 from util import *
 
-__all__ = ['api_generate_token',
-           'api_load_tokens',
-           'api_delete_token']
+__all__ = ['api_token_generate',
+           'api_token_load',
+           'api_token_delete']
 
 # Location of the database that contain the tokens
 TOKEN_DB = '/etc/irods/irods-ruleset-uu/tokens.db'
@@ -27,7 +27,14 @@ TOKEN_LENGTH = 32
 
 
 @api.make()
-def api_generate_token(ctx, label=None):
+def api_token_generate(ctx, label=None):
+    """Generates a token for user authentication.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param label: Optional label of the token
+
+    :returns: Generated token or API error
+    """
     def generate_token():
         return secrets.token_urlsafe(TOKEN_LENGTH)
 
@@ -56,7 +63,13 @@ def api_generate_token(ctx, label=None):
 
 
 @api.make()
-def api_load_tokens(ctx):
+def api_token_load(ctx):
+    """Loads valid tokens of user.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Valid tokens
+    """
     user_id = user.name(ctx)
     conn = sqlite3.connect(TOKEN_DB)
     result = []
@@ -78,7 +91,14 @@ def api_load_tokens(ctx):
 
 
 @api.make()
-def api_delete_token(ctx, label):
+def api_token_delete(ctx, label):
+    """Deletes a token of the user.
+
+    :param ctx:   Combined type of a callback and rei struct
+    :param label: Label of the token
+
+    :returns: Status of token deletion
+    """
     user_id = user.name(ctx)
     conn = sqlite3.connect(TOKEN_DB)
     result = None
