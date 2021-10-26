@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-
 import secrets
 import sqlite3
 from datetime import datetime, timedelta
@@ -15,9 +14,6 @@ from util import *
 __all__ = ['api_token_generate',
            'api_token_load',
            'api_token_delete']
-
-# Location of the database that contain the tokens
-TOKEN_DB = '/etc/irods/irods-ruleset-uu/tokens.db'
 
 
 @api.make()
@@ -38,7 +34,7 @@ def api_token_generate(ctx, label=None):
     gen_time = datetime.now()
     token_lifetime = timedelta(hours=config.token_lifetime)
     exp_time = gen_time + token_lifetime
-    conn = sqlite3.connect(TOKEN_DB)
+    conn = sqlite3.connect(config.token_database)
     result = None
 
     try:
@@ -66,7 +62,7 @@ def api_token_load(ctx):
     :returns: Valid tokens
     """
     user_id = user.name(ctx)
-    conn = sqlite3.connect(TOKEN_DB)
+    conn = sqlite3.connect(config.token_database)
     result = []
 
     try:
@@ -95,7 +91,7 @@ def api_token_delete(ctx, label):
     :returns: Status of token deletion
     """
     user_id = user.name(ctx)
-    conn = sqlite3.connect(TOKEN_DB)
+    conn = sqlite3.connect(config.token_database)
     result = None
 
     try:
