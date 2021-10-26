@@ -460,6 +460,16 @@ def intake_check_dataset(ctx, root, dataset_id):
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
+    # Check validity of wav
+    waves = ["20w", "30w", "0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
+    components = dataset_parse_id(dataset_id)
+    if components['wave'] not in waves:
+        dataset_add_error(ctx, tl_objects, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
+
+    # check presence of wave, pseudo-ID and experiment
+    if '' in [components['wave'], components['experiment_type'], components['pseudocode']]:
+        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing")
+
     for tl in tl_objects:
         # Save the aggregated counts of #objects, #warnings, #errors on object level
 
