@@ -19,12 +19,6 @@ __all__ = ['api_token_generate',
 # Location of the database that contain the tokens
 TOKEN_DB = '/etc/irods/irods-ruleset-uu/tokens.db'
 
-# Lifetime of a token
-TOKEN_LIFETIME = timedelta(hours=72)
-
-# Length of token
-TOKEN_LENGTH = 32
-
 
 @api.make()
 def api_token_generate(ctx, label=None):
@@ -36,13 +30,14 @@ def api_token_generate(ctx, label=None):
     :returns: Generated token or API error
     """
     def generate_token():
-        return secrets.token_urlsafe(TOKEN_LENGTH)
+        return secrets.token_urlsafe(config.token_length)
 
     user_id = user.name(ctx)
     token = generate_token()
 
     gen_time = datetime.now()
-    exp_time = gen_time + TOKEN_LIFETIME
+    token_lifetime = timedelta(hours=config.token_lifetime)
+    exp_time = gen_time + token_lifetime
     conn = sqlite3.connect(TOKEN_DB)
     result = None
 

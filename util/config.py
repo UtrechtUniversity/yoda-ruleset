@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
