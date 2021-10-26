@@ -41,7 +41,6 @@ from policies               import *
 from revisions              import *
 from settings               import *
 from notifications          import *
-from token                  import *
 
 # Import certain modules only when enabled.
 from .util.config import config
@@ -53,4 +52,8 @@ if config.enable_intake:
 if config.enable_datarequest:
     from datarequest import *
 
-from deposit import *
+if config.enable_deposit:
+    from deposit import *
+
+if config.enable_tokens:
+    from token import *
