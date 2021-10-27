@@ -615,8 +615,6 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     :returns: Dict with paginated datarequests
     """
-    dmc_member = user.is_member_of(ctx, GROUP_DMC)
-
     coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
     def transform(row):
