@@ -679,7 +679,7 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 #
 uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassification, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	if (*description == "") {
 		# XXX This exact workaround exists in the `uuGroupModify` rule as well.
@@ -741,7 +741,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 #
 uuGroupModify(*groupName, *property, *value, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	*kv.'.' = ".";
 
@@ -786,7 +786,7 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 #
 uuGroupRemove(*groupName, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	*status = errorcode(msiSudoGroupRemove(*groupName, ""));
 	if (*status == 0) {
@@ -827,7 +827,7 @@ uuExternalUser(*userName) {
 #
 uuGroupUserAdd(*groupName, *user, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
 	*fullName = "*userName#*userZone";
@@ -881,7 +881,7 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 #
 uuGroupUserRemove(*groupName, *user, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
 	*fullName = "*userName#*userZone";
@@ -915,7 +915,7 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 #
 uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 	*status  = 1;
-	*message = "An internal error occured.";
+	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
 	*fullName = "*userName#*userZone";

@@ -23,6 +23,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
            'api_datarequest_browse',
            'api_datarequest_schema_get',
+           'api_datarequest_resubmission_id_get',
            'api_datarequest_submit',
            'api_datarequest_get',
            'api_datarequest_attachment_upload_permission',
@@ -33,11 +34,15 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_preliminary_review_get',
            'api_datarequest_datamanager_review_submit',
            'api_datarequest_datamanager_review_get',
+           'api_datarequest_dmc_members_get',
            'api_datarequest_assignment_submit',
            'api_datarequest_assignment_get',
            'api_datarequest_review_submit',
            'api_datarequest_reviews_get',
            'api_datarequest_evaluation_submit',
+           'api_datarequest_preregistration_submit',
+           'api_datarequest_preregistration_get',
+           'api_datarequest_preregistration_confirm',
            'api_datarequest_feedback_get',
            'api_datarequest_dta_upload_permission',
            'api_datarequest_dta_post_upload_actions',
@@ -75,14 +80,22 @@ DM_REVIEW            = "datamanager_review"
 REVIEW               = "review"
 ASSIGNMENT           = "assignment"
 EVALUATION           = "evaluation"
+PREREGISTRATION      = "preregistration"
 FEEDBACK             = "feedback"
 DTA_PATHNAME         = "dta"
 SIGDTA_PATHNAME      = "signed_dta"
 
 
 ###################################################
-#          Datarequest status functions           #
+#           Datarequest info functions            #
 ###################################################
+
+# List of valid datarequest types
+class type(Enum):
+    REGULAR = "REGULAR"
+    PRIVATE = "PRIVATE"
+    DAO     = "DAO"
+
 
 # List of valid datarequest statuses
 class status(Enum):
@@ -109,9 +122,15 @@ class status(Enum):
     REVIEWED                          = 'REVIEWED'
 
     APPROVED                          = 'APPROVED'
+    APPROVED_PRIVATE                  = 'APPROVED_PRIVATE'
     REJECTED                          = 'REJECTED'
     RESUBMIT                          = 'RESUBMIT'
 
+    RESUBMITTED                       = 'RESUBMITTED'
+
+    PREREGISTRATION_SUBMITTED         = 'PREREGISTRATION_SUBMITTED'
+
+    PREREGISTRATION_CONFIRMED         = 'PREREGISTRATION_CONFIRMED'
     DAO_APPROVED                      = 'DAO_APPROVED'
 
     DTA_READY                         = 'DTA_READY'
@@ -122,51 +141,60 @@ class status(Enum):
 # List of valid datarequest status transitions (source, destination)
 status_transitions = [(status(x),
                        status(y))
-                      for x, y in [('IN_SUBMISSION',               'DRAFT'),
-                                   ('IN_SUBMISSION',               'PENDING_ATTACHMENTS'),
-                                   ('IN_SUBMISSION',               'DAO_SUBMITTED'),
-                                   ('IN_SUBMISSION',               'SUBMITTED'),
+                      for x, y in [('IN_SUBMISSION',                     'DRAFT'),
+                                   ('IN_SUBMISSION',                     'PENDING_ATTACHMENTS'),
+                                   ('IN_SUBMISSION',                     'DAO_SUBMITTED'),
+                                   ('IN_SUBMISSION',                     'SUBMITTED'),
 
-                                   ('DRAFT',                       'PENDING_ATTACHMENTS'),
-                                   ('DRAFT',                       'DAO_SUBMITTED'),
-                                   ('DRAFT',                       'SUBMITTED'),
+                                   ('DRAFT',                             'PENDING_ATTACHMENTS'),
+                                   ('DRAFT',                             'DAO_SUBMITTED'),
+                                   ('DRAFT',                             'SUBMITTED'),
 
-                                   ('PENDING_ATTACHMENTS',         'SUBMITTED'),
+                                   ('PENDING_ATTACHMENTS',               'SUBMITTED'),
 
-                                   ('DAO_SUBMITTED',               'DAO_APPROVED'),
-                                   ('DAO_SUBMITTED',               'REJECTED'),
-                                   ('DAO_SUBMITTED',               'RESUBMIT'),
+                                   ('DAO_SUBMITTED',                     'DAO_APPROVED'),
+                                   ('DAO_SUBMITTED',                     'REJECTED'),
+                                   ('DAO_SUBMITTED',                     'RESUBMIT'),
 
-                                   ('SUBMITTED',                   'PRELIMINARY_ACCEPT'),
-                                   ('SUBMITTED',                   'PRELIMINARY_REJECT'),
-                                   ('SUBMITTED',                   'PRELIMINARY_RESUBMIT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_ACCEPT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_REJECT'),
+                                   ('SUBMITTED',                         'PRELIMINARY_RESUBMIT'),
 
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_ACCEPT'),
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_REJECT'),
-                                   ('PRELIMINARY_ACCEPT',          'DATAMANAGER_RESUBMIT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_ACCEPT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_REJECT'),
+                                   ('PRELIMINARY_ACCEPT',                'DATAMANAGER_RESUBMIT'),
 
-                                   ('DATAMANAGER_ACCEPT',          'UNDER_REVIEW'),
-                                   ('DATAMANAGER_ACCEPT',          'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_ACCEPT',          'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'UNDER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_REJECT',          'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'UNDER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'REJECTED_AFTER_DATAMANAGER_REVIEW'),
-                                   ('DATAMANAGER_RESUBMIT',        'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'UNDER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_ACCEPT',                'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'UNDER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_REJECT',                'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'UNDER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'REJECTED_AFTER_DATAMANAGER_REVIEW'),
+                                   ('DATAMANAGER_RESUBMIT',              'RESUBMIT_AFTER_DATAMANAGER_REVIEW'),
 
-                                   ('UNDER_REVIEW',                'REVIEWED'),
+                                   ('UNDER_REVIEW',                      'REVIEWED'),
 
-                                   ('REVIEWED',                    'APPROVED'),
-                                   ('REVIEWED',                    'REJECTED'),
-                                   ('REVIEWED',                    'RESUBMIT'),
+                                   ('REVIEWED',                          'APPROVED'),
+                                   ('REVIEWED',                          'APPROVED_PRIVATE'),
+                                   ('REVIEWED',                          'REJECTED'),
+                                   ('REVIEWED',                          'RESUBMIT'),
 
-                                   ('APPROVED',                    'DTA_READY'),
-                                   ('DAO_APPROVED',                'DTA_READY'),
+                                   ('RESUBMIT',                          'RESUBMITTED'),
+                                   ('PRELIMINARY_RESUBMIT',              'RESUBMITTED'),
+                                   ('RESUBMIT_AFTER_DATAMANAGER_REVIEW', 'RESUBMITTED'),
 
-                                   ('DTA_READY',                   'DTA_SIGNED'),
+                                   ('APPROVED',                          'PREREGISTRATION_SUBMITTED'),
+                                   ('PREREGISTRATION_SUBMITTED',         'PREREGISTRATION_CONFIRMED'),
 
-                                   ('DTA_SIGNED',                  'DATA_READY')]]
+                                   ('PREREGISTRATION_CONFIRMED',         'DTA_READY'),
+                                   ('APPROVED_PRIVATE',                  'DTA_READY'),
+                                   ('DAO_APPROVED',                      'DTA_READY'),
+
+                                   ('DTA_READY',                         'DTA_SIGNED'),
+
+                                   ('DTA_SIGNED',                        'DATA_READY')]]
 
 
 def status_transition_allowed(ctx, current_status, new_status):
@@ -226,6 +254,29 @@ def status_get(ctx, request_id):
         return status.IN_SUBMISSION
     else:
         raise error.UUError("Could not unambiguously determine the current status for datarequest <{}>".format(request_id))
+
+
+def type_get(ctx, request_id):
+    """Get the type of a data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Type of given data request
+    """
+    # Get datarequest
+    datarequest = json.loads(datarequest_get(ctx, request_id))
+
+    # Determine type
+    if datarequest['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
+        datarequest_type = type.DAO
+    elif not datarequest['datarequest']['publication_approval']:
+        datarequest_type = type.PRIVATE
+    else:
+        datarequest_type = type.REGULAR
+
+    # Return datarequest type
+    return datarequest_type
 
 
 ###################################################
@@ -440,6 +491,25 @@ def datarequest_schema_get(ctx, schema_name):
     return {"schema": schema, "uischema": uischema}
 
 
+@api.make()
+def api_datarequest_resubmission_id_get(ctx, request_id):
+    """Given a request ID, get the request ID of the associated resubmitted data request
+
+    :param ctx:            Combined type of a callback and rei struct
+    :param request_id:     Unique identifier of the data request
+
+    :returns:              String containing the request ID of the resubmitted data request
+    """
+    coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=query.AS_DICT))
+    if len(coll_path) == 1:
+        # We're extracting the request ID from the pathname of the collection as that's the most
+        # straightforward way of getting it, and is also stable.
+        return coll_path[0]['COLL_NAME'].split("/")[-1]
+    else:
+        return api.Error("metadata_read_error", "Not exactly 1 match for when searching for data requests with previous_request_id = {}".format(request_id))
+
+
 def datarequest_provenance_write(ctx, request_id, request_status):
     """Write the timestamp of a status transition to a provenance log
 
@@ -479,17 +549,36 @@ def datarequest_provenance_write(ctx, request_id, request_status):
         return api.Error("write_error", "Could not write timestamp to provenance log: {}.".format(e))
 
 
-def datarequest_data_valid(ctx, data, schema_name):
+def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
     """Check if form data contains no errors
+
+    Default mode of operation is to provide schema data and the schema name of the schema against
+    which to validate the data.
+
+    A second mode of operation is available in which no schema name is provided, but in which the
+    schema is provided directly (as JSON).
+
+    This second mode of operation is necessary when the default schema has been altered. E.g. for
+    the assignment form, a list of DMC members to which a data request can be assigned for review is
+    fetched dynamically when the form is rendered. To validate schema data generated using this
+    schema, we need to reconstruct the schema by mutating it exactly like we did when we rendered it
+    (i.e. also dynamically fetch the list of DMC members and insert them into the schema).
 
     :param ctx:         Combined type of a callback and rei struct
     :param data:        The form data to validate
     :param schema_name: Name of JSON schema against which to validate the form data
+    :param schema:      JSON schema against which to validate the form data (in case a default
+                        schema doesn't suffice)
 
     :returns: Boolean indicating if datarequest is valid or API error
     """
+    # Check if a schema is specified
+    if not (schema_name or schema):
+        return api.Error("validation_error",
+                         "No schema specified (neither a schema name nor a schema was given).")
+
     try:
-        schema = datarequest_schema_get(ctx, schema_name)['schema']
+        schema = datarequest_schema_get(ctx, schema_name)['schema'] if schema_name else schema
 
         validator = jsonschema.Draft7Validator(schema)
 
@@ -515,7 +604,7 @@ def cc_email_addresses_get(contact_object):
 ###################################################
 
 @api.make()
-def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10):
+def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10, archived=False):
     """Get paginated datarequests, including size/modify date information.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -523,9 +612,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
+    :param archived:   If true, show archived (i.e. rejected) data requests only. If false, only show
+                       non-archived data requests
 
     :returns: Dict with paginated datarequests
     """
+    dmc_member = user.is_member_of(ctx, GROUP_DMC)
+
     coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
     def transform(row):
@@ -544,6 +637,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         return {'id':          x['COLL_NAME'].split('/')[-1],
                 'title':       x['META_DATA_ATTR_VALUE']}
 
+    def transform_status(row):
+        # Remove ORDER_BY etc. wrappers from column names.
+        x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
+
+        return {'id':          x['COLL_NAME'].split('/')[-1],
+                'status':      x['META_DATA_ATTR_VALUE']}
+
     if sort_on == 'modified':
         # FIXME: Sorting on modify date is borked: There appears to be no
         # reliable way to filter out replicas this way - multiple entries for
@@ -559,32 +659,55 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
-                  offset=offset, limit=limit, output=query.AS_DICT)
+    # Build query
+    #
+    # Set filter
+    #
+    # a) Normal case
+    if not dmc_member and not archived:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'PRELIMINARY_RESUBMIT' && != 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' && != 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+    # b) Archive case
+    elif not dmc_member and archived:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'PRELIMINARY_RESUBMIT' || = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' || = 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+    # c) DMC member case
+    elif dmc_member:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+    #
+    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
+    if len(list(qcoll)) > 0:
+        coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+    else:
+        return OrderedDict([('total', 0), ('items', [])])
 
-    ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
-    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
-                        offset=offset, limit=limit, output=query.AS_DICT)
-
+    # Execute query
     colls = map(transform, list(qcoll))
+    #
+    # Merge datarequest title into results
     colls_title = map(transform_title, list(qcoll_title))
-
-    # Merge datarequest title in results.
     for datarequest_title in colls_title:
         for datarequest in colls:
             if datarequest_title['id'] == datarequest['id']:
                 datarequest['title'] = datarequest_title['title']
                 break
+    #
+    # Merge datarequest status into results
+    colls_status = map(transform_status, list(qcoll_status))
+    for datarequest_status in colls_status:
+        for datarequest in colls:
+            if datarequest_title['id'] == datarequest['id']:
+                datarequest['status'] = datarequest_status['status']
+                break
 
     if len(colls) == 0:
         # No results at all?
-        # Make sure the collection actually exists.
+        # Make sure the collection actually exists
         if not collection.exists(ctx, coll):
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
-    return OrderedDict([('total', qcoll.total_rows()),
-                        ('items', colls)])
+    return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
 
 
 def file_write_and_lock(ctx, coll_path, filename, data, readers):
@@ -611,7 +734,12 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
 
     # Revoke temporary write permission
     msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
-    ctx.adminTempWritePermission(coll_path, "revoke")
+    # If invoking user is request owner, set read permission for this user on the collection again,
+    # else revoke individual user permissions on collection entirely (invoking users will still have
+    # appropriate permissions through group membership, e.g. the project managers group)
+    permission = "read" if user.name(ctx) == datarequest_owner_get(ctx, coll_path.split('/')[-1]) \
+                 else "revoke"
+    ctx.adminTempWritePermission(coll_path, permission)
 
 
 @api.make()
@@ -716,6 +844,11 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # Revoke write permission
     msi.set_acl(ctx, "default", "read", user.full_name(ctx), file_path)
 
+    # If submission is a resubmission of a previously rejected data request, set status of previous
+    # request to RESUBMITTED
+    if 'previous_request_id' in data:
+        status_set(ctx, data['previous_request_id'], status.RESUBMITTED)
+
     # Update data request status
     if data['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
         status_set(ctx, request_id, status.DAO_SUBMITTED)
@@ -743,6 +876,9 @@ def api_datarequest_get(ctx, request_id):
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DMC", "OWN"], None)
 
+    # Get request type
+    datarequest_type = type_get(ctx, request_id).value
+
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
 
@@ -750,7 +886,8 @@ def api_datarequest_get(ctx, request_id):
     datarequest = datarequest_get(ctx, request_id)
 
     # Return JSON encoded results
-    return {'requestJSON': datarequest, 'requestStatus': datarequest_status}
+    return {'requestJSON': datarequest, 'requestType': datarequest_type,
+            'requestStatus': datarequest_status}
 
 
 def datarequest_get(ctx, request_id):
@@ -1048,6 +1185,25 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
+def api_datarequest_dmc_members_get(ctx):
+    return datarequest_dmc_members_get(ctx)
+
+
+def datarequest_dmc_members_get(ctx):
+    """Get list of DMC members
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of DMC members
+    """
+    dmc_members = map(lambda member: member[0], group.members(ctx, GROUP_DMC))
+    if "rods" in dmc_members:
+        dmc_members.remove("rods")
+
+    return dmc_members
+
+
+@api.make()
 def api_datarequest_assignment_submit(ctx, data, request_id):
     """Persist an assignment to disk.
 
@@ -1061,7 +1217,11 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Validate data against schema
-    if not datarequest_data_valid(ctx, data, ASSIGNMENT):
+    dmc_members = datarequest_dmc_members_get(ctx)
+    schema      = datarequest_schema_get(ctx, ASSIGNMENT)
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enum']      = dmc_members
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dmc_members
+    if not datarequest_data_valid(ctx, data, schema=schema):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
 
@@ -1298,7 +1458,12 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         if status_get(ctx, request_id) == status.DAO_SUBMITTED:
             status_set(ctx, request_id, status.DAO_APPROVED)
         else:
-            status_set(ctx, request_id, status.APPROVED)
+            # Get privacy of data request
+            public_request = json.loads(datarequest_get(ctx, request_id))['datarequest']['publication_approval']
+            if public_request:
+                status_set(ctx, request_id, status.APPROVED)
+            else:
+                status_set(ctx, request_id, status.APPROVED_PRIVATE)
     elif decision == "Rejected":
         datarequest_feedback_write(ctx, request_id, data['feedback_for_researcher'])
         status_set(ctx, request_id, status.REJECTED)
@@ -1310,6 +1475,13 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
 
 def datarequest_evaluation_get(ctx, request_id):
+    """Retrieve an evaluation
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Evaluation JSON or API error on failure
+    """
     # Force conversion of request_id to string
     request_id = str(request_id)
 
@@ -1385,6 +1557,97 @@ def api_datarequest_feedback_get(ctx, request_id):
 
 
 @api.make()
+def api_datarequest_preregistration_submit(ctx, data, request_id):
+    """Persist a preregistration to disk.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param data:       Contents of the preregistration
+    :param request_id: Unique identifier of the data request
+
+    :returns: API status
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Validate data against schema
+    if not datarequest_data_valid(ctx, data, PREREGISTRATION):
+        return api.Error("validation_fail",
+                         "{} form data did not pass validation against its schema.".format(PREREGISTRATION))
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.APPROVED])
+
+    # Construct path to collection
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+
+    # Write form data to disk
+    try:
+        file_write_and_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [GROUP_PM])
+    except error.UUError:
+        return api.Error('write_error', 'Could not write preregistration data to disk')
+
+    # Set status
+    status_set(ctx, request_id, status.PREREGISTRATION_SUBMITTED)
+
+
+@api.make()
+def api_datarequest_preregistration_get(ctx, request_id):
+    """Retrieve a preregistration.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Preregistration JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], None)
+
+    return datarequest_preregistration_get(ctx, request_id)
+
+
+def datarequest_preregistration_get(ctx, request_id):
+    """Retrieve a preregistration.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Preregistration JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = PREREGISTRATION + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name)
+
+    # Get the contents of the review JSON file
+    try:
+        return data_object.read(ctx, file_path)
+    except error.UUError as e:
+        return api.Error("ReadError", "Could not get preregistration data: {}.".format(e))
+
+
+@api.make()
+def api_datarequest_preregistration_confirm(ctx, request_id):
+    """Set the status of a submitted datarequest to CONTRIBUTION_CONFIRMED.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM"], [status.PREREGISTRATION_SUBMITTED])
+
+    status_set(ctx, request_id, status.PREREGISTRATION_CONFIRMED)
+
+
+@api.make()
 def api_datarequest_dta_upload_permission(ctx, request_id, action):
     """
     :param ctx:        Combined type of a callback and rei struct
@@ -1399,6 +1662,7 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
+                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Check if action is valid
@@ -1423,6 +1687,7 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
+                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Set permissions
@@ -1542,9 +1807,16 @@ def api_datarequest_data_ready(ctx, request_id):
 #                   Email logic                   #
 ###################################################
 
+def truncated_title_get(ctx, request_id):
+    datarequest = json.loads(datarequest_get(ctx, request_id))
+    study_title = datarequest['datarequest']['study_information']['title']
+
+    return study_title if len(study_title) < 16 else study_title[0:15] + "..."
+
+
 def send_emails(ctx, obj_name, status_to):
     # Get request ID
-    temp, _ = pathutil.chop(obj_name)
+    temp, _       = pathutil.chop(obj_name)
     _, request_id = pathutil.chop(temp)
 
     # Get datarequest status
@@ -1576,12 +1848,19 @@ def send_emails(ctx, obj_name, status_to):
         review_emails(ctx, request_id)
 
     elif datarequest_status in (status.APPROVED,
+                                status.APPROVED_PRIVATE,
                                 status.REJECTED,
                                 status.RESUBMIT):
         evaluation_emails(ctx, request_id, datarequest_status)
 
+    elif datarequest_status == status.PREREGISTRATION_SUBMITTED:
+        preregistration_submit_emails(ctx, request_id)
+
+    elif datarequest_status == status.PREREGISTRATION_CONFIRMED:
+        datarequest_approved_emails(ctx, request_id)
+
     elif datarequest_status == status.DAO_APPROVED:
-        dao_approved_emails(ctx, request_id)
+        datarequest_approved_emails(ctx, request_id, dao=True)
 
     elif datarequest_status == status.DTA_READY:
         dta_post_upload_actions_emails(ctx, request_id)
@@ -1600,35 +1879,39 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     study_title      = datarequest['datarequest']['study_information']['title']
+    truncated_title  = truncated_title_get(ctx, request_id)
     pm_members       = group.members(ctx, GROUP_PM)
     timestamp        = datetime.fromtimestamp(int(request_id)).strftime('%c')
+    resubmission     = "previous_request_id" in datarequest
 
     # Send email to researcher and project manager
-    mail_datarequest_researcher(ctx, researcher_email, researcher['given_name'] + ' '
-                                + researcher['family_name'], request_id, cc, dao)
+    mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
+                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                request_id, cc, dao)
     for pm_member in pm_members:
         pm_email, _ = pm_member
         if dao:
-            mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
-                                    + researcher['family_name'], researcher_email,
-                                    researcher['institution'], researcher['department'],
-                                    timestamp, study_title)
+            mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
+                                    researcher['given_name'] + ' ' + researcher['family_name'],
+                                    researcher_email, researcher['institution'],
+                                    researcher['department'], timestamp, study_title)
         else:
-            mail_datarequest_pm(ctx, pm_email, request_id, researcher['given_name'] + ' '
-                                + researcher['family_name'], researcher_email,
-                                researcher['institution'], researcher['department'], timestamp,
-                                study_title)
+            mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id,
+                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                researcher_email, researcher['institution'],
+                                researcher['department'], timestamp, study_title)
 
 
 def preliminary_review_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
+    truncated_title     = truncated_title_get(ctx, request_id)
 
     # Email datamanager
     if datarequest_status == status.PRELIMINARY_ACCEPT:
         for datamanager_member in datamanager_members:
             datamanager_email, _ = datamanager_member
-            mail_preliminary_review_accepted(ctx, datamanager_email, request_id)
+            mail_preliminary_review_accepted(ctx, truncated_title, datamanager_email, request_id)
         return
 
     # Email researcher with feedback and call to action
@@ -1644,11 +1927,11 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
 
         # Send emails
         if datarequest_status == status.PRELIMINARY_RESUBMIT:
-            mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
+            mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                           + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
         elif datarequest_status == status.PRELIMINARY_REJECT:
-            mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
+            mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                           + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
 
@@ -1659,17 +1942,18 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
     datamanager_review  = json.loads(datarequest_datamanager_review_get(ctx, request_id))
     datamanager_remarks = (datamanager_review['datamanager_remarks'] if 'datamanager_remarks' in
                            datamanager_review else "")
+    truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send emails
     for pm_member in pm_members:
         pm_email, _ = pm_member
         if datarequest_status   == status.DATAMANAGER_ACCEPT:
-            mail_datamanager_review_accepted(ctx, pm_email, request_id)
+            mail_datamanager_review_accepted(ctx, truncated_title, pm_email, request_id)
         elif datarequest_status == status.DATAMANAGER_RESUBMIT:
-            mail_datamanager_review_resubmit(ctx, pm_email, datamanager_remarks,
+            mail_datamanager_review_resubmit(ctx, truncated_title, pm_email, datamanager_remarks,
                                              request_id)
         elif datarequest_status == status.DATAMANAGER_REJECT:
-            mail_datamanager_review_rejected(ctx, pm_email, datamanager_remarks,
+            mail_datamanager_review_rejected(ctx, truncated_title, pm_email, datamanager_remarks,
                                              request_id)
 
 
@@ -1681,14 +1965,16 @@ def assignment_emails(ctx, request_id, datarequest_status):
     cc               = cc_email_addresses_get(researcher)
     study_title      = datarequest['datarequest']['study_information']['title']
     assignment       = json.loads(datarequest_assignment_get(ctx, request_id))
+    truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send emails
     if datarequest_status == status.UNDER_REVIEW:
         assignees = assignment['assign_to']
-        mail_assignment_accepted_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+        mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email,
+                                            researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
         for assignee_email in assignees:
-            mail_assignment_accepted_assignee(ctx, assignee_email, study_title,
+            mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, study_title,
                                               request_id)
     elif datarequest_status in (status.RESUBMIT_AFTER_DATAMANAGER_REVIEW,
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
@@ -1698,29 +1984,30 @@ def assignment_emails(ctx, request_id, datarequest_status):
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
-            mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
+            mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                           + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
-            mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
+            mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                           + researcher['family_name'], feedback_for_researcher, pm_email,
                           request_id, cc)
 
 
 def review_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datarequest       = json.loads(datarequest_get(ctx, request_id))
-    researcher        = datarequest['contact']
-    researcher_email  = datarequest_owner_get(ctx, request_id)
-    cc                = cc_email_addresses_get(researcher)
-    pm_members        = group.members(ctx, GROUP_PM)
+    datarequest      = json.loads(datarequest_get(ctx, request_id))
+    researcher       = datarequest['contact']
+    researcher_email = datarequest_owner_get(ctx, request_id)
+    cc               = cc_email_addresses_get(researcher)
+    pm_members       = group.members(ctx, GROUP_PM)
+    truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send emails
-    mail_review_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+    mail_review_researcher(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                            + researcher['family_name'], request_id, cc)
     for pm_member in pm_members:
         pm_email, _ = pm_member
-        mail_review_pm(ctx, pm_email, request_id)
+        mail_review_pm(ctx, truncated_title, pm_email, request_id)
 
 
 def evaluation_emails(ctx, request_id, datarequest_status):
@@ -1733,39 +2020,50 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
     pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    truncated_title         = truncated_title_get(ctx, request_id)
 
     # Send emails
     if datarequest_status == status.APPROVED:
-        datamanager_members = group.members(ctx, GROUP_DM)
-        mail_evaluation_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
+        mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email,
+                                            researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-        for datamanager_member in datamanager_members:
-            datamanager_email, _ = datamanager_member
-            mail_evaluation_approved_dm(ctx, datamanager_email, request_id)
+    elif datarequest_status == status.APPROVED_PRIVATE:
+        datarequest_approved_emails(ctx, request_id, dao=False)
     elif datarequest_status == status.RESUBMIT:
-        mail_resubmit(ctx, researcher_email, researcher['given_name'] + ' '
+        mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
                       cc)
     elif datarequest_status == status.REJECTED:
-        mail_rejected(ctx, researcher_email, researcher['given_name'] + ' '
+        mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
                       cc)
 
 
-def dao_approved_emails(ctx, request_id):
+def preregistration_submit_emails(ctx, request_id):
+    # Get parameters
+    truncated_title  = truncated_title_get(ctx, request_id)
+
+    for pm_member in group.members(ctx, GROUP_PM):
+        pm_email, _ = pm_member
+        mail_preregistration_submit(ctx, truncated_title, pm_email, request_id)
+
+
+def datarequest_approved_emails(ctx, request_id, dao=False):
     # Get parameters
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']
     researcher_email    = datarequest_owner_get(ctx, request_id)
     cc                  = cc_email_addresses_get(researcher)
     datamanager_members = group.members(ctx, GROUP_DM)
+    truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send emails
-    mail_dao_approved_researcher(ctx, researcher_email, researcher['given_name'] + ' '
-                                 + researcher['family_name'], request_id, cc)
+    mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email,
+                                         researcher['given_name'] + ' ' + researcher['family_name'],
+                                         request_id, cc, dao)
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_evaluation_approved_dm(ctx, datamanager_email, request_id)
+        mail_datarequest_approved_dm(ctx, truncated_title, datamanager_email, request_id, dao)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -1774,41 +2072,48 @@ def dta_post_upload_actions_emails(ctx, request_id):
     researcher       = datarequest['contact']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
+    # (Also) cc project manager
+    pm_email, _      = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    cc               = cc + ',{}'.format(pm_email) if cc else pm_email
+    truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
-    mail_dta(ctx, researcher_email, researcher['given_name'] + ' ' + researcher['family_name'],
-             request_id, cc)
+    mail_dta(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
+             + researcher['family_name'], request_id, cc)
 
 
 def signed_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
+    cc, _ = pm_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send email
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_signed_dta(ctx, datamanager_email, request_id)
+        mail_signed_dta(ctx, truncated_title, datamanager_email, request_id, cc)
 
 
 def data_ready_emails(ctx, request_id):
     # Get (source data for) email input parameters
-    datarequest          = json.loads(datarequest_get(ctx, request_id))
-    researcher           = datarequest['contact']
-    researcher_email     = datarequest_owner_get(ctx, request_id)
-    cc                   = cc_email_addresses_get(researcher)
-    datamanager_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_DM))[0]
+    datarequest      = json.loads(datarequest_get(ctx, request_id))
+    researcher       = datarequest['contact']
+    researcher_email = datarequest_owner_get(ctx, request_id)
+    cc               = cc_email_addresses_get(researcher)
+    truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
-    mail_data_ready(ctx, researcher_email, researcher['given_name'] + ' '
-                    + researcher['family_name'], datamanager_email, request_id, cc)
+    mail_data_ready(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
+                    + researcher['family_name'], request_id, cc)
 
 
 ###################################################
 #                 Email templates                 #
 ###################################################
 
-def mail_datarequest_researcher(ctx, researcher_email, researcher_name, request_id, cc, dao):
-    subject = "YOUth data request {} (data assessment only): submitted".format(request_id) if dao else "YOUth data request {}: submitted".format(request_id)
+def mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
+                                researcher_name, request_id, cc, dao):
+    subject = "YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted") if dao else "YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted")
 
     return mail.send(ctx,
                      to=researcher_email,
@@ -1828,13 +2133,13 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_pm(ctx, pm_email, request_id, researcher_name, researcher_email,
-                        researcher_institution, researcher_department, submission_date,
-                        proposal_title):
+def mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id, researcher_name,
+                        researcher_email, researcher_institution, researcher_department,
+                        submission_date, proposal_title):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: submitted".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
                      body="""Dear project manager,
 
 A new data request has been submitted.
@@ -1853,13 +2158,13 @@ YOUth
                          submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_dao_pm(ctx, pm_email, request_id, researcher_name, researcher_email,
-                            researcher_institution, researcher_department, submission_date,
-                            proposal_title):
+def mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
+                            researcher_name, researcher_email, researcher_institution,
+                            researcher_department, submission_date, proposal_title):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (data assessment only): submitted".format(request_id),
+                     subject="YOUth data request {} (\"{}\") (data assessment only): {}".format(request_id, truncated_title, "resubmitted" if resubmission else "submitted"),
                      body="""Dear project manager,
 
 A new data request (for the purpose of data assessment only) has been submitted.
@@ -1878,11 +2183,11 @@ YOUth
                          submission_date, request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_preliminary_review_accepted(ctx, datamanager_email, request_id):
+def mail_preliminary_review_accepted(ctx, truncated_title, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: accepted for data manager review".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): accepted for data manager review".format(request_id, truncated_title),
                      body="""Dear data manager,
 
 Data request {} has been approved for review by the YOUth project manager.
@@ -1896,11 +2201,11 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datamanager_review_accepted(ctx, pm_email, request_id):
+def mail_datamanager_review_accepted(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: accepted by data manager".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): accepted by data manager".format(request_id, truncated_title),
                      body="""Dear project manager,
 
 Data request {} has been accepted by the data manager.
@@ -1912,11 +2217,11 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datamanager_review_resubmit(ctx, pm_email, datamanager_remarks, request_id):
+def mail_datamanager_review_resubmit(ctx, truncated_title, pm_email, datamanager_remarks, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected (resubmit) by data manager".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): rejected (resubmit) by data manager".format(request_id, truncated_title),
                      body="""Dear project manager,
 
 Data request {} has been rejected (resubmission allowed) by the data manager for the following reason(s):
@@ -1930,11 +2235,11 @@ YOUth
 """.format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datamanager_review_rejected(ctx, pm_email, datamanager_remarks, request_id):
+def mail_datamanager_review_rejected(ctx, truncated_title, pm_email, datamanager_remarks, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected by data manager".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): rejected by data manager".format(request_id, truncated_title),
                      body="""Dear project manager,
 
 Data request {} has been rejected by the data manager for the following reason(s):
@@ -1948,12 +2253,12 @@ YOUth
 """.format(request_id, datamanager_remarks, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_assignment_accepted_researcher(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: under review".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): under review".format(request_id, truncated_title),
                      body="""Dear {},
 
 Your data request has passed a preliminary assessment and is now under review.
@@ -1965,11 +2270,11 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_assignment_accepted_assignee(ctx, assignee_email, proposal_title, request_id):
+def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, proposal_title, request_id):
     return mail.send(ctx,
                      to=assignee_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: assigned".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
                      body="""Dear DMC member,
 
 Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
@@ -1981,12 +2286,12 @@ YOUth
 """.format(request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_review_researcher(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: reviewed".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
                      body="""Dear {},
 
 Your data request been reviewed by the YOUth Data Management Committee and is awaiting final evaluation by the YOUth project manager.
@@ -1998,11 +2303,11 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_review_pm(ctx, pm_email, request_id):
+def mail_review_pm(ctx, truncated_title, pm_email, request_id):
     return mail.send(ctx,
                      to=pm_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: reviewed".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
                      body="""Dear project manager,
 
 Data request {} has been reviewed by the YOUth Data Management Committee and is awaiting your final evaluation.
@@ -2014,29 +2319,41 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_evaluation_approved_researcher(ctx, researcher_email, researcher_name,
+def mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email, researcher_name,
                                         request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: approved".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
                      body="""Dear {},
 
-Congratulations! Your data request has been approved. The YOUth data manager will now prepare a Data Transfer Agreement for you to sign. You will be notified when it is ready.
-
-The following link will take you directly to your data request: https://{}/datarequest/view/{}.
+Congratulations! Your data request has been approved. You are now asked to preregister your study in the YOUth Open Science Framework preregistry. To do so, please navigate to the preregistration form using this link: https://{}/datarequest/preregister/{}.
 
 With kind regards,
 YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_evaluation_approved_dm(ctx, datamanager_email, request_id):
+def mail_preregistration_submit(ctx, truncated_title, pm_email, request_id):
+    return mail.send(ctx,
+                     to=pm_email,
+                     actor=user.full_name(ctx),
+                     subject="YOUth data request {} (\"{}\"): preregistration submitted".format(request_id, truncated_title),
+                     body="""Dear project manager,
+
+Data request {} has been preregistered by the researcher. You are now asked to review and confirm the preregistration. The following link will take you directly to the data request, where you may confirm the preregistration: https://{}/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, YODA_PORTAL_FQDN, request_id))
+
+
+def mail_datarequest_approved_dm(ctx, truncated_title, datamanager_email, request_id, dao=False):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: approved".format(request_id),
+                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title)),
                      body="""Dear data manager,
 
 Data request {} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
@@ -2048,12 +2365,12 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_dao_approved_researcher(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc, dao=False):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {} (data assessment only): approved".format(request_id),
+                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title)),
                      body="""Dear {},
 
 Your data request has been approved. The YOUth data manager will now create a Data Transfer Agreement for you to sign. You will be notified when it is ready.
@@ -2065,13 +2382,13 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_resubmit(ctx, researcher_email, researcher_name, feedback_for_researcher, pm_email,
+def mail_resubmit(ctx, truncated_title, researcher_email, researcher_name, feedback_for_researcher, pm_email,
                   request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected (resubmit)".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): rejected (resubmit)".format(request_id, truncated_title),
                      body="""Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -2090,13 +2407,13 @@ YOUth
                          YODA_PORTAL_FQDN, request_id))
 
 
-def mail_rejected(ctx, researcher_email, researcher_name, feedback_for_researcher, pm_email,
+def mail_rejected(ctx, truncated_title, researcher_email, researcher_name, feedback_for_researcher, pm_email,
                   request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: rejected".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): rejected".format(request_id, truncated_title),
                      body="""Dear {},
 
 Your data request has been rejected for the following reason(s):
@@ -2112,12 +2429,12 @@ YOUth
 """.format(researcher_name, feedback_for_researcher, pm_email, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_dta(ctx, researcher_email, researcher_name, request_id, cc):
+def mail_dta(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: DTA ready".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): DTA ready".format(request_id, truncated_title),
                      body="""Dear {},
 
 The YOUth data manager has created a Data Transfer Agreement to formalize the transfer of the data you have requested. Please sign in to Yoda to download and read the Data Transfer Agreement.
@@ -2131,11 +2448,12 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_signed_dta(ctx, datamanager_email, request_id):
+def mail_signed_dta(ctx, truncated_title, datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=datamanager_email,
+                     cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: DTA signed".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): DTA signed".format(request_id, truncated_title),
                      body="""Dear data manager,
 
 The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}.
@@ -2149,16 +2467,16 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_data_ready(ctx, researcher_email, researcher_name, datamanager_email, request_id, cc):
+def mail_data_ready(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
     return mail.send(ctx,
                      to=researcher_email,
                      cc=cc,
                      actor=user.full_name(ctx),
-                     subject="YOUth data request {}: data ready".format(request_id),
+                     subject="YOUth data request {} (\"{}\"): data ready".format(request_id, truncated_title),
                      body="""Dear {},
 
-The data you have requested is ready for you to download! For information on how to access the data through Yoda, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda or contact the YOUth data manager ({}).
+The data you have requested has been made available to you within a new folder in Yoda. You can access the data through the webportal in the "research" area or you can connect Yoda as a network drive and access the data through your file explorer. For information on how to access the data, see https://www.uu.nl/en/research/yoda/guide-to-yoda/i-want-to-start-using-yoda
 
 With kind regards,
 YOUth
-""".format(researcher_name, datamanager_email))
+""".format(researcher_name))

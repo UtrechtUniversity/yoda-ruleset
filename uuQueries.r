@@ -111,14 +111,14 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 	*err = errormsg(msiExecGenQuery(*GenQInp, *GenQOut), *errmsg);
         if (*err < 0) {
 		*status = 'ErrorExecutingQuery';
-		*statusInfo = 'An error occured while retrieving data - *errmsg';
+		*statusInfo = 'An error occurred while retrieving data - *errmsg';
 		succeed;
 	}
 
 	*err = errormsg(msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew), *errmsg);
         if (*err < 0) {
                 *status = 'ErrorGetContFromQuery';
-                *statusInfo = 'An error occured while retrieving data - *errmsg';
+                *statusInfo = 'An error occurred while retrieving data - *errmsg';
                 succeed;
         }
 
@@ -181,7 +181,7 @@ uuPaginatedQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset, *kvp
 		        *err = errormsg(msiExecGenQuery(*TotalQInp, *TotalQOut), *errmsg);
 		        if (*err < 0) {
                 		*status = 'ErrorExecutingQuery';
-                		*statusInfo = 'An error occured while retrieving data - *errmsg';
+				*statusInfo = 'An error occurred while retrieving data - *errmsg';
                 		succeed;
         		}
 
@@ -252,14 +252,14 @@ uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset,
 	*err = errormsg(msiExecGenQuery(*GenQInp, *GenQOut), *errmsg);
         if (*err < 0) {
 		*status = 'ErrorExecutingQuery';
-		*statusInfo = 'An error occured while retrieving data - *errmsg';
+		*statusInfo = 'An error occurred while retrieving data - *errmsg';
 		succeed;
 	}
 
 	*err = errormsg(msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew), *errmsg);
         if (*err < 0) {
                 *status = 'ErrorGetContFromQuery';
-                *statusInfo = 'An error occured while retrieving data - *errmsg';
+                *statusInfo = 'An error occurred while retrieving data - *errmsg';
                 succeed;
         }
 
@@ -317,7 +317,7 @@ uuPaginatedUpperQuery(*fields, *conditions, *orderby, *ascdesc, *limit, *offset,
 		        *err = errormsg(msiExecGenQuery(*TotalQInp, *TotalQOut), *errmsg);
 		        if (*err < 0) {
                 		*status = 'ErrorExecutingQuery';
-                		*statusInfo = 'An error occured while retrieving data - *errmsg';
+				*statusInfo = 'An error occurred while retrieving data - *errmsg';
                 		succeed;
         		}
 

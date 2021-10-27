@@ -34,16 +34,30 @@ jobs:
           python -m pip install openapi-spec-validator
           python -m pip install -r requirements.txt
 
-      - name: Generate OpenAPI documentation
+      - name: Create directory for API documentation
         run: |
           mkdir build
-          export PYTHONPATH="${PYTHONPATH}:."
           ln -s . rules_uu
-          python tools/generate-openapi.py rules_uu > build/api.json
 
-      - name: Validate OpenAPI
+      - name: Generate Yoda core API documentation
         run: |
-          openapi-spec-validator build/api.json
+          export PYTHONPATH="${PYTHONPATH}:."
+          python tools/api/generate-openapi.py rules_uu --core > build/api_core.json
+
+      - name: Validate Yoda core API documentation
+        run: |
+          openapi-spec-validator build/api_core.json
+
+      - name: Generate Yoda module API documentation
+        run: |
+          export PYTHONPATH="${PYTHONPATH}:."
+          python tools/api/generate-openapi.py rules_uu --module intake > build/api_intake.json
+          python tools/api/generate-openapi.py rules_uu --module datarequest > build/api_datarequest.json
+
+      - name: Validate Yoda module API documentation
+        run: |
+          openapi-spec-validator build/api_intake.json
+          openapi-spec-validator build/api_datarequest.json
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@releases/v3
