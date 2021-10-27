@@ -604,7 +604,7 @@ def cc_email_addresses_get(contact_object):
 ###################################################
 
 @api.make()
-def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10):
+def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10, archived=False):
     """Get paginated datarequests, including size/modify date information.
 
     :param ctx:        Combined type of a callback and rei struct
@@ -612,9 +612,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     :param sort_order: Column sort order ('asc' or 'desc')
     :param offset:     Offset to start browsing from
     :param limit:      Limit number of results
+    :param archived:   If true, show archived (i.e. rejected) data requests only. If false, only show
+                       non-archived data requests
 
     :returns: Dict with paginated datarequests
     """
+    dmc_member = user.is_member_of(ctx, GROUP_DMC)
+
     coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
     def transform(row):
@@ -655,45 +659,50 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    if not user.is_member_of(ctx, GROUP_DMC):
-        # Normal case
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
-                      offset=offset, limit=limit, output=query.AS_DICT)
-        qcoll_title = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
-                            offset=offset, limit=limit, output=query.AS_DICT)
+    # Build query
+    #
+    # Set filter
+    #
+    # a) Normal case
+    if not dmc_member and not archived:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'PRELIMINARY_RESUBMIT' && != 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' && != 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+    # b) Archive case
+    elif not dmc_member and archived:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'PRELIMINARY_RESUBMIT' || = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' || = 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+    # c) DMC member case
+    elif dmc_member:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+    #
+    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
+    if len(list(qcoll)) > 0:
+        coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
     else:
-        # DMC member case
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx)),
-                      offset=offset, limit=limit, output=query.AS_DICT)
-        if len(list(qcoll)) > 0:
-            coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-            qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-            qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-        else:
-            return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
+        return OrderedDict([('total', 0), ('items', [])])
 
+    # Execute query
     colls = map(transform, list(qcoll))
-
-    # Merge datarequest title in results.
+    #
+    # Merge datarequest title into results
     colls_title = map(transform_title, list(qcoll_title))
     for datarequest_title in colls_title:
         for datarequest in colls:
             if datarequest_title['id'] == datarequest['id']:
                 datarequest['title'] = datarequest_title['title']
                 break
-
-    # Merge datarequest status in results, if applicable:
-    if user.is_member_of(ctx, GROUP_DMC):
-        colls_status = map(transform_status, list(qcoll_status))
-        for datarequest_status in colls_status:
-            for datarequest in colls:
-                if datarequest_title['id'] == datarequest['id']:
-                    datarequest['status'] = datarequest_status['status']
-                    break
+    #
+    # Merge datarequest status into results
+    colls_status = map(transform_status, list(qcoll_status))
+    for datarequest_status in colls_status:
+        for datarequest in colls:
+            if datarequest_title['id'] == datarequest['id']:
+                datarequest['status'] = datarequest_status['status']
+                break
 
     if len(colls) == 0:
         # No results at all?
-        # Make sure the collection actually exists.
+        # Make sure the collection actually exists
         if not collection.exists(ctx, coll):
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
