@@ -12,6 +12,7 @@ import os
 import re
 import time
 
+import genquery
 import irods_types
 import session_vars
 import xmltodict
@@ -174,9 +175,9 @@ def get(ctx, metadata_path, metadata=None):
         # print('{} -> {}'.format(src,dst))
 
         return schema_transformations.get(src, dst)
-    except KeyError as e:
+    except KeyError:
         return None
-    except error.UUError as e:
+    except error.UUError:
         # print('{} -> {} ERR {}'.format(src,dst, e))
         return None
 
@@ -268,7 +269,6 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
         path_parts = coll_name.split('/')
 
         try:
-            group_name = path_parts[3]
             # Get vault package path.
             vault_package = '/'.join(path_parts[:5])
             metadata_path = meta.get_latest_vault_metadata_path(callback, vault_package)

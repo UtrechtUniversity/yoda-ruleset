@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -50,12 +50,6 @@ def api_search_folder_status(user, status):
         "search",
         {"search_string": status, "search_type": "status", "offset": 0, "limit": "10", "sort_order": "asc", "sort_on": "name"}
     )
-
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
 
 
 @then('result "<result>" is found')

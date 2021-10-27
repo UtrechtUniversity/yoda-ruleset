@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -106,12 +106,6 @@ def api_response(user, target_coll):
         "meta_clone_file",
         {"target_coll": target_coll}
     )
-
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, body = api_response
-    assert http_status == code
 
 
 @then('metadata JSON is removed from "<clone_collection>"')

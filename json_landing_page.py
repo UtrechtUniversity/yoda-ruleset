@@ -70,7 +70,13 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         additional_labs = []
 
     try:
-        disciplines = dictJsonData['Discipline']  # niet verplicht
+        discipline_ids = dictJsonData['Discipline']
+        disciplines = []
+        schema_disc_ids = json_schema['definitions']['optionsDiscipline']['enum']
+        schema_disc_names = json_schema['definitions']['optionsDiscipline']['enumNames']
+        for id in discipline_ids:
+            index = schema_disc_ids.index(id)
+            disciplines.append(schema_disc_names[index])
     except KeyError:
         disciplines = []
 
@@ -80,24 +86,29 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         version = ''
 
     try:
-        language = dictJsonData['Language']
+        language = ''
+        language_id = dictJsonData['Language']
+        schema_lang_ids = json_schema['definitions']['optionsLanguage']['enum']
+        schema_lang_names = json_schema['definitions']['optionsLanguage']['enumNames']
+        index = schema_lang_ids.index(language_id)
+        language = schema_lang_names[index]
     except KeyError:
         language = ''
 
     try:
-        collected = dictJsonData['Collected']
+        datatype = ''
+        datatype_id = dictJsonData['Data_Type']
+        schema_dt_ids = json_schema['definitions']['optionsDataType']['enum']
+        schema_dt_names = json_schema['definitions']['optionsDataType']['enumNames']
+        index = schema_dt_ids.index(datatype_id)
+        datatype = schema_dt_names[index]
     except KeyError:
-        collected = {}
+        datatype = ''
 
     try:
         covered_geolocation_place = dictJsonData['Covered_Geolocation_Place']
     except KeyError:
         covered_geolocation_place = {}
-
-    try:
-        covered_period = dictJsonData['Covered_Period']
-    except KeyError:
-        covered_period = []
 
     try:
         tags = dictJsonData['Tag']  # not mandatory
@@ -149,6 +160,10 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         measured_property = []
 
+    # Route all domain specific keywords to tag area of landingpage
+    all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure
+                     + geomorphical_feature + material + monitoring + software + measured_property)
+
     try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory
     except KeyError:
@@ -198,21 +213,13 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     landing_page = tm.render(
         title=title,
         description=description,
+        datatype=datatype,
         labs=labs,
         additional_labs=additional_labs,
         disciplines=disciplines,
         version=version,
         language=language,
-        tags=tags,
-        apparatus=apparatus,
-        main_setting=main_setting,
-        process_hazard=process_hazard,
-        geological_structure=geological_structure,
-        geomorphical_feature=geomorphical_feature,
-        material=material,
-        monitoring=monitoring,
-        software=software,
-        measured_property=measured_property,
+        tags=all_taggebles,
         creators=creators,
         contributors=contributors,
         contacts=contacts,

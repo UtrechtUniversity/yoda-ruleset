@@ -8,11 +8,11 @@ import itertools
 import os
 import time
 
+import genquery
 import irods_types
 
 import folder
 import group
-import mail
 import meta
 import meta_form
 import policies_datapackage_status
@@ -31,7 +31,9 @@ __all__ = ['api_vault_submit',
            'api_vault_system_metadata',
            'api_vault_collection_details',
            'api_vault_copy_to_research',
-           'api_vault_get_publication_terms']
+           'api_vault_get_publication_terms',
+           'api_grant_read_access_research_group',
+           'api_revoke_read_access_research_group']
 
 
 @api.make()
@@ -329,7 +331,7 @@ def vault_write_license(ctx, vault_pkg_coll):
             # Fix ACLs.
             try:
                 ctx.iiCopyACLsFromParent(license_file, 'default')
-            except Exception as e:
+            except Exception:
                 log.write(ctx, "rule_vault_write_license: Failed to set vault permissions on <{}>".format(license_file))
         else:
             log.write(ctx, "rule_vault_write_license: License text not available for <{}>".format(license))
@@ -450,7 +452,7 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IIVAULTSTATUSATTRNAME]
         try:
             return constants.vault_package_state(x)
-        except Exception as e:
+        except Exception:
             log.write(ctx, 'Invalid vault folder status <{}>'.format(x))
 
     return constants.vault_package_state.EMPTY
@@ -494,7 +496,7 @@ def api_vault_collection_details(ctx, path):
     action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
     iter = genquery.row_iterator(
         "COLL_ID",
-        "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+        "META_COLL_ATTR_NAME = '" + action_status + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
         genquery.AS_LIST, ctx
     )
     for _row in iter:
@@ -566,6 +568,90 @@ def api_vault_get_publication_terms(ctx):
         return data_object.read(ctx, terms_file)
     except Exception:
         return api.Error('TermsReadFailed', 'Could not open Terms and Agreements.')
+
+
+@api.make()
+def api_grant_read_access_research_group(ctx, coll):
+    """Grant read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, coll)
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
+
+
+@api.make()
+def api_revoke_read_access_research_group(ctx, coll):
+    """Revoke read rights of research group for datapackage in vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection of data package to remove read rights from
+
+    :returns: API status
+    """
+    # coll = '/' + user.zone(ctx) + '/home' + coll
+    log.write(ctx, 'HARM')
+    log.write(ctx, coll)
+
+    if not collection.exists(ctx, coll):
+        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+
+    coll_parts = coll.split('/')
+    if len(coll_parts) != 5:
+        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+
+    vault_group_name = coll_parts[3]
+
+    # Find category
+    group_parts = vault_group_name.split('-')
+    research_group_name = 'research-' + group_parts[1]
+    category = group.get_category(ctx, research_group_name)
+
+    # Is datamanager?
+    actor = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+        # Grant research group read access to vault package.
+        try:
+            acl_kv = misc.kvpair(ctx, "actor", actor)
+            msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
+        except Exception:
+            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+    else:
+        return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
+
+    return {'status': 'Success',
+            'statusInfo': ''}
 
 
 def copy_folder_to_vault(ctx, folder, target):
@@ -643,7 +729,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:read", user.full_name(ctx), source_path)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     dest_path = destination
@@ -661,7 +747,7 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         # CREATE COLLECTION
         try:
             msi.coll_create(ctx, dest_path, '', irods_types.BytesBuf())
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         if markIncomplete:
@@ -671,13 +757,13 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
         try:
             # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
             ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     if read_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), source_path)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
     return 0
@@ -689,7 +775,6 @@ def set_vault_permissions(ctx, group_name, folder, target):
     base_name = '-'.join(parts[1:])
 
     parts = folder.split('/')
-    datapackage_name = parts[-1]
     vault_group_name = constants.IIVAULTPREFIX + base_name
 
     # Check if noinherit is set
@@ -732,7 +817,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
             try:
                 msi.set_acl(ctx, "default", "admin:read", group_name, vault_path)
                 log.write(ctx, "Granted " + group_name + " read access to " + vault_path)
-            except msi.Error as e:
+            except msi.Error:
                 log.write(ctx, "Failed to grant " + group_name + " read access to " + vault_path)
 
     # Check if vault group has ownership
@@ -807,10 +892,8 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     # Set new status
     try:
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
-        if new_coll_status == str(constants.vault_package_state.SUBMITTED_FOR_PUBLICATION):
-            send_datamanagers_publication_request_mail(ctx, coll)
         return ['Success', '']
-    except msi.Error as e:
+    except msi.Error:
         current_coll_status = get_coll_vault_status(ctx, coll).value
         is_legal = policies_datapackage_status.can_transition_datapackage_status(ctx, actor, coll, current_coll_status, new_coll_status)
         if not is_legal:
@@ -821,7 +904,6 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
                 # landing page and doi have to be present
 
                 # Landingpage URL.
-                landinpage_url = ""
                 iter = genquery.row_iterator(
                     "META_COLL_ATTR_VALUE",
                     "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
@@ -844,48 +926,6 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
                         return ['1', 'DOI is missing']
 
     return ['Success', '']
-
-
-def send_datamanagers_publication_request_mail(ctx, coll):
-    """All involved datamanagers will receive an email notification regarding a publication request by a researcher.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Vault package with publication request
-    """
-    # Find group
-    coll_parts = coll.split('/')
-    vault_group_name = coll_parts[3]
-    group_parts = vault_group_name.split('-')
-
-    # Create the research equivalent in order to get the category.
-    group_name = 'research-' + '-'.join(group_parts[1:])
-
-    # Find category.
-    category = group.get_category(ctx, group_name)
-
-    # Get the submitter.
-    submitter = 'Unknown'
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_submission_actor'" % (coll),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        submitter = row[0].split('#')[0]
-
-    # Find the datamanagers of the category and inform them of data to be accepted to vault
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_GROUP_NAME = 'datamanager-" + category + "' "
-        "AND USER_ZONE = '" + user.zone(ctx) + "' "
-        "AND USER_TYPE != 'rodsgroup'",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        datamanager = row[0]
-        # coll split off zone / home
-        mail.mail_datamanager_publication_to_be_accepted(ctx, datamanager, submitter, '/'.join(coll_parts[3:]))
 
 
 def vault_request_status_transitions(ctx, coll, new_vault_status):
@@ -963,7 +1003,7 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
         action_status = constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id
         iter = genquery.row_iterator(
             "COLL_ID",
-            "META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + '"vault_status_action_' + coll_id + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
+            "META_COLL_ATTR_NAME = '" + action_status + "' AND META_COLL_ATTR_VALUE = 'PENDING'",
             genquery.AS_LIST, ctx
         )
         for _row in iter:
@@ -985,3 +1025,37 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     avu.set_on_coll(ctx, actor_group_path, constants.UUORGMETADATAPREFIX + 'vault_status_action_' + coll_id, 'PENDING')
 
     return ['', '']
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Set submitter of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_submission_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_approver(ctx, path, actor):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_approver(ctx, path):
+    """Set approver of data package for publication."""
+    attribute = constants.UUORGMETADATAPREFIX + "publication_approval_actor"
+    org_metadata = dict(folder.get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None

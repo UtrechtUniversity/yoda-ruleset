@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -32,12 +32,6 @@ def api_browse_collections(user, collection):
         "browse_collections",
         {"coll": collection}
     )
-
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
 
 
 @then('the browse result contains "<result>"')

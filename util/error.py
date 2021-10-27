@@ -19,3 +19,7 @@ class UUFileNotExistError(UUError):
 
 class UUJsonValidationError(UUError):
     """JSON data could not be validated."""
+
+
+class UUNotAuthorized(UUError):
+    """Not authorized action."""

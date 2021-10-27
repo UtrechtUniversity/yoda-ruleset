@@ -1,7 +1,7 @@
 # coding=utf-8
 """Meta UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,9 +13,8 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_meta.feature')
 
 
-@when('user opens metadata form of folder "<folder>"')
-def ui_metadata_open(browser, folder):
-    browser.links.find_by_partial_text(folder).click()
+@when('user opens metadata form')
+def ui_metadata_open(browser):
     browser.find_by_css('button.metadata-form').click()
 
 
@@ -35,7 +34,6 @@ def ui_metadata_save(browser):
 def ui_metadata_delete(browser):
     browser.find_by_css('.yodaButtons .btn-danger').click()
     browser.find_by_css('.confirm').click()
-    browser.find_by_css('.btn-light').click()
 
 
 @then('metadata form is saved as yoda-metadata.json')
@@ -45,4 +43,4 @@ def ui_metadata_saved(browser):
 
 @then('metadata is deleted from folder')
 def ui_metadata_deleted(browser):
-    assert browser.is_text_present("Deleted metadata of folder </research-initial>")
+    browser.is_text_present("Deleted metadata of folder </research-initial>", wait_time=3)

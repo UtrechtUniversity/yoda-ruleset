@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for dealing with collections."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -13,7 +13,6 @@ import genquery
 import irods_types
 
 import msi
-from query import Query
 
 
 def exists(ctx, path):
@@ -129,6 +128,46 @@ def create(ctx, path, entire_tree=''):
                     irods_types.BytesBuf())
 
 
+def copy(ctx, path_org, path_copy):
+    """Copy a collection.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path_org:  Collection original path
+    :param path_copy: Collection copy path
+
+    This may raise a error.UUError if the collection does not exist, or when
+    the user does not have write permission.
+    """
+    msi.coll_rsync(ctx,
+                   path_org,
+                   path_copy,
+                   '',
+                   'IRODS_TO_IRODS',
+                   irods_types.BytesBuf())
+
+
+def move(ctx, path_org, path_move):
+    """Move a collection.
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path_org:  Collection original path
+    :param path_move: Collection move path
+
+    This may raise a error.UUError if the collection does not exist, or when
+    the user does not have write permission.
+    """
+    msi.coll_rsync(ctx,
+                   path_org,
+                   path_move,
+                   '',
+                   'IRODS_TO_IRODS',
+                   irods_types.BytesBuf())
+    msi.rm_coll(ctx,
+                path_org,
+                '',
+                irods_types.BytesBuf())
+
+
 def remove(ctx, path):
     """Delete a collection.
 
@@ -169,7 +208,7 @@ def id_from_name(ctx, coll_name):
 
     :returns: Collection id
     """
-    return Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
+    return genquery.Query(ctx, "COLL_ID", "COLL_NAME = '{}'".format(coll_name)).first()
 
 
 def name_from_id(ctx, coll_id):
@@ -180,4 +219,4 @@ def name_from_id(ctx, coll_id):
 
     :returns: Collection name
     """
-    return Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()
+    return genquery.Query(ctx, "COLL_NAME", "COLL_ID = '{}'".format(coll_id)).first()

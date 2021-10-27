@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for folder status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
 import meta
+import notifications
 import provenance
 from util import *
 
@@ -59,12 +60,13 @@ def can_transition_folder_status(ctx, actor, coll, status_from, status_to):
     elif status_to in [constants.research_package_state.ACCEPTED,
                        constants.research_package_state.REJECTED]:
 
-        grp = pathutil.info(coll).group
-        cat = group.get_category(ctx, grp)
-        dmgrp = 'datamanager-' + cat
+        if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+            grp = pathutil.info(coll).group
+            cat = group.get_category(ctx, grp)
+            dmgrp = 'datamanager-' + cat
 
-        if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
-            return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
+            if group.exists(ctx, dmgrp) and not user.is_member_of(ctx, dmgrp, actor):
+                return policy.fail('Only a member of {} is allowed to accept or reject a submitted folder'.format(dmgrp))
 
     elif status_to is constants.research_package_state.SECURED:
         actor = user.user_and_zone(ctx)
@@ -96,16 +98,35 @@ def post_status_transition(ctx, path, actor, status):
     if status is constants.research_package_state.SUBMITTED:
         provenance.log_action(ctx, actor, path, "submitted for vault")
 
-        # Set status to accepted if group has no datamanager.
-        if not folder.datamanager_exists(ctx, path):
+        # Store actor of submitted for vault.
+        folder.set_submitter(ctx, path, actor)
+
+        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+            # Send notifications to datamanagers
+            datamanagers = folder.get_datamanagers(ctx, path)
+            message = "Data package submitted for the vault"
+            for datamanager in datamanagers:
+                datamanager = '{}#{}'.format(*datamanager)
+                notifications.set(ctx, actor, datamanager, path, message)
+        else:
+            # Set status to accepted for deposit groups or if research group has no datamanager.
             folder.set_status(ctx, path, constants.research_package_state.ACCEPTED)
 
     elif status is constants.research_package_state.ACCEPTED:
-        # Actor is system if group has no datamanager.
-        if not folder.datamanager_exists(ctx, path):
+        # Actor is system for deposit groups or if research group has no datamanager.
+        if pathutil.info(path).space is pathutil.Space.DEPOSIT or not folder.datamanager_exists(ctx, path):
             actor = "system"
 
         provenance.log_action(ctx, actor, path, "accepted for vault")
+
+        # Store actor of accepted for vault.
+        folder.set_accepter(ctx, path, actor)
+
+        # Send notifications to submitter.
+        if pathutil.info(path).space is pathutil.Space.RESEARCH and folder.datamanager_exists(ctx, path):
+            submitter = folder.get_submitter(ctx, path)
+            message = "Data package accepted for vault"
+            notifications.set(ctx, actor, submitter, path, message)
 
         # Set state to secure package in vault space.
         attribute = constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault"
@@ -115,7 +136,7 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.research_package_state.FOLDER:
         # If previous action was submit and new status is FOLDER action is unsubmit.
         provenance_log = provenance.get_provenance_log(ctx, path)
-        if provenance_log[-1][1] == "submitted for vault":
+        if provenance_log[0][1] == "submitted for vault":
             provenance.log_action(ctx, actor, path, "unsubmitted for vault")
         else:
             provenance.log_action(ctx, actor, path, "unlocked")
@@ -126,6 +147,26 @@ def post_status_transition(ctx, path, actor, status):
     elif status is constants.research_package_state.REJECTED:
         provenance.log_action(ctx, actor, path, "rejected for vault")
 
+        # Send notifications to submitter
+        submitter = folder.get_submitter(ctx, path)
+        message = "Data package rejected for vault"
+        notifications.set(ctx, actor, submitter, path, message)
+
     elif status is constants.research_package_state.SECURED:
         actor = "system"
         provenance.log_action(ctx, actor, path, "secured in vault")
+
+        # Send notifications to submitter and accepter
+        data_package = folder.get_vault_data_package(ctx, path)
+        submitter = folder.get_submitter(ctx, path)
+        accepter = folder.get_accepter(ctx, path)
+        message = "Data package secured in vault"
+        notifications.set(ctx, actor, submitter, data_package, message)
+        notifications.set(ctx, actor, accepter, data_package, message)
+
+        # Remove deposit folder after secure in vault.
+        if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            parent, _ = pathutil.chop(path)
+            msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
+            msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
+            collection.remove(ctx, path)

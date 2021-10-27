@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 import irods_types
 
 import epic
@@ -13,7 +14,6 @@ import policies_folder_status
 import provenance
 import vault
 from util import *
-from util.query import Query
 
 __all__ = ['rule_collection_group_name',
            'api_folder_get_locks',
@@ -268,7 +268,7 @@ def folder_secure(ctx, coll, target):
             if modify_access != b'\x01':
                 try:
                     msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-                except msi.Error as e:
+                except msi.Error:
                     return '1'
 
             avu.set_on_coll(ctx, coll, constants.UUORGMETADATAPREFIX + "cronjob_copy_to_vault", constants.CRONJOB_STATE['RETRY'])
@@ -277,7 +277,7 @@ def folder_secure(ctx, coll, target):
             if modify_access != b'\x01':
                 try:
                     msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-                except msi.Error as e:
+                except msi.Error:
                     log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
                     return '1'
 
@@ -288,7 +288,7 @@ def folder_secure(ctx, coll, target):
     # Set vault permissions for new vault package.
     group = collection_group_name(ctx, coll)
     if group == '':
-        log.write(ctx, "folder_secure: Cannot determine which research group <{}> belongs to".format(coll))
+        log.write(ctx, "folder_secure: Cannot determine which deposit or research group <{}> belongs to".format(coll))
         return '1'
 
     vault.set_vault_permissions(ctx, group, coll, target)
@@ -328,13 +328,16 @@ def folder_secure(ctx, coll, target):
             log.write(ctx, "Could not set ACL on " + parent)
         parent, chopped_coll = pathutil.chop(parent)
 
+    # Save vault package for notification.
+    set_vault_data_package(ctx, coll, target)
+
+    # Set folder status to SECURED.
     avu.set_on_coll(ctx, coll, constants.IISTATUSATTRNAME, constants.research_package_state.SECURED)
 
     try:
         msi.set_acl(ctx, "recursive", "admin:null", user.full_name(ctx), coll)
     except msi.Error:
         log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
-        return '1'
 
     parent, chopped_coll = pathutil.chop(coll)
     while parent != "/" + user.zone(ctx) + "/home":
@@ -354,7 +357,7 @@ def determine_vault_target(ctx, folder):
 
     group = collection_group_name(ctx, folder)
     if group == '':
-        log.write(ctx, "Cannot determine which research group " + + " ibelongs to")
+        log.write(ctx, "Cannot determine which deposit or research group " + + " belongs to")
         return ""
 
     parts = group.split('-')
@@ -384,6 +387,10 @@ def determine_vault_target(ctx, folder):
 
 def collection_group_name(callback, coll):
     """Return the name of the group a collection belongs to."""
+
+    if pathutil.info(coll).space is pathutil.Space.DEPOSIT:
+        coll, _ = pathutil.chop(coll)
+
     # Retrieve all access user IDs on collection.
     iter = genquery.row_iterator(
         "COLL_ACCESS_USER_ID",
@@ -404,8 +411,8 @@ def collection_group_name(callback, coll):
         for row2 in iter2:
             group_name = row2[0]
 
-            # Check if group is a research or intake group.
-            if group_name.startswith("research-") or group_name.startswith("intake-"):
+            # Check if group is a research, deposit or intake group.
+            if group_name.startswith("research-") or group_name.startswith("deposit-") or group_name.startswith("intake-"):
                 return group_name
 
     for row in iter:
@@ -430,11 +437,11 @@ def get_org_metadata(ctx, path, object_type=pathutil.ObjectType.COLL):
     typ = 'DATA' if object_type is pathutil.ObjectType.DATA else 'COLL'
 
     return [(k, v) for k, v
-            in Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
-                     "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
-                     + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
-                        if object_type is pathutil.ObjectType.DATA
-                        else " AND COLL_NAME = '{}'".format(path)))]
+            in genquery.Query(ctx, 'META_{}_ATTR_NAME, META_{}_ATTR_VALUE'.format(typ, typ),
+                              "META_{}_ATTR_NAME like '{}%'".format(typ, constants.UUORGMETADATAPREFIX)
+                              + (" AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))
+                                 if object_type is pathutil.ObjectType.DATA
+                                 else " AND COLL_NAME = '{}'".format(path)))]
 
 
 def get_locks(ctx, path, org_metadata=None, object_type=pathutil.ObjectType.COLL):
@@ -501,7 +508,7 @@ def get_status(ctx, path, org_metadata=None):
         x = org_metadata[constants.IISTATUSATTRNAME]
         try:
             return constants.research_package_state(x)
-        except Exception as e:
+        except Exception:
             log.write(ctx, 'Invalid folder status <{}>'.format(x))
 
     return constants.research_package_state.FOLDER
@@ -513,3 +520,62 @@ def datamanager_exists(ctx, coll):
     category = group.get_category(ctx, group_name)
 
     return group.exists(ctx, "datamanager-" + category)
+
+
+def get_datamanagers(ctx, coll):
+    """Retrieve datamanagers for a given collection."""
+    group_name = collection_group_name(ctx, coll)
+    category = group.get_category(ctx, group_name)
+
+    return group.members(ctx, "datamanager-" + category)
+
+
+def set_submitter(ctx, path, actor):
+    """Set submitter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_submitter(ctx, path):
+    """Get submitter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "submitted_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_accepter(ctx, path, actor):
+    """Set accepter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
+    avu.set_on_coll(ctx, path, attribute, actor)
+
+
+def get_accepter(ctx, path):
+    """Get accepter of folder for the vault."""
+    attribute = constants.UUORGMETADATAPREFIX + "accepted_actor"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None
+
+
+def set_vault_data_package(ctx, path, vault):
+    """Set vault data package for deposit."""
+    attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
+    avu.set_on_coll(ctx, path, attribute, vault)
+
+
+def get_vault_data_package(ctx, path):
+    """Get vault data package for deposit."""
+    attribute = constants.UUORGMETADATAPREFIX + "vault_data_package"
+    org_metadata = dict(get_org_metadata(ctx, path))
+
+    if attribute in org_metadata:
+        return org_metadata[attribute]
+    else:
+        return None

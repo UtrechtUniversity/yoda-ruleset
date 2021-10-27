@@ -1,6 +1,6 @@
 Feature: Browse UI
 
-    Scenario: Browsing to a folder in the research space
+    Scenario Outline: Browsing to a folder in the research space
         Given user "<user>" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"
@@ -13,7 +13,7 @@ Feature: Browse UI
           | datamanager | research-core-0    |
           | datamanager | research-default-1 |
 
-    Scenario: Browsing to a folder in the vault space
+    Scenario Outline: Browsing to a folder in the vault space
           Given user "<user>" is logged in
           And module "vault" is shown
           When user browses to data package "<data_package>"
@@ -25,3 +25,8 @@ Feature: Browse UI
             | researcher  | vault-default-1 |
             | datamanager | vault-core-0    |
             | datamanager | vault-default-1 |
+
+    Scenario: Browsing to a non existing page
+        Given user "researcher" is logged in
+        When module "nonexisting" is shown
+        Then the 404 error page is shown

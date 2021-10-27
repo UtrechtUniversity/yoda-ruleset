@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 import requests
 
 from util import *
 
 __all__ = ['api_group_data',
-           'api_group_data_filtered',
            'api_group_categories',
            'api_group_subcategories',
            'rule_group_provision_external_user',
@@ -162,25 +162,66 @@ def getSubcategories(ctx, category):
 
 @api.make()
 def api_group_data(ctx):
-    """Retrieve group data for all users."""
-    return getGroupData(ctx)
+    """Retrieve group data as hierarchy for user.
 
+    The structure of the group hierarchy parameter is as follows:
+    {
+      'CATEGORY_NAME': {
+        'SUBCATEGORY_NAME': {
+          'GROUP_NAME': {
+            'description': 'GROUP_DESCRIPTION',
+            'data-classification': 'GROUP_DATA_CLASSIFICATION',
+            'members': {
+              'USER_NAME': {
+                'access': (reader | normal | manager)
+              }, ...
+            }
+          }, ...
+        }, ...
+      }, ...
+    }
 
-@api.make()
-def api_group_data_filtered(ctx, username, zone_name):
-    """Retrieve group data for a single user.
+    :param ctx: Combined type of a ctx and rei struct
 
-    :param ctx:       Combined type of a ctx and rei struct
-    :param username: User to retrieve group data for
-    :param zone_name: Zone name of user
-
-    :returns: Group data for a single user
+    :returns: Group hierarchy, user type and user zone
     """
-    groups    = getGroupData(ctx)
-    full_name = '{}#{}'.format(username, zone_name)
+    if user.is_admin(ctx):
+        groups = getGroupData(ctx)
+    else:
+        groups    = getGroupData(ctx)
+        full_name = user.full_name(ctx)
+        # Filter groups (only return groups user is part of), convert to json and write to stdout.
+        groups = list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
-    # Filter groups (only return groups user is part of), convert to json and write to stdout.
-    return list(filter(lambda group: full_name in group['read'] + group['members'], groups))
+    group_hierarchy = {}
+    for group in groups:
+        members = {}
+
+        # Normal users
+        for member in group['members']:
+            members[member] = {'access': 'normal'}
+
+        # Managers
+        for member in group['managers']:
+            members[member] = {'access': 'manager'}
+
+        # Read users
+        for member in group['read']:
+            members[member] = {'access': 'reader'}
+
+        if not group_hierarchy.get(group['category']):
+            group_hierarchy[group['category']] = {}
+
+        if not group_hierarchy[group['category']].get(group['subcategory']):
+            group_hierarchy[group['category']][group['subcategory']] = {}
+
+        group_hierarchy[group['category']][group['subcategory']][group['name']] = {
+            'description': group['description'] if 'description' in group else '',
+            'data_classification': group['data_classification'] if 'data_classification' in group else '',
+            'members': members
+        }
+
+    return {'group_hierarchy': group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
@@ -378,7 +419,7 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
     """
-    ruleResult = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
+    ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
 
 
 @api.make()
@@ -390,7 +431,7 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :param property_name:  Name of the property to update
     :param property_value: Value of the property to update
     """
-    ruleResult = ctx.uuGroupModify(group_name, property_name, property_value, '', '')
+    ctx.uuGroupModify(group_name, property_name, property_value, '', '')
 
 
 @api.make()
@@ -400,7 +441,7 @@ def api_group_delete(ctx, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group to delete
     """
-    ruleResult = ctx.uuGroupRemove(group_name, '', '')
+    ctx.uuGroupRemove(group_name, '', '')
 
 
 @api.make()
@@ -439,7 +480,7 @@ def api_group_user_add(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
     """
-    ruleResult = ctx.uuGroupUserAdd(group_name, username, '', '')
+    ctx.uuGroupUserAdd(group_name, username, '', '')
 
 
 @api.make()
@@ -451,7 +492,7 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
     :param group_name: Name of the group
     :param new_role:   New role of the user
     """
-    ruleResult = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
+    ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
 
 
 @api.make()
@@ -478,4 +519,4 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
     """
-    ruleResult = ctx.uuGroupUserRemove(group_name, username, '', '')
+    ctx.uuGroupUserRemove(group_name, username, '', '')

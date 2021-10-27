@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """iRODS policy implementations."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
 
+import irods_errors
 import session_vars
 
 import datarequest
@@ -28,13 +29,13 @@ from util import *
 # Authorize I/O operations {{{
 
 # Separate from ACLs, we deny certain operations on collections and data in
-# research folders when paths are locked.
+# research or deposit folders when paths are locked.
 
 def can_coll_create(ctx, actor, coll):
     """Disallow creating collections in locked folders."""
     log.debug(ctx, 'check coll create <{}>'.format(coll))
 
-    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+    if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_locked(ctx, pathutil.dirname(coll)) and not user.is_admin(ctx, actor):
             return policy.fail('Parent folder is locked')
 
@@ -52,7 +53,7 @@ def can_coll_delete(ctx, actor, coll):
     if re.match(r'^/[^/]+/home/[^/]+$', coll) and not user.is_admin(ctx, actor):
         return policy.fail('Cannot delete or move collections directly under /home')
 
-    if pathutil.info(coll).space is pathutil.Space.RESEARCH:
+    if pathutil.info(coll).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if not user.is_admin(ctx, actor) and folder.has_locks(ctx, coll):
             return policy.fail('Folder or subfolder is locked')
 
@@ -73,7 +74,7 @@ def can_coll_move(ctx, actor, src, dst):
 def can_data_create(ctx, actor, path):
     log.debug(ctx, 'check data create <{}>'.format(path))
 
-    if pathutil.info(path).space is pathutil.Space.RESEARCH:
+    if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_locked(ctx, pathutil.dirname(path)):
             # Parent coll locked?
             if not user.is_admin(ctx, actor):
@@ -95,8 +96,8 @@ def can_data_create(ctx, actor, path):
 def can_data_write(ctx, actor, path):
     log.debug(ctx, 'check data write <{}>'.format(path))
 
-    # Disallow writing to locked objects in research folders.
-    if pathutil.info(path).space is pathutil.Space.RESEARCH:
+    # Disallow writing to locked objects in research and deposit folders.
+    if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if folder.is_data_locked(ctx, path) and not user.is_admin(ctx, actor):
             return policy.fail('Data object is locked')
 
@@ -112,7 +113,7 @@ def can_data_delete(ctx, actor, path):
     if re.match(r'^/[^/]+/home/[^/]+$', path) and not user.is_admin(ctx, actor):
         return policy.fail('Cannot delete or move data directly under /home')
 
-    if pathutil.info(path).space is pathutil.Space.RESEARCH:
+    if pathutil.info(path).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         if not user.is_admin(ctx, actor) and folder.is_data_locked(ctx, path):
             return policy.fail('Folder is locked')
 
@@ -181,7 +182,7 @@ def py_acDataDeletePolicy(ctx):
     return (policy.succeed()
             if can_data_delete(ctx, user.user_and_zone(ctx),
                                str(session_vars.get_map(ctx.rei)['data_object']['object_path']))
-            else ctx.msiDeleteDisallowed())
+            else irods_errors.SYS_DELETE_DISALLOWED)
 
 
 @policy.require()
@@ -344,8 +345,8 @@ def py_acPreProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, valu
 
     space = pathutil.info(obj_name).space
 
-    if space is pathutil.Space.RESEARCH and attr == constants.IISTATUSATTRNAME:
-        # Research folder status change. Validate.
+    if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT] and attr == constants.IISTATUSATTRNAME:
+        # Research or deposit folder status change. Validate.
         if not unit == '':
             return policy.fail('Invalid status attribute')
         if option not in ['set', 'rm', 'rmw']:
@@ -405,7 +406,7 @@ def py_acPreProcForModifyAVUMetadata_mod(ctx, *args):
     if t_dst not in ['-d', '-C']:
         return policy.succeed()
 
-    if pathutil.info(dst).space in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
+    if pathutil.info(dst).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
         return policy.fail('Metadata mod not allowed')
 
 
@@ -419,7 +420,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
     if t_dst not in ['-d', '-C']:
         return policy.succeed()
 
-    if pathutil.info(dst).space in [pathutil.Space.RESEARCH, pathutil.Space.VAULT]:
+    if pathutil.info(dst).space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
         # Prevent imeta cp. Previously this was blocked by a buggy policy.
         # We now block this explicitly in research & vault because the action is
         # too difficult to reliably validate w.r.t. for example folder status transitions,
@@ -437,7 +438,7 @@ def py_acPreProcForModifyAVUMetadata_cp(ctx, _, t_src, t_dst, src, dst):
 def py_acPostProcForModifyAVUMetadata(ctx, option, obj_type, obj_name, attr, value, unit):
     info = pathutil.info(obj_name)
 
-    if attr == constants.IISTATUSATTRNAME and info.space is pathutil.Space.RESEARCH:
+    if attr == constants.IISTATUSATTRNAME and info.space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         status = constants.research_package_state.FOLDER.value if option in ['rm', 'rmw'] else value
         policies_folder_status.post_status_transition(ctx, obj_name, str(user.user_and_zone(ctx)), status)
 

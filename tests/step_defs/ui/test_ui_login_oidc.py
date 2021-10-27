@@ -11,12 +11,24 @@ from pytest_bdd import (
     when,
 )
 
+from conftest import portal_url
+
 scenarios('../../features/ui/ui_login_oidc.feature')
 
 
-@given('login page is shown')
-def ui_login(browser):
-    browser.is_text_present("Login to Yoda")
+@given('the user "<user>" can start the OIDC flow')
+def ui_start_oidc(browser, user):
+    url = "{}/user/gate".format(portal_url)
+    browser.visit(url)
+    input_username = browser.find_by_id('f-login-username')
+    input_username.fill(user)
+    browser.find_by_id('f-login-submit').click()
+
+
+@given('the user is at the login gate')
+def ui_gate(browser):
+    url = "{}/user/gate".format(portal_url)
+    browser.visit(url)
 
 
 @when('user clicks login with OIDC')

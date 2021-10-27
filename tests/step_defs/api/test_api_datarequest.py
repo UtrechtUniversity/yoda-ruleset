@@ -338,12 +338,6 @@ def api_datarequest_data_ready(user, datarequest_id):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then(parsers.parse('request status is "{status}"'))
 def request_status(user, datarequest_id, status):
     _, body = api_request(

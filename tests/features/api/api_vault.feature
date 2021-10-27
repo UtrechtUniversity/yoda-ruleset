@@ -39,7 +39,7 @@ Feature: Vault API
         Then the response status code is "200"
         And preservable formats lists are returned
 
-    Scenario: Vault unpreservable files
+    Scenario Outline: Vault unpreservable files
         Given user "researcher" is authenticated
         And data package exists in "<vault>"
         And the Yoda vault unpreservable files API is queried with "<list>" on datapackage in "<vault>"

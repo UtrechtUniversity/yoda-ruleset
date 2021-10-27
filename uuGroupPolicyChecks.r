@@ -2,7 +2,8 @@
 # \brief     Group operation policy check rules.
 # \author    Chris Smeele
 # \author    Ton Smeele
-# \copyright Copyright (c) 2015 - 2017, Utrecht University. All rights reserved
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2015 - 2021, Utrecht University. All rights reserved
 # \license   GPLv3, see LICENSE
 
 # For every Group Management action (GroupAdd, GroupUserChangeRole, etc.) there
@@ -37,7 +38,7 @@ uuUserNameIsValid(*name)
 #
 # Group names must:
 #
-# - be prefixed with 'intake-' or 'research-'
+# - be prefixed with 'intake-' or 'research-' or 'deposit-'
 # - contain only lowercase characters, numbers and hyphens
 # - not start or end with a hyphen
 #
@@ -50,7 +51,7 @@ uuUserNameIsValid(*name)
 # \param[in] name
 #
 uuGroupNameIsValid(*name)
-	= *name like regex ``(intake|research)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
+	= *name like regex ``(intake|research|deposit)-([a-z0-9]|[a-z0-9][a-z0-9-]*[a-z0-9])``;
 
 # \brief Check if a category name is valid.
 #
@@ -149,7 +150,7 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 				*reason = "The name '*groupName' is already in use by another *existingType.";
 			}
 		} else {
-			*reason = "Group names must start with one of 'intake-' or 'research-' and may only contain lowercase letters (a-z) and hyphens (-).";
+			*reason = "Group names must start with one of 'intake-' or 'research-' or 'deposit-' and may only contain lowercase letters (a-z) and hyphens (-).";
 		}
 	} else {
 		*reason = "You cannot create groups because you are not a member of the priv-group-add group.";
@@ -274,7 +275,7 @@ uuGroupPolicyCanGroupRemove(*actor, *groupName, *allowed, *reason) {
 	uuGroupUserIsManager(*groupName, *actor, *isManager);
 	if (*isManager) {
 		#                           v  These groups are user-removable  v
-		if (*groupName like regex "(grp|intake|research|vault)-.*") {
+		if (*groupName like regex "(grp|intake|research|deposit|vault)-.*") {
 			# NB: Only rodsadmin can remove datamanager groups.
 			#     Even datamanager group managers cannot remove their own group.
 			*homeCollection = "/$rodsZoneClient/home/*groupName";
@@ -421,5 +422,35 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 		}
 	} else {
 		*reason = "'*member' is not a member of group *groupName.";
+	}
+}
+
+# \brief User Policy: Can the user set a certain user attribute to a certain value?
+#
+# \param[in]  actor     the user whose privileges are checked
+# \param[in]  userName  the user name
+# \param[in]  attribute the user attribute to set
+# \param[out] allowed   whether the action is allowed
+# \param[out] reason    the reason why the action was disallowed, set if allowed is false
+#
+uuUserPolicyCanUserModify(*actor, *userName, *attribute, *allowed, *reason) {
+	uuGetUserType(*actor, *actorUserType);
+	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
+
+	*allowed = 0;
+	*reason  = "";
+
+    # User setting: mail notifications
+    if (*attribute == "org_settings_mail_notifications") {
+        if (*actor == *userName) {
+            *allowed = 1;
+        } else {
+            *reason = "Cannot modify settings of other user.";
+        }
+    # User notifications
+    } else if (trimr(*attribute, "_") == "org_notification") {
+        *allowed = 1;
+	} else {
+		*reason = "Invalid user attribute name.";
 	}
 }

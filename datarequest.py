@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -12,12 +12,11 @@ from datetime import datetime
 from enum import Enum
 
 import jsonschema
-from genquery import AS_DICT, row_iterator
+from genquery import AS_DICT, Query, row_iterator
 
 import avu_json
 import mail
 from util import *
-from util.query import Query
 
 __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
@@ -240,7 +239,6 @@ def status_get(ctx, request_id):
     # Construct filename and filepath
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_name = DATAREQUEST + JSON_EXT
-    file_path = "{}/{}".format(coll_path, file_name)
 
     # Retrieve current status
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
@@ -367,7 +365,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
         # If both checks pass, user is permitted to perform action
         return True
-    except error.UUError as e:
+    except error.UUError:
         return api.Error("internal_error", "Something went wrong during permission checking.")
 
 
@@ -585,7 +583,7 @@ def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
         errors = list(validator.iter_errors(data))
 
         return len(errors) == 0
-    except error.UUJsonValidationError as e:
+    except error.UUJsonValidationError:
         # File may be missing or not valid JSON
         return api.Error("validation_error",
                          "{} form data could not be validated against its schema.".format(schema_name))
@@ -659,27 +657,12 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     if sort_order == 'desc':
         ccols = [x.replace('ORDER(', 'ORDER_DESC(') for x in ccols]
 
-    # Build query
-    #
-    # Set filter
-    #
-    # a) Normal case
-    if not dmc_member and not archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'PRELIMINARY_RESUBMIT' && != 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' && != 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
-    # b) Archive case
-    elif not dmc_member and archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'PRELIMINARY_RESUBMIT' || = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' || = 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
-    # c) DMC member case
-    elif dmc_member:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
-    #
-    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
-    if len(list(qcoll)) > 0:
-        coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-    else:
-        return OrderedDict([('total', 0), ('items', [])])
+    qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status'".format(coll, DATAREQUEST + JSON_EXT),
+                  offset=offset, limit=limit, output=AS_DICT)
+
+    ccols_title = ['COLL_NAME', "META_DATA_ATTR_VALUE"]
+    qcoll_title = Query(ctx, ccols_title, "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'title'".format(coll, DATAREQUEST + JSON_EXT),
+                        offset=offset, limit=limit, output=AS_DICT)
 
     # Execute query
     colls = map(transform, list(qcoll))
@@ -955,11 +938,11 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.PENDING_ATTACHMENTS])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
-                                                     ATTACHMENTS_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
+                                         ATTACHMENTS_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DMC, coll_path)
 
 
 @api.make()
@@ -1691,10 +1674,10 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
                                                            status.DAO_APPROVED])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, DTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), coll_path)
 
     # Set status to dta_ready
     status_set(ctx, request_id, status.DTA_READY)
@@ -1759,10 +1742,10 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
     # Set permissions
-    file_path = coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
-    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+    coll_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME, filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), coll_path)
 
     # Set status to dta_signed
     status_set(ctx, request_id, status.DTA_SIGNED)

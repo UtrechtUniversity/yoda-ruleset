@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Functions for finding the active schema."""
 
-__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
+
+import genquery
 
 import meta
 from util import *
@@ -55,7 +57,7 @@ def get_group_category(callback, rods_zone, group_name):
 
 
 def get_active_schema_path(callback, path):
-    """Get the iRODS path to a schema file from a research or vault path.
+    """Get the iRODS path to a schema file from a deposit, research or vault path.
 
     The schema path is determined from the category name of the path's group level.
 
@@ -70,7 +72,11 @@ def get_active_schema_path(callback, path):
     group_name = path_parts[3]
 
     if group_name.startswith("vault-"):
-        group_name = group_name.replace("vault-", "research-", 1)
+        temp_group_name = group_name.replace("vault-", "deposit-", 1)
+        if group.exists(callback, temp_group_name):
+            group_name = temp_group_name
+        else:
+            group_name = group_name.replace("vault-", "research-", 1)
 
     category = get_group_category(callback, rods_zone, group_name)
 

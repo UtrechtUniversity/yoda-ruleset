@@ -6,7 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    parsers,
+    # parsers,
     scenarios,
     then,
 )
@@ -75,7 +75,7 @@ def api_intake_lock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_lock_dataset",
-        {"path": collection, "dataset_id": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id}
     )
 
 
@@ -84,7 +84,7 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     return api_request(
         user,
         "intake_unlock_dataset",
-        {"path": collection, "dataset_id": dataset_id}
+        {"path": collection, "dataset_ids": dataset_id}
     )
 
 
@@ -97,12 +97,12 @@ def api_intake_dataset_get_details(user, dataset_id, collection):
     )
 
 
-@given('the Yoda intake dataset add comment API is queried with dataset id, collection "<collection>" and comment "<comment>"', target_fixture="api_response")
-def api_intake_dataset_add_comment(user, dataset_id, collection, comment):
+@given('the Yoda intake dataset add comment API is queried with dataset id, study id "<study_id>" and comment "<comment>"', target_fixture="api_response")
+def api_intake_dataset_add_comment(user, dataset_id, study_id, comment):
     return api_request(
         user,
         "intake_dataset_add_comment",
-        {"coll": collection, "dataset_id": dataset_id, "comment": comment}
+        {"study_id": study_id, "dataset_id": dataset_id, "comment": comment}
     )
 
 
@@ -136,12 +136,6 @@ def api_intake_report_export_study_data(user, study_id):
 @given('dataset exists', target_fixture="dataset_id")
 def dataset_exists(user):
     return "dataset id"
-
-
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
 
 
 @then('study "<study>" is returned')

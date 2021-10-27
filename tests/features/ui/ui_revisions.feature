@@ -1,6 +1,6 @@
 Feature: Revisions UI
 
-    Scenario: Search revisions on file name
+    Scenario Outline: Search revisions on file name
         Given user "researcher" is logged in
         And module "research" is shown
         When the user searches revision by name with "<name>"
@@ -12,7 +12,7 @@ Feature: Revisions UI
             | lorem | /research-initial/testdata/lorem.txt                    |
 
 
-    Scenario: Restore a revision
+    Scenario Outline: Restore a revision
         Given user "researcher" is logged in
         And module "research" is shown
         When the user searches revision by name with "<name>"
@@ -23,8 +23,3 @@ Feature: Revisions UI
         | name  | revision                                                |
         | SIPI  | /research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff |
         | lorem | /research-initial/testdata/lorem.txt                    |
-
-
-    #   Examples:
-    #    | user       | path                                                                  | coll_target                    | new_filename            |
-    #    | researcher | /tempZone/home/research-initial/testdata/SIPI_Jelly_Beans_4.1.07.tiff | /tempZone/home/research-browse | SIPI_Jelly_Beans_2.tiff |

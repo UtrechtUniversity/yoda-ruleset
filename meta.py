@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from collections import OrderedDict
 
+import genquery
 import irods_types
 import jsonschema
 
@@ -125,7 +126,7 @@ def is_json_metadata_valid(callback,
                                             metadata_path,
                                             metadata=metadata,
                                             ignore_required=ignore_required)) == 0
-    except error.UUError as e:
+    except error.UUError:
         # File may be missing or not valid JSON.
         return False
 
@@ -235,7 +236,7 @@ def api_meta_remove(ctx, coll):
                                                    constants.IIMETADATAXMLNAME]]:
         try:
             data_object.remove(ctx, path)
-        except error.UUError as e:
+        except error.UUError:
             # ignore non-existent files.
             # (this may also fail for other reasons, but we can't distinguish them)
             pass
@@ -278,7 +279,7 @@ def ingest_metadata_research(ctx, path):
 
     try:
         metadata = jsonutil.read(ctx, path)
-    except error.UUError as e:
+    except error.UUError:
         log.write(ctx, 'ingest_metadata_research failed: Could not read {} as JSON'.format(path))
         return
 
@@ -328,7 +329,7 @@ def ingest_metadata_vault(ctx, path):
 
     try:
         metadata = jsonutil.read(ctx, path)
-    except error.UUError as e:
+    except error.UUError:
         log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
 
@@ -406,7 +407,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
             msi.set_acl(ctx, 'default', 'admin:own', client_full_name, json_path)
-    except error.UUError as e:
+    except error.UUError:
         set_result('AccessError', 'Couldn\'t grant access to json metadata file')
         return
 
@@ -436,14 +437,14 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     try:
         # Note: This copy triggers metadata/AVU ingestion via policy.
         msi.data_obj_copy(ctx, json_path, dest, 'verifyChksum=', irods_types.BytesBuf())
-    except error.UUError as e:
+    except error.UUError:
         set_result('FailedToCopyJSON', 'Couldn\'t copy json metadata file from <{}> to <{}>'
                    .format(json_path, dest))
         return
 
     try:
         callback.iiCopyACLsFromParent(dest, 'default')
-    except Exception as e:
+    except Exception:
         set_result('FailedToSetACLs', 'Failed to set vault permissions on <{}>'.format(dest))
         return
 
@@ -456,7 +457,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     # Cleanup staging area.
     try:
         data_object.remove(ctx, json_path)
-    except Exception as e:
+    except Exception:
         set_result('FailedToRemoveDatamanagerXML', 'Failed to remove <{}>'.format(json_path))
         return
 
@@ -465,11 +466,11 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         try:
             # We may or may not have delete access already.
             msi.set_acl(ctx, 'recursive', 'admin:own', client_full_name, dm_path)
-        except error.UUError as e:
+        except error.UUError:
             pass
         try:
             msi.rm_coll(ctx, stage_coll, 'forceFlag=', irods_types.BytesBuf())
-        except error.UUError as e:
+        except error.UUError:
             set_result('FailedToRemoveColl', 'Failed to remove <{}>'.format(stage_coll))
             return
 

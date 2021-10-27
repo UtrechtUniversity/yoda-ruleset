@@ -173,7 +173,7 @@ def _api(f):
             else:
                 log._write(ctx, 'Error: API rule <{}> failed with error <{}> (debug info follows below this line)\n{}'.format(f.__name__, e, e.debug_info))
             return e.as_dict()
-        except Exception as e:
+        except Exception:
             # An uncaught error. Log a trace to aid debugging.
             log._write(ctx, 'Error: API rule <{}> failed with uncaught error (trace follows below this line)\n{}'
                             .format(f.__name__, traceback.format_exc()))

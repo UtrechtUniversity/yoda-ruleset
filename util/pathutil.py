@@ -9,9 +9,9 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 from enum import Enum
 
+import genquery
+
 import msi
-import query
-from query import Query
 
 
 class Space(Enum):
@@ -23,6 +23,7 @@ class Space(Enum):
     DATAMANAGER = 3
     DATAREQUEST = 4
     INTAKE      = 5
+    DEPOSIT     = 6
 
     def __repr__(self):
         return 'Space.' + self.name
@@ -115,20 +116,21 @@ def info(path):
     from collections import namedtuple
 
     return (namedtuple('PathInfo', 'space zone group subpath'.split())
-            (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',        Space.VAULT)
-            or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',    Space.RESEARCH)
-            or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$', Space.DATAMANAGER)
-            or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',  Space.INTAKE)
+            (*test('^/([^/]+)/home/(vault-[^/]+)(?:/(.+))?$',         Space.VAULT)
+            or test('^/([^/]+)/home/(research-[^/]+)(?:/(.+))?$',     Space.RESEARCH)
+            or test('^/([^/]+)/home/(deposit-[^/]+)(?:/(.+))?$',      Space.DEPOSIT)
+            or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$',  Space.DATAMANAGER)
+            or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',   Space.INTAKE)
             or test('^/([^/]+)/home/(datarequests-[^/]+)(?:/(.+))?$', Space.DATAREQUEST)
-            or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',             Space.OTHER)
-            or test('^/([^/]+)()(?:/(.+))?$',                        Space.OTHER)
+            or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',              Space.OTHER)
+            or test('^/([^/]+)()(?:/(.+))?$',                         Space.OTHER)
             or (Space.OTHER, '', '', '')))  # (matches '/' and empty paths)
 
 
 def object_type(ctx, path):
     try:
         t = msi.get_obj_type(ctx, path, '')['arguments'][1]
-    except Exception as e:
+    except Exception:
         return
     if t == '-d':
         return ObjectType.DATA
@@ -138,8 +140,8 @@ def object_type(ctx, path):
 
 def fs_object_from_id(ctx, obj_id):
     """Return (path, ObjectType) for the given object id, or (None, None) if the ID does not exist."""
-    x = Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), query.AS_DICT).first() \
-        or Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), query.AS_DICT).first()
+    x = genquery.Query(ctx, 'COLL_NAME, DATA_NAME', "DATA_ID = '{}'".format(obj_id), genquery.AS_DICT).first() \
+        or genquery.Query(ctx, 'COLL_NAME',            "COLL_ID = '{}'".format(obj_id), genquery.AS_DICT).first()
 
     if x is None:  # obj does not exist.
         return None, None

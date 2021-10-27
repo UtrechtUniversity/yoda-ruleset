@@ -1,5 +1,5 @@
+urllib3==1.26.5
+requests==2.25.0
+pytest-splinter==3.2.0
 pytest_bdd==4.0.1
-urllib3==1.24.2
-pytest==5.4.3
-requests==2.21.0
-splinter==3.2.0
+pytest==6.1.2

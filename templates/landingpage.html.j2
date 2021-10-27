@@ -4,29 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <meta name="description" content="Data Publication platform of Utrecht University" />
+    <meta name="DC.identifier" content="{{ persistent_identifier_datapackage.Identifier_Scheme }}:{{ persistent_identifier_datapackage.Identifier }}" scheme="DCTERMS.URI"/>
+    <meta name="DC.title" content="{{ title }}"/>
+    {% for creator in creators %}<meta name="DC.creator" content="{{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }}"/>
+    {% endfor %}
+    <meta name="DC.publisher" content="Utrecht University"/>
+    <meta name="DC.date" content="{{ publication_date }}" scheme="DCTERMS.W3CDTF">
+    <meta name="DC.type" content="{{ datatype }}"/>
     <title>{{ title }} - Data Publication platform of Utrecht University</title>
 
-    <style>
-        .map {
-            height: 450px;
-            width: 600px;
-        }
-
-        a.leaflet-control-zoom-in,
-        a.leaflet-control-zoom-out {
-            text-decoration: none ! important;
-        }
-
-        .indented {
-            padding-left: 10px;
-        }
-    </style>
-
     <link href="/static/css/bootstrap.min.css?v=1559637767" rel="stylesheet" />
-    </style>
     <link href="/static/css/uu.css?v=1559637767" rel="stylesheet" />
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
+    <style>
+        .map {height: 450px; width: 600px;}
+        a.leaflet-control-zoom-in, a.leaflet-control-zoom-out {text-decoration: none ! important;}
+        .indented {padding-left: 10px;}
+    </style>
     <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
     <script>
         let bounds = [
@@ -114,131 +108,6 @@
                             <div class="col-sm-10">
                                 <span>{% for lab in additional_labs %}
                                                {{ lab }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-                        {% if apparatus %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Apparatus</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in apparatus %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if main_setting %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Main setting</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in main_setting %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if process_hazard %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Process hazard</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in process_hazard %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if geological_structure %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Geological structure</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in geological_structure %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if geomorphical_feature %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Geomorphical feature</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in geomorphical_feature %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if material %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Material</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in material %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if monitoring %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Monitoring device</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in monitoring %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if software %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Software</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in software %}
-                                               {{ item }}{{ ", " if not loop.last }}
-                                           {% endfor %}
-                                </span>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        {% if measured_property %}
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <label>Measured property</label>
-                            </div>
-                            <div class="col-sm-10">
-                                <span>{% for item in measured_property %}
-                                               {{ item }}{{ ", " if not loop.last }}
                                            {% endfor %}
                                 </span>
                             </div>

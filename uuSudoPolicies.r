@@ -1,7 +1,8 @@
 # \file      uuSudoPolicies.r
 # \brief     Sudo microservices policies.
 # \author    Chris Smeele
-# \copyright Copyright (c) 2016-2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2016-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # Sudo policies {{{
@@ -18,7 +19,8 @@
 # In order, these preproc rules:
 #
 # - Allow only rodsadmin to perform actions
-# - Allow actions only when permitted by Group Manager policy rules *
+# - Allow actions only when permitted by Group Manager policy rules
+# - Allow actions only when permitted by User Settings policy rules
 # - Deny all sudo actions (and cut)
 #
 # * The GM implementations of pre- and postproc rules in this file call a
@@ -147,7 +149,23 @@ acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit
 }
 
 # }}}
-# Implementation 3: Deny everything and cut. {{{
+# Implementation 3: User settings policy implementations. {{{
+# Only define User Settings rules for meta operations on User / Group objects.
+
+acPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
+	ON (*objType == "-u") {
+		uuUserPreSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv);
+	}
+}
+
+acPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv) {
+	ON (*objType == "-u") {
+		uuUserPreSudoObjMetaRemove(*objName, *objType, *wildcards, *attribute, *value, *unit, *policyKv);
+	}
+}
+
+# }}}
+# Implementation 4: Deny everything and cut. {{{
 
 acPreSudoUserAdd(*userName, *initialAttr, *initialValue, *initialUnit, *policyKv) { cut; fail; }
 acPreSudoUserRemove(*userName, *policyKv) { cut; fail; }

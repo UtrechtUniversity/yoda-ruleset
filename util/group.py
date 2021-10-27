@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
+
 import user
-from query import Query
 
 
 def exists(ctx, grp):
@@ -16,8 +17,8 @@ def exists(ctx, grp):
 
     :returns: Boolean indicating if group with given name exists
     """
-    return Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'"
-                      .format(grp)).first() is not None
+    return genquery.Query(ctx, "USER_GROUP_NAME", "USER_GROUP_NAME = '{}' AND USER_TYPE = 'rodsgroup'"
+                               .format(grp)).first() is not None
 
 
 def members(ctx, grp):
@@ -28,9 +29,9 @@ def members(ctx, grp):
 
     :returns: Members of given group
     """
-    return Query(ctx, "USER_NAME, USER_ZONE",
-                 "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'"
-                 .format(grp))
+    return genquery.Query(ctx, "USER_NAME, USER_ZONE",
+                          "USER_GROUP_NAME = '{}' AND USER_TYPE != 'rodsgroup'"
+                          .format(grp))
 
 
 def is_member(ctx, grp, usr=None):

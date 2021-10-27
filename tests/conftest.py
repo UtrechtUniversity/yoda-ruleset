@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
+import re
 
 import pytest
 import requests
@@ -12,6 +13,7 @@ import urllib3
 from pytest_bdd import (
     given,
     parsers,
+    then,
     when,
 )
 
@@ -26,6 +28,7 @@ users = ['researcher',
 user_cookies = {}
 
 datarequest = False
+deposit = False
 intake = False
 login_oidc = False
 
@@ -34,12 +37,14 @@ def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test")
     parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
+    parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
+    config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
 
     global portal_url
@@ -53,6 +58,9 @@ def pytest_configure(config):
 
     global datarequest
     datarequest = config.getoption("--datarequest")
+
+    global deposit
+    deposit = config.getoption("--deposit")
 
     global intake
     intake = config.getoption("--intake")
@@ -73,6 +81,10 @@ def pytest_configure(config):
 def pytest_bdd_apply_tag(tag, function):
     if tag == 'datarequest' and not datarequest:
         marker = pytest.mark.skip(reason="Skip datarequest")
+        marker(function)
+        return True
+    elif tag == 'deposit' and not deposit:
+        marker = pytest.mark.skip(reason="Skip deposit")
         marker(function)
         return True
     elif tag == 'intake' and not intake:
@@ -97,19 +109,27 @@ def login(user, password):
 
     client = requests.session()
 
-    # Retrieve the CSRF token first
-    csrf = client.get(url, verify=False).cookies['csrf_yoda']
+    # Retrieve the login CSRF token.
+    content = client.get(url, verify=False).content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
 
     # Login as user.
-    login_data = dict(csrf_yoda=csrf, username=user, password=password, next='/home')
-    client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
+    response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
+    session = client.cookies['session']
     client.close()
 
+    # Retrieve the authenticated CSRF token.
+    content = response.content.decode()
+    p = re.compile("tokenValue: '([a-zA-Z0-9._-]*)'")
+    csrf = p.findall(content)[0]
+
     # Return CSRF and session cookies.
-    return client.cookies['csrf_yoda'], client.cookies['yoda_session']
+    return csrf, session
 
 
-def api_request(user, request, data):
+def api_request(user, request, data, timeout=10):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -118,10 +138,10 @@ def api_request(user, request, data):
 
     # Make API request.
     url = api_url + "/" + request
-    files = {'csrf_yoda': (None, csrf), 'data': (None, json.dumps(data))}
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
-
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
+    cookies = {'session': session}
+    headers = {'referer': portal_url}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
     # Remove debug info from response body.
     body = response.json()
@@ -129,6 +149,35 @@ def api_request(user, request, data):
         del body["debug_info"]
 
     return (response.status_code, body)
+
+
+def upload_data(user, file, folder):
+    # Retrieve user cookies.
+    csrf, session = user_cookies[user]
+
+    # Disable unsecure connection warning.
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    # Make POST request.
+    url = portal_url + "/research/upload"
+
+    files = {"csrf_token": (None, csrf),
+             "filepath": (None, folder),
+             "flowChunkNumber": (None, "1"),
+             "flowChunkSize": (None, "10485760"),
+             "flowCurrentChunkSize": (None, "4"),
+             "flowTotalSize": (None, "4"),
+             "flowIdentifier": (None, "4-{}".format(file)),
+             "flowFilename": (None, file),
+             "flowRelativePath": (None, file),
+             "flowTotalChunks": (None, "1"),
+             "file": (file, "test")}
+
+    cookies = {'session': session}
+    headers = {'referer': portal_url}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
+
+    return (response.status_code, response)
 
 
 def post_form_data(user, request, files):
@@ -140,10 +189,10 @@ def post_form_data(user, request, files):
 
     # Make POST request.
     url = portal_url + "/" + request
-    files['csrf_yoda'] = (None, csrf)
-    cookies = {'csrf_yoda': csrf, 'yoda_session': session}
-
-    response = requests.post(url, files=files, cookies=cookies, verify=False, timeout=10)
+    files['csrf_token'] = (None, csrf)
+    cookies = {'session': session}
+    headers = {'referer': portal_url}
+    response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
 
@@ -157,12 +206,14 @@ def api_user_authenticated(user):
 
 @given('user "<user>" is logged in')
 @given(parsers.parse('user "{user}" is logged in'))
+@when('user "<user>" logs in')
 def ui_login(browser, user):
-    url = "{}/user/login".format(portal_url)
+    url = "{}/user/gate".format(portal_url)
     browser.visit(url)
 
     # Fill in username
     browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-submit').click()
 
     # Fill in password
     browser.find_by_id('f-login-password').fill(password)
@@ -173,15 +224,47 @@ def ui_login(browser, user):
 
 @given('user is not logged in')
 def ui_logout(browser):
-    url = "{}/user/login".format(portal_url)
+    url = "{}/user/logout".format(portal_url)
     browser.visit(url)
+
+
+@when('user "<user>" enters email address')
+def ui_gate_username(browser, user):
+    browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-submit').click()
+
+
+@given('the user is redirected to the login page')
+@then('the user is redirected to the login page')
+def ui_login_assert_login_page(browser):
+    assert (
+        "{}/user/login".format(portal_url) in browser.url
+        or "{}/user/gate".format(portal_url) in browser.url)
 
 
 @given(parsers.parse('module "{module}" is shown'))
 @when(parsers.parse('module "{module}" is shown'))
+@given(parsers.parse('page "{module}" is shown'))
+@when(parsers.parse('page "{module}" is shown'))
 def ui_module_shown(browser, module):
-    url = "{}/{}".format(portal_url, module)
+    if "/" in module:
+        url = "{}/{}".format(portal_url, module)
+    else:
+        url = "{}/{}/".format(portal_url, module)
     browser.visit(url)
+
+
+@given(parsers.parse('text "{text}" is shown'))
+@when(parsers.parse('text "{text}" is shown'))
+@then(parsers.parse('text "{text}" is shown'))
+def ui_text_shown(browser, text):
+    assert browser.is_text_present(text)
+
+
+@then(parsers.parse('the response status code is "{code:d}"'))
+def api_response_code(api_response, code):
+    http_status, _ = api_response
+    assert http_status == code
 
 
 @given('collection "<collection>" exists')
@@ -230,3 +313,27 @@ def collection_is_locked(user, collection):
         assert http_status == 200
     else:
         assert body["data"]["status"] == "LOCKED"
+
+
+@given('the user navigates to "<page>"')
+@when('the user navigates to "<page>"')
+def ui_login_visit_groupmngr(browser, page):
+    browser.visit("{}{}".format(portal_url, page))
+
+
+@then('the user is redirected to "<page>"')
+def ui_user_redirected(browser, page):
+    target = "{}{}".format(portal_url, page)
+
+    assert browser.url == target
+
+
+@when('user browses to folder "<folder>"')
+def ui_browse_folder(browser, folder):
+    link = []
+    while len(link) == 0:
+        link = browser.links.find_by_partial_text(folder)
+        if len(link) > 0:
+            link.click()
+        else:
+            browser.find_by_id('file-browser_next').click()

@@ -99,12 +99,6 @@ def api_vault_get_publication_terms(user):
     )
 
 
-@then(parsers.parse('the response status code is "{code:d}"'))
-def api_response_code(api_response, code):
-    http_status, _ = api_response
-    assert http_status == code
-
-
 @then(parsers.parse('data package status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
     _, body = api_request(
