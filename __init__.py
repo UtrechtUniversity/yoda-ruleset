@@ -20,7 +20,6 @@ __author__    =  ('Felix Croes'
 from browse                 import *
 from folder                 import *
 from group                  import *
-from integrity              import *
 from json_datacite41        import *
 from json_landing_page      import *
 from mail                   import *
