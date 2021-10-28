@@ -12,6 +12,10 @@
         "Rejected"
       ]
     },
+    "informed_consent_fit": {
+      "type": "string",
+      "title": "Does the research question fit with the provided informed consent of the participants of YOUth? (If in doubt please confer with the data manager and a privacy officer.)"
+    },
     "internal_remarks": {
       "type": "string",
       "title": "Internal remarks",
@@ -57,6 +61,7 @@
     }
   },
   "required": [
-    "preliminary_review"
+    "preliminary_review",
+    "informed_consent_fit"
   ]
 }

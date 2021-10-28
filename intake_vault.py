@@ -17,8 +17,6 @@ __all__ = ['rule_intake_to_vault']
 
 @rule.make(inputs=range(2), outputs=range(2, 2))
 def rule_intake_to_vault(ctx, intake_root, vault_root):
-    log.write(ctx, intake_root)
-
     # 1. add to_vault_freeze metadata lock to the dataset
     # 2. check that dataset does not yet exist in the vault
     # 3. copy dataset to vault with its metadata
@@ -70,7 +68,6 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
         dataset_id = row[1]
         # check if to_vault_lock exists on all the dataobjects of this dataset
         all_locked = True
-
         iter2 = genquery.row_iterator(
             "DATA_NAME",
             "COLL_NAME = '" + toplevel_collection + "' "
@@ -210,29 +207,29 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
         if status:
             break
 
-        # data ingested, what's left is to delete the original in intake area
-        # this will also melt/unfreeze etc because metadata is removed too
-        iter = genquery.row_iterator(
-            "DATA_NAME",
-            "COLL_NAME = '" + toplevel_collection + "' "
-            "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
-            "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
-            genquery.AS_LIST, ctx)
+    # data ingested, what's left is to delete the original in intake area
+    # this will also melt/unfreeze etc because metadata is removed too
+    iter = genquery.row_iterator(
+        "DATA_NAME",
+        "COLL_NAME = '" + toplevel_collection + "' "
+        "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
+        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        genquery.AS_LIST, ctx)
 
-        for row in iter:
-            intake_path = toplevel_collection + "/" + row[0]
-            # Now remove data object in intake
-            try:
-                data_object.remove(ctx, intake_path)
-            except Exception:
-                log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
-                # error occurred during ingest, cleanup vault area and relay the error to user
-                # NB: keep the dataset in the vault queue so we can retry some other time
-                log.write(ctx, "ERROR: Ingest failed for *datasetId error = *status")
+    for row in iter:
+        intake_path = toplevel_collection + "/" + row[0]
+        # Now remove data object in intake
+        try:
+            data_object.remove(ctx, intake_path)
+        except Exception:
+            log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
+            # error occurred during ingest, cleanup vault area and relay the error to user
+            # NB: keep the dataset in the vault queue so we can retry some other time
+            log.write(ctx, "ERROR: Ingest failed for *datasetId error = *status")
 
-                # reset buffer interface
-                buffer = {}
-                status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
+            # reset buffer interface
+            buffer = {}
+            status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
 
     # Finally return status
     return status
