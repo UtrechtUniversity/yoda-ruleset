@@ -402,7 +402,7 @@ def get_tier_by_resource_name(ctx, res_name):
 
 @rule.make()
 def rule_resource_store_monthly_storage_statistics(ctx):
-    """For all categories known store all found storage data for each group belonging to those category.
+    """For all categories, known store all found storage data for each group belonging to these categories.
 
     Store as metadata on group level holding
     1) category of group on probe date - this can change
@@ -418,6 +418,16 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     # Get storage month with leading 0
     dt = datetime.today()
     md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
+
+    # Determine previous month for storage date when actual probe is going wrong
+##
+    today = datetime.date.today()
+    first = today.replace(day=1)
+    lastMonth = first - datetime.timedelta(days=1)
+    # print(lastMonth.strftime("%Y%m"))
+
+    md_storage_last_month = constants.UUMETADATASTORAGEMONTH + lastMonth.strftime("%m")
+##
 
     # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
     iter = genquery.row_iterator(
@@ -455,6 +465,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
         for group in groups:
             # Per group collect totals for category and tier
+            log.write(ctx, 'STOR Category: ' + category + 'group: ' + group)
 
             # Loop though all tiers and set storage to 0
             tier_storage = {}
@@ -477,6 +488,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                         whereClause = "COLL_NAME = '" + path + "'"
                     else:
                         whereClause = "COLL_NAME like '" + path + "/%'"
+                    log.write(ctx, folder)
 
                     iter = genquery.row_iterator(
                         "SUM(DATA_SIZE), RESC_NAME",
@@ -488,10 +500,12 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                         # sum up for this tier
                         the_tier = resource_tiers[row[1]]
                         tier_storage[the_tier] += int(row[0])
+                        log.write(ctx, row[1] + ', ' + the_tier + ',' + row[0])
 
-            # 3) Revision erea
+            # 3) Revision area
             revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
             whereClause = "COLL_NAME like '" + revision_path + "/%'"
+            log.write(ctx, 'Revision area')
             iter = genquery.row_iterator(
                 "SUM(DATA_SIZE), RESC_NAME",
                 whereClause,
@@ -501,15 +515,22 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                 # sum up for this tier
                 the_tier = resource_tiers[row[1]]
                 tier_storage[the_tier] += int(row[0])
+                log.write(ctx, row[1] + ', ' + the_tier + ',' + row[0])
 
             # Write total storages as metadata on current group for any tier
             key = md_storage_month
             # val = [category, tier, storage]
             for tier in tiers:
+                log.write(ctx, 'Storing for tier:' + tier)
                 # constructed this way to be backwards compatible (not using json.dump)
                 val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
+                log.write(ctx, val)
                 # write as metadata (kv-pair) to current group
-                avu.associate_to_group(ctx, group, key, val)
+                # Moet dit geen set zijn ipv associate?? Verklaart niet de errors
+                try:
+                    avu.associate_to_group(ctx, group, key, val)
+                except:
+                    # set current data to storage amount of last month
 
     return 'ok'
 
