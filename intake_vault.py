@@ -8,6 +8,7 @@ import time
 
 import genquery
 
+import intake
 import intake_lock
 import intake_scan
 from util import *
@@ -169,7 +170,14 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
         # duplicate dataset, signal error and throw out of vault queue
         log.write(ctx, "INFO: version already exists in vault: " + dataset_id)
         message = "Duplicate dataset, version already exists in vault"
-        intake_scan.dataset_add_error(ctx, [toplevel_collection], True, message)
+
+        tl_info = intake.get_dataset_toplevel_objects(ctx, toplevel_collection, dataset_id)
+        is_collection = tl_info['is_collection']
+        tl_objects = tl_info['objects']
+
+        # dataset_add_error(ctx, tl_objects, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
+
+        intake_scan.dataset_add_error(ctx, tl_objects, is_collection, message)
         intake_lock.intake_dataset_melt(ctx, toplevel_collection, dataset_id)
         intake_lock.intake_dataset_unlock(ctx, toplevel_collection, dataset_id)
         return 1
