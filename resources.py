@@ -467,7 +467,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
         for group in groups:
             # COLLECT GROUP DATA
             # Per group collect totals for category and tier
-            
+
             # Loop though all tiers and set storage to 0
             tier_storage = {}
             for tier in tiers:
@@ -475,7 +475,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
             # If anyting goes wrong during collection or storing of storage data for this group
             # -> for current group fall back on data of previous month
-            if False:  # try:
+            try:
                 # Research and vault area
                 log.write(ctx, 'Research and vault area starting for group: ' + group)
                 for step in steps:
@@ -523,7 +523,6 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
                 # STORE GROUP DATA
                 # Write total storages as metadata on current group for any tier
-                key = md_storage_month
                 # val = [category, tier, storage]
                 for tier in tiers:
                     log.write(ctx, 'Storing for group: ' + group)
@@ -532,9 +531,9 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     log.write(ctx, val)
                     # write as metadata (kv-pair) to current group
                     avu.associate_to_group(ctx, group, md_storage_month, val)
-                log.write(ctx, 'All group data collected and stored for current month') 
+                log.write(ctx, 'All group data collected and stored for current month')
 
-            if True:  # except Exception:
+            except Exception:
                 log.write(ctx, 'ERROR COLLECTING OR SAVING GROUP STORAGE DATA')
                 log.write(ctx, 'Copy prev month storage to current month')
 
