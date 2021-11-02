@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
+from datetime import timedelta
 from math import ceil
 
 import genquery
@@ -418,16 +419,15 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     # Get storage month with leading 0
     dt = datetime.today()
     md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
+    log.write(ctx, 'Month current: ' + md_storage_month)
 
     # Determine previous month for storage date when actual probe is going wrong
-##
-    today = datetime.date.today()
-    first = today.replace(day=1)
-    lastMonth = first - datetime.timedelta(days=1)
-    # print(lastMonth.strftime("%Y%m"))
+    # today = datetime.today()
+    first = dt.replace(day=1)
+    last_month = first - timedelta(days=1)
 
-    md_storage_last_month = constants.UUMETADATASTORAGEMONTH + lastMonth.strftime("%m")
-##
+    md_storage_last_month = constants.UUMETADATASTORAGEMONTH + last_month.strftime("%m")
+    log.write(ctx, 'Month previous: ' + md_storage_last_month)
 
     # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
     iter = genquery.row_iterator(
@@ -461,76 +461,104 @@ def rule_resource_store_monthly_storage_statistics(ctx):
 
     # Loop through all categories
     for category in categories:
+        log.write(ctx, 'COLLECTING FOR CATEGORY: ' + category)
         groups = get_groups_on_category(ctx, category)
 
         for group in groups:
+            # COLLECT GROUP DATA
             # Per group collect totals for category and tier
-            log.write(ctx, 'STOR Category: ' + category + 'group: ' + group)
-
+            
             # Loop though all tiers and set storage to 0
             tier_storage = {}
             for tier in tiers:
                 tier_storage[tier] = 0
 
-            # per group handle research and vault
-            for step in steps:
-                if step == 'research':
-                    path = '/' + zone + '/home/' + group
-                else:
-                    path = '/' + zone + '/home/' + group.replace('research-', 'vault-', 1)
-
-                # Per group two statements are required to gather all data
-                # 1) data in folder itself
-                # 2) data in all subfolders of the folder
-
-                for folder in ['self', 'subfolders']:
-                    if folder == 'self':
-                        whereClause = "COLL_NAME = '" + path + "'"
+            # If anyting goes wrong during collection or storing of storage data for this group
+            # -> for current group fall back on data of previous month
+            if False:  # try:
+                # Research and vault area
+                log.write(ctx, 'Research and vault area starting for group: ' + group)
+                for step in steps:
+                    if step == 'research':
+                        path = '/' + zone + '/home/' + group
                     else:
-                        whereClause = "COLL_NAME like '" + path + "/%'"
-                    log.write(ctx, folder)
+                        path = '/' + zone + '/home/' + group.replace('research-', 'vault-', 1)
 
-                    iter = genquery.row_iterator(
-                        "SUM(DATA_SIZE), RESC_NAME",
-                        whereClause,
-                        genquery.AS_LIST, ctx
-                    )
+                    # Per group two statements are required to gather all data
+                    # 1) data in folder itself
+                    # 2) data in all subfolders of the folder
 
-                    for row in iter:
-                        # sum up for this tier
-                        the_tier = resource_tiers[row[1]]
-                        tier_storage[the_tier] += int(row[0])
-                        log.write(ctx, row[1] + ', ' + the_tier + ',' + row[0])
+                    for folder in ['self', 'subfolders']:
+                        if folder == 'self':
+                            whereClause = "COLL_NAME = '" + path + "'"
+                        else:
+                            whereClause = "COLL_NAME like '" + path + "/%'"
 
-            # 3) Revision area
-            revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
-            whereClause = "COLL_NAME like '" + revision_path + "/%'"
-            log.write(ctx, 'Revision area')
-            iter = genquery.row_iterator(
-                "SUM(DATA_SIZE), RESC_NAME",
-                whereClause,
-                genquery.AS_LIST, ctx
-            )
-            for row in iter:
-                # sum up for this tier
-                the_tier = resource_tiers[row[1]]
-                tier_storage[the_tier] += int(row[0])
-                log.write(ctx, row[1] + ', ' + the_tier + ',' + row[0])
+                        iter = genquery.row_iterator(
+                            "SUM(DATA_SIZE), RESC_NAME",
+                            whereClause,
+                            genquery.AS_LIST, ctx
+                        )
 
-            # Write total storages as metadata on current group for any tier
-            key = md_storage_month
-            # val = [category, tier, storage]
-            for tier in tiers:
-                log.write(ctx, 'Storing for tier:' + tier)
-                # constructed this way to be backwards compatible (not using json.dump)
-                val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
-                log.write(ctx, val)
-                # write as metadata (kv-pair) to current group
-                # Moet dit geen set zijn ipv associate?? Verklaart niet de errors
-                try:
-                    avu.associate_to_group(ctx, group, key, val)
-                except:
-                    # set current data to storage amount of last month
+                        for row in iter:
+                            # sum up for this tier
+                            the_tier = resource_tiers[row[1]]
+                            tier_storage[the_tier] += int(row[0])
+                log.write(ctx, 'Research and vault area complete for group: ' + group)
+
+                # Revision area
+                log.write(ctx, 'Revision area starting for group: ' + group)
+                revision_path = '/{}{}/{}'.format(zone, constants.UUREVISIONCOLLECTION, group)
+                whereClause = "COLL_NAME like '" + revision_path + "/%'"
+                iter = genquery.row_iterator(
+                    "SUM(DATA_SIZE), RESC_NAME",
+                    whereClause,
+                    genquery.AS_LIST, ctx
+                )
+                for row in iter:
+                    # sum up for this tier
+                    the_tier = resource_tiers[row[1]]
+                    tier_storage[the_tier] += int(row[0])
+                log.write(ctx, 'Revision area completed for group: ' + group)
+
+                # STORE GROUP DATA
+                # Write total storages as metadata on current group for any tier
+                key = md_storage_month
+                # val = [category, tier, storage]
+                for tier in tiers:
+                    log.write(ctx, 'Storing for group: ' + group)
+                    # constructed this way to be backwards compatible (not using json.dump)
+                    val = "[\"" + category + "\", \"" + tier + "\", " + str(tier_storage[tier]) + "]"
+                    log.write(ctx, val)
+                    # write as metadata (kv-pair) to current group
+                    avu.associate_to_group(ctx, group, md_storage_month, val)
+                log.write(ctx, 'All group data collected and stored for current month') 
+
+            if True:  # except Exception:
+                log.write(ctx, 'ERROR COLLECTING OR SAVING GROUP STORAGE DATA')
+                log.write(ctx, 'Copy prev month storage to current month')
+
+                # Something went wrong during collection. Possibly some newly collected data has been added to groups already.
+                # Delete this and fall back on data of the previous month
+                iter2 = genquery.row_iterator(
+                    "META_USER_ATTR_VALUE, USER_GROUP_NAME",
+                    "META_USER_ATTR_NAME = '" + md_storage_month + "' AND USER_NAME = '" + group + "'",
+                    genquery.AS_LIST, ctx
+                )
+                for row2 in iter2:
+                    avu.rm_from_group(ctx, row2[1], md_storage_month, row2[0])
+
+                # set current data to storage amount of last month
+                iter2 = genquery.row_iterator(
+                    "META_USER_ATTR_VALUE, USER_NAME, USER_GROUP_NAME",
+                    "META_USER_ATTR_NAME = '" + md_storage_last_month + "' AND USER_NAME = '" + group + "'",
+                    genquery.AS_LIST, ctx
+                )
+                for row2 in iter2:
+                    storage_prev_month = row2[0]
+                    # Add all previous month storage amounts to current month
+                    avu.associate_to_group(ctx, group, md_storage_month, storage_prev_month)
+                    log.write(ctx, 'Previous data associated to group ' + group + ' month: ' + md_storage_month + ' val: ' + storage_prev_month)
 
     return 'ok'
 
