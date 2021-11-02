@@ -696,7 +696,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     colls_status = map(transform_status, list(qcoll_status))
     for datarequest_status in colls_status:
         for datarequest in colls:
-            if datarequest_title['id'] == datarequest['id']:
+            if datarequest_status['id'] == datarequest['id']:
                 datarequest['status'] = datarequest_status['status']
                 break
 
