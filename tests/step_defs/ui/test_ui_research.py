@@ -72,6 +72,24 @@ def ui_research_folder_rename(browser, folder_old, folder_new):
     browser.find_by_css('.btn-confirm-folder-rename').click()
 
 
+@when('user copies folder "<folder_old>" to "<folder_new>"')
+def ui_research_folder_copy(browser, folder_old, folder_new):
+    browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
+    browser.find_by_css('a.folder-copy[data-name={}]'.format(folder_old)).click()
+    time.sleep(5)
+    browser.links.find_by_partial_text(folder_new).click()
+    browser.find_by_css('.dlg-action-button').click()
+
+
+@when('user moves folder "<folder_old>" to "<folder_new>"')
+def ui_research_folder_move(browser, folder_old, folder_new):
+    browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
+    browser.find_by_css('a.folder-move[data-name={}]'.format(folder_old)).click()
+    time.sleep(5)
+    browser.links.find_by_partial_text(folder_new).click()
+    browser.find_by_css('.dlg-action-button').click()
+
+
 @when('user deletes folder "<folder_delete>"')
 def ui_research_folder_delete(browser, folder_delete):
     browser.find_by_css('button[data-name={}]'.format(folder_delete)).click()
@@ -79,9 +97,21 @@ def ui_research_folder_delete(browser, folder_delete):
     browser.find_by_css('.btn-confirm-folder-delete').click()
 
 
+@then('user browses to subfolder "<folder_new>"')
+def ui_browse_newsubfolder(browser, folder_new):
+    time.sleep(5)
+    browser.links.find_by_partial_text(folder_new).click()
+
+
 @then('folder "<folder_new>" exists in "<folder>"')
 def ui_research_folder_exists(browser, folder_new, folder):
     browser.is_text_present(folder)
+    browser.is_text_present(folder_new)
+
+
+@then('folder "<folder_new>" exists in "<folder_old>"')
+def ui_research_newfolder_exists(browser, folder_new, folder_old):
+    browser.is_text_present(folder_old)
     browser.is_text_present(folder_new)
 
 

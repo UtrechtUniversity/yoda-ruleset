@@ -20,6 +20,8 @@ Feature: Research UI
             | folder           | folder_new      |
             | research-initial | ui_test_folder1 |
             | research-initial | ui_test_folder2 |
+            | research-initial | ui_test_copy    |
+            | research-initial | ui_test_move    |
 
     Scenario Outline: Renaming a folder
         Given user "researcher" is logged in
@@ -33,6 +35,30 @@ Feature: Research UI
             | research-initial | ui_test_folder1 | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2 | ui_test_folder2_renamed |
 
+    Scenario Outline: Copying a folder
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user copies folder "<folder_old>" to "<folder_new>"
+        Then user browses to subfolder "<folder_new>"
+        And folder "<folder_new>" exists in "<folder_old>"
+
+        Examples:
+            | folder           | folder_old   | folder_new   |
+            | research-initial | ui_test_copy | ui_test_move |
+
+    Scenario Outline: Moving a folder
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user moves folder "<folder_old>" to "<folder_new>"
+        Then user browses to subfolder "<folder_new>"
+        And folder "<folder_new>" exists in "<folder_old>"
+
+        Examples:
+            | folder           | folder_old   | folder_new   |
+            | research-initial | ui_test_move | ui_test_copy |
+
     Scenario Outline: Deleting a folder
         Given user "researcher" is logged in
         And module "research" is shown
@@ -44,8 +70,9 @@ Feature: Research UI
             | folder           | folder_delete           |
             | research-initial | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2_renamed |
+            | research-initial | ui_test_copy            |
 
-    Scenario Outline: Renaming a file and rename it again to guarentee equal start situation for new tests
+    Scenario Outline: Renaming a file
         Given user "researcher" is logged in
         And module "research" is shown
         When user browses to folder "<folder>"
@@ -57,4 +84,3 @@ Feature: Research UI
             | folder           | subfolder | file_name         | new_file_name     |
             | research-initial | testdata  | lorem.txt         | renamed_lorem.txt |
             | research-initial | testdata  | renamed_lorem.txt | lorem.txt         |
-            
