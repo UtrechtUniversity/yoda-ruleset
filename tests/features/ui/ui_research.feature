@@ -9,6 +9,55 @@ Feature: Research UI
         And collection "<collection>" exists
         And "<collection>" is unlocked
 
+    Scenario Outline: Copying a file
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user browses to subfolder "<subfolder>"
+        And user copies file "<file>" to "<folder>"
+        And user browses to folder "<folder>"
+        Then file "<file>" exists in folder
+
+        Examples:
+            | folder           | subfolder | file      |
+            | research-initial | testdata  | lorem.txt |
+
+    Scenario Outline: Renaming a file
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user renames file "<file>" to "<file_renamed>"
+        Then file "<file>" exists in folder
+
+        Examples:
+            | folder           | file         | file_renamed      |
+            | research-initial | lorem.txt    | lorem_renamed.txt |
+
+    Scenario Outline: Moving a file
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user moves file "<file>" to "<subfolder>"
+        Then file "<file>" does not exist in folder
+        And user browses to subfolder "<subfolder>"
+        And file "<file>" exists in folder
+
+        Examples:
+            | folder           | subfolder | file              |
+            | research-initial | testdata  | lorem_renamed.txt |
+
+    Scenario Outline: Deleting a file
+        Given user "researcher" is logged in
+        And module "research" is shown
+        When user browses to folder "<folder>"
+        And user browses to subfolder "<subfolder>"
+        And user deletes file "<file>"
+        Then file "<file>" does not exist in folder
+
+        Examples:
+            | folder           | subfolder | file             |
+            | research-initial | testdata  | lorem_renamed.txt |
+
     Scenario Outline: Adding a folder
         Given user "researcher" is logged in
         And module "research" is shown
@@ -71,16 +120,3 @@ Feature: Research UI
             | research-initial | ui_test_folder1_renamed |
             | research-initial | ui_test_folder2_renamed |
             | research-initial | ui_test_copy            |
-
-    Scenario Outline: Renaming a file
-        Given user "researcher" is logged in
-        And module "research" is shown
-        When user browses to folder "<folder>"
-        And user browses to subfolder "<subfolder>"
-        And user clicks rename file for file "<file_name>"
-        When user renames file to "<new_file_name>"
-        And new file name "<new_file_name>" is present in folder
-        Examples:
-            | folder           | subfolder | file_name         | new_file_name     |
-            | research-initial | testdata  | lorem.txt         | renamed_lorem.txt |
-            | research-initial | testdata  | renamed_lorem.txt | lorem.txt         |
