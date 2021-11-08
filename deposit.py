@@ -4,51 +4,37 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import genquery
-
 import folder
 import meta
 from util import *
 
-__all__ = ['api_deposit_path',
+__all__ = ['api_deposit_create',
            'api_deposit_status',
-           'api_deposit_submit',
-           'api_deposit_clear']
+           'api_deposit_submit']
 
 DEPOSIT_GROUP = "deposit-pilot"
 
 
 def determine_deposit_path(ctx):
     """Determine deposit path for a user."""
-    deposit_path = ""
-    coll = "/" + user.zone(ctx) + "/home/" + DEPOSIT_GROUP
-    iter = genquery.row_iterator(
-        "COLL_NAME",
-        "COLL_PARENT_NAME = '{}'".format(coll),
-        genquery.AS_LIST, ctx
-    )
 
-    for row in iter:
-        deposit_path = row[0]
+    datapackage_name = pathutil.basename(coll)
 
-    if deposit_path == "":
-        datapackage_name = pathutil.basename(coll)
+    if len(datapackage_name) > 235:
+        datapackage_name = datapackage_name[0:235]
 
-        if len(datapackage_name) > 235:
-            datapackage_name = datapackage_name[0:235]
+    ret = msi.get_icat_time(ctx, '', 'unix')
+    timestamp = ret['arguments'][0].lstrip('0')
 
-        ret = msi.get_icat_time(ctx, '', 'unix')
-        timestamp = ret['arguments'][0].lstrip('0')
+    # Ensure vault target does not exist.
+    i = 0
+    target_base = coll + "/" + datapackage_name + "[" + timestamp + "]"
+    deposit_path = target_base
+    while collection.exists(ctx, deposit_path):
+        i += 1
+        deposit_path = target_base + "[" + str(i) + "]"
 
-        # Ensure vault target does not exist.
-        i = 0
-        target_base = coll + "/" + datapackage_name + "[" + timestamp + "]"
-        deposit_path = target_base
-        while collection.exists(ctx, deposit_path):
-            i += 1
-            deposit_path = target_base + "[" + str(i) + "]"
-
-        collection.create(ctx, deposit_path)
+    collection.create(ctx, deposit_path)
 
     space, zone, group, subpath = pathutil.info(deposit_path)
 
@@ -56,27 +42,27 @@ def determine_deposit_path(ctx):
 
 
 @api.make()
-def api_deposit_path(ctx):
-    """Get deposit collection.
+def api_deposit_create(ctx):
+    """Create deposit collection.
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: Path to deposit collection
+    :returns: Path to created deposit collection
     """
 
     return {"deposit_path": determine_deposit_path(ctx)}
 
 
 @api.make()
-def api_deposit_status(ctx):
+def api_deposit_status(ctx, path):
     """Retrieve status of deposit.
 
     :param ctx: Combined type of a callback and rei struct
+    :param path: Path to deposit collection
 
     :returns: Deposit status
     """
-    deposit_path = determine_deposit_path(ctx)
-    coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
+    coll = "/{}/home/{}".format(user.zone(ctx), path)
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
     data = False
@@ -95,32 +81,13 @@ def api_deposit_status(ctx):
 
 
 @api.make()
-def api_deposit_submit(ctx):
+def api_deposit_submit(ctx, path):
     """Submit deposit collection.
 
     :param ctx: Combined type of a callback and rei struct
+    :param path: Path to deposit collection
 
     :returns: API status
     """
-    deposit_path = determine_deposit_path(ctx)
-    coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
+    coll = "/{}/home/{}".format(user.zone(ctx), path)
     return folder.set_status(ctx, coll, constants.research_package_state.SUBMITTED)
-
-
-@api.make()
-def api_deposit_clear(ctx):
-    """Clear deposit collection.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: API status
-    """
-    deposit_path = determine_deposit_path(ctx)
-    coll = "/{}/home/{}".format(user.zone(ctx), deposit_path)
-
-    try:
-        collection.remove(ctx, coll)
-    except msi.Error:
-        return api.Error('internal', 'Something went wrong. Please try again')
-
-    return api.Result.ok()
