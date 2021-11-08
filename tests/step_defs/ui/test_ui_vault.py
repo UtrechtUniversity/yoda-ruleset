@@ -105,6 +105,16 @@ def ui_provenance_log(browser, status):
             return True
 
 
+@then('core metadata is visible')
+def ui_data_package_core_metadata_is_visible(browser):
+    browser.is_element_visible_by_css('h3.metadata-title', wait_time=3)
+    browser.is_element_visible_by_css('h5.metadata-creator', wait_time=3)
+    browser.is_element_visible_by_css('div.metadata-description', wait_time=3)
+    browser.is_element_visible_by_css('span.metadata-data-classification', wait_time=3)
+    browser.is_element_visible_by_css('span.metadata-access', wait_time=3)
+    browser.is_element_visible_by_css('span.metadata-license', wait_time=3)
+
+
 @when('user clicks metatadata button')
 def ui_data_package_click_metadata_button(browser):
     browser.find_by_css('button.metadata-form').click()
