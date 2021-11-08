@@ -17,7 +17,7 @@ DEPOSIT_GROUP = "deposit-pilot"
 
 def determine_deposit_path(ctx):
     """Determine deposit path for a user."""
-
+    coll = "/" + user.zone(ctx) + "/home/" + DEPOSIT_GROUP
     datapackage_name = pathutil.basename(coll)
 
     if len(datapackage_name) > 235:
