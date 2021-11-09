@@ -62,7 +62,7 @@ def api_deposit_status(ctx, path):
 
     :returns: Deposit status
     """
-    coll = "/{}/home/{}".format(user.zone(ctx), path)
+    coll = "/{}/home{}".format(user.zone(ctx), path)
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
     data = False
@@ -89,5 +89,5 @@ def api_deposit_submit(ctx, path):
 
     :returns: API status
     """
-    coll = "/{}/home/{}".format(user.zone(ctx), path)
+    coll = "/{}/home{}".format(user.zone(ctx), path)
     return folder.set_status(ctx, coll, constants.research_package_state.SUBMITTED)
