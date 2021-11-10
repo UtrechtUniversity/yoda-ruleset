@@ -419,15 +419,12 @@ def rule_resource_store_monthly_storage_statistics(ctx):
     # Get storage month with leading 0
     dt = datetime.today()
     md_storage_month = constants.UUMETADATASTORAGEMONTH + dt.strftime("%m")
-    log.write(ctx, 'Month current: ' + md_storage_month)
 
     # Determine previous month for storage date when actual probe is going wrong
     # today = datetime.today()
     first = dt.replace(day=1)
     last_month = first - timedelta(days=1)
-
     md_storage_last_month = constants.UUMETADATASTORAGEMONTH + last_month.strftime("%m")
-    log.write(ctx, 'Month previous: ' + md_storage_last_month)
 
     # Delete previous data for that month. Could be one year ago as this is circular buffer containing max 1 year
     iter = genquery.row_iterator(
