@@ -7,6 +7,11 @@
     "biological_samples"
   ],
   "properties": {
+    "introduction": {
+      "type": "object",
+      "title": "Reviewer instructions",
+      "description": "Please note that your review is permanent and cannot be altered after submission. If you are in doubt, please contact the YOUth project manager first."
+    },
     "evaluation": {
       "type": "string",
       "title": "Would you approve / reject / reject (resubmit) this data request?",
@@ -78,11 +83,11 @@
             },
             "biological_samples_volume": {
               "type": "string",
-              "title": "Is the volume requested reasonable and does it not seriously deplete the resource?"
+              "title": "Is the volume of biological samples requested reasonable and does it not seriously deplete the resource?"
             },
             "biological_samples_committee_approval": {
               "type": "string",
-              "title": "Does the committee agree to the use of these samples for the specific research question?"
+              "title": "Does the committee agree to the use of these biological samples for the specific research question?"
             }
           },
           "required": [
@@ -110,36 +115,26 @@
                 true
               ]
             },
-            "informed_consent_fit": {
-              "type": "string",
-              "title": "How does the research question fit with the provided informed consent of the participants of YOUth? (If in doubt please confer with the data manager and a privacy officer.)"
-            },
             "research_question_answerability": {
               "type": "string",
               "title": "Can the research question be answered with the requested YOUth data?"
             },
             "study_quality": {
               "type": "string",
-              "title": "Is the quality of the proposal good? Is the study design correct?"
-            },
-            "logistical_feasibility": {
-              "type": "string",
-              "title": "Is the proposal logistically feasible?"
+              "title": "How do you evaluate the study design?"
             },
             "study_value": {
               "type": "string",
-              "title": "Is the study valuable?"
+              "title": "Is the study scientifically valuable?"
             },
             "researcher_expertise": {
               "type": "string",
-              "title": "Does the researcher have the expertise necessary to correctly analyze and report on the research question at hand?"
+              "title": "Do you believe that the researcher team has the expertise necessary to correctly analyze and report on the research question at hand?"
             }
           },
           "required": [
-            "informed_consent_fit",
             "research_question_answerability",
             "study_quality",
-            "logistical_feasibility",
             "study_value",
             "researcher_expertise"
           ]

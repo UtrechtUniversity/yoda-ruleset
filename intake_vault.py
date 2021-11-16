@@ -8,6 +8,7 @@ import time
 
 import genquery
 
+import intake
 import intake_lock
 import intake_scan
 from util import *
@@ -17,8 +18,6 @@ __all__ = ['rule_intake_to_vault']
 
 @rule.make(inputs=range(2), outputs=range(2, 2))
 def rule_intake_to_vault(ctx, intake_root, vault_root):
-    log.write(ctx, intake_root)
-
     # 1. add to_vault_freeze metadata lock to the dataset
     # 2. check that dataset does not yet exist in the vault
     # 3. copy dataset to vault with its metadata
@@ -70,7 +69,6 @@ def rule_intake_to_vault(ctx, intake_root, vault_root):
         dataset_id = row[1]
         # check if to_vault_lock exists on all the dataobjects of this dataset
         all_locked = True
-
         iter2 = genquery.row_iterator(
             "DATA_NAME",
             "COLL_NAME = '" + toplevel_collection + "' "
@@ -125,7 +123,7 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
     vault_parent = pathutil.chop(vault_path)[0]
     try:
         collection.create(ctx, vault_parent, "1")
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_parent)
         return 2
 
@@ -145,7 +143,7 @@ def dataset_collection_move_2_vault(ctx, toplevel_collection, dataset_id, vault_
         # and finally remove the dataset original in the intake area
         try:
             collection.remove(ctx, toplevel_collection)
-        except Exception as e:
+        except Exception:
             log.write(ctx, "ERROR: unable to remove intake collection " + toplevel_collection)
             return 3
     else:
@@ -172,7 +170,14 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
         # duplicate dataset, signal error and throw out of vault queue
         log.write(ctx, "INFO: version already exists in vault: " + dataset_id)
         message = "Duplicate dataset, version already exists in vault"
-        intake_scan.dataset_add_error(ctx, [toplevel_collection], True, message)
+
+        tl_info = intake.get_dataset_toplevel_objects(ctx, toplevel_collection, dataset_id)
+        is_collection = tl_info['is_collection']
+        tl_objects = tl_info['objects']
+
+        # dataset_add_error(ctx, tl_objects, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
+
+        intake_scan.dataset_add_error(ctx, tl_objects, is_collection, message)
         intake_lock.intake_dataset_melt(ctx, toplevel_collection, dataset_id)
         intake_lock.intake_dataset_unlock(ctx, toplevel_collection, dataset_id)
         return 1
@@ -184,14 +189,14 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
     # create path to and including the toplevel collection (will create in-between levels)
     try:
         collection.create(ctx, vault_path, "1")
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: parent collection could not be created " + vault_path)
         return 2
 
     # stamp the vault dataset collection with default metadata
     try:
         vault_dataset_add_default_metadata(ctx, vault_path, dataset_id)
-    except Exception as e:
+    except Exception:
         log.write(ctx, "ERROR: default metadata could not be added to " + vault_path)
         return 3
 
@@ -210,29 +215,29 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
         if status:
             break
 
-        # data ingested, what's left is to delete the original in intake area
-        # this will also melt/unfreeze etc because metadata is removed too
-        iter = genquery.row_iterator(
-            "DATA_NAME",
-            "COLL_NAME = '" + toplevel_collection + "' "
-            "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
-            "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
-            genquery.AS_LIST, ctx)
+    # data ingested, what's left is to delete the original in intake area
+    # this will also melt/unfreeze etc because metadata is removed too
+    iter = genquery.row_iterator(
+        "DATA_NAME",
+        "COLL_NAME = '" + toplevel_collection + "' "
+        "AND META_DATA_ATTR_NAME = 'dataset_toplevel' "
+        "AND META_DATA_ATTR_VALUE = '" + dataset_id + "' ",
+        genquery.AS_LIST, ctx)
 
-        for row in iter:
-            intake_path = toplevel_collection + "/" + row[0]
-            # Now remove data object in intake
-            try:
-                data_object.remove(ctx, intake_path)
-            except Exception as e:
-                log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
-                # error occurred during ingest, cleanup vault area and relay the error to user
-                # NB: keep the dataset in the vault queue so we can retry some other time
-                log.write(ctx, "ERROR: Ingest failed for *datasetId error = *status")
+    for row in iter:
+        intake_path = toplevel_collection + "/" + row[0]
+        # Now remove data object in intake
+        try:
+            data_object.remove(ctx, intake_path)
+        except Exception:
+            log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
+            # error occurred during ingest, cleanup vault area and relay the error to user
+            # NB: keep the dataset in the vault queue so we can retry some other time
+            log.write(ctx, "ERROR: Ingest failed for *datasetId error = *status")
 
-                # reset buffer interface
-                buffer = {}
-                status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
+            # reset buffer interface
+            buffer = {}
+            status = vault_tree_walk_collection(ctx, vault_path, buffer, vault_walk_remove_object)
 
     # Finally return status
     return status
@@ -249,7 +254,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         try:
             ctx.msiDataObjChksum(object_path, "forceChksum=", 0)
             ctx.msiDataObjCopy(object_path, vault_path, 'verifyChksum=', 0)
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         coll, dataname = pathutil.chop(object_path)
@@ -276,7 +281,7 @@ def vault_ingest_object(ctx, object_path, is_collection, vault_path):
         # CREATE COLLECTION
         try:
             collection.create(ctx, vault_path, "1")
-        except msi.Error as e:
+        except msi.Error:
             return 1
 
         iter = genquery.row_iterator(
@@ -308,7 +313,7 @@ def vault_walk_remove_object(ctx, item_parent, item_name, is_collection):
             collection.remove(ctx, item_parent + '/' + item_name)
         else:
             data_object.remove(ctx, item_parent + '/' + item_name)
-    except Exception as e:
+    except Exception:
         status = 1
 
     return status
@@ -377,7 +382,7 @@ def vault_dataset_add_default_metadata(ctx, vault_path, dataset_id):
     for key in keys:
         try:
             avu.set_on_data(ctx, vault_path, key, id_components[key])
-        except Exception as e:
+        except Exception:
             avu.set_on_coll(ctx, vault_path, key, id_components[key])
 
 

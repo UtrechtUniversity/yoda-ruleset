@@ -21,7 +21,7 @@
     "introduction": {
       "type": "object",
       "title": "Introduction",
-      "description": "The information you provide here will be used by the YOUth project manager, the YOUth data manager, and the Data Management Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the Data Access Protocol (<a href='https://www.uu.nl/sites/default/files/dataaccessprotocol_youth_191029.pdf'>link</a>).<br/><br/>All approved data requests will have to be preregistered at the YOUth registry on the Open Science Framework (<a href='http://url_to_be_added_when_available'>link</a>). The OSF preregistration form consists of the same fields as the Study information fields in the data request form below. In addition, approved data requests will be published on the YOUth website, including the name and institution of the contact person and the participating researchers.<br/><br/>If you have have compelling reasons to object to the preregistration and publication of the data request, you will be able to specify this in the data request form below. The objection will be evaluated by the project manager, executive board and the data management committee. If the objection is rejected, you may decide to withdraw your data request."
+      "description": "The information you provide here will be used by the YOUth project manager, the YOUth data manager, and the Data Management Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the Data Access Protocol (<a href='https://www.uu.nl/sites/default/files/dataaccessprotocol_youth_191029.pdf'>link</a>).<br/><br/>All approved data requests will have to be preregistered at the YOUth registry on the Open Science Framework (<a href='https://osf.io/registries/youthstudy'>link</a>). The OSF preregistration form consists of the same fields as the Study information fields in the data request form below. In addition, approved data requests will be published on the YOUth website, including the name and institution of the contact person and the participating researchers.<br/><br/>If you have have compelling reasons to object to the preregistration and publication of the data request, you will be able to specify this in the data request form below. The objection will be evaluated by the project manager, executive board and the data management committee. If the objection is rejected, you may decide to withdraw your data request."
     },
     "contact": {
       "type": "object",
@@ -51,11 +51,13 @@
         },
         "work_address": {
           "$ref": "#/definitions/stringNormal",
-          "title": "Work address"
+          "title": "Work address",
+          "description": "E.g. Leuvenlaan 1 (room 1.04), 3584 CS, Utrecht, the Netherlands"
         },
         "phone": {
           "$ref": "#/definitions/stringNormal",
-          "title": "Phone"
+          "title": "Phone",
+          "description": "Preferably use the E.164 international telephone number format: +[country code][area code][phone number] (e.g. +31 30 1234 5678)."
         },
         "cc_email_addresses": {
           "$ref": "#/definitions/stringNormal",

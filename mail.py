@@ -80,7 +80,7 @@ def send(ctx, to, actor, subject, body, cc=None):
     try:
         smtp.login(cfg['username'], cfg['password'])
 
-    except Exception as e:
+    except Exception:
         log.write(ctx, '[EMAIL] Could not login to mail server with configured credentials')
         return api.Error('internal', 'Mail configuration error')
 
@@ -107,7 +107,7 @@ def send(ctx, to, actor, subject, body, cc=None):
 
     try:
         smtp.quit()
-    except Exception as e:
+    except Exception:
         pass
 
 

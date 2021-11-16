@@ -117,7 +117,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                                 else:
                                                     newData[subElement] = listCompoundData[0]  # compoundDict # Single dict
 
-                                        except KeyError as e:
+                                        except KeyError:
                                             try:
                                                 subPropertyValue = dataItem['Properties'][subPropertyElement]
 
@@ -126,7 +126,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                                 else:
                                                     newData[subElement] = subPropertyValue
 
-                                            except KeyError as e2:
+                                            except KeyError:
                                                 pass
 
                                     counter = counter + 1
@@ -196,7 +196,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                         else:
                                             newData[subElement] = listCompoundData[0]  # compoundDict # Single dict
 
-                                except KeyError as e:
+                                except KeyError:
                                     try:
                                         subPropertyValue = data['Properties'][subPropertyElement]
 
@@ -205,7 +205,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                                         else:
                                             newData[subElement] = subPropertyValue
 
-                                    except KeyError as e2:
+                                    except KeyError:
                                         pass
 
                             counter = counter + 1
@@ -216,7 +216,7 @@ def transformYodaXmlDataToJson(callback, dictSchema, xmlData):
                     else:
                         jsonDict[elementName] = newData
 
-                except KeyError as e:
+                except KeyError:
                     pass
 
                 try:
@@ -384,7 +384,6 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 continue
 
             if not jsonFound:
-                date_name = ''
                 x = callback.iiGetLatestVaultMetadataXml(vault_collection, '', '')
                 metadataXmlPath = x['arguments'][1]
 
@@ -395,7 +394,7 @@ def iiCheckVaultMetadataXmlForTransformationToJsonBatch(callback, rods_zone, col
                 else:
                     transformVaultMetadataXmlToJson(callback, rods_zone, vault_collection, group_name, data_name)
 
-        except Exception as e:
+        except Exception:
             log.write(callback, str(e))
             pass
 

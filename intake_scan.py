@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
 import re
 import time
 
@@ -13,13 +14,16 @@ import intake
 from util import *
 
 
-def intake_scan_collection(ctx, root, scope, in_dataset):
+def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     """Recursively scan a directory in a Youth Cohort intake.
 
     :param ctx:    Combined type of a callback and rei struct
     :param root:   the directory to scan
     :param scope:     a scoped kvlist buffer
     :param in_dataset: whether this collection is within a dataset collection
+    :param found_datasets: collection of subscopes that were found in order to report toplevel datasets in the scanning process
+
+    :returns: Found datasets
     """
     # Scan files under root
     iter = genquery.row_iterator(
@@ -36,8 +40,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
         if not (locked_state['locked'] or locked_state['frozen']):
             remove_dataset_metadata(ctx, path, False)
             scan_mark_scanned(ctx, path, False)
-            if not scan_filename_is_valid(ctx, row[0]):
-                avu.set_on_data(ctx, path, "error", "File name contains disallowed characters")
         if in_dataset:
             apply_dataset_metadata(ctx, path, scope, False, False)
         else:
@@ -47,7 +49,11 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                 # We found a top-level dataset data object.
                 subscope["dataset_directory"] = row[1]
                 apply_dataset_metadata(ctx, path, subscope, False, True)
+                # For reporting purposes collect the subscopes
+                found_datasets.append(subscope)
             else:
+                # subscope["dataset_directory"] = row[1]
+                # apply_dataset_metadata(ctx, path, subscope, False, True)
                 apply_partial_metadata(ctx, subscope, path, False)
                 avu.set_on_data(ctx, path, "unrecognized", "Experiment type, wave or pseudocode missing from path")
 
@@ -70,9 +76,6 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
             if not (locked_state['locked'] or locked_state['frozen']):
                 remove_dataset_metadata(ctx, path, True)
 
-                if not scan_filename_is_valid(ctx, dirname):
-                    avu.set_on_coll(ctx, path, "error", "Directory name contains disallowed characters")
-
                 subscope = scope.copy()
                 child_in_dataset = in_dataset
 
@@ -87,21 +90,14 @@ def intake_scan_collection(ctx, root, scope, in_dataset):
                         # We found a top-level dataset collection.
                         subscope["dataset_directory"] = path
                         apply_dataset_metadata(ctx, path, subscope, True, True)
+                        # For reporting purposes collect the subscopes
+                        found_datasets.append(subscope)
                     else:
                         apply_partial_metadata(ctx, subscope, path, True)
                 # Go a level deeper
-                intake_scan_collection(ctx, path, subscope, child_in_dataset)
+                found_datasets = intake_scan_collection(ctx, path, subscope, child_in_dataset, found_datasets)
 
-
-def scan_filename_is_valid(ctx, name):
-    """Check if a file or directory name contains invalid characters.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param name: Name of collection or object
-
-    :returns: Boolean indicating if filename is valid or not
-    """
-    return (re.match('^[a-zA-Z0-9_.-]+$', name) is not None)
+    return found_datasets
 
 
 def object_is_locked(ctx, path, is_collection):
@@ -153,39 +149,28 @@ def intake_tokens_identify_dataset(tokens):
     """
     required = ['wave', 'experiment_type', 'pseudocode']  # version is optional
 
-    complete = False
+    missing = 0
     for req_token in required:
         # required tokens must be present and must have a value
         if req_token not in tokens or tokens[req_token] == "":
-            return False
-    return True
+            missing = missing + 1
+
+    return (missing < 3)
 
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
     """Extract one or more tokens from a file / directory name and add dataset information as metadata.
-
     :param ctx:           Combined type of a callback and rei struct
     :param path:          Path to object or collection
     :param name:          Name of object or collection
     :param is_collection: Indicates if object or collection
     :param scoped_buffer: Holds dataset buffer with prefilled keys
-
     :returns: Returns extended scope buffer
     """
-    # chop of extension
-    # base_name = '.'.join(name.split('.'))[:-1]
-    if is_collection:
-        base_name = name
-    else:
-        # Dit kan problemen opleveren. Eigenlijk wordt hier de extensie eraf gehaald
-        # Maar niet alle bestanden hebben een extensie en mogelijk wordt dus een deel
-        # weggehaald met belangrijke beschrijvende info over de dataset.
-        base_name = name  # name.rsplit('.', 1)[0]
-    parts = base_name.split('_')
+    name_without_ext = os.path.splitext(name)[0]
+    parts = re.split("[_-]", name_without_ext)
     for part in parts:
-        subparts = part.split('-')
-        for subpart in subparts:
-            scoped_buffer.update(intake_extract_tokens(ctx, subpart))
+        scoped_buffer.update(intake_extract_tokens(ctx, part))
     return scoped_buffer
 
 
@@ -246,16 +231,18 @@ def intake_extract_tokens(ctx, string):
 
     str_lower = string.lower()
     str_upper = string.upper()
+    str_for_pseudocode_test = string.split('.')[0]
+    str_for_version_test = string.translate(None, ".")
 
     foundKVs = {}
     if re.match('^[0-9]{1,2}[wmy]$', str_lower) is not None:
         # String contains a wave.
         # Wave validity is checked later on in the dataset checks.
         foundKVs["wave"] = str_lower
-    elif re.match('^[bap][0-9]{5}$', str_lower) is not None:
+    elif re.match('^[bap][0-9]{5}$', str_for_pseudocode_test.lower()) is not None:
         # String contains a pseudocode.
-        foundKVs["pseudocode"] = str_upper[0:len(string)]
-    elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', string) is not None:
+        foundKVs["pseudocode"] = str_upper[0:len(str_for_pseudocode_test)]
+    elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', str_for_version_test) is not None:
         foundKVs["version"] = string[3:len(string)]
     else:
         if str_lower in exp_types:
@@ -403,21 +390,6 @@ def apply_partial_metadata(ctx, scope, path, is_collection):
                     avu.set_on_data(ctx, path, key, scope[key])
 
 
-def dataset_add_warning(ctx, top_levels, is_collection_toplevel, text):
-    """ Add a dataset warning to all given dataset toplevels.
-
-    :param ctx:                    Combined type of a callback and rei struct
-    :param top_levels:             Top level objects
-    :param is_collection_toplevel: Indicator whether is a collection or not
-    :param text:                   Warning text
-    """
-    for tl in top_levels:
-        if is_collection_toplevel:
-            avu.associate_to_coll(ctx, tl, "dataset_warning", text)
-        else:
-            avu.associate_to_data(ctx, tl, "dataset_warning", text)
-
-
 def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
     """Add a dataset error to all given dataset toplevels.
 
@@ -435,13 +407,11 @@ def dataset_add_error(ctx, top_levels, is_collection_toplevel, text):
 
 def dataset_get_ids(ctx, coll):
     """Find dataset ids under collection.
-
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection name for which to find dataset-ids
-
-    :returns: Returns ids a list of dataset ids
+    :returns: Returns a set of dataset ids
     """
-    data_ids = []
+    data_ids = set()
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -451,7 +421,7 @@ def dataset_get_ids(ctx, coll):
     )
     for row in iter:
         if row[0]:
-            data_ids.append(row[0])
+            data_ids.add(row[0])
 
     # Get distinct data_ids
     iter = genquery.row_iterator(
@@ -460,8 +430,8 @@ def dataset_get_ids(ctx, coll):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        if row[0]:  # CHECK FOR DUPLICATES???
-            data_ids.append(row[0])
+        if row[0]:
+            data_ids.add(row[0])
 
     return data_ids
 
@@ -490,13 +460,15 @@ def intake_check_dataset(ctx, root, dataset_id):
     is_collection = tl_info['is_collection']
     tl_objects = tl_info['objects']
 
-    intake_check_generic(ctx, root, dataset_id, tl_objects, is_collection)
+    # Check validity of wav
+    waves = ["20w", "30w", "0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
+    components = dataset_parse_id(dataset_id)
+    if components['wave'] not in waves:
+        dataset_add_error(ctx, tl_objects, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
 
-    id_components = dataset_parse_id(dataset_id)
-
-    # specific check
-    if id_components["experiment_type"].lower() == "echo":
-        intake_check_et_echo(ctx, root, dataset_id, tl_objects, is_collection)  # toplevels
+    # check presence of wave, pseudo-ID and experiment
+    if '' in [components['wave'], components['experiment_type'], components['pseudocode']]:
+        dataset_add_error(ctx, tl_objects, is_collection, "Wave, experiment type or pseudo-ID missing")
 
     for tl in tl_objects:
         # Save the aggregated counts of #objects, #warnings, #errors on object level
@@ -513,52 +485,11 @@ def intake_check_dataset(ctx, root, dataset_id):
         else:
             avu.set_on_data(ctx, tl, "object_errors", str(count))
 
-        count = get_aggregated_object_warning_count(ctx, dataset_id, tl)
+        count = 0
         if is_collection:
             avu.set_on_coll(ctx, tl, "object_warnings", str(count))
         else:
             avu.set_on_data(ctx, tl, "object_warnings", str(count))
-
-
-def intake_check_generic(ctx, root, dataset_id, toplevels, is_collection):
-    """Run checks that must be applied to all datasets regardless of WEPV values.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param root:          Root of the dataset
-    :param dataset_id:    The dataset identifier to check
-    :param toplevels:     List of toplevel objects for this dataset id
-    :param is_collection: Whether dataset is represented as a collection
-    """
-    # Check validity of wav
-    waves = ["20w", "30w", "0m", "5m", "10m", "3y", "6y", "9y", "12y", "15y"]
-    components = dataset_parse_id(dataset_id)
-    if components['wave'] not in waves:
-        dataset_add_error(ctx, toplevels, is_collection, "The wave '" + components['wave'] + "' is not in the list of accepted waves")
-
-
-def intake_check_et_echo(ctx, root, dataset_id, toplevels, is_collection):
-    """Run checks specific to the Echo experiment type.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param root:          Root of the dataset
-    :param dataset_id:    The dataset identifier to check
-    :param toplevels:     List of toplevel objects for this dataset id
-    :param is_collection: Whether dataset is represented as a collection
-    """
-    objects = get_rel_paths_objects(ctx, root, dataset_id)
-
-    try:
-        if is_collection:
-            dataset_parent = toplevels[0]
-        else:
-            dataset_parent = pathutil.dirname(toplevels[0])
-    except Exception as e:
-        dataset_parent = root
-
-    intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.index.jpg', '(.*/)?I[0-9]{7}\.index\.jpe?g', 13, -1)
-    intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.raw', '(.*/)?I[0-9]{7}\.raw', 7, -1)
-    intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.dcm', '(.*/)?I[0-9]{7}\.dcm', 6, -1)
-    intake_check_file_count(ctx, dataset_parent, toplevels, is_collection, objects, 'I0000000.vol', '(.*/)?I[0-9]{7}\.vol', 6, -1)
 
 
 def get_rel_paths_objects(ctx, root, dataset_id):
@@ -582,7 +513,7 @@ def get_rel_paths_objects(ctx, root, dataset_id):
             parent_coll = tl_objects[0]
         else:
             parent_coll = pathutil.dirname(tl_objects[0])
-    except Exception as e:
+    except Exception:
         parent_coll = '/'
 
     """
@@ -607,49 +538,6 @@ def get_rel_paths_objects(ctx, root, dataset_id):
         rel_path_objects.append(row[1][len(parent_coll):] + '/' + row[0])
 
     return rel_path_objects
-
-
-def intake_check_file_count(ctx, dataset_parent, toplevels, is_collection_toplevel, objects, pattern_human, pattern_regex, min, max):
-    """Check if a certain filename pattern has enough occurrences in a dataset.
-
-    Adds a warning if the match count is out of range.
-
-    NOTE: Currently, patterns must match the full relative object path.
-       At the time of writing, Echo is the only experiment type we run this
-       check for, and it is a flat dataset without subdirectories, so it makes
-       no difference there.
-
-       For other experiment types it may be desirable to match patterns with
-       basenames instead of paths. In this case the currently commented-out
-       code in this function can be used.
-
-    :param ctx:                    Combined type of a callback and rei struct
-    :param dataset_parent:         Either the dataset collection or the first parent of a data-object dataset toplevel
-    :param toplevels:              List of toplevel objects
-    :param is_collection_toplevel: Indication of toplevel or not
-    :param objects:                List of dataset object paths relative to the datasetParent parameter
-    :param pattern_human:          Human-readable pattern (e.g.: 'I0000000.raw')
-    :param pattern_regex:          Regular expression that matches filenames (e.g.: 'I[0-9]{7}\.raw')
-    :param min:                    Minimum amount of occurrences. set to -1 to disable minimum check
-    :param max:                    Maximum amount of occurrences. set to -1 to disable maximum check
-    """
-    count = 0
-    for path in objects:
-        log.write(ctx, path)
-        if re.match(pattern_regex, path) is not None:
-            count += 1
-            log.write(ctx, '##intake_check_file_count ' + str(count))
-
-    # count = count / 2
-
-    if min != -1 and count < min:
-        text = "Expected at least " + str(min) + " files of type '" + pattern_human + "', found " + str(count)
-        log.write(ctx, '##' + text)
-        dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
-    if max != -1 and count > max:
-        text = "Expected at most " + str(max) + " files of type '" + pattern_human + "', found " + str(count)
-        log.write(ctx, '##' + text)
-        dataset_add_warning(ctx, toplevels, is_collection_toplevel, text)
 
 
 def get_aggregated_object_count(ctx, dataset_id, tl_collection):
@@ -685,22 +573,6 @@ def get_aggregated_object_error_count(ctx, dataset_id, tl_collection):
     )))
 
 
-def get_aggregated_object_warning_count(ctx, dataset_id, tl_collection):
-    """Return total amount of object warnings.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param dataset_id:    Dataset id
-    :param tl_collection: Collection name of top level
-
-    :returns: Total amount of object warnings
-    """
-    return len(list(genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME like '" + tl_collection + "%' AND META_DATA_ATTR_NAME = 'warning' ",
-        genquery.AS_LIST, ctx
-    )))
-
-
 def dataset_make_id(scope):
     """Construct a dateset based on WEPV and directory.
 
@@ -725,6 +597,6 @@ def dataset_parse_id(dataset_id):
     dataset['expType'] = dataset_parts[1]
     dataset['pseudocode'] = dataset_parts[2]
     dataset['version'] = dataset_parts[3]
-    dataset['directory'] = dataset_parts[4]  # HIER WORDT NIKS MEE GEDAAN - toch ff zo laten
+    dataset['directory'] = dataset_parts[4]
 
     return dataset

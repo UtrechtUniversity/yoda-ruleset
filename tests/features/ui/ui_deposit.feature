@@ -1,22 +1,22 @@
 @deposit
 Feature: Deposit UI
 
-  Scenario: Deposit page home
+  Scenario: Deposit start new deposit
     Given user "researcher" is logged in
-    And page "deposit" is shown
-    Then text "Deposit upload" is shown
+    And module "deposit" is shown
+    When user starts a new deposit
+    And module "deposit" is shown
+    Then new deposit is created
 
-  Scenario: Deposit meta page
+  Scenario: Deposit steps
     Given user "researcher" is logged in
-    And page "deposit/metadata/" is shown
-    Then text "Metadata for your deposit" is shown
-
-  Scenario: Deposit submit page
-    Given user "researcher" is logged in
-    And page "deposit/submit/" is shown
-    Then text "Submit your data package" is shown
+    And module "deposit" is shown
+    When user clicks on active deposit
+    Then upload data step is shown
+    When user clicks on document data button
+    Then document data step is shown
 
   Scenario: Deposit thankyou page
     Given user "researcher" is logged in
-    And page "deposit/thankyou/" is shown
-    Then text "Thank you" is shown
+    And page "deposit/thank-you" is shown
+    Then text "Thank you!" is shown

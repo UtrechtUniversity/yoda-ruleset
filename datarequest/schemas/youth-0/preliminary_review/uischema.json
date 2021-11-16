@@ -1,4 +1,7 @@
 {
+  "informed_consent_fit": {
+    "ui:widget": "textarea"
+  },
   "internal_remarks": {
     "ui:widget": "textarea",
     "ui:options": {

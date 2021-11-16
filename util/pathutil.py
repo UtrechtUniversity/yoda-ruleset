@@ -130,7 +130,7 @@ def info(path):
 def object_type(ctx, path):
     try:
         t = msi.get_obj_type(ctx, path, '')['arguments'][1]
-    except Exception as e:
+    except Exception:
         return
     if t == '-d':
         return ObjectType.DATA

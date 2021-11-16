@@ -18,6 +18,7 @@ __copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Chris Smeele')
+__author__    =  ('Lazlo Westerhof')
 # (in alphabetical order)
 
 import sys
@@ -33,10 +34,15 @@ import argparse
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('ruleset', metavar='RULESET', type=str,
                     help='a Python module/package name for an iRODS ruleset')
+parser.add_argument('--core', dest='core', action='store_const', const=True, default=False,
+                    help='only generate core API')
+parser.add_argument('--module', action="store", dest="module", default=False,
+                    help='only generate API of specific module')
 
 args = parser.parse_args()
 ruleset_name = args.ruleset
-
+core = args.core
+module = args.module
 
 # Strategy: Import the requested ruleset with an instrumented environment, and
 # apply introspection to extract API function information.
@@ -105,16 +111,23 @@ except Exception as e:
 #       So we use ordered dicts.
 O = lambda *xs: OrderedDict(xs)
 
+title = 'Yoda API'
+
+if core:
+    title = 'Yoda core API'
+
+if module:
+    title = 'Yoda {} API'.format(module)
+
 spec = O(('openapi', '3.0.0'),
          ('info',
          O(('description', ruleset_mod.__doc__),
            ('contact',
            O(('email', 'l.r.westerhof@uu.nl'))),
            ('version', getattr(ruleset_mod, '__version__', '9999')),
-           ('title', 'Yoda core API'))),
+           ('title', title))),
          ('servers',
-          [O(('url', 'https://portal.yoda.test/api'), ('description', 'Local Yoda test server')),
-           O(('url', 'https://yoda.test/api'),        ('description', 'Local Yoda2 test server'))]),
+          [O(('url', 'https://portal.yoda.test/api'), ('description', 'Local Yoda development server'))]),
          ('security', [ O(('cookieAuth', [])), O(('basicAuth', [])) ]),
          ('components',
          O(('schemas',
@@ -264,6 +277,16 @@ for name, fn in api.fns:
         continue
 
     name = re.sub('^api_', '', name)
+
+    if core:
+        modules = ['datarequest', 'intake']
+        if name.startswith(tuple(modules)):
+            continue
+
+    if module:
+        if not name.startswith(module):
+            continue
+
     spec['paths'].update([('/'+name, gen_fn_spec(name, fn))])
 
 print(json.dumps(spec))

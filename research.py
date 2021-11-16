@@ -11,6 +11,8 @@ import meta_form
 from util import *
 
 __all__ = ['api_research_folder_add',
+           'api_research_folder_copy',
+           'api_research_folder_move',
            'api_research_folder_delete',
            'api_research_folder_rename',
            'api_research_file_copy',
@@ -38,7 +40,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
-    except ValidationError as e:
+    except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # not in home - a groupname must be present ie at least 2!?
@@ -78,7 +80,113 @@ def api_research_folder_add(ctx, coll, new_folder_name):
     # All requirements OK
     try:
         collection.create(ctx, coll_target)
-    except msi.Error as e:
+    except msi.Error:
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
+
+
+@api.make()
+def api_research_folder_copy(ctx, folder_path, new_folder_path):
+    """Copy a folder in a research folder.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param folder_path:     Path to the folder to copy
+    :param new_folder_path: Path to the new copy of the folder
+
+    :returns: Dict with API status result
+    """
+    if len(new_folder_path) == 0:
+        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
+
+    try:
+        validate_filepath(new_folder_path.decode('utf-8'))
+    except ValidationError:
+        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
+
+    # Same folder path makes no sense.
+    if folder_path == new_folder_path:
+        return api.Error('invalid_folder_path', 'Origin and copy folder paths are equal. Please choose another destination')
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(new_folder_path.split('/')) > 2:
+        return api.Error('invalid_destination', 'It is not possible to copy folder at this location')
+
+    # in vault?
+    target_group_name = new_folder_path.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('invalid_destination', 'It is not possible to copy folder to the vault')
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected folder')
+
+    # Folder not locked?
+    if folder.is_locked(ctx, new_folder_path):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be copied')
+
+    # Does original folder exist?
+    if not collection.exists(ctx, folder_path):
+        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
+
+    # All requirements OK
+    try:
+        collection.copy(ctx, folder_path, new_folder_path)
+    except msi.Error:
+        return api.Error('internal', 'Something went wrong. Please try again')
+
+    return api.Result.ok()
+
+
+@api.make()
+def api_research_folder_move(ctx, folder_path, new_folder_path):
+    """Move a folder in a research folder.
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param folder_path:     Path to the folder to move
+    :param new_folder_path: Path to the new folder
+
+    :returns: Dict with API status result
+    """
+    if len(new_folder_path) == 0:
+        return api.Error('missing_folder_path', 'Missing folder path. Please add a folder path')
+
+    try:
+        validate_filepath(new_folder_path.decode('utf-8'))
+    except ValidationError:
+        return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
+
+    # Same folder path makes no sense.
+    if folder_path == new_folder_path:
+        return api.Error('invalid_folder_path', 'Origin and move folder paths are equal. Please choose another destination')
+
+    # not in home - a groupname must be present ie at least 2!?
+    if not len(new_folder_path.split('/')) > 2:
+        return api.Error('invalid_destination', 'It is not possible to move folder at this location')
+
+    # in vault?
+    target_group_name = new_folder_path.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('invalid_destination', 'It is not possible to move folder to the vault')
+
+    # permissions ok for group?
+    user_full_name = user.full_name(ctx)
+    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected folder')
+
+    # Folder not locked?
+    if folder.is_locked(ctx, new_folder_path):
+        return api.Error('not_allowed', 'The indicated folder is locked and therefore the folder can not be moved')
+
+    # Does original folder exist?
+    if not collection.exists(ctx, folder_path):
+        return api.Error('invalid_source', 'The original folder ' + folder_path + ' can not be found')
+
+    # All requirements OK
+    try:
+        collection.move(ctx, folder_path, new_folder_path)
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -102,7 +210,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     try:
         validate_filepath(coll_target.decode('utf-8'))
-    except ValidationError as e:
+    except ValidationError:
         return api.Error('invalid_foldername', 'This is not a valid folder name. Please choose another name for your folder')
 
     # Same name makes no sense
@@ -146,7 +254,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
     # All requirements OK
     try:
         collection.rename(ctx, coll + '/' + org_folder_name, coll_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -193,7 +301,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
     # All requirements OK
     try:
         collection.remove(ctx, coll_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -256,7 +364,7 @@ def api_research_file_copy(ctx, filepath, new_filepath):
     # All requirements OK
     try:
         data_object.copy(ctx, filepath, new_filepath)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -320,7 +428,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
     # All requirements OK
     try:
         data_object.rename(ctx, coll + '/' + org_file_name, path_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -383,7 +491,7 @@ def api_research_file_move(ctx, filepath, new_filepath):
     # All requirements OK
     try:
         data_object.rename(ctx, filepath, new_filepath)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
@@ -426,7 +534,7 @@ def api_research_file_delete(ctx, coll, file_name):
     # All requirements OK
     try:
         data_object.remove(ctx, path_target)
-    except msi.Error as e:
+    except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()

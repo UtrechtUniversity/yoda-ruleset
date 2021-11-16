@@ -209,20 +209,3 @@ def ui_data_package_status(browser, status):
         browser.reload()
 
     raise AssertionError()
-
-
-@when('user browses to folder "<folder>"')
-def ui_browse_folder(browser, folder):
-    # browser.links.find_by_partial_text(folder).click()
-
-    link = []
-    while len(link) == 0:
-        link = browser.links.find_by_partial_text(folder)
-        if len(link) > 0:
-            link.click()
-        else:
-            browser.find_by_id('file-browser_next').click()
-
-    browser.find_by_css('.sorting_asc').click()
-
-    browser.links.find_by_partial_text(folder)[0].click()
