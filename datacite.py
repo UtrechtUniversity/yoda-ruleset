@@ -36,11 +36,15 @@ def rule_register_doi_metadata(ctx, doi, payload):
 
 def register_doi_metadata(ctx, doi, payload):
     """Register DOI metadata with DataCite."""
-    url = "{}/metadata/{}".format(config.datacite_url, doi)
+    url = "{}/dois/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
-    headers = {'Content-Type': 'application/xml', 'charset': 'UTF-8'}
+    headers = {'Content-Type': 'application/vnd.api+json', 'charset': 'UTF-8'}
+
+    log.write(ctx, url)
 
     response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
+
+    log.write(ctx, response)
 
     return response.status_code
 
