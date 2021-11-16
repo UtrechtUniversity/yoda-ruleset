@@ -6,6 +6,12 @@
     "ui:help": "A description of your data package",
     "ui:widget": "textarea"
   },
+  "Discipline": {
+    "ui:description": "Categorize your research to a (sub)discipline"
+  },
+  "Tag": {
+    "ui:description": "Free text field for adding (searchable) key words to your data package"
+  },
   "Data_Type": {
     "ui:help": "What is the type of your data"
   },

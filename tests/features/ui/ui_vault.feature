@@ -2,7 +2,7 @@ Feature: Vault UI
 
     Examples:
         | vault          |
-        | vault-initial1 |
+        | vault-default-1 |
 
     Scenario: Vault submit
         Given user "researcher" is logged in
@@ -72,6 +72,12 @@ Feature: Vault UI
         When user browses to data package in "<vault>"
         Then the data package status is "Published"
         And provenance log includes "Published"
+
+    Scenario: Vault view metadata form
+        Given user "datamanager" is logged in
+        And module "vault" is shown
+        When user browses to data package in "<vault>"
+        Then core metadata is visible
 
     Scenario: Vault view metadata form
         Given user "datamanager" is logged in

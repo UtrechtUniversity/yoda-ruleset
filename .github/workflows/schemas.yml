@@ -1,0 +1,32 @@
+name: "Validate schemas"
+
+on:
+  push:
+    paths:
+    - 'schemas/**'
+    - 'datarequest/schemas/**'
+  pull_request:
+    paths:
+    - 'schemas/**'
+    - 'datarequest/schemas/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16.x
+
+      - name: Install ajv-cli
+        run: |
+          npm install -g ajv-cli
+
+      - name: Validate JSON schemas
+        run: |
+          ajv compile -s "schemas/*/*.json" --spec=draft7 --strict=false
+          ajv compile -s "datarequest/schemas/*/*/*.json"  --spec=draft7 --strict=false
