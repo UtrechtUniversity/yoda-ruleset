@@ -36,9 +36,9 @@ def rule_register_doi_metadata(ctx, doi, payload):
 
 def register_doi_metadata(ctx, doi, payload):
     """Register DOI metadata with DataCite."""
-    url = "{}/dois/{}".format(config.datacite_url, doi)
+    url = "{}/metadata/{}".format(config.datacite_url, doi)
     auth = (config.datacite_username, config.datacite_password)
-    headers = {'Content-Type': 'application/vnd.api+json', 'charset': 'UTF-8'}
+    headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
     log.write(ctx, url)
 

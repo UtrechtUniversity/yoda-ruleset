@@ -120,8 +120,8 @@ def json_datacite41_create_datacite_json(ctx, combi_path):
     combi = jsonutil.read(ctx, combi_path)
 
     # Collect the metadata in datacite format
-    metadata = {} 
-    metadata['data'] = {
+    # metadata = {} 
+    metadata = {
         "id": get_DOI(combi),
         "type": "dois",
         "attributes": {
@@ -202,7 +202,7 @@ def get_identifiers(combi):
 
  
 def get_titles(combi):
-    return [{'title': combi['Title'], 'language': combi.get('Language', 'en')[0:2]}]
+    return [{'title': combi['Title'], 'language': 'en-us'}] # combi.get('Language', 'en')[0:2]}]  # taal moet langer 'en-us'
 
 
 def get_descriptions(combi):
@@ -234,7 +234,7 @@ def get_subjects(combi):
         subjects.append({'subjectScheme': 'OECD FOS 2007', 'subject': discipline})
 
     for tag in combi.get('Tag', []):
-        subjects.append({'subjectScheme': 'Keyword', 'subject': tag})
+        subjects.append({'subject': tag, 'subjectScheme': 'Keyword'})
 
     # Geo schemas have some specific fields that need to be added as subject.
     # Sort of freely usable fields
@@ -251,7 +251,7 @@ def get_subjects(combi):
     # for each subject field that exists in the metadata...
     for field in subject_fields:
         for x in combi.get(field, []):
-            subjects.append({'subjectScheme': field, 'subject': x})
+            subjects.append({'subject': x, 'subjectScheme': field})
 
     return subjects
 
@@ -260,7 +260,7 @@ def get_funders(combi):
     funders = []
     for funder in combi.get('Funding_Reference', []):
         funders.append({'fundingReference': {'funderName': funder['Funder_Name'], 
-                                             'awardNumber': funder['Award_Number']}})
+                                             'awardNumber': {'awardNumber': funder['Award_Number']}}})
     return funders
 
 
@@ -278,7 +278,7 @@ def get_creators(combi):
                 name_ids.append({'nameIdentifier': pid['Name_Identifier'], 
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-        all_creators.append({'name': creator['Name']['Family_Name'] + ', ' + creator['Name']['Given_Name'],
+        all_creators.append({'creatorName': creator['Name']['Family_Name'] + ', ' + creator['Name']['Given_Name'],
                          'nameType': 'Personal',
                          'givenName': creator['Name']['Given_Name'],
                          'familyName': creator['Name']['Family_Name'],
@@ -307,10 +307,10 @@ def get_contributors(combi):
                 name_ids.append({'nameIdentifier': pid['Name_Identifier'],
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-        all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+        all.append({'contributorName': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
                     'nameType': 'Personal',
-                    'givenName': person['Name']['Given_Name'],
-                    'familyName': person['Name']['Family_Name'],
+                    # 'givenName': person['Name']['Given_Name'],
+                    # 'familyName': person['Name']['Family_Name'],
                     'affiliation': affiliations,
                     'contributorType':  person['Contributor_Type'],
                     'nameIdentifiers': name_ids})
@@ -339,14 +339,14 @@ def get_contributors(combi):
 def get_dates(combi):
     """ return list of dates in datacite format """
 
-    dates = [{'dateType': 'Updated', 'date': combi.get('System', {}).get('Last_Modified_Date')}, 
-             {'dateType': 'Available', 'date': combi.get('Embargo_End_Date')}]
+    dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'}, 
+             {'date': combi.get('Embargo_End_Date'), 'dateType': 'Available'}]
 
     collected = combi.get('Collected')
     x = collected.get('Start_Date')
     y = collected.get('End_Date')
     if x is not None and y is not None:
-        dates.append({'dateType': 'Collected', 'date': '{}/{}'.format(x, y)})
+        dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
 
     return dates
 
@@ -363,13 +363,13 @@ def get_rights_list(combi):
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    return [{'rights': 'Custom'},
-            {'rights': combi['Data_Access_Restriction'], 'rightsUri': options[combi['Data_Access_Restriction'].split()[0]]}]
+    # {'rights': 'Custom'}
+    return [{'rights': combi['Data_Access_Restriction'], 'rightsURI': options[combi['Data_Access_Restriction'].split()[0]]}]
 
 
 def get_language(combi):
     """Get string in DataCite format containing language."""
-    return combi['Language'][0:2]
+    return 'en-us' # combi['Language'][0:2]
 
 
 def get_resource_type(combi):
@@ -399,7 +399,7 @@ def get_resource_type(combi):
              'Model':     'Model'}\
         .get(type, 'Other Document')
 
-    return {"resourceType": type, "resourceTypeGeneral": descr}
+    return {"resourceTypeGeneral": descr, "resourceType": type}
 
 
 def get_related_datapackages(combi):
@@ -415,9 +415,9 @@ def get_related_datapackages(combi):
     """
     related_dps = []
     for rel in combi['Related_Datapackage']:
-        related_dps.append({'relationType': rel['Relation_Type'].split(':')[0],
-                            'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
-                            'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme']})
+        related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                            'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                            'relationType': rel['Relation_Type'].split(':')[0]})
     return related_dps
 
 
@@ -466,7 +466,7 @@ def get_geo_locations(combi):
     try:
         for location in combi['Covered_Geolocation_Place']:
             if location:
-                geoLocations.append({'geoLocation': {'geoLocationPlace': location}})
+                geoLocations.append({'geoLocationPlace': location})
     except KeyError:
         return
 
