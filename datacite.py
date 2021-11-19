@@ -41,10 +41,12 @@ def register_doi_metadata(ctx, doi, payload):
     headers = {'Content-Type': 'application/json', 'charset': 'UTF-8'}
 
     log.write(ctx, url)
+    log.write(ctx, payload)
 
     response = requests.put(url, auth=auth, data=payload, headers=headers, timeout=30)
 
     log.write(ctx, response)
+    log.write(ctx, response.text)
 
     return response.status_code
 

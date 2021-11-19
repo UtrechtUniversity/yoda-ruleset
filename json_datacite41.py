@@ -119,14 +119,19 @@ def json_datacite41_create_datacite_json(ctx, combi_path):
 
     combi = jsonutil.read(ctx, combi_path)
 
+    doi = get_DOI(combi)
+    doi_parts = doi.split('/')
+
     # Collect the metadata in datacite format
-    # metadata = {} 
-    metadata = {
+    metadata = {} 
+    metadata['data'] = {
         "id": get_DOI(combi),
         "type": "dois",
         "attributes": {
             "event": "publish",
-            "doi": get_DOI(combi),
+            "doi": doi,
+            "prefix": doi_parts[0],
+            "suffix": doi_parts[1],
             "identifiers": get_identifiers(combi),
             "creators": get_creators(combi),
             "titles": get_titles(combi),
@@ -470,4 +475,4 @@ def get_geo_locations(combi):
     except KeyError:
         return
 
-    return geoLocations    
+    return geoLocations
