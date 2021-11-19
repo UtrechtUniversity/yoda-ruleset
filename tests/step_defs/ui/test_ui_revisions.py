@@ -16,7 +16,7 @@ scenarios('../../features/ui/ui_revisions.feature')
 
 @when('the user searches revision by name with "<name>"')
 def ui_revisions_search(browser, name):
-    browser.find_by_css('.search-panel button.dropdown-toggle').click()
+    browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=revision]').click()
     browser.find_by_css('input#search-filter').fill(name)
     browser.find_by_css('input#search-filter').type(Keys.RETURN)
