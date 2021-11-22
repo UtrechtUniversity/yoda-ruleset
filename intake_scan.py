@@ -244,9 +244,8 @@ def intake_extract_tokens(ctx, string):
         foundKVs["pseudocode"] = str_upper[0:len(str_for_pseudocode_test)]
     elif re.match('^[Vv][Ee][Rr][A-Z][a-zA-Z0-9-]*$', str_for_version_test) is not None:
         foundKVs["version"] = string[3:len(string)]
-    else:
-        if str_lower in exp_types:
-            foundKVs["experiment_type"] = string
+    elif str_lower in exp_types:
+        foundKVs["experiment_type"] = str_lower
 
     return foundKVs
 
