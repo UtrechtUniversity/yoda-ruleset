@@ -23,7 +23,7 @@
         "Text"
       ],
       "enumNames": [
-        "Datapackage",
+        "Dataset",
         "Method",
         "Software",
         "Other Document"
@@ -36,6 +36,64 @@
         "Basic",
         "Sensitive",
         "Critical"
+      ]
+    },
+    "optionsRetentionPeriod": {
+      "type": "string",
+      "enum": [
+        "2",
+        "5",
+        "10",
+        "20",
+        "50"
+      ]
+    },
+    "optionsOwnerRole": {
+      "type": "string",
+      "enum": [
+         "Principal Investigator",
+         "3rd Party Data Owner",
+         "Group Leader"
+      ]
+    },
+    "optionsRelationType": {
+      "type": "string",
+      "enum": [
+        "IsSupplementTo: Current datapackage is supplement to",
+        "IsSupplementedBy: Current datapackage is supplemented by",
+        "IsContinuedBy: Current datadatapackage is continued by",
+        "Continues: Continues this current dataset",
+        "IsNewVersionOf: Current datapackage is new version of",
+        "IsPreviousVersionOf: Current datapackage is previous version of",
+        "IsPartOf: Current datapackage is part of",
+        "HasPart: Is part of current datapackage",
+        "IsReferencedBy: Current datapackage is referenced by",
+        "References: Current datapackages references",
+        "IsVariantFormOf: Current datapackage is variant of",
+        "IsOriginalFormOf: Current datapackage is original of",
+        "IsSourceOf: Raw data for this current datapackage"
+      ]
+    },
+    "optionsPersistentIdentifierScheme": {
+      "type": "string",
+      "enum": [
+        "ARK",
+        "arXiv",
+        "bibcode",
+        "DOI",
+        "EAN13",
+        "EISSN",
+        "Handle",
+        "ISBN",
+        "ISSN",
+        "ISTC",
+        "LISSN",
+        "LSID",
+        "PMID",
+        "PURL",
+        "UPC",
+        "URL",
+        "URN"
       ]
     },
     "optionsDiscipline": {
@@ -158,22 +216,8 @@
         "Human geography and spatial planning - Education",
         "Human geography and spatial planning - Urban Geography",
         "Human geography and spatial planning - Social Urban Transitions",
-        "Sustainable development - Biobased Economy",
-        "Sustainable development - Energy System Analysis",
-        "Sustainable development - Energy, Resources and Technological Change",
-        "Sustainable development - Integration of Intermittent Renewable Energy",
-        "Sustainable development - Integration of Photovoltaic Solar Energy",
-        "Sustainable development - Sustainable Energy",
-        "Sustainable development - Sustainable Energy Supply Systems",
-        "Sustainable development - Dynamics of Innovation Systems",
-        "Sustainable development - Innovation and Sustainability",
-        "Sustainable development - Innovation Studies",
-        "Sustainable development - Environmental Governance",
-        "Sustainable development - Global Sustainability Governance",
-        "Sustainable development - Environmental Sciences",
-        "Sustainable development - Global Ecohydrology and Sustainability",
-        "Sustainable development - Spatial Ecology and Global Change",
-        "Sustainable development - Urban Futures Studio"
+        "Human Geography - Economic Geography, Economic Urban Transitions, Geography & Education, International Development Studies, Social Urban Transitions, Spatial Planning, Urban Geography",
+        "Sustainable Development - Energy & Resources, Innovation Studies, Environmental Governance, Environmental Sciences, Section Urban Features"
       ],
       "enumNames": [
         "Earth sciences - Experimental rock deformation",
@@ -202,22 +246,8 @@
         "Human geography and spatial planning - Education",
         "Human geography and spatial planning - Urban Geography",
         "Human geography and spatial planning - Social Urban Transitions",
-        "Sustainable development - Biobased Economy",
-        "Sustainable development - Energy System Analysis",
-        "Sustainable development - Energy, Resources and Technological Change",
-        "Sustainable development - Integration of Intermittent Renewable Energy",
-        "Sustainable development - Integration of Photovoltaic Solar Energy",
-        "Sustainable development - Sustainable Energy",
-        "Sustainable development - Sustainable Energy Supply Systems",
-        "Sustainable development - Dynamics of Innovation Systems",
-        "Sustainable development - Innovation and Sustainability",
-        "Sustainable development - Innovation Studies",
-        "Sustainable development - Environmental Governance",
-        "Sustainable development - Global Sustainability Governance",
-        "Sustainable development - Environmental Sciences",
-        "Sustainable development - Global Ecohydrology and Sustainability",
-        "Sustainable development - Spatial Ecology and Global Change",
-        "Sustainable development - Urban Futures Studio"
+        "Human Geography - Economic Geography, Economic Urban Transitions, Geography & Education, International Development Studies, Social Urban Transitions, Spatial Planning, Urban Geography",
+        "Sustainable Development - Energy & Resources, Innovation Studies, Environmental Governance, Environmental Sciences, Section Urban Features"
       ]
     },
     "optionsISO639-1": {
@@ -685,7 +715,8 @@
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
-        "Closed"
+        "Open – Accessible for researchers of Geosciences",
+        "Restricted – Accessible on request"
       ]
     },
     "optionsNameIdentifierScheme": {
@@ -701,6 +732,7 @@
     "optionsLicense": {
       "type": "string",
       "enum": [
+        "Internal License Data Archive Geosciences 2021-01",
         "Creative Commons Attribution 4.0 International Public License",
         "Creative Commons Attribution-ShareAlike 4.0 International Public License",
         "Creative Commons Zero v1.0 Universal",
@@ -722,9 +754,9 @@
     "Title",
     "Description",
     "Research_Group",
+    "Collection_Name",
     "Collected",
     "Tag",
-    "Personal_Data",
     "End_Preservation",
     "Data_Type",
     "Creator",
@@ -759,7 +791,7 @@
       "default": "en - English"
     },
     "Tag": {
-      "title": "Tags",
+      "title": "Keyword",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -772,10 +804,14 @@
       "$ref": "#/definitions/optionsResearch_Group",
       "title": "Research Group"
     },
+    "Collection_Name": {
+      "$ref": "#/definitions/stringNormal",
+      "title": "Project"
+    },
     "Collected": {
       "type": "object",
       "additionalProperties": false,
-      "title": "Collection period",
+      "title": "Research period",
       "yoda:structure": "compound",
       "properties": {
         "Start_Date": {
@@ -796,6 +832,7 @@
     },
     "GeoLocation": {
       "type": "array",
+      "title": "Geographical location",
       "minItems": 1,
       "items": {
         "type": "object",
@@ -834,18 +871,56 @@
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/stringNormal",
-        "title": "keyword",
+        "title": "Keyword",
         "default": "pilot"
       }
     },
-    "Personal_Data": {
-      "$ref": "#/definitions/optionsContainsPersonalData",
-      "title": "Contains personal data"
+    "Related_Datapackage": {
+      "title": "Reference",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Relation_Type": {
+            "$ref": "#/definitions/optionsRelationType",
+            "title": "Relation type"
+          },
+          "Title": {
+            "$ref": "#/definitions/stringNormal",
+            "title": "Title"
+          },
+          "Persistent_Identifier": {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "Persistent identifier",
+            "yoda:structure": "compound",
+            "properties": {
+              "Identifier_Scheme": {
+                "$ref": "#/definitions/optionsPersistentIdentifierScheme",
+                "title": "Type"
+              },
+              "Identifier": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Identifier"
+              }
+            },
+            "dependencies": {
+              "Identifier_Scheme": ["Identifier"],
+              "Identifier": ["Identifier_Scheme"]
+            }
+          }
+        },
+        "dependencies": {
+          "Relation_Type": ["Title"]
+        }
+      }
     },
     "End_Preservation": {
-      "type": "string",
-      "format": "date",
-      "title": "End Preservation Date"
+      "$ref": "#/definitions/optionsRetentionPeriod",
+      "title": "Retention period (years)"
     },
     "File_Data_Type": {
       "type": "array",
@@ -890,7 +965,8 @@
         "yoda:structure": "subproperties",
         "required": [
           "Name",
-          "Affiliation"
+          "Affiliation",
+          "Owner_Role"
         ],
         "properties": {
           "Name": {
@@ -914,6 +990,10 @@
           "Affiliation": {
             "type": "string",
             "default": "Utrecht University"
+          },
+          "Owner_Role": {
+            "$ref": "#/definitions/optionsOwnerRole",
+            "title": "Owner role"
           }
         }
       }
@@ -953,12 +1033,12 @@
     "License": {
       "$ref": "#/definitions/optionsLicense",
       "title": "License",
-	  "default": "Creative Commons Attribution 4.0 International Public License"
+      "default": "Internal License Data Archive Geosciences 2021-01"
     },
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
-      "title": "Data package access",
-      "default": "Closed"
+      "title": "Data Package Access",
+      "default": "Open – Accessible for researchers of Geosciences"
     }
   }
 }
