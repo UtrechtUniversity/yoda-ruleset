@@ -32,10 +32,12 @@
     "optionsDataClassification": {
       "type": "string",
       "enum": [
-        "Public",
-        "Basic",
+        "Yes",
+        "No"
+      ],
+      "enumNames": [
         "Sensitive",
-        "Critical"
+        "Basic"
       ]
     },
     "optionsRetentionPeriod": {
@@ -954,7 +956,7 @@
     },
     "Data_Classification": {
       "$ref": "#/definitions/optionsDataClassification",
-      "title": "Data classification"
+      "title": "Personal data"
     },
     "Creator": {
       "type": "array",
