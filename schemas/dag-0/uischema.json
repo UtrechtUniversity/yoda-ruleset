@@ -72,6 +72,7 @@
     "ui:help": "Select how the data should be shared within the faculty of Geosciences. Personal data may only be accessed on request"
   },
   "Contributor": {
+    "ui:description": "Person performing the deposit will also act as first contact person",
     "items": {
       "Name": {
         "ui:help": "The name of the persons who deposits this data package to the archive"
@@ -79,6 +80,7 @@
     }
   },
   "Creator": {
+    "ui:description": "The person(s) within the faculty responsible for collecting the data",
     "items": {
       "Name": {
         "ui:help": "The name of the person(s) who created (a version of) the data package"
