@@ -915,31 +915,6 @@
       "$ref": "#/definitions/optionsRetentionPeriod",
       "title": "Retention period (years)"
     },
-    "File_Data_Type": {
-      "type": "array",
-      "minItems": 1,
-      "title": "File specification",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "yoda:structure": "subproperties",
-        "title": "File",
-        "required": [
-          "File_name",
-          "File_description"
-        ],
-        "properties": {
-          "File_name": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "File name"
-          },
-          "File_description": {
-            "$ref": "#/definitions/stringNormal",
-            "title": "File layout"
-          }
-        }
-      }
-    },
     "Data_Type": {
       "$ref": "#/definitions/optionsDataType",
       "title": "Data type",
