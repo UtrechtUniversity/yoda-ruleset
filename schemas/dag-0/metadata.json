@@ -792,16 +792,6 @@
       "title": "Language of the data",
       "default": "en - English"
     },
-    "Tag": {
-      "title": "Keyword",
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "$ref": "#/definitions/stringNormal",
-        "title": "Tag",
-        "default": ""
-      }
-    },
     "Research_Group": {
       "$ref": "#/definitions/optionsResearch_Group",
       "title": "Research Group"
@@ -869,12 +859,13 @@
       }
     },
     "Tag": {
+      "title": "Keyword",
       "type": "array",
       "minItems": 1,
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Keyword",
-        "default": "pilot"
+        "default": ""
       }
     },
     "Related_Datapackage": {
@@ -958,6 +949,38 @@
       "$ref": "#/definitions/optionsDataClassification",
       "title": "Personal data"
     },
+    "Contributor": {
+      "type": "array",
+          "title": "Depositor of the datapackage",
+      "minItems": 1,
+          "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "yoda:structure": "subproperties",
+        "properties": {
+          "Name": {
+            "type": "object",
+            "additionalProperties": false,
+            "yoda:structure": "compound",
+            "properties": {
+              "Given_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Given Name"
+              },
+              "Family_Name": {
+                "$ref": "#/definitions/stringNormal",
+                "title": "Family Name"
+              }
+            },
+            "dependencies": {
+              "Given_Name": ["Family_Name"],
+              "Family_Name": ["Given_Name"]
+            }
+          }
+        }
+      }
+    },
     "Creator": {
       "type": "array",
 	  "title": "Owner of datapackage",
@@ -996,38 +1019,6 @@
           "Owner_Role": {
             "$ref": "#/definitions/optionsOwnerRole",
             "title": "Owner role"
-          }
-        }
-      }
-    },
-    "Contributor": {
-      "type": "array",
-	  "title": "Depositor of the datapackage",
-      "minItems": 1,
-	  "maxItems": 1,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "yoda:structure": "subproperties",
-        "properties": {
-          "Name": {
-            "type": "object",
-            "additionalProperties": false,
-            "yoda:structure": "compound",
-            "properties": {
-              "Given_Name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Given Name"
-              },
-              "Family_Name": {
-                "$ref": "#/definitions/stringNormal",
-                "title": "Family Name"
-              }
-            },
-            "dependencies": {
-              "Given_Name": ["Family_Name"],
-              "Family_Name": ["Given_Name"]
-            }
           }
         }
       }
