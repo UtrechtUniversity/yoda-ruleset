@@ -22,16 +22,6 @@
     "ui:help": "What is the type of your data",
     "ui:widget": "hidden"
   },
-  "File_Data_Type": {
-    "items": {
-      "File_name": {
-        "ui:help": "Specify folder and filename"
-      },
-      "File_description": {
-        "ui:help": "Describe the file type (e.g. images or tabular) or format (e.g. JPEG or GIS)"
-      }
-    }
-  },
   "Data_Classification": {
     "ui:help": "How is your data classified with regards to information security policy"
   },
