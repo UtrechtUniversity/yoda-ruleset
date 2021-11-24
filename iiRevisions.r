@@ -339,3 +339,29 @@ iiRevisionLastBefore(*path, *timestamp, *revisionId) {
                 }
         }
 }
+
+# \brief Return list of revisioncandidates of a path.
+#
+# \param[in]  path       path of original
+# \param[out] revisions  list of revisioncandidates
+#
+iiRevisionCandidates(*path, *revisions) {
+
+	*revisions = list();
+	*originalPathKey = UUORGMETADATAPREFIX ++ "original_path";
+	*revisionStore = "/" ++ $rodsZoneClient ++ UUREVISIONCOLLECTION;
+
+	foreach(*row in SELECT DATA_ID, order(DATA_NAME) WHERE META_DATA_ATTR_NAME = *originalPathKey
+		                                         AND META_DATA_ATTR_VALUE = *path
+							 AND COLL_NAME like "*revisionStore%") {
+		*id = *row.DATA_ID;
+		uuObjectMetadataKvp(*id, UUORGMETADATAPREFIX, *mdkvp);
+		msiGetValByKey(*mdkvp, UUORGMETADATAPREFIX ++ "original_modify_time", *modifyTime);
+		*revisions = cons(iirevisioncandidate(double(*modifyTime), *id), *revisions);
+	}
+}
+
+# \datatype iirevisionwithpath
+# combination of revisionId and original path of the revised file
+data iirevisionwithpath =
+	| iirevisionwithpath : string * string -> iirevisionwithpath
