@@ -48,9 +48,7 @@
     }
   },
   "Related_Datapackage": {
-    "items": {
-      "ui:help": "BLablbla"
-    }
+    "ui:description": "Reference to other resources, such as another data package, or an online publication"
   },
   "Personal_Data": {
     "ui:help": "Indicate whether the data package contains personal information"
