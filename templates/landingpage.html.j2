@@ -321,15 +321,19 @@
                 }).addTo(mymap);
 
                 if (lat0==lat1 && lon0==lon1) {
-	            var marker = L.marker([lat0, lon0]).addTo(mymap);
-		}
-		else {
+                    var marker = L.marker([lat0, lon0]).addTo(mymap);
+                } else {
                     var rectangle = L.rectangle([[lat0, lon0],[lat1, lon1]]).addTo(mymap);
-		}
+                }
                                                 </script>
                                     </span>
                                 <span>
-                                {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} | {{ loc.Description_Spatial }}
+                                {% if loc.Description_Temporal %}
+                                    {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} |
+                                {% endif %}
+                                {% if loc.Description_Spatial %}
+                                    {{ loc.Description_Spatial }}
+                                {% endif %}
                                 </span>
                             </div>
                         </div>
