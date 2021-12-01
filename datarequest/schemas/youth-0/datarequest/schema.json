@@ -197,7 +197,7 @@
                     "missing_data": {
                       "$ref": "#/definitions/stringLong",
                       "title": "Missing data",
-                      "description": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will usein the statistical analyses. Based on this information, provide a new expected sample size."
+                      "description": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will use in the statistical analyses. Based on this information, provide a new expected sample size."
                     },
                     "statistical_outliers": {
                       "$ref": "#/definitions/stringLong",
