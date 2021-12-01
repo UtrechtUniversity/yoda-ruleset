@@ -264,8 +264,8 @@ def get_subjects(combi):
 def get_funders(combi):
     funders = []
     for funder in combi.get('Funding_Reference', []):
-        funders.append({'fundingReference': {'funderName': funder['Funder_Name'], 
-                                             'awardNumber': {'awardNumber': funder['Award_Number']}}})
+        funders.append({'funderName': funder['Funder_Name'], 
+                        'awardNumber': {'awardNumber': funder['Award_Number']}})
     return funders
 
 
@@ -312,7 +312,7 @@ def get_contributors(combi):
                 name_ids.append({'nameIdentifier': pid['Name_Identifier'],
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-        all.append({'contributorName': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+        all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
                     'nameType': 'Personal',
                     # 'givenName': person['Name']['Given_Name'],
                     # 'familyName': person['Name']['Family_Name'],
@@ -404,7 +404,7 @@ def get_resource_type(combi):
              'Model':     'Model'}\
         .get(type, 'Other Document')
 
-    return {"resourceTypeGeneral": descr, "resourceType": type}
+    return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
 def get_related_datapackages(combi):
