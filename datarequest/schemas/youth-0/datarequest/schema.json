@@ -269,7 +269,9 @@
                     }
                   },
                   "required": [
-                    "statistical_models"
+                    "statistical_models",
+                    "statistical_power",
+                    "assumption_violation"
                   ]
                 },
                 "attachments": {
