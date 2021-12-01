@@ -277,7 +277,7 @@
                   "title": "Attachments",
                   "properties": {
                     "attachments": {
-                      "title": "Add attachments",
+                      "title": "Do you wish to add attachments?",
                       "description": "Please indicate whether you would like to add one or more attachments to your data request. You will be prompted to upload your attachments after you have submitted your data request, but you may of course already refer to attachments in the study information fields above (e.g. \"see experimental_setup_images.zip\").",
                       "type": "string",
                       "enum": [
