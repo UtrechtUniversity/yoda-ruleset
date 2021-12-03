@@ -51,4 +51,8 @@ if config.enable_intake:
 if config.enable_datarequest:
     from datarequest import *
 
-from deposit import *
+if config.enable_deposit:
+    from deposit import *
+
+if config.enable_tokens:
+    from token import *
