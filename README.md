@@ -1,4 +1,4 @@
-# Yoda rules and policies [![License](https://img.shields.io/github/license/UtrechtUniversity/irods-ruleset-uu.svg?maxAge=2592000)](/LICENSE)
+# Yoda rules and policies [![License](https://img.shields.io/github/license/UtrechtUniversity/yoda-ruleset.svg?maxAge=2592000)](/LICENSE)
 
 All iRODS rules and policies to be configured with all [Yoda](https://github.com/UtrechtUniversity/yoda-ansible) environments.
 

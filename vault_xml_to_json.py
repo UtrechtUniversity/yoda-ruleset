@@ -24,7 +24,7 @@ def getMetadaJsonDict(callback, yoda_json_path):
     return jsonutil.read(callback, yoda_json_path)
 
 
-def getActiveJsonSchemaAsDict(callback, rods_zone, category):  # irods-ruleset-uu function in uuResources.py
+def getActiveJsonSchemaAsDict(callback, rods_zone, category):  # yoda-ruleset function in uuResources.py
     """Read yoda-metadata.json from vault and return as (ordered!) dict."""
     json_schema_path = '/' + rods_zone + '/yoda/schemas/' + category + '/metadata.json'
     return jsonutil.read(callback, json_schema_path)
