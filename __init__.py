@@ -56,3 +56,6 @@ if config.enable_deposit:
 
 if config.enable_tokens:
     from token import *
+
+if config.enable_tape_archive:
+    from tape_archive import *
