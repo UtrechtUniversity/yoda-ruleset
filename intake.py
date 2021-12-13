@@ -492,10 +492,22 @@ def api_intake_lock_dataset(ctx, path, dataset_ids):
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
-        return {"proc_status": "NOK"}
+        return {"proc_status": "NOK",
+                "error_msg": "No permissions to lock dataset(s)",
+                "error_dataset_ids": []}
 
+    error_dataset_ids = []
     for dataset_id in dataset_ids.split(','):
-        intake_lock.intake_dataset_lock(ctx, path, dataset_id)
+        # error_dataset_ids.append(dataset_id)
+        try:
+            intake_lock.intake_dataset_lock(ctx, path, dataset_id)
+        except Exception:
+            error_dataset_ids.append(dataset_id)
+
+    if error_dataset_ids:
+        return {"proc_status": "NOK",
+                "error_msg": "Something went wrong locking datasets",
+                "error_dataset_ids": error_dataset_ids}
 
     return {"proc_status": "OK"}
 
@@ -518,11 +530,23 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
 
     if not user.is_member_of(ctx, datamanager_group):
-        log.write(ctx, "No permissions to unlock dataset")
-        return {"proc_status": "NOK"}
+        log.write(ctx, "No permissions to unlock dataset(s)")
+        return {"proc_status": "NOK", 
+                "error_msg": "No permissions to unlock dataset",
+                "error_dataset_ids": []}
 
+    error_dataset_ids = []
     for dataset_id in dataset_ids.split(','):
-        intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
+        # error_dataset_ids.append(dataset_id)
+        try:
+            intake_lock.intake_dataset_unlock(ctx, path, dataset_id)
+        except Exception:
+            error_dataset_ids.append(dataset_id)
+
+    if error_dataset_ids:
+        return {"proc_status": "NOK",
+                "error_msg": "Something went wrong unlocking datasets",
+                "error_dataset_ids": error_dataset_ids}
 
     return {"proc_status": "OK"}
 
