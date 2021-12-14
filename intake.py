@@ -531,7 +531,7 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to unlock dataset(s)")
-        return {"proc_status": "NOK", 
+        return {"proc_status": "NOK",
                 "error_msg": "No permissions to unlock dataset",
                 "error_dataset_ids": []}
 
