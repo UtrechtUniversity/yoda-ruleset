@@ -397,9 +397,12 @@ def api_intake_scan_for_datasets(ctx, coll):
     """
 
     if _intake_check_authorized_to_scan(ctx, coll):
-        _intake_scan_for_datasets(ctx, coll)
+        try:
+            _intake_scan_for_datasets(ctx, coll)
+        except Exception:
+            return {"proc_status": "NOK", "error_msg": "Error during scanning process"}
     else:
-        return {}
+        return {"proc_status": "NOK", "error_msg": "No permissions to scan collection"}
 
     return {"proc_status": "OK"}
 
@@ -412,12 +415,17 @@ def rule_intake_scan_for_datasets(ctx, coll):
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection to scan for datasets
 
-    :returns: indication correct
+    :returns: 0=correct, 1=insufficient rights, 2=error during scanning process
     """
+    if not collection.exists(ctx, coll):
+        return "Non existing collection: " + coll
     if _intake_check_authorized_to_scan(ctx, coll):
-        _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
+        try:
+            _intake_scan_for_datasets(ctx, coll, tl_datasets_log_target='stdout')
+        except Exception:
+            return "Error scanning for datasets for collection: " + coll
     else:
-        return 1
+        return "Insufficient permissions for collection: " + coll
 
     return 0
 
