@@ -1567,10 +1567,10 @@
     "Discipline": {
       "type": "array",
       "minItems": 1,
-      "title": "Disciplines",
+      "title": "Subdomain",
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
-        "title": "Discipline",
+        "title": "Subdomain",
         "default": "Rock and melt physical properties"
       }
     },
@@ -1738,7 +1738,7 @@
     "Tag": {
       "type": "array",
       "minItems": 1,
-      "title": "Tags",
+      "title": "Free keyword",
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Tag",

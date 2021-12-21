@@ -1278,10 +1278,10 @@
     "Discipline": {
       "type": "array",
       "minItems": 1,
-      "title": "Disciplines",
+      "title": "Subdomain",
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
-        "title": "Discipline",
+        "title": "Subdomain",
         "default": "Analogue modelling of geologic processes"
       }
     },
@@ -1427,10 +1427,10 @@
     "Geomorphical_Feature": {
       "type": "array",
       "minItems": 1,
-      "title": "Geomorphical feature",
+      "title": "Geomorphological feature",
       "items": {
         "$ref": "#/definitions/optionsGeomorphicalFeature",
-        "title": "Geomorphical feature",
+        "title": "Geomorphological feature",
         "default": null
       }
     },
@@ -1482,10 +1482,10 @@
     "Tag": {
       "type": "array",
       "minItems": 1,
-      "title": "Tags",
+      "title": "Free keyword",
       "items": {
         "$ref": "#/definitions/stringNormal",
-        "title": "Tag",
+        "title": "Free keyword",
         "default": ""
       }
     },
