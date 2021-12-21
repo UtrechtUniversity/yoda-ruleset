@@ -73,7 +73,7 @@ def api_resource_full_year_group_data(ctx, group_name):
     # per month gather month/tier/storage information from metadata:
     # metadata-attr-name = constants.UUMETADATASTORAGEMONTH + '01'...'12'
     # metadata-attr-val = [category,tier,storage] ... only tier and storage required within this code
-    for counter in range(0, 11):
+    for counter in range(0, 12):
         referenceMonth = current_month - counter
         if referenceMonth < 1:
             referenceMonth = referenceMonth + 12
@@ -92,10 +92,10 @@ def api_resource_full_year_group_data(ctx, group_name):
             total_storage += data[2]
             data_size = ceil((data[2] / 1000000000000.0) * 10) / 10  # bytes to terabytes
             try:
-                full_year_data[tierName][referenceMonth] = data_size
+                full_year_data[tierName][referenceMonth - 1] = data_size
             except KeyError:
                 full_year_data[tierName] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                full_year_data[tierName][referenceMonth] = data_size
+                full_year_data[tierName][referenceMonth - 1] = data_size
 
     # Supporting info for the frontend.
     months_order = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
