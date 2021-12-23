@@ -90,9 +90,9 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                     intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
 
                     new_deeper_dataset_toplevel = False
-                    if not (prev_scope['pseudocode']==subscope['pseudocode']
-                            and prev_scope['experiment_type']==subscope['experiment_type']
-                            and prev_scope['wave']==subscope['wave']):
+                    if not (prev_scope['pseudocode'] == subscope['pseudocode']
+                            and prev_scope['experiment_type'] == subscope['experiment_type']
+                            and prev_scope['wave'] == subscope['wave']):
                         # Found a deeper lying dataset with more specific attributes
                         # Prepwork for being able to create a dataset_id
                         prev_scope['directory'] = prev_scope["dataset_directory"]
@@ -105,7 +105,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                         new_deeper_dataset_toplevel = True
 
                     subscope["dataset_directory"] = path
-                    apply_dataset_metadata(ctx, path, subscope, True, new_deeper_dataset_toplevel) # True)
+                    apply_dataset_metadata(ctx, path, subscope, True, new_deeper_dataset_toplevel)
 
                     scan_mark_scanned(ctx, path, True)
                 else:
@@ -181,8 +181,7 @@ def intake_tokens_identify_dataset(tokens):
         if req_token not in tokens or tokens[req_token] == "":
             missing = missing + 1
 
-    return (missing==0) 
-    # return (missing < 3)
+    return (missing == 0)
 
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
