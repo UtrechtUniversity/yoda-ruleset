@@ -275,10 +275,6 @@ def intake_extract_tokens(ctx, string):
     elif str_lower in exp_types:
         foundKVs["experiment_type"] = str_lower
 
-    log.write(ctx, 'TOKEN EXTRACTION')
-    log.write(ctx, string)
-    log.write(ctx, foundKVs)
-
     return foundKVs
 
 
