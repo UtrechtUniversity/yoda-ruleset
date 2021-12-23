@@ -25,6 +25,10 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
 
     :returns: Found datasets
     """
+
+    # Let op! Hij moet in de loop blijven TOT alle pseudocode/exp/wave compleet zijn.
+    # En zelfs daarna, kunnen waarden nog worden overschreven.
+
     # Scan files under root
     iter = genquery.row_iterator(
         "DATA_NAME, COLL_NAME",
@@ -80,7 +84,29 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                 child_in_dataset = in_dataset
 
                 if in_dataset:  # initially is False
-                    apply_dataset_metadata(ctx, path, subscope, True, False)
+                    # Safeguard original data
+                    prev_scope = subscope.copy()
+                    # Extract tokens
+                    intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
+
+                    new_deeper_dataset_toplevel = False
+                    if not (prev_scope['pseudocode']==subscope['pseudocode']
+                            and prev_scope['experiment_type']==subscope['experiment_type']
+                            and prev_scope['wave']==subscope['wave']):
+                        # Found a deeper lying dataset with more specific attributes
+                        # Prepwork for being able to create a dataset_id
+                        prev_scope['directory'] = prev_scope["dataset_directory"]
+                        if 'version' not in prev_scope:
+                            prev_scope['version'] = 'Raw'
+
+                        avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+
+                        # set flag correctly for creating of new toplevel
+                        new_deeper_dataset_toplevel = True
+
+                    subscope["dataset_directory"] = path
+                    apply_dataset_metadata(ctx, path, subscope, True, new_deeper_dataset_toplevel) # True)
+
                     scan_mark_scanned(ctx, path, True)
                 else:
                     subscope = intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
@@ -155,7 +181,8 @@ def intake_tokens_identify_dataset(tokens):
         if req_token not in tokens or tokens[req_token] == "":
             missing = missing + 1
 
-    return (missing < 3)
+    return (missing==0) 
+    # return (missing < 3)
 
 
 def intake_extract_tokens_from_name(ctx, path, name, is_collection, scoped_buffer):
@@ -249,6 +276,10 @@ def intake_extract_tokens(ctx, string):
     elif str_lower in exp_types:
         foundKVs["experiment_type"] = str_lower
 
+    log.write(ctx, 'TOKEN EXTRACTION')
+    log.write(ctx, string)
+    log.write(ctx, foundKVs)
+
     return foundKVs
 
 
@@ -335,11 +366,6 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
     :param is_top_level:  If true, a dataset_toplevel field will be set on the object
     """
 
-#    if is_collection:
-#        avu.set_on_coll(ctx, )
-#    else:
-#        avu.set_on_data(ctx, )
-
     if "version" not in scope:
         version = "Raw"
     else:
@@ -352,6 +378,9 @@ def apply_dataset_metadata(ctx, path, scope, is_collection, is_top_level):
                 "directory": scope["dataset_directory"]}
 
     subscope["dataset_id"] = dataset_make_id(subscope)
+
+    log.write(ctx, 'APPLY DATASET META')
+    log.write(ctx, subscope)
 
     # add all keys to this to this level
 
