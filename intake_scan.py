@@ -45,7 +45,27 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
             remove_dataset_metadata(ctx, path, False)
             scan_mark_scanned(ctx, path, False)
         if in_dataset:
-            apply_dataset_metadata(ctx, path, scope, False, False)
+            subscope = scope.copy()
+
+            # Safeguard original data
+            prev_scope = subscope.copy()
+
+            # Extract tokens of current name
+            intake_extract_tokens_from_name(ctx, row[1], row[0], False, subscope)
+
+            new_deeper_dataset_toplevel = False
+            if not (prev_scope['pseudocode'] == subscope['pseudocode']
+                    and prev_scope['experiment_type'] == subscope['experiment_type']
+                    and prev_scope['wave'] == subscope['wave']):
+                prev_scope['directory'] = prev_scope["dataset_directory"]
+                if 'version' not in prev_scope:
+                    prev_scope['version'] = 'Raw'
+
+                # It is safe to assume that the dataset was collection based. I.e. without testing
+                # Otherwise it would mean that each found file on this level could potentially change the dataset properties
+                avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+                new_deeper_dataset_toplevel = True
+            apply_dataset_metadata(ctx, path, subscope, False, new_deeper_dataset_toplevel)
         else:
             subscope = intake_extract_tokens_from_name(ctx, row[1], row[0], False, scope.copy())
 
@@ -86,7 +106,8 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                 if in_dataset:  # initially is False
                     # Safeguard original data
                     prev_scope = subscope.copy()
-                    # Extract tokens
+
+                    # Extract tokens of current name
                     intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
 
                     new_deeper_dataset_toplevel = False
