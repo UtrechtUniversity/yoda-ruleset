@@ -61,7 +61,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                 if 'version' not in prev_scope:
                     prev_scope['version'] = 'Raw'
 
-                # It is safe to assume that the dataset was collection based. I.e. without testing
+                # It is safe to assume that the dataset was collection based without actively checking.
                 # Otherwise it would mean that each found file on this level could potentially change the dataset properties
                 avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
                 new_deeper_dataset_toplevel = True
