@@ -241,12 +241,15 @@ def getSubjects(combi):
     subject_fields = ['Main_Setting',
                       'Process_Hazard',
                       'Geological_Structure',
-                      'Geomorphical_Feature',
+                      'Geomorphological_Feature',
                       'Material',
                       'Apparatus',
                       'Monitoring',
                       'Software',
-                      'Measured_Property']
+                      'Measured_Property',
+                      'Pore_Fluid',
+                      'Ancillary_Equipment',
+                      'Inferred_Deformation_Behaviour']
 
     # for each subject field that exists in the metadata...
     for field in subject_fields:

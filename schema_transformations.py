@@ -124,11 +124,11 @@ def _default1_teclab0(m):
     m['Main_Setting'] = ['basin plain setting']
     m['Process_Hazard'] = ['deformation']
     m['Geological_Structure'] = ['fault']
-    m['Geomorphical_Feature'] = ['crest']
-    m['Material'] = ['Air']
-    m['Apparatus'] = ['Densimeter']
+    m['Geomorphological_Feature'] = ['alluvial and fluvial features']
+    m['Material'] = ['sedimentary rock - limestone - Solnhofen limestone']
+    m['Apparatus'] = ['2D Convection box']
     m['Software'] = ['CloudCompare']
-    m['Measured_Property'] = ['Cohesion']
+    m['Measured_Property'] = ['Bulk modulus']
 
     if not m.get('Data_Type', False):
         m['Data_Type'] = 'Dataset'
@@ -244,10 +244,10 @@ def _default1_hptlab0(m):
 
     # Material, Apparatus and Apparatus might get different default values (email Vincent Brunst 15 oct)
     # Pore_Fluid list still to be defined
-    m['Material'] = ['Concrete']
-    m['Apparatus'] = ['Uniaxial']
-    m['Measured_Property'] = ['Hardness']
-    m['Pore_Fluid'] = ['Waarde_komt_nog']
+    m['Material'] = ['sedimentary rock - limestone - Solnhofen limestone']
+    m['Apparatus'] = ['deformation testing - compression testing - confining pressure vessel']
+    m['Measured_Property'] = ['strength  - tensile strength']
+    m['Pore_Fluid'] = ['vacuum']
 
     if not m.get('Data_Type', False):
         m['Data_Type'] = 'Dataset'
