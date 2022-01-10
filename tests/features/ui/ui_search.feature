@@ -2,7 +2,7 @@ Feature: Search UI
 
     Scenario Outline: Search file
         Given user "researcher" is logged in
-        And module "research" is shown
+        And module "search" is shown
         When the user searches by filename with "<file>"
         Then result "<result>" is found
 
@@ -12,7 +12,7 @@ Feature: Search UI
 
     Scenario Outline: Search folder
         Given user "researcher" is logged in
-        And module "research" is shown
+        And module "search" is shown
         When the user searches by folder with "<folder>"
         Then result "<result>" is found
 
@@ -22,7 +22,7 @@ Feature: Search UI
 
     Scenario Outline: Search metadata
         Given user "researcher" is logged in
-        And module "research" is shown
+        And module "search" is shown
         When the user searches by metadata with "<metadata>"
         Then result "<result>" is found
 
@@ -32,7 +32,7 @@ Feature: Search UI
 
     Scenario Outline: Search folder status
         Given user "researcher" is logged in
-        And module "research" is shown
+        And module "search" is shown
         When the user searches by folder status with "<status>"
         Then result "<result>" is found
 
