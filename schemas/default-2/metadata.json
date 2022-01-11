@@ -706,7 +706,7 @@
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
         "title": "Discipline",
-        "default": ""
+        "default": null
       }
     },
     "Version": {
