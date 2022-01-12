@@ -983,12 +983,16 @@
             "properties": {
               "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "First Name"
+                "title": "Given Name"
               },
               "Family_Name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "Family Name"
               }
+            },
+            "dependencies": {
+              "Given_Name": ["Family_Name"],
+              "Family_Name": ["Given_Name"]
             }
           },
           "Affiliation": {
