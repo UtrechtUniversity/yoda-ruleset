@@ -6,21 +6,21 @@
     "ui:help": "Describe the data package. Please refer to projects or grants responsible for the data package",
     "ui:widget": "textarea"
   },
+  "Discipline": {
+    "ui:widget": "hidden"
+  },
+  "Language": {
+    "ui:widget": "hidden"
+  },
   "Research_Group": {
     "ui:help": "Specify the research group responsible for the data package"
   },
-  "Data_Type": {
-    "ui:help": "What is the type of your data"
+  "Collection_Name": {
+    "ui:help": "Identification of the Program or Project responsible for collecting the data"
   },
-  "File_Data_Type": {
-    "items": {
-      "File_name": {
-        "ui:help": "Specify folder and filename"
-      },
-      "File_description": {
-        "ui:help": "Describe the file type (e.g. images or tabular) or format (e.g. JPEG or GIS)"
-      }
-    }
+  "Data_Type": {
+    "ui:help": "What is the type of your data",
+    "ui:widget": "hidden"
   },
   "Data_Classification": {
     "ui:help": "How is your data classified with regards to information security policy"
@@ -34,8 +34,10 @@
     }
   },
   "GeoLocation": {
+    "ui:help": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
     "items": {
       "geoLocationBox": {
+        "ui:help": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
         "ui:field": "geo"
       }
     }
@@ -45,16 +47,20 @@
       "ui:help": "Give in terms which describes your data package"
     }
   },
+  "Related_Datapackage": {
+    "ui:description": "Reference to other resources, such as another data package, or an online publication"
+  },
   "Personal_Data": {
     "ui:help": "Indicate whether the data package contains personal information"
   },
   "End_Preservation": {
-    "ui:help": "Indicate when the data must be removed (for legal reasons) ***pilot-discussion: should there always be such a date? Should there be a minimal data (for RDM compliance?)***"
+    "ui:help": "The minimum number of years that the data must be kept"
   },
   "Data_Access_Restriction": {
-    "ui:help": "Archived data is only accessible internally."
+    "ui:help": "Select how the data should be shared within the faculty of Geosciences. Personal data may only be accessed on request"
   },
   "Contributor": {
+    "ui:description": "Person performing the deposit will also act as first contact person",
     "items": {
       "Name": {
         "ui:help": "The name of the persons who deposits this data package to the archive"
@@ -62,13 +68,18 @@
     }
   },
   "Creator": {
+    "ui:description": "The person(s) within the faculty responsible for collecting the data",
     "items": {
       "Name": {
         "ui:help": "The name of the person(s) who created (a version of) the data package"
+      },
+      "Owner_Role": {
+        "ui:help": "What is the role of the owner in the data collection"
       }
     }
   },
   "License": {
-    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY",
+    "ui:widget": "hidden"
   }
 }

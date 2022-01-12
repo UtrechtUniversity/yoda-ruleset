@@ -199,6 +199,7 @@
       "enum": [
         "Creative Commons Attribution 4.0 International Public License",
         "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
         "Creative Commons Zero v1.0 Universal",
         "Open Data Commons Attribution License (ODC-By) v1.0",
         "Custom"
@@ -705,7 +706,7 @@
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
         "title": "Discipline",
-        "default": ""
+        "default": null
       }
     },
     "Version": {
@@ -778,7 +779,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Tag",
-        "default": ""
+        "default": null
       }
     },
     "Related_Datapackage": {

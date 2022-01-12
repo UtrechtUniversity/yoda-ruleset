@@ -4,18 +4,6 @@
 # \license   GPLv3, see LICENSE
 
 
-# \brief move all locked datasets to the vault
-#
-# \param[in]  intakeCollection  pathname root of intake area
-# \param[in]  vaultCollection   pathname root of vault area
-# \param[out] status            result of operation either "ok" or "error"
-#
-uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
-    *status = 0;
-    rule_intake_to_vault(*intakeRoot, *vaultRoot);
-}
-
-
 # \brief (over)write data object with a list of vault object checksums
 #
 # \param[in]  vaultRoot          root collection to be indexed

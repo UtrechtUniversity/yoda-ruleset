@@ -94,5 +94,5 @@ createXmlXsdCollections {
 	}
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-uu/schemas/", *schema="default-1", *category="default", *update=0
+input *resc="irodsResc", *src="/etc/irods/yoda-ruleset/schemas/", *schema="default-1", *category="default", *update=0
 output ruleExecOut

@@ -4,5 +4,5 @@ TIMESTAMP=`date +%s`
 echo $TIMESTAMP
 OFFSET=2
 TIMESTAMP=$(( $TIMESTAMP - ($OFFSET * 60 * 60)))
-#/usr/bin/irule -F /etc/irods/irods-ruleset-uu/tools/revision-clean-up.r "*endOfCalendarDay=${TIMESTAMP}" '*bucketcase="A"'
+#/usr/bin/irule -F /etc/irods/yoda-ruleset/tools/revision-clean-up.r "*endOfCalendarDay=${TIMESTAMP}" '*bucketcase="A"'
 echo $TIMESTAMP
