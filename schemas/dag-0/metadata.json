@@ -809,6 +809,10 @@
       "additionalProperties": false,
       "title": "Research period",
       "yoda:structure": "compound",
+      "required": [
+        "Start_Date",
+        "End_Date"
+      ],
       "properties": {
         "Start_Date": {
           "type": "string",
@@ -930,13 +934,16 @@
     },
     "Contributor": {
       "type": "array",
-          "title": "Depositor of the datapackage",
+      "title": "Depositor of the datapackage",
       "minItems": 1,
-          "maxItems": 1,
+      "maxItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "yoda:structure": "subproperties",
+        "required": [
+          "Name"
+        ],
         "properties": {
           "Name": {
             "type": "object",
