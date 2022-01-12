@@ -721,8 +721,8 @@
         "Restricted - available upon request"
       ],
       "enumNames": [
-        "Open – Accessible for researchers of Geosciences",
-        "Restricted – Accessible on request"
+        "Open - Accessible for researchers of Geosciences",
+        "Restricted - Accessible on request"
       ]
     },
     "optionsNameIdentifierScheme": {
@@ -1010,7 +1010,7 @@
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
       "title": "Data Package Access",
-      "default": "Open – Accessible for researchers of Geosciences"
+      "default": "Open - freely retrievable"
     }
   }
 }
