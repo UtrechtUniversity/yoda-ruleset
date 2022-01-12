@@ -1914,7 +1914,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Free keyword",
-        "default": ""
+        "default": null
       }
     },
     "Related_Datapackage": {

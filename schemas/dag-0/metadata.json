@@ -869,7 +869,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Keyword",
-        "default": ""
+        "default": null
       }
     },
     "Related_Datapackage": {

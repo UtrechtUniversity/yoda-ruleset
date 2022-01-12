@@ -628,7 +628,7 @@
       "items": {
         "$ref": "#/definitions/optionsDiscipline",
         "title": "Discipline",
-        "default": ""
+        "default": null
       }
     },
     "Language": {
@@ -643,7 +643,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Tag",
-        "default": ""
+        "default": null
       }
     },
     "Data_Type": {
