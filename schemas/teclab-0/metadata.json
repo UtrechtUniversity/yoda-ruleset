@@ -1487,7 +1487,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Tag",
-        "default": ""
+        "default": null
       }
     },
     "Related_Datapackage": {
