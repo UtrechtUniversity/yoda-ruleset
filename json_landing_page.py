@@ -136,7 +136,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         geological_structure = []
 
     try:
-        geomorphical_feature = dictJsonData['Geomorphical_Feature']
+        geomorphical_feature = dictJsonData['Geomorphological_Feature']
     except KeyError:
         geomorphical_feature = []
 
@@ -160,9 +160,26 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     except KeyError:
         measured_property = []
 
+    # geo hptlab specific
+    try:
+        pore_fluid = dictJsonData['Pore_Fluid']
+    except KeyError:
+        pore_fluid = []
+
+    try:
+        ancillary_equipment = dictJsonData['Ancillary_Equipment']
+    except KeyError:
+        ancillary_equipment = []
+
+    try:
+        inferred_deformation_behaviour = dictJsonData['Inferred_Deformation_Behaviour']
+    except KeyError:
+        inferred_deformation_behaviour = []
+
     # Route all domain specific keywords to tag area of landingpage
     all_taggebles = (tags + apparatus + main_setting + process_hazard + geological_structure
-                     + geomorphical_feature + material + monitoring + software + measured_property)
+                     + geomorphical_feature + material + monitoring + software + measured_property
+                     + pore_fluid + ancillary_equipment + inferred_deformation_behaviour)
 
     try:
         related_datapackages = dictJsonData['Related_Datapackage']  # not mandatory

@@ -201,6 +201,7 @@
       "enum": [
         "Creative Commons Attribution 4.0 International Public License",
         "Creative Commons Attribution-ShareAlike 4.0 International Public License",
+        "Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International Public License",
         "Creative Commons Zero v1.0 Universal",
         "Open Data Commons Attribution License (ODC-By) v1.0",
         "Custom"
