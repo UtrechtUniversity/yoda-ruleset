@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -46,7 +46,7 @@ def api_browse_folder(ctx,
                     'type':        'data',
                     'size':        int(x['DATA_SIZE']),
                     'modify_time': int(x['DATA_MODIFY_TIME']),
-                    'status':      'ONLINE'}
+                    'state':       'REG'}
         else:
             return {'name':        x['COLL_NAME'].split('/')[-1],
                     'type':        'coll',
@@ -101,18 +101,18 @@ def api_browse_folder(ctx,
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
-    # Retrieve tape archive status for data objects.
-    status_cols = ['DATA_NAME', 'META_DATA_ATTR_VALUE']
-    qstatus = Query(ctx, status_cols, "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(coll, "org_tape_archive_status"),
-                    offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
-    status = map(transform, list(qstatus))
+    # Retrieve tape archive state for data objects.
+    state_cols = ['DATA_NAME', 'META_DATA_ATTR_VALUE']
+    qstate = Query(ctx, state_cols, "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(coll, "org_tape_archive_state"),
+                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
+    state = map(transform, list(qstate))
 
     for d in datas:
         name = d['name']
-        if any(name in s for s in status):
-            for s in status:
+        if any(name in s for s in state):
+            for s in state:
                 if name in s:
-                    d.update({'status': s[name]})
+                    d.update({'state': s[name]})
 
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
