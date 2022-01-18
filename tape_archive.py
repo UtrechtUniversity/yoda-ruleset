@@ -93,7 +93,7 @@ def api_tape_archive_stage(ctx, path):
     state, error = process.communicate()
 
     if error is None:
-        timestamp = int(time.time())
+        timestamp = int(time())
         avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
         avu.set_on_data(ctx, path, "org_tape_archive_state", state)
     else:
@@ -121,7 +121,7 @@ def api_tape_archive_state(ctx, path):
     state, error = process.communicate()
 
     if error is None:
-        timestamp = int(time.time())
+        timestamp = int(time())
         avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
         avu.set_on_data(ctx, path, "org_tape_archive_state", state)
         return state
