@@ -8,6 +8,8 @@ import subprocess
 from enum import Enum
 from time import time
 
+import genquery
+
 from util import *
 
 __all__ = ['api_tape_archive_stage',
