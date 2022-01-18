@@ -4,10 +4,19 @@
 __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import subprocess
+from enum import Enum
+from time import time
+
 from util import *
 
 __all__ = ['api_tape_archive_stage',
            'api_tape_archive_state']
+
+DMGET = "/var/lib/irods/msiExecCmd_bin/dmget"
+DMATTR = "/var/lib/irods/msiExecCmd_bin/dmattr"
+
+TAPE_ARCHIVE_RESC = "mockTapeArchive"
 
 
 class State(Enum):
@@ -40,6 +49,22 @@ class State(Enum):
     The most likely reason is that it is in a filesystem that does not use DMF."""
 
 
+def get_physical_path(ctx, path):
+    """Get physical path of data object on tape archive."""
+    coll_name, data_name = pathutil.chop(path)
+
+    iter = genquery.row_iterator(
+        "DATA_PATH",
+        "RESC_NAME = '{}' AND COLL_NAME = '{}' AND DATA_NAME = '{}'".format(TAPE_ARCHIVE_RESC, coll_name, data_name),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
+
+
 @api.make()
 def api_tape_archive_stage(ctx, path):
     """Bring back a file from tape archive.
@@ -49,6 +74,29 @@ def api_tape_archive_stage(ctx, path):
 
     :returns: API status
     """
+    physical_path = get_physical_path(ctx, path)
+
+    if physical_path is None:
+        return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
+
+    dmget_command = "{} {}".format(DMGET, physical_path)
+    process = subprocess.Popen(dmget_command.split(), stdout=subprocess.PIPE)
+    _, error = process.communicate()
+
+    if error is not None:
+        return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
+
+    dmattr_command = "{} {}".format(DMATTR, physical_path)
+    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
+    state, error = process.communicate()
+
+    if error is None:
+        timestamp = int(time.time())
+        avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
+        avu.set_on_data(ctx, path, "org_tape_archive_state", state)
+    else:
+        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
+
     return api.Result.ok()
 
 
@@ -61,4 +109,19 @@ def api_tape_archive_state(ctx, path):
 
     :returns: API status
     """
-    return api.Result.ok()
+    physical_path = get_physical_path(ctx, path)
+
+    if physical_path is None:
+        return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
+
+    dmattr_command = "{} {}".format(DMATTR, physical_path)
+    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
+    state, error = process.communicate()
+
+    if error is None:
+        timestamp = int(time.time())
+        avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
+        avu.set_on_data(ctx, path, "org_tape_archive_state", state)
+        return state
+    else:
+        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))

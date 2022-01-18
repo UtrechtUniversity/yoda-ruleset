@@ -101,18 +101,19 @@ def api_browse_folder(ctx,
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
 
-    # Retrieve tape archive state for data objects.
-    state_cols = ['DATA_NAME', 'META_DATA_ATTR_VALUE']
-    qstate = Query(ctx, state_cols, "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(coll, "org_tape_archive_state"),
-                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
-    state = map(transform, list(qstate))
+    if config.enable_tape_archive:
+        # Retrieve tape archive state for data objects.
+        state_cols = ['DATA_NAME', 'META_DATA_ATTR_VALUE']
+        qstate = Query(ctx, state_cols, "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(coll, "org_tape_archive_state"),
+                       offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
+        state = map(transform, list(qstate))
 
-    for d in datas:
-        name = d['name']
-        if any(name in s for s in state):
-            for s in state:
-                if name in s:
-                    d.update({'state': s[name]})
+        for d in datas:
+            name = d['name']
+            if any(name in s for s in state):
+                for s in state:
+                    if name in s:
+                        d.update({'state': s[name]})
 
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])
