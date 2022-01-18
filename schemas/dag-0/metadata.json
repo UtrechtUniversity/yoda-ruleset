@@ -79,23 +79,9 @@
     "optionsPersistentIdentifierScheme": {
       "type": "string",
       "enum": [
-        "ARK",
-        "arXiv",
-        "bibcode",
         "DOI",
-        "EAN13",
-        "EISSN",
         "Handle",
-        "ISBN",
-        "ISSN",
-        "ISTC",
-        "LISSN",
-        "LSID",
-        "PMID",
-        "PURL",
-        "UPC",
-        "URL",
-        "URN"
+        "URL"
       ]
     },
     "optionsDiscipline": {
@@ -887,7 +873,8 @@
         "properties": {
           "Relation_Type": {
             "$ref": "#/definitions/optionsRelationType",
-            "title": "Relation type"
+            "title": "Relation type",
+            "default": "References: Current datapackages references"
           },
           "Title": {
             "$ref": "#/definitions/stringNormal",
