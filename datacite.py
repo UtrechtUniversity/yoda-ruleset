@@ -49,4 +49,3 @@ def generate_random_id(ctx, length):
     """Generate random ID for DOI."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choice(characters) for x in range(int(length)))
-

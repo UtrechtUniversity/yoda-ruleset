@@ -4,8 +4,6 @@
 __copyright__ = 'Copyright (c) 2019, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import xml.etree.cElementTree as ET
-
 from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
@@ -123,7 +121,7 @@ def json_datacite41_create_datacite_json(ctx, combi_path):
     doi_parts = doi.split('/')
 
     # Collect the metadata in datacite format
-    metadata = {} 
+    metadata = {}
     metadata['data'] = {
         "id": get_DOI(combi),
         "type": "dois",
@@ -205,9 +203,9 @@ def get_identifiers(combi):
     return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
              'identifierType': 'DOI'}]
 
- 
+
 def get_titles(combi):
-    return [{'title': combi['Title'], 'language': 'en-us'}] # combi.get('Language', 'en')[0:2]}]  # taal moet langer 'en-us'
+    return [{'title': combi['Title'], 'language': 'en-us'}]
 
 
 def get_descriptions(combi):
@@ -267,7 +265,7 @@ def get_subjects(combi):
 def get_funders(combi):
     funders = []
     for funder in combi.get('Funding_Reference', []):
-        funders.append({'funderName': funder['Funder_Name'], 
+        funders.append({'funderName': funder['Funder_Name'],
                         'awardNumber': {'awardNumber': funder['Award_Number']}})
     return funders
 
@@ -283,15 +281,15 @@ def get_creators(combi):
         name_ids = []
         for pid in creator.get('Person_Identifier', []):
             if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
-                name_ids.append({'nameIdentifier': pid['Name_Identifier'], 
+                name_ids.append({'nameIdentifier': pid['Name_Identifier'],
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
         all_creators.append({'creatorName': creator['Name']['Family_Name'] + ', ' + creator['Name']['Given_Name'],
-                         'nameType': 'Personal',
-                         'givenName': creator['Name']['Given_Name'],
-                         'familyName': creator['Name']['Family_Name'],
-                         'affiliation': affiliations,
-                         'nameIdentifiers': name_ids})
+                             'nameType': 'Personal',
+                             'givenName': creator['Name']['Given_Name'],
+                             'familyName': creator['Name']['Family_Name'],
+                             'affiliation': affiliations,
+                             'nameIdentifiers': name_ids})
     return all_creators
 
 
@@ -347,7 +345,7 @@ def get_contributors(combi):
 def get_dates(combi):
     """ return list of dates in datacite format """
 
-    dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'}, 
+    dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'},
              {'date': combi.get('Embargo_End_Date'), 'dateType': 'Available'}]
 
     collected = combi.get('Collected')
@@ -377,7 +375,7 @@ def get_rights_list(combi):
 
 def get_language(combi):
     """Get string in DataCite format containing language."""
-    return 'en-us' # combi['Language'][0:2]
+    return 'en-us'
 
 
 def get_resource_type(combi):
