@@ -110,8 +110,8 @@ processPublication() {
 			if (*collName like regex "/[^/]+/home/vault-.*") {
                                        *status = '';
                                        *statusInfo = '';
-                                       rule_process_dm_updated_publication(*collName, *status, *statusInfo);
-                                       writeLine("stdout", "rule_process_dm_updated_publication *collName returned with status: *status");
+                                       rule_process_publication(*collName, *status, *statusInfo);
+                                       writeLine("stdout", "rule_process_publication *collName returned with status: *status");
                                        if (*status == "OK") {
                                            msiString2KeyValPair("", *publicationUpdateKvp);
                                            *publicationUpdate = UUORGMETADATAPREFIX ++ "cronjob_publication_update=" ++ CRONJOB_PENDING;

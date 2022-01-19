@@ -16,7 +16,6 @@ import vault
 from util import *
 
 __all__ = ['rule_process_publication',
-           'rule_process_dm_updated_publication',
            'rule_process_depublication',
            'rule_process_republication',
            'rule_update_publication']
@@ -553,18 +552,6 @@ def check_doi_availability(ctx, publication_config, publication_state):
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_dm_updated_publication(ctx, vault_package):
-    """Rule interface for processing publication of a after had been manually changed by dm.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_publication(ctx, vault_package, 'put')
-
-
-@rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_publication(ctx, vault_package):
     """Rule interface for processing vault status transition request.
 
@@ -573,15 +560,14 @@ def rule_process_publication(ctx, vault_package):
 
     :return: "OK" if all went ok
     """
-    return process_publication(ctx, vault_package, 'post')
+    return process_publication(ctx, vault_package)
 
 
-def process_publication(ctx, vault_package, datacite_action):
+def process_publication(ctx, vault_package):
     """Handling of publication of vault_package.
 
     :param ctx:             Combined type of a callback and rei struct
     :param vault_package:   Path to the package in the vault
-    :param datacite_action: Either 'put' or 'post' depending on whether dataset has been published before or not
 
     :return: "OK" if all went ok
     """
@@ -667,10 +653,18 @@ def process_publication(ctx, vault_package, datacite_action):
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
+    # Determine wether an update ('put') or create ('post') message has to be sent to datacite
+    datacite_action = 'post'
+    try:
+        if publication_state['DOIMinted'] == 'yes':
+            datacite_action = 'put'
+    except KeyError:
+        pass
+
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, datacite_action)  # 'post')
+            post_metadata_to_datacite(ctx, publication_config, publication_state, datacite_action)
         except msi.Error:
             publication_state["status"] = "Retry"
 
