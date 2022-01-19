@@ -109,7 +109,7 @@ def rule_json_datacite41_create_datacite_json(ctx, combi_path):
 
 
 def json_datacite41_create_datacite_json(ctx, combi_path):
-    """Based on content of combi json, get DataciteXml as string.
+    """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:        Combined type of a callback and rei struct
     :param combi_path: Path to the combined JSON file that holds both user and system metadata
@@ -251,7 +251,10 @@ def get_subjects(combi):
                       'Apparatus',
                       'Monitoring',
                       'Software',
-                      'Measured_Property']
+                      'Measured_Property',
+                      'Pore_Fluid',
+                      'Ancillary_Equipment',
+                      'Inferred_Deformation_Behaviour']
 
     # for each subject field that exists in the metadata...
     for field in subject_fields:

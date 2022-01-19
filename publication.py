@@ -16,6 +16,7 @@ import vault
 from util import *
 
 __all__ = ['rule_process_publication',
+           'rule_process_dm_updated_publication',
            'rule_process_depublication',
            'rule_process_republication',
            'rule_update_publication']
@@ -333,24 +334,23 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_config, publication_state):
+def post_metadata_to_datacite(ctx, publication_config, publication_state, send_method):
     """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
+    :param send_method:        http verb (either 'post' or 'put')
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
-
-    log.write(ctx, datacite_json_path)
-
     datacite_json = data_object.read(ctx, datacite_json_path)
 
-    log.write(ctx, datacite_json)
+    if send_method == 'post':
+        httpCode = datacite.metadata_post(ctx, datacite_json)
+    else:
+        httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], datacite_json)
 
-    httpCode = datacite.register_doi_metadata(ctx, publication_state["yodaDOI"], datacite_json)
-
-    if httpCode == 201:
+    if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
         publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in [401, 403, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
@@ -363,9 +363,10 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state):
 
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
     """Remove metadata XML from DataCite."""
-    yodaDOI = publication_state["yodaDOI"]
+    import json
+    payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
-    httpCode = datacite.delete_doi_metadata(ctx, yodaDOI)
+    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
 
     if httpCode == 200:
         publication_state["dataCiteMetadataPosted"] = "yes"
@@ -389,12 +390,12 @@ def mint_doi(ctx, publication_config, publication_state):
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
-    yodaDOI = publication_state["yodaDOI"]
-    landingPageUrl = publication_state["landingPageUrl"]
+    import json
+    payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.register_doi_url(ctx, yodaDOI, landingPageUrl)
+    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
 
-    if httpCode == 201:
+    if httpCode == 200:  # 201:
         publication_state["DOIMinted"] = "yes"
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
@@ -528,7 +529,7 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     else:
         publication_state["anonymousAccess"] = "yes"
 
-# OK
+
 def check_doi_availability(ctx, publication_config, publication_state):
     """Request DOI to check on availibity. We want a 404 as return code.
 
@@ -538,7 +539,7 @@ def check_doi_availability(ctx, publication_config, publication_state):
     """
     yodaDOI = publication_state["yodaDOI"]
 
-    httpCode = datacite.check_doi_availability(ctx, yodaDOI)
+    httpCode = datacite.metadata_get(ctx, yodaDOI)
 
     if httpCode == 404:
         publication_state["DOIAvailable"] = "yes"
@@ -552,6 +553,18 @@ def check_doi_availability(ctx, publication_config, publication_state):
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_process_dm_updated_publication(ctx, vault_package):
+    """Rule interface for processing publication of a after had been manually changed by dm.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+
+    :return: "OK" if all went ok
+    """
+    return process_publication(ctx, vault_package, 'put')
+
+
+@rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_publication(ctx, vault_package):
     """Rule interface for processing vault status transition request.
 
@@ -560,10 +573,10 @@ def rule_process_publication(ctx, vault_package):
 
     :return: "OK" if all went ok
     """
-    return process_publication(ctx, vault_package)
+    return process_publication(ctx, vault_package, 'post')
 
 
-def process_publication(ctx, vault_package):
+def process_publication(ctx, vault_package, datacite_action):
     """Handling of publication of vault_package."""
     publication_state = {}
 
@@ -649,7 +662,7 @@ def process_publication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state)
+            post_metadata_to_datacite(ctx, publication_config, publication_state, datacite_action)  # 'post')
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -865,6 +878,7 @@ def process_republication(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+
     if vault_status not in [str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "InvalidPackageStatusForRePublication" + ": " + vault_status
 
@@ -920,7 +934,7 @@ def process_republication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state)
+            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1000,6 +1014,7 @@ def update_publication(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     vault_status = vault.get_coll_vault_status(ctx, vault_package).value
+
     if vault_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.DEPUBLISHED)]:
         return "InvalidPackageStatus" + ": " + vault_status
 
@@ -1044,7 +1059,7 @@ def update_publication(ctx, vault_package):
 
     # Send DataCite JSON to metadata end point
     try:
-        post_metadata_to_datacite(ctx, publication_config, publication_state)
+        post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
     except msi.Error:
         publication_state["status"] = "Retry"
 
