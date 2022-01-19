@@ -578,9 +578,10 @@ def rule_process_publication(ctx, vault_package):
 
 def process_publication(ctx, vault_package, datacite_action):
     """Handling of publication of vault_package.
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-    :datacite_action:     Either 'put' or 'post' depending on whether dataset has been published before or not
+
+    :param ctx:             Combined type of a callback and rei struct
+    :param vault_package:   Path to the package in the vault
+    :param datacite_action: Either 'put' or 'post' depending on whether dataset has been published before or not
 
     :return: "OK" if all went ok
     """
