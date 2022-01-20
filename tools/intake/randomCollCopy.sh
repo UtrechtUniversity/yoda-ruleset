@@ -44,7 +44,7 @@ if [[ $copyHow != "iget" && $copyHow != "icp" ]] ; then
 fi
 
 #run rule put output in an array
-read -ra array <<< $(irule -F randomCollCopy.r "'$wave'" "'$experimentType'" "'$dateFrom'" "'$dateTill'")
+read -ra array <<< $(irule -r irods_rule_engine_plugin-irods_rule_language-instance -F randomCollCopy.r "'$wave'" "'$experimentType'" "'$dateFrom'" "'$dateTill'")
 
 #if array is empty give notice and exit
 if [ ${#array[@]} -eq 0 ]; then

@@ -40,7 +40,7 @@ pseudoCodes=`cat $pseudocodeCsvFile`
 echo "pseudocodes: $pseudoCodes"
 
 #run rule put output in an array
-read -ra array <<< $(irule -F collCopyPseudo.r "'$pseudoCodes'" "'$dateFrom'" "'$dateTill'")
+read -ra array <<< $(irule -r irods_rule_engine_plugin-irods_rule_language-instance -F collCopyPseudo.r "'$pseudoCodes'" "'$dateFrom'" "'$dateTill'")
 
 #if array is empty give notice and exit
 if [ ${#array[@]} -eq 0 ]; then

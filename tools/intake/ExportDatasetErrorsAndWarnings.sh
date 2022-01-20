@@ -10,4 +10,4 @@
 
 # /Run with DatasetErrorsAndWarnins.sh script to have the export added to a csv file.
 
-irule -F ExportDatasetErrorsAndWarnings.r "*studyParam='$1'" > DatasetErrorsAndWarnings.csv
+irule -r irods_rule_engine_plugin-irods_rule_language-instance -F ExportDatasetErrorsAndWarnings.r "*studyParam='$1'" > DatasetErrorsAndWarnings.csv
