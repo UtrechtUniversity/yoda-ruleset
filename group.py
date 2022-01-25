@@ -418,6 +418,8 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
     :param subcategory:         Subcategory of the group to create
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
+
+    :returns: Dict holding process status and process status info
     """
     # Safeguard the maximum length of a group
     # if len(group_name) > 63:
