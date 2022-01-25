@@ -172,12 +172,18 @@
                       "$ref": "#/definitions/stringLong",
                       "title": "Hypotheses",
                       "description": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A ≠ B). If directional, state the direction. You may also provide a rationale for each hypothesis."
+                    },
+                    "data_returned": {
+                      "$ref": "#/definitions/stringLong",
+                      "title": "Returned files and total size thereof",
+                      "description": "As outlined in the Data Access Protocol and in the Data Transfer Agreement, researchers are required to return the processed and analyzed data and the scripts used to process and analyze the data to the secure Yoda folder after publication of the project results. In order to prepare for the return of these data, we ask you to indicate what type of data files you will be returning and to estimate the total size of these files. Please provide a description and an estimate of the file sizes here."
                     }
                   },
                   "required": [
                     "title",
                     "research_questions",
-                    "hypotheses"
+                    "hypotheses",
+                    "data_returned"
                   ]
                 },
                 "variables": {
