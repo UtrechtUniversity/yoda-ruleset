@@ -419,7 +419,21 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
     """
-    ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')
+    # Safeguard the maximum length of a group
+    # if len(group_name) > 63:
+    #    return {'proc_status': 'NOK',
+    #            'proc_status_info': 'The given groupname "{}" is too long. It is limited to a maximum of 63 characters.'.format(group_name)}
+
+    try:
+        response = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')['arguments']
+        log.write(ctx, response)
+        status = response[5]
+        message = response[6]
+        return {'proc_status': status,
+                'proc_status_info': message}
+    except Exception:
+        return {'proc_status': 'NOK',
+                'proc_status_info': 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name)}
 
 
 @api.make()
@@ -431,6 +445,8 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :param property_name:  Name of the property to update
     :param property_value: Value of the property to update
     """
+    log.write(ctx, "GROUP UPDATE")
+
     ctx.uuGroupModify(group_name, property_name, property_value, '', '')
 
 

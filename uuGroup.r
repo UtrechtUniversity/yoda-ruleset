@@ -674,12 +674,20 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 # \brief Create a group.
 #
 # \param[in]  groupName
-# \param[out] status  zero on success, non-zero on failure
+# \param[out] status  '0' on success, non-zero on failure - as string value!
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassification, *status, *message) {
-	*status  = 1;
-	*message = "An internal error occurred.";
+	*status  = '0';
+	*message = "An internal error occurred";
+
+        # Safeguard the maximum length of a group
+        *nameLength = strlen(*groupName);
+        if (*nameLength > 63) {
+            *status = '999';
+            *message = "The groupname '*groupName' is too long (" ++ str(*nameLength) ++ "). The maximum allowed number of characters is 63";
+            succeed;
+        }
 
 	if (*description == "") {
 		# XXX This exact workaround exists in the `uuGroupModify` rule as well.
@@ -700,9 +708,9 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 	*kv."data_classification" = *dataClassification;
 
 	# Shoot first, ask questions later.
-	*status = errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv));
+        *status = str(errorcode(msiSudoGroupAdd(*groupName, "manager", uuClientFullName, "", *kv)));
 
-	if (*status == 0) {
+	if (*status == '0') {
 		*message = "";
 	} else {
 		# Why didn't you allow me to do that?
