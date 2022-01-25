@@ -92,8 +92,7 @@ def api_datarequest_save(user):
                         "exploratory_analysis": "test"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report",
-                    "publication_approval": True
+                    "publication_type": "Article or report"
                 },
                 "owner": "researcher"
             },
@@ -175,8 +174,7 @@ def api_datarequest_submit(user, datarequest_id):
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report",
-                    "publication_approval": True
+                    "publication_type": "Article or report"
                 },
                 "owner": "researcher"
             },

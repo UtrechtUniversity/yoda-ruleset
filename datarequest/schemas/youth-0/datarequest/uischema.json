@@ -5,12 +5,21 @@
   "previous_request_id": {
     "ui:widget": "hidden"
   },
+  "contact": {
+    "ui:order": [ "principal_investigator", "pi_is_contact", "study_contact", "participating_researchers", "participating_researchers_array", "cc_email_addresses" ],
+    "pi_is_contact": {
+      "ui:widget": "radio"
+    },
+    "participating_researchers": {
+      "ui:widget": "radio"
+    }
+  },
   "datarequest": {
-    "ui:order": [ "data", "additional_specifications", "other_remarks", "purpose", "publication_type", "publication_approval", "private_request_explanation", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
+    "ui:order": [ "data", "specific_criteria", "purpose", "publication_type", "publication_type_other", "part2", "study_information", "variables", "knowledge_of_data", "analyses", "research_context", "hypotheses", "data_returned", "methods", "attachments" ],
     "data": {
       "ui:field": "DataSelection"
     },
-    "additional_specifications": {
+    "specific_criteria": {
       "ui:widget": "textarea"
     },
     "purpose": {
@@ -20,12 +29,6 @@
       "ui:widget": "radio"
     },
     "other_remarks": {
-      "ui:widget": "textarea"
-    },
-    "publication_approval": {
-      "ui:widget": "radio"
-    },
-    "private_request_explanation": {
       "ui:widget": "textarea"
     },
     "hypotheses": {

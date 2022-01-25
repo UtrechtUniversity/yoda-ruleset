@@ -93,7 +93,6 @@ SIGDTA_PATHNAME      = "signed_dta"
 # List of valid datarequest types
 class type(Enum):
     REGULAR = "REGULAR"
-    PRIVATE = "PRIVATE"
     DAO     = "DAO"
 
 
@@ -122,7 +121,6 @@ class status(Enum):
     REVIEWED                          = 'REVIEWED'
 
     APPROVED                          = 'APPROVED'
-    APPROVED_PRIVATE                  = 'APPROVED_PRIVATE'
     REJECTED                          = 'REJECTED'
     RESUBMIT                          = 'RESUBMIT'
 
@@ -177,7 +175,6 @@ status_transitions = [(status(x),
                                    ('UNDER_REVIEW',                      'REVIEWED'),
 
                                    ('REVIEWED',                          'APPROVED'),
-                                   ('REVIEWED',                          'APPROVED_PRIVATE'),
                                    ('REVIEWED',                          'REJECTED'),
                                    ('REVIEWED',                          'RESUBMIT'),
 
@@ -189,7 +186,6 @@ status_transitions = [(status(x),
                                    ('PREREGISTRATION_SUBMITTED',         'PREREGISTRATION_CONFIRMED'),
 
                                    ('PREREGISTRATION_CONFIRMED',         'DTA_READY'),
-                                   ('APPROVED_PRIVATE',                  'DTA_READY'),
                                    ('DAO_APPROVED',                      'DTA_READY'),
 
                                    ('DTA_READY',                         'DTA_SIGNED'),
@@ -270,8 +266,6 @@ def type_get(ctx, request_id):
     # Determine type
     if datarequest['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
         datarequest_type = type.DAO
-    elif not datarequest['datarequest']['publication_approval']:
-        datarequest_type = type.PRIVATE
     else:
         datarequest_type = type.REGULAR
 
@@ -1458,12 +1452,7 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         if status_get(ctx, request_id) == status.DAO_SUBMITTED:
             status_set(ctx, request_id, status.DAO_APPROVED)
         else:
-            # Get privacy of data request
-            public_request = json.loads(datarequest_get(ctx, request_id))['datarequest']['publication_approval']
-            if public_request:
-                status_set(ctx, request_id, status.APPROVED)
-            else:
-                status_set(ctx, request_id, status.APPROVED_PRIVATE)
+            status_set(ctx, request_id, status.APPROVED)
     elif decision == "Rejected":
         datarequest_feedback_write(ctx, request_id, data['feedback_for_researcher'])
         status_set(ctx, request_id, status.REJECTED)
@@ -1662,7 +1651,6 @@ def api_datarequest_dta_upload_permission(ctx, request_id, action):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
-                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Check if action is valid
@@ -1687,7 +1675,6 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
     # Permission check
     datarequest_action_permitted(ctx, request_id, ["DM"], [status.APPROVED,
-                                                           status.APPROVED_PRIVATE,
                                                            status.DAO_APPROVED])
 
     # Set permissions
@@ -1848,7 +1835,6 @@ def send_emails(ctx, obj_name, status_to):
         review_emails(ctx, request_id)
 
     elif datarequest_status in (status.APPROVED,
-                                status.APPROVED_PRIVATE,
                                 status.REJECTED,
                                 status.RESUBMIT):
         evaluation_emails(ctx, request_id, datarequest_status)
@@ -2027,8 +2013,6 @@ def evaluation_emails(ctx, request_id, datarequest_status):
         mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email,
                                             researcher['given_name'] + ' '
                                             + researcher['family_name'], request_id, cc)
-    elif datarequest_status == status.APPROVED_PRIVATE:
-        datarequest_approved_emails(ctx, request_id, dao=False)
     elif datarequest_status == status.RESUBMIT:
         mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
                       + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
