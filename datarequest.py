@@ -34,7 +34,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_preliminary_review_get',
            'api_datarequest_datamanager_review_submit',
            'api_datarequest_datamanager_review_get',
-           'api_datarequest_dmc_members_get',
+           'api_datarequest_dac_members_get',
            'api_datarequest_assignment_submit',
            'api_datarequest_assignment_get',
            'api_datarequest_review_submit',
@@ -68,7 +68,7 @@ SCHEMA            = "schema"
 UISCHEMA          = "uischema"
 
 GROUP_DM          = "datarequests-research-datamanagers"
-GROUP_DMC         = "datarequests-research-data-management-committee"
+GROUP_DAC         = "datarequests-research-data-access-committee"
 GROUP_PM          = "datarequests-research-project-managers"
 
 DRCOLLECTION         = "home/datarequests-research"
@@ -306,7 +306,7 @@ def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
 
-    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DMC, OWN, REV)
+    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
     :param statuses:     Array of permitted current data request statuses or None (check skipped)
 
     :returns:            True if permitted, False if not
@@ -327,7 +327,7 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
 
     :param ctx:          Combined type of a callback and rei struct
     :param request_id:   Unique identifier of the data request
-    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DMC, OWN, REV)
+    :param roles:        Array of permitted roles (possible values: PM, ED, DM, DAC, OWN, REV)
     :param statuses:     Array of permitted current data request statuses or None (check skipped)
 
     :returns:            True if permitted, False if not
@@ -347,8 +347,8 @@ def datarequest_action_permitted(ctx, request_id, roles, statuses):
             current_user_roles.append("PM")
         if user.is_member_of(ctx, GROUP_DM):
             current_user_roles.append("DM")
-        if user.is_member_of(ctx, GROUP_DMC):
-            current_user_roles.append("DMC")
+        if user.is_member_of(ctx, GROUP_DAC):
+            current_user_roles.append("DAC")
         if datarequest_is_owner(ctx, request_id):
             current_user_roles.append("OWN")
         if datarequest_is_reviewer(ctx, request_id):
@@ -381,8 +381,8 @@ def api_datarequest_roles_get(ctx, request_id=None):
         roles.append("PM")
     if user.is_member_of(ctx, GROUP_DM):
         roles.append("DM")
-    if user.is_member_of(ctx, GROUP_DMC):
-        roles.append("DMC")
+    if user.is_member_of(ctx, GROUP_DAC):
+        roles.append("DAC")
     if request_id is not None and datarequest_is_owner(ctx, request_id):
         roles.append("OWN")
     if request_id is not None and datarequest_is_reviewer(ctx, request_id):
@@ -553,10 +553,10 @@ def datarequest_data_valid(ctx, data, schema_name=False, schema=False):
     schema is provided directly (as JSON).
 
     This second mode of operation is necessary when the default schema has been altered. E.g. for
-    the assignment form, a list of DMC members to which a data request can be assigned for review is
+    the assignment form, a list of DAC members to which a data request can be assigned for review is
     fetched dynamically when the form is rendered. To validate schema data generated using this
     schema, we need to reconstruct the schema by mutating it exactly like we did when we rendered it
-    (i.e. also dynamically fetch the list of DMC members and insert them into the schema).
+    (i.e. also dynamically fetch the list of DAC members and insert them into the schema).
 
     :param ctx:         Combined type of a callback and rei struct
     :param data:        The form data to validate
@@ -611,7 +611,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     :returns: Dict with paginated datarequests
     """
-    dmc_member = user.is_member_of(ctx, GROUP_DMC)
+    dac_member = user.is_member_of(ctx, GROUP_DAC)
 
     coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
@@ -658,13 +658,13 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     # Set filter
     #
     # a) Normal case
-    if not dmc_member and not archived:
+    if not dac_member and not archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'PRELIMINARY_RESUBMIT' && != 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' && != 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
     # b) Archive case
-    elif not dmc_member and archived:
+    elif not dac_member and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'PRELIMINARY_RESUBMIT' || = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' || = 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
-    # c) DMC member case
-    elif dmc_member:
+    # c) DAC member case
+    elif dac_member:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
@@ -783,11 +783,11 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
         # Grant permissions on collections
         msi.set_acl(ctx, "default", "read", GROUP_DM, coll_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, coll_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DAC, coll_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, coll_path)
         msi.set_acl(ctx, "default", "own", "rods", coll_path)
         msi.set_acl(ctx, "default", "read", GROUP_DM, attachments_path)
-        msi.set_acl(ctx, "default", "read", GROUP_DMC, attachments_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DAC, attachments_path)
         msi.set_acl(ctx, "default", "read", GROUP_PM, attachments_path)
         msi.set_acl(ctx, "default", "own", "rods", attachments_path)
         msi.set_acl(ctx, "default", "read", user.full_name(ctx), attachments_path)
@@ -832,7 +832,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
     # Grant read permissions on data request
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DAC, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     # Revoke write permission
@@ -868,7 +868,7 @@ def api_datarequest_get(ctx, request_id):
     request_id = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DMC", "OWN"], None)
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
 
     # Get request type
     datarequest_type = type_get(ctx, request_id).value
@@ -953,7 +953,7 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
                                                      ATTACHMENTS_PATHNAME, filename)
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DMC, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_DAC, file_path)
 
 
 @api.make()
@@ -973,7 +973,7 @@ def api_datarequest_attachments_get(ctx, request_id):
     request_id = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DMC", "OWN"], None)
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "DAC", "OWN"], None)
 
     # Return list of attachment filepaths
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
@@ -1030,7 +1030,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                         GROUP_DMC])
+                                                                         GROUP_DAC])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
 
@@ -1118,7 +1118,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                         GROUP_DMC])
+                                                                         GROUP_DAC])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
 
@@ -1179,22 +1179,22 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_dmc_members_get(ctx):
-    return datarequest_dmc_members_get(ctx)
+def api_datarequest_dac_members_get(ctx):
+    return datarequest_dac_members_get(ctx)
 
 
-def datarequest_dmc_members_get(ctx):
-    """Get list of DMC members
+def datarequest_dac_members_get(ctx):
+    """Get list of DAC members
 
     :param ctx: Combined type of a callback and rei struct
 
-    :returns: List of DMC members
+    :returns: List of DAC members
     """
-    dmc_members = map(lambda member: member[0], group.members(ctx, GROUP_DMC))
-    if "rods" in dmc_members:
-        dmc_members.remove("rods")
+    dac_members = map(lambda member: member[0], group.members(ctx, GROUP_DAC))
+    if "rods" in dac_members:
+        dac_members.remove("rods")
 
-    return dmc_members
+    return dac_members
 
 
 @api.make()
@@ -1211,10 +1211,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Validate data against schema
-    dmc_members = datarequest_dmc_members_get(ctx)
+    dac_members = datarequest_dac_members_get(ctx)
     schema      = datarequest_schema_get(ctx, ASSIGNMENT)
-    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enum']      = dmc_members
-    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dmc_members
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enum']      = dac_members
+    schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dac_members
     if not datarequest_data_valid(ctx, data, schema=schema):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(ASSIGNMENT))
@@ -1230,7 +1230,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                          GROUP_DMC])
+                                                                          GROUP_DAC])
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
 
@@ -1253,10 +1253,10 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
 
 def assign_request(ctx, assignees, request_id):
-    """Assign a data request to one or more DMC members for review.
+    """Assign a data request to one or more DAC members for review.
 
     :param ctx:        Combined type of a callback and rei struct
-    :param assignees:  JSON-formatted array of DMC members
+    :param assignees:  JSON-formatted array of DAC members
     :param request_id: Unique identifier of the data request
     """
     # Construct data request collection path
@@ -2194,7 +2194,7 @@ def mail_datamanager_review_accepted(ctx, truncated_title, pm_email, request_id)
 
 Data request {} has been accepted by the data manager.
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DMC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
@@ -2212,7 +2212,7 @@ Data request {} has been rejected (resubmission allowed) by the data manager for
 
 {}
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DMC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
@@ -2230,7 +2230,7 @@ Data request {} has been rejected by the data manager for the following reason(s
 
 {}
 
-The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DMC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
+The data manager's review is advisory. Please review the data manager's review (and if accepted, assign the data request for review to one or more DAC members). To do so, please navigate to the assignment form using this link https://{}/datarequest/assign/{}.
 
 With kind regards,
 YOUth
@@ -2259,7 +2259,7 @@ def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, prop
                      to=assignee_email,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
-                     body="""Dear DMC member,
+                     body="""Dear DAC member,
 
 Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
 
@@ -2278,7 +2278,7 @@ def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_na
                      subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
                      body="""Dear {},
 
-Your data request been reviewed by the YOUth Data Management Committee and is awaiting final evaluation by the YOUth project manager.
+Your data request been reviewed by the YOUth Data Access Committee and is awaiting final evaluation by the YOUth project manager.
 
 The following link will take you directly to your data request: https://{}/datarequest/view/{}.
 
@@ -2294,7 +2294,7 @@ def mail_review_pm(ctx, truncated_title, pm_email, request_id):
                      subject="YOUth data request {} (\"{}\"): reviewed".format(request_id, truncated_title),
                      body="""Dear project manager,
 
-Data request {} has been reviewed by the YOUth Data Management Committee and is awaiting your final evaluation.
+Data request {} has been reviewed by the YOUth Data Access Committee and is awaiting your final evaluation.
 
 Please log into Yoda to evaluate the data request. The following link will take you directly to the evaluation form: https://{}/datarequest/evaluate/{}.
 

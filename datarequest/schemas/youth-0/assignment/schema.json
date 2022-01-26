@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "title": "Assignment",
-  "description": "Please consider carefully the remarks of the data manager, if any. In case of acceptance for review, you will be prompted to assign the data request for review to one or more DMC members.",
+  "description": "Please consider carefully the remarks of the data manager, if any. In case of acceptance for review, you will be prompted to assign the data request for review to one or more DAC members.",
   "properties": {
     "decision": {
       "type": "string",
@@ -25,16 +25,16 @@
           "properties": {
             "assign_to": {
               "type": "array",
-              "title": "Please select the DMC member(s) to whom the data request should be assigned for review.",
+              "title": "Please select the DAC member(s) to whom the data request should be assigned for review.",
               "items": {
                 "type": "string",
                 "enum": [
                   "projectmanager",
-                  "dmcmember"
+                  "dacmember"
                 ],
                 "enumNames": [
                   "Prof. Dr. P. Manager / Utrecht University / Dev / projectmanager",
-                  "Prof. Dr. D.M.C. Member / Utrecht University / Dev / dmcmember"
+                  "Prof. Dr. D.M.C. Member / Utrecht University / Dev / dacmember"
                 ]
               },
               "uniqueItems": true

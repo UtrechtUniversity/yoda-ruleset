@@ -131,7 +131,7 @@ uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName,
         msiSetACL("default", "admin:write", uuClientFullName, *filePath);
 
         # Not so elegant way to handle the special case of assigning a data
-        # request for review to one or more DMC members
+        # request for review to one or more DAC members
         if (*attributeName == "assignedForReview") {
 
                 # Check if data request is already assigned. If so, remove
