@@ -744,11 +744,11 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 # \param[in]  groupName
 # \param[in]  property  the property to change
 # \param[in]  value     the new property value
-# \param[out] status    zero on success, non-zero on failure
+# \param[out] status    '0' on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupModify(*groupName, *property, *value, *status, *message) {
-	*status  = 1;
+	*status  = '1';
 	*message = "An internal error occurred.";
 
 	*kv.'.' = ".";
@@ -775,8 +775,8 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 		*kv.'oldCategory' = *category;
 	}
 
-	*status = errorcode(msiSudoObjMetaSet(*groupName, "-u", *property, *value, "", *kv));
-	if (*status == 0) {
+	*status = str(errorcode(msiSudoObjMetaSet(*groupName, "-u", *property, *value, "", *kv)));
+	if (*status == '0') {
 		*message = "";
 	} else {
 		uuGroupPolicyCanGroupModify(uuClientFullName, *groupName, *property, *value, *allowed, *reason);
