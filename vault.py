@@ -30,6 +30,7 @@ __all__ = ['api_vault_submit',
            'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
+           'api_vault_get_package_by_id',
            'api_vault_copy_to_research',
            'api_vault_get_publication_terms',
            'api_grant_read_access_research_group',
@@ -555,6 +556,31 @@ def api_vault_collection_details(ctx, path):
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
             "research_path": research_path}
+
+
+@api.make()
+def api_vault_get_package_by_id(ctx, yoda_id):
+    """Return path to data package with provided Yoda ID (UUID4).
+
+    :param ctx:     Combined type of a callback and rei struct
+    :param yoda_id: Yoda identifier (UUID4)
+
+    :returns: Path to data package.
+    """
+    data_package = ""
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.YODA_ID, yoda_id),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        data_package = row[0]
+
+    if data_package == "":
+        return api.Error('not_found', 'Could not find data package with provided Yoda ID.')
+
+    _, _, path, subpath = pathutil.info(data_package)
+    return "/{}/{}".format(path, subpath)
 
 
 @api.make()
