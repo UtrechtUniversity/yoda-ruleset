@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -409,6 +409,18 @@ def api_vault_system_metadata(callback, coll):
         package_doi = row[0]
         persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
+
+    # Yoda ID.
+    yoda_id = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.YODA_ID),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        yoda_id = row[0]
+        system_metadata["Yoda ID"] = "<a href=\"yda/{}\">yda/{}</a>".format(yoda_id, yoda_id)
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
