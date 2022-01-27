@@ -2,43 +2,13 @@
   "evaluation_rationale": {
     "ui:widget": "textarea"
   },
-  "biological_samples": {
-    "ui:widget": "hidden",
-    "ui:disabled": true
+  "involvement_requested": {
+    "ui:widget": "radio"
   },
-  "biological_samples_volume": {
-    "ui:widget": "textarea"
-  },
-  "biological_samples_committee_approval": {
-    "ui:widget": "textarea"
-  },
-  "for_publishing": {
-    "ui:widget": "hidden",
-    "ui:disabled": true
-  },
-  "contribution": {
-    "ui:widget": "textarea"
-  },
-  "research_question_answerability": {
-    "ui:widget": "textarea"
-  },
-  "study_quality": {
-    "ui:widget": "textarea"
-  },
-  "study_value": {
-    "ui:widget": "textarea"
-  },
-  "researcher_expertise": {
-    "ui:widget": "textarea"
-  },
-  "ui:order": [
-    "introduction",
-    "evaluation",
-    "evaluation_rationale",
-    "biological_samples",
-    "biological_samples_volume",
-    "biological_samples_committee_approval",
-    "for_publishing",
-    "*"
-  ]
+  "researchers_to_be_involved": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 12
+    }
+  }
 }

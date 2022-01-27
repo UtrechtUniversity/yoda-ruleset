@@ -2,9 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "required": [
-    "for_publishing",
     "evaluation",
-    "biological_samples"
+    "involvement_requested"
   ],
   "properties": {
     "introduction": {
@@ -26,14 +25,13 @@
       "title": "Please provide a brief rationale for your evaluation.",
       "description": "This is mandatory if the data request is rejected."
     },
-    "biological_samples": {
-      "type": "boolean",
-      "title": "Will biological samples be used?",
-      "default": false
-    },
-    "for_publishing": {
-      "type": "boolean",
-      "title": "Data request for publishing?"
+    "involvement_requested": {
+      "type": "string",
+      "title": "Do you or any of your (former) colleagues who were involved in the collection of (part of) the requested data wish to become involved in this project and/or the resulting publication?",
+      "enum": [
+        "Yes",
+        "No"
+      ]
     }
   },
   "dependencies": {
@@ -63,80 +61,31 @@
         }
       ]
     },
-    "biological_samples": {
+    "involvement_requested": {
       "oneOf": [
         {
           "properties": {
-            "biological_samples": {
+            "involvement_requested": {
               "enum": [
-                false
+                "No"
               ]
             }
           }
         },
         {
           "properties": {
-            "biological_samples": {
+            "involvement_requested": {
               "enum": [
-                true
+                "Yes"
               ]
             },
-            "biological_samples_volume": {
+            "researchers_to_be_involved": {
               "type": "string",
-              "title": "Is the volume of biological samples requested reasonable and does it not seriously deplete the resource?"
-            },
-            "biological_samples_committee_approval": {
-              "type": "string",
-              "title": "Does the committee agree to the use of these biological samples for the specific research question?"
+              "title": "Please specify the name and email address of the person(s) who should be invited to become involved."
             }
           },
           "required": [
-            "biological_samples_volume",
-            "biological_samples_committee_approval"
-          ]
-        }
-      ]
-    },
-    "for_publishing": {
-      "oneOf": [
-        {
-          "properties": {
-            "for_publishing": {
-              "enum": [
-                false
-              ]
-            }
-          }
-        },
-        {
-          "properties": {
-            "for_publishing": {
-              "enum": [
-                true
-              ]
-            },
-            "research_question_answerability": {
-              "type": "string",
-              "title": "Can the research question be answered with the requested YOUth data?"
-            },
-            "study_quality": {
-              "type": "string",
-              "title": "How do you evaluate the study design?"
-            },
-            "study_value": {
-              "type": "string",
-              "title": "Is the study scientifically valuable?"
-            },
-            "researcher_expertise": {
-              "type": "string",
-              "title": "Do you believe that the researcher team has the expertise necessary to correctly analyze and report on the research question at hand?"
-            }
-          },
-          "required": [
-            "research_question_answerability",
-            "study_quality",
-            "study_value",
-            "researcher_expertise"
+            "researchers_to_be_involved"
           ]
         }
       ]
