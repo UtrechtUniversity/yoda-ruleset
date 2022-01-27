@@ -776,7 +776,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         while collection.exists("/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
             request_id = generate_request_id(ctx)
 
-    # Construct data request file path.
+    # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
