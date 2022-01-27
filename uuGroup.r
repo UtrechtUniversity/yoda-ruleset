@@ -789,15 +789,15 @@ uuGroupModify(*groupName, *property, *value, *status, *message) {
 # \brief Remove a group.
 #
 # \param[in]  groupName
-# \param[out] status    zero on success, non-zero on failure
+# \param[out] status    '0' on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupRemove(*groupName, *status, *message) {
-	*status  = 1;
+	*status  = '1';
 	*message = "An internal error occurred.";
 
-	*status = errorcode(msiSudoGroupRemove(*groupName, ""));
-	if (*status == 0) {
+	*status = str(errorcode(msiSudoGroupRemove(*groupName, "")));
+	if (*status == '0') {
 		*message = "";
 	} else {
 		uuGroupPolicyCanGroupRemove(uuClientFullName, *groupName, *allowed, *reason);
@@ -897,7 +897,7 @@ uuExternalUser(*userName) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserAdd(*groupName, *user, *status, *message) {
-	*status  = 1;
+	*status  = '1';
 	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
@@ -908,8 +908,8 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 	# User does not exist, add user to iRODS first.
 	if (!*exists) {
 		*kv."forGroup" = *groupName;
-		*status = errorcode(msiSudoUserAdd(*fullName, "", "", "", *kv));
-		if (*status != 0) {
+		*status = str(errorcode(msiSudoUserAdd(*fullName, "", "", "", *kv)));
+		if (*status != '0') {
 			uuGroupPolicyCanGroupUserAdd(uuClientFullName, *groupName, *fullName, *allowed, *reason);
 			if (*allowed == 0) {
 				*message = *reason;
@@ -924,7 +924,7 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
                         rule_group_provision_external_user(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);
                         if (*message != "") {
                                 writeLine("serverLog", "[EXTERNAL USER] *message");
-                                *status = int(*http_code)
+                                *status = *http_code;
                                 succeed; # Return here (fail would ruin the status and error message).
                         }
                         writeLine("serverLog", "[EXTERNAL USER] User *userName added by $userNameClient on $rodsZoneClient.");
@@ -932,8 +932,8 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 	}
 
 	# User exists, now add them to the group.
-	*status = errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, ""));
-	if (*status == 0) {
+	*status = str(errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, "")));
+	if (*status == '0') {
 		*message = "";
 	} else {
 		uuGroupPolicyCanGroupUserAdd(uuClientFullName, *groupName, *fullName, *allowed, *reason);
@@ -947,11 +947,11 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 #
 # \param[in]  groupName
 # \param[in]  user      the user to remove from the group
-# \param[out] status    zero on success, non-zero on failure
+# \param[out] status    '0' on success, non-zero on failure
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserRemove(*groupName, *user, *status, *message) {
-	*status  = 1;
+	*status  = '1';
 	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
@@ -965,8 +965,8 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 		*actualGroupToRemoveUserFrom = "read-*baseName";
 	}
 
-	*status = errorcode(msiSudoGroupMemberRemove(*actualGroupToRemoveUserFrom, *fullName, ""));
-	if (*status == 0) {
+	*status = str(errorcode(msiSudoGroupMemberRemove(*actualGroupToRemoveUserFrom, *fullName, "")));
+	if (*status == '0') {
 		*message = "";
 	} else {
 		uuGroupPolicyCanGroupUserRemove(uuClientFullName, *groupName, *fullName, *allowed, *reason);
@@ -985,7 +985,7 @@ uuGroupUserRemove(*groupName, *user, *status, *message) {
 # \param[out] message   a user friendly error message, may contain the reason why an action was disallowed
 #
 uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
-	*status  = 1;
+	*status  = '1';
 	*message = "An internal error occurred.";
 
 	uuGetUserAndZone(*user, *userName, *userZone);
@@ -995,7 +995,7 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 
 	if (*newRole == *oldRole) {
 		# Nothing to do.
-		*status  = 0;
+		*status  = '0';
 		*message = "";
 
 		succeed;
@@ -1018,9 +1018,9 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 	if (*oldRole == "reader") {
 		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroup = "read-*baseName";
-		*status = errorcode(msiSudoGroupMemberRemove(*roGroup, *fullName, ""));
+		*status = str(errorcode(msiSudoGroupMemberRemove(*roGroup, *fullName, "")));
 
-		if (*status != 0) {
+		if (*status != '0') {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
 			if (*allowed == 0) {
 				*message = *reason;
@@ -1030,8 +1030,8 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 
 		# Add the user to the group to make them a normal member.
 
-		*status = errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, ""));
-		if (*status == 0) {
+		*status = str(errorcode(msiSudoGroupMemberAdd(*groupName, *fullName, "")));
+		if (*status == '0') {
 			*message = "";
 		} else {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
@@ -1042,8 +1042,8 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 		}
 
 	} else if (*oldRole == "manager") {
-		*status = errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *fullName, "", ""));
-		if (*status != 0) {
+		*status = str(errorcode(msiSudoObjMetaRemove(*groupName, "-u", "", "manager", *fullName, "", "")));
+		if (*status != '0') {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, "normal", *allowed, *reason);
 			if (*allowed == 0) {
 				*message = *reason;
@@ -1063,7 +1063,7 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 		if (*allowed == 0) {
 			*message = *reason;
 		} else {
-			*status = 1; # This shouldn't be allowed, abort abort!
+			*status = '1'; # This shouldn't be allowed, abort abort!
 		}
 		succeed;
 	}
@@ -1079,9 +1079,9 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 
 		# Remove the user from the normal group.
 
-		*status = errorcode(msiSudoGroupMemberRemove(*groupName, *fullName, ""));
+		*status = str(errorcode(msiSudoGroupMemberRemove(*groupName, *fullName, "")));
 
-		if (*status != 0) {
+		if (*status != '0') {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
 			if (*allowed == 0) {
 				*message = *reason;
@@ -1094,8 +1094,8 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 		uuChop(*groupName, *_, *baseName, "-", true);
 		*roGroup = "read-*baseName";
 
-		*status = errorcode(msiSudoGroupMemberAdd(*roGroup, *fullName, ""));
-		if (*status == 0) {
+		*status = str(errorcode(msiSudoGroupMemberAdd(*roGroup, *fullName, "")));
+		if (*status == '0') {
 			*message = "";
 		} else {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);
@@ -1108,8 +1108,8 @@ uuGroupUserChangeRole(*groupName, *user, *newRole, *status, *message) {
 
 		# Add manager metadata.
 
-		*status = errorcode(msiSudoObjMetaAdd(*groupName, "-u", *newRole, *fullName, "", ""));
-		if (*status == 0) {
+		*status = str(errorcode(msiSudoObjMetaAdd(*groupName, "-u", *newRole, *fullName, "", "")));
+		if (*status == '0') {
 			*message = "";
 		} else {
 			uuGroupPolicyCanGroupUserChangeRole(uuClientFullName, *groupName, *fullName, *newRole, *allowed, *reason);

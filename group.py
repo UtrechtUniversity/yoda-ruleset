@@ -419,17 +419,18 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
-    :returns: Dict holding process status and process status info
+    :returns: Dict with API status result
     """
     try:
         response = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')['arguments']
         status = response[5]
         message = response[6]
-        return {'proc_status': status,
-                'proc_status_info': message}
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
     except Exception:
-        return {'proc_status': 'NOK',
-                'proc_status_info': 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name)}
+        return api.Error('-1', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -447,11 +448,12 @@ def api_group_update(ctx, group_name, property_name, property_value):
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
         status = response[3]
         message = response[4]
-        return {'proc_status': status,
-                'proc_status_info': message}
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
     except Exception:
-        return {'proc_status': 'NOK',
-                'proc_status_info': 'Something went wrong updating group "{}". Please contact a system administrator'.format(group_name)}
+        return api.Error('-1', 'Something went wrong updating group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -460,8 +462,20 @@ def api_group_delete(ctx, group_name):
 
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group to delete
+
+    :returns: Dict holding process status and process status info
+
     """
-    ctx.uuGroupRemove(group_name, '', '')
+    try:
+        response = ctx.uuGroupRemove(group_name, '', '')['arguments']
+        status = response[1]
+        message = response[2]
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
+    except Exception:
+        return api.Error('-1', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -499,8 +513,19 @@ def api_group_user_add(ctx, username, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+
+    :returns: Dict holding process status and process status info
     """
-    ctx.uuGroupUserAdd(group_name, username, '', '')
+    try:
+        response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
+        status = response[2]
+        message = response[3]
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
+    except Exception:
+        return api.Error('-1', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
 
 
 @api.make()
@@ -511,8 +536,19 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
     :param username:   Name of the user
     :param group_name: Name of the group
     :param new_role:   New role of the user
+
+    :returns: Dict holding process status and process status info
     """
-    ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')
+    try:
+        response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
+        status = response[3]
+        message = response[4]
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
+    except Exception:
+        return api.Error('-1', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
 
 
 @api.make()
@@ -538,5 +574,18 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param username:   Name of the user
     :param group_name: Name of the group
+
+    :returns: Dict holding process status and process status info
     """
-    ctx.uuGroupUserRemove(group_name, username, '', '')
+    # ctx.uuGroupUserRemove(group_name, username, '', '')
+    try:
+        response = ctx.uuGroupUserRemove(group_name, username, '', '')['arguments']
+        status = response[2]
+        message = response[3]
+        if status == '0':
+            return api.Result.ok()
+        else:
+            return api.Error('-1', message)
+    except Exception:
+        return api.Error('-1', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+
