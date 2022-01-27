@@ -6,6 +6,8 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
+import string
+import random
 import re
 from collections import OrderedDict
 from datetime import datetime
@@ -773,7 +775,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         request_id = generate_request_id(ctx)
 
         # Check if request ID collection exists, generate new request ID if it exists.
-        while collection.exists("/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
+        while collection.exists(ctx, "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
             request_id = generate_request_id(ctx)
 
     # Construct data request collection and file path.
