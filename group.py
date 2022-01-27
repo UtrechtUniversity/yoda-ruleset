@@ -588,4 +588,3 @@ def api_group_remove_user_from_group(ctx, username, group_name):
             return api.Error('-1', message)
     except Exception:
         return api.Error('-1', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
-
