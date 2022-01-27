@@ -771,14 +771,13 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     else:
         # Generate request ID and construct data request collection path.
         request_id = generate_request_id(ctx)
-        coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
         # Check if request ID collection exists, generate new request ID if it exists.
-        while collection.exists(coll_path):
+        while collection.exists("/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
             request_id = generate_request_id(ctx)
-            coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
     # Construct data request file path.
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
     # If we're not working with a draft, initialize the data request collection
