@@ -773,6 +773,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         request_id = generate_request_id(ctx)
         coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
+        # Check if request ID collection exists, generate new request ID if it exists.
         while collection.exists(coll_path):
             request_id = generate_request_id(ctx)
             coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
