@@ -80,7 +80,7 @@
         },
         "participating_researchers": {
           "type": "string",
-          "title": "Are there are participating researchers?",
+          "title": "Are there any participating researchers?",
           "enum": [
             "Yes",
             "No"
