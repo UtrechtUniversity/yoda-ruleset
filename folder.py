@@ -313,7 +313,8 @@ def folder_secure(ctx, coll, target):
             return '1'
 
     # Generate UUID4 and set as Yoda ID of vault package.
-    avu.set_on_coll(ctx, target, constants.YODA_ID, str(uuid.uuid4()))
+    if config.enable_yoda_id:
+        avu.set_on_coll(ctx, target, constants.YODA_ID, str(uuid.uuid4()))
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
