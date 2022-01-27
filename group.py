@@ -428,9 +428,9 @@ def api_group_create(ctx, group_name, category, subcategory, description, data_c
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', 'Something went wrong creating group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -451,9 +451,9 @@ def api_group_update(ctx, group_name, property_name, property_value):
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong updating group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', 'Something went wrong updating group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -473,9 +473,9 @@ def api_group_delete(ctx, group_name):
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
+        return api.Error('error_internal', 'Something went wrong deleting group "{}". Please contact a system administrator'.format(group_name))
 
 
 @api.make()
@@ -523,9 +523,9 @@ def api_group_user_add(ctx, username, group_name):
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', 'Something went wrong adding {} to group "{}". Please contact a system administrator'.format(username, group_name))
 
 
 @api.make()
@@ -546,9 +546,9 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
 
 
 @api.make()
@@ -585,6 +585,6 @@ def api_group_remove_user_from_group(ctx, username, group_name):
         if status == '0':
             return api.Result.ok()
         else:
-            return api.Error('-1', message)
+            return api.Error('policy_error', message)
     except Exception:
-        return api.Error('-1', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
+        return api.Error('error_internal', 'Something went wrong removing {} from group "{}". Please contact a system administrator'.format(username, group_name))
