@@ -299,6 +299,12 @@ def metadata_set(ctx, request_id, key, value):
     ctx.adminDatarequestActions()
 
 
+def generate_request_id(ctx):
+    """Generate request ID for data request."""
+    characters = string.ascii_uppercase + string.digits
+    return ''.join(random.choice(characters) for x in range(6))
+
+
 @api.make()
 def api_datarequest_action_permitted(ctx, request_id, roles, statuses):
     """Wrapper around datarequest_action_permitted
@@ -759,10 +765,18 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     if (user.is_member_of(ctx, GROUP_PM) or user.is_member_of(ctx, GROUP_DM)):
         return api.Error("permission_error", "Action not permitted.")
 
-    # If we're not working with a draft, create a new request ID
-    request_id = draft_request_id if draft_request_id else str(datetime.now().strftime('%s'))
+    # If we're not working with a draft, generate a new request ID.
+    if draft_request_id:
+        request_id = draft_request_id
+    else:
+        # Generate request ID and construct data request collection path.
+        request_id = generate_request_id(ctx)
 
-    # Construct paths
+        # Check if request ID collection exists, generate new request ID if it exists.
+        while collection.exists("/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
+            request_id = generate_request_id(ctx)
+
+    # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
 
