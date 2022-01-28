@@ -244,9 +244,13 @@ def get_subjects(combi):
 
 def get_funders(combi):
     funders = []
-    for funder in combi.get('Funding_Reference', []):
-        funders.append({'funderName': funder['Funder_Name'],
-                        'awardNumber': {'awardNumber': funder['Award_Number']}})
+    try:
+        for funder in combi.get('Funding_Reference', []):
+            funders.append({'funderName': funder['Funder_Name'],
+                            'awardNumber': {'awardNumber': funder['Award_Number']}})
+    except KeyError:
+        pass
+
     return funders
 
 
