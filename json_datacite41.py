@@ -346,10 +346,9 @@ def get_dates(combi):
 
 def get_version(combi):
     """Get string in DataCite format containing version info."""
-    return combi['Version']
+    return combi.get('Version', '')
 
 
-# OK ?? moet 'Custom' hierbij???? waar komt dat vandaan??
 def get_rights_list(combi):
     """Get list in DataCite format containing rights related information."""
     options = {'Open':       'info:eu-repo/semantics/openAccess',
