@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-"""Functions for transforming JSON to DataCite 4.1 XML."""
+"""Functions for transforming Yoda JSON to DataCite 4.1 JSON."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from util import *
@@ -40,26 +40,6 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                publicationDate,
                                                openAccessLink,
                                                licenseUri)
-    """
-    # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = jsonutil.read(ctx, metadataJsonPath)
-
-    # add System info
-    metaDict['System'] = {
-        'Last_Modified_Date': lastModifiedDateTime,
-        'Persistent_Identifier_Datapackage': {
-            'Identifier_Scheme': 'DOI',
-            'Identifier': yodaDOI
-        },
-        'Publication_Date': publicationDate,
-        'Open_access_Link': openAccessLink,
-        'License_URI': licenseUri
-    }
-
-    # Write combined data to file at location combiJsonPath
-    jsonutil.write(ctx, combiJsonPath, metaDict)
-
-    """
 
 
 def json_datacite41_create_combi_metadata_json(ctx,
@@ -313,13 +293,16 @@ def get_contributors(combi):
                 name_ids.append({'nameIdentifier': pid['Name_Identifier'],
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-        all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
-                    'nameType': 'Personal',
-                    # 'givenName': person['Name']['Given_Name'],
-                    # 'familyName': person['Name']['Family_Name'],
-                    'affiliation': affiliations,
-                    'contributorType':  person['Contributor_Type'],
-                    'nameIdentifiers': name_ids})
+        try:
+            all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+                        'nameType': 'Personal',
+                        # 'givenName': person['Name']['Given_Name'],
+                        # 'familyName': person['Name']['Family_Name'],
+                        'affiliation': affiliations,
+                        'contributorType':  person['Contributor_Type'],
+                        'nameIdentifiers': name_ids})
+        except KeyError:
+            pass
 
     # 2) Contactperson
     for person in combi.get('ContactPerson', []):
@@ -332,13 +315,17 @@ def get_contributors(combi):
                 name_ids.append({'nameIdentifier': pid['Name_Identifier'],
                                  'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-        all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
-                    'nameType': 'Personal',
-                    'givenName': person['Name']['Given_Name'],
-                    'familyName': person['Name']['Family_Name'],
-                    'affiliation': affiliations,
-                    'contributorType': 'Contact',
-                    'nameIdentifiers': name_ids})
+        try:
+            all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+                        'nameType': 'Personal',
+                        'givenName': person['Name']['Given_Name'],
+                        'familyName': person['Name']['Family_Name'],
+                        'affiliation': affiliations,
+                        'contributorType': 'Contact',
+                        'nameIdentifiers': name_ids})
+        except KeyError:
+            pass
+
     return all
 
 
