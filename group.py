@@ -442,7 +442,7 @@ def api_group_update(ctx, group_name, property_name, property_value):
     :param property_name:  Name of the property to update
     :param property_value: Value of the property to update
 
-    :returns: Dict holding process status and process status info
+    :returns: Dict with API status result
     """
     try:
         response = ctx.uuGroupModify(group_name, property_name, property_value, '', '')['arguments']
@@ -463,8 +463,7 @@ def api_group_delete(ctx, group_name):
     :param ctx:        Combined type of a ctx and rei struct
     :param group_name: Name of the group to delete
 
-    :returns: Dict holding process status and process status info
-
+    :returns: Dict with API status result
     """
     try:
         response = ctx.uuGroupRemove(group_name, '', '')['arguments']
@@ -514,7 +513,7 @@ def api_group_user_add(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
 
-    :returns: Dict holding process status and process status info
+    :returns: Dict with API status result
     """
     try:
         response = ctx.uuGroupUserAdd(group_name, username, '', '')['arguments']
@@ -537,7 +536,7 @@ def api_group_user_update_role(ctx, username, group_name, new_role):
     :param group_name: Name of the group
     :param new_role:   New role of the user
 
-    :returns: Dict holding process status and process status info
+    :returns: Dict with API status result
     """
     try:
         response = ctx.uuGroupUserChangeRole(group_name, username, new_role, '', '')['arguments']
@@ -575,7 +574,7 @@ def api_group_remove_user_from_group(ctx, username, group_name):
     :param username:   Name of the user
     :param group_name: Name of the group
 
-    :returns: Dict holding process status and process status info
+    :returns: Dict with API status result
     """
     # ctx.uuGroupUserRemove(group_name, username, '', '')
     try:
