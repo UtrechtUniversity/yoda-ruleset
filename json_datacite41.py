@@ -407,10 +407,14 @@ def get_related_datapackages(combi):
   ],
     """
     related_dps = []
-    for rel in combi['Related_Datapackage']:
-        related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
-                            'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
-                            'relationType': rel['Relation_Type'].split(':')[0]})
+    try:
+        for rel in combi['Related_Datapackage']:
+            related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                                'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                                'relationType': rel['Relation_Type'].split(':')[0]})
+    except KeyError:
+        pass
+
     return related_dps
 
 
