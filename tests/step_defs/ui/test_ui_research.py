@@ -130,13 +130,13 @@ def ui_research_multi_copy(browser, folder):
 
 @when('user multi-select deletes files / folders')
 def ui_research_multi_delete(browser, folder):
-    browser.find_by_css('button[data-name="testdata"]').click()
-    browser.find_by_css('a.folder-delete[data-name="testdata"]').click()
-    browser.find_by_css('.btn-confirm-folder-delete').click()
+    browser.find_by_css('input[data-name="testdata"]').click()
+    browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
+    browser.find_by_id('multiSelect').click()
+    browser.find_by_css('a.multiple-delete').click()
+    browser.find_by_css('.dlg-action-button').click()
     time.sleep(3)
-    browser.find_by_css('button[data-name="yoda-metadata.json"]').click()
-    browser.find_by_css('a.file-delete[data-name="yoda-metadata.json"]').click()
-    browser.find_by_css('.btn-confirm-file-delete').click()
+    browser.find_by_id('finishMultiSelect').click()
 
 
 @then('folder "<folder_new>" exists in "<folder>"')

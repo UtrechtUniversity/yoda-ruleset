@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Yoda ruleset configuration."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
@@ -91,8 +91,14 @@ config = Config(environment=None,
                 eus_api_fqdn=None,
                 eus_api_port=None,
                 eus_api_secret=None,
+                enable_deposit=False,
                 enable_intake=False,
                 enable_datarequest=False,
+                enable_yoda_id=False,
+                enable_tokens=False,
+                token_database=None,
+                token_length=0,
+                token_lifetime=0,
                 yoda_portal_fqdn=None,
                 epic_pid_enabled=False,
                 epic_url=None,

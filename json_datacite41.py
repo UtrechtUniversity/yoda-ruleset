@@ -244,7 +244,7 @@ def get_subjects(combi):
     subject_fields = ['Main_Setting',
                       'Process_Hazard',
                       'Geological_Structure',
-                      'Geomorphical_Feature',
+                      'Geomorphological_Feature',
                       'Material',
                       'Apparatus',
                       'Monitoring',

@@ -13,7 +13,7 @@ createXmlXsdCollections {
 
 	if (!*isfound) {
 		writeLine("stdout", "Resource *resc is not found. Please provide a valid resource example:");
-		writeLine("stdout", "irule -F ./install-default-xml-for-metadata.r '\*resc=\"irodsResc\"'");
+		writeLine("stdout", "irule -r irods_rule_engine_plugin-irods_rule_language-instance -F ./install-default-xml-for-metadata.r '\*resc=\"irodsResc\"'");
 		failmsg(-1, "Aborting. Resource not found");
 	}
 
@@ -94,5 +94,5 @@ createXmlXsdCollections {
 	}
 }
 
-input *resc="irodsResc", *src="/etc/irods/irods-ruleset-uu/schemas/", *schema="default-1", *category="default", *update=0
+input *resc="irodsResc", *src="/etc/irods/yoda-ruleset/schemas/", *schema="default-1", *category="default", *update=0
 output ruleExecOut

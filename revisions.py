@@ -281,10 +281,11 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     """
     zone = user.zone(ctx)
 
+    revisions = []
     dict_org_paths = {}
     multiple_counted = 0
 
-    # Return nothing if in fact requested ALL
+    # Return nothing if search string is empty.
     if len(searchString) == 0:
         return {'total': 0,
                 'items': revisions}
@@ -342,8 +343,7 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                 # [count, collect-exists, data-name]
                 dict_org_paths[rev_data['original_coll_name']] = [1, rev_data['collection_exists'], rev['META_DATA_ATTR_VALUE']]
 
-    # create a list from collected data in dict_org_paths
-    revisions = []
+    # Create a list from collected data in dict_org_paths.
     for key, value in dict_org_paths.items():
         revisions.append({'main_original_dataname': value[2],
                           'collection_exists': value[1],

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions to act on user-visible folders in the research or vault area."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import uuid
 
 import genquery
 import irods_types
@@ -309,6 +311,10 @@ def folder_secure(ctx, coll, target):
         except msi.Error:
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
+
+    # Generate UUID4 and set as Yoda ID of vault package.
+    if config.enable_yoda_id:
+        avu.set_on_coll(ctx, target, constants.YODA_ID, str(uuid.uuid4()))
 
     # Vault package is ready, set vault package state to UNPUBLISHED.
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
