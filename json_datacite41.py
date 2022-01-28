@@ -1,42 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Functions for transforming JSON to DataCite 4.1 XML."""
+"""Functions for transforming Yoda JSON to DataCite 4.1 JSON."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
-
-import xml.etree.cElementTree as ET
 
 from util import *
 
 __all__ = ['rule_json_datacite41_create_combi_metadata_json',
-           'rule_json_datacite41_create_data_cite_xml_on_json']
-
-
-def El(tag, *children, **attrs):
-    """Construct an XML element with the given attributes and children.
-
-    If a string is given as the only child, it is used as a textual element body instead.
-
-    :param tag:       Tag of XML element to construct
-    :param *children: Children of XML element to construct
-    :param **attrs:   Attributes of XML element to construct
-
-    :returns: XML element
-    """
-    if type(tag) is str:
-        tag = tag.decode('utf-8')
-
-    el = ET.Element(tag, attrs)
-
-    if len(children) == 1 and type(children[0]) in [str, unicode]:
-        text = children[0]
-        if type(text) is str:
-            text = text.decode('utf-8')
-        el.text = text
-    else:
-        el.extend(children)
-
-    return el
+           'rule_json_datacite41_create_datacite_json']
 
 
 @rule.make()
@@ -69,26 +40,6 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                publicationDate,
                                                openAccessLink,
                                                licenseUri)
-    """
-    # get the data in the designated YoDa metadata.json and retrieve it as dict
-    metaDict = jsonutil.read(ctx, metadataJsonPath)
-
-    # add System info
-    metaDict['System'] = {
-        'Last_Modified_Date': lastModifiedDateTime,
-        'Persistent_Identifier_Datapackage': {
-            'Identifier_Scheme': 'DOI',
-            'Identifier': yodaDOI
-        },
-        'Publication_Date': publicationDate,
-        'Open_access_Link': openAccessLink,
-        'License_URI': licenseUri
-    }
-
-    # Write combined data to file at location combiJsonPath
-    jsonutil.write(ctx, combiJsonPath, metaDict)
-
-    """
 
 
 def json_datacite41_create_combi_metadata_json(ctx,
@@ -131,110 +82,142 @@ def json_datacite41_create_combi_metadata_json(ctx,
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
-    return json_datacite41_create_data_cite_xml_on_json(ctx, combi_path)
+def rule_json_datacite41_create_datacite_json(ctx, combi_path):
+    return json_datacite41_create_datacite_json(ctx, combi_path)
 
 
-def json_datacite41_create_data_cite_xml_on_json(ctx, combi_path):
-    """Based on content of combi json, get DataciteXml as string.
+def json_datacite41_create_datacite_json(ctx, combi_path):
+    """Based on content of combi json, get Datacite metadata as a dict.
 
     :param ctx:        Combined type of a callback and rei struct
     :param combi_path: Path to the combined JSON file that holds both user and system metadata
 
-    :returns: string -- Holds Datacite formatted metadata of Yoda
+    :returns: dict -- Holding Datacite formatted metadata of Yoda
     """
 
     combi = jsonutil.read(ctx, combi_path)
 
-    ET.register_namespace('', 'http://datacite.org/schema/kernel-4')
-    ET.register_namespace('yoda', 'https://yoda.uu.nl/schemas/default')
+    doi = get_DOI(combi)
+    doi_parts = doi.split('/')
 
-    # Build datacite XML
-    e = ET.fromstring(getHeader() + '</resource>')
+    # Collect the metadata in datacite format
+    metadata = {}
+    metadata['data'] = {
+        "id": get_DOI(combi),
+        "type": "dois",
+        "attributes": {
+            "event": "publish",
+            "doi": doi,
+            "prefix": doi_parts[0],
+            "suffix": doi_parts[1],
+            "identifiers": get_identifiers(combi),
+            "creators": get_creators(combi),
+            "titles": get_titles(combi),
+            "publisher": get_publisher(combi),
+            "publicationYear": get_publication_year(combi),
+            "subjects": get_subjects(combi),
+            "contributors": get_contributors(combi),
+            "dates": get_dates(combi),
+            "language": get_language(combi),
+            "types": get_resource_type(combi),
+            "relatedIdentifiers": get_related_datapackages(combi),
+            "version": get_version(combi),
+            "rightsList": get_rights_list(combi),
+            "descriptions": get_descriptions(combi),
+            "geoLocations": get_geo_locations(combi),
+            "fundingReferences": get_funders(combi),
+            "url": "https://schema.datacite.org/meta/kernel-4.0/index.html",
+            "schemaVersion": "http://datacite.org/schema/kernel-4"
+        }
+    }
+    return metadata
 
-    for f in [getDOI,
-              getTitles,
-              getDescriptions,
-              getPublisher,
-              getPublicationYear,
-              getSubjects,
-              getCreators,
-              getContributors,
-              getDates,
-              getVersion,
-              getRightsList,
-              getLanguage,
-              getResourceType,
-              getRelatedDataPackage,
-              getGeoLocations,
-              getFunders]:
-        try:
-            x = f(combi)
-        except KeyError:
-            # Ignore absent fields.
-            continue
-        except IndexError:
-            # Ignore absent fields.
-            continue
+    """
 
-        if isinstance(x, str):
-            if len(x):
-                e.append(ET.fromstring(unicode(x)))
-        elif x is not None:
-            e.append(x)
+      "doi": "10.5438/0012",
+      ? "prefix": "10.5438",
+      ? "suffix": "0012",
+      "identifiers": [{
+        "identifier": "https://doi.org/10.5438/0012",
+        "identifierType": "DOI"
+      }],
+      "creators": getCreators(combi)[],
+      "titles": getTitles(combi)[],
+      "publisher": getPublisher(combi),
+      # "container": {},
+      "publicationYear": getPublicationYear(combi),
+      "subjects": getSubjects(combi)[],
+      "contributors": getContributors(combi)[],
+      "dates": getDates(combi)[],
+      "language": getLanguage(combi),
+      "types": getResourceType(combi)?? {},
+      "relatedIdentifiers": getRelatedDataPackage(combi) ??[],
+      # "sizes": [],
+      # "formats": [],
+      "version": getVersion(combi),
+      "rightsList": getRightsList(combi)[],
+      "descriptions": getDescriptions(combi)[],
+      "geoLocations": getGeoLocations(combi)[],
+      "fundingReferences": getFunders(combi)[],
+      # "xml": null,
+      # "url":null,
+      # "contentUrl": null,
+      # "metadataVersion": 1,
+      # "schemaVersion": "http://datacite.org/schema/kernel-4",
+      # "source": null,
+      # "isActive": true,
+      # "state": "draft",
+      # "reason": null,
+      # "created": ### "2016-09-19T21:53:56.000Z",
+      # "registered": null,
+      # "updated": ### "2019-02-06T14:31:27.000Z"
 
-    return ET.tostring(e, encoding='UTF-8')
-
-
-def getHeader():
-    # TODO: all that is present before the yoda data  !! Hier moet de ID nog in
-    return '''<?xml version="1.0" encoding="UTF-8"?><resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://datacite.org/schema/kernel-4" xmlns:yoda="https://yoda.uu.nl/schemas/default" xsi:schemaLocation="http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4/metadata.xsd">'''
-
-    # Note: xmlns:yoda is currently unused and pruned automatically.
-    #       Also, the url is invalid.
-
-
-def getDOI(combi):
-    return El('identifier', combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
-              identifierType='DOI')
+    """
 
 
-def getTitles(combi):
-    return El('titles',
-              El('title', combi['Title'],
-                 **{'xml:lang': combi.get('Language', 'en')[0:2]}))
+def get_DOI(combi):
+    return combi['System']['Persistent_Identifier_Datapackage']['Identifier']
 
 
-def getDescriptions(combi):
-    return El('descriptions',
-              El('description', combi['Description'],
-                  descriptionType='Abstract'))
+def get_identifiers(combi):
+    return [{'identifier': combi['System']['Persistent_Identifier_Datapackage']['Identifier'],
+             'identifierType': 'DOI'}]
 
 
-def getPublisher(combi):
+def get_titles(combi):
+    return [{'title': combi['Title'], 'language': 'en-us'}]
+
+
+def get_descriptions(combi):
+    return [{'description': combi['Description'], 'descriptionType': 'Abstract'}]
+
+
+def get_publisher(combi):
     # FIXME (untouched from b057f496).
-    return '<publisher>Utrecht University</publisher>'  # Hardcoded like in former XSLT
+    return 'Utrecht University'
 
 
-def getPublicationYear(combi):
-    return El('publicationYear', combi['System']['Publication_Date'][0:4])
+def get_publication_year(combi):
+    return combi['System']['Publication_Date'][0:4]
 
 
-def getSubjects(combi):
-    """Get string in DataCite format containing:
+def get_subjects(combi):
+    """Get list in DataCite format containing:
 
        1) standard objects like tags/disciplne
        2) free items, for now specifically for GEO schemas
 
     :param combi: Combined JSON file that holds both user and system metadata
 
-    :returns: XML element with subjects in DataCite format
+    :returns: list of subjects in DataCite format
     """
 
-    subjects = []  # :: [(scheme, value)]
+    subjects = []
+    for discipline in combi.get('Discipline', []):
+        subjects.append({'subjectScheme': 'OECD FOS 2007', 'subject': discipline})
 
-    subjects += [('OECD FOS 2007', x) for x in combi.get('Discipline', [])]
-    subjects += [('Keyword', x) for x in combi.get('Tag', [])]
+    for tag in combi.get('Tag', []):
+        subjects.append({'subject': tag, 'subjectScheme': 'Keyword'})
 
     # Geo schemas have some specific fields that need to be added as subject.
     # Sort of freely usable fields
@@ -253,40 +236,48 @@ def getSubjects(combi):
 
     # for each subject field that exists in the metadata...
     for field in subject_fields:
-        subjects += [(field, x) for x in combi.get(field, [])]
+        for x in combi.get(field, []):
+            subjects.append({'subject': x, 'subjectScheme': field})
 
-    # Create elements, prune empty / null values.
-    subjects = [El('subject', value, subjectScheme=scheme)
-                for scheme, value in subjects
-                if type(value) in (str, unicode) and len(value)]
-
-    if subjects:
-        return El('subjects', *subjects)
+    return subjects
 
 
-def getFunders(combi):
-    return El('fundingReferences',
-              *[El('fundingReference',
-                   El('funderName',  funder['Funder_Name']),
-                   El('awardNumber', funder['Award_Number']))
-                for funder in combi.get('Funding_Reference', [])])
+def get_funders(combi):
+    funders = []
+    try:
+        for funder in combi.get('Funding_Reference', []):
+            funders.append({'funderName': funder['Funder_Name'],
+                            'awardNumber': {'awardNumber': funder['Award_Number']}})
+    except KeyError:
+        pass
+
+    return funders
 
 
-def getCreators(combi):
-    """Get string in DataCite format containing creator information."""
-    creators = [El('creator',
-                   El('creatorName', '{}, {}'.format(creator['Name']['Family_Name'], creator['Name']['Given_Name'])),
-                   *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in creator.get('Person_Identifier', [])
-                       if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
-                   + [El('affiliation', x) for x in creator.get('Affiliation', [])])
-                for creator in combi.get('Creator', [])]
+def get_creators(combi):
+    """Return creator information in datacite format."""
+    all_creators = []
 
-    if creators:
-        return El('creators', *creators)
+    for creator in combi.get('Creator', []):
+        affiliations = []
+        for aff in creator.get('Affiliation', []):
+            affiliations.append(aff)
+        name_ids = []
+        for pid in creator.get('Person_Identifier', []):
+            if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
+                name_ids.append({'nameIdentifier': pid['Name_Identifier'],
+                                 'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
+
+        all_creators.append({'creatorName': creator['Name']['Family_Name'] + ', ' + creator['Name']['Given_Name'],
+                             'nameType': 'Personal',
+                             'givenName': creator['Name']['Given_Name'],
+                             'familyName': creator['Name']['Family_Name'],
+                             'affiliation': affiliations,
+                             'nameIdentifiers': name_ids})
+    return all_creators
 
 
-def getContributors(combi):
+def get_contributors(combi):
     """Get string in DataCite format containing contributors,
        including contact persons if these were added explicitly (GEO).
 
@@ -294,92 +285,144 @@ def getContributors(combi):
 
     :returns: XML element with contributors in DataCite format
     """
-    contribs = [El('contributor',
-                   El('contributorName', '{}, {}'.format(person['Name']['Family_Name'], person['Name']['Given_Name'])),
-                   *[El('nameIdentifier', pid['Name_Identifier'], nameIdentifierScheme=pid['Name_Identifier_Scheme'])
-                       for pid in person.get('Person_Identifier', [])
-                       if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid]
-                   + [El('affiliation', x) for x in person.get('Affiliation', [])],
-                   contributorType=('ContactPerson' if typ == 'Contact' else person['Contributor_Type']))
+    all = []
+    # 1) Contributor
+    for person in combi.get('Contributor', []):
+        affiliations = []
+        for aff in person.get('Affiliation', []):
+            affiliations.append(aff)
+        name_ids = []
+        for pid in person.get('Person_Identifier', []):
+            if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
+                name_ids.append({'nameIdentifier': pid['Name_Identifier'],
+                                 'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
 
-                # Contact is a special case introduced for Geo - Contributor type = 'contactPerson'
-                for typ in ['Contributor', 'Contact']
-                for person in combi.get(typ, [])]
+        try:
+            all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+                        'nameType': 'Personal',
+                        # 'givenName': person['Name']['Given_Name'],
+                        # 'familyName': person['Name']['Family_Name'],
+                        'affiliation': affiliations,
+                        'contributorType':  person['Contributor_Type'],
+                        'nameIdentifiers': name_ids})
+        except KeyError:
+            pass
 
-    if contribs:
-        return El('contributors', *contribs)
+    # 2) Contactperson
+    for person in combi.get('ContactPerson', []):
+        affiliations = []
+        for aff in person.get('Affiliation', []):
+            affiliations.append(aff)
+        name_ids = []
+        for pid in person.get('Person_Identifier', []):
+            if 'Name_Identifier' in pid and 'Name_Identifier_Scheme' in pid:
+                name_ids.append({'nameIdentifier': pid['Name_Identifier'],
+                                 'nameIdentifierScheme': pid['Name_Identifier_Scheme']})
+
+        try:
+            all.append({'name': person['Name']['Family_Name'] + ', ' + person['Name']['Given_Name'],
+                        'nameType': 'Personal',
+                        'givenName': person['Name']['Given_Name'],
+                        'familyName': person['Name']['Family_Name'],
+                        'affiliation': affiliations,
+                        'contributorType': 'Contact',
+                        'nameIdentifiers': name_ids})
+        except KeyError:
+            pass
+
+    return all
 
 
-def getDates(combi):
+def get_dates(combi):
+    """ return list of dates in datacite format """
 
-    def get_span(d):
-        x = d.get('Start_Date')
-        y = d.get('End_Date')
-        if x is not None and y is not None:
-            return '{}/{}'.format(x, y)
+    dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'},
+             {'date': combi.get('Embargo_End_Date'), 'dateType': 'Available'}]
 
-    dates = [El('date', dat, dateType=typ)
-             for typ, dat in [('Updated',   combi.get('System', {}).get('Last_Modified_Date')),
-                              ('Available', combi.get('Embargo_End_Date')),
-                              ('Collected', get_span(combi.get('Collected', {})))]
-             if dat is not None]
+    collected = combi.get('Collected')
+    x = collected.get('Start_Date')
+    y = collected.get('End_Date')
+    if x is not None and y is not None:
+        dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
 
-    if dates:
-        return El('dates', *dates)
+    return dates
 
 
-def getVersion(combi):
+def get_version(combi):
     """Get string in DataCite format containing version info."""
-    return El('version', combi['Version'])
+    return combi.get('Version', '')
 
 
-def getRightsList(combi):
-    """Get string in DataCite format containing rights related information."""
+def get_rights_list(combi):
+    """Get list in DataCite format containing rights related information."""
     options = {'Open':       'info:eu-repo/semantics/openAccess',
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    return El('rightsList', El('rights',
-                               rightsURI=options[combi['Data_Access_Restriction'].split()[0]]))
+    # {'rights': 'Custom'}
+    return [{'rights': combi['Data_Access_Restriction'], 'rightsURI': options[combi['Data_Access_Restriction'].split()[0]]}]
 
 
-def getLanguage(combi):
+def get_language(combi):
     """Get string in DataCite format containing language."""
-    return El('language', combi['Language'][0:2])
+    return 'en-us'
 
 
-def getResourceType(combi):
-    """Get string in DataCite format containing Resource type and default handling."""
-    typs = {'Dataset':   'Research Data',
-            'DataPaper': 'Method Description',
-            'Software':  'Computer code',
-            'Model':     'Model'}
+def get_resource_type(combi):
+    """Get dict in DataCite format containing Resource type and default handling."""
+    """
+    "types": {
+        "ris": "DATA",
+        "bibtex": "misc",
+        "citeproc": "dataset",
+        "schemaOrg": "Dataset",
+        "resourceType": "Research Data",
+        "resourceTypeGeneral": "Dataset"}
+    """
+    types = {'Dataset':   'Research Data',
+             'DataPaper': 'Method Description',
+             'Software':  'Computer code',
+             'Model':     'Model'}
 
-    typ = combi.get('Data_Type', 'Text')
-    if typ not in typs:
-        typ = 'Text'
+    # if not in combi or not in types default to 'Text'
+    type = combi.get('Data_Type', 'Text')
+    if type not in types:
+        type = 'Text'
 
     descr = {'Dataset':   'Research Data',
              'DataPaper': 'Method Description',
              'Software':  'Computer code',
              'Model':     'Model'}\
-        .get(typ, 'Other Document')
+        .get(type, 'Other Document')
 
-    return El('resourceType', descr, resourceTypeGeneral=typ)
-
-
-def getRelatedDataPackage(combi):
-    """Get string in DataCite format containing related datapackages."""
-    related = [El('relatedIdentifier',    rel['Persistent_Identifier']['Identifier'],
-                  relatedIdentifierType=rel['Persistent_Identifier']['Identifier_Scheme'],
-                  relationType=rel['Relation_Type'].split(':')[0])
-               for rel in combi['Related_Datapackage']]
-    if related:
-        return El('relatedIdentifiers', *related)
+    return {"resourceTypeGeneral": type, "resourceType": descr}
 
 
-def getGeoLocations(combi):
-    """Get string in datacite format containing the information of geo locations.
+def get_related_datapackages(combi):
+    """Get list in DataCite format containing related datapackages."""
+    """
+  "relatedIdentifiers": [
+    {
+      "relationType": "IsSupplementTo",
+      "relatedIdentifier": "Identifier: 02-09-2019 02:30:59",
+      "relatedIdentifierType": "ARK"
+    }
+  ],
+    """
+    related_dps = []
+    try:
+        for rel in combi['Related_Datapackage']:
+            related_dps.append({'relatedIdentifier': rel['Persistent_Identifier']['Identifier'],
+                                'relatedIdentifierType': rel['Persistent_Identifier']['Identifier_Scheme'],
+                                'relationType': rel['Relation_Type'].split(':')[0]})
+    except KeyError:
+        pass
+
+    return related_dps
+
+
+def get_geo_locations(combi):
+    """Get list of geoLocation elements in datacite format containing the information of geo locations.
 
        There are two versions of this:
        1) Default schema - only textual representation of
@@ -403,40 +446,28 @@ def getGeoLocations(combi):
             lon1 = str(geoloc['geoLocationBox']['eastBoundLongitude'])
             lat1 = str(geoloc['geoLocationBox']['southBoundLatitude'])
 
-            geoPlace = None
-            geoPoint = None
-            geoBox   = None
+            geo_location = {}
 
             if spatial_description:
-                geoPlace = El('geoLocationPlace', spatial_description)
+                geo_location['geoLocationPlace'] = spatial_description
 
             if lon0 == lon1 and lat0 == lat1:  # Dealing with a point.
-                geoPoint  = El('geoLocationPoint',
-                               El('pointLongitude', lon0),
-                               El('pointLatitude', lat0))
+                geo_location['geoLocationPoint'] = {'pointLongitude': lon0,
+                                                    'pointLatitude': lat0}
             else:
-                geoBox = El('geoLocationBox',
-                            El('westBoundLongitude', lon0),
-                            El('eastBoundLongitude', lon1),
-                            El('southBoundLatitude', lat0),
-                            El('northBoundLatitude', lat1))
-
-            # Put it all together as one geoLocation elemenmt
-            geoLocations += [El('geoLocation', *[x for x in [geoPlace, geoPoint, geoBox] if x])]
-
-        if len(geoLocations):
-            return El('geoLocations', *geoLocations)
-
+                geo_location['geoLocationBox'] = {'westBoundLongitude': lon0,
+                                                  'eastBoundLongitude': lon1,
+                                                  'southBoundLatitude': lat0,
+                                                  'northBoundLatitude': lat1}
+            geoLocations.append(geo_location)
     except KeyError:
         pass
 
     try:
-        locationList = combi['Covered_Geolocation_Place']
-        for location in locationList:
+        for location in combi['Covered_Geolocation_Place']:
             if location:
-                geoLocations += [El('geoLocation', El('geoLocationPlace', location))]
+                geoLocations.append({'geoLocationPlace': location})
     except KeyError:
         return
 
-    if len(geoLocations):
-        return El('geoLocations', *geoLocations)
+    return geoLocations
