@@ -1131,6 +1131,9 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
+    # Add reviewing data manager to reviewing_dm field of data
+    data['reviewing_dm'] = user.name(ctx)
+
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
@@ -1705,6 +1708,11 @@ def api_datarequest_dta_post_upload_actions(ctx, request_id, filename):
 
 @api.make()
 def api_datarequest_dta_path_get(ctx, request_id):
+    return datarequest_dta_path_get(ctx, request_id)
+
+
+def datarequest_dta_path_get(ctx, request_id):
+
     """Get path to DTA
 
     :param ctx:        Combined type of a callback and rei struct
@@ -2063,7 +2071,12 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
                                          request_id, cc, dao)
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_datarequest_approved_dm(ctx, truncated_title, datamanager_email, request_id, dao)
+        if dao:
+            mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, request_id)
+        else:
+            reviewing_dm = json.loads(datarequest_datamanager_review_get(ctx, request_id))['reviewing_dm']
+            mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager_email,
+                                         request_id)
 
 
 def dta_post_upload_actions_emails(ctx, request_id):
@@ -2085,13 +2098,14 @@ def dta_post_upload_actions_emails(ctx, request_id):
 def signed_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
+    authoring_dm        = data_object.owner(ctx, datarequest_dta_path_get(ctx, request_id))[0]
     cc, _ = pm_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     truncated_title     = truncated_title_get(ctx, request_id)
 
     # Send email
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
-        mail_signed_dta(ctx, truncated_title, datamanager_email, request_id, cc)
+        mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc)
 
 
 def data_ready_emails(ctx, request_id):
@@ -2349,11 +2363,27 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_approved_dm(ctx, truncated_title, datamanager_email, request_id, dao=False):
+def mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
-                     subject=("YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title) if dao else "YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title)),
+                     subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
+                     body="""Dear data manager,
+
+Data request {} has been approved by the YOUth project manager (and has passed the data manager review of {}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
+
+The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+
+With kind regards,
+YOUth
+""".format(request_id, reviewing_dm, YODA_PORTAL_FQDN, request_id))
+
+
+def mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, request_id):
+    return mail.send(ctx,
+                     to=datamanager_email,
+                     actor=user.full_name(ctx),
+                     subject="YOUth data request {} (\"{}\") (data assessment only): approved".format(request_id, truncated_title),
                      body="""Dear data manager,
 
 Data request {} has been approved by the YOUth project manager. Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
@@ -2448,7 +2478,7 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_signed_dta(ctx, truncated_title, datamanager_email, request_id, cc):
+def mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc):
     return mail.send(ctx,
                      to=datamanager_email,
                      cc=cc,
@@ -2456,7 +2486,7 @@ def mail_signed_dta(ctx, truncated_title, datamanager_email, request_id, cc):
                      subject="YOUth data request {} (\"{}\"): DTA signed".format(request_id, truncated_title),
                      body="""Dear data manager,
 
-The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}.
+The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}. The DTA was authored by {}.
 
 Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://{}/datarequest/view/{}.
 
@@ -2464,7 +2494,7 @@ After verifying that the document has been signed correctly, you may prepare the
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""".format(request_id, authoring_dm, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_data_ready(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
