@@ -1641,7 +1641,7 @@ def datarequest_preregistration_get(ctx, request_id):
 
 @api.make()
 def api_datarequest_preregistration_confirm(ctx, request_id):
-    """Set the status of a submitted datarequest to CONTRIBUTION_CONFIRMED.
+    """Set the status of a submitted datarequest to PREREGISTRATION_CONFIRMED.
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
