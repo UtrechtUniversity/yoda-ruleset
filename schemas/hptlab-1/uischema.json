@@ -51,15 +51,18 @@
   "Material": {
     "ui:description": "Naturally occurring matter derived from or consisting of rock and sediment."
   },
-
   "Measured_Property": {
     "ui:description": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
   },
-
-  "Monitoring": {
-    "ui:description": "Display produced by a device that takes signals and displays them on a television screen or a computer monitor."
+  "Ancillary_Equipment": {
+    "ui:description": "Ancillary equipment"
   },
-
+  "Pore_Fluid": {
+    "ui:description": "Pore fluid"
+  },
+  "Inferred_Deformation_Behaviour": {
+    "ui:description": "Inferred deformation behaviour"
+  },
   "Tag": {
     "ui:description": "Free text field for adding (searchable) key words to your data package"
   },
