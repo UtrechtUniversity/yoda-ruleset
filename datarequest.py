@@ -1885,7 +1885,7 @@ def send_emails(ctx, obj_name, status_to):
 def datarequest_submit_emails(ctx, request_id, dao=False):
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
-    researcher       = datarequest['contact']
+    researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     study_title      = datarequest['datarequest']['study_information']['title']
@@ -1896,18 +1896,18 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
 
     # Send email to researcher and project manager
     mail_datarequest_researcher(ctx, truncated_title, resubmission, researcher_email,
-                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                researcher['name'],
                                 request_id, cc, dao)
     for pm_member in pm_members:
         pm_email, _ = pm_member
         if dao:
             mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, request_id,
-                                    researcher['given_name'] + ' ' + researcher['family_name'],
+                                    researcher['name'],
                                     researcher_email, researcher['institution'],
                                     researcher['department'], timestamp, study_title)
         else:
             mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id,
-                                researcher['given_name'] + ' ' + researcher['family_name'],
+                                researcher['name'],
                                 researcher_email, researcher['institution'],
                                 researcher['department'], timestamp, study_title)
 
@@ -1928,7 +1928,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
     elif datarequest_status in (status.PRELIMINARY_REJECT, status.PRELIMINARY_RESUBMIT):
         # Get additional (source data for) email input parameters
         datarequest             = json.loads(datarequest_get(ctx, request_id))
-        researcher              = datarequest['contact']
+        researcher              = datarequest['contact']['principal_investigator']
         researcher_email        = datarequest_owner_get(ctx, request_id)
         cc                      = cc_email_addresses_get(researcher)
         pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
@@ -1937,13 +1937,11 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
 
         # Send emails
         if datarequest_status == status.PRELIMINARY_RESUBMIT:
-            mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_email,
-                          request_id, cc)
+            mail_resubmit(ctx, truncated_title, researcher_email, researcher['name'],
+                          feedback_for_researcher, pm_email, request_id, cc)
         elif datarequest_status == status.PRELIMINARY_REJECT:
-            mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_email,
-                          request_id, cc)
+            mail_rejected(ctx, truncated_title, researcher_email, researcher['name'],
+                          feedback_for_researcher, pm_email, request_id, cc)
 
 
 def datamanager_review_emails(ctx, request_id, datarequest_status):
@@ -1970,7 +1968,7 @@ def datamanager_review_emails(ctx, request_id, datarequest_status):
 def assignment_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
-    researcher       = datarequest['contact']
+    researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     study_title      = datarequest['datarequest']['study_information']['title']
@@ -1981,8 +1979,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
     if datarequest_status == status.UNDER_REVIEW:
         assignees = assignment['assign_to']
         mail_assignment_accepted_researcher(ctx, truncated_title, researcher_email,
-                                            researcher['given_name'] + ' '
-                                            + researcher['family_name'], request_id, cc)
+                                            researcher['name'], request_id, cc)
         for assignee_email in assignees:
             mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, study_title,
                                               request_id)
@@ -1994,27 +1991,25 @@ def assignment_emails(ctx, request_id, datarequest_status):
 
         # Send emails
         if datarequest_status == status.RESUBMIT_AFTER_DATAMANAGER_REVIEW:
-            mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_email,
-                          request_id, cc)
+            mail_resubmit(ctx, truncated_title, researcher_email, researcher['name'],
+                          feedback_for_researcher, pm_email, request_id, cc)
         elif datarequest_status == status.REJECTED_AFTER_DATAMANAGER_REVIEW:
-            mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                          + researcher['family_name'], feedback_for_researcher, pm_email,
-                          request_id, cc)
+            mail_rejected(ctx, truncated_title, researcher_email, researcher['name'],
+                          feedback_for_researcher, pm_email, request_id, cc)
 
 
 def review_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
-    researcher       = datarequest['contact']
+    researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     pm_members       = group.members(ctx, GROUP_PM)
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send emails
-    mail_review_researcher(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                           + researcher['family_name'], request_id, cc)
+    mail_review_researcher(ctx, truncated_title, researcher_email, researcher['name'], request_id,
+                           cc)
     for pm_member in pm_members:
         pm_email, _ = pm_member
         mail_review_pm(ctx, truncated_title, pm_email, request_id)
@@ -2023,7 +2018,7 @@ def review_emails(ctx, request_id):
 def evaluation_emails(ctx, request_id, datarequest_status):
     # Get (source data for) email input parameters
     datarequest             = json.loads(datarequest_get(ctx, request_id))
-    researcher              = datarequest['contact']
+    researcher              = datarequest['contact']['principal_investigator']
     researcher_email        = datarequest_owner_get(ctx, request_id)
     cc                      = cc_email_addresses_get(researcher)
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
@@ -2035,16 +2030,13 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     # Send emails
     if datarequest_status == status.APPROVED:
         mail_evaluation_approved_researcher(ctx, truncated_title, researcher_email,
-                                            researcher['given_name'] + ' '
-                                            + researcher['family_name'], request_id, cc)
+                                            researcher['name'], request_id, cc)
     elif datarequest_status == status.RESUBMIT:
-        mail_resubmit(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                      + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
-                      cc)
+        mail_resubmit(ctx, truncated_title, researcher_email, researcher['name'],
+                      feedback_for_researcher, pm_email, request_id, cc)
     elif datarequest_status == status.REJECTED:
-        mail_rejected(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                      + researcher['family_name'], feedback_for_researcher, pm_email, request_id,
-                      cc)
+        mail_rejected(ctx, truncated_title, researcher_email, researcher['name'],
+                      feedback_for_researcher, pm_email, request_id, cc)
 
 
 def preregistration_submit_emails(ctx, request_id):
@@ -2059,7 +2051,7 @@ def preregistration_submit_emails(ctx, request_id):
 def datarequest_approved_emails(ctx, request_id, dao=False):
     # Get parameters
     datarequest         = json.loads(datarequest_get(ctx, request_id))
-    researcher          = datarequest['contact']
+    researcher          = datarequest['contact']['principal_investigator']
     researcher_email    = datarequest_owner_get(ctx, request_id)
     cc                  = cc_email_addresses_get(researcher)
     datamanager_members = group.members(ctx, GROUP_DM)
@@ -2067,7 +2059,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
 
     # Send emails
     mail_datarequest_approved_researcher(ctx, truncated_title, researcher_email,
-                                         researcher['given_name'] + ' ' + researcher['family_name'],
+                                         researcher['name'],
                                          request_id, cc, dao)
     for datamanager_member in datamanager_members:
         datamanager_email, _ = datamanager_member
@@ -2082,7 +2074,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
 def dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
-    researcher       = datarequest['contact']
+    researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     # (Also) cc project manager
@@ -2091,8 +2083,7 @@ def dta_post_upload_actions_emails(ctx, request_id):
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
-    mail_dta(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-             + researcher['family_name'], request_id, cc)
+    mail_dta(ctx, truncated_title, researcher_email, researcher['name'], request_id, cc)
 
 
 def signed_dta_post_upload_actions_emails(ctx, request_id):
@@ -2111,14 +2102,13 @@ def signed_dta_post_upload_actions_emails(ctx, request_id):
 def data_ready_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datarequest      = json.loads(datarequest_get(ctx, request_id))
-    researcher       = datarequest['contact']
+    researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
     cc               = cc_email_addresses_get(researcher)
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
-    mail_data_ready(ctx, truncated_title, researcher_email, researcher['given_name'] + ' '
-                    + researcher['family_name'], request_id, cc)
+    mail_data_ready(ctx, truncated_title, researcher_email, researcher['name'], request_id, cc)
 
 
 ###################################################
@@ -2158,7 +2148,7 @@ def mail_datarequest_pm(ctx, truncated_title, resubmission, pm_email, request_id
 
 A new data request has been submitted.
 
-Submitted by: {} ({})
+Principal investigator: {} ({})
 Affiliation: {}, {}
 Date: {}
 Request ID: {}
@@ -2183,7 +2173,7 @@ def mail_datarequest_dao_pm(ctx, truncated_title, resubmission, pm_email, reques
 
 A new data request (for the purpose of data assessment only) has been submitted.
 
-Submitted by: {} ({})
+Principal investigator: {} ({})
 Affiliation: {}, {}
 Date: {}
 Request ID: {}
