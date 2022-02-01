@@ -339,11 +339,15 @@ def get_dates(combi):
     dates = [{'date': combi.get('System', {}).get('Last_Modified_Date'), 'dateType': 'Updated'},
              {'date': combi.get('Embargo_End_Date'), 'dateType': 'Available'}]
 
-    collected = combi.get('Collected')
-    x = collected.get('Start_Date')
-    y = collected.get('End_Date')
-    if x is not None and y is not None:
-        dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
+    collected = combi.get('Collected', None)
+    if collected is not None:
+        try:
+            x = collected.get('Start_Date')
+            y = collected.get('End_Date')
+            if x is not None and y is not None:
+                dates.append({'date': '{}/{}'.format(x, y), 'dateType': 'Collected'})
+        except KeyError:
+            pass
 
     return dates
 
