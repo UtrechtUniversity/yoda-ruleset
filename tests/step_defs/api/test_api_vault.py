@@ -130,7 +130,6 @@ def system_metadata(api_response):
     assert http_status == 200
     assert len(body["data"]) >= 0
     assert "Package size" in body["data"]
-    assert "Modified date" in body["data"]
     assert "Yoda ID" in body["data"]
 
 
