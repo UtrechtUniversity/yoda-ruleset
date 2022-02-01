@@ -135,6 +135,9 @@ def ui_data_package_click_system_metadata_icon(browser):
 def ui_data_package_system_metadata_is_visible(browser):
     assert browser.is_element_visible_by_css('.system-metadata')
 
+    assert browser.is_text_present("Package size", wait_time=3)
+    assert browser.is_text_present("Yoda ID", wait_time=3)
+
 
 @when('user clicks provenance icon')
 def ui_data_package_click_provenance_icon(browser):
