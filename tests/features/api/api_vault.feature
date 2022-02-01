@@ -56,6 +56,7 @@ Feature: Vault API
         And data package exists in "<vault>"
         And the Yoda vault system metadata API is queried on datapackage in "<vault>"
         Then the response status code is "200"
+        And system metadata is returned
 
     Scenario: Vault collection details
         Given user "researcher" is authenticated
