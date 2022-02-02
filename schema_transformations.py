@@ -448,7 +448,7 @@ def _teclab0_teclab1(ctx, m):
                             break
         except KeyError:
             pass
-        
+
         if len(new_list):
             m[attribute] = new_list
         else:
