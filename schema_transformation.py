@@ -31,7 +31,7 @@ def execute_transformation(ctx, metadata_path, transform):
     group_name = metadata_path.split('/')[3]
 
     metadata = jsonutil.read(ctx, metadata_path)
-    metadata = transform(metadata)
+    metadata = transform(ctx, metadata)
 
     if group_name.startswith('research-'):
         backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))

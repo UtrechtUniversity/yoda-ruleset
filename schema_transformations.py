@@ -7,6 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import meta
+from util import *
+
 
 # No rules are exported by this module.
 __all__ = []
@@ -22,7 +24,7 @@ __all__ = []
 # The docstring of a transformation function should describe the transformation
 # in a human-readable manner: it is provided to the user executing the transformation.
 
-def _default0_default1(m):
+def _default0_default1(ctx, m):
     """
     A Data type field is added to be used for publication purposes to DataCite.
 
@@ -37,7 +39,8 @@ def _default0_default1(m):
     Finally, the creator and contributor name fields have been split into first
     and last names, to comply with the OpenAIRE standard.
 
-    :param m: Metadata to transform (default-0)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-0)
 
     :returns: Transformed (default-1) JSON object
     """
@@ -72,7 +75,7 @@ def _default0_default1(m):
     return m
 
 
-def _default1_default2(m):
+def _default1_default2(ctx, m):
     """
     Metadata fields Discipline, Language and Tags have become required fields.
 
@@ -86,8 +89,8 @@ def _default1_default2(m):
     I.e. discipline must be manually added if not present yet.
     This requires an intervention by the responsible datamanager beforehand
 
-
-    :param m: Metadata to transform (default-1)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-1)
 
     :returns: Transformed (default-2) JSON object
     """
@@ -104,12 +107,12 @@ def _default1_default2(m):
     return m
 
 
-def _default1_teclab0(m):
+def _default1_teclab0(ctx, m):
     """
     Transform Default-1 data to the teclab-0 schema definition
 
-
-    :param m: Metadata to be transformed (default-1)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to be transformed (default-1)
 
     :returns: Transformed (teclab-0) JSON object
     """
@@ -225,12 +228,12 @@ def _default1_teclab0(m):
     return m
 
 
-def _default1_hptlab0(m):
+def _default1_hptlab0(ctx, m):
     """
     Transform Default-1 data to the hptlab-0 schema definition
 
-
-    :param m: Metadata to be transformed (default-1)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to be transformed (default-1)
 
     :returns: Transformed (hptlab-0) JSON object
 
@@ -343,6 +346,119 @@ def _default1_hptlab0(m):
 
     return m
 
+
+def _hptlab0_hptlab1(ctx, m):
+    """
+    Transform hptlab-0 data to the hptlab-1 schema definition which holds better qualified lists.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m: Metadata to transform (hptlab-0)
+
+    :returns: Transformed (hptlab-1) JSON object
+    """
+    try:
+        m.pop('Monitoring')
+    except KeyError:
+        pass
+
+    # Get the entire metadata schema to be able to get some proper values based on the previous saved values
+    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/hptlab-1/metadata.json'.format(user.zone(ctx)))
+
+    attributes = {'Material': 'optionsMaterial',
+                  'Apparatus': 'optionsApparatus',
+                  'Measured_Property': 'optionsMeasuredProperty'}
+
+    for attribute, option_list in attributes.items():
+        new_list = []
+        reference_list = new_schema['definitions'][option_list]['enum']
+        try:
+            for item_search in m[attribute]:
+                found = False
+                for i, elem in enumerate(reference_list):
+                    if item_search.lower() in elem.lower():
+                        found = True
+                        new_list.append(elem)
+                        break
+                if not found:
+                    for i, elem in enumerate(reference_list):
+                        # Split on ' ' an compare based on the first token
+                        if item_search.split(' ')[0].lower() in elem.lower():
+                            found = True
+                            new_list.append(elem)
+                            break
+        except KeyError:
+            pass
+
+        if len(new_list):
+            m[attribute] = new_list
+        else:
+            # Take first in the corresponding list as a default value
+            m[attribute] = [new_schema['definitions'][option_list]['enum'][0]]
+
+    # Newly introduced - no previous value present
+    m['Pore_Fluid'] = [new_schema['definitions']['optionsPoreFluid']['enum'][0]]
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/hptlab-1/metadata.json')
+
+    return m
+
+
+def _teclab0_teclab1(ctx, m):
+    """
+    Transform teclab-0 data to the teclab-1 schema definition which holds better qualified lists.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (teclab-0)
+
+    :returns: Transformed (teclab-1) JSON object
+    """
+    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/teclab-1/metadata.json'.format(user.zone(ctx)))
+
+    if 'Geomorphical_Feature' in m:
+        # Name is no longer in use.
+        m['Geomorphological_Feature'] = m['Geomorphical_Feature']
+        m.pop('Geomorphical_Feature')
+
+    attributes = {'Material': 'optionsMaterial',
+                  'Apparatus': 'optionsApparatus',
+                  'Measured_Property': 'optionsMeasuredProperty',
+                  'Main_Setting': 'optionsMainSetting',
+                  'Process_Hazard': 'optionsProcessHazard',
+                  'Geological_Structure': 'optionsGeologicalStructure',
+                  'Geomorphological_Feature': 'optionsGeomorphologicalFeature',
+                  'Software': 'optionsSoftware'}
+
+    for attribute, option_list in attributes.items():
+        new_list = []
+        reference_list = new_schema['definitions'][option_list]['enum']
+        try:
+            for item_search in m[attribute]:
+                found = False
+                for i, elem in enumerate(reference_list):
+                    if item_search.lower() in elem.lower():
+                        found = True
+                        new_list.append(elem)
+                        break
+                if not found:
+                    for i, elem in enumerate(reference_list):
+                        # Split on ' ' an compare based on the first token
+                        if item_search.split(' ')[0].lower() in elem.lower():
+                            found = True
+                            new_list.append(elem)
+                            break
+        except KeyError:
+            pass
+
+        if len(new_list):
+            m[attribute] = new_list
+        else:
+            # Take first in the corresponding list as a default value
+            m[attribute] = [new_schema['definitions'][option_list]['enum'][0]]
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/teclab-1/metadata.json')
+
+    return m
+
 # }}}
 
 
@@ -365,7 +481,11 @@ def get(src_id, dst_id):
     transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
                        'https://yoda.uu.nl/schemas/default-1/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2}}
+                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
+                       'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1},
+                       'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/teclab-1/metadata.json': _teclab0_teclab1}}
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)
