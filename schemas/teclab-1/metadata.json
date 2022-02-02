@@ -1908,7 +1908,7 @@
             "required": [ "rel", "href" ],
             "properties": {
                 "rel":  { "const": "describedby" },
-                "href": { "const": "https://yoda.uu.nl/schemas/teclab-0/metadata.json" }
+                "href": { "const": "https://yoda.uu.nl/schemas/teclab-1/metadata.json" }
             }
         }
     },

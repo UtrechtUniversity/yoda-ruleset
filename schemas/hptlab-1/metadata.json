@@ -1164,7 +1164,7 @@
         "gas -> nitrogen N2",
         "gas -> argon Ar"
       ]
-    }, 
+    },
     "optionsInferredDeformationBehaviour": {
       "type": "string",
       "enum": [
@@ -1207,7 +1207,7 @@
         "localization feature -> boudinage",
         "localization feature -> chemical reaction zonation"
       ]
-    }, 
+    },
     "optionsDataAccessRestriction": {
       "type": "string",
       "enum": [
@@ -1832,7 +1832,7 @@
             "required": [ "rel", "href" ],
             "properties": {
                 "rel":  { "const": "describedby" },
-                "href": { "const": "https://yoda.uu.nl/schemas/hptlab-0/metadata.json" }
+                "href": { "const": "https://yoda.uu.nl/schemas/hptlab-1/metadata.json" }
             }
         }
     },
