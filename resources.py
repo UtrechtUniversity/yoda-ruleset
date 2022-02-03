@@ -130,7 +130,7 @@ def api_resource_list_groups(ctx):
                                            "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups_deposit = [a for a
                           in genquery.Query(ctx, "USER_GROUP_NAME",
-                                           "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups = list(set(groups_member + groups_dm + groups_deposit))
         log.write(ctx, groups)
 
