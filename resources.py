@@ -129,7 +129,7 @@ def api_resource_list_groups(ctx):
                          in genquery.Query(ctx, "USER_GROUP_NAME",
                                            "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups_deposit = [a for a
-                         in genquery.Query(ctx, "USER_GROUP_NAME",
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
         groups = list(set(groups_member + groups_dm + groups_deposit))
         log.write(ctx, groups)
@@ -469,7 +469,7 @@ def rule_resource_store_monthly_storage_statistics(ctx):
         resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
 
     # Steps to be taken per group
-    # The software distinguishes 2 separate areas. 
+    # The software distinguishes 2 separate areas.
     # 1) VAULT AREA
     # 2) RESEARCH AREA - which includes research and deposit groups
     steps = ['research', 'vault']
