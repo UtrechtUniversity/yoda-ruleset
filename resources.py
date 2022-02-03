@@ -117,6 +117,10 @@ def api_resource_list_groups(ctx):
         groups = [a for a
                   in genquery.Query(ctx, "USER_GROUP_NAME",
                                     "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+        groups_deposit = [a for a
+                          in genquery.Query(ctx, "USER_GROUP_NAME",
+                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_ZONE = '{}'".format(user_zone))]
+        groups = list(set(groups + groups_deposit))
     else:
         categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories)
@@ -124,8 +128,11 @@ def api_resource_list_groups(ctx):
         groups_member = [a for a
                          in genquery.Query(ctx, "USER_GROUP_NAME",
                                            "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-
-        groups = list(set(groups_member + groups_dm))
+        groups_deposit = [a for a
+                         in genquery.Query(ctx, "USER_GROUP_NAME",
+                                           "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups = list(set(groups_member + groups_dm + groups_deposit))
+        log.write(ctx, groups)
 
     groups.sort()
     group_list = []
@@ -367,7 +374,15 @@ def get_groups_on_categories(ctx, categories):
             "USER_GROUP_NAME like 'research-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
             genquery.AS_LIST, ctx
         )
+        for row in iter:
+            groupName = row[0]
+            groups.append(groupName)
 
+        iter = genquery.row_iterator(
+            "USER_NAME",
+            "USER_GROUP_NAME like 'deposit-%%' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category' AND META_USER_ATTR_VALUE = '" + category + "' ",
+            genquery.AS_LIST, ctx
+        )
         for row in iter:
             groupName = row[0]
             groups.append(groupName)
@@ -454,6 +469,9 @@ def rule_resource_store_monthly_storage_statistics(ctx):
         resource_tiers[resource] = get_tier_by_resource_name(ctx, resource)
 
     # Steps to be taken per group
+    # The software distinguishes 2 separate areas. 
+    # 1) VAULT AREA
+    # 2) RESEARCH AREA - which includes research and deposit groups
     steps = ['research', 'vault']
 
     # Loop through all categories
@@ -479,7 +497,12 @@ def rule_resource_store_monthly_storage_statistics(ctx):
                     if step == 'research':
                         path = '/' + zone + '/home/' + group
                     else:
-                        path = '/' + zone + '/home/' + group.replace('research-', 'vault-', 1)
+                        # groupname can start with 'research-' or 'deposit-'
+                        if group.startswith('research-'):
+                            vault_group = group.replace('research-', 'vault-', 1)
+                        else:
+                            vault_group = group.replace('deposit-', 'vault-', 1)
+                        path = '/' + zone + '/home/' + vault_group
 
                     # Per group two statements are required to gather all data
                     # 1) data in folder itself
