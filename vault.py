@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
@@ -30,6 +30,7 @@ __all__ = ['api_vault_submit',
            'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
+           'api_vault_get_package_by_reference',
            'api_vault_copy_to_research',
            'api_vault_get_publication_terms',
            'api_grant_read_access_research_group',
@@ -372,7 +373,7 @@ def api_vault_system_metadata(callback, coll):
     collection_count = collection.collection_count(callback, coll)
     size = collection.size(callback, coll)
     size_readable = convert_size(size)
-    system_metadata["Package size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     # Modified date.
     iter = genquery.row_iterator(
@@ -409,6 +410,18 @@ def api_vault_system_metadata(callback, coll):
         package_doi = row[0]
         persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
+
+    # Data Package Reference.
+    data_package_reference = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        data_package_reference = row[0]
+        system_metadata["Data Package Reference"] = "<a href=\"yda/{}\">yda/{}</a>".format(data_package_reference, data_package_reference)
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
@@ -543,6 +556,31 @@ def api_vault_collection_details(ctx, path):
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
             "research_path": research_path}
+
+
+@api.make()
+def api_vault_get_package_by_reference(ctx, reference):
+    """Return path to data package with provided reference (UUID4).
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param reference: Data Package Reference (UUID4)
+
+    :returns: Path to data package.
+    """
+    data_package = ""
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.DATA_PACKAGE_REFERENCE, reference),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        data_package = row[0]
+
+    if data_package == "":
+        return api.Error('not_found', 'Could not find data package with provided reference.')
+
+    _, _, path, subpath = pathutil.info(data_package)
+    return "/{}/{}".format(path, subpath)
 
 
 @api.make()

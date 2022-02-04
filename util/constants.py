@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -78,6 +78,8 @@ IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
+
+DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',

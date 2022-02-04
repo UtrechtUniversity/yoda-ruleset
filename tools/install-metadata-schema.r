@@ -13,7 +13,7 @@ createXmlXsdCollections {
 
 	if (!*isfound) {
 		writeLine("stdout", "Resource *resc is not found. Please provide a valid resource example:");
-		writeLine("stdout", "irule -F ./install-default-xml-for-metadata.r '\*resc=\"irodsResc\"'");
+		writeLine("stdout", "irule -r irods_rule_engine_plugin-irods_rule_language-instance -F ./install-default-xml-for-metadata.r '\*resc=\"irodsResc\"'");
 		failmsg(-1, "Aborting. Resource not found");
 	}
 

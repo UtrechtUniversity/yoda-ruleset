@@ -28,7 +28,7 @@
     "ui:help": "The language of the data package"
   },
   "Collected": {
-    "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "ui:description": "Indicate when collecting the data for this data package started and ended",
     "Start_Date": {
       "ui:help": "Indicate when you've started collecting the data for this data package"
     },
@@ -39,25 +39,42 @@
   "GeoLocation": {
     "ui:description": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
     "items": {
-      "ui:help": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
       "geoLocationBox": {
         "ui:field": "geo"
       }
     }
   },
-  "Apparatus": {
-    "ui:description": "Any instrument or apparatus which, by reason of its objective technical characteristics and the results which it makes it possible to obtain, is mainly or exclusively suited to scientific activities."
+  "Main_Setting": {
+    "ui:description": "The geologic, hydrologic, and geochemical systems of the region in which a geologic repository operations area is or may be located."
   },
+  "Process_Hazard": {
+    "ui:description": "A natural process whereby geological features are modified. Geologic processes become geologic hazards when they pose a threat to human life and/or property or in threatening populations of species."
+  },
+  "Geological_Structure": {
+    "ui:description": "The result of the powerful tectonic forces that occur within the earth. These forces fold and break rocks, form deep faults, and build mountains. Repeated applications of force—the folding of already folded rocks or the faulting and offsetting of already faulted rocks—can create a very complex geologic picture that is difficult to interpret. Most of these forces are related to plate tectonic activity. Some of the natural resources we depend on, such as metallic ores and petroleum, often form along or near geologic structures. Thus, understanding the origin of these structures is critical to discovering more reserves of our nonrenewable resources."
+  },
+  "Geomorphical_Feature": {
+    "ui:description": "Topographic and bathymetric landforms on the Earth's surface."
+  },
+
   "Material": {
     "ui:description": "Naturally occurring matter derived from or consisting of rock and sediment."
   },
 
-  "Measured_Property": {
-    "ui:description": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
+  "Apparatus": {
+    "ui:description": "Any instrument or apparatus which, by reason of its objective technical characteristics and the results which it makes it possible to obtain, is mainly or exclusively suited to scientific activities."
   },
 
   "Monitoring": {
     "ui:description": "Display produced by a device that takes signals and displays them on a television screen or a computer monitor."
+  },
+
+  "Software": {
+    "ui:description": "The instructions that control what a computer does; computer programs"
+  },
+
+  "Measured_Property": {
+    "ui:description": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
   },
 
   "Tag": {
