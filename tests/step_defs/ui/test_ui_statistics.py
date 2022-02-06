@@ -44,8 +44,19 @@ def ui_statistics_graph_shown(browser):
 
 @then('storage for "<categories>" is shown')
 def ui_statistics_category_storage(browser, categories):
+    storage_table_rows = browser.find_by_css('.storage-table tbody tr')
+    found = False
     for category in categories.split(','):
-        assert browser.is_text_present(category, wait_time=1)
+        found = False	
+        for row in storage_table_rows:
+            if row.value.find(category) >= 0:
+                found = True
+                break
+        if not found:
+            # Assert this way so we make visible which category was not found
+            assert 'Could not find category' == category
+
+    assert found
 
 
 @then('csv file is downloaded')
