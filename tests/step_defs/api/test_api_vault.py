@@ -129,8 +129,8 @@ def system_metadata(api_response):
     http_status, body = api_response
     assert http_status == 200
     assert len(body["data"]) >= 0
-    assert "Package size" in body["data"]
-    assert "Yoda ID" in body["data"]
+    assert "Data Package Size" in body["data"]
+    assert "Data Package Reference" in body["data"]
 
 
 @then('publication terms are returned')
