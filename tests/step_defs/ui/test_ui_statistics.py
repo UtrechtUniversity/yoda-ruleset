@@ -47,7 +47,7 @@ def ui_statistics_category_storage(browser, categories):
     storage_table_rows = browser.find_by_css('.storage-table tbody tr')
     found = False
     for category in categories.split(','):
-        found = False	
+        found = False
         for row in storage_table_rows:
             if row.value.find(category) >= 0:
                 found = True
