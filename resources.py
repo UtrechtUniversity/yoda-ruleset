@@ -109,30 +109,34 @@ def api_resource_full_year_group_data(ctx, group_name):
 
 @api.make()
 def api_resource_list_groups(ctx):
-    """Get the research groups a user is member or datamanager of."""
+    """Get the groups (research and deposit) a user is member or datamanager of.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: List of groups
+    """
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
 
     if user.is_admin(ctx):
-        groups = [a for a
-                  in genquery.Query(ctx, "USER_GROUP_NAME",
-                                    "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
+        groups_research = [a for a
+                           in genquery.Query(ctx, "USER_GROUP_NAME",
+                                             "USER_GROUP_NAME like 'research-%%' AND USER_ZONE = '{}'".format(user_zone))]
         groups_deposit = [a for a
                           in genquery.Query(ctx, "USER_GROUP_NAME",
                                             "USER_GROUP_NAME like 'deposit-%%' AND USER_ZONE = '{}'".format(user_zone))]
-        groups = list(set(groups + groups_deposit))
+        groups = list(set(groups_research + groups_deposit))
     else:
         categories = get_categories(ctx)
         groups_dm = get_groups_on_categories(ctx, categories)
 
-        groups_member = [a for a
-                         in genquery.Query(ctx, "USER_GROUP_NAME",
-                                           "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups_deposit = [a for a
-                          in genquery.Query(ctx, "USER_GROUP_NAME",
-                                            "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
-        groups = list(set(groups_member + groups_dm + groups_deposit))
-        log.write(ctx, groups)
+        groups_research_member = [a for a
+                                  in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                    "USER_GROUP_NAME like 'research-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups_deposit_member = [a for a
+                                 in genquery.Query(ctx, "USER_GROUP_NAME",
+                                                   "USER_GROUP_NAME like 'deposit-%%' AND USER_NAME = '{}' AND USER_ZONE = '{}'".format(user_name, user_zone))]
+        groups = list(set(groups_research_member + groups_deposit_member + groups_dm))
 
     groups.sort()
     group_list = []
