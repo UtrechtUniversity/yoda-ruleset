@@ -164,8 +164,12 @@ def post_status_transition(ctx, path, actor, status):
         notifications.set(ctx, actor, submitter, data_package, message)
         notifications.set(ctx, actor, accepter, data_package, message)
 
-        # Remove deposit folder after secure in vault.
+        # Handle vault packages from deposit module.
         if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            # Grant submitter (depositor) read access to vault package.
+            msi.set_acl(ctx, "recursive", "read", submitter, data_package)
+
+            # Remove deposit folder after secure in vault.
             parent, _ = pathutil.chop(path)
             msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
             msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)
