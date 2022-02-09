@@ -28,29 +28,6 @@ __all__ = ['api_group_data',
            'api_group_remove_user_from_group']
 
 
-# TODO: These belong in the group manager part of our rulesets. {{{
-#       (and they should be plain python rules, not just wrappers for iRODS rules)
-#
-# Since a group manager overhaul is pending, this is left as it is for now.
-
-def group_category(ctx, group):
-    if group.startswith('vault-'):
-        group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
-    return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
-
-
-def user_member_type(ctx, group, user):
-    """returns: 'none' | 'reader' | 'normal' | 'manager'"""
-    return ctx.uuGroupGetMemberType(group, user, '')['arguments'][2]
-
-
-def user_is_datamanager(ctx, category, user):
-    return user_member_type(ctx, 'datamanager-{}'.format(category), user) \
-        in ('normal', 'manager')
-
-# }}}
-
-
 def getGroupData(ctx):
     """Return groups and related data."""
     groups = {}

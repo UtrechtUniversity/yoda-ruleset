@@ -629,7 +629,7 @@ def api_grant_read_access_research_group(ctx, coll):
     # Find category
     group_parts = vault_group_name.split('-')
     research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = group.group_category(ctx, vault_group_name)
+    category = meta_form.group_category(ctx, vault_group_name)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -667,7 +667,7 @@ def api_revoke_read_access_research_group(ctx, coll):
     # Find category
     group_parts = vault_group_name.split('-')
     research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = group.group_category(ctx, vault_group_name)
+    category = meta_form.group_category(ctx, vault_group_name)
 
     # Is datamanager?
     actor = user.full_name(ctx)
