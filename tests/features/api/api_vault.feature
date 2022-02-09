@@ -64,6 +64,18 @@ Feature: Vault API
         And the Yoda vault collection details API is queried on datapackage in "<vault>"
         Then the response status code is "200"
 
+    Scenario: Revoke read access to research group
+        Given user "datamanager" is authenticated
+        And data package exists in "<vault>"
+        And the Yoda vault revoke read access research group API is queried on datapackage in "<vault>"
+        Then the response status code is "200"
+
+    Scenario: Revoke grant access to research group
+        Given user "datamanager" is authenticated
+        And data package exists in "<vault>"
+        And the Yoda vault grant read access research group API is queried on datapackage in "<vault>"
+        Then the response status code is "200"
+
     Scenario: Vault get publication terms
         Given user "researcher" is authenticated
         And the Yoda vault get publication terms API is queried
