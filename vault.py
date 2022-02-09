@@ -617,8 +617,6 @@ def api_grant_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, coll)
     if not collection.exists(ctx, coll):
         return api.Error('DatapackageNotExists', 'Datapackage does not exist')
 
@@ -630,8 +628,8 @@ def api_grant_read_access_research_group(ctx, coll):
 
     # Find category
     group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = group.group_category(ctx, vault_group_name)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -645,8 +643,7 @@ def api_grant_read_access_research_group(ctx, coll):
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 @api.make()
@@ -658,10 +655,6 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, 'HARM')
-    log.write(ctx, coll)
-
     if not collection.exists(ctx, coll):
         return api.Error('DatapackageNotExists', 'Datapackage does not exist')
 
@@ -673,8 +666,8 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     # Find category
     group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = group.group_category(ctx, vault_group_name)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -688,8 +681,7 @@ def api_revoke_read_access_research_group(ctx, coll):
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 def copy_folder_to_vault(ctx, folder, target):
