@@ -201,6 +201,7 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				msiGetIcatTime(*date, "unix");
 				msiAddKeyVal(*kv, "dataset_date_created", *date);
 				msiAssociateKeyValuePairsToObj(*kv, *vaultPath, "-C");
+				msiModAVUMetadata("-C", *vaultPath, "add", "irods::indexing::index", "yoda::metadata", "elasticsearch");
 				# and finally remove the dataset original in the intake area
 				msiRmColl(*topLevelCollection, "forceFlag=", *error);
 #				uuTreeWalk(
