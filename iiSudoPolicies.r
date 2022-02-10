@@ -8,7 +8,7 @@
 # it's signature is defined in the sudo microservice
 # The implementation is redirected to iiDatamanagerPreSudoObjAclSet in iiDatamanagerPolicies.r
 acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
-	ON (*otherName like regex "(datamanager|research|read)-.*") {
+	ON (*otherName like regex "(datamanager|research|deposit|read)-.*") {
 		iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv);
 	}
 }
