@@ -22,9 +22,6 @@ IISCHEMACOLLECTION = UUSYSTEMCOLLECTION ++ "/schemas"
 # \constant IIMETADATAJSONNAME Name of metadata JSON file
 IIJSONMETADATA = "yoda-metadata.json"
 
-# \constant IIMETADATAXMLNAME
-IIMETADATAXMLNAME = "yoda-metadata.xml"
-
 # \constant IIJSONNAME Name of the metadata JSON
 IIJSONNAME = "metadata.json"
 
