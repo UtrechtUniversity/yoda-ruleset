@@ -94,15 +94,20 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			succeed;
 		}
 
-		*baseGroupName = triml(*otherName, IIGROUPPREFIX);
-		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
-			uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
-			uuGroupExists("research-*category", *researchExists);
-			if (!*researchExists) {
-				*allowed = false;
-				*reason = "Cannot grant or revoke read access, research group *category does not exist.";
-				succeed;
+		uuChop(*otherName, *_, *baseGroupName, "-", true);
+		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "deposit-" ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
+			if (*otherName == "deposit-" ++ *baseGroupName) {
+				uuGroupGetCategory("deposit-" ++ *baseGroupName, *category, *subcategory);
+			} else {
+				uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
+				uuGroupExists("research-*category", *researchExists);
+				if (!*researchExists) {
+					*allowed = false;
+					*reason = "Cannot grant or revoke read access, research group *category does not exist.";
+					succeed;
+				}
 			}
+
 			uuGroupExists("datamanager-*category", *datamanagerExists);
 			if (!*datamanagerExists) {
 				*allowed = false;

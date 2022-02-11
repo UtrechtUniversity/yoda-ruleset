@@ -539,7 +539,7 @@ def api_vault_collection_details(ctx, path):
             user_name = row2[0]
 
             # Check if group is a research or intake group.
-            if user_name.startswith("research-"):
+            if user_name.startswith(("research-", "deposit-")):
                 research_group_access = True
 
     # Check if research space is accessible.
@@ -618,18 +618,23 @@ def api_grant_read_access_research_group(ctx, coll):
     :returns: API status
     """
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = meta_form.group_category(ctx, vault_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -656,18 +661,23 @@ def api_revoke_read_access_research_group(ctx, coll):
     :returns: API status
     """
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = meta_form.group_category(ctx, vault_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
