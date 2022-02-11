@@ -2,10 +2,21 @@
 # \file      iiDatamanagerPolicies.r
 # \brief     Sudo microservices policy implementations to enable datamanager control of vault process.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
 # \licens    GPLv3 see LICENSE.
 
-# \brief This rule should be called from iiSudoPolicies on sudo ACL set actions.
+
+# This policy override enables the datamanager to manage ACL's in the vault
+# it's signature is defined in the sudo microservice
+# The implementation is redirected to iiDatamanagerPreSudoObjAclSet in iiDatamanagerPolicies.r
+acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
+	ON (*otherName like regex "(datamanager|research|deposit|read)-.*") {
+		iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv);
+	}
+}
+
+# \brief This rule should be called from acPreSudoObjAclSet on sudo ACL set actions.
 #
 # \param[in] recursive
 # \param[in] accessLevel

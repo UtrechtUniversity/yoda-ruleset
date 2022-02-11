@@ -15,6 +15,7 @@ import folder
 import group
 import meta
 import meta_form
+import policies_datamanager
 import policies_datapackage_status
 from util import *
 
@@ -644,7 +645,11 @@ def api_grant_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
 
@@ -687,7 +692,11 @@ def api_revoke_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
 
