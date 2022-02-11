@@ -140,7 +140,8 @@ def get_collection_metadata_path(ctx, coll):
 
     :returns: String with path to metadata file
     """
-    if data_object.exists(ctx, '{}/{}'.format(coll, constants.IIJSONMETADATA)):
+    path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    if data_object.exists(ctx, path):
         return path
 
     return None
