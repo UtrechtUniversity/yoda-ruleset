@@ -42,6 +42,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_review_submit',
            'api_datarequest_reviews_get',
            'api_datarequest_evaluation_submit',
+           'api_datarequest_approval_conditions_get',
            'api_datarequest_preregistration_submit',
            'api_datarequest_preregistration_get',
            'api_datarequest_preregistration_confirm',
@@ -82,6 +83,7 @@ DM_REVIEW            = "datamanager_review"
 REVIEW               = "review"
 ASSIGNMENT           = "assignment"
 EVALUATION           = "evaluation"
+APPROVAL_CONDITIONS  = "approval_conditions"
 PREREGISTRATION      = "preregistration"
 FEEDBACK             = "feedback"
 DTA_PATHNAME         = "dta"
@@ -1457,6 +1459,14 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
 
+    # Write approval conditions to disk if applicable
+    if 'approval_conditions' in data:
+        try:
+            file_write_and_lock(ctx, coll_path, APPROVAL_CONDITIONS + JSON_EXT,
+                                data['approval_conditions'], [datarequest_owner_get(ctx, request_id)])
+        except error.UUError:
+            return api.Error('write_error', 'Could not write approval conditions to disk')
+
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, [GROUP_PM])
@@ -1480,6 +1490,38 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         status_set(ctx, request_id, status.RESUBMIT)
     else:
         return api.Error("InvalidData", "Invalid value for 'evaluation' key in evaluation JSON data.")
+
+
+@api.make()
+def api_datarequest_approval_conditions_get(ctx, request_id):
+    """Retrieve approval conditions
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Approval conditions JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], None)
+
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = APPROVAL_CONDITIONS + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name)
+
+    # Check for presence of approval conditions
+    if (data_object.exists(ctx, file_path)):
+        # If present, get and return the approval conditions
+        try:
+            return data_object.read(ctx, file_path)
+        except error.UUError:
+            return api.Error("ReadError", "Could not get approval conditions.")
+    else:
+        # If not, return None
+        return None
 
 
 def datarequest_evaluation_get(ctx, request_id):

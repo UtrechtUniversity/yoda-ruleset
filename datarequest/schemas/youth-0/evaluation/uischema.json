@@ -1,4 +1,10 @@
 {
+  "approval_conditions": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 8
+    }
+  },
   "internal_remarks": {
     "ui:widget": "textarea",
     "ui:options": {
