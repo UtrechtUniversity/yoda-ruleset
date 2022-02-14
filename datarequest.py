@@ -6,9 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
-import string
 import random
 import re
+import string
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
