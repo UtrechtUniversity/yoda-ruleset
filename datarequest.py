@@ -1789,7 +1789,7 @@ def api_datarequest_signed_dta_upload_permission(ctx, request_id, action):
     datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
 
     # Check if action is valid
-    if action not in ["grant", "revoke"]:
+    if action not in ["grant", "grantread"]:
         return api.Error("InputError", "Invalid action input parameter.")
 
     # Grant/revoke temporary write permissions
