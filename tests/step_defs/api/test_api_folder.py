@@ -1,6 +1,11 @@
 # coding=utf-8
 """Folder API feature tests."""
 
+import json
+import os
+from collections import OrderedDict
+from urllib.parse import urlparse
+
 from pytest_bdd import (
     given,
     parsers,
@@ -78,32 +83,23 @@ def api_folder_accept(user, folder):
 
 @given('metadata JSON exists in "<folder>"')
 def api_response(user, folder):
+    _, body = api_request(
+        user,
+        "meta_form_load",
+        {"coll": folder}
+    )
+
+    path = urlparse(body['data']['schema']['$id']).path
+    schema = path.split("/")[2]
+
+    cwd = os.getcwd()
+    with open("{}/files/{}.json".format(cwd, schema)) as f:
+        metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
+
     http_status, _ = api_request(
         user,
         "meta_form_save",
-        {"coll": folder,
-         "metadata": {
-             "links": [{
-                 "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
-             }],
-             "Language": "en - English",
-             "Retention_Period": 10,
-             "Creator": [{
-                 "Name": {
-                     "Given_Name": "Test",
-                     "Family_Name": "Test"
-                 },
-                 "Affiliation": ["Utrecht University"],
-                 "Person_Identifier": [{}]
-             }],
-             "Data_Access_Restriction": "Restricted - available upon request",
-             "Title": "Test",
-             "Description": "Test",
-             "Data_Type": "Dataset",
-             "Data_Classification": "Public",
-             "License": "Creative Commons Attribution 4.0 International Public License"
-         }}
+        {"coll": folder, "metadata": metadata}
     )
 
     assert http_status == 200
