@@ -4,6 +4,8 @@ Feature: Vault API
         | vault                          |
         | /tempZone/home/vault-core-0    |
         | /tempZone/home/vault-default-1 |
+        | /tempZone/home/vault-core-1    |
+        | /tempZone/home/vault-default-2 |
 
     Scenario: Vault submit
         Given user "researcher" is authenticated

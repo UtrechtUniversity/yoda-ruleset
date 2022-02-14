@@ -1,8 +1,8 @@
 Feature: Vault UI
 
     Examples:
-        | vault          |
-        | vault-default-1 |
+        | vault             |
+        | research-initial1 |
 
     Scenario: Vault submit
         Given user "researcher" is logged in
