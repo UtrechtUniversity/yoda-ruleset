@@ -669,10 +669,10 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     #
     # a) Normal case
     if not dac_member and not archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'PRELIMINARY_RESUBMIT' && != 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' && != 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'RESUBMITTED' && != 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
     # b) Archive case
     elif not dac_member and archived:
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'PRELIMINARY_RESUBMIT' || = 'RESUBMIT_AFTER_DATAMANAGER_REVIEW' || = 'RESUBMIT'".format(coll, DATAREQUEST + JSON_EXT)
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'RESUBMITTED' || = 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
     # c) DAC member case
     elif dac_member:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
