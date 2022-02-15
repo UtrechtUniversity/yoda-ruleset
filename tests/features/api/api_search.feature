@@ -9,7 +9,9 @@ Feature: Search API
         Examples:
             | file               | result                                 |
             | yoda-metadata.json | /research-core-0/yoda-metadata.json    |
-            | yoda-metadata.json | /research-default-1/yoda-metadata.json |
+            | yoda-metadata.json | /research-default-1/yoda-metadata.json |            
+            | yoda-metadata.json | /research-core-1/yoda-metadata.json    |
+            | yoda-metadata.json | /research-default-2/yoda-metadata.json |
 
     Scenario Outline: Search folder
         Given user "researcher" is authenticated
@@ -43,3 +45,5 @@ Feature: Search API
             | status           | result              |
             | research:SECURED | /research-core-0    |
             | research:SECURED | /research-default-1 |
+            | research:SECURED | /research-core-1    |
+            | research:SECURED | /research-default-2 |

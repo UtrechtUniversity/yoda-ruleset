@@ -2,7 +2,7 @@
 # \brief     This file contains rules related to metadata to a dataset.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2017-2019, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 # \brief Remove the User AVU's from the irods AVU store.
@@ -46,23 +46,4 @@ iiRemoveAVUs(*coll, *prefix) {
 #
 iiAdminVaultIngest() {
 	msiExecCmd("admin-vaultingest.sh", uuClientFullName, "", "", 0, *out);
-}
-
-# \brief iiGetLatestVaultMetadataXml
-#
-# \param[in] vaultPackage
-# \param[out] metadataXmlPath
-#
-iiGetLatestVaultMetadataXml(*vaultPackage, *metadataXmlPath, *metadataXmlSize) {
-	uuChopFileExtension(IIMETADATAXMLNAME, *baseName, *extension);
-	*dataNameQuery = "%*baseName[%].*extension";
-	*dataName = "";
-	*metadataXmlPath = "";
-	foreach (*row in SELECT DATA_NAME, DATA_SIZE WHERE COLL_NAME = *vaultPackage AND DATA_NAME like *dataNameQuery) {
-		if (*dataName == "" || (*dataName < *row.DATA_NAME && strlen(*dataName) <= strlen(*row.DATA_NAME))) {
-			*dataName = *row.DATA_NAME;
-			*metadataXmlPath = *vaultPackage ++ "/" ++ *dataName;
-			*metadataXmlSize = int(*row.DATA_SIZE);
-		}
-	}
 }

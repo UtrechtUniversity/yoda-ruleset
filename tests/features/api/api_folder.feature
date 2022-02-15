@@ -4,6 +4,8 @@ Feature: Folder API
         | folder                            |
         | /tempZone/home/research-core-0    |
         | /tempZone/home/research-default-1 |
+        | /tempZone/home/research-core-1    |
+        | /tempZone/home/research-default-2 |
 
     Scenario: Folder lock
         Given user "researcher" is authenticated
