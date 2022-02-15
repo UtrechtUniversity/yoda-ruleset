@@ -49,7 +49,6 @@ Feature: Research API locked
             | file               | copy                    | copy_collection                 |
             | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial |
 
-
     Scenario Outline: Research file rename in locked collection
         Given user "researcher" is authenticated
         And the Yoda research file rename API is queried with "<file>", "<file_renamed>" and "<collection>"
@@ -61,15 +60,15 @@ Feature: Research API locked
             | file               | file_renamed              |
             | yoda-metadata.json | yoda-metadata_locked.json |
 
-#    Scenario Outline: Research file upload in locked collection
-#        Given user "researcher" is authenticated
-#        And a file "<file>" is uploaded in "<folder>"
-#        Then the response status code is "200"
-#        And file "<file>" does not exist in "<collection>"
-#
-#        Examples:
-#            | file                 | folder            |
-#            | upload_test_file.txt | /research-initial |
+    Scenario Outline: Research file upload in locked collection
+        Given user "researcher" is authenticated
+        And a file "<file>" is uploaded in "<folder>"
+        Then the response status code is "200"
+        And file "<file>" does not exist in "<collection>"
+
+        Examples:
+            | file                 | folder            |
+            | upload_test_file.txt | /research-initial |
 
     Scenario Outline: Research file delete in locked collection
         Given user "researcher" is authenticated

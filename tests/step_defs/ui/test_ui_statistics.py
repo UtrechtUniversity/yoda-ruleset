@@ -42,6 +42,11 @@ def ui_statistics_graph_shown(browser):
     assert browser.is_text_not_present("No storage information found.", wait_time=1)
 
 
+@then('statistics graph is not shown')
+def ui_statistics_graph_shown(browser):
+    assert browser.is_text_present("No storage information found.", wait_time=1)
+
+
 @then('storage for "<categories>" is shown')
 def ui_statistics_category_storage(browser, categories):
     storage_table_rows = browser.find_by_css('.storage-table tbody tr')
