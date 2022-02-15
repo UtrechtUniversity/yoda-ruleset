@@ -171,6 +171,7 @@
                                 <label>Geolocation</label>
                             </div>
                             <div class="col-sm-10">
+                            {% if loc.geoLocationBox and loc.geoLocationBox | length >= 4 %}
                                 <span>
                                         <div class='map' id='map{{ loop.index }}'></div>
                                                 <script>
@@ -196,6 +197,7 @@
                 }
                                                 </script>
                                     </span>
+                            {% endif %}
                                 <span>
                                 {% if loc.Description_Temporal %}
                                     {{ loc.Description_Temporal.Start_Date }} - {{ loc.Description_Temporal.End_Date }} |
