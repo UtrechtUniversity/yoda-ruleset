@@ -1,0 +1,55 @@
+{
+    "Discipline": [
+        "Natural Sciences - Earth and related environmental sciences (1.5)"
+    ], 
+    "Language": "en - English", 
+    "Collected": {
+        "Start_Date": "2022-02-01", 
+        "End_Date": "2022-02-28"
+    }, 
+    "GeoLocation": [
+        {
+            "geoLocationBox": {}
+        }
+    ], 
+    "Tag": [
+        "test"
+    ], 
+    "Related_Datapackage": [
+        {
+            "Relation_Type": "References: Current datapackages references", 
+            "Persistent_Identifier": {}, 
+            "Title": "API test dag-0"
+        }
+    ], 
+    "Data_Type": "Dataset", 
+    "Contributor": [
+        {
+            "Name": {}
+        }
+    ], 
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "Jane", 
+                "Family_Name": "Doe"
+            }, 
+            "Affiliation": "Utrecht University", 
+            "Owner_Role": "Principal Investigator"
+        }
+    ], 
+    "License": "Internal License Data Archive Geosciences 2021-01", 
+    "Data_Access_Restriction": "Open - freely retrievable", 
+    "Title": "API test dag-0", 
+    "Description": "API test dag-0", 
+    "Research_Group": "Earth sciences - Experimental rock deformation", 
+    "Collection_Name": "API test dag-0", 
+    "End_Preservation": "10", 
+    "Data_Classification": "No", 
+    "links": [
+        {
+            "rel": "describedby", 
+            "href": "https://yoda.uu.nl/schemas/dag-0/metadata.json"
+        }
+    ]
+}

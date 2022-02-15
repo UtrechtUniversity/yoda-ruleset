@@ -15,6 +15,7 @@ import folder
 import group
 import meta
 import meta_form
+import policies_datamanager
 import policies_datapackage_status
 from util import *
 
@@ -539,7 +540,7 @@ def api_vault_collection_details(ctx, path):
             user_name = row2[0]
 
             # Check if group is a research or intake group.
-            if user_name.startswith("research-"):
+            if user_name.startswith(("research-", "deposit-")):
                 research_group_access = True
 
     # Check if research space is accessible.
@@ -617,21 +618,24 @@ def api_grant_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, coll)
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -641,12 +645,15 @@ def api_grant_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 @api.make()
@@ -658,23 +665,24 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, 'HARM')
-    log.write(ctx, coll)
-
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -684,12 +692,15 @@ def api_revoke_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 def copy_folder_to_vault(ctx, folder, target):

@@ -52,15 +52,6 @@ IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
 IIJSONMETADATA = 'yoda-metadata.json'
 """Name of metadata JSON file."""
 
-IIMETADATAXMLNAME = 'yoda-metadata.xml'
-"""Name of metadata XML file."""
-
-IIRESEARCHXSDNAME = 'research.xsd'
-"""Name of the research XSD."""
-
-IIVAULTXSDNAME = 'vault.xsd'
-"""Name of the vault XSD."""
-
 IIDATA_MAX_SLURP_SIZE = 4 * 1024 * 1024  # 4 MiB
 """The maximum file size that can be read into a string in memory, to prevent
    DOSing / out of control memory consumption."""
