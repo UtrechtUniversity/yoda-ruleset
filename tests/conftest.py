@@ -72,6 +72,9 @@ def pytest_configure(config):
     if datarequest:
         users = users + ['projectmanager', 'dmcmember']
 
+    if deposit:
+        users = users + ['viewer']
+
     # Store cookies for each user.
     for user in users:
         csrf, session = login(user, password)

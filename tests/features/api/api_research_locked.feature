@@ -1,4 +1,4 @@
-Feature: Research API locked
+Feature: Research API (locked)
 
     Examples:
         | collection                      |
