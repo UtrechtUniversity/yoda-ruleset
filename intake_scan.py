@@ -63,7 +63,13 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
 
                 # It is safe to assume that the dataset was collection based without actively checking.
                 # Otherwise it would mean that each found file on this level could potentially change the dataset properties
-                avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+                # avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+                # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
+                try:
+                    avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
+                except msi.Error:
+                    pass
+
                 new_deeper_dataset_toplevel = True
             apply_dataset_metadata(ctx, path, subscope, False, new_deeper_dataset_toplevel)
         else:
@@ -120,7 +126,11 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                         if 'version' not in prev_scope:
                             prev_scope['version'] = 'Raw'
 
-                        avu.rm_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', dataset_make_id(prev_scope))
+                        # If still present (could have been removed in loop earlier) remove dataset_toplevel on prev_scope['directory']
+                        try:
+                            avu.rmw_from_coll(ctx, prev_scope['directory'], 'dataset_toplevel', "%")
+                        except msi.Error:
+                            pass
 
                         # set flag correctly for creating of new toplevel
                         new_deeper_dataset_toplevel = True
