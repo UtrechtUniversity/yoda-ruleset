@@ -43,7 +43,7 @@ def ui_statistics_graph_shown(browser):
 
 
 @then('statistics graph is not shown')
-def ui_statistics_graph_shown(browser):
+def ui_statistics_graph_not_shown(browser):
     assert browser.is_text_present("No storage information found.", wait_time=1)
 
 
