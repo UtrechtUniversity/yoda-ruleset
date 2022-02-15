@@ -1,8 +1,13 @@
 # coding=utf-8
 """Deposit API feature tests."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+import json
+import os
+from collections import OrderedDict
+from urllib.parse import urlparse
 
 from pytest_bdd import (
     given,
@@ -10,7 +15,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request
+from conftest import api_request, upload_data
 
 scenarios('../../features/api/api_deposit.feature')
 
@@ -55,6 +60,37 @@ def api_deposit_clear(user, deposit_name):
     )
 
 
+@given('a file "<file>" is uploaded in deposit', target_fixture="api_response")
+def api_deposit_file_upload(user, file, deposit_name):
+    return upload_data(
+        user,
+        file,
+        "/deposit-pilot/{}".format(deposit_name)
+    )
+
+
+@given('metadata JSON is created in deposit', target_fixture="api_response")
+def api_response(user, deposit_name):
+    _, body = api_request(
+        user,
+        "meta_form_load",
+        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name)}
+    )
+
+    path = urlparse(body['data']['schema']['$id']).path
+    schema = path.split("/")[2]
+
+    cwd = os.getcwd()
+    with open("{}/files/{}.json".format(cwd, schema)) as f:
+        metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
+
+    return api_request(
+        user,
+        "meta_form_save",
+        {"coll": "/tempZone/home/deposit-pilot/{}".format(deposit_name), "metadata": metadata}
+    )
+
+
 @then('deposit path is returned')
 def api_deposit_path_return(api_response):
     _, body = api_response
@@ -65,5 +101,5 @@ def api_deposit_path_return(api_response):
 def api_deposit_status_return(api_response):
     _, body = api_response
     assert body["data"]
-    assert not body["data"]["data"]
-    assert not body["data"]["metadata"]
+    assert body["data"]["data"]
+    assert body["data"]["metadata"]

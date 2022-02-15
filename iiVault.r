@@ -2,7 +2,7 @@
 # \brief     Functions to copy packages to the vault and manage permissions of vault packages.
 # \author    Paul Frederiks
 # \author    Lazlo Westerhof
-# \copyright Copyright (c) 2016-2020, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2016-2022, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
 
@@ -23,7 +23,6 @@ iiCopyFolderToVault(*folder, *target) {
 		fail;
 	}
 }
-
 
 # \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
 #
@@ -86,7 +85,6 @@ iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	}
 }
 
-
 # \brief Called by uuTreeWalk for each collection and dataobject to copy to the research area.
 #
 # \param[in] itemParent
@@ -121,7 +119,6 @@ iiCopyObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	}
 }
 
-
 #\ Generic secure copy functionality
 # \param[in] argv         argument string for secure copy like "*publicHost inbox /var/www/landingpages/*publicPath";
 # \param[in] origin_path  local path of origin file
@@ -136,86 +133,6 @@ iiGenericSecureCopy(*argv, *origin_path, *err) {
                 writeLine("serverLog", *stderr);
                 writeLine("serverLog", *stdout);
         }
-}
-
-# \brief Rule to grant read access to the vault package managed by a datamanger.
-#
-# \param[in] path
-# \param[out] status
-# \param[out] statusInfo
-#
-iiGrantReadAccessToResearchGroup(*path, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error occurred";
-
-	# Vault packages start four directories deep
-	*pathElems = split(*path, "/");
-	if (size(*pathElems) != 4) {
-		*status = "PermissionDenied";
-		*statusInfo = "The datamanager can only grant permissions to vault packages";
-		succeed;
-	}
-	*vaultGroupName = elem(*pathElems, 2);
-	*baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
-	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
-	*actor = uuClientFullName;
-	*aclKv.actor = *actor;
-	*err = errormsg(msiSudoObjAclSet("recursive", "read", *researchGroup, *path, *aclKv), *msg);
-	if (*err < 0) {
-		*status = "PermissionDenied";
-		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "read", *allowed, *reason);
-		if (*allowed) {
-			*statusInfo = "Could not acquire datamanager access to *path.";
-			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
-		} else {
-			*statusInfo = *reason;
-		}
-		succeed;
-	} else {
-		*status = "Success";
-		*statusInfo = "";
-		succeed;
-	}
-
-}
-
-# \brief Rule to revoke read access to the vault package managed by a datamanger.
-#
-# \param[in] path
-# \param[out] status
-# \param[out] statusInfo
-#
-iiRevokeReadAccessToResearchGroup(*path, *status, *statusInfo) {
-	*status = "Unknown";
-	*statusInfo = "An internal error occurred";
-
-	*pathElems = split(*path, "/");
-	if (size(*pathElems) != 4) {
-		*status = "PermissionDenied";
-		*statusInfo = "The datamanager can only revoke permissions to vault packages";
-		succeed;
-	}
-	*vaultGroupName = elem(*pathElems, 2);
-	*baseGroupName = triml(*vaultGroupName, IIVAULTPREFIX);
-	*researchGroup = IIGROUPPREFIX ++ *baseGroupName;
-	*actor = uuClientFullName;
-	*aclKv.actor = *actor;
-	*err = errormsg(msiSudoObjAclSet("recursive", "null", *researchGroup, *path, *aclKv), *msg);
-	if (*err < 0) {
-		*status = "PermissionDenied";
-		iiCanDatamanagerAclSet(*path, *actor, *researchGroup, 1, "null", *allowed, *reason);
-		if (*allowed) {
-			*statusInfo = "Could not acquire datamanager access to *path.";
-			writeLine("serverLog", "iiGrantReadAccessToResearchGroup: *err - *msg");
-		} else {
-			*statusInfo = *reason;
-		}
-		succeed;
-	} else {
-			*status = "Success";
-			*statusInfo = "";
-			succeed;
-	}
 }
 
 # \brief When inheritance is missing we need to copy ACL's when introducing new data in vault package.
@@ -251,7 +168,6 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
         }
 }
 
-
 # \brief Copy a vault package to the research area.
 #
 # \param[in] folder  folder to copy from the vault
@@ -275,67 +191,50 @@ iiCopyFolderToResearch(*folder, *target) {
         }
 }
 
-
-# ---------------- Start of Yoda FrontOffice API ----------------
-
-# \brief Request a copy action of a vault package to the research area.
+# \brief Retrieve current vault folder status
 #
-# \param[in] folder  	          folder to copy from the vault
-# \param[in] target               path of the research area target
-iiFrontRequestCopyVaultPackage(*folder, *target, *status, *statusInfo) {
-	# Check if target is a research folder.
-	if (*target like regex "/[^/]+/home/research-.*") {
-	} else {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'Please select a folder in the research area.';
-                succeed;
+# \param[in]  folder	    Path of vault folder
+# \param[out] folderStatus  Current status of vault folder
+#
+iiVaultStatus(*folder, *vaultStatus) {
+	*vaultStatusKey = IIVAULTSTATUSATTRNAME;
+	*vaultStatus = UNPUBLISHED;
+	foreach(*row in SELECT META_COLL_ATTR_VALUE WHERE COLL_NAME = *folder AND META_COLL_ATTR_NAME = *vaultStatusKey) {
+		*vaultStatus = *row.META_COLL_ATTR_VALUE;
+	}
+}
+
+# \brief Retrieve actor of action on vault folder
+#
+# \param[in]  folder      Path of action vault folder
+# \param[out] actionActor Actor of action on vault folder
+#
+iiVaultGetActionActor(*folder, *actor, *actionActor) {
+	# Retrieve vault folder collection id.
+	foreach(*row in SELECT COLL_ID WHERE COLL_NAME = *folder) {
+	        *collId = *row.COLL_ID;
 	}
 
-        # Check whether datapackage folder already present in target folder.
-        uuChopPath(*folder, *parent, *datapackageName);
-        *newTargetCollection = "*target/*datapackageName";
-        if (uuCollectionExists(*newTargetCollection)) {
-                *status = 'ErrorCollectionAlreadyExists';
-                *statusInfo = 'Please select another location for this datapackage as it is present already in folder you selected.';
-                succeed;
+        # Retrieve vault folder action actor.
+        *actionActor = "";
+        foreach(*row in SELECT ORDER_DESC(META_COLL_MODIFY_TIME), COLL_ID, META_COLL_ATTR_VALUE WHERE META_COLL_ATTR_NAME = "org_vault_action_*collId") {
+                *err = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actionActor, "get", 2));
+                if (*err < 0) {
+                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId contains invalid JSON");
+                } else {
+                        writeLine("serverLog", "iiVaultGetActionActor: org_vault_action_*collId actor is *actionActor");
+                }
+                break;
         }
 
-        # Check origin circumstances.
-        iiCollectionDetails(*folder, *kvpCollDetails, *stat, *statInfo);
-        if (*stat == 'ErrorPathNotExists') {
-                *status = 'FO-ErrorVaultCollectionDoesNotExist';
-                *statusInfo = 'The datapackage does not exist.';
-                succeed;
-        }
-
-	# Check if user has read access to vault package.
-        if (*kvpCollDetails.researchGroupAccess != "yes") {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'You have insufficient permissions to copy the datapackage.';
-                succeed;
-        }
-
-        # Check target circumstances
-        iiCollectionDetails(*target, *kvpCollDetails, *stat, *statInfo);
-        if (*kvpCollDetails.lockCount != "0") {
-                *status = 'FO-ErrorTargetLocked';
-                *statusInfo = 'The selected folder is locked. Please unlock this folder first.';
-                succeed;
-        }
-
-        # Check if user has write acces to research folder
-        if (*kvpCollDetails.userType != "normal" && *kvpCollDetails.userType != "manager") {
-                *status = 'ErrorTargetPermissions';
-                *statusInfo = 'You have insufficient permissions to copy the datapackage to this folder. Please select another folder.';
-                succeed;
-        }
-
-	# Add copy action to delayed rule queue.
-	*status = "Success";
-	*statusInfo = "";
-	delay("<PLUSET>1s</PLUSET>") {
-                iiCopyFolderToResearch(*folder, *target);
+        # Fallback actor (rodsadmin).
+        if (*actionActor == "") {
+                *actionActor = *actor;
         }
 }
 
-#---------------- End of Yoda Front Office API ----------------
+# \brief Perform admin operations on the vault
+#
+iiAdminVaultActions() {
+	msiExecCmd("admin-vaultactions.sh", uuClientFullName, "", "", 0, *out);
+}

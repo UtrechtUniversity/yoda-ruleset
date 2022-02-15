@@ -4,6 +4,11 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+import os
+from collections import OrderedDict
+from urllib.parse import urlparse
+
 from pytest_bdd import (
     given,
     # parsers,
@@ -18,32 +23,23 @@ scenarios('../../features/api/api_meta.feature')
 
 @given('metadata JSON exists in "<collection>"')
 def api_meta_form_save(user, collection):
+    _, body = api_request(
+        user,
+        "meta_form_load",
+        {"coll": collection}
+    )
+
+    path = urlparse(body['data']['schema']['$id']).path
+    schema = path.split("/")[2]
+
+    cwd = os.getcwd()
+    with open("{}/files/{}.json".format(cwd, schema)) as f:
+        metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
+
     http_status, _ = api_request(
         user,
         "meta_form_save",
-        {"coll": collection,
-         "metadata": {
-             "links": [{
-                 "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
-             }],
-             "Language": "en - English",
-             "Retention_Period": 10,
-             "Creator": [{
-                 "Name": {
-                     "Given_Name": "Test",
-                     "Family_Name": "Test"
-                 },
-                 "Affiliation": ["Utrecht University"],
-                 "Person_Identifier": [{}]
-             }],
-             "Data_Access_Restriction": "Restricted - available upon request",
-             "Title": "Test",
-             "Description": "Test",
-             "Data_Type": "Dataset",
-             "Data_Classification": "Public",
-             "License": "Creative Commons Attribution 4.0 International Public License"
-         }}
+        {"coll": collection, "metadata": metadata}
     )
 
     assert http_status == 200

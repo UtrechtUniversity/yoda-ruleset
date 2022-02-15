@@ -1,8 +1,8 @@
 Feature: Vault UI
 
     Examples:
-        | vault          |
-        | vault-default-1 |
+        | vault             |
+        | research-initial1 |
 
     Scenario: Vault submit
         Given user "researcher" is logged in
@@ -123,7 +123,7 @@ Feature: Vault UI
         And user presses copy package button
         #Then data package is copied to research area
 
-    Scenario: Check datapackage compliancy with policy [OK]
+    Scenario: Check datapackage compliancy with policy
         Given user "datamanager" is logged in
         And module "vault" is shown
         When user browses to data package in "<vault>"

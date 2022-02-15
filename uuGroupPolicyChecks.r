@@ -405,7 +405,7 @@ uuGroupPolicyCanGroupUserChangeRole(*actor, *groupName, *member, *newRole, *allo
 
 	if (*exists) {
 		if (   (*newRole == "normal" || *newRole == "manager")
-			|| (*newRole == "reader" && *groupName like regex "(intake|research)-.*")) {
+			|| (*newRole == "reader" && *groupName like regex "(intake|research|deposit)-.*")) {
 
 			uuGroupUserIsManager(*groupName, *actor, *isManager);
 			if (*isManager) {
