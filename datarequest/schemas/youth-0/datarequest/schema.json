@@ -47,7 +47,7 @@
   "type": "object",
   "properties": {
     "previous_request_id": {
-      "type": "number"
+      "type": "string"
     },
     "owner": {
       "type": "string"
