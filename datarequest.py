@@ -608,18 +608,21 @@ def cc_email_addresses_get(contact_object):
 ###################################################
 
 @api.make()
-def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10, archived=False):
+def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limit=10,
+                           archived=False, dacrequests=True):
     """Get paginated datarequests, including size/modify date information.
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param sort_on:    Column to sort on ('name', 'modified')
-    :param sort_order: Column sort order ('asc' or 'desc')
-    :param offset:     Offset to start browsing from
-    :param limit:      Limit number of results
-    :param archived:   If true, show archived (i.e. rejected) data requests only. If false, only show
-                       non-archived data requests
+    :param ctx:         Combined type of a callback and rei struct
+    :param sort_on:     Column to sort on ('name', 'modified')
+    :param sort_order:  Column sort order ('asc' or 'desc')
+    :param offset:      Offset to start browsing from
+    :param limit:       Limit number of results
+    :param archived:    If true, show archived (i.e. rejected) data requests only. If false, only
+                        show non-archived data requests
+    :param dacrequests: If true, show a DAC member's own data requests (instead of data requests to
+                        be reviewed
 
-    :returns: Dict with paginated datarequests
+    :returns:           Dict with paginated datarequests
     """
     dac_member = user.is_member_of(ctx, GROUP_DAC)
 
@@ -673,9 +676,12 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     # b) Archive case
     elif not dac_member and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'RESUBMITTED' || = 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
-    # c) DAC member case
-    elif dac_member:
+    # c1) DAC reviewable requests case
+    elif dac_member and not dacrequests:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+    # c2) DAC own requests case
+    elif dac_member and dacrequests:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'owner' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
     if len(list(qcoll)) > 0:
