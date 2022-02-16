@@ -677,11 +677,14 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     elif not dac_member and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'PRELIMINARY_REJECT' || = 'REJECTED_AFTER_DATAMANAGER_REVIEW' || = 'REJECTED' || = 'RESUBMITTED' || = 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
     # c1) DAC reviewable requests case
-    elif dac_member and not dacrequests:
+    elif dac_member and not dacrequests and not archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     # c2) DAC own requests case
-    elif dac_member and dacrequests:
+    elif dac_member and dacrequests and not archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'owner' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
+    # c3) DAC reviewed requests
+    elif dac_member and not dacrequests and archived:
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
     if len(list(qcoll)) > 0:
@@ -1401,6 +1404,9 @@ def api_datarequest_review_submit(ctx, data, request_id):
                                          str(len(reviewers)),
                                          status_code, status_info)
     ctx.adminDatarequestActions()
+
+    # Set a reviewedBy attribute
+    metadata_set(ctx, request_id, "reviewedBy", user.name(ctx))
 
     # If there are no reviewers left, update data request status
     if len(reviewers) < 1:
