@@ -65,6 +65,9 @@ UUUSERMETADATAROOT = 'usr'
 UUORGMETADATAPREFIX = 'org_'
 """Prefix for organisational metadata."""
 
+UUINDEXMETADATAPREFIX = 'YodaIndex'
+"""Prefix for indexed metadata."""
+
 IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'

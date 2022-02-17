@@ -310,6 +310,17 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
+def update_index_metadata(ctx, path, metadata):
+    """Update the index attributes for JSON metadata."""
+    for creator in metadata['Creator']:
+        name = creator['Name']
+        avu.associate_to_data(ctx, path,
+                              constants.UUINDEXMETADATAPREFIX + 'Creator',
+                              name['Given_Name'] + ' ' + name['Family_Name'])
+    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Title',
+                          metadata['Title'])
+
+
 def ingest_metadata_vault(ctx, path):
     """Ingest (pre-validated) JSON metadata in the vault."""
     # The JSON metadata file has just landed in the vault, required validation /
@@ -324,6 +335,9 @@ def ingest_metadata_vault(ctx, path):
     except error.UUError:
         log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
+
+    # update index metadata
+    update_index_metadata(ctx, path, metadata)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
