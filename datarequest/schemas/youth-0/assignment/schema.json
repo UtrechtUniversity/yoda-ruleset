@@ -23,6 +23,11 @@
       "oneOf": [
         {
           "properties": {
+            "review_period_length": {
+              "type": "integer",
+              "title": "Please indicate the length of the review period (in days, starting from the submission of this assignment)",
+              "default": 21
+            },
             "assign_to": {
               "type": "array",
               "title": "Please select the DAC member(s) to whom the data request should be assigned for review.",

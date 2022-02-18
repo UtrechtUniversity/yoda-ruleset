@@ -9,6 +9,7 @@ import json
 import random
 import re
 import string
+import time
 from collections import OrderedDict
 from datetime import datetime
 from enum import Enum
@@ -688,8 +689,15 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     :returns:           Dict with paginated datarequests
     """
     dac_member = user.is_member_of(ctx, GROUP_DAC)
+    coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
-    coll = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    # If projectmanager, check if any of the review periods have reached their deadline
+    if user.is_member_of(ctx, GROUP_PM):
+        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE > '{}'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
+        ccols    = ['COLL_NAME']
+        qcoll    = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
+        if len(list(qcoll)) > 0:
+            datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
@@ -784,6 +792,16 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         # (checking this beforehand would waste a query in the most common situation)
 
     return OrderedDict([('total', qcoll.total_rows()), ('items', colls)])
+
+
+def datarequest_process_expired_review_periods(ctx, request_ids):
+    """Process expired review periods by setting their status to REVIEWED.
+
+    :param ctx:         Combined type of a callback and rei struct
+    :param request_ids: Array of unique data request identifiers
+    """
+    for request_id in request_ids:
+        status_set(ctx, request_id, status.REVIEWED)
 
 
 def file_write_and_lock(ctx, coll_path, filename, data, readers):
@@ -1323,6 +1341,12 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Construct path to collection
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+
+    # Set date of end of review period as metadata on the datarequest
+    current_timestamp               = int(time.time())
+    review_period_length_in_seconds = data['review_period_length'] * 86400
+    end_of_review_period_timestamp  = str(current_timestamp + review_period_length_in_seconds)
+    metadata_set(ctx, request_id, "endOfReviewPeriod", end_of_review_period_timestamp)
 
     # Write form data to disk
     try:
@@ -2121,7 +2145,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
                                             researcher['name'], request_id, cc)
         for assignee_email in assignees:
             mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, study_title,
-                                              request_id)
+                                              assignment['review_period_length'], request_id)
     elif datarequest_status in (status.RESUBMIT_AFTER_DATAMANAGER_REVIEW,
                                 status.REJECTED_AFTER_DATAMANAGER_REVIEW):
         # Get additional email input parameters
@@ -2413,20 +2437,21 @@ YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, proposal_title, request_id):
+def mail_assignment_accepted_assignee(ctx, truncated_title, assignee_email, proposal_title,
+                                      review_period_length, request_id):
     return mail.send(ctx,
                      to=assignee_email,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {} (\"{}\"): assigned".format(request_id, truncated_title),
                      body="""Dear DAC member,
 
-Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review.
+Data request {} (proposal title: \"{}\") has been assigned to you for review. Please sign in to Yoda to view the data request and submit your review within {} days.
 
 The following link will take you directly to the review form: https://{}/datarequest/review/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, proposal_title, YODA_PORTAL_FQDN, request_id))
+""".format(request_id, proposal_title, review_period_length, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_review_researcher(ctx, truncated_title, researcher_email, researcher_name, request_id, cc):
