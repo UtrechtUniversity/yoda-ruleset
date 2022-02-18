@@ -421,7 +421,7 @@ def api_vault_system_metadata(callback, coll):
 
     for row in iter:
         data_package_reference = row[0]
-        system_metadata["Data Package Reference"] = "<a href=\"yda/{}\">yda/{}</a>".format(data_package_reference, data_package_reference)
+        system_metadata["Data Package Reference"] = "<a href=\"yoda/{}\">yoda/{}</a>".format(data_package_reference, data_package_reference)
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
