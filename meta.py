@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata handling."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -131,21 +131,18 @@ def is_json_metadata_valid(callback,
         return False
 
 
-def get_collection_metadata_path(callback, coll):
+def get_collection_metadata_path(ctx, coll):
     """
-    Check if a collection has a metadata file and provide its path, if any.
+    Check if a collection has a JSON metadata file and provide its path, if any.
 
-    Both JSON and legacy XML are checked, JSON has precedence if it exists.
-
-    :param callback: Combined type of a callback and rei struct
-    :param coll:     Path of collection to check for metadata
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path of collection to check for metadata
 
     :returns: String with path to metadata file
     """
-    for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
-                                                   constants.IIMETADATAXMLNAME]]:
-        if data_object.exists(callback, path):
-            return path
+    path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
+    if data_object.exists(ctx, path):
+        return path
 
     return None
 
@@ -229,17 +226,15 @@ rule_meta_collection_has_cloneable_metadata = (
 
 @api.make()
 def api_meta_remove(ctx, coll):
-    """Remove a collection's metadata JSON and XML, if they exist."""
+    """Remove a collection's metadata JSON, if it exist."""
     log.write(ctx, 'Remove metadata of coll {}'.format(coll))
 
-    for path in ['{}/{}'.format(coll, x) for x in [constants.IIJSONMETADATA,
-                                                   constants.IIMETADATAXMLNAME]]:
-        try:
-            data_object.remove(ctx, path)
-        except error.UUError:
-            # ignore non-existent files.
-            # (this may also fail for other reasons, but we can't distinguish them)
-            pass
+    try:
+        data_object.remove(ctx, '{}/{}'.format(coll, constants.IIJSONMETADATA))
+    except error.UUError:
+        # ignore non-existent files.
+        # (this may also fail for other reasons, but we can't distinguish them)
+        pass
 
 
 @api.make()
@@ -256,13 +251,10 @@ def api_meta_clone_file(ctx, target_coll):
     source_coll = pathutil.chop(target_coll)[0]  # = parent collection
     source_data = get_collection_metadata_path(ctx, source_coll)
 
-    if source_data is None:
-        # No metadata to clone? Abort.
-        return
-    elif source_data.endswith('.json'):
+    if source_data.endswith('.json'):
         target_data = '{}/{}'.format(target_coll, constants.IIJSONMETADATA)
     else:
-        # XML metadata files must be transformed to JSON before cloning.
+        # No metadata to clone? Abort.
         return
 
     try:
@@ -412,8 +404,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         return
 
     # Determine destination filename.
-    # FIXME - TOCTOU: also exists in XML version
-    #      -> should do this in a loop around msi.data_obj_copy instead.
+    # FIXME - TOCTOU: should do this in a loop around msi.data_obj_copy instead.
     ret = msi.get_icat_time(ctx, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
@@ -425,8 +416,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
         dest = '{}/{}[{}][{}].{}'.format(vault_pkg_path, json_name, timestamp, i, json_ext)
 
     # Validate metadata.
-    # FIXME - TOCTOU: also exists in XML version
-    #      -> might fix by reading JSON only once, and validating and writing to vault from that.
+    # FIXME - TOCTOU: might fix by reading JSON only once, and validating and writing to vault from that.
     ret = callback.rule_meta_validate(json_path, '', '')
     invalid = ret['arguments'][1]
     if invalid == '1':
@@ -458,7 +448,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     try:
         data_object.remove(ctx, json_path)
     except Exception:
-        set_result('FailedToRemoveDatamanagerXML', 'Failed to remove <{}>'.format(json_path))
+        set_result('FailedToRemoveDatamanagerMetadata', 'Failed to remove <{}>'.format(json_path))
         return
 
     stage_coll = '/{}/home/{}/{}'.format(zone, dm_group, vault_group)

@@ -32,7 +32,6 @@ from schema                 import *
 from schema_transformation  import *
 from schema_transformations import *
 from vault                  import *
-from vault_xml_to_json      import *
 from datacite               import *
 from epic                   import *
 from publication            import *
@@ -55,4 +54,4 @@ if config.enable_deposit:
     from deposit import *
 
 if config.enable_tokens:
-    from token import *
+    from data_access_token import *

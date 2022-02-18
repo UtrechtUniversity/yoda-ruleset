@@ -2,10 +2,21 @@
 # \file      iiDatamanagerPolicies.r
 # \brief     Sudo microservices policy implementations to enable datamanager control of vault process.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017, Utrecht University. All rights reserved.
+# \author    Lazlo Westerhof
+# \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
 # \licens    GPLv3 see LICENSE.
 
-# \brief This rule should be called from iiSudoPolicies on sudo ACL set actions.
+
+# This policy override enables the datamanager to manage ACL's in the vault
+# it's signature is defined in the sudo microservice
+# The implementation is redirected to iiDatamanagerPreSudoObjAclSet in iiDatamanagerPolicies.r
+acPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv) {
+	ON (*otherName like regex "(datamanager|research|deposit|read)-.*") {
+		iiDatamanagerPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyKv);
+	}
+}
+
+# \brief This rule should be called from acPreSudoObjAclSet on sudo ACL set actions.
 #
 # \param[in] recursive
 # \param[in] accessLevel
@@ -94,15 +105,20 @@ iiCanDatamanagerAclSet(*objPath, *actor, *otherName, *recursive, *accessLevel, *
 			succeed;
 		}
 
-		*baseGroupName = triml(*otherName, IIGROUPPREFIX);
-		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
-			uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
-			uuGroupExists("research-*category", *researchExists);
-			if (!*researchExists) {
-				*allowed = false;
-				*reason = "Cannot grant or revoke read access, research group *category does not exist.";
-				succeed;
+		uuChop(*otherName, *_, *baseGroupName, "-", true);
+		if (*otherName == IIGROUPPREFIX ++ *baseGroupName || *otherName == "deposit-" ++ *baseGroupName || *otherName == "read-" ++ *baseGroupName) {
+			if (*otherName == "deposit-" ++ *baseGroupName) {
+				uuGroupGetCategory("deposit-" ++ *baseGroupName, *category, *subcategory);
+			} else {
+				uuGroupGetCategory(IIGROUPPREFIX ++ *baseGroupName, *category, *subcategory);
+				uuGroupExists("research-*category", *researchExists);
+				if (!*researchExists) {
+					*allowed = false;
+					*reason = "Cannot grant or revoke read access, research group *category does not exist.";
+					succeed;
+				}
 			}
+
 			uuGroupExists("datamanager-*category", *datamanagerExists);
 			if (!*datamanagerExists) {
 				*allowed = false;

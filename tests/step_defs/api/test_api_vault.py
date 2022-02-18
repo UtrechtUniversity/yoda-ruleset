@@ -90,6 +90,24 @@ def api_vault_collection_details(user, vault, data_package):
     )
 
 
+@given('the Yoda vault revoke read access research group API is queried on datapackage in "<vault>"', target_fixture="api_response")
+def api_revoke_read_access_research_group(user, vault, data_package):
+    return api_request(
+        user,
+        "revoke_read_access_research_group",
+        {"coll": vault + "/" + data_package}
+    )
+
+
+@given('the Yoda vault grant read access research group API is queried on datapackage in "<vault>"', target_fixture="api_response")
+def api_grant_read_access_research_group(user, vault, data_package):
+    return api_request(
+        user,
+        "grant_read_access_research_group",
+        {"coll": vault + "/" + data_package}
+    )
+
+
 @given('the Yoda vault get publication terms API is queried', target_fixture="api_response")
 def api_vault_get_publication_terms(user):
     return api_request(

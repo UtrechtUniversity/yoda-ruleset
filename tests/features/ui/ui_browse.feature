@@ -8,10 +8,10 @@ Feature: Browse UI
 
         Examples:
           | user        | folder             |
-          | researcher  | research-core-0    |
-          | researcher  | research-default-1 |
-          | datamanager | research-core-0    |
-          | datamanager | research-default-1 |
+          | researcher  | research-core-1    |
+          | researcher  | research-default-2 |
+          | datamanager | research-core-1    |
+          | datamanager | research-default-2 |
 
     Scenario Outline: Browsing to a folder in the vault space
           Given user "<user>" is logged in
@@ -21,10 +21,10 @@ Feature: Browse UI
 
           Examples:
             | user        | data_package    |
-            | researcher  | vault-core-0    |
-            | researcher  | vault-default-1 |
-            | datamanager | vault-core-0    |
-            | datamanager | vault-default-1 |
+            | researcher  | vault-core-1    |
+            | researcher  | vault-default-2 |
+            | datamanager | vault-core-1    |
+            | datamanager | vault-default-2 |
 
     Scenario: Browsing to a non existing page
         Given user "researcher" is logged in
