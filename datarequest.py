@@ -42,6 +42,7 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_review_submit',
            'api_datarequest_reviews_get',
            'api_datarequest_evaluation_submit',
+           'api_datarequest_evaluation_get',
            'api_datarequest_approval_conditions_get',
            'api_datarequest_preregistration_submit',
            'api_datarequest_preregistration_get',
@@ -277,6 +278,48 @@ def type_get(ctx, request_id):
     return datarequest_type
 
 
+def available_documents_get(ctx, request_id, datarequest_type, datarequest_status):
+
+    # Construct list of existing documents
+    available_documents = []
+    if datarequest_type == type.REGULAR.value:
+        if datarequest_status == status.DRAFT.value:
+            available_documents = []
+        elif datarequest_status in [status.SUBMITTED.value, status.PENDING_ATTACHMENTS.value]:
+            available_documents = [DATAREQUEST]
+        elif datarequest_status in [status.PRELIMINARY_ACCEPT.value, status.PRELIMINARY_REJECT.value, status.PRELIMINARY_RESUBMIT.value]:
+            available_documents = [DATAREQUEST, PR_REVIEW]
+        elif datarequest_status in [status.DATAMANAGER_ACCEPT.value, status.DATAMANAGER_REJECT.value, status.DATAMANAGER_RESUBMIT.value]:
+            available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW]
+        elif datarequest_status in [status.UNDER_REVIEW.value, status.REJECTED_AFTER_DATAMANAGER_REVIEW.value, status.RESUBMIT_AFTER_DATAMANAGER_REVIEW.value]:
+            available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT]
+        elif datarequest_status == status.REVIEWED.value:
+            available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW]
+        elif datarequest_status in [status.APPROVED.value, status.REJECTED.value, status.RESUBMIT.value, status.RESUBMITTED.value]:
+            available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION]
+        elif datarequest_status in [status.PREREGISTRATION_SUBMITTED.value, status.PREREGISTRATION_CONFIRMED.value, status.DTA_READY.value, status.DTA_SIGNED.value, status.DATA_READY.value]:
+            available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION, PREREGISTRATION]
+    elif datarequest_type == type.DAO.value:
+        if datarequest_status == status.DAO_SUBMITTED.value:
+            available_documents = [DATAREQUEST]
+        elif datarequest_status in [status.DAO_APPROVED.value, status.DTA_READY.value, status.DTA_SIGNED.value, status.DATA_READY.value]:
+            available_documents = [DATAREQUEST, EVALUATION]
+
+    # Filter out documents which the user is not permitted to read
+    roles = datarequest_roles_get(ctx, request_id)
+    if "OWN" in roles:
+        allowed_documents = [DATAREQUEST, PREREGISTRATION]
+    elif "PM" in roles:
+        allowed_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION, PREREGISTRATION]
+    elif "DM" in roles:
+        allowed_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW]
+    elif "REV" in roles:
+        allowed_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION]
+    available_documents = [value for value in available_documents if value in allowed_documents]
+
+    return available_documents
+
+
 ###################################################
 #                 Helper functions                #
 ###################################################
@@ -386,6 +429,19 @@ def api_datarequest_roles_get(ctx, request_id=None):
     :returns:          Array of user roles
     :rtype:            Array
     """
+    return datarequest_roles_get(ctx, request_id)
+
+
+def datarequest_roles_get(ctx, request_id):
+    """Get roles of invoking user
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request (OWN and REV roles will not be checked
+                       if this parameter is missing)
+
+    :returns:          Array of user roles
+    :rtype:            Array
+    """
     roles = []
     if user.is_member_of(ctx, GROUP_PM):
         roles.append("PM")
@@ -452,9 +508,16 @@ def datarequest_is_reviewer(ctx, request_id):
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     reviewers = []
 
-    # Retrieve list of reviewers
+    # Retrieve list of reviewers (review pending)
     rows = row_iterator(["META_DATA_ATTR_VALUE"],
                         "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
+                        AS_DICT, ctx)
+    for row in rows:
+        reviewers.append(row['META_DATA_ATTR_VALUE'])
+
+    # Retrieve list of reviewers (review given)
+    rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy'".format(coll_path, DATAREQUEST + JSON_EXT),
                         AS_DICT, ctx)
     for row in rows:
         reviewers.append(row['META_DATA_ATTR_VALUE'])
@@ -745,8 +808,9 @@ def file_write_and_lock(ctx, coll_path, filename, data, readers):
     for reader in readers:
         msi.set_acl(ctx, "default", "read", reader, file_path)
 
-    # Revoke temporary write permission
-    msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
+    # Revoke temporary write permission (unless read permissions were set on the invoking user)
+    if not user.full_name(ctx) in readers:
+        msi.set_acl(ctx, "default", "null", user.full_name(ctx), file_path)
     # If invoking user is request owner, set read permission for this user on the collection again,
     # else revoke individual user permissions on collection entirely (invoking users will still have
     # appropriate permissions through group membership, e.g. the project managers group)
@@ -903,12 +967,15 @@ def api_datarequest_get(ctx, request_id):
     # Get request status
     datarequest_status = status_get(ctx, request_id).value
 
+    # Get list of available documents
+    datarequest_available_documents = available_documents_get(ctx, request_id, datarequest_type, datarequest_status)
+
     # Get request
     datarequest = datarequest_get(ctx, request_id)
 
     # Return JSON encoded results
     return {'requestJSON': datarequest, 'requestType': datarequest_type,
-            'requestStatus': datarequest_status}
+            'requestStatus': datarequest_status, 'requestAvailableDocuments': datarequest_available_documents}
 
 
 def datarequest_get(ctx, request_id):
@@ -1375,7 +1442,7 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # Write form data to disk
     try:
         file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data,
-                            [GROUP_PM])
+                            [user.full_name(ctx), GROUP_PM])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
 
@@ -1536,6 +1603,24 @@ def api_datarequest_approval_conditions_get(ctx, request_id):
         return None
 
 
+@api.make()
+def api_datarequest_evaluation_get(ctx, request_id):
+    """Retrieve an evaluation.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Evaluation JSON or API error on failure
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "DAC"], None)
+
+    return datarequest_evaluation_get(ctx, request_id)
+
+
 def datarequest_evaluation_get(ctx, request_id):
     """Retrieve an evaluation
 
@@ -1644,7 +1729,7 @@ def api_datarequest_preregistration_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [GROUP_PM])
+        file_write_and_lock(ctx, coll_path, PREREGISTRATION + JSON_EXT, data, [user.full_name(ctx), GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write preregistration data to disk')
 
