@@ -317,9 +317,10 @@ def update_index_metadata(ctx, path, metadata):
         avu.associate_to_data(ctx, path,
                               constants.UUINDEXMETADATAPREFIX + 'Creator',
                               name['Given_Name'] + ' ' + name['Family_Name'])
-        avu.associate_to_data(ctx, path,
-                              constants.UUINDEXMETADATAPREFIX + 'OwnerRole',
-                              creator['Owner_Role'])
+        if 'Owner_Role' in creator:
+            avu.associate_to_data(ctx, path,
+                                  constants.UUINDEXMETADATAPREFIX + 'OwnerRole',
+                                  creator['Owner_Role'])
     avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Title',
                           metadata['Title'])
     avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Description',
