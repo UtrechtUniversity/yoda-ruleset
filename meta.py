@@ -360,7 +360,7 @@ def ingest_metadata_vault(ctx, path):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
     for row in iter:
         data_package_reference = row[0]
@@ -370,7 +370,7 @@ def ingest_metadata_vault(ctx, path):
     iter = genquery.row_iterator(
         "COLL_CREATE_TIME",
         "COLL_NAME = '%s'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
     for row in iter:
         creation_time = row[0]
