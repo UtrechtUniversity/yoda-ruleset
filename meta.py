@@ -310,7 +310,7 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
-def update_index_metadata(ctx, path, metadata, ref, creation_time):
+def update_index_metadata(ctx, path, metadata, creation_time):
     """Update the index attributes for JSON metadata."""
     for creator in metadata['Creator']:
         name = creator['Name']
@@ -331,10 +331,6 @@ def update_index_metadata(ctx, path, metadata, ref, creation_time):
                           constants.UUINDEXMETADATAPREFIX + 'DataAccessRestriction',
                           metadata['Data_Access_Restriction'])
 
-    # from system metadata
-    avu.associate_to_data(ctx, path,
-                          constants.UUINDEXMETADATAPREFIX + 'DataPackage',
-                          ref)
     avu.associate_to_data(ctx, path,
                           constants.UUINDEXMETADATAPREFIX + 'CreationTime',
                           creation_time)
@@ -355,17 +351,6 @@ def ingest_metadata_vault(ctx, path):
         log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
 
-    # Get Data Package Reference.
-    data_package_reference = ""
-    iter = genquery.row_iterator(
-        "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        data_package_reference = row[0]
-        break
-
     # Get creation time.
     creation_time = ""
     iter = genquery.row_iterator(
@@ -375,11 +360,9 @@ def ingest_metadata_vault(ctx, path):
     )
     for row in iter:
         creation_time = str(int(row[0]))
-        break
 
     # update index metadata
-    update_index_metadata(ctx, path, metadata, data_package_reference,
-                          creation_time)
+    update_index_metadata(ctx, path, metadata, creation_time)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
