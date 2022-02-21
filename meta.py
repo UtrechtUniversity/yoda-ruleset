@@ -310,7 +310,7 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
-def update_index_metadata(ctx, path, metadata):
+def update_index_metadata(ctx, path, metadata, ref):
     """Update the index attributes for JSON metadata."""
     for creator in metadata['Creator']:
         name = creator['Name']
@@ -321,12 +321,20 @@ def update_index_metadata(ctx, path, metadata):
             avu.associate_to_data(ctx, path,
                                   constants.UUINDEXMETADATAPREFIX + 'OwnerRole',
                                   creator['Owner_Role'])
+
     avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Title',
                           metadata['Title'])
-    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Description',
+    avu.associate_to_data(ctx, path,
+                          constants.UUINDEXMETADATAPREFIX + 'Description',
                           metadata['Description'])
-    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'DataAccessRestriction',
+    avu.associate_to_data(ctx, path,
+                          constants.UUINDEXMETADATAPREFIX + 'DataAccessRestriction',
                           metadata['Data_Access_Restriction'])
+
+    # from system metadata
+    avu.associate_to_data(ctx, path,
+                          constants.UUINDEXMETADATAPREFIX + 'DataPackage',
+                          ref)
 
 
 def ingest_metadata_vault(ctx, path):
@@ -344,8 +352,18 @@ def ingest_metadata_vault(ctx, path):
         log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
 
+    # get Data Package Reference.
+    data_package_reference = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+        genquery.AS_LIST, callback
+    )
+    for row in iter:
+        data_package_reference = row[0]
+
     # update index metadata
-    update_index_metadata(ctx, path, metadata)
+    update_index_metadata(ctx, path, metadata, data_package_reference)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
