@@ -364,6 +364,7 @@ def ingest_metadata_vault(ctx, path):
     )
     for row in iter:
         data_package_reference = row[0]
+        break
 
     # Get creation time.
     creation_time = ""
@@ -373,7 +374,8 @@ def ingest_metadata_vault(ctx, path):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        creation_time = row[0]
+        creation_time = str(int(row[0]))
+        break
 
     # update index metadata
     update_index_metadata(ctx, path, metadata, data_package_reference,
