@@ -319,6 +319,10 @@ def update_index_metadata(ctx, path, metadata):
                               name['Given_Name'] + ' ' + name['Family_Name'])
     avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Title',
                           metadata['Title'])
+    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Description',
+                          metadata['Description'])
+    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'DataAccessRestriction',
+                          metadata['Data_Access_Restriction'])
 
 
 def ingest_metadata_vault(ctx, path):
