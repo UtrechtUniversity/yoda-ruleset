@@ -305,11 +305,12 @@ def api_meta_form_load(ctx, coll):
                 break
 
         date_deposit = datetime.strptime(deposit_date, '%Y-%m-%d')
- 
+
+        preservation_in_years = int(metadata['End_Preservation'])
         try:
-            new_date = date_deposit.replace(year = date_deposit.year + 10)
+            new_date = date_deposit.replace(year=date_deposit.year + preservation_in_years)
         except ValueError:
-            new_date = datetime(year=(date_deposit.year + 10), month=3, day=1)
+            new_date = datetime(year=(date_deposit.year + preservation_in_years), month=3, day=1)
 
         deposit_data = {'deposit_date': deposit_date,
                         'deposit_end_preservation_date': new_date.strftime('%Y-%m-%d')}
