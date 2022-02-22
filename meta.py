@@ -310,7 +310,7 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
-def update_index_metadata(ctx, path, metadata, creation_time):
+def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
     for creator in metadata['Creator']:
         name = creator['Name']
@@ -334,6 +334,10 @@ def update_index_metadata(ctx, path, metadata, creation_time):
     avu.associate_to_data(ctx, path,
                           constants.UUINDEXMETADATAPREFIX + 'CreationTime',
                           creation_time)
+    if config.enable_data_package_reference:
+        avu.associate_to_data(ctx, path,
+                              constants.UUINDEXMETADATAPREFIX + 'DataPackage',
+                              data_package)
 
 
 def ingest_metadata_vault(ctx, path):
@@ -361,8 +365,19 @@ def ingest_metadata_vault(ctx, path):
     for row in iter:
         creation_time = str(int(row[0]))
 
+    # Get Data Package Reference.
+    data_package = ""
+    if config.enable_data_package_reference:
+        iter = genquery.row_iterator(
+             "META_COLL_ATTR_VALUE",
+             "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+             genquery.AS_LIST, ctx
+        )
+        for row in iter:
+             data_package = row[0]
+
     # update index metadata
-    update_index_metadata(ctx, path, metadata, creation_time)
+    update_index_metadata(ctx, path, metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
