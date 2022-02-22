@@ -369,12 +369,12 @@ def ingest_metadata_vault(ctx, path):
     data_package = ""
     if config.enable_data_package_reference:
         iter = genquery.row_iterator(
-             "META_COLL_ATTR_VALUE",
-             "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
-             genquery.AS_LIST, ctx
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+            genquery.AS_LIST, ctx
         )
         for row in iter:
-             data_package = row[0]
+            data_package = row[0]
 
     # update index metadata
     update_index_metadata(ctx, path, metadata, creation_time, data_package)
