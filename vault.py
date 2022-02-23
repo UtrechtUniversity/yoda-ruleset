@@ -587,10 +587,14 @@ def api_vault_get_package_by_reference(ctx, reference):
 
 
 @api.make()
-def api_vault_get_deposit_data(ctx):
-    """Retrieve deposit data of data package."""
-    deposit_data = {}
+def api_vault_get_deposit_data(ctx, coll):
+    """Retrieve deposit data of data package.
 
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to retrieve deposit data from
+
+    :returns: API status
+    """
     # Get deposit date and end preservation date based upon retention period
     # "submitted for vault"
     # deposit_date = '2016-02-29'  # To be gotten from the action log
