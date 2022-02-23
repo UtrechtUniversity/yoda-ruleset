@@ -7,6 +7,7 @@ __license__   = 'GPLv3, see LICENSE'
 import itertools
 import os
 import time
+from datetime import datetime
 
 import genquery
 import irods_types
@@ -34,6 +35,7 @@ __all__ = ['api_vault_submit',
            'api_vault_get_package_by_reference',
            'api_vault_copy_to_research',
            'api_vault_get_publication_terms',
+           'api_vault_get_deposit_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group']
 
@@ -582,6 +584,30 @@ def api_vault_get_package_by_reference(ctx, reference):
 
     _, _, path, subpath = pathutil.info(data_package)
     return "/{}/{}".format(path, subpath)
+
+
+@api.make()
+def api_vault_get_deposit_data(ctx):
+    """Retrieve deposit data of data package."""
+    deposit_data = {}
+
+    # Get deposit date and end preservation date based upon retention period
+    # "submitted for vault"
+    # deposit_date = '2016-02-29'  # To be gotten from the action log
+    iter = genquery.row_iterator(
+        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # row contains json encoded [str(int(time.time())), action, actor]
+        log_item_list = jsonutil.parse(row[1])
+        if log_item_list[1] == "submitted for vault":
+            deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+            deposit_date = deposit_timestamp.strftime('%Y-%m-%d')
+            break
+
+    return {'deposit_date': deposit_date}
 
 
 @api.make()
