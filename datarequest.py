@@ -6,9 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
 import json
-import random
 import re
-import string
 import time
 from collections import OrderedDict
 from datetime import datetime
@@ -349,9 +347,10 @@ def metadata_set(ctx, request_id, key, value):
 
 
 def generate_request_id(ctx):
-    """Generate request ID for data request."""
-    characters = string.ascii_uppercase + string.digits
-    return ''.join(random.choice(characters) for x in range(6))
+    coll                            = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    number_of_existing_datarequests = collection.collection_count(ctx, coll, recursive=False)
+
+    return number_of_existing_datarequests + 1
 
 
 @api.make()
@@ -921,7 +920,7 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
         # Apply initial permission restrictions to researcher
         msi.set_acl(ctx, "default", "null", user.full_name(ctx), provenance_path)
-        msi.set_acl(ctx, "default", "read", user.full_name(ctx), coll_path)
+        msi.set_acl(ctx, "default", "read", "public", coll_path)
 
     # Write form data to disk
     try:
