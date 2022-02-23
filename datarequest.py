@@ -55,7 +55,8 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_upload_permission',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
-           'api_datarequest_data_ready']
+           'api_datarequest_data_ready',
+           'rule_datarequest_review_period_expiration_check']
 
 
 ###################################################
@@ -667,6 +668,16 @@ def cc_email_addresses_get(contact_object):
         return None
 
 
+@rule.make(inputs=range(0), outputs=range(2))
+def rule_datarequest_review_period_expiration_check(ctx):
+    coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
+    ccols    = ['COLL_NAME']
+    qcoll    = Query(ctx, ccols, criteria, output=query.AS_DICT)
+    if len(list(qcoll)) > 0:
+        datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
+
+
 ###################################################
 #          Datarequest workflow API calls         #
 ###################################################
@@ -690,14 +701,6 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     """
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-
-    # If projectmanager, check if any of the review periods have reached their deadline
-    if user.is_member_of(ctx, GROUP_PM):
-        criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE > '{}'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
-        ccols    = ['COLL_NAME']
-        qcoll    = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
-        if len(list(qcoll)) > 0:
-            datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
