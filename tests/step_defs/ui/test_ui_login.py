@@ -11,7 +11,7 @@ from pytest_bdd import (
     when,
 )
 
-from conftest import password, portal_url
+from conftest import portal_url
 
 scenarios('../../features/ui/ui_login.feature')
 
