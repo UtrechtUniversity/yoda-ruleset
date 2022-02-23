@@ -142,7 +142,6 @@ def api_meta_form_load(ctx, coll):
 
     :returns: API status
     """
-    deposit_data = {}
     can_edit  = False
     can_clone = False
     metadata  = None
@@ -285,41 +284,11 @@ def api_meta_form_load(ctx, coll):
                              'The metadata file is not compliant with the schema in this category and cannot be transformed. '
                              + 'Please contact your datamanager.')
 
-        # Get deposit date and end preservation date based upon retention period
-        # "submitted for vault"
-        # deposit_date = '2016-02-29'  # To be gotten from the action log
-        import genquery
-        from datetime import datetime
-        iter = genquery.row_iterator(
-            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-            "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            # row contains json encoded [str(int(time.time())), action, actor]
-            log_item_list = jsonutil.parse(row[1])
-            if log_item_list[1] == "submitted for vault":
-                deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-
-                deposit_date = deposit_timestamp.strftime('%Y-%m-%d')
-                break
-
-        date_deposit = datetime.strptime(deposit_date, '%Y-%m-%d')
-
-        preservation_in_years = int(metadata['End_Preservation'])
-        try:
-            new_date = date_deposit.replace(year=date_deposit.year + preservation_in_years)
-        except ValueError:
-            new_date = datetime(year=(date_deposit.year + preservation_in_years), month=3, day=1)
-
-        deposit_data = {'deposit_date': deposit_date,
-                        'deposit_end_preservation_date': new_date.strftime('%Y-%m-%d')}
-
-    return dict({'can_edit': can_edit,
-                 'can_clone': can_clone,
-                 'schema': schema,
-                 'uischema': uischema,
-                 'metadata': metadata}.items() + deposit_data.items())
+    return {'can_edit': can_edit,
+            'can_clone': can_clone,
+            'schema': schema,
+            'uischema': uischema,
+            'metadata': metadata}
 
 
 @api.make()
