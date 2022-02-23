@@ -4,6 +4,8 @@ Feature: Vault API
         | vault                          |
         | /tempZone/home/vault-core-0    |
         | /tempZone/home/vault-default-1 |
+        | /tempZone/home/vault-core-1    |
+        | /tempZone/home/vault-default-2 |
 
     Scenario: Vault submit
         Given user "researcher" is authenticated
@@ -56,11 +58,24 @@ Feature: Vault API
         And data package exists in "<vault>"
         And the Yoda vault system metadata API is queried on datapackage in "<vault>"
         Then the response status code is "200"
+        And system metadata is returned
 
     Scenario: Vault collection details
         Given user "researcher" is authenticated
         And data package exists in "<vault>"
         And the Yoda vault collection details API is queried on datapackage in "<vault>"
+        Then the response status code is "200"
+
+    Scenario: Revoke read access to research group
+        Given user "datamanager" is authenticated
+        And data package exists in "<vault>"
+        And the Yoda vault revoke read access research group API is queried on datapackage in "<vault>"
+        Then the response status code is "200"
+
+    Scenario: Revoke grant access to research group
+        Given user "datamanager" is authenticated
+        And data package exists in "<vault>"
+        And the Yoda vault grant read access research group API is queried on datapackage in "<vault>"
         Then the response status code is "200"
 
     Scenario: Vault get publication terms

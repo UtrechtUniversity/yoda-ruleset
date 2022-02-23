@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """JSON metadata form handling."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -171,7 +171,7 @@ def api_meta_form_load(ctx, coll):
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
         can_edit = is_member and not folder.is_locked(ctx, coll, org_metadata)
 
-        # Analyze a possibly existing metadata JSON/XML file.
+        # Analyze a possibly existing metadata JSON file.
         meta_path = meta.get_collection_metadata_path(ctx, coll)
 
         if meta_path is None:
@@ -243,13 +243,6 @@ def api_meta_form_load(ctx, coll):
                 return api.Error('bad_schema',
                                  'The metadata file is not compliant with the schema in this category and cannot be transformed. '
                                  + 'Please contact your datamanager.')
-
-        elif meta_path.endswith('.xml'):
-            # Offer automatic transformation.
-            return api.Error('transformation_needed',
-                             'The metadata file format needs to be transformed from XML to JSON to continue.',
-                             data={'transformation_html': '<p>Your yoda-metadata.xml needs to be converted to the new yoda-metadata.json format to continue.</p>',
-                                   'can_edit': can_edit})
 
     elif space is pathutil.Space.VAULT:
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)

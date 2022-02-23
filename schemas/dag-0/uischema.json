@@ -34,21 +34,37 @@
     }
   },
   "GeoLocation": {
-    "ui:help": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
+    "ui:description": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
     "items": {
       "geoLocationBox": {
-        "ui:help": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
+        "ui:description": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
         "ui:field": "geo"
       }
     }
   },
   "Tag": {
-    "items": {
-      "ui:help": "Give in terms which describes your data package"
-    }
+    "ui:description": "Free text field for adding (searchable) key words to your data package"
   },
   "Related_Datapackage": {
-    "ui:description": "Reference to other resources, such as another data package, or an online publication"
+    "ui:description": "Reference to other resources, such as another data package, or an online publication",
+    "items": {
+      "Relation_Type": {
+        "ui:help": "Relation to this data package",
+        "ui:widget": "hidden"
+      },
+      "Title": {
+        "ui:help": "Title of the related resource"
+      },
+      "Persistent_Identifier": {
+        "ui:help": "Persistent identifier of the related resource",
+        "Identifier_Scheme": {
+          "ui:help": "Type of Persistent identifier of the related resource"
+        },
+        "Identifier": {
+          "ui:help": "The identifier as it can be resolved on the appropriate service"
+        }
+      }
+    }
   },
   "Personal_Data": {
     "ui:help": "Indicate whether the data package contains personal information"
@@ -63,7 +79,12 @@
     "ui:description": "Person performing the deposit will also act as first contact person",
     "items": {
       "Name": {
-        "ui:help": "The name of the persons who deposits this data package to the archive"
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) performing the deposit"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) performing the deposit"
+        }
       }
     }
   },
@@ -71,7 +92,15 @@
     "ui:description": "The person(s) within the faculty responsible for collecting the data",
     "items": {
       "Name": {
-        "ui:help": "The name of the person(s) who created (a version of) the data package"
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) responsible for collecting the data"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) responsible for collecting the data"
+        }
+      },
+      "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the contributor"
       },
       "Owner_Role": {
         "ui:help": "What is the role of the owner in the data collection"

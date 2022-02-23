@@ -210,7 +210,7 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 	} else if (*otherName like "datamanager-*" && *accessLevel == "read") {
 		*forGroup = *policyKv."forGroup";
 		if (*objPath == "/$rodsZoneClient/home/*forGroup") {
-			if (*forGroup like regex "(intake|research)-.*") {
+			if (*forGroup like regex "(intake|research|deposit)-.*") {
 				uuGroupUserIsManager(*forGroup, uuClientFullName, *isManagerInGroup);
 				uuGroupGetCategory(*forGroup, *category, *_);
 
@@ -235,7 +235,7 @@ uuGroupPreSudoObjAclSet(*recursive, *accessLevel, *otherName, *objPath, *policyK
 	} else if (*otherName like "datamanager-*" && *accessLevel == "null") {
 		*forGroup = *policyKv."forGroup";
 		if (*objPath == "/$rodsZoneClient/home/*forGroup") {
-			if (*forGroup like regex "(intake|research)-.*") {
+			if (*forGroup like regex "(intake|research|deposit)-.*") {
 				uuGroupUserIsManager(*forGroup, uuClientFullName, *isManagerInGroup);
 				uuGroupGetCategory(*forGroup, *category, *_);
 
@@ -494,8 +494,12 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 						*aclKv."forGroup" = *vaultGroupName;
 						msiSudoObjAclSet("recursive", "read", *groupName, "/$rodsZoneClient/home/*vaultGroupName", *aclKv);
 					}
+                # Filter down to deposit groups and get their vault groups.
 				} else if (*catGroup like regex "deposit-.*") {
-                    # Only read access to deposit vault groups.
+                    # Not recursive read rights.
+                    *aclKv."forGroup" = *catGroup;
+                    msiSudoObjAclSet("", "read", *groupName, "/$rodsZoneClient/home/*catGroup", *aclKv);
+
 					uuChop(*catGroup, *_, *catGroupBase, "-", true);
 					*vaultGroupName = "vault-*catGroupBase";
 
@@ -581,7 +585,7 @@ uuPostSudoObjMetaSet(*objName, *objType, *attribute, *value, *unit, *policyKv) {
 	ON (
 		*objType == "-u"
 		# vault- and read- groups don't define their own category attribute.
-		&& *objName like regex "(intake|research)-.*"
+		&& *objName like regex "(intake|research|deposit)-.*"
 		&& *attribute == "category"
 	) {
 		# Make sure it's actually a group.

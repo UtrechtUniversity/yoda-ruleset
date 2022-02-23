@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for handling schema updates within any yoda-metadata file."""
 
-__copyright__ = 'Copyright (c) 2018-2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __all__ = ['rule_batch_transform_vault_metadata',
@@ -15,12 +15,10 @@ import time
 import genquery
 import irods_types
 import session_vars
-import xmltodict
 
 import meta
 import schema
 import schema_transformations
-import vault_xml_to_json
 from util import *
 
 
@@ -31,7 +29,7 @@ def execute_transformation(ctx, metadata_path, transform):
     group_name = metadata_path.split('/')[3]
 
     metadata = jsonutil.read(ctx, metadata_path)
-    metadata = transform(metadata)
+    metadata = transform(ctx, metadata)
 
     if group_name.startswith('research-'):
         backup = '{}/transformation-backup[{}].json'.format(coll, str(int(time.time())))
@@ -49,103 +47,12 @@ def execute_transformation(ctx, metadata_path, transform):
         raise AssertionError()
 
 
-def transform_research_xml(ctx, xml_path):
-    """Transform a Yoda metadata XML to JSON in the research area.
-
-    Note: This assumes no yoda-metadata.json exists yet - otherwise it will be overwritten.
-
-    :param ctx:      Combined type of a ctx and rei struct
-    :param xml_path: Path to Yoda metadata XML to transform
-
-    :raises KeyError: Schema is not defined, use fallback
-
-    :returns: API status
-    """
-    _, zone, _1, _2 = pathutil.info(xml_path)
-    xml_data = xmltodict.parse(data_object.read(ctx, xml_path))
-
-    try:
-        xml_ns = xml_data['metadata']['@xmlns']
-        schema_category = xml_ns.split('/')[-1]
-    except KeyError as e:
-        if e.args[0] != '@xmlns':
-            raise
-        # Previous default-0 compliant metadata XML had no schema indication.
-        # Set to default-0 for backwards compat.
-        xml_ns = 'https://yoda.uu.nl/schemas/default-0'
-        schema_category = xml_ns.split('/')[-1]
-    except Exception as e:
-        return api.Error('bad_xml', 'XML metadata file is malformed', debug_info=repr(e))
-
-    try:
-        json_schema_path = '/' + zone + '/yoda/schemas/' + schema_category + '/metadata.json'
-        schem = jsonutil.read(ctx, json_schema_path)
-    except error.UUFileNotExistError:
-        return api.Error('missing_schema',
-                         'Metadata schema for default-0 is needed for XML transformation. Please contact an administrator.')
-
-    try:
-        # FIXME: This should get a dict instead of a json string.
-        metadata = jsonutil.parse(vault_xml_to_json.transformYodaXmlDataToJson(ctx, schem, xml_data))
-        # FIXME: schema id should be inserted by the transformer instead.
-        schema_id = xml_ns + '/metadata.json'
-        meta.metadata_set_schema_id(metadata, schema_id)
-
-        try:
-            schem = schema.get_schema_by_id(ctx, schema_id, xml_path)
-        except Exception as e:
-            log.write(ctx, 'Warning: could not get JSON schema for XML <{}> with schema_id <{}>: {}'
-                      .format(xml_path, schema_id, str(e)))
-            # The result is unusable, as there will be no possible JSON → JSON
-            # transformation that will make this a valid metadata file.
-            raise e  # give up.
-
-        json_path = re.sub('\.xml$', '.json', xml_path)
-
-        # Validate against the metadata's indicated schema.
-        # This is purely for logging / debugging currently,
-        # any validation errors will be reported when the form is next opened.
-        errors = meta.get_json_metadata_errors(ctx,
-                                               json_path,
-                                               metadata=metadata,
-                                               schema=schem,
-                                               ignore_required=True)
-
-        if len(errors) > 0:
-            # This is not fatal - there may have been validation errors in the XML as well,
-            # which should remain exactly the same in the new JSON situation.
-            # print(errors)
-            log.write(ctx, 'Warning: Validation errors exist after transforming XML to JSON (<{}> with schema id <{}>), continuing'
-                      .format(xml_path, schema_id))
-
-        jsonutil.write(ctx, json_path, metadata)
-    except Exception as e:
-        return api.Error('bad_xml', 'XML metadata file could not be transformed', debug_info=repr(e))
-
-
 @api.make()
 def api_transform_metadata(ctx, coll):
     """Transform a yoda-metadata file in the given collection to the active schema."""
     metadata_path = meta.get_collection_metadata_path(ctx, coll)
 
-    if metadata_path is None:
-        return api.Error('no_metadata', 'No metadata file found')
-    elif metadata_path.endswith('.xml'):
-        # XML metadata.
-
-        space, _0, _1, _2 = pathutil.info(metadata_path)
-        if space != pathutil.Space.RESEARCH:
-            # Vault XML metadata is not transformed through this path, currently.
-            log.write(ctx, 'vault metadata transformation not supported via API, currently')
-            return api.Error('internal', 'Internal error')
-
-        # Special case: Transform legacy XML metadata to JSON equivalent.
-        # If the metadata is in default-0 format and the active schema is
-        # newer, a second transformation will be needed, and the user will be
-        # prompted for that the next time they open the form.
-        log.write(ctx, 'Transforming XML -> JSON in the research space')
-        return transform_research_xml(ctx, metadata_path)
-    else:
+    if metadata_path.endswith('.json'):
         # JSON metadata.
         log.write(ctx, 'Transforming JSON -> JSON in the research space')
         transform = get(ctx, metadata_path)
@@ -154,6 +61,8 @@ def api_transform_metadata(ctx, coll):
             return api.Error('undefined_transformation', 'No transformation found')
 
         execute_transformation(ctx, metadata_path, transform)
+    else:
+        return api.Error('no_metadata', 'No metadata file found')
 
 
 def get(ctx, metadata_path, metadata=None):

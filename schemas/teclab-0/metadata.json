@@ -1484,7 +1484,7 @@
       "minItems": 1,
       "title": "Tags",
       "items": {
-        "$ref": "#/definitions/stringNormal",
+        "$ref": "#/definitions/stringNormalNullable",
         "title": "Tag",
         "default": ""
       }

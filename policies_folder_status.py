@@ -164,8 +164,26 @@ def post_status_transition(ctx, path, actor, status):
         notifications.set(ctx, actor, submitter, data_package, message)
         notifications.set(ctx, actor, accepter, data_package, message)
 
-        # Remove deposit folder after secure in vault.
+        # Handle vault packages from deposit module.
         if pathutil.info(path).space is pathutil.Space.DEPOSIT:
+            # Grant submitter (depositor) read access to vault package.
+            msi.set_acl(ctx, "recursive", "read", submitter, data_package)
+
+            # Retrieve Data Access Restriction of vault package.
+            meta_path = meta.get_collection_metadata_path(ctx, path)
+            open_package = False
+            if meta_path is not None:
+                metadata = jsonutil.read(ctx, meta_path)
+                data_access_restriction = metadata.get("Data_Access_Restriction", "")
+                if data_access_restriction == "Open - freely retrievable":
+                    open_package = True
+
+            # Revoke read access for research group when data package is not open.
+            if not open_package:
+                _, _, group, _ = pathutil.info(path)
+                msi.set_acl(ctx, "recursive", "null", group, data_package)
+
+            # Remove deposit folder after secure in vault.
             parent, _ = pathutil.chop(path)
             msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), parent)
             msi.set_acl(ctx, "recursive", "admin:own", user.full_name(ctx), path)

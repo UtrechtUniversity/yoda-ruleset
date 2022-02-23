@@ -1,7 +1,7 @@
 # coding=utf-8
-"""Login OIDC UI feature tests."""
+"""Login UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,7 +13,9 @@ from pytest_bdd import (
 
 from conftest import portal_url
 
-scenarios('../../features/ui/ui_login_oidc.feature')
+scenarios('../../features/ui/ui_login.feature')
+
+restricted_page = "{}/test".format(portal_url)
 
 
 @given('the user "<user>" can start the OIDC flow')

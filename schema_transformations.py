@@ -7,6 +7,8 @@ __license__   = 'GPLv3, see LICENSE'
 import re
 
 import meta
+from util import *
+
 
 # No rules are exported by this module.
 __all__ = []
@@ -22,7 +24,7 @@ __all__ = []
 # The docstring of a transformation function should describe the transformation
 # in a human-readable manner: it is provided to the user executing the transformation.
 
-def _default0_default1(m):
+def _default0_default1(ctx, m):
     """
     A Data type field is added to be used for publication purposes to DataCite.
 
@@ -37,7 +39,8 @@ def _default0_default1(m):
     Finally, the creator and contributor name fields have been split into first
     and last names, to comply with the OpenAIRE standard.
 
-    :param m: Metadata to transform (default-0)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-0)
 
     :returns: Transformed (default-1) JSON object
     """
@@ -72,7 +75,7 @@ def _default0_default1(m):
     return m
 
 
-def _default1_default2(m):
+def _default1_default2(ctx, m):
     """
     Metadata fields Discipline, Language and Tags have become required fields.
 
@@ -86,8 +89,8 @@ def _default1_default2(m):
     I.e. discipline must be manually added if not present yet.
     This requires an intervention by the responsible datamanager beforehand
 
-
-    :param m: Metadata to transform (default-1)
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (default-1)
 
     :returns: Transformed (default-2) JSON object
     """
@@ -104,6 +107,358 @@ def _default1_default2(m):
     return m
 
 
+def _default1_teclab0(ctx, m):
+    """
+    Transform Default-1 data to the teclab-0 schema definition
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to be transformed (default-1)
+
+    :returns: Transformed (teclab-0) JSON object
+    """
+
+    # First bring to default2 level
+    m = _default1_default2(m)
+
+    # 1) REQUIRED FIELDS
+    m['Discipline'] = ['Analogue modelling of geologic processes']
+    m['Lab'] = ['aa45f98e5c098237d0c57b58e5f953e1']
+
+    m['Main_Setting'] = ['basin plain setting']
+    m['Process_Hazard'] = ['deformation']
+    m['Geological_Structure'] = ['fault']
+    m['Geomorphological_Feature'] = ['alluvial and fluvial features']
+    m['Material'] = ['sedimentary rock - limestone - Solnhofen limestone']
+    m['Apparatus'] = ['2D Convection box']
+    m['Software'] = ['CloudCompare']
+    m['Measured_Property'] = ['Bulk modulus']
+
+    if not m.get('Data_Type', False):
+        m['Data_Type'] = 'Dataset'
+
+    if not m.get('Related_Datapackage', False):
+        m['Related_Datapackage'] = [{'Relation_Type': 'IsSupplementTo',
+                                     'Title': 'RDP title',
+                                     'Persistent_Identifier': {'Identifier_Scheme': 'ARK',
+                                                               'Identifier': 'ARK123'}}]
+    else:
+        # Relation types of default1 have additional information in string 'IsSupplementTo: Is supplement to'
+        # Stripping is required for teclab/hptlab
+        for rdp in m['Related_Datapackage']:
+            try:
+                rdp['Relation_Type'] = rdp['Relation_Type'].split(':')[0]
+            except Exception:
+                rdp['Relation_Type'] = 'IsSupplementTo'
+
+    # Contact is a special contributor of contributor type 'ContactPerson'
+    # First check whether present Contributors contain contact persons.
+    # If not, add a placeholder Contact
+    # Loop through present Contributors.
+    # If ContactPerson is present, add as a Contacts and remove from Contributors list
+    new_contacts = []
+    contributors_remaining = []
+    if m.get('Contributor', False):
+        for contributor in m['Contributor']:
+            if contributor['Contributor_Type'] == 'ContactPerson':
+                # Add this contributor-contact-person to contacts list
+                new_contacts.append({'Name': {'Given_Name': contributor['Name']['Given_Name'], 'Family_Name': contributor['Name']['Family_Name']},
+                                     'Position': 'Position',
+                                     'Email': 'Email',
+                                     'Affiliation': ['Affiliation'],
+                                     'Person_Identifier': [{'Name_Identifier_Scheme': contributor['Person_Identifier'][0]['Name_Identifier_Scheme'],
+                                                           'Name_Identifier': contributor['Person_Identifier'][0]['Name_Identifier']}]})
+            else:
+                # remaining list contains non-contactpersons only
+                contributors_remaining.append(contributor)
+
+    if len(new_contacts):
+        # If new contacts are present
+        m['Contact'] = new_contacts
+        m['Contributor'] = contributors_remaining
+    else:
+        m['Contact'] = [{'Name': {'Given_Name': 'Contact given name', 'Family_Name': 'Contact family name'},
+                         'Position': 'Position',
+                         'Email': 'Email',
+                         'Affiliation': ['Affiliation'],
+                         'Person_Identifier': [{'Name_Identifier_Scheme': '',
+                                               'Name_Identifier': ''}]}]
+
+    # 2) SPECIFIC TRANSFORMATION combining different attributes
+    # GeoBox - derived from Covered_Geolocation_Place and Covered_Period
+    # spatial = ', '.join(m['Covered_Geolocation_Place'])
+    try:
+        m['GeoLocation'] = [{'geoLocationBox': {'northBoundLatitude': 0.0,
+                                                'westBoundLongitude': 0.0,
+                                                'southBoundLatitude': 0.0,
+                                                'eastBoundLongitude': 0.0},
+                             'Description_Spatial': ', '.join(m['Covered_Geolocation_Place']),
+                             'Description_Temporal': {'Start_Date': m['Covered_Period']['Start_Date'], 'End_Date': m['Covered_Period']['End_Date']}}]
+    except Exception:
+        pass
+
+    # Funding reference is not a required field, but if present in def1 then an extra field is required
+    if m.get('Funding_Reference', False):
+        for fun_ref in m['Funding_Reference']:
+            fun_ref['Funder_Reference'] = 'Funder_Reference'
+
+    # 3) REMOVE ATTRIBUTES that are not part of teclab-0
+    try:
+        m.pop('Covered_Geolocation_Place')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Covered_Period')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Retention_Information')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Collection_Name')
+    except KeyError:
+        pass
+
+    # 4) SET CORRECT META SCHEMA
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/teclab-0/metadata.json')
+
+    return m
+
+
+def _default1_hptlab0(ctx, m):
+    """
+    Transform Default-1 data to the hptlab-0 schema definition
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to be transformed (default-1)
+
+    :returns: Transformed (hptlab-0) JSON object
+
+    """
+    # First bring to default2 level
+    m = _default1_default2(m)
+
+    # 1) REQUIRED FIELDS
+    m['Discipline'] = ['Rock and melt physical properties']
+    m['Lab'] = ['e3a4f5d02528d02c516dbea19c20b32c']
+
+    # Material, Apparatus and Apparatus might get different default values (email Vincent Brunst 15 oct)
+    # Pore_Fluid list still to be defined
+    m['Material'] = ['sedimentary rock - limestone - Solnhofen limestone']
+    m['Apparatus'] = ['deformation testing - compression testing - confining pressure vessel']
+    m['Measured_Property'] = ['strength  - tensile strength']
+    m['Pore_Fluid'] = ['vacuum']
+
+    if not m.get('Data_Type', False):
+        m['Data_Type'] = 'Dataset'
+
+    if not m.get('Related_Datapackage', False):
+        m['Related_Datapackage'] = [{'Relation_Type': 'IsSupplementTo',
+                                     'Title': 'RDP title',
+                                     'Persistent_Identifier': {'Identifier_Scheme': 'ARK',
+                                                               'Identifier': 'ARK123'}}]
+    else:
+        # Relation types of default1 have additional information in string 'IsSupplementTo: Is supplement to'
+        # Stripping is required for teclab/hptlab
+        for rdp in m['Related_Datapackage']:
+            try:
+                rdp['Relation_Type'] = rdp['Relation_Type'].split(':')[0]
+            except Exception:
+                rdp['Relation_Type'] = 'IsSupplementTo'
+
+    # Contact is a special contributor of contributor type 'ContactPerson'
+    # First check whether present Contributors contain contact persons.
+    # If not, add a placeholder Contact
+    # Loop through present Contributors.
+    # If ContactPerson is present, add as a Contacts and remove from Contributors list
+    new_contacts = []
+    contributors_remaining = []
+    if m.get('Contributor', False):
+        for contributor in m['Contributor']:
+            if contributor['Contributor_Type'] == 'ContactPerson':
+                # Add this contributor-contact-person to contacts list
+                new_contacts.append({'Name': {'Given_Name': contributor['Name']['Given_Name'], 'Family_Name': contributor['Name']['Family_Name']},
+                                     'Position': 'Position',
+                                     'Email': 'Email',
+                                     'Affiliation': ['Affiliation'],
+                                     'Person_Identifier': [{'Name_Identifier_Scheme': contributor['Person_Identifier'][0]['Name_Identifier_Scheme'],
+                                                           'Name_Identifier': contributor['Person_Identifier'][0]['Name_Identifier']}]})
+            else:
+                # remaining list contains non-contactpersons only
+                contributors_remaining.append(contributor)
+
+    if len(new_contacts):
+        # If new contacts are present
+        m['Contact'] = new_contacts
+        m['Contributor'] = contributors_remaining
+    else:
+        m['Contact'] = [{'Name': {'Given_Name': 'Contact given name', 'Family_Name': 'Contact family name'},
+                         'Position': 'Position',
+                         'Email': 'Email',
+                         'Affiliation': ['Affiliation'],
+                         'Person_Identifier': [{'Name_Identifier_Scheme': '',
+                                               'Name_Identifier': ''}]}]
+
+    # 2) SPECIFIC TRANSFORMATION combining different attributes
+    # GeoBox - derived from Covered_Geolocation_Place and Covered_Period
+    # spatial = ', '.join(m['Covered_Geolocation_Place'])
+    try:
+        m['GeoLocation'] = [{'geoLocationBox': {'northBoundLatitude': 0.0,
+                                                'westBoundLongitude': 0.0,
+                                                'southBoundLatitude': 0.0,
+                                                'eastBoundLongitude': 0.0},
+                             'Description_Spatial': ', '.join(m['Covered_Geolocation_Place']),
+                             'Description_Temporal': {'Start_Date': m['Covered_Period']['Start_Date'], 'End_Date': m['Covered_Period']['End_Date']}}]
+    except Exception:
+        pass
+
+    # Funding reference is not a required field, but if present in def1 then an extra field is required
+    if m.get('Funding_Reference', False):
+        for fun_ref in m['Funding_Reference']:
+            fun_ref['Funder_Reference'] = 'Funder_Reference'
+
+    # 3) REMOVE ATTRIBUTES that are not part of hptlab-0
+    try:
+        m.pop('Covered_Geolocation_Place')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Covered_Period')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Retention_Information')
+    except KeyError:
+        pass
+
+    try:
+        m.pop('Collection_Name')
+    except KeyError:
+        pass
+
+    # 4) SET CORRECT META SCHEMA
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/hptlab-0/metadata.json')
+
+    return m
+
+
+def _hptlab0_hptlab1(ctx, m):
+    """
+    Transform hptlab-0 data to the hptlab-1 schema definition which holds better qualified lists.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m: Metadata to transform (hptlab-0)
+
+    :returns: Transformed (hptlab-1) JSON object
+    """
+    try:
+        m.pop('Monitoring')
+    except KeyError:
+        pass
+
+    # Get the entire metadata schema to be able to get some proper values based on the previous saved values
+    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/hptlab-1/metadata.json'.format(user.zone(ctx)))
+
+    attributes = {'Material': 'optionsMaterial',
+                  'Apparatus': 'optionsApparatus',
+                  'Measured_Property': 'optionsMeasuredProperty'}
+
+    for attribute, option_list in attributes.items():
+        new_list = []
+        reference_list = new_schema['definitions'][option_list]['enum']
+        try:
+            for item_search in m[attribute]:
+                found = False
+                for i, elem in enumerate(reference_list):
+                    if item_search.lower() in elem.lower():
+                        found = True
+                        new_list.append(elem)
+                        break
+                if not found:
+                    for i, elem in enumerate(reference_list):
+                        # Split on ' ' an compare based on the first token
+                        if item_search.split(' ')[0].lower() in elem.lower():
+                            found = True
+                            new_list.append(elem)
+                            break
+        except KeyError:
+            pass
+
+        if len(new_list):
+            m[attribute] = new_list
+        else:
+            # Take first in the corresponding list as a default value
+            m[attribute] = [new_schema['definitions'][option_list]['enum'][0]]
+
+    # Newly introduced - no previous value present
+    m['Pore_Fluid'] = [new_schema['definitions']['optionsPoreFluid']['enum'][0]]
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/hptlab-1/metadata.json')
+
+    return m
+
+
+def _teclab0_teclab1(ctx, m):
+    """
+    Transform teclab-0 data to the teclab-1 schema definition which holds better qualified lists.
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to transform (teclab-0)
+
+    :returns: Transformed (teclab-1) JSON object
+    """
+    new_schema = jsonutil.read(ctx, '/{}/yoda/schemas/teclab-1/metadata.json'.format(user.zone(ctx)))
+
+    if 'Geomorphical_Feature' in m:
+        # Name is no longer in use.
+        m['Geomorphological_Feature'] = m['Geomorphical_Feature']
+        m.pop('Geomorphical_Feature')
+
+    attributes = {'Material': 'optionsMaterial',
+                  'Apparatus': 'optionsApparatus',
+                  'Measured_Property': 'optionsMeasuredProperty',
+                  'Main_Setting': 'optionsMainSetting',
+                  'Process_Hazard': 'optionsProcessHazard',
+                  'Geological_Structure': 'optionsGeologicalStructure',
+                  'Geomorphological_Feature': 'optionsGeomorphologicalFeature',
+                  'Software': 'optionsSoftware'}
+
+    for attribute, option_list in attributes.items():
+        new_list = []
+        reference_list = new_schema['definitions'][option_list]['enum']
+        try:
+            for item_search in m[attribute]:
+                found = False
+                for i, elem in enumerate(reference_list):
+                    if item_search.lower() in elem.lower():
+                        found = True
+                        new_list.append(elem)
+                        break
+                if not found:
+                    for i, elem in enumerate(reference_list):
+                        # Split on ' ' an compare based on the first token
+                        if item_search.split(' ')[0].lower() in elem.lower():
+                            found = True
+                            new_list.append(elem)
+                            break
+        except KeyError:
+            pass
+
+        if len(new_list):
+            m[attribute] = new_list
+        else:
+            # Take first in the corresponding list as a default value
+            m[attribute] = [new_schema['definitions'][option_list]['enum'][0]]
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/teclab-1/metadata.json')
+
+    return m
+
 # }}}
 
 
@@ -116,10 +471,21 @@ def get(src_id, dst_id):
 
     :return: A transformation function, or None if no mapping exists for the given ids
     """
+    # Simplified shortcut as these are once in a lifetime!
+    if src_id == 'https://yoda.uu.nl/schemas/default-1/metadata.json':
+        if dst_id == 'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
+            return _default1_hptlab0
+        if dst_id == 'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
+            return _default1_teclab0
+
     transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
                        'https://yoda.uu.nl/schemas/default-1/metadata.json':
-                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2}}
+                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
+                       'https://yoda.uu.nl/schemas/hptlab-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/hptlab-1/metadata.json': _hptlab0_hptlab1},
+                       'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/teclab-1/metadata.json': _teclab0_teclab1}}
 
     x = transformations.get(src_id)
     return None if x is None else x.get(dst_id)

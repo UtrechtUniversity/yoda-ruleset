@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Constants that apply to all Yoda environments."""
 
-__copyright__ = 'Copyright (c) 2016-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2016-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from enum import Enum
@@ -52,15 +52,6 @@ IITERMSCOLLECTION = UUSYSTEMCOLLECTION + "/terms"
 IIJSONMETADATA = 'yoda-metadata.json'
 """Name of metadata JSON file."""
 
-IIMETADATAXMLNAME = 'yoda-metadata.xml'
-"""Name of metadata XML file."""
-
-IIRESEARCHXSDNAME = 'research.xsd'
-"""Name of the research XSD."""
-
-IIVAULTXSDNAME = 'vault.xsd'
-"""Name of the vault XSD."""
-
 IIDATA_MAX_SLURP_SIZE = 4 * 1024 * 1024  # 4 MiB
 """The maximum file size that can be read into a string in memory, to prevent
    DOSing / out of control memory consumption."""
@@ -78,6 +69,8 @@ IILOCKATTRNAME        = UUORGMETADATAPREFIX + 'lock'
 IISTATUSATTRNAME      = UUORGMETADATAPREFIX + 'status'
 IIVAULTSTATUSATTRNAME = UUORGMETADATAPREFIX + 'vault_status'
 IICOPYPARAMSNAME      = UUORGMETADATAPREFIX + 'copy_to_vault_params'
+
+DATA_PACKAGE_REFERENCE = UUORGMETADATAPREFIX + 'data_package_reference'
 
 CRONJOB_STATE = {
     'PENDING':       'CRONJOB_PENDING',

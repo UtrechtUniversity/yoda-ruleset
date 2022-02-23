@@ -5,7 +5,7 @@
 #$3 pseudocode
 #lists all files, when found any grp-intake-folder using specified parameter(s) 
 
-output=$(irule -F youthIntakeCheck.r "'$1'" "'$2'" "'$3'")
+output=$(irule -r irods_rule_engine_plugin-irods_rule_language-instance -F youthIntakeCheck.r "'$1'" "'$2'" "'$3'")
 #echo $output
 if [[ "$output" == "" ]]
 then

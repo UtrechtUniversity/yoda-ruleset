@@ -1,5 +1,5 @@
 # coding=utf-8
-"""Login OIDC UI feature tests."""
+"""Login redirect UI feature tests."""
 
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'

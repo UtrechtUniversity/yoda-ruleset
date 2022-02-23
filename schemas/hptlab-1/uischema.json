@@ -1,0 +1,213 @@
+{
+  "links": {
+    "ui:disabled": true
+  },
+  "Title": {
+    "ui:help": "The title of your data package"
+  },
+  "Description": {
+    "ui:help": "A description of your data package",
+    "ui:widget": "textarea"
+  },
+  "Additional_Documentation": {
+    "ui:widget": "textarea"
+  },
+  "Discipline": {
+    "ui:description": "A part of a domain distinguished from adjacent parts by a distinctive feature or characteristic."
+  },
+  "Lab": {
+    "ui:description": "Facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. The laboratory is mentioned in the pre-defined vocabulary of laboratories."
+  },
+  "Additional_Lab": {
+    "ui:description": "facility that provides controlled conditions in which scientific or technological research, experiments, and measurements has been performed. This laboratory has a minor role compared to the originating laboratory or is not mentioned in the pre-defined vocabulary of laboratories."
+  },
+  "Version": {
+    "ui:help": "A version number for the data package"
+  },
+  "Language": {
+    "ui:help": "The language of the data package"
+  },
+  "Collected": {
+    "ui:help": "Indicate when collecting the data for this data package started and ended",
+    "Start_Date": {
+      "ui:help": "Indicate when you've started collecting the data for this data package"
+    },
+    "End_Date": {
+      "ui:help": "Indicate when you've finished collecting the data for this data package"
+    }
+  },
+  "GeoLocation": {
+    "ui:description": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
+    "items": {
+      "ui:help": "Geographical location refers to a specific physical point on Earth. This is more precise than 'area' or 'place' often defined by a set of latitude and longitude coordinates.",
+      "geoLocationBox": {
+        "ui:field": "geo"
+      }
+    }
+  },
+  "Apparatus": {
+    "ui:description": "Any instrument or apparatus which, by reason of its objective technical characteristics and the results which it makes it possible to obtain, is mainly or exclusively suited to scientific activities."
+  },
+  "Material": {
+    "ui:description": "Naturally occurring matter derived from or consisting of rock and sediment."
+  },
+  "Measured_Property": {
+    "ui:description": "A property of a physical system which can be compared against a standard unit of measurement to provide a numerical value defining the quantity of that property."
+  },
+  "Ancillary_Equipment": {
+    "ui:description": "Ancillary equipment"
+  },
+  "Pore_Fluid": {
+    "ui:description": "Pore fluid"
+  },
+  "Inferred_Deformation_Behaviour": {
+    "ui:description": "Inferred deformation behaviour"
+  },
+  "Tag": {
+    "ui:description": "Free text field for adding (searchable) key words to your data package"
+  },
+  "Related_Datapackage": {
+    "items": {
+      "Relation_Type": {
+        "ui:help": "Relation to this data package"
+      },
+      "Title": {
+        "ui:help": "Title of the related work"
+      },
+      "Persistent_Identifier": {
+        "ui:help": "Persistent identifier of the related work",
+        "Identifier_Scheme": {
+          "ui:help": "Type of Persistent identifier of the related work"
+        },
+        "Identifier": {
+          "ui:help": "The identifier as it can be resolved on the appropriate service"
+        }
+      }
+    }
+  },
+  "Funding_Reference": {
+    "items": {
+      "Funder_Name": {
+        "ui:help": "The name(s) of the organisation(s) funding the research. E.g. NWO"
+      },
+      "Award_Number": {
+        "ui:help": "The award or grant number issued by the funding organisation"
+      }
+    }
+  },
+  "Retention_Period": {
+    "ui:help": "The minimal number of years the data will be kept in the archive",
+    "ui:widget": "updown"
+  },
+  "Retention_Information": {
+    "ui:help": "Provide the reason when you deviate from the minimum of 10 years retention of the data package"
+  },
+  "Data_Type": {
+    "ui:help": "What is the type of your data"
+  },
+  "Data_Classification": {
+    "ui:help": "How is your data classified with regards to information security policy"
+  },
+  "Embargo_End_Date": {
+    "ui:help": "If there is an embargo on the data package; when will it end?"
+  },
+  "Creator": {
+    "ui:description": "The person(s) who created (a version of) the data package.",
+    "items": {
+      "Name": {
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who created (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who created (a version of) the data package"
+        }
+      },
+      "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the creator"
+      },
+      "Person_Identifier": {
+        "ui:description": "Person identifier of creator of the data package",
+        "items": {
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "Contributor": {
+    "ui:description": "The person(s) who have contributed to this data package",
+    "items": {
+      "Name": {
+        "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who has contributed to (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who has contributed to (a version of) the data package"
+        }
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite"
+      },
+      "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the contributor"
+      },
+      "Person_Identifier": {
+        "ui:description": "Person identifier of contributor of the data package",
+        "items": {
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "Contact": {
+    "ui:description": "The person(s) who act as point of contact for this data package",
+    "items": {
+      "Name": {
+        "ui:help": "The name(s) of the persons who have contributed to this data package",
+        "Given_Name": {
+          "ui:help": "The personal or first name of the person(s) who has contributed to (a version of) the data package"
+        },
+        "Family_Name": {
+          "ui:help": "The surname or last name of the person(s) who has contributed to (a version of) the data package"
+        }
+      },
+      "Position": {
+        "ui:help": "The position the contact person holds within the organization"
+      },
+      "Email": {
+        "ui:help": "The e-mail of the contact person"
+      },
+
+      "Affiliation": {
+        "ui:description": "The organizational or institutional affiliation of the contributor"
+      },
+      "Person_Identifier": {
+        "ui:description": "Person identifier of contributor of the data package",
+        "items": {
+          "Name_Identifier_Scheme": {
+            "ui:help": "What type of person identifier is used? (e.g. an ORCID, DAI, or ScopusID)"
+          },
+          "Name_Identifier": {
+            "ui:help": "Identifier as it can be resolved on the appropriate service"
+          }
+        }
+      }
+    }
+  },
+  "License": {
+    "ui:help": "The license under which you offer the data package for use by third parties. Preferred value is CC BY"
+  },
+  "Data_Access_Restriction": {
+    "ui:help": "Once archived, how is your data package accessible to third parties?"
+  }
+}

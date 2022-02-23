@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """Functions to copy packages to the vault and manage permissions of vault packages."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
 import time
+from datetime import datetime
 
 import genquery
 import irods_types
@@ -15,6 +16,7 @@ import folder
 import group
 import meta
 import meta_form
+import policies_datamanager
 import policies_datapackage_status
 from util import *
 
@@ -30,8 +32,10 @@ __all__ = ['api_vault_submit',
            'rule_vault_process_status_transitions',
            'api_vault_system_metadata',
            'api_vault_collection_details',
+           'api_vault_get_package_by_reference',
            'api_vault_copy_to_research',
            'api_vault_get_publication_terms',
+           'api_vault_get_deposit_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group']
 
@@ -372,7 +376,7 @@ def api_vault_system_metadata(callback, coll):
     collection_count = collection.collection_count(callback, coll)
     size = collection.size(callback, coll)
     size_readable = convert_size(size)
-    system_metadata["Package size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
+    system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
     # Modified date.
     iter = genquery.row_iterator(
@@ -409,6 +413,18 @@ def api_vault_system_metadata(callback, coll):
         package_doi = row[0]
         persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
+
+    # Data Package Reference.
+    data_package_reference = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        data_package_reference = row[0]
+        system_metadata["Data Package Reference"] = "<a href=\"yoda/{}\">yoda/{}</a>".format(data_package_reference, data_package_reference)
 
     # Persistent Identifier EPIC.
     package_epic_pid = ""
@@ -526,7 +542,7 @@ def api_vault_collection_details(ctx, path):
             user_name = row2[0]
 
             # Check if group is a research or intake group.
-            if user_name.startswith("research-"):
+            if user_name.startswith(("research-", "deposit-")):
                 research_group_access = True
 
     # Check if research space is accessible.
@@ -543,6 +559,59 @@ def api_vault_collection_details(ctx, path):
             "vault_action_pending": vault_action_pending,
             "research_group_access": research_group_access,
             "research_path": research_path}
+
+
+@api.make()
+def api_vault_get_package_by_reference(ctx, reference):
+    """Return path to data package with provided reference (UUID4).
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param reference: Data Package Reference (UUID4)
+
+    :returns: Path to data package.
+    """
+    data_package = ""
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.DATA_PACKAGE_REFERENCE, reference),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        data_package = row[0]
+
+    if data_package == "":
+        return api.Error('not_found', 'Could not find data package with provided reference.')
+
+    _, _, path, subpath = pathutil.info(data_package)
+    return "/{}/{}".format(path, subpath)
+
+
+@api.make()
+def api_vault_get_deposit_data(ctx, coll):
+    """Retrieve deposit data of data package.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Collection to retrieve deposit data from
+
+    :returns: API status
+    """
+    # Get deposit date and end preservation date based upon retention period
+    # "submitted for vault"
+    # deposit_date = '2016-02-29'  # To be gotten from the action log
+    iter = genquery.row_iterator(
+        "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+        "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # row contains json encoded [str(int(time.time())), action, actor]
+        log_item_list = jsonutil.parse(row[1])
+        if log_item_list[1] == "submitted for vault":
+            deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+            deposit_date = deposit_timestamp.strftime('%Y-%m-%d')
+            break
+
+    return {'deposit_date': deposit_date}
 
 
 @api.make()
@@ -579,21 +648,24 @@ def api_grant_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, coll)
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -603,12 +675,15 @@ def api_grant_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "read", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for granting access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 @api.make()
@@ -620,23 +695,24 @@ def api_revoke_read_access_research_group(ctx, coll):
 
     :returns: API status
     """
-    # coll = '/' + user.zone(ctx) + '/home' + coll
-    log.write(ctx, 'HARM')
-    log.write(ctx, coll)
-
     if not collection.exists(ctx, coll):
-        return api.Error('DatapackageNotExists', 'Datapackage does not exist')
+        return api.Error('nonexistent', 'The given path does not exist')
 
     coll_parts = coll.split('/')
     if len(coll_parts) != 5:
-        return api.Error('InvalidDatapackageCollection', 'Invalid datapackage collection')
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
-    vault_group_name = coll_parts[3]
+    space, zone, group, subpath = pathutil.info(coll)
+    if space != pathutil.Space.VAULT:
+        return api.Error('invalid_collection', 'The datamanager can only revoke permissions to vault packages')
 
     # Find category
-    group_parts = vault_group_name.split('-')
-    research_group_name = 'research-' + group_parts[1]
-    category = group.get_category(ctx, research_group_name)
+    group_parts = group.split('-')
+    if subpath.startswith("deposit-"):
+        research_group_name = 'deposit-' + '-'.join(group_parts[1:])
+    else:
+        research_group_name = 'research-' + '-'.join(group_parts[1:])
+    category = meta_form.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
@@ -646,12 +722,15 @@ def api_revoke_read_access_research_group(ctx, coll):
             acl_kv = misc.kvpair(ctx, "actor", actor)
             msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
         except Exception:
-            return api.Error('ErrorACLs', 'Error setting ACLs by datamanager')
+            policy_error = policies_datamanager.can_datamanager_acl_set(ctx, coll, actor, research_group_name, "1", "read")
+            if bool(policy_error):
+                return api.Error('ErrorACLs', 'Could not acquire datamanager access to {}.'.format(coll))
+            else:
+                return api.Error('ErrorACLs', str(policy_error))
     else:
         return api.Error('NoDatamanager', 'Actor must be a datamanager for revoking access')
 
-    return {'status': 'Success',
-            'statusInfo': ''}
+    return {'status': 'Success', 'statusInfo': ''}
 
 
 def copy_folder_to_vault(ctx, folder, target):

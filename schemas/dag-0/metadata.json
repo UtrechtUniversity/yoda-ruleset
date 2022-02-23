@@ -79,23 +79,9 @@
     "optionsPersistentIdentifierScheme": {
       "type": "string",
       "enum": [
-        "ARK",
-        "arXiv",
-        "bibcode",
         "DOI",
-        "EAN13",
-        "EISSN",
         "Handle",
-        "ISBN",
-        "ISSN",
-        "ISTC",
-        "LISSN",
-        "LSID",
-        "PMID",
-        "PURL",
-        "UPC",
-        "URL",
-        "URN"
+        "URL"
       ]
     },
     "optionsDiscipline": {
@@ -721,8 +707,8 @@
         "Restricted - available upon request"
       ],
       "enumNames": [
-        "Open – Accessible for researchers of Geosciences",
-        "Restricted – Accessible on request"
+        "Open - Accessible for researchers of Geosciences",
+        "Restricted - Accessible on request"
       ]
     },
     "optionsNameIdentifierScheme": {
@@ -809,6 +795,10 @@
       "additionalProperties": false,
       "title": "Research period",
       "yoda:structure": "compound",
+      "required": [
+        "Start_Date",
+        "End_Date"
+      ],
       "properties": {
         "Start_Date": {
           "type": "string",
@@ -869,7 +859,7 @@
       "items": {
         "$ref": "#/definitions/stringNormal",
         "title": "Keyword",
-        "default": ""
+        "default": null
       }
     },
     "Related_Datapackage": {
@@ -883,7 +873,8 @@
         "properties": {
           "Relation_Type": {
             "$ref": "#/definitions/optionsRelationType",
-            "title": "Relation type"
+            "title": "Relation type",
+            "default": "References: Current datapackages references"
           },
           "Title": {
             "$ref": "#/definitions/stringNormal",
@@ -930,13 +921,16 @@
     },
     "Contributor": {
       "type": "array",
-          "title": "Depositor of the datapackage",
+      "title": "Depositor of the datapackage",
       "minItems": 1,
-          "maxItems": 1,
+      "maxItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
         "yoda:structure": "subproperties",
+        "required": [
+          "Name"
+        ],
         "properties": {
           "Name": {
             "type": "object",
@@ -983,12 +977,16 @@
             "properties": {
               "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
-                "title": "First Name"
+                "title": "Given Name"
               },
               "Family_Name": {
                 "$ref": "#/definitions/stringNormal",
                 "title": "Family Name"
               }
+            },
+            "dependencies": {
+              "Given_Name": ["Family_Name"],
+              "Family_Name": ["Given_Name"]
             }
           },
           "Affiliation": {
@@ -1010,7 +1008,7 @@
     "Data_Access_Restriction": {
       "$ref": "#/definitions/optionsDataAccessRestriction",
       "title": "Data Package Access",
-      "default": "Open – Accessible for researchers of Geosciences"
+      "default": "Open - freely retrievable"
     }
   }
 }

@@ -30,7 +30,7 @@ def of_data(ctx, path):
     """Get (a,v,u) triplets for a given data object."""
     return itertools.imap(lambda x: Avu(*x),
                           genquery.Query(ctx, "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE, META_DATA_ATTR_UNITS",
-                                              "COLL_NAME = '{}', DATA_NAME = '{}'".format(*pathutil.chop(path))))
+                                              "COLL_NAME = '{}' AND DATA_NAME = '{}'".format(*pathutil.chop(path))))
 
 
 def of_group(ctx, group):
