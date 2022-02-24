@@ -16,6 +16,9 @@
       "type": "string",
       "title": "Data manager remarks",
       "description": "Any advisory remarks about the data request go here. In case of rejection, an explanation is mandatory. The researcher cannot read these remarks."
+    },
+    "reviewing_dm": {
+      "type": "string"
     }
   },
   "dependencies": {

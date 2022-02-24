@@ -17,6 +17,7 @@
   "ui:order": [
     "decision",
     "assign_to",
+    "review_period_length",
     "response_to_dm_remarks",
     "feedback_for_researcher",
     "*"

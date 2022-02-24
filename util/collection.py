@@ -71,11 +71,12 @@ def data_count(ctx, path, recursive=True):
     return sum(1 for _ in data_objects(ctx, path, recursive=recursive))
 
 
-def collection_count(ctx, path):
+def collection_count(ctx, path, recursive=True):
     """Get a collection's collection count (the amount of collections within a collection)."""
     return sum(1 for _ in genquery.row_iterator(
                "COLL_ID",
-               "COLL_NAME like '{}/%'".format(path),
+               "COLL_NAME like '{}/%'".format(path) if recursive else
+               "COLL_PARENT_NAME = '{}' AND COLL_NAME like '{}/%'".format(path, path),
                genquery.AS_LIST, ctx))
 
 

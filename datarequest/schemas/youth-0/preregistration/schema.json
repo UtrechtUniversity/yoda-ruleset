@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema",
   "type": "object",
   "title": "Preregistration",
-  "description": "Please visit the YOUth Open Science Framework preregistry (<a href='https://osf.io/registries/youthstudy'>link</a>) to preregister your study.<br/><br/>After having done so, copy and paste the URL to the preregistration in the field below and submit this form.<br/><br/>",
+  "description": "Please visit the YOUth Open Science Framework preregistry (<a href=\"https://osf.io/registries/youthstudy\">link</a>) to preregister your study.<br/><br/>After having done so, copy and paste the URL to the preregistration in the field below and submit this form.<br/><br/>",
   "properties": {
     "preregistration_url": {
       "type": "string",

@@ -28,6 +28,10 @@
               "enum": [
                 "Approved"
               ]
+            },
+            "approval_conditions": {
+              "type": "string",
+              "title": "Approval conditions, if any. The researcher will be informed of these conditions and will have to consent to them to proceed with the data request."
             }
           }
         },
