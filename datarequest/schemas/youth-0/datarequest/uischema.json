@@ -2,6 +2,9 @@
   "owner": {
     "ui:widget": "hidden"
   },
+  "submission_timestamp": {
+    "ui:widget": "hidden"
+  },
   "previous_request_id": {
     "ui:widget": "hidden"
   },
