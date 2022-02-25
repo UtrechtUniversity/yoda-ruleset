@@ -853,6 +853,9 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
+    # Set submission date in form data
+    data['submission_timestamp'] = str(datetime.now().strftime('%s'))
+
     # Validate data against schema
     if not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
@@ -2056,7 +2059,7 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     study_title      = datarequest['datarequest']['study_information']['title']
     truncated_title  = truncated_title_get(ctx, request_id)
     pm_members       = group.members(ctx, GROUP_PM)
-    timestamp        = datetime.fromtimestamp(int(request_id)).strftime('%c')
+    timestamp        = datetime.fromtimestamp(int(datarequest['submission_timestamp']))
     resubmission     = "previous_request_id" in datarequest
 
     # Send email to researcher and project manager

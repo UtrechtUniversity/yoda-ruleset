@@ -52,6 +52,9 @@
     "owner": {
       "type": "string"
     },
+    "submission_timestamp": {
+      "type": "string"
+    },
     "instructions": {
       "type": "object",
       "title": "Instructions",
