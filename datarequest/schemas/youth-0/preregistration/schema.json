@@ -6,6 +6,7 @@
   "properties": {
     "preregistration_url": {
       "type": "string",
+      "pattern": "^https://osf.io/",
       "title": "OSF preregistration page URL:"
     }
   },
