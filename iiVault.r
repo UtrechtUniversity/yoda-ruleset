@@ -18,7 +18,7 @@ iiCopyFolderToVault(*folder, *target) {
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
 	if (*error == 0) {
-		msiModAVUMetadata("-C", *target, "add", "irods::indexing::index", "yoda::metadata", "elasticsearch");
+		msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
 	} else {
 		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
 		writeLine("stdout", "iiIngestObject: *error: *msg");
