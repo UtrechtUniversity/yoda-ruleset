@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Yoda tests configuration."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
