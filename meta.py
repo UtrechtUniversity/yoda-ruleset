@@ -315,8 +315,8 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     for creator in metadata['Creator']:
         name = creator['Name']
         ctx.msi_add_avu('-d', path, 'Creator',
-                    name['Given_Name'] + ' ' + name['Family_Name'],
-                    constants.UUFLATINDEX)
+                        name['Given_Name'] + ' ' + name['Family_Name'],
+                        constants.UUFLATINDEX)
         if 'Owner_Role' in creator:
             ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
                             constants.UUFLATINDEX)
