@@ -2568,7 +2568,7 @@ The following link will take you directly to the data request: https://{}/datare
 
 With kind regards,
 YOUth
-""".format(request_id, YODA_PORTAL_FQDN, request_id))
+""".format(researcher_name, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_resubmit(ctx, truncated_title, researcher_email, researcher_name, feedback_for_researcher, pm_email,
