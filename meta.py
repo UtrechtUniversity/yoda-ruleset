@@ -314,30 +314,26 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
     for creator in metadata['Creator']:
         name = creator['Name']
-        avu.associate_to_data(ctx, path,
-                              constants.UUINDEXMETADATAPREFIX + 'Creator',
-                              name['Given_Name'] + ' ' + name['Family_Name'])
+        ctx.msi_add_avu('-d', path, 'Creator',
+                    name['Given_Name'] + ' ' + name['Family_Name'],
+                    constants.UUFLATINDEX)
         if 'Owner_Role' in creator:
-            avu.associate_to_data(ctx, path,
-                                  constants.UUINDEXMETADATAPREFIX + 'OwnerRole',
-                                  creator['Owner_Role'])
+            ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
+                            constants.UUFLATINDEX)
 
-    avu.associate_to_data(ctx, path, constants.UUINDEXMETADATAPREFIX + 'Title',
-                          metadata['Title'])
-    avu.associate_to_data(ctx, path,
-                          constants.UUINDEXMETADATAPREFIX + 'Description',
-                          metadata['Description'])
-    avu.associate_to_data(ctx, path,
-                          constants.UUINDEXMETADATAPREFIX + 'DataAccessRestriction',
-                          metadata['Data_Access_Restriction'])
+    ctx.msi_add_avu('-d', path, 'Title', metadata['Title'],
+                    constants.UUFLATINDEX)
+    ctx.msi_add_avu('-d', path,  'Description', metadata['Description'],
+                    constants.UUFLATINDEX)
+    ctx.msi_add_avu('-d', path, 'Data_Access_Restriction',
+                    metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
 
-    avu.associate_to_data(ctx, path,
-                          constants.UUINDEXMETADATAPREFIX + 'CreationTime',
-                          creation_time)
+    ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
+                    constants.UUFLATINDEX)
+
     if config.enable_data_package_reference:
-        avu.associate_to_data(ctx, path,
-                              constants.UUINDEXMETADATAPREFIX + 'DataPackage',
-                              data_package)
+        ctx.msi_add_avu('-d', path, 'Data_Package_Reference', data_package,
+                        constants.UUFLATINDEX)
 
 
 def ingest_metadata_vault(ctx, path):
@@ -376,7 +372,7 @@ def ingest_metadata_vault(ctx, path):
         for row in iter:
             data_package = row[0]
 
-    # update index metadata
+    # update flat index metadata
     update_index_metadata(ctx, path, metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
