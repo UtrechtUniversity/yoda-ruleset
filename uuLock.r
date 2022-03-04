@@ -111,8 +111,8 @@ uuLockExists(*collection, *isLocked) {
 		msiGetValByKey(*row,"META_COLL_ATTR_VALUE",*lockValue);
 		*lockTime = double(uuLockGetDateTime(*lockValue));
 		if (
-			    ((*lockTime + 5 * 60) < *currentTime)
-					#	remove locks/requests after expire time of 5 minutes
+			    ((*lockTime + 7 * 86400 ) < *currentTime)
+					#	remove locks/requests after expire time of 1 week
 				 	#			 && (*lockKey == "lockRequest")
 			) {
 			# cleanup lock requests older than 5 minutes
