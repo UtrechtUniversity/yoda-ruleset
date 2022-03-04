@@ -97,6 +97,7 @@ SIGDTA_PATHNAME      = "signed_dta"
 
 # List of valid datarequest types
 class type(Enum):
+    DRAFT   = "DRAFT"
     REGULAR = "REGULAR"
     DAO     = "DAO"
 
@@ -267,6 +268,10 @@ def type_get(ctx, request_id):
     """
     # Get datarequest
     datarequest = json.loads(datarequest_get(ctx, request_id))
+
+    # Determine if draft
+    if datarequest['draft']:
+        return type.DRAFT
 
     # Determine type
     if datarequest['datarequest']['purpose'] == "Analyses for data assessment only (results will not be published)":
@@ -853,11 +858,14 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     # Set request owner in form data
     data['owner'] = user.name(ctx)
 
+    # Set draft flag in form data
+    data['draft'] = draft
+
     # Set submission date in form data
     data['submission_timestamp'] = str(datetime.now().strftime('%s'))
 
     # Validate data against schema
-    if not datarequest_data_valid(ctx, data, DATAREQUEST):
+    if not draft and not datarequest_data_valid(ctx, data, DATAREQUEST):
         return api.Error("validation_fail",
                          "{} form data did not pass validation against its schema.".format(DATAREQUEST))
 
