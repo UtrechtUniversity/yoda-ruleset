@@ -1,3 +1,4 @@
+#!/usr/bin/irule -r irods_rule_engine_plugin-irods_rule_language-instance -F
 addVaultIndexing {
 	uuGetUserType("$userNameClient#$rodsZoneClient", *usertype);
 
@@ -9,7 +10,9 @@ addVaultIndexing {
 		*vaultGroupName = *row.USER_NAME;		
 		*vaultHome = "/" ++ $rodsZoneClient ++ "/home/" ++ *vaultGroupName;
 		if (uuCollectionExists(*vaultHome)) {
-			msiExecCmd("enable-indexing.sh", *vaultHome, "", "", 0, *out);
+			foreach (*row2 in SELECT COLL_NAME WHERE COLL_PARENT_NAME = *vaultHome) {
+				msiExecCmd("enable-indexing.sh", *row2.COLL_NAME, "", "", 0, *out);
+			}
 		}
 	}
 }
