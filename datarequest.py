@@ -459,6 +459,8 @@ def datarequest_roles_get(ctx, request_id):
         roles.append("OWN")
     if request_id is not None and datarequest_is_reviewer(ctx, request_id):
         roles.append("REV")
+    if request_id is not None and datarequest_is_reviewer(ctx, request_id, pending=True):
+        roles.append("PENREV")
     return roles
 
 
@@ -492,11 +494,12 @@ def datarequest_owner_get(ctx, request_id):
     return jsonutil.read(ctx, file_path)['owner']
 
 
-def datarequest_is_reviewer(ctx, request_id):
+def datarequest_is_reviewer(ctx, request_id, pending=False):
     """Check if a user is assigned as reviewer to a data request
 
     :param ctx:        Combined type of a callback and rei struct
     :param request_id: Unique identifier of the data request
+    :param pending:    When true, only return pending reviewers
 
     :returns: Boolean indicating if the user is assigned as reviewer
     """
@@ -506,10 +509,25 @@ def datarequest_is_reviewer(ctx, request_id):
     # Get username
     username = user.name(ctx)
 
-    # Reviewers are stored in one or more assignedForReview attributes on
-    # the data request, so our first step is to query the metadata of our
-    # data request file for these attributes
+    # Get reviewers
+    reviewers = datarequest_reviewers_get(ctx, request_id, pending)
 
+    # Check if the reviewers list contains the current user
+    is_reviewer = username in reviewers
+
+    # Return the is_reviewer boolean
+    return is_reviewer
+
+
+def datarequest_reviewers_get(ctx, request_id, pending=False):
+    """Return a list of users assigned as reviewers to a data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param pending:    When true, only return pending reviewers
+
+    :returns: List of reviewers
+    """
     # Declare variables needed for retrieving the list of reviewers
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     reviewers = []
@@ -522,17 +540,14 @@ def datarequest_is_reviewer(ctx, request_id):
         reviewers.append(row['META_DATA_ATTR_VALUE'])
 
     # Retrieve list of reviewers (review given)
-    rows = row_iterator(["META_DATA_ATTR_VALUE"],
-                        "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy'".format(coll_path, DATAREQUEST + JSON_EXT),
-                        AS_DICT, ctx)
-    for row in rows:
-        reviewers.append(row['META_DATA_ATTR_VALUE'])
+    if not pending:
+        rows = row_iterator(["META_DATA_ATTR_VALUE"],
+                            "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy'".format(coll_path, DATAREQUEST + JSON_EXT),
+                            AS_DICT, ctx)
+        for row in rows:
+            reviewers.append(row['META_DATA_ATTR_VALUE'])
 
-    # Check if the reviewers list contains the current user
-    is_reviewer = username in reviewers
-
-    # Return the is_reviewer boolean
-    return is_reviewer
+    return reviewers
 
 
 @api.make()
@@ -954,7 +969,6 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
 
     # Grant read permissions on data request
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DAC, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
 
     # Revoke write permission
@@ -1078,7 +1092,6 @@ def api_datarequest_attachment_post_upload_actions(ctx, request_id, filename):
                                                      ATTACHMENTS_PATHNAME, filename)
     msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
-    msi.set_acl(ctx, "default", "read", GROUP_DAC, file_path)
 
 
 @api.make()
@@ -1090,7 +1103,17 @@ def api_datarequest_attachments_get(ctx, request_id):
 
     :returns:          List of attachment filenames
     """
+    return datarequest_attachments_get(ctx, request_id)
 
+
+def datarequest_attachments_get(ctx, request_id):
+    """Get all attachments of a given data request
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          List of attachment filenames
+    """
     def get_filename(file_path):
         return file_path.split('/')[-1]
 
@@ -1154,8 +1177,7 @@ def api_datarequest_preliminary_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                         GROUP_DAC])
+        file_write_and_lock(ctx, coll_path, PR_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
     except error.UUError as e:
         return api.Error('write_error', 'Could not write preliminary review data to disk: {}'.format(e))
 
@@ -1245,8 +1267,7 @@ def api_datarequest_datamanager_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                         GROUP_DAC])
+        file_write_and_lock(ctx, coll_path, DM_REVIEW + JSON_EXT, data, [GROUP_DM, GROUP_PM])
     except error.UUError:
         return api.Error('write_error', 'Could not write data manager review data to disk')
 
@@ -1307,18 +1328,22 @@ def datarequest_datamanager_review_get(ctx, request_id):
 
 
 @api.make()
-def api_datarequest_dac_members_get(ctx):
-    return datarequest_dac_members_get(ctx)
+def api_datarequest_dac_members_get(ctx, request_id):
+    return datarequest_dac_members_get(ctx, request_id)
 
 
-def datarequest_dac_members_get(ctx):
+def datarequest_dac_members_get(ctx, request_id):
     """Get list of DAC members
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
 
     :returns: List of DAC members
     """
     dac_members = map(lambda member: member[0], group.members(ctx, GROUP_DAC))
+    request_owner = datarequest_owner_get(ctx, request_id)
+    if request_owner in dac_members:
+        dac_members.remove(request_owner)
     if "rods" in dac_members:
         dac_members.remove("rods")
 
@@ -1339,7 +1364,7 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
     request_id = str(request_id)
 
     # Validate data against schema
-    dac_members = datarequest_dac_members_get(ctx)
+    dac_members = datarequest_dac_members_get(ctx, request_id)
     schema      = datarequest_schema_get(ctx, ASSIGNMENT)
     schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enum']      = dac_members
     schema['schema']['dependencies']['decision']['oneOf'][0]['properties']['assign_to']['items']['enumNames'] = dac_members
@@ -1363,8 +1388,13 @@ def api_datarequest_assignment_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, [GROUP_DM, GROUP_PM,
-                                                                          GROUP_DAC])
+        # Determine who is permitted to read
+        permitted_to_read = [GROUP_DM, GROUP_PM]
+        if 'assign_to' in data.keys():
+            permitted_to_read = permitted_to_read + data['assign_to'][:]
+
+        # Write form data to disk
+        file_write_and_lock(ctx, coll_path, ASSIGNMENT + JSON_EXT, data, permitted_to_read)
     except error.UUError:
         return api.Error('write_error', 'Could not write assignment data to disk')
 
@@ -1395,6 +1425,14 @@ def assign_request(ctx, assignees, request_id):
     """
     # Construct data request collection path
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+
+    # Grant read permissions on relevant files of data request
+    attachments = datarequest_attachments_get(ctx, request_id)
+    attachments = map(lambda attachment: ATTACHMENTS_PATHNAME + "/" + attachment, attachments)
+    for assignee in json.loads(assignees):
+        for doc in map(lambda filename: filename + JSON_EXT, [DATAREQUEST, PR_REVIEW, DM_REVIEW]) + attachments:
+            file_path = "{}/{}".format(coll_path, doc)
+            ctx.adminTempWritePermission(file_path, "grantread", "{}#{}".format(assignee, user.zone(ctx)))
 
     # Assign the data request by adding a delayed rule that sets one or more
     # "assignedForReview" attributes on the datarequest (the number of
@@ -1478,8 +1516,9 @@ def api_datarequest_review_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data,
-                            [user.full_name(ctx), GROUP_PM])
+        readers = [GROUP_PM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
+                                   datarequest_reviewers_get(ctx, request_id))
+        file_write_and_lock(ctx, coll_path, REVIEW + "_{}".format(user.name(ctx)) + JSON_EXT, data, readers)
     except error.UUError as e:
         return api.Error('write_error', 'Could not write review data to disk: {}.'.format(e))
 
@@ -1585,7 +1624,9 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
 
     # Write form data to disk
     try:
-        file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, [GROUP_PM])
+        readers = [GROUP_PM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
+                                   datarequest_reviewers_get(ctx, request_id))
+        file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
 
