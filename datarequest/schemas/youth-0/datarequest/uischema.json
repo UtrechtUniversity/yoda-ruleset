@@ -2,6 +2,9 @@
   "owner": {
     "ui:widget": "hidden"
   },
+  "draft": {
+    "ui:widget": "hidden"
+  },
   "submission_timestamp": {
     "ui:widget": "hidden"
   },

@@ -49,6 +49,9 @@
     "previous_request_id": {
       "type": "string"
     },
+    "draft": {
+      "type": "boolean"
+    },
     "owner": {
       "type": "string"
     },

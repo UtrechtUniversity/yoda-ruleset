@@ -86,9 +86,15 @@ adminDatarequestActions() {
 }
 
 
-# \brief Grant or revoke temporary write permission
+# \brief Grant or revoke temporary permissions on a file for the invoking user
 adminTempWritePermission(*path, *permission) {
-        *argv = uuClientFullName ++ " *path *permission";
+        adminTempWritePermission(*path, *permission, uuClientFullName);
+}
+
+
+# \brief Grant or revoke temporary permissions on a file of a given user
+adminTempWritePermission(*path, *permission, *user) {
+        *argv = uuClientFullName ++ " *path *permission *user";
         msiExecCmd("admin-datarequest-temp-write-permission.sh", *argv, "", "", 0, *out);
 }
 
@@ -180,6 +186,26 @@ uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName,
                                 *statusInfo = "";
                         }
                 }
+        } else if (*attributeName == "reviewedBy") {
+                # Do not change existing reviewedBy KVPs if present; set new one instead
+                *AttrValStr = *attributeName ++ "=" ++ *newAttributeValue;
+                msiString2KeyValPair(*AttrValStr, *Kvp);
+                *err = errormsg(msiAssociateKeyValuePairsToObj(*Kvp,
+                                    *filePath, "-d"), *msg);
+                if (*err < 0) {
+                        if (*err == -818000) {
+                                *status = "PermissionDenied";
+                                *statusInfo = "User is not " ++
+                                              "permitted to modify " ++
+                                              "this attribute";
+                        } else {
+                                *status = "Unrecoverable";
+                                *statusInfo = "*err - *msg";
+                        }
+                } else {
+                        *status = "Success";
+                        *statusInfo = "";
+                }
         } else {
                 # Check if requested change isn't already present
                 *currentAttributeValue = "";
@@ -217,6 +243,6 @@ uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName,
                 }
         }
 
-        # Revoke temporary write ACL
-        msiSetACL("default", "admin:null", uuClientFullName, *filePath);
+        # Reset write ACL to "own"
+        msiSetACL("default", "admin:own", uuClientFullName, *filePath);
 }
