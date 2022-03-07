@@ -312,6 +312,8 @@ def ingest_metadata_staging(ctx, path):
 
 def update_index_metadata(ctx, path, metadata, creation_time, data_package):
     """Update the index attributes for JSON metadata."""
+    ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+
     for creator in metadata['Creator']:
         name = creator['Name']
         ctx.msi_add_avu('-d', path, 'Creator',
