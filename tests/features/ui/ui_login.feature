@@ -1,11 +1,11 @@
 @oidc
-Feature: Login OIDC UI
+Feature: Login UI
 
-    Scenario Outline: Login using OIDC button
+    Scenario Outline: External user login
         Given user is not logged in
-        And the user "<user>" can start the OIDC flow
-        When user clicks login with OIDC
-        And user "<user>" follows OIDC login process
+        And the user is at the login gate
+        When user "<user>" enters email address
+        And user "<user>" logs in
         Then user "<user>" is logged in
 
         Examples:
@@ -23,8 +23,10 @@ Feature: Login OIDC UI
             | user                      |
             | yodaresearcher@gmail.com  |
             | yodadatamanager@gmail.com |
+            | researcher@yoda.test      |
+            | datamanager@yoda.test     |
 
-    Scenario Outline: After redirected oidc login redirected to original target
+    Scenario Outline: After redirected OIDC login redirected to original target
         Given user is not logged in
         And the user navigates to "<page>"
         And the user is redirected to the login page
