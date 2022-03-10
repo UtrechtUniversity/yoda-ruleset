@@ -1,0 +1,334 @@
+<html lang="en"><head>
+        
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+
+            <title>Yoda - Dev ‐ DAG Datapackage</title>
+
+            <link rel="shortcut icon" href="/assets/img/favicon.ico?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+
+            <link rel="stylesheet" href="/assets/lib/font-awesome-4.7.0/css/font-awesome.min.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+            <link rel="stylesheet" href="/assets/css/yoda-portal.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+            
+<link rel="stylesheet" href="/vault/assets/css/vault.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+<link rel="stylesheet" href="/assets/lib/datatables-1.11.2/datatables.min.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+<link rel="stylesheet" href="/vault/assets/lib/leaflet/leaflet.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+<link rel="stylesheet" href="/open_search/assets/lib/fontawesome-free-6.0.0/css/fontawesome.min.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+<link rel="stylesheet" href="/open_search/assets/lib/fontawesome-free-6.0.0/css/all.min.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+<link rel="stylesheet" href="/vault/assets/css/datapackage.css?q=b6a11295b8ee9210fa357413df2048b0589dd382">
+
+
+            <script src="/assets/lib/jquery-1.12.4/js/jquery.min.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+            <script src="/assets/lib/bootstrap-5.0.2/js/bootstrap.bundle.min.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+            <script src="/assets/js/yoda.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+            <script>
+                Yoda.csrf = {tokenName: 'csrf_token', tokenValue: 'Ijg5NzBiMjRhYTZiZTQ3ODUyM2Y1MTk2MjljMDcyYjhjNDY3ZDMyMDgi.YioCWg.Y0gt1Z6TXGmUHQlVOJc0i4Jg10o'};
+                
+                Yoda.basePath = '/tempZone/home';
+                Yoda.user = {
+                    username: 'viewer',
+                };
+                
+            </script>
+            
+<script src="/assets/lib/datatables-1.11.2/datatables.min.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+<script src="/vault/assets/js/datapackage.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+<script src="/vault/assets/js/dlgSelectCollection.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+<script src="/vault/assets/lib/leaflet/leaflet.js?q=b6a11295b8ee9210fa357413df2048b0589dd382"></script>
+<script>
+        var browseStartDir = "/vault-pilot/deposit-pilot[1646908974][1646908984]";
+        var view = 'browse';
+        var dp_is_restricted = false;
+        var dp_reference = "d34cfb64-0ade-4a3e-b59c-f884a40b5c97";
+</script>
+
+        
+    </head>
+
+    <body class="d-flex flex-column min-vh-100">
+        <header class="py-3">
+            <div class="container d-flex flex-wrap justify-content-center">
+                <a href="/" class="mb-lg-0 me-lg-auto text-dark text-decoration-none">
+                    <img class="logo" src="/assets/img/logo.svg?q=b6a11295b8ee9210fa357413df2048b0589dd382" alt="Logo">
+                </a>
+                
+                    
+                    <form class="col-lg-4 mt-2 mb-lg-0 me-3" action="/open_search/" method="get">
+                        <input type="search" name="q" class="search form-control" placeholder="Search..." aria-label="Search">
+                    </form>
+                    
+                
+                <div class="mt-2 text-end">
+                    
+                        <div class="dropdown">
+                            <button type="button" class="btn btn-primary dropdown-toggle" id="userDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            viewer 
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+                                <a class="dropdown-item" href="/user/notifications">
+                                    Notifications 
+                                </a>
+                                <a class="dropdown-item" href="/user/settings">Settings</a>
+                                
+                                <a class="dropdown-item" href="/user/data_access">Data Access Password</a>
+                                
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="/user/logout">Log out</a>
+                            </div>
+                        </div>
+                    
+                </div>
+            </div>
+        </header>
+
+        <nav class="navbar navbar-dark navbar-static-top navbar-expand-lg mb-3">
+            <div class="container">
+                <a class="navbar-brand" href="/">Yoda Portal</a>
+                
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse">
+                    <ul class="nav navbar-nav">
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/research/browse">Research</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/deposit/browse">Deposit</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/intake/">Intake</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/datarequest/example">Datarequest</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/vault/browse">Vault</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/stats/">Statistics</a>
+                            </li>
+                        
+                            <li class="nav-item">
+                                <a class="nav-link " href="/group_manager/">Group Manager</a>
+                            </li>
+                        
+                    </ul>
+                </div>
+                
+            </div>
+        </nav>
+
+        
+        <div class="page">
+            <div class="container">
+                <div id="messages">
+                    
+                </div>
+
+                
+
+<div class="modal" tabindex="-1" role="dialog" id="viewMap">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title modal-map-title">Modal title</h5>
+            </div>
+
+            <div class="modal-body text-center">
+                <div class="map leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom" id="map1" style="position: relative;" tabindex="0"><div class="leaflet-pane leaflet-map-pane" style="transform: translate3d(0px, 0px, 0px);"><div class="leaflet-pane leaflet-tile-pane"><div class="leaflet-layer " style="z-index: 1; opacity: 1;"><div class="leaflet-tile-container leaflet-zoom-animated" style="z-index: 18; transform: translate3d(0px, 0px, 0px) scale(1);"><img alt="" role="presentation" src="https://b.tile.openstreetmap.org/5/15/10.png" class="leaflet-tile leaflet-tile-loaded" style="width: 256px; height: 256px; transform: translate3d(-254px, -164px, 0px); opacity: 1;"></div></div></div><div class="leaflet-pane leaflet-shadow-pane"></div><div class="leaflet-pane leaflet-overlay-pane"></div><div class="leaflet-pane leaflet-marker-pane"></div><div class="leaflet-pane leaflet-tooltip-pane"></div><div class="leaflet-pane leaflet-popup-pane"></div><div class="leaflet-proxy leaflet-zoom-animated" style="transform: translate3d(4093.95px, 2724.14px, 0px) scale(16);"></div></div><div class="leaflet-control-container"><div class="leaflet-top leaflet-left"><div class="leaflet-control-zoom leaflet-bar leaflet-control"><a class="leaflet-control-zoom-in" href="#" title="Zoom in" role="button" aria-label="Zoom in">+</a><a class="leaflet-control-zoom-out" href="#" title="Zoom out" role="button" aria-label="Zoom out">−</a></div></div><div class="leaflet-top leaflet-right"></div><div class="leaflet-bottom leaflet-left"></div><div class="leaflet-bottom leaflet-right"><div class="leaflet-control-attribution leaflet-control"><a href="http://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> | &amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors</div></div></div></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-between bg-gray pt-2 pb-2">
+        <div class="col-4">
+            DAG Datapackage
+        </div>
+        <div class="col-4">
+            
+            <a class="btn btn-light float-end" href="https://dag.sites.uu.nl/search/guidance/" target="_blank" title="Guidance"><i class="fa fa-info-circle"></i> Guidance</a>
+            
+        </div>
+    </div>
+</div>
+
+<section class="metadata-info container mt-4">
+    <div class="row justify-content-between">
+        <div class="col-8 fw-bold metadata-creator">Lazlo Westerhof (Principal Investigator)</div>
+        <div class="col-4">
+            
+            <a href="/vault/browse?dir=/vault-pilot/deposit-pilot%5B1646908974%5D%5B1646908984%5D" class="btn btn-primary float-end btn-sm btn-show-file-browser"><i class="fa fa-folder-open"></i> Access data</a>
+            
+
+            
+            <span class="badge rounded-pill bg-success me-2 mt-1 float-end">
+            <i class="fa-solid fa-lock-open"></i> Open
+            </span>
+            
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col fw-bold metadata-title">Title dit is de title dit is de title dit is de title dit is de title dit is de title dit is de title dit is de title HARM</div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col">
+            <div class="metadata-description">Description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit is de description dit</div>
+            <button class="btn read-more-button p-0 hide" role="button" style="display: block;">Read full description...</button>
+            <button class="btn read-less-button p-0 hide" role="button">Collapse description...</button>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Identifier</strong>
+        </div>
+        <div class="col">
+            <span class="metadata-identifier">https://portal.yoda.test/vault/yoda/d34cfb64-0ade-4a3e-b59c-f884a40b5c97</span>
+            <button class="btn btn-secondary btn-sm float-end btn-copy-to-clipboard"><i class="fa fa-copy"></i> Copy to clipboard</button>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Keywords</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Tag">Keyword1, Keyword2</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Research Group</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Research_Group">Earth sciences - Geochemistry</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Project</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Collection_Name">Project1</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Owners</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Creator">Lazlo Westerhof, Utrecht University, Principal Investigator</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Contact person</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Contributor">Harm de Raaff</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Research period</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Collected">2000-01-01 - 2010-01-01</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Geo Locations</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="GeoLocation"><table><tbody><tr><td style="width:200px;">Europe</td><td><button class="btn btn-outline-secondary btn-sm show-map" data-lon0="-1.185455520777088" data-lat0="57.16007826737998" data-lon1="28.343619812441688" data-lat1="39.87601941962116" data-spatial="Europe"><i class="fa fa-map"></i> Show map</button></td></tr><tr><td style="width:200px;">Spain</td><td><button class="btn btn-outline-secondary btn-sm show-map" data-lon0="-6.370620534645853" data-lat0="43.13306116240615" data-lon1="0.1328067708844838" data-lat1="37.020098201368114" data-spatial="Spain"><i class="fa fa-map"></i> Show map</button></td></tr><tr><td style="width:200px;">Oslo</td><td><button class="btn btn-outline-secondary btn-sm show-map" data-lon0="10.854673409731783" data-lat0="60.108670463036" data-lon1="10.854673409731783" data-lat1="60.108670463036" data-spatial="Oslo"><i class="fa fa-map"></i> Show map</button></td></tr></tbody></table></span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>References</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Related_Datapackage"><table><tbody><tr><td style="width:300px;">Reference to a publication</td><td style="width:50px;">DOI: </td><td><a href="https://reference.com">doi123</a></td></tr><tr><td style="width:300px;">Another reference to a publicatoin</td><td style="width:50px;">Handle: </td><td><a href="https://reference.com">handle123</a></td></tr></tbody></table></span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Personal data</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Data_Classification">No</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Deposit date</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="Date_Deposit">2022-03-10</span>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-2">
+            <strong>Retention period</strong>
+        </div>
+        <div class="col">
+            <span class="metadata" data-dp-attr="End_Preservation">2042-03-10 (20 years)</span>
+        </div>
+    </div>
+</section>
+
+<div class="breadcrumbs-browser hide">
+    <table id="file-browser" class="table yoda-table table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Size</th>
+            <th>Modified date</th>
+            <th></th>
+        </tr>
+        </thead>
+    </table>
+
+</div>
+
+
+
+            </div>
+        </div>
+        
+
+        <footer class="footer">
+            
+            <div class="container">
+                <p class="text-muted">Yoda development</p>
+                <!-- b6a11295b8ee9210fa357413df2048b0589dd382 -->
+            </div>
+            
+        </footer>
+    
+</body></html>

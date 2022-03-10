@@ -136,4 +136,17 @@ Feature: Vault UI
         And module "vault" is shown
         When user browses to data package in "<vault>"
         And user clicks action menu go to research
-        Then the research space of "<vault>" is shown
+	Then the research space of "<vault>" is shown
+
+    Scenario: Go to search page, find open datapackage, view landingpage and have access to data
+        Given user "researcher" is logged in
+        And module "search" is shown
+        When user searches for "geo"
+        And user clicks first open search result
+        Then open datapackage details are visible
+        When user clicks for map details
+        Then map is shown
+        When user clicks to copy reference 
+        Then reference confirmation is shown
+        When user clicks for data access
+        Then vault browser is shown

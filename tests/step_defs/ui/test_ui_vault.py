@@ -231,3 +231,64 @@ def ui_data_package_go_to_research(browser):
 def ui_vault_research_space(browser, vault):
     research = vault.replace("vault-", "research-")
     assert browser.is_text_present(research, wait_time=3)
+
+#  Scenario: Go to search page, find open datapackage, view landingpage and have access to data
+
+# When user searches for "geo"
+@when('user searches for "<search_term>"')
+def ui_search_user_searches(browser, search_term):
+    a = 1
+	
+# And user clicks first open search result
+@when('user clicks first open search result')
+def ui_search_user_clicks_search_result(browser):
+    a = 1
+
+@then('open datapackage details are visible')
+def ui_search_open_datapackage_details_are_visible(browser):
+    # Assert each field on the package landing page holds information
+    assert len(browser.find_by_css('.metadata-creator')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-title')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-description')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-identifier')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-keywords')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-research-group')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-project')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-owners')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-contact-person')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-research-period')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-geo-locations')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-references')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-personal-data')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-deposit-date')[0].value) > 0
+    assert len(browser.find_by_css('.metadata-retention-period')[0].value) > 0
+
+
+@when('user clicks for map details')
+def ui_user_click_map_details(browser):
+    browser.find_by_css('.show-map')[0].click()
+
+
+@then('map is shown')
+def ui_map_is_shown(browser):
+    a = 1
+
+@when('user clicks to copy reference')
+def ui_user_clicks_copy_reference(browser):
+    browser.find_by_css('.btn-copy-to-clipboard')[0].click()
+
+
+@then('reference confirmation is shown')
+def ui_reference_confirmation_is_shown(browser):
+    assert browser.find_by_text('DAG permalink identifier has been copied to the clipboard')
+
+
+@when('user clicks for data access')
+def ui_user_clicks_for_data_access(browser):
+    browser.find_by_css('.btn-show-file-browser')[0].click()
+
+
+@then('map is shown')
+def ui_map_is_shown(browser):
+    assert browser.find_by_css('.modal-title modal-map-title').is_visible()
+
