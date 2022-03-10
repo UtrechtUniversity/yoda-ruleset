@@ -43,8 +43,24 @@ def ui_deposit_open_search_complete_data(browser, data_access):
 
 @when('all fields contain correct data')
 def ui_deposit_open_search_complete_data(browser):
-    assert browser.is_text_present('Keyword1')
-
+    # assert browser.is_text_present('Keyword1')
+    required_text = ['Lazlo Westerhof (Principal Investigator)',
+                     'Title dit is de title',
+                     'Description dit is de description',
+                     'Keyword1',
+                     'Earth sciences - Geochemistry',
+                     'Project1',
+                     'Lazlo Westerhof, Utrecht University, Principal Investigator',
+                     'Harm de Raaff',
+                     '2000-01-01 - 2010-01-01',
+                     'Reference to a publication',
+                     'Another reference to a publicatoin']
+                     # '2022-03-10',
+                     # '2042-03-10 (20 years)']
+    for text in required_text:
+        if not browser.is_text_present(text):
+            assert '-1' == text
+    assert True
 
 @when('user copies identifier to clipboard')
 def ui_user_clicks_copy_reference(browser):
