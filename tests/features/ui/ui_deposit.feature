@@ -26,14 +26,14 @@ Feature: Deposit UI
     Given user "viewer" is logged in
     And module "deposit" is shown
 	
-    When user searcher for "Lazlo"
+    When user searches for "Lazlo"
     And search results are shown
     And landingpage shows "restricted" access
     And all fields contain correct data
     And user copies identifier to clipboard
     And user clicks for map details
 
-    When user searcher for "HARM"
+    When user searches for "HARM"
     And search results are shown
     And landingpage shows "Open" access
     And all fields contain correct data

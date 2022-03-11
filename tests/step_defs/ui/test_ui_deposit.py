@@ -16,17 +16,15 @@ from pytest_bdd import (
 )
 
 from conftest import api_request, upload_data
+from selenium.webdriver.common.keys import Keys
 
 scenarios('../../features/ui/ui_deposit.feature')
 
 
-@when(parsers.parse('user searcher for "{search_argument}"'))
+@when(parsers.parse('user searches for "{search_argument}"'))
 def ui_deposit_open_search(browser, search_argument):
-    # browser.find_by_name('q')[0].value = 'LAZLO\r'
-    # browser.fill('q', 'title\r\n')
-    browser.visit('https://portal.yoda.test/open_search/?q=' + search_argument)
-    # browser.type('q', '\r')
-    # browser.is_text_present('Search', wait_time=10)
+    browser.fill('q', search_argument)
+    browser.find_by_name('q').type(Keys.RETURN)
 
 
 @when('search results are shown')
