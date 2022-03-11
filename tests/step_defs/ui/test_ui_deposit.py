@@ -14,8 +14,8 @@ from pytest_bdd import (
     then,
     when
 )
-
 from selenium.webdriver.common.keys import Keys
+
 from conftest import api_request, upload_data
 
 scenarios('../../features/ui/ui_deposit.feature')
