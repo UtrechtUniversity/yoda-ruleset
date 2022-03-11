@@ -8,8 +8,8 @@ import os
 from collections import OrderedDict
 
 from pytest_bdd import (
-    parsers,
     given,
+    parsers,
     scenarios,
     then,
     when
@@ -31,19 +31,16 @@ def ui_deposit_open_search(browser, search_argument):
 
 @when('search results are shown')
 def ui_deposit_open_search_results(browser):
-    # browser.is_text_present('Search', wait_time=10)
     browser.links.find_by_partial_text('title')[0].click()
-    # browser.is_text_present('Search', wait_time=10)
 
 
 @when(parsers.parse('landingpage shows "{data_access}" access'))
-def ui_deposit_open_search_complete_data(browser, data_access):
+def ui_deposit_open_search_data_access_type_visible(browser, data_access):
     assert browser.is_text_present(data_access)
 
 
 @when('all fields contain correct data')
-def ui_deposit_open_search_complete_data(browser):
-    # assert browser.is_text_present('Keyword1')
+def ui_deposit_open_search_contains_correct_data(browser):
     required_text = ['Lazlo Westerhof (Principal Investigator)',
                      'Title dit is de title',
                      'Description dit is de description',
@@ -55,12 +52,14 @@ def ui_deposit_open_search_complete_data(browser):
                      '2000-01-01 - 2010-01-01',
                      'Reference to a publication',
                      'Another reference to a publicatoin']
-                     # '2022-03-10',
-                     # '2042-03-10 (20 years)']
+    # Retention not fully / correctly implemented in open_search
+    # '2022-03-10',
+    # '2042-03-10 (20 years)']
     for text in required_text:
         if not browser.is_text_present(text):
-            assert '-1' == text
+            assert False
     assert True
+
 
 @when('user copies identifier to clipboard')
 def ui_user_clicks_copy_reference(browser):
@@ -131,7 +130,7 @@ def ui_deposit_dp_submission(browser):
 def ui_deposit_dp_submission_confirmed(browser):
     assert browser.is_text_present('Thank you for your deposit')
 
-#-----------
+
 @when('user starts a new deposit')
 def ui_deposit_start(browser):
     browser.links.find_by_partial_text('Start new deposit').click()
