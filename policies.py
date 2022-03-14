@@ -510,9 +510,10 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
         # Import metadata if a metadata JSON file was changed.
         # Example matches:
         # "/tempZone/home/research-any/possible/path/to/yoda-metadata.json"
+        # "/tempZone/home/deposit-any/deposit[123]/yoda-metadata.json"
         # "/tempZone/home/vault-any/possible/path/to/yoda-metadata[123][1].json"
         # "/tempZone/home/datamanager-category/vault-path/to/yoda-metadata.json"
-        if ((info.space in (pathutil.Space.RESEARCH, pathutil.Space.DATAMANAGER)
+        if ((info.space in (pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.DATAMANAGER)
                 and pathutil.basename(info.subpath) == constants.IIJSONMETADATA)
             or (info.space is pathutil.Space.VAULT
                 # Vault jsons have a [timestamp] in the file name.
