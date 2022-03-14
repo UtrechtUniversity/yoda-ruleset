@@ -292,6 +292,30 @@ def ingest_metadata_research(ctx, path):
                              jsonutil.dump(metadata))
 
 
+def ingest_metadata_deposit(ctx, path):
+    """Validate JSON metadata (without requiredness) and ingests as AVUs in the deposit space."""
+    coll, data = pathutil.chop(path)
+
+    try:
+        metadata = jsonutil.read(ctx, path)
+    except error.UUError:
+        log.write(ctx, 'ingest_metadata_deposit failed: Could not read {} as JSON'.format(path))
+        return
+
+    if not is_json_metadata_valid(ctx, path, metadata, ignore_required=True):
+        log.write(ctx, 'ingest_metadata_deposit failed: {} is invalid'.format(path))
+        return
+
+    # Note: We do not set a $id in deposit space: this would trigger jsonavu
+    # validation, which does not respect our wish to ignore required
+    # properties in the research area.
+
+    # Replace all metadata under this namespace.
+    avu_json.set_json_to_obj(ctx, coll, '-C',
+                             constants.UUUSERMETADATAROOT,
+                             jsonutil.dump(metadata))
+
+
 def ingest_metadata_staging(ctx, path):
     """Set cronjob metadata flag and triggers vault ingest."""
     ret = msi.string_2_key_val_pair(ctx,
@@ -344,6 +368,8 @@ def rule_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_vault(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
         ingest_metadata_research(ctx, path)
+    elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
+        ingest_metadata_deposit(ctx, path)
 
 
 def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
