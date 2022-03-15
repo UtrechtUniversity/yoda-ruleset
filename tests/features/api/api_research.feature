@@ -53,7 +53,7 @@ Feature: Research API
         And folder "<folder>" exists in "<collection>"
 
         Examples:
-            | folder_old       | folder                   |
+            | folder_old       | folder                  |
             | api_test_folder  | api_test_folder_renamed |
 
     Scenario Outline: Research file copy
