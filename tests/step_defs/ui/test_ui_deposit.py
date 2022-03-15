@@ -1,10 +1,11 @@
 # coding=utf-8
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os
+import time
 from collections import OrderedDict
 
 from pytest_bdd import (
@@ -27,9 +28,9 @@ def ui_deposit_open_search(browser, search_argument):
     browser.find_by_name('q').type(Keys.RETURN)
 
 
-@when('search results are shown')
-def ui_deposit_open_search_results(browser):
-    browser.links.find_by_partial_text('title')[0].click()
+@when(parsers.parse('clicks on "{title}" data package'))
+def ui_deposit_open_search_results(browser, title):
+    browser.links.find_by_partial_text(title)[0].click()
 
 
 @when(parsers.parse('landingpage shows "{data_access}" access'))
@@ -39,17 +40,17 @@ def ui_deposit_open_search_data_access_type_visible(browser, data_access):
 
 @when('all fields contain correct data')
 def ui_deposit_open_search_contains_correct_data(browser):
-    required_text = ['Lazlo Westerhof (Principal Investigator)',
-                     'Title dit is de title',
-                     'Description dit is de description',
+    required_text = ['Jane Doe (Principal Investigator)',
+                     'UI test',
+                     'Aut aspernatur quia perferendis et',
                      'Keyword1',
                      'Earth sciences - Geochemistry',
                      'Project1',
-                     'Lazlo Westerhof, Utrecht University, Principal Investigator',
-                     'Harm de Raaff',
+                     'Jane Doe, Utrecht University, Principal Investigator',
+                     'John Doe',
                      '2000-01-01 - 2010-01-01',
                      'Reference to a publication',
-                     'Another reference to a publicatoin']
+                     'Another reference to a publication']
     # Retention not fully / correctly implemented in open_search
     # '2022-03-10',
     # '2042-03-10 (20 years)']
@@ -80,7 +81,7 @@ def ui_user_clicks_for_data_access(browser, title):
 
 @given('data file is uploaded to deposit', target_fixture="api_response")
 def api_deposit_file_upload(user, deposit_name):
-    file = 'BLABLA.BLA'
+    file = 'ui_test.file'
     return upload_data(
         user,
         file,
@@ -88,10 +89,10 @@ def api_deposit_file_upload(user, deposit_name):
     )
 
 
-@given(parsers.parse('"{datapackage_access}" metadata is uploaded'), target_fixture="api_response")
-def ui_deposit_metadata_json_upload_on_access(user, deposit_name, datapackage_access):
+@given('"<data_access_restriction>" metadata is uploaded', target_fixture="api_response")
+def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_restriction):
     cwd = os.getcwd()
-    with open("{}/files/{}.json".format(cwd, "dag-" + datapackage_access + "-yoda-metadata")) as f:
+    with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
     return api_request(
@@ -111,7 +112,7 @@ def ui_deposit_click_deposit_on_dp_access(browser):
 
 @when('user goes to submission page')
 def ui_deposit_to_submission_page(browser):
-    browser.find_by_css('button.btn.btn-primary.pull-right').click()
+    browser.find_by_css('button.btn.btn-primary.float-end').click()
 
 
 @when('user accepts terms')
@@ -126,6 +127,7 @@ def ui_deposit_dp_submission(browser):
 
 @when('submission is confirmed')
 def ui_deposit_dp_submission_confirmed(browser):
+    time.sleep(10)
     assert browser.is_text_present('Thank you for your deposit')
 
 
