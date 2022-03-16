@@ -34,7 +34,7 @@ def api_deposit_browse_collections(ctx,
     """Get paginated collection contents, including size/modify date information.
 
     This function browses a folder and only looks at the collections in it. No dataobjects.
-    Specifically for folder selection for copying data to research area from vault for instance.
+    Specifically for deposit selection which is why it adds deposit-specific data to the result
 
     :param ctx:        Combined type of a callback and rei struct
     :param coll:       Collection to get paginated contents of
@@ -50,22 +50,13 @@ def api_deposit_browse_collections(ctx,
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
-        deposit_title = '[No title]'
-        deposit_size = 0
-        deposit_count = 0
-        log.write(ctx, x['COLL_NAME'])
-        iter = genquery.row_iterator(
-            "SUM(DATA_SIZE), COUNT(DATA_ID)",
-            "COLL_NAME like '{}/%'".format(x['COLL_NAME']),
-            genquery.AS_LIST, ctx
-        )
-        for row in iter:
-            deposit_size = int(row[0])
-            deposit_count = int(row[1])
+        deposit_count = collection.data_count(ctx, x['COLL_NAME'])
+        deposit_size = collection.size(ctx, x['COLL_NAME'])
 
+        deposit_title = '[No title]'
         iter = genquery.row_iterator(
-            "META_DATA_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = 'usr_Title'".format(x['COLL_NAME']),
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(x['COLL_NAME']),
             genquery.AS_LIST, ctx
         )
         for row in iter:
@@ -98,18 +89,9 @@ def api_deposit_browse_collections(ctx,
     zone = user.zone(ctx)
 
     # We make offset/limit act on two queries at once, placing qdata right after qcoll.
-    if space == str(pathutil.Space.RESEARCH):
-        qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
-                      offset=offset, limit=limit, output=AS_DICT)
-    elif space == str(pathutil.Space.VAULT):
-        qcoll = Query(ctx, ccols,
-                      "COLL_PARENT_NAME = '{}' AND COLL_NAME like '/{}/home/%vault-%'".format(coll, zone),
-                      offset=offset, limit=limit, output=AS_DICT)
-    else:
-        qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
-                      offset=offset, limit=limit, output=AS_DICT)
-
+    qcoll = Query(ctx, ccols,
+                  "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
+                  offset=offset, limit=limit, output=AS_DICT)
     colls = map(transform, list(qcoll))
 
     if len(colls) == 0:
