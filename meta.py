@@ -306,14 +306,8 @@ def ingest_metadata_deposit(ctx, path):
         log.write(ctx, 'ingest_metadata_deposit failed: {} is invalid'.format(path))
         return
 
-    # Note: We do not set a $id in deposit space: this would trigger jsonavu
-    # validation, which does not respect our wish to ignore required
-    # properties in the research area.
-
-    # Replace all metadata under this namespace.
-    avu_json.set_json_to_obj(ctx, coll, '-C',
-                             constants.UUUSERMETADATAROOT,
-                             jsonutil.dump(metadata))
+    # Set title of deposit as AVU.
+    avu.associate_to_coll(ctx, coll, 'Title', metadata['Title'])
 
 
 def ingest_metadata_staging(ctx, path):
