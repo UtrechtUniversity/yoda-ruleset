@@ -56,7 +56,7 @@ def api_deposit_browse_collections(ctx,
         deposit_title = '[No title]'
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(x['COLL_NAME']),
+            "COLL_NAME = '{}' AND META_COLL_ATTR_UNITS = 'usr_0_s' AND META_COLL_ATTR_NAME = 'Title'".format(x['COLL_NAME']),
             genquery.AS_LIST, ctx
         )
         for row in iter:
