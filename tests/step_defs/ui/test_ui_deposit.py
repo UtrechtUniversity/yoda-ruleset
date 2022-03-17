@@ -105,14 +105,23 @@ def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_re
 @given(parsers.parse('user clicks new deposit'), target_fixture="deposit_name")
 def ui_deposit_click_deposit_on_dp_access(browser):
     # Find the deposit_name for further reference when uploading data
-    datapackage = browser.links.find_by_partial_text('deposit-pilot[')[0].value
-    browser.links.find_by_partial_text(datapackage)[0].click()
+    # strip away /deposit-pilot/ to get to the deposit name
+    datapackage = browser.links.find_by_partial_text('[No title]')[0]['data-path'][15:]
+    
+    browser.links.find_by_partial_text('[No title]')[0].click()
+
     return datapackage
+
+
+@when('user clicks on deposit containing "<data_access_restriction>" in title')
+def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
+    package_title_contains = 'UI test ' + data_access_restriction.title()
+    browser.links.find_by_partial_text(package_title_contains)[0].click()
 
 
 @when('user goes to submission page')
 def ui_deposit_to_submission_page(browser):
-    browser.find_by_css('button.btn.btn-primary.float-end').click()
+    browser.find_by_css('button.btn.btn-primary.float-end', wait_time=10).click()
 
 
 @when('user accepts terms')
@@ -138,7 +147,8 @@ def ui_deposit_start(browser):
 
 @when('user clicks on active deposit')
 def ui_deposit_click_active(browser):
-    browser.links.find_by_partial_text('deposit-pilot[')[0].click()
+    # browser.links.find_by_partial_text('deposit-pilot[')[0].click()
+    browser.links.find_by_partial_text('[No title]')[0].click()
 
 
 @when('user clicks on document data button')
@@ -148,7 +158,8 @@ def ui_deposit_click_document(browser):
 
 @then('new deposit is created')
 def ui_deposit_created(browser):
-    assert browser.is_text_present("deposit-pilot[")
+    # assert browser.is_text_present("deposit-pilot[")
+    assert browser.is_text_present('[No title]')
 
 
 @then('upload data step is shown')
