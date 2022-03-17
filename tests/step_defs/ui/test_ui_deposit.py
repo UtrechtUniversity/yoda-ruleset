@@ -107,7 +107,7 @@ def ui_deposit_click_deposit_on_dp_access(browser):
     # Find the deposit_name for further reference when uploading data
     # strip away /deposit-pilot/ to get to the deposit name
     datapackage = browser.links.find_by_partial_text('[No title]')[0]['data-path'][15:]
-    
+
     browser.links.find_by_partial_text('[No title]')[0].click()
 
     return datapackage
