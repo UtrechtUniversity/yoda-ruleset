@@ -15,6 +15,12 @@ Feature: Deposit UI
 
     When user clicks on document data button
     Then document data step is shown
+	
+    And module "deposit" is shown
+    When user clicks on deposit containing "<data_access_restriction>" in title
+
+    When user clicks on document data button
+    Then document data step is shown
 
     When user goes to submission page
     And user accepts terms
