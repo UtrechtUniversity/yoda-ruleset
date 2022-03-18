@@ -306,8 +306,9 @@ def ingest_metadata_deposit(ctx, path):
         log.write(ctx, 'ingest_metadata_deposit failed: {} is invalid'.format(path))
         return
 
-    # Set title of deposit as AVU.
+    # Set Title and Data Access Restriction of deposit as AVU.
     avu.associate_to_coll(ctx, coll, 'Title', metadata['Title'])
+    avu.associate_to_coll(ctx, coll, 'Data_Access_Restriction', metadata['Data_Access_Restriction'])
 
 
 def ingest_metadata_staging(ctx, path):
