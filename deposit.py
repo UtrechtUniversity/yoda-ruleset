@@ -127,10 +127,9 @@ def api_deposit_overview(ctx,
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
 
-        deposit_count = collection.data_count(ctx, x['COLL_NAME'])
         deposit_size = collection.size(ctx, x['COLL_NAME'])
 
-        deposit_title = '[No title]'
+        deposit_title = '(no title)'
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(x['COLL_NAME']),
@@ -143,7 +142,6 @@ def api_deposit_overview(ctx,
                 'type':          'coll',
                 'modify_time':   int(x['COLL_MODIFY_TIME']),
                 'deposit_title': deposit_title,
-                'deposit_count': deposit_count,
                 'deposit_size':  deposit_size}
 
     if sort_on == 'modified':
