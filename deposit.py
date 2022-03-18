@@ -138,10 +138,20 @@ def api_deposit_overview(ctx,
         for row in iter:
             deposit_title = row[0]
 
+        deposit_access = '(no title)'
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'".format(x['COLL_NAME']),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            deposit_access = row[0].split("-").strip()
+
         return {'name':          x['COLL_NAME'].split('/')[-1],
                 'type':          'coll',
                 'modify_time':   int(x['COLL_MODIFY_TIME']),
                 'deposit_title': deposit_title,
+                'deposit_access': deposit_access,
                 'deposit_size':  deposit_size}
 
     if sort_on == 'modified':
