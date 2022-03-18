@@ -307,8 +307,10 @@ def ingest_metadata_deposit(ctx, path):
         return
 
     # Set Title and Data Access Restriction of deposit as AVU.
-    avu.associate_to_coll(ctx, coll, 'Title', metadata['Title'])
-    avu.associate_to_coll(ctx, coll, 'Data_Access_Restriction', metadata['Data_Access_Restriction'])
+    if 'Title' in metadata:
+        avu.associate_to_coll(ctx, coll, 'Title', metadata['Title'])
+    if 'Data_Access_Restriction' in metadata:
+        avu.associate_to_coll(ctx, coll, 'Data_Access_Restriction', metadata['Data_Access_Restriction'])
 
 
 def ingest_metadata_staging(ctx, path):
