@@ -138,14 +138,14 @@ def api_deposit_overview(ctx,
         for row in iter:
             deposit_title = row[0]
 
-        deposit_access = '(no title)'
+        deposit_access = ''
         iter = genquery.row_iterator(
             "META_COLL_ATTR_VALUE",
             "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Data_Access_Restriction'".format(x['COLL_NAME']),
             genquery.AS_LIST, ctx
         )
         for row in iter:
-            deposit_access = row[0].split("-").strip()
+            deposit_access = row[0].split("-")[0].strip()
 
         return {'name':          x['COLL_NAME'].split('/')[-1],
                 'type':          'coll',
