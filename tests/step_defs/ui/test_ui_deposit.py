@@ -106,9 +106,9 @@ def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_re
 def ui_deposit_click_deposit_on_dp_access(browser):
     # Find the deposit_name for further reference when uploading data
     # strip away /deposit-pilot/ to get to the deposit name
-    datapackage = browser.links.find_by_partial_text('[No title]')[0]['data-path'][15:]
+    datapackage = browser.links.find_by_partial_text('(no title)')[0]['data-path'][15:]
 
-    browser.links.find_by_partial_text('[No title]')[0].click()
+    browser.links.find_by_partial_text('(no title)')[0].click()
 
     return datapackage
 
