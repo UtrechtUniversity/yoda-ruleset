@@ -395,8 +395,9 @@ def ingest_metadata_vault(ctx, path):
         for row in iter:
             data_package = row[0]
 
-    # update flat index metadata
-    update_index_metadata(ctx, path, metadata, creation_time, data_package)
+    # Update flat index metadata for OpenSearch.
+    if config.enable_open_search:
+        update_index_metadata(ctx, path, metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
