@@ -63,10 +63,6 @@ def post_status_transition(ctx, path, actor, status):
         actor = "system"
         provenance.log_action(ctx, actor, path, "secured in vault")
 
-        # Enable indexing on vault package.
-        if config.enable_open_search:
-            ctx.iiEnableIndexing(path)
-
     elif status is constants.vault_package_state.SUBMITTED_FOR_PUBLICATION:
         provenance.log_action(ctx, actor, path, "submitted for publication")
 

@@ -354,6 +354,10 @@ def folder_secure(ctx, coll, target):
 
         parent, chopped_coll = pathutil.chop(parent)
 
+    # Enable indexing on vault package.
+    if config.enable_open_search:
+        ctx.iiEnableIndexing(target)
+
     # All went well
     return '0'
 
