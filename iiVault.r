@@ -17,9 +17,7 @@ iiCopyFolderToVault(*folder, *target) {
 	*buffer.source = *folder;
 	*buffer.destination = *target ++ "/original";
 	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
-	if (*error == 0) {
-		msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
-	} else {
+	if (*error != 0) {
 		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
 		writeLine("stdout", "iiIngestObject: *error: *msg");
 		fail;
@@ -239,4 +237,9 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 #
 iiAdminVaultActions() {
 	msiExecCmd("admin-vaultactions.sh", uuClientFullName, "", "", 0, *out);
+}
+
+# \brief Enable indexing on vault target.
+iiEnableIndexing(*target) {
+    msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
 }
