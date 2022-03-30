@@ -358,9 +358,9 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in creator.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ",&nbsp;" if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
                                             {% endfor %}
-                                        </span>
+                                </span>
                             </div>
                         </div>
 
@@ -370,10 +370,14 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
+                                    {% if creator.Affiliation is string %}
+                                        {{ creator.Affiliation }}
+                                    {% else %}
                                         {% for affiliation in creator.Affiliation %}
-                                            {{ affiliation }}{{ ",&nbsp;" if not loop.last }}
+                                            {{ affiliation }}{{ ", " if not loop.last }}
                                         {% endfor %}
-                                        </span>
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                         {% endfor %}
@@ -397,9 +401,9 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contributor.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ",&nbsp;" if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
                                             {% endfor %}
-                                        </span>
+                                </span>
                             </div>
                         </div>
 
@@ -410,9 +414,9 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contributor.Affiliation %}
-                                            {{ affiliation }}{{ ",&nbsp;" if not loop.last }}
+                                            {{ affiliation }}{{ ", " if not loop.last }}
                                         {% endfor %}
-                                        </span>
+                                </span>
                             </div>
                         </div>
                         {% endfor %}
@@ -457,9 +461,9 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contact.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ",&nbsp;" if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
                                             {% endfor %}
-                                        </span>
+                                </span>
                             </div>
                         </div>
 
@@ -470,9 +474,9 @@
                             <div class="col-sm-10">
                                 <span>
                                         {% for affiliation in contact.Affiliation %}
-                                            {{ affiliation }}{{ ",&nbsp;" if not loop.last }}
+                                            {{ affiliation }}{{ ", " if not loop.last }}
                                         {% endfor %}
-                                        </span>
+                                </span>
                             </div>
                         </div>
                         {% endfor %}
@@ -488,7 +492,7 @@
                                     {% else %}
                                         {{ license }}
                                     {% endif %}
-                                    </span>
+                                </span>
                             </div>
                         </div>
                         {% if collection_name|length>1 %}
