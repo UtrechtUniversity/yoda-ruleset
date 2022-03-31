@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Policy check functions for data package status transitions."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import folder
@@ -55,7 +55,7 @@ def can_set_datapackage_status_attr(ctx, actor, coll, status):
 
 
 def post_status_transition(ctx, path, actor, status):
-    """Post folder status transition actions."""
+    """Post data package status transition actions."""
     status = constants.vault_package_state(status)
     actor = ctx.iiVaultGetActionActor(path, actor, '')['arguments'][2]
 

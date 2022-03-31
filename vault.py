@@ -35,7 +35,7 @@ __all__ = ['api_vault_submit',
            'api_vault_get_package_by_reference',
            'api_vault_copy_to_research',
            'api_vault_get_publication_terms',
-           'api_vault_get_deposit_data',
+           'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group']
 
@@ -587,14 +587,30 @@ def api_vault_get_package_by_reference(ctx, reference):
 
 
 @api.make()
-def api_vault_get_deposit_data(ctx, coll):
-    """Retrieve deposit data of data package.
+def api_vault_get_landingpage_data(ctx, coll):
+    """Retrieve landingpage data of data package.
+
+    Landinpage data consists of metadata and system metadata.
 
     :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection to retrieve deposit data from
+    :param coll: Collection to retrieve landingpage data from
 
     :returns: API status
     """
+    meta_path = meta.get_latest_vault_metadata_path(ctx, coll)
+
+    # Try to load the metadata file.
+    try:
+        metadata = jsonutil.read(ctx, meta_path)
+        current_schema_id = meta.metadata_get_schema_id(metadata)
+        if current_schema_id is None:
+            return api.Error('no_schema_id', 'Please check the structure of this file.',
+                             'schema id missing')
+    except jsonutil.ParseError:
+        return api.Error('bad_json', 'Please check the structure of this file.', 'JSON invalid')
+    except msi.Error as e:
+        return api.Error('internal', 'The metadata file could not be read.', e)
+
     # Get deposit date and end preservation date based upon retention period
     # "submitted for vault"
     # deposit_date = '2016-02-29'  # To be gotten from the action log
@@ -611,7 +627,7 @@ def api_vault_get_deposit_data(ctx, coll):
             deposit_date = deposit_timestamp.strftime('%Y-%m-%d')
             break
 
-    return {'deposit_date': deposit_date}
+    return {'metadata': metadata, 'deposit_date': deposit_date}
 
 
 @api.make()

@@ -193,7 +193,10 @@ def api_resource_resource_and_tier_data(ctx):
                              'id': resourceId,
                              'tier': tierName})
 
-    return resourceList
+    # Sort on resource name.
+    resourceListSorted = sorted(resourceList, key=lambda d: d['name'])
+
+    return resourceListSorted
 
 
 @api.make()
@@ -246,7 +249,10 @@ def api_resource_category_stats(ctx):
                                'tier': tier,
                                'storage': str(storageDict[category][tier])})
 
-    return allStorage
+    # Sort on category name.
+    allStorageSorted = sorted(allStorage, key=lambda d: d['category'])
+
+    return allStorageSorted
 
 
 @api.make()

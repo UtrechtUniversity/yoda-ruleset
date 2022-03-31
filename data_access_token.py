@@ -42,6 +42,8 @@ def api_token_generate(ctx, label=None):
             # TODO: encrypt database so tokens cannot (easily) be read
             conn.execute('''INSERT INTO tokens VALUES (?, ?, ?, ?, ?)''', (user_id, label, token, gen_time, exp_time))
             result = token
+    except sqlite3.IntegrityError:
+        result = api.Error('TokenExistsError', 'Token with this label already exists')
     except Exception:
         print_exc()
         result = api.Error('DatabaseError', 'Error occurred while writing to database')

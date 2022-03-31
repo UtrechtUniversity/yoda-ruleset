@@ -250,6 +250,10 @@ def folder_secure(ctx, coll, target):
     msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
 
+    # Generate UUID4 and set as Data Package Reference.
+    if config.enable_data_package_reference:
+        avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()))
+
     meta.copy_user_metadata(ctx, coll, target)
     vault.vault_copy_original_metadata_to_vault(ctx, target)
     vault.vault_write_license(ctx, target)
@@ -312,10 +316,6 @@ def folder_secure(ctx, coll, target):
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
-    # Generate UUID4 and set as Data Package Reference.
-    if config.enable_data_package_reference:
-        avu.set_on_coll(ctx, target, constants.DATA_PACKAGE_REFERENCE, str(uuid.uuid4()))
-
     # Vault package is ready, set vault package state to UNPUBLISHED.
     avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.UNPUBLISHED)
 
@@ -353,6 +353,10 @@ def folder_secure(ctx, coll, target):
             log.write(ctx, "Could not set ACL (admin:null) on " + parent)
 
         parent, chopped_coll = pathutil.chop(parent)
+
+    # Enable indexing on vault package.
+    if config.enable_open_search:
+        ctx.iiEnableIndexing(target)
 
     # All went well
     return '0'

@@ -238,3 +238,8 @@ iiVaultGetActionActor(*folder, *actor, *actionActor) {
 iiAdminVaultActions() {
 	msiExecCmd("admin-vaultactions.sh", uuClientFullName, "", "", 0, *out);
 }
+
+# \brief Enable indexing on vault target.
+iiEnableIndexing(*target) {
+    msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
+}

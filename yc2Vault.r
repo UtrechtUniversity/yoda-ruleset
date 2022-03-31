@@ -40,7 +40,7 @@ uuYcVaultDatasetGetPath(*vaultRoot, *datasetId, *datasetPath) {
 	*experimentType = *datasetComponents."experiment_type";
 	*pseudocode = *datasetComponents."pseudocode";
 	*version = *datasetComponents."version";
-	*sep = "_"; 
+	*sep = "_";
 	*wepv = *wave ++ *sep ++ *experimentType ++ *sep ++ *pseudocode ++ *sep ++ "ver*version";
    *datasetPath = "*vaultRoot/*wave/*experimentType/*pseudocode/*wepv";
 }
@@ -81,7 +81,7 @@ uuYcVaultWalkRemoveObject(*itemParent, *itemName, *itemIsCollection, *buffer, *s
 
 
 uuYcVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
-	# from the original object only the below list '*copiedMetadata' of metadata keys 
+	# from the original object only the below list '*copiedMetadata' of metadata keys
 	# is copied to the vault object, other info is ignored
 	*copiedMetadata = list("wave", "experiment_type", "pseudocode", "version",
 									 "error", "warning", "comment", "dataset_error",
@@ -158,7 +158,7 @@ uuYcVaultIngestObject(*objectPath, *isCollection, *vaultPath, *status) {
 
 uuYcVaultWalkIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *status) {
 	*sourcePath = "*itemParent/*itemName";
-	*destPath = *buffer."destination"; # top level destination is specified 
+	*destPath = *buffer."destination"; # top level destination is specified
 	if (*sourcePath != *buffer."source") {
 		# rewrite path to copy objects that are located underneath the toplevel collection
 		*sourceLength = strlen(*sourcePath);
@@ -167,7 +167,7 @@ uuYcVaultWalkIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *s
 	}
 #	writeLine("serverLog","VLT from = *sourcePath");
 #	writeLine("serverLog","VLT to   = *destPath");
-	uuYcVaultIngestObject(*sourcePath, *itemIsCollection, *destPath, *status); 
+	uuYcVaultIngestObject(*sourcePath, *itemIsCollection, *destPath, *status);
 }
 
 
@@ -179,7 +179,7 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 		uuYcVaultDatasetGetPath(*vaultRoot, *datasetId, *vaultPath);
 		# create the in-between levels of the path to the toplevel collection
 		uuChopPath(*vaultPath, *vaultParent, *vaultCollection);
-		msiCollCreate(*vaultParent, "1", *status);		
+		msiCollCreate(*vaultParent, "1", *status);
 #		writeLine("serverLog","VAULT: dataset created *datasetId status=*status path=*vaultPath");
 		if (*status == 0) {
 			# copy the dataset tree to the vault
@@ -189,7 +189,7 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 #			writeLine("serverLog","VAULT: source = *topLevelCollection");
 #			writeLine("serverLog","VAULT: dest   = *vaultPath");
 			uuTreeWalk(
-				"forward", 
+				"forward",
 				*topLevelCollection,
 				"uuYcVaultWalkIngestObject",
 				*buffer,
@@ -204,10 +204,10 @@ uuYcDatasetCollectionMove2Vault(*intakeRoot,*topLevelCollection, *datasetId, *va
 				# and finally remove the dataset original in the intake area
 				msiRmColl(*topLevelCollection, "forceFlag=", *error);
 #				uuTreeWalk(
-#					"reverse", 
-#					*topLevelCollection, 
-#					"uuYcVaultWalkRemoveObject", 
-#					*buffer, 
+#					"reverse",
+#					*topLevelCollection,
+#					"uuYcVaultWalkRemoveObject",
+#					*buffer,
 #					*error
 #					);
 				if (*error != 0) {
@@ -330,7 +330,7 @@ uuYc2Vault(*intakeRoot, *vaultRoot, *status) {
 			if (*status == 0) {
 				# datset frozen, now move to fault and remove from intake area
 				uuYcDatasetCollectionMove2Vault(
-						*intakeRoot, 
+						*intakeRoot,
 						*topLevelCollection,
 						*datasetId,
 						*vaultRoot,

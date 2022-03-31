@@ -21,7 +21,7 @@ iiFolderStatus(*folder, *folderStatus) {
 # \brief Schedule copy-to-vault (asynchronously).
 #
 iiScheduleCopyToVault() {
-	delay ("<PLUSET>1s</PLUSET>") {
+	delay ("<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>1s</PLUSET>") {
 		msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
 	}
 }
