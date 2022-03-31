@@ -201,7 +201,7 @@ def rule_batch_transform_vault_metadata(rule_args, callback, rei):
     if coll_id != 0:
         # Check the next batch after a delay.
         callback.delayExec(
-            "<PLUSET>%ds</PLUSET>" % delay,
+            "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % delay,
             "rule_batch_transform_vault_metadata('%d', '%d', '%f', '%d')" % (coll_id, batch, pause, delay),
             "")
 
