@@ -92,8 +92,7 @@ def api_datarequest_save(user):
                         "exploratory_analysis": "test"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report",
-                    "publication_approval": True
+                    "publication_type": "Article or report"
                 },
                 "owner": "researcher"
             },
@@ -175,8 +174,7 @@ def api_datarequest_submit(user, datarequest_id):
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report",
-                    "publication_approval": True
+                    "publication_type": "Article or report"
                 },
                 "owner": "researcher"
             },
@@ -262,7 +260,7 @@ def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"decision": "Accepted for review", "assign_to": ["dmcmember"]}, "request_id": datarequest_id}
+        {"data": {"decision": "Accepted for review", "assign_to": ["dacmember"]}, "request_id": datarequest_id}
     )
 
 
@@ -280,7 +278,7 @@ def api_datarequest_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_review_submit",
-        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dmcmember"}, "request_id": datarequest_id}
+        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dacmember"}, "request_id": datarequest_id}
     )
 
 
@@ -336,6 +334,12 @@ def api_datarequest_data_ready(user, datarequest_id):
         "datarequest_data_ready",
         {"request_id": datarequest_id}
     )
+
+
+@then(parsers.parse('the response status code is "{code:d}"'))
+def api_response_code(api_response, code):
+    http_status, _ = api_response
+    assert http_status == code
 
 
 @then(parsers.parse('request status is "{status}"'))

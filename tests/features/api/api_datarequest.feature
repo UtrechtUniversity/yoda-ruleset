@@ -6,7 +6,7 @@ Feature: Datarequest API
         And the Yoda datarequest browse API is queried
         Then the response status code is "200"
 
-    Scenario Outline: Datarequest schema get
+    Scenario: Datarequest schema get
         Given user "researcher" is authenticated
         And the Yoda datarequest schema get API is queried with schema name "<schema_name>"
         Then the response status code is "200"
@@ -32,7 +32,7 @@ Feature: Datarequest API
         Then the response status code is "200"
         And request status is "PENDING_ATTACHMENTS"
 
-    Scenario Outline: Confirm that the users have appropriate roles
+    Scenario: Confirm that the users have appropriate roles
         Given user "<user>" is authenticated
         And datarequest exists
         And the Yoda datarequest roles get API is queried with request id
@@ -44,7 +44,7 @@ Feature: Datarequest API
             | researcher        | ['OWN'] |
             | projectmanager    | ['PM']  |
             | datamanager       | ['DM']  |
-            | dmcmember         | ['DMC'] |
+            | dacmember         | ['DAC'] |
 
     Scenario: Upload attachments
         Given user "researcher" is authenticated
@@ -107,7 +107,7 @@ Feature: Datarequest API
         Then the response status code is "200"
 
     Scenario: Datarequest review submit
-        Given user "dmcmember" is authenticated
+        Given user "dacmember" is authenticated
         And datarequest exists
         And the datarequest review submit API is queried with request id
         Then the response status code is "200"

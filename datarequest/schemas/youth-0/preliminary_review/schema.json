@@ -12,9 +12,15 @@
         "Rejected"
       ]
     },
-    "informed_consent_fit": {
-      "type": "string",
-      "title": "Does the research question fit with the provided informed consent of the participants of YOUth? (If in doubt please confer with the data manager and a privacy officer.)"
+    "requestee_credentials": {
+      "type": "boolean",
+      "default": false,
+      "title": "The researcher and their organisation are bona fide."
+    },
+    "framework_and_ic_fit": {
+      "type": "boolean",
+      "default": false,
+      "title": "The request fits within the YOUth framework and informed consent."
     },
     "internal_remarks": {
       "type": "string",
@@ -62,6 +68,7 @@
   },
   "required": [
     "preliminary_review",
-    "informed_consent_fit"
+    "requestee_credentials",
+    "framework_and_ic_fit"
   ]
 }

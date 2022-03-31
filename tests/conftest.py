@@ -70,7 +70,7 @@ def pytest_configure(config):
 
     global users
     if datarequest:
-        users = users + ['projectmanager', 'dmcmember']
+        users = users + ['projectmanager', 'dacmember']
 
     if deposit:
         users = users + ['viewer']
