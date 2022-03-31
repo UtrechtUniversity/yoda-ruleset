@@ -1,3 +1,4 @@
+@deposit
 Feature: Deposit UI
 
   Scenario: Deposit open and restricted data package
@@ -15,7 +16,7 @@ Feature: Deposit UI
 
     When user clicks on document data button
     Then document data step is shown
-	
+
     And module "deposit" is shown
     When user clicks on deposit containing "<data_access_restriction>" in title
 
