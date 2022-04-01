@@ -1,7 +1,10 @@
 #!/usr/bin/irule -F
 archiveRule {
-  moveDataOffLine(*SIZE_THRESHOLD);
-  writeLine("stdout", "Data have been put offline");
+    writeLine("stdout", "Tape archive replication job started");
+    writeLine("serverLog", "Tape archive replication job started");
+    moveDataOffLine(*SIZE_THRESHOLD);
+    writeLine("serverLog", "Tape archive replication job finished");
+    writeLine("stdout", "Tape archive replication job finished");
 }
 INPUT *SIZE_THRESHOLD='1000000000'
 OUTPUT ruleExecOut
