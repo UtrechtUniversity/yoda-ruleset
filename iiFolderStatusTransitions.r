@@ -251,12 +251,15 @@ iiFolderSecure(*folder) {
 		*target = iiDetermineVaultTarget(*folder);
 	}
 
-	# Copy to vault
+	# Copy to vault.
 	iiCopyFolderToVault(*folder, *target);
 
-        # From HERE relay to python
-        *return = "";
-        rule_folder_secure(*folder, *target, *return);
+    # Enable indexing on vault target.
+    iiEnableIndexing(*target);
+
+    # Continue securing process in PREP.
+    *return = "";
+    rule_folder_secure(*folder, *target, *return);
 }
 
 
