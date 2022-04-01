@@ -1,14 +1,20 @@
 {
+  "approval_conditions": {
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 8
+    }
+  },
   "internal_remarks": {
     "ui:widget": "textarea",
     "ui:options": {
-      "rows": 12
+      "rows": 8
     }
   },
   "feedback_for_researcher": {
     "ui:widget": "textarea",
     "ui:options": {
-      "rows": 12
+      "rows": 8
     }
   }
 }

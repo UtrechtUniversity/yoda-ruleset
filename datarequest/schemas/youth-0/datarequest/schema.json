@@ -8,33 +8,13 @@
     "stringLong": {
       "type": "string",
       "maxLength": 2700
-    }
-  },
-  "type": "object",
-  "properties": {
-    "previous_request_id": {
-      "type": "number"
     },
-    "owner": {
-      "type": "string"
-    },
-    "introduction": {
+    "person": {
       "type": "object",
-      "title": "Introduction",
-      "description": "The information you provide here will be used by the YOUth project manager, the YOUth data manager, and the Data Management Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the Data Access Protocol (<a href='https://www.uu.nl/sites/default/files/dataaccessprotocol_youth_191029.pdf'>link</a>).<br/><br/>All approved data requests will have to be preregistered at the YOUth registry on the Open Science Framework (<a href='https://osf.io/registries/youthstudy'>link</a>). The OSF preregistration form consists of the same fields as the Study information fields in the data request form below. In addition, approved data requests will be published on the YOUth website, including the name and institution of the contact person and the participating researchers.<br/><br/>If you have have compelling reasons to object to the preregistration and publication of the data request, you will be able to specify this in the data request form below. The objection will be evaluated by the project manager, executive board and the data management committee. If the objection is rejected, you may decide to withdraw your data request."
-    },
-    "contact": {
-      "type": "object",
-      "title": "Contact",
-      "description": "In this section, please provide the necessary contact information.</br><ul><li>Your own contact details</li><li>Email addresses of contacts that should receive CCs of email communication addressed to you (if any)</li><li>Name and details of the contact person within YOUth (if any)</li></ul>",
       "properties": {
-        "given_name": {
+        "name": {
           "$ref": "#/definitions/stringNormal",
-          "title": "First name"
-        },
-        "family_name": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Family name"
+          "title": "Name"
         },
         "institution": {
           "$ref": "#/definitions/stringNormal",
@@ -43,11 +23,6 @@
         "department": {
           "$ref": "#/definitions/stringNormal",
           "title": "Department"
-        },
-        "academic_role": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Academic role",
-          "description": "E.g. Professor, Associate professor, PhD student"
         },
         "work_address": {
           "$ref": "#/definitions/stringNormal",
@@ -58,45 +33,150 @@
           "$ref": "#/definitions/stringNormal",
           "title": "Phone",
           "description": "Preferably use the E.164 international telephone number format: +[country code][area code][phone number] (e.g. +31 30 1234 5678)."
+        }
+      },
+      "required": [
+        "name",
+        "institution",
+        "department",
+        "work_address",
+        "phone"
+      ]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "previous_request_id": {
+      "type": "string"
+    },
+    "draft": {
+      "type": "boolean"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "submission_timestamp": {
+      "type": "string"
+    },
+    "instructions": {
+      "type": "object",
+      "title": "Instructions",
+      "description": "The information you provide here will be used by the YOUth project manager, the YOUth data manager, and the Data Access Committee to evaluate your data request. Details regarding this evaluation procedure can be found in the <a href=\"https://www.uu.nl/sites/default/files/dataaccessprotocol_youth_191029.pdf\">Data Access Protocol</a>.<br/><br/>All approved data requests will have to be preregistered at the <a href=\"http://osf.io/registries/youthstudy\">YOUth registry</a> on the Open Science Framework. The OSF preregistration form consists of the same fields as the Study information fields in the data request form below. Approved data requests will be published in the YOUth OSF registry, including the name and institution of the contact person and the participating researchers.<br/><br/>Please note that data requests that include biological materials will need to go through an additional phase after the general online data request procedure: these requests will have to be approved by the UMC Utrecht Review Committee Biobanks (<a href=\"https://tcbio.umcutrecht.nl/\">Toetsingscommissie Biobanken, TCBio</a>)."
+    },
+    "part": {
+      "type": "object",
+      "title": "<b>Part 1 (researcher details, data overview, publication)</b>"
+    },
+    "contact": {
+      "type": "object",
+      "title": "Researcher details",
+      "description": "In this section, please provide information about the researcher involved with this data request.<br/><ul><li>Name, affiliation and contact information of the principal investigator</li><li>Name, affiliation and contact information of the contact person for this request</li><li>Name and details of participating researchers (e.g. intended co-authors)</li><li>A comma-separated list of email addresses which should receive a CC of all email correspondence regarding this data request</li></ul>",
+      "properties": {
+        "principal_investigator": {
+          "$ref": "#/definitions/person",
+          "title": "<i>Principal investigator</i>"
+        },
+        "pi_is_contact": {
+          "type": "string",
+          "title": "Is the principal investigator is also the contact person for this study?",
+          "enum": [
+            "Yes",
+            "No"
+          ]
+        },
+        "participating_researchers": {
+          "type": "string",
+          "title": "Are there any participating researchers?",
+          "enum": [
+            "Yes",
+            "No"
+          ]
         },
         "cc_email_addresses": {
           "$ref": "#/definitions/stringNormal",
           "title": "CC email addresses",
           "description": "A comma-separated list of email addresses which should receive a CC of all email correspondence addressed to the main contact (i.e. the researcher submitting this request). For example a superior or a colleague."
+        }
+      },
+      "dependencies": {
+        "pi_is_contact": {
+          "oneOf": [
+            {
+              "properties": {
+                "pi_is_contact": {
+                  "enum": [
+                    "Yes"
+                  ]
+                }
+              }
+            },
+            {
+              "properties": {
+                "pi_is_contact": {
+                  "enum": [
+                    "No"
+                  ]
+                },
+                "study_contact": {
+                  "$ref": "#/definitions/person",
+                  "title": "<i>Contact person of study</i>"
+                }
+              },
+              "required": [
+                "study_contact"
+              ]
+            }
+          ]
         },
-        "dmc_contact": {
-          "$ref": "#/definitions/stringNormal",
-          "title": "Contact person in YOUth Data Management Committee (if any)"
+        "participating_researchers": {
+          "oneOf": [
+            {
+              "properties": {
+                "participating_researchers": {
+                  "enum": [
+                    "Yes"
+                  ]
+                },
+                "participating_researchers_array": {
+                  "type": "array",
+                  "minItems": 1,
+                  "title": "<i>List of participating researchers</i>",
+                  "items": {
+                    "$ref": "#/definitions/person"
+                  }
+                }
+              }
+            },
+            {
+              "properties": {
+                "participating_researchers": {
+                  "enum": [
+                    "No"
+                  ]
+                }
+              }
+            }
+          ]
         }
       },
       "required": [
-        "given_name",
-        "family_name",
-        "institution",
-        "department",
-        "academic_role",
-        "work_address",
-        "phone"
+        "pi_is_contact",
+        "participating_researchers"
       ]
     },
     "datarequest": {
       "type": "object",
       "title": "Requested data",
-      "description": "In this section, please specify as detailed as possible which data you request (and from which subjects). Include information regarding:<ul><li>Which wave(s)</li><li>Which experiments, questionnaires, etc.</li><li>How many sets (sample-size)</li><li>Purpose of your data request</li><li>Other aspects relevant to your data request (optional).</li></ul>Some information on the use of the data selection table below:<ul><li>Use the sorting options to find the data set(s) you would like to request</li><li>Click the checkbox or the row to add the data to your \"shopping cart\"</li><li>Click the (+) to show additional information about a data set (if available)</li><li>Your selection is shown in the shopping cart below the data selection table</li><li>You may change the number of rows per page using the bottom-left drop-down menu</li></ul>Please note that data requests that include biological materials will need to go through an additional phase after the general online data request procedure: these requests will have to be approved by the UMC Utrecht Review Committee Biobanks (Toetsingscommissie Biobanken, TCBio), please see <a href=\"http://to-be-added\">this link</a>.</br></br>",
+      "description": "In this section, please specify as detailed as possible which data you request from which cohort (Baby & Child or Child & Adolescent) and which wave(s). If applicable, please also list any specific criteria (e.g. only data of children of whom mothers smoked during pregnancy).",
       "properties": {
         "data": {
           "type": "object",
           "title": "Data"
         },
-        "additional_specifications": {
+        "specific_criteria": {
           "$ref": "#/definitions/stringLong",
-          "title": "Additional specifications",
-          "description": "If necessary, please provide additional specifications on the data you would like to obtain (e.g. only of children of which the mother smoked during pregnancy)."
-        },
-        "other_remarks": {
-          "$ref": "#/definitions/stringLong",
-          "title": "Other aspects relevant to your data request",
-          "description": "Optional"
+          "title": "Specific criteria",
+          "description": "If applicable, please provide the specific criteria that should be applied to your data selection."
         },
         "purpose": {
           "type": "string",
@@ -106,6 +186,10 @@
             "Analyses in order to publish",
             "Analyses for data assessment only (results will not be published)"
           ]
+        },
+        "part2": {
+          "type": "object",
+          "title": "<b>Part 2 (study information)</b>"
         }
       },
       "dependencies": {
@@ -140,18 +224,14 @@
                     "Analyses in order to publish"
                   ]
                 },
-                "publication_approval": {
-                  "type": "boolean",
-                  "title": "Do you agree with publishing the complete request on our researcher’s website after it is approved?",
-                  "enumNames": [ "Yes", "No (please provide a rationale)" ]
-                },
                 "publication_type": {
                   "type": "string",
-                  "title": "Publication type",
+                  "title": "Publication of results",
                   "enum": [
-                    "Article or report",
-                    "Article or report that will also be part of a PhD thesis",
-                    "PhD thesis"
+                    "Article or report in a peer-reviewed journal",
+                    "(Part of a) PhD thesis",
+                    "(Part of a) PhD thesis that will also be published in a peer-reviewed journal",
+                    "Other (please specify below)"
                   ]
                 },
                 "study_information": {
@@ -172,12 +252,18 @@
                       "$ref": "#/definitions/stringLong",
                       "title": "Hypotheses",
                       "description": "For each of the research questions listed in the previous section, provide one or more specific and testable hypothesis. Please make clear whether the hypotheses are directional (e.g., A > B) or non-directional (e.g., A ≠ B). If directional, state the direction. You may also provide a rationale for each hypothesis."
+                    },
+                    "data_returned": {
+                      "$ref": "#/definitions/stringLong",
+                      "title": "Returned files and total size thereof",
+                      "description": "As outlined in the Data Access Protocol and in the Data Transfer Agreement, researchers are required to return the processed and analyzed data and the scripts used to process and analyze the data to the secure Yoda folder after publication of the project results. In order to prepare for the return of these data, we ask you to indicate what type of data files you will be returning and to estimate the total size of these files. Please provide a description and an estimate of the file sizes here."
                     }
                   },
                   "required": [
                     "title",
                     "research_questions",
-                    "hypotheses"
+                    "hypotheses",
+                    "data_returned"
                   ]
                 },
                 "variables": {
@@ -197,7 +283,7 @@
                     "missing_data": {
                       "$ref": "#/definitions/stringLong",
                       "title": "Missing data",
-                      "description": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will usein the statistical analyses. Based on this information, provide a new expected sample size."
+                      "description": "How will you deal with incomplete or missing data? Provide descriptive information, if available, on the amount of missing data for each variable you will use in the statistical analyses. Based on this information, provide a new expected sample size."
                     },
                     "statistical_outliers": {
                       "$ref": "#/definitions/stringLong",
@@ -269,7 +355,9 @@
                     }
                   },
                   "required": [
-                    "statistical_models"
+                    "statistical_models",
+                    "statistical_power",
+                    "assumption_violation"
                   ]
                 },
                 "attachments": {
@@ -277,7 +365,7 @@
                   "title": "Attachments",
                   "properties": {
                     "attachments": {
-                      "title": "Add attachments",
+                      "title": "Do you wish to add attachments?",
                       "description": "Please indicate whether you would like to add one or more attachments to your data request. You will be prompted to upload your attachments after you have submitted your data request, but you may of course already refer to attachments in the study information fields above (e.g. \"see experimental_setup_images.zip\").",
                       "type": "string",
                       "enum": [
@@ -292,37 +380,38 @@
                 }
               },
               "required": [
-                "publication_type",
-                "publication_approval"
+                "publication_type"
               ]
             }
           ]
         },
-        "publication_approval": {
+        "publication_type": {
           "oneOf": [
             {
               "properties": {
-                "publication_approval": {
+                "publication_type": {
                   "enum": [
-                    true
+                    "Article or report in a peer-reviewed journal",
+                    "(Part of a) PhD thesis",
+                    "(Part of a) PhD thesis that will also be published in a peer-reviewed journal"
                   ]
                 }
               }
             },
             {
               "properties": {
-                "publication_approval": {
+                "publication_type": {
                   "enum": [
-                    false
+                    "Other (please specify below)"
                   ]
                 },
-                "private_request_explanation": {
-                  "$ref": "#/definitions/stringLong",
-                  "title": "Please explain why your request should not be made public."
+                "publication_type_other": {
+                  "$ref": "#/definitions/stringNormal",
+                  "title": "Publication type"
                 }
               },
               "required": [
-                "private_request_explanation"
+                "publication_type_other"
               ]
             }
           ]
