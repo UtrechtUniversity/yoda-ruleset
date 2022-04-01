@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions to handle data requests."""
 
-__copyright__ = 'Copyright (c) 2019-2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 __author__    = ('Lazlo Westerhof, Jelmer Zondergeld')
 
@@ -13,12 +13,11 @@ from datetime import datetime
 from enum import Enum
 
 import jsonschema
-from genquery import AS_DICT, row_iterator
+from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
 import avu_json
 import mail
 from util import *
-from util.query import Query
 
 __all__ = ['api_datarequest_roles_get',
            'api_datarequest_action_permitted',
@@ -1525,10 +1524,10 @@ def api_datarequest_review_submit(ctx, data, request_id):
     # the list of reviewers ...
     reviewers = []
 
-    iter = genquery.row_iterator(
+    iter = row_iterator(
         "META_DATA_ATTR_VALUE",
         "COLL_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'assignedForReview'".format(coll_path, DATAREQUEST + JSON_EXT),
-        genquery.AS_LIST, ctx)
+        AS_LIST, ctx)
 
     for row in iter:
         reviewer = row[0]
