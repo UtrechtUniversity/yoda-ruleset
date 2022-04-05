@@ -22,8 +22,14 @@ __all__ = ['api_deposit_create',
 DEPOSIT_GROUP = "deposit-pilot"
 
 
-def determine_deposit_path(ctx):
-    """Determine deposit path for a user."""
+@api.make()
+def api_deposit_create(ctx):
+    """Create deposit collection.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Path to created deposit collection
+    """
     coll = "/" + user.zone(ctx) + "/home/" + DEPOSIT_GROUP
     datapackage_name = pathutil.basename(coll)
 
@@ -33,7 +39,7 @@ def determine_deposit_path(ctx):
     ret = msi.get_icat_time(ctx, '', 'unix')
     timestamp = ret['arguments'][0].lstrip('0')
 
-    # Ensure vault target does not exist.
+    # Ensure deposit target does not exist.
     i = 0
     target_base = coll + "/" + datapackage_name + "[" + timestamp + "]"
     deposit_path = target_base
@@ -41,23 +47,16 @@ def determine_deposit_path(ctx):
         i += 1
         deposit_path = target_base + "[" + str(i) + "]"
 
-    collection.create(ctx, deposit_path)
+    # Try to create deposit collection.
+    try:
+        collection.create(ctx, deposit_path)
+    except msi.CollCreateError:
+        return api.Error('not_allowed', 'Could not create deposit collection.')
 
     space, zone, group, subpath = pathutil.info(deposit_path)
+    deposit_path = "{}/{}".format(group, subpath)
 
-    return "{}/{}".format(group, subpath)
-
-
-@api.make()
-def api_deposit_create(ctx):
-    """Create deposit collection.
-
-    :param ctx: Combined type of a callback and rei struct
-
-    :returns: Path to created deposit collection
-    """
-
-    return {"deposit_path": determine_deposit_path(ctx)}
+    return {"deposit_path": deposit_path}
 
 
 @api.make()
@@ -70,6 +69,9 @@ def api_deposit_status(ctx, path):
     :returns: Deposit status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'Deposit collection does not exist.')
+
     meta_path = '{}/{}'.format(coll, constants.IIJSONMETADATA)
 
     data = False
@@ -97,6 +99,9 @@ def api_deposit_submit(ctx, path):
     :returns: API status
     """
     coll = "/{}/home{}".format(user.zone(ctx), path)
+    if not collection.exists(ctx, coll):
+        return api.Error('nonexistent', 'Deposit collection does not exist.')
+
     return folder.set_status(ctx, coll, constants.research_package_state.SUBMITTED)
 
 
