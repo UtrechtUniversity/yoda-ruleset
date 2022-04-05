@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for listing collection information."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -39,12 +39,14 @@ def api_browse_folder(ctx,
     def transform(row):
         # Remove ORDER_BY etc. wrappers from column names.
         x = {re.sub('.*\((.*)\)', '\\1', k): v for k, v in row.items()}
-
-        if 'DATA_NAME' in x:
+        if 'DATA_NAME' in x and 'META_DATA_ATTR_VALUE' in x:
+            return {x['DATA_NAME']: x['META_DATA_ATTR_VALUE']}
+        elif 'DATA_NAME' in x:
             return {'name':        x['DATA_NAME'],
                     'type':        'data',
                     'size':        int(x['DATA_SIZE']),
-                    'modify_time': int(x['DATA_MODIFY_TIME'])}
+                    'modify_time': int(x['DATA_MODIFY_TIME']),
+                    'state':       'REG'}
         else:
             return {'name':        x['COLL_NAME'].split('/')[-1],
                     'type':        'coll',
@@ -98,6 +100,20 @@ def api_browse_folder(ctx,
         if not collection.exists(ctx, coll):
             return api.Error('nonexistent', 'The given path does not exist')
         # (checking this beforehand would waste a query in the most common situation)
+
+    if config.enable_tape_archive:
+        # Retrieve tape archive state for data objects.
+        state_cols = ['DATA_NAME', 'META_DATA_ATTR_VALUE']
+        qstate = Query(ctx, state_cols, "COLL_NAME = '{}' AND META_DATA_ATTR_NAME = '{}'".format(coll, "org_tape_archive_state"),
+                       offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
+        state = map(transform, list(qstate))
+
+        for d in datas:
+            name = d['name']
+            if any(name in s for s in state):
+                for s in state:
+                    if name in s:
+                        d.update({'state': s[name]})
 
     return OrderedDict([('total', qcoll.total_rows() + qdata.total_rows()),
                         ('items', colls + datas)])

@@ -500,11 +500,13 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     path = _ctx.map()['logical_path']
     zone = _ctx.map()['user_rods_zone']
     username = _ctx.map()['user_user_name']
+    info = pathutil.info(path)
 
     if config.resource_replica:
         ctx.uuReplicateAsynchronously(path, instance_name, config.resource_replica)
 
-    info = pathutil.info(path)
+    if config.enable_tape_archive:
+        ctx.uuTapeArchiveReplicateAsynchronously(path)
 
     try:
         # Import metadata if a metadata JSON file was changed.
