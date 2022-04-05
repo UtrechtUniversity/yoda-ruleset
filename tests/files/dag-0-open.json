@@ -84,7 +84,7 @@
     "Research_Group": "Earth sciences - Geochemistry",
     "Collection_Name": "Project1",
     "End_Preservation": "20",
-    "Data_Classification": "No",
+    "Data_Classification": "Basic",
     "links": [
         {
             "rel": "describedby",
