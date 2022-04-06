@@ -1,0 +1,94 @@
+{
+    "Discipline": [
+        "Natural Sciences - Earth and related environmental sciences (1.5)"
+    ],
+    "Language": "en - English",
+    "Collected": {
+        "Start_Date": "2000-01-01",
+        "End_Date": "2010-01-01"
+    },
+    "GeoLocation": [
+        {
+            "geoLocationBox": {
+                "northBoundLatitude": 57.16007826737998,
+                "westBoundLongitude": 28.343619812441688,
+                "southBoundLatitude": 39.87601941962116,
+                "eastBoundLongitude": -1.185455520777088
+            },
+            "Description_Spatial": "Europe"
+        },
+        {
+            "geoLocationBox": {
+                "northBoundLatitude": 43.13306116240615,
+                "westBoundLongitude": 0.1328067708844838,
+                "southBoundLatitude": 37.020098201368114,
+                "eastBoundLongitude": -6.370620534645853
+            },
+            "Description_Spatial": "Spain"
+        },
+        {
+            "geoLocationBox": {
+                "northBoundLatitude": 60.108670463036,
+                "westBoundLongitude": 10.854673409731783,
+                "southBoundLatitude": 60.108670463036,
+                "eastBoundLongitude": 10.854673409731783
+            },
+            "Description_Spatial": "Oslo"
+        }
+    ],
+    "Tag": [
+        "Keyword1",
+        "Keyword2"
+    ],
+    "Related_Datapackage": [
+        {
+            "Relation_Type": "References: Current datapackages references",
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "doi123"
+            },
+            "Title": "Reference to a publication"
+        },
+        {
+            "Relation_Type": "References: Current datapackages references",
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "Handle",
+                "Identifier": "handle123"
+            },
+            "Title": "Another reference to a publication"
+        }
+    ],
+    "Data_Type": "Dataset",
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "John",
+                "Family_Name": "Doe"
+            }
+        }
+    ],
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "Jane",
+                "Family_Name": "Doe"
+            },
+            "Affiliation": "Utrecht University",
+            "Owner_Role": "Principal Investigator"
+        }
+    ],
+    "License": "Internal License Data Archive Geosciences 2021-01",
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "Title": "UI test Open - Aperiam ad ipsam velit dolor quis fuga et.",
+    "Description": "Aut aspernatur quia perferendis et. Aperiam ad ipsam velit dolor quis fuga et. Blanditiis explicabo asperiores occaecati iusto harum. Ipsum ea dolor nam. In rerum atque animi illo eveniet iure impedit inventore. Blanditiis rerum ipsum quisquam tempora eos neque iusto consectetur. Reprehenderit omnis quae sunt maxime quo. Dicta aliquam odio eius vel sequi aliquam. Totam minus aut dicta labore odit. Iure tenetur et qui vitae ut quis dolor. Voluptatum modi quia illo officia minima voluptas quae ducimus. Excepturi quam dolorem quia. Minima ut temporibus dignissimos quaerat sequi nemo consectetur. Molestiae vitae et consequuntur. Sed nostrum et neque officiis ipsa dolores. Cumque illum quod eaque. Voluptas numquam nesciunt ex cupiditate. Sunt ullam illum dolores et. Maiores ut blanditiis dolorem inventore perferendis. Ad ipsam enim doloremque. Ut quam qui ut. Non nobis velit iusto modi vero eius ut est. Expedita soluta omnis voluptate qui consectetur eum. Et dolor omnis quidem dolores facere qui laboriosam omnis.",
+    "Research_Group": "Earth sciences - Geochemistry",
+    "Collection_Name": "Project1",
+    "End_Preservation": "20",
+    "Data_Classification": "Basic",
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/dag-0/metadata.json"
+        }
+    ]
+}

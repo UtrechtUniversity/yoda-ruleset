@@ -21,7 +21,7 @@ iiFolderStatus(*folder, *folderStatus) {
 # \brief Schedule copy-to-vault (asynchronously).
 #
 iiScheduleCopyToVault() {
-	delay ("<PLUSET>1s</PLUSET>") {
+	delay ("<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>1s</PLUSET>") {
 		msiExecCmd("scheduled-copytovault.sh", "", "", "", 0, *out);
 	}
 }
@@ -251,12 +251,20 @@ iiFolderSecure(*folder) {
 		*target = iiDetermineVaultTarget(*folder);
 	}
 
-	# Copy to vault
+	# Copy to vault.
 	iiCopyFolderToVault(*folder, *target);
 
-        # From HERE relay to python
-        *return = "";
-        rule_folder_secure(*folder, *target, *return);
+    # Enable indexing on vault target.
+    iiCollectionGroupName(*folder, *groupName);
+    *groupElems = split(*groupName, "-");
+    *groupSpace = elem(*groupElems, 0);
+    if (*groupSpace == "deposit") {
+        iiEnableIndexing(*target);
+    }
+
+    # Continue securing process in PREP.
+    *return = "";
+    rule_folder_secure(*folder, *target, *return);
 }
 
 

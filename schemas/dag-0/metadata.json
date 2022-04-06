@@ -32,12 +32,12 @@
     "optionsDataClassification": {
       "type": "string",
       "enum": [
-        "Yes",
-        "No"
-      ],
-      "enumNames": [
         "Sensitive",
         "Basic"
+      ],
+      "enumNames": [
+        "Yes",
+        "No"
       ]
     },
     "optionsRetentionPeriod": {

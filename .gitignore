@@ -14,6 +14,7 @@ Thumbs.db
 .pytest_cache/
 
 #pytest folders
+step_defs.*
 tests.step_defs.*
 geckodriver.log
 

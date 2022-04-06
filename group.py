@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """Functions for group management and group queries."""
 
-__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
+
+from collections import OrderedDict
 
 import genquery
 import requests
@@ -193,9 +195,13 @@ def api_group_data(ctx):
         # Filter groups (only return groups user is part of), convert to json and write to stdout.
         groups = list(filter(lambda group: full_name in group['read'] + group['members'], groups))
 
-    group_hierarchy = {}
+    # Sort groups on name.
+    groups = sorted(groups, key=lambda d: d['name'])
+
+    group_hierarchy = OrderedDict()
     for group in groups:
-        members = {}
+        group['members'] = sorted(group['members'])
+        members = OrderedDict()
 
         # Normal users
         for member in group['members']:
@@ -210,10 +216,10 @@ def api_group_data(ctx):
             members[member] = {'access': 'reader'}
 
         if not group_hierarchy.get(group['category']):
-            group_hierarchy[group['category']] = {}
+            group_hierarchy[group['category']] = OrderedDict()
 
         if not group_hierarchy[group['category']].get(group['subcategory']):
-            group_hierarchy[group['category']][group['subcategory']] = {}
+            group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',

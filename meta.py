@@ -292,6 +292,27 @@ def ingest_metadata_research(ctx, path):
                              jsonutil.dump(metadata))
 
 
+def ingest_metadata_deposit(ctx, path):
+    """Validate JSON metadata (without requiredness) and ingests as AVUs in the deposit space."""
+    coll, data = pathutil.chop(path)
+
+    try:
+        metadata = jsonutil.read(ctx, path)
+    except error.UUError:
+        log.write(ctx, 'ingest_metadata_deposit failed: Could not read {} as JSON'.format(path))
+        return
+
+    if not is_json_metadata_valid(ctx, path, metadata, ignore_required=True):
+        log.write(ctx, 'ingest_metadata_deposit failed: {} is invalid'.format(path))
+        return
+
+    # Set Title and Data Access Restriction of deposit as AVU.
+    if 'Title' in metadata:
+        avu.associate_to_coll(ctx, coll, 'Title', metadata['Title'])
+    if 'Data_Access_Restriction' in metadata:
+        avu.associate_to_coll(ctx, coll, 'Data_Access_Restriction', metadata['Data_Access_Restriction'])
+
+
 def ingest_metadata_staging(ctx, path):
     """Set cronjob metadata flag and triggers vault ingest."""
     ret = msi.string_2_key_val_pair(ctx,
@@ -310,6 +331,34 @@ def ingest_metadata_staging(ctx, path):
     ctx.iiAdminVaultIngest()
 
 
+def update_index_metadata(ctx, path, metadata, creation_time, data_package):
+    """Update the index attributes for JSON metadata."""
+    ctx.msi_rmw_avu('-d', path, '%', '%', constants.UUFLATINDEX)
+
+    for creator in metadata['Creator']:
+        name = creator['Name']
+        ctx.msi_add_avu('-d', path, 'Creator',
+                        name['Given_Name'] + ' ' + name['Family_Name'],
+                        constants.UUFLATINDEX)
+        if 'Owner_Role' in creator:
+            ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
+                            constants.UUFLATINDEX)
+
+    ctx.msi_add_avu('-d', path, 'Title', metadata['Title'],
+                    constants.UUFLATINDEX)
+    ctx.msi_add_avu('-d', path,  'Description', metadata['Description'],
+                    constants.UUFLATINDEX)
+    ctx.msi_add_avu('-d', path, 'Data_Access_Restriction',
+                    metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
+
+    ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
+                    constants.UUFLATINDEX)
+
+    if config.enable_data_package_reference:
+        ctx.msi_add_avu('-d', path, 'Data_Package_Reference', data_package,
+                        constants.UUFLATINDEX)
+
+
 def ingest_metadata_vault(ctx, path):
     """Ingest (pre-validated) JSON metadata in the vault."""
     # The JSON metadata file has just landed in the vault, required validation /
@@ -324,6 +373,31 @@ def ingest_metadata_vault(ctx, path):
     except error.UUError:
         log.write(ctx, 'ingest_metadata_vault failed: Could not read {} as JSON'.format(path))
         return
+
+    # Get creation time.
+    creation_time = ""
+    iter = genquery.row_iterator(
+        "COLL_CREATE_TIME",
+        "COLL_NAME = '%s'" % (coll),
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        creation_time = str(int(row[0]))
+
+    # Get Data Package Reference.
+    data_package = ""
+    if config.enable_data_package_reference:
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            data_package = row[0]
+
+    # Update flat index metadata for OpenSearch.
+    if config.enable_open_search:
+        update_index_metadata(ctx, path, metadata, creation_time, data_package)
 
     # Remove any remaining legacy XML-style AVUs.
     ctx.iiRemoveAVUs(coll, constants.UUUSERMETADATAPREFIX)
@@ -344,6 +418,8 @@ def rule_meta_modified_post(ctx, path, user, zone):
         ingest_metadata_vault(ctx, path)
     elif re.match('^/{}/home/research-[^/]+/.*'.format(zone), path):
         ingest_metadata_research(ctx, path)
+    elif re.match('^/{}/home/deposit-[^/]+/.*'.format(zone), path):
+        ingest_metadata_deposit(ctx, path)
 
 
 def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
