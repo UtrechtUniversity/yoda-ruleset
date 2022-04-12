@@ -360,6 +360,38 @@ def post_metadata_to_datacite(ctx, publication_config, publication_state, send_m
         publication_state["status"] = "Unrecoverable"
 
 
+def post_draft_doi_to_datacite(ctx, publication_config, publication_state):
+    """Upload DOI to DataCite. This will register the DOI as a draft.
+    This function is also a draft, and will have to be reworked!
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param publication_config: Dict with publication configuration
+    :param publication_state:  Dict with state of the publication process
+    """
+    datacite_json_path = publication_state["dataCiteJsonPath"]
+    datacite_json = data_object.read(ctx, datacite_json_path)
+
+    # post the DOI only
+    httpCode = datacite.metadata_post(ctx, {
+        'data': {
+            'type': 'dois',
+            'attributes': {
+                'doi': datacite_json['data']['attributes']['doi']
+            }
+        }
+    }
+
+    if httpCode == 201:
+        publication_state["dataCiteMetadataPosted"] = "no"
+    elif httpCode in [401, 403, 500, 503, 504]:
+        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
+        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        publication_state["status"] = "Retry"
+    else:
+        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+        publication_state["status"] = "Unrecoverable"
+
+
 def remove_metadata_from_datacite(ctx, publication_config, publication_state):
     """Remove metadata XML from DataCite."""
     import json
