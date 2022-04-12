@@ -379,7 +379,7 @@ def post_draft_doi_to_datacite(ctx, publication_config, publication_state):
                 'doi': datacite_json['data']['attributes']['doi']
             }
         }
-    }
+    })
 
     if httpCode == 201:
         publication_state["dataCiteMetadataPosted"] = "no"
