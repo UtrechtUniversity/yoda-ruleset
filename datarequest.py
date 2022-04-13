@@ -587,7 +587,7 @@ def api_datarequest_resubmission_id_get(ctx, request_id):
     :returns:              String containing the request ID of the resubmitted data request
     """
     coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=query.AS_DICT))
+    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=AS_DICT))
     if len(coll_path) == 1:
         # We're extracting the request ID from the pathname of the collection as that's the most
         # straightforward way of getting it, and is also stable.
@@ -690,7 +690,7 @@ def rule_datarequest_review_period_expiration_check(ctx):
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
     ccols    = ['COLL_NAME']
-    qcoll    = Query(ctx, ccols, criteria, output=query.AS_DICT)
+    qcoll    = Query(ctx, ccols, criteria, output=AS_DICT)
     if len(list(qcoll)) > 0:
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
@@ -777,11 +777,11 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     elif dac_member and not dacrequests and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
-    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
+    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
         coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
     else:
         return OrderedDict([('total', 0), ('items', [])])
 
