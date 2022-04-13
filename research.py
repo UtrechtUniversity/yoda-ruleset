@@ -6,8 +6,9 @@ __license__   = 'GPLv3, see LICENSE'
 
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
-import folder
 import genquery
+
+import folder
 import meta_form
 from util import *
 
@@ -335,7 +336,7 @@ def _get_files_to_be_cleaned_up(ctx, coll):
 
     for uw_file in config.cleanup_temp_files.split(','):
         if "?" in uw_file or "*" in uw_file:
-            wildcard_file = uw_file.replace('%','\\%').replace('_','\\_').replace('?','_').replace('*','%')
+            wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
             iter = genquery.row_iterator(
                 "DATA_NAME, COLL_NAME",
                 "COLL_NAME like '" + coll + "%' AND DATA_NAME LIKE '" + wildcard_file + "'",
