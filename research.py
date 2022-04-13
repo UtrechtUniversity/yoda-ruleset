@@ -4,9 +4,9 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
-import genquery
 
 import folder
 import meta_form
