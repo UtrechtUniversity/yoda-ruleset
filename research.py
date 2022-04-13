@@ -16,7 +16,6 @@ __all__ = ['api_research_folder_add',
            'api_research_folder_move',
            'api_research_folder_delete',
            'api_research_folder_rename',
-           'api_research_cleanup_folder',
            'api_research_cleanup_get_files',
            'api_research_file_copy',
            'api_research_file_rename',
@@ -311,50 +310,6 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
 
 @api.make()
-def api_research_cleanup_folder(ctx, coll):
-    """Cleanup a research folder.
-
-    :param ctx:         Combined type of a callback and rei struct
-    :param coll:        Parent collection of folder to delete
-
-    :returns: Dict with API status result
-    """
-    coll_target = coll
-
-    # Not in home - a groupname must be present ie at least 2!?
-    if not len(coll.split('/')) > 2:
-        return api.Error('invalid_target', 'It is not possible to delete folder ' + folder_name + ' at this location')
-
-    # in vault?
-    target_group_name = coll_target.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('not_allowed', 'It is not possible to delete folders from the vault')
-
-    # permissions ok for group?
-    user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected folder')
-
-    # Folder not locked?
-    if folder.is_locked(ctx, coll):
-        return api.Error('not_allowed', 'The indicated folder is locked and therefore can not be deleted')
-
-    # Collection exists?
-    if not collection.exists(ctx, coll_target):
-        return api.Error('invalid_target', 'The folder to delete does not exist')
-
-    # All requirements OK
-    # Step through all files to be cleaned up and delete them
-    for file in _get_files_to_be_cleaned_up(ctx, coll):
-        try:
-            data_object.remove(ctx, file[0] + '/' + file [1])
-        except msi.Error:
-            return api.Error('internal', 'Something went wrong. Please try again')
-
-    return api.Result.ok()
-
-
-@api.make()
 def api_research_cleanup_get_files(ctx, coll):
     """ get list of files to be cleaned up.
 
@@ -378,26 +333,25 @@ def _get_files_to_be_cleaned_up(ctx, coll):
 
     list_cleanup_files = []
 
-    for uw_file in _list_unwanted_files():
-        iter = genquery.row_iterator(
-            "DATA_NAME, COLL_NAME",
-            "COLL_NAME like '" + coll + "%' AND DATA_NAME = '" + uw_file + "'",
-            genquery.AS_LIST, ctx
-        )
+    for uw_file in config.cleanup_temp_files.split(','):
+        if "?" in uw_file or "*" in uw_file:
+            wildcard_file = uw_file.replace('%','\\%').replace('_','\\_').replace('?','_').replace('*','%')
+            iter = genquery.row_iterator(
+                "DATA_NAME, COLL_NAME",
+                "COLL_NAME like '" + coll + "%' AND DATA_NAME LIKE '" + wildcard_file + "'",
+                genquery.AS_LIST, ctx
+            )
+        else:
+            iter = genquery.row_iterator(
+                "DATA_NAME, COLL_NAME",
+                "COLL_NAME like '" + coll + "%' AND DATA_NAME = '" + uw_file + "'",
+                genquery.AS_LIST, ctx
+            )
 
         for row in iter:
             list_cleanup_files.append([row[1], row[0]])
 
     return list_cleanup_files
-
-
-def _list_unwanted_files():
-    """ return list of unwanted files that require to be cleaned up """
-
-    return  ['._*',          # MacOS resource fork
-             '.DS_Store',    # MacOS custom folder attributes
-             'Thumbs.db'     # Windows thumbnail images
-            ]
 
 
 @api.make()
