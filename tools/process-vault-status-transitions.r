@@ -14,6 +14,7 @@ processVaultActions() {
 			*collName = *row.COLL_NAME;
 			# Check if vault status transition is requested in research or datamanager group.
 			if (*collName like regex "/[^/]+/home/research-.*" ||
+                            *collName like regex "/[^/]+/home/deposit-.*" ||
 			    *collName like regex "/[^/]+/home/datamanager-.*") {
 
 				*folder = "";
