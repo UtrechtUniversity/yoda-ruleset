@@ -3,11 +3,6 @@
 __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import json
-import os
-import time
-from collections import OrderedDict
-
 from pytest_bdd import (
     given,
     parsers,
@@ -15,9 +10,8 @@ from pytest_bdd import (
     then,
     when
 )
-from selenium.webdriver.common.keys import Keys
 
-from conftest import api_request, upload_data
+from conftest import upload_data
 
 scenarios('../../features/ui/ui_cleanup.feature')
 
