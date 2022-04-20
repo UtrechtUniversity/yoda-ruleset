@@ -716,6 +716,10 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     :returns:           Dict with paginated datarequests
     """
+    # Convert parameters that couldn't be passed as actual boolean values to booleans
+    archived    = archived == "True"
+    dacrequests = dacrequests == "True"
+
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
