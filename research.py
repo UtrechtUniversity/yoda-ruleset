@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
+
 
 import folder
 import meta_form
@@ -20,7 +22,8 @@ __all__ = ['api_research_folder_add',
            'api_research_file_move',
            'api_research_file_delete',
            'api_research_system_metadata',
-           'api_research_collection_details']
+           'api_research_collection_details',
+           'api_research_list_temporary_files']
 
 
 @api.make()
@@ -305,6 +308,38 @@ def api_research_folder_delete(ctx, coll, folder_name):
         return api.Error('internal', 'Something went wrong. Please try again')
 
     return api.Result.ok()
+
+
+@api.make()
+def api_research_list_temporary_files(ctx, coll):
+    """Get list of temporary files to be cleaned up.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Parent collection of folder to delete
+
+    :returns: List of files that possibly require cleaning up
+    """
+    list_cleanup_files = []
+
+    for uw_file in config.temporary_files:
+        if "?" in uw_file or "*" in uw_file:
+            wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
+            iter = genquery.row_iterator(
+                "DATA_NAME, COLL_NAME",
+                "COLL_NAME like '" + coll + "%' AND DATA_NAME LIKE '" + wildcard_file + "'",
+                genquery.AS_LIST, ctx
+            )
+        else:
+            iter = genquery.row_iterator(
+                "DATA_NAME, COLL_NAME",
+                "COLL_NAME like '" + coll + "%' AND DATA_NAME = '" + uw_file + "'",
+                genquery.AS_LIST, ctx
+            )
+
+        for row in iter:
+            list_cleanup_files.append([row[1], row[0]])
+
+    return list_cleanup_files
 
 
 @api.make()
