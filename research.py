@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for the research space."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -17,13 +17,13 @@ __all__ = ['api_research_folder_add',
            'api_research_folder_move',
            'api_research_folder_delete',
            'api_research_folder_rename',
-           'api_research_cleanup_get_files',
            'api_research_file_copy',
            'api_research_file_rename',
            'api_research_file_move',
            'api_research_file_delete',
            'api_research_system_metadata',
-           'api_research_collection_details']
+           'api_research_collection_details',
+           'api_research_list_temporary_files']
 
 
 @api.make()
@@ -311,30 +311,17 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
 
 @api.make()
-def api_research_cleanup_get_files(ctx, coll):
-    """ get list of files to be cleaned up.
+def api_research_list_temporary_files(ctx, coll):
+    """Get list of temporary files to be cleaned up.
 
-    :param ctx:         Combined type of a callback and rei struct
-    :param coll:        Parent collection of folder to delete
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Parent collection of folder to delete
 
-    :returns: list of files that possibly require cleaning up
+    :returns: List of files that possibly require cleaning up
     """
-
-    return _get_files_to_be_cleaned_up(ctx, coll)
-
-
-def _get_files_to_be_cleaned_up(ctx, coll):
-    """ get list of files to be cleaned up.
-
-    :param ctx:         Combined type of a callback and rei struct
-    :param coll:        Parent collection of folder to delete
-
-    :returns: list of files that fit the unwanted files list
-    """
-
     list_cleanup_files = []
 
-    for uw_file in config.cleanup_temp_files.split(','):
+    for uw_file in config.temporary_files:
         if "?" in uw_file or "*" in uw_file:
             wildcard_file = uw_file.replace('%', '\\%').replace('_', '\\_').replace('?', '_').replace('*', '%')
             iter = genquery.row_iterator(

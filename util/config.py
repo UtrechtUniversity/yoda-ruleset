@@ -106,7 +106,7 @@ config = Config(environment=None,
                 epic_handle_prefix=None,
                 epic_key=None,
                 epic_certificate=None,
-                cleanup_temp_files=None)
+                temporary_files=[])
 
 # }}}
 
