@@ -1,6 +1,6 @@
 # coding=utf-8
 
-__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
+__copyright__ = 'Copyright (c) 2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -13,7 +13,7 @@ from pytest_bdd import (
 
 from conftest import upload_data
 
-scenarios('../../features/ui/ui_cleanup.feature')
+scenarios('../../features/ui/ui_research_cleanup.feature')
 
 
 @given(parsers.parse('"{file}" is uploaded to folder "<folder>"'), target_fixture="api_response")
