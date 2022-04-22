@@ -20,7 +20,7 @@ scenarios('../../features/ui/ui_cleanup.feature')
 def api_cleanup_file_upload(user, file, folder):
     return upload_data(
         user,
-        '\.' + file,
+        file,
         "/{}".format(folder)
     )
 
