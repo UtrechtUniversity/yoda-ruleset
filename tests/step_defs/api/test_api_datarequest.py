@@ -41,23 +41,24 @@ def api_datarequest_save(user):
         "datarequest_submit",
         {
             "data": {
-                "introduction": {},
                 "contact": {
-                    "given_name": "test",
-                    "family_name": "test",
-                    "institution": "test",
-                    "department": "test",
-                    "academic_role": "test",
-                    "work_address": "test",
-                    "phone": "test"
+                    "principal_investigator": {
+                        "name": "Jane Doe",
+                        "institution": "Utrecht University",
+                        "department": "RDMS",
+                        "work_address": "Heidelberglaan 8",
+                        "phone": "+31 30 1234 5678"
+                    },
+                    "pi_is_contact": "Yes",
+                    "participating_researchers": "No"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 2,
+                                "expId": 1,
                                 "expCohort": 1,
-                                "expWave": 8,
+                                "expWave": 7,
                                 "expType": 0,
                                 "expSubject": 0,
                                 "expName": 5,
@@ -67,34 +68,28 @@ def api_datarequest_save(user):
                         ]
                     },
                     "study_information": {
-                        "title": "test",
-                        "attachments": "Yes",
+                        "title": "API test datarequest",
                         "research_questions": "test",
-                        "hypotheses": "test"
+                        "hypotheses": "test",
+                        "data_returned": "test"
                     },
                     "variables": {
-                        "variables": "test",
-                        "unit_of_analysis": "test",
-                        "missing_data": "test",
-                        "statistical_outliers": "test"
+                        "variables": "test"
                     },
                     "knowledge_of_data": {
-                        "prior_publication": "test",
                         "prior_knowledge": "test"
                     },
                     "analyses": {
                         "statistical_models": "test",
-                        "effect_size": "test",
                         "statistical_power": "test",
-                        "inference_criteria": "test",
-                        "assumption_violation": "test",
-                        "reliability_and_robustness_testing": "test",
-                        "exploratory_analysis": "test"
+                        "assumption_violation": "test"
+                    },
+                    "attachments": {
+                        "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report"
+                    "publication_type": "Article or report in a peer-reviewed journal"
                 },
-                "owner": "researcher"
             },
             "draft": True
         })
@@ -105,7 +100,7 @@ def datarequest_exists(user):
     http_status, body = api_request(
         user,
         "datarequest_browse",
-        {"sort_order": "desc"}
+        {"limit": 1, "sort_order": "desc", "sort_on":"modified"}
     )
 
     assert http_status == 200
@@ -121,23 +116,24 @@ def api_datarequest_submit(user, datarequest_id):
         "datarequest_submit",
         {
             "data": {
-                "introduction": {},
                 "contact": {
-                    "given_name": "test",
-                    "family_name": "test",
-                    "institution": "test",
-                    "department": "test",
-                    "academic_role": "test",
-                    "work_address": "test",
-                    "phone": "test"
+                    "principal_investigator": {
+                        "name": "Jane Doe",
+                        "institution": "Utrecht University",
+                        "department": "RDMS",
+                        "work_address": "Heidelberglaan 8",
+                        "phone": "+31 30 1234 5678"
+                    },
+                    "pi_is_contact": "Yes",
+                    "participating_researchers": "No"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 2,
+                                "expId": 1,
                                 "expCohort": 1,
-                                "expWave": 8,
+                                "expWave": 7,
                                 "expType": 0,
                                 "expSubject": 0,
                                 "expName": 5,
@@ -147,36 +143,28 @@ def api_datarequest_submit(user, datarequest_id):
                         ]
                     },
                     "study_information": {
-                        "title": "test",
+                        "title": "API test datarequest",
                         "research_questions": "test",
-                        "hypotheses": "test"
+                        "hypotheses": "test",
+                        "data_returned": "test"
                     },
                     "variables": {
-                        "variables": "test",
-                        "unit_of_analysis": "test",
-                        "missing_data": "test",
-                        "statistical_outliers": "test"
+                        "variables": "test"
                     },
                     "knowledge_of_data": {
-                        "prior_publication": "test",
                         "prior_knowledge": "test"
                     },
                     "analyses": {
                         "statistical_models": "test",
-                        "effect_size": "test",
                         "statistical_power": "test",
-                        "inference_criteria": "test",
-                        "assumption_violation": "test",
-                        "reliability_and_robustness_testing": "test",
-                        "exploratory_analysis": "test"
+                        "assumption_violation": "test"
                     },
                     "attachments": {
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report"
+                    "publication_type": "Article or report in a peer-reviewed journal"
                 },
-                "owner": "researcher"
             },
             "draft": False,
             "draft_request_id": datarequest_id
