@@ -784,12 +784,12 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
         if sort_on == 'modified':
-            coll_names   = [result['COLL_NAME'] for result in list(qcoll)]
+            coll_names = [result['COLL_NAME'] for result in list(qcoll)]
         else:
             if sort_order == 'desc':
-                coll_names   = [result['ORDER_DESC(COLL_NAME)'] for result in list(qcoll)]
+                coll_names = [result['ORDER_DESC(COLL_NAME)'] for result in list(qcoll)]
             else:
-                coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
+                coll_names = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
         qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
         qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
     else:
