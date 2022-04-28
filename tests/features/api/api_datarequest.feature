@@ -44,7 +44,7 @@ Feature: Datarequest API
             | researcher        | ['OWN'] |
             | projectmanager    | ['PM']  |
             | datamanager       | ['DM']  |
-            | dacmember         | ['DAC'] |
+        #   | dacmember         | ['DAC'] |
 
     Scenario: Upload attachments
         Given user "researcher" is authenticated

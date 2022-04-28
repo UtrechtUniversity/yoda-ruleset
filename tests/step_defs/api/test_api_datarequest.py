@@ -100,7 +100,7 @@ def datarequest_exists(user):
     http_status, body = api_request(
         user,
         "datarequest_browse",
-        {"limit": 1, "sort_order": "desc", "sort_on":"modified"}
+        {"limit": 1, "sort_order": "desc", "sort_on": "modified"}
     )
 
     assert http_status == 200
@@ -212,7 +212,15 @@ def api_datarequest_preliminary_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_preliminary_review_submit",
-        {"data": {"preliminary_review": "Accepted for data manager review", "internal_remarks": "test"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "requestee_credentials": True,
+                "framework_and_ic_fit": True,
+                "preliminary_review": "Accepted for data manager review",
+                "internal_remarks": "test"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -230,7 +238,14 @@ def api_datarequest_datamanager_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_datamanager_review_submit",
-        {"data": {"datamanager_review": "Accepted", "datamanager_remarks": "test"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "datamanager_review": "Accepted",
+                "datamanager_remarks": "test",
+                "reviewing_dm": "datamanager"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -248,7 +263,17 @@ def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"decision": "Accepted for review", "assign_to": ["dacmember"]}, "request_id": datarequest_id}
+        {
+            "data": {
+                "review_period_length": 21,
+                "assign_to": [
+                    "dacmember"
+                ],
+                "decision": "Accepted for review",
+                "response_to_dm_remarks": "test"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -266,7 +291,18 @@ def api_datarequest_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_review_submit",
-        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dacmember"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "introduction": {},
+                "for_publishing": True,
+                "biological_samples": True,
+                "evaluation": "Approve",
+                "evaluation_rationale": "test",
+                "involvement_requested": "No",
+                "username": "dacmember"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
