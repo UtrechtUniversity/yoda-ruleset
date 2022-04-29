@@ -45,7 +45,7 @@ def deposit_exists(user):
 
 @given('deposit is archived')
 def deposit_is_archived(user):
-    time.sleep(10)
+    time.sleep(12)
 
 
 @given('the Yoda deposit status API is queried', target_fixture="api_response")

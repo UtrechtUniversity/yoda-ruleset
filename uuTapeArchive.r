@@ -71,7 +71,7 @@ moveDataOffLine(*sizeThreshold) {
         msiGetValByKey(*genQOut, "DATA_SIZE", *data_size);
 
         *obj_path = *coll_path ++ "/" ++ *obj_name;
-        if (*repl_num == '0' && int(*data_size) > int(*sizeThreshold)) {
+        if (*repl_num == '0' && double(*data_size) > double(*sizeThreshold)) {
             # replication of the data object
             writeLine("serverLog", "[putDataOffLine] Replica *repl_num of object *obj_path (*data_size) will be moved offline");
             *replstatus = errorcode(msiDataObjRepl(*obj_path, "destRescName=*archiveResource++++replNum=*repl_num++++verifyChksum=", *replOut));

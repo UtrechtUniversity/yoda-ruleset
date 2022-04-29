@@ -1046,12 +1046,15 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
 
+    group_type = coll_parts[4].split('-')[0]
+
     group_parts = vault_group_name.split('-')
     # create the research equivalent in order to get the category
-    group_name = 'research-' + '-'.join(group_parts[1:])
+    group_name = group_type + '-' + '-'.join(group_parts[1:])
 
     # Find category
     category = group.get_category(ctx, group_name)
+
     zone = user.zone(ctx)
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]

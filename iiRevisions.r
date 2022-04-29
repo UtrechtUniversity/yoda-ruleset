@@ -226,6 +226,10 @@ iiRevisionCreate(*resource, *path, *maxSize, *verbose, *id) {
         *revFileName = *basename ++ "_" ++ *iso8601 ++ *dataOwner;
         *revColl = *revisionStore ++ "/" ++ *collId;
 
+        msiCheckAccess(*path, "read object", *access);
+        if (*access == 0) {
+            errorcode(msiSetACL("default", "admin:read", "rods#$rodsZoneClient", *path));
+        }
         if (uuCollectionExists(*revColl)) {
             # Rods may not have own access yet.
             errorcode(msiSetACL("default", "admin:own", "rods#$rodsZoneClient", *revColl));
