@@ -81,6 +81,7 @@ uuReplicateBatch(*verbose) {
                     writeLine("serverLog", "Batch replication: copying *path from *from to *to ...");
                 }
 
+                errorcode(msiDataObjChksum(*path, "replNum=0", *s));
                 *replstatus = errorcode(msiDataObjRepl(*path, *opts, *s));
 
                 *kv.*attr = "*from,*to";
