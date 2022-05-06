@@ -78,7 +78,7 @@
         },
         "pi_is_contact": {
           "type": "string",
-          "title": "Is the principal investigator is also the contact person for this study?",
+          "title": "Is the principal investigator also the contact person for this study?",
           "enum": [
             "Yes",
             "No"
