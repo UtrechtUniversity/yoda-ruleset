@@ -2114,7 +2114,7 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     study_title      = datarequest['datarequest']['study_information']['title']
     truncated_title  = truncated_title_get(ctx, request_id)
     pm_members       = group.members(ctx, GROUP_PM)
@@ -2157,7 +2157,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         datarequest             = json.loads(datarequest_get(ctx, request_id))
         researcher              = datarequest['contact']['principal_investigator']
         researcher_email        = datarequest_owner_get(ctx, request_id)
-        cc                      = cc_email_addresses_get(researcher)
+        cc                      = cc_email_addresses_get(datarequest['contact'])
         pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
@@ -2197,7 +2197,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     study_title      = datarequest['datarequest']['study_information']['title']
     assignment       = json.loads(datarequest_assignment_get(ctx, request_id))
     truncated_title  = truncated_title_get(ctx, request_id)
@@ -2230,7 +2230,7 @@ def review_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     pm_members       = group.members(ctx, GROUP_PM)
     truncated_title  = truncated_title_get(ctx, request_id)
 
@@ -2247,7 +2247,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     datarequest             = json.loads(datarequest_get(ctx, request_id))
     researcher              = datarequest['contact']['principal_investigator']
     researcher_email        = datarequest_owner_get(ctx, request_id)
-    cc                      = cc_email_addresses_get(researcher)
+    cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
@@ -2280,7 +2280,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']['principal_investigator']
     researcher_email    = datarequest_owner_get(ctx, request_id)
-    cc                  = cc_email_addresses_get(researcher)
+    cc                  = cc_email_addresses_get(datarequest['contact'])
     datamanager_members = group.members(ctx, GROUP_DM)
     truncated_title     = truncated_title_get(ctx, request_id)
 
@@ -2303,7 +2303,7 @@ def dta_post_upload_actions_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     # (Also) cc project manager
     pm_email, _      = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     cc               = cc + ',{}'.format(pm_email) if cc else pm_email
@@ -2331,7 +2331,7 @@ def data_ready_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
