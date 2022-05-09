@@ -189,3 +189,11 @@ dmattr(*data, *irods_path, *time, *dmfs) {
     msiAddKeyVal(*kv2, "org_tape_archive_time", "*time");
     msiSetKeyValuePairsToObj(*kv2, *irods_path, "-d");
 }
+
+
+# \brief Perform admin operations on the vault
+#
+uuTapeArchiveSetState(*path, *timestamp, *state) {
+    *argv = " *path *timestamp *state";
+    msiExecCmd("admin-tape-archive-set-state.sh", *argv, "", "", 0, *out);
+}
