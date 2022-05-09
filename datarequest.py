@@ -606,7 +606,7 @@ def datarequest_provenance_write(ctx, request_id, request_status):
     :returns:              Nothing
     """
     # Check if request ID is valid
-    if re.search("^\d{10}$", request_id) is None:
+    if re.search("^\d+$", request_id) is None:
         return api.Error("input_error", "Invalid request ID supplied: {}.".format(request_id))
 
     # Check if status parameter is valid
