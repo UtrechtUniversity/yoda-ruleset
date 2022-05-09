@@ -38,7 +38,7 @@ getObjResource(*objPath) {
 }
 
 
-# PEP to incercept the creation of a new object in the vault
+# PEP to intercept the creation of a new object in the vault
 uuTapeArchiveReplicateAsynchronously(*path) {
     *offlineSpaceKey = "SURF_OffLineSpace";
     *archiveResource = "testArchiveVault";
@@ -54,7 +54,7 @@ uuTapeArchiveReplicateAsynchronously(*path) {
 }
 
 
-# rule to replicate the data to Data Archive and then trim the original copy.
+# Rule to replicate the data to Data Archive and then trim the original copy.
 # It takes as input the minimum size in bytes of a data object to be archived.
 moveDataOffLine(*sizeThreshold) {
 
@@ -73,33 +73,33 @@ moveDataOffLine(*sizeThreshold) {
         *obj_path = *coll_path ++ "/" ++ *obj_name;
         if (*repl_num == '0' && double(*data_size) > double(*sizeThreshold)) {
             # replication of the data object
-            writeLine("serverLog", "[putDataOffLine] Replica *repl_num of object *obj_path (*data_size) will be moved offline");
+            writeLine("serverLog", "[moveDataOffLine] Replica *repl_num of object *obj_path (*data_size) will be moved offline");
             *replstatus = errorcode(msiDataObjRepl(*obj_path, "destRescName=*archiveResource++++replNum=*repl_num++++verifyChksum=", *replOut));
             if (*replstatus == 0) {
                 # removing the metadata
                 msiString2KeyValPair("*offlineSpaceKey=*archiveResource", *kvp);
                 *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kvp, *obj_path, "-d"));
                 if (*rmstatus != 0) {
-                    writeLine("serverLog", "Remove Key Value Pairs error: Scheduled replication of <*obj_path>: could not remove schedule flag (*rmstatus)");
+                    writeLine("serverLog", "[moveDataOffLine] Remove Key Value Pairs error: Scheduled replication of <*obj_path>: could not remove schedule flag (*rmstatus)");
                 }
                 # when the replication is successful, trimming the original copy
                 *trimstatus = errorcode(msiDataObjTrim(*obj_path, "null", *repl_num, "1", "null", *trimOut));
                 if (*trimstatus != 0) {
-                    writeLine("serverLog", "trim error: Scheduled trimming of <*obj_path> failed (*trimstatus)");
+                    writeLine("serverLog", "[moveDataOffLine] trim error: Scheduled trimming of <*obj_path> failed (*trimstatus)");
                 }
             }
             else {
-                writeLine("serverLog", "repl error: Scheduled replication of <*obj_path> failed (*replstatus)");
+                writeLine("serverLog", "[moveDataOffLine] repl error: Scheduled replication of <*obj_path> failed (*replstatus)");
             }
         }
         else {
-            writeLine("serverLog", "repl: Scheduled replication of <*obj_path> does not meet the criteria, repl num: <*repl_num>, size:<*data_size>");
+            writeLine("serverLog", "[moveDataOffLine] repl: Scheduled replication of <*obj_path> does not meet the criteria, repl num: <*repl_num>, size:<*data_size>");
             # removing the metadata
             if (*repl_num == '0') {
                 msiString2KeyValPair("*offlineSpaceKey=*archiveResource", *kvp);
                 *rmstatus = errorcode(msiRemoveKeyValuePairsFromObj(*kvp, *obj_path, "-d"));
                 if (*rmstatus != 0) {
-                    writeLine("serverLog", "Remove Key Value Pairs error: Scheduled replication of <*obj_path>: could not remove schedule flag (*rmstatus)");
+                    writeLine("serverLog", "[moveDataOffLine] Remove Key Value Pairs error: Scheduled replication of <*obj_path>: could not remove schedule flag (*rmstatus)");
                 }
             }
         }
