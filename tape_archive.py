@@ -95,8 +95,6 @@ def api_tape_archive_stage(ctx, path):
     if error is None:
         timestamp = int(time())
         ctx.uuTapeArchiveSetState(path, timestamp, state)
-        #avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
-        #avu.set_on_data(ctx, path, "org_tape_archive_state", state)
     else:
         return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
 
@@ -124,8 +122,6 @@ def api_tape_archive_state(ctx, path):
     if error is None:
         timestamp = int(time())
         ctx.uuTapeArchiveSetState(path, timestamp, state)
-        #avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
-        #avu.set_on_data(ctx, path, "org_tape_archive_state", state)
         return state
     else:
         return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
