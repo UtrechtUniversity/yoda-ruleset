@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from io import BytesIO
+
 from pytest_bdd import (
     given,
     parsers,
@@ -333,21 +335,43 @@ def api_datarequest_feedback_get(user, datarequest_id):
     )
 
 
+@given('the datarequest preregistration submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_preregistration_submit(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_preregistration_submit",
+        {"data": {"preregistration_url": "https://osf.io/example"}, "request_id": datarequest_id}
+    )
+
+
+@given('the datarequest preregistration confirm API is queried with request id', target_fixture="api_response")
+def api_datarequest_preregistration_confirm(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_preregistration_confirm",
+        {"request_id": datarequest_id}
+    )
+
+
 @given('DTA is uploaded', target_fixture="api_response")
 def api_datarequest_dta_upload(user, datarequest_id):
+    dta_path = open("files/dta.pdf", "rb")
+    dta      = BytesIO(dta_path.read())
     return post_form_data(
         user,
         "/datarequest/upload_dta/{}".format(datarequest_id),
-        {"file": ("dta.pdf", "test")}
+        {"file": ("dta.pdf", dta)}
     )
 
 
 @given('signed DTA is uploaded', target_fixture="api_response")
 def api_datarequest_signed_dta_upload(user, datarequest_id):
+    signed_dta_path = open("files/signed_dta.pdf", "rb")
+    signed_dta      = BytesIO(signed_dta_path.read())
     return post_form_data(
         user,
-        "/datarequest/datarequest/upload_signed_dta/{}".format(datarequest_id),
-        {"file": ("signed_dta.pdf", "test")}
+        "/datarequest/upload_signed_dta/{}".format(datarequest_id),
+        {"file": ("signed_dta.pdf", signed_dta)}
     )
 
 
