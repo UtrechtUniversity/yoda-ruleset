@@ -126,6 +126,20 @@ Feature: Datarequest API
         Then the response status code is "200"
         And request status is "APPROVED"
 
+    Scenario: Datarequest preregistration submit
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And the datarequest preregistration submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "PREREGISTRATION_SUBMITTED"
+
+    Scenario: Datarequest preregistration confirm
+        Given user "projectmanager" is authenticated
+        And datarequest exists
+        And the datarequest preregistration confirm API is queried with request id
+        Then the response status code is "200"
+        And request status is "PREREGISTRATION_CONFIRMED"
+
     Scenario: Datarequest feedback get
         Given user "researcher" is authenticated
         And datarequest exists
