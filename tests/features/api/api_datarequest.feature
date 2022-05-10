@@ -44,7 +44,16 @@ Feature: Datarequest API
             | researcher        | ['OWN'] |
             | projectmanager    | ['PM']  |
             | datamanager       | ['DM']  |
-        #   | dacmember         | ['DAC'] |
+
+    Scenario: Confirm that the DAC member user has appropriate role
+        Given user "<user>" is authenticated
+        And the Yoda datarequest roles get API is queried
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user              | result  |
+            | dacmember         | ['DAC'] |
 
     Scenario: Upload attachments
         Given user "researcher" is authenticated

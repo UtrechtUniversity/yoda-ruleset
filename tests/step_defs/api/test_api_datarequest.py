@@ -173,8 +173,17 @@ def api_datarequest_submit(user, datarequest_id):
         })
 
 
+@given('the Yoda datarequest roles get API is queried', target_fixture="api_response")
+def api_datarequest_roles_get(user):
+    return api_request(
+        user,
+        "datarequest_roles_get",
+        {"request_id": None}
+    )
+
+
 @given('the Yoda datarequest roles get API is queried with request id', target_fixture="api_response")
-def api_datarequest_roles_get(user, datarequest_id):
+def api_datarequest_roles_get_with_id(user, datarequest_id):
     return api_request(
         user,
         "datarequest_roles_get",
