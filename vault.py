@@ -8,6 +8,7 @@ import itertools
 import os
 import time
 from datetime import datetime
+from dateutil import relativedelta
 
 import genquery
 import irods_types
@@ -37,7 +38,89 @@ __all__ = ['api_vault_submit',
            'api_vault_get_publication_terms',
            'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
-           'api_revoke_read_access_research_group']
+           'api_revoke_read_access_research_group',
+           'rule_process_ending_retention_packages']
+
+# @rule.make(inputs=range(1), outputs=range(1, 3))
+# def rule_process_publication(ctx, vault_package):
+
+@rule.make(inputs=range(1), outputs=range(1, 3))
+def rule_process_ending_retention_packages(ctx, vault_package):
+    """Rule interface for processing vault status transition request.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+
+    :return: "OK" if all went ok
+    """
+    return ['OK', 'NOK']
+    # return process_ending_retention_packages(ctx)
+
+
+def process_ending_retention_packages(ctx):
+    # Find all vault packages
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '/tempZone/home' AND COLL_NAME like 'vault-%%'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        # per vault get each package and get deposit-date and retention period.
+        vault_coll = row[0]
+        meta_path = meta.get_latest_vault_metadata_path(ctx, vault_coll)
+
+        # Try to load the metadata file.
+        try:
+            metadata = jsonutil.read(ctx, meta_path)
+            current_schema_id = meta.metadata_get_schema_id(metadata)
+            if current_schema_id is None:
+                log.write(ctx, 'Schema id missing - Please check the structure of this file.')
+        except jsonutil.ParseError:
+            log.write(ctx, 'JSON invalid - Please check the structure of this file.')
+        except msi.Error as e:
+            log.write(ctx,'The metadata file could not be read.' + e)
+
+        # Get deposit date and end preservation date based upon retention period
+        # "submitted for vault"
+        # deposit_date = '2016-02-29'  # To be gotten from the action log
+        iter2 = genquery.row_iterator(
+            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            # row2 contains json encoded [str(int(time.time())), action, actor]
+            log_item_list = jsonutil.parse(row2[1])
+            if log_item_list[1] == "submitted for vault":
+                deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+                date_deposit = deposit_timestamp.strftime('%Y-%m-%d')
+                break
+
+        # are we one month away from retention period??
+        retention = int(metadata['End_Preservation'])
+
+        try:
+            date_end_retention = date_deposit.replace(year = date_deposit.year + retention).date()
+        except ValueError:
+            date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
+
+        r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
+
+        if r == 0:
+            # one month off - notify the datamanager(s)
+            group_name = collection_group_name(ctx, vault_coll)
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
+
+            if group.exists(ctx, datamanager_group_name):
+                # Send notifications to datamanagers.
+                datamanagers = folder.get_datamanagers(ctx, path)
+                message = "Datapackage reaching end of preservation date"
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    # notifications.set(ctx, actor, datamanager, path, message)
+                    log.write(ctx, 'notification: ' + datamanager)
+
 
 
 @api.make()
