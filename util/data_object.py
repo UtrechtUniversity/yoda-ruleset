@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for data object IO."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -102,7 +102,7 @@ def copy(ctx, path_org, path_copy, force=True):
     msi.data_obj_copy(ctx,
                       path_org,
                       path_copy,
-                      'verifyChksum={}'.format('++++forceFlag=' if force else ''),
+                      'numThreads=1++++verifyChksum={}'.format('++++forceFlag=' if force else ''),
                       irods_types.BytesBuf())
 
 
