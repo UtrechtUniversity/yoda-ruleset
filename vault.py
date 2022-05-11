@@ -102,7 +102,7 @@ def process_ending_retention_packages(ctx):
                 log_item_list = jsonutil.parse(row2[1])
                 if log_item_list[1] == "submitted for vault":
                     deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-                    deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
+                    # deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
                     date_deposit = deposit_timestamp.date()
                     break
 
