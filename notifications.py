@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """Functions for user notifications."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
 import json
+import random
+import string
 import time
 from datetime import datetime
 
@@ -22,6 +24,12 @@ __all__ = ['api_notifications_load',
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
 
+def generate_random_id(ctx):
+    """Generate random ID for notification."""
+    characters = string.ascii_lowercase + string.digits
+    return ''.join(random.choice(characters) for x in range(10))
+
+
 def set(ctx, actor, receiver, target, message):
     """Set user notification and send mail notification when configured.
 
@@ -33,8 +41,9 @@ def set(ctx, actor, receiver, target, message):
     """
     if user.exists(ctx, receiver):
         timestamp = int(time.time())
+        id = generate_random_id(ctx)
         notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
-        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, str(timestamp)), json.dumps(notification), '', '')
+        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, id), json.dumps(notification), '', '')
 
         # Send mail notification if immediate notifications are on.
         receiver = user.from_str(ctx, receiver)[0]
