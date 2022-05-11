@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import re
 from collections import OrderedDict
+from datetime import datetime
 
 import genquery
 import irods_types
@@ -350,8 +351,26 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
                     constants.UUFLATINDEX)
     ctx.msi_add_avu('-d', path, 'Data_Access_Restriction',
                     metadata['Data_Access_Restriction'], constants.UUFLATINDEX)
+    if 'Research_Group' in metadata:
+        ctx.msi_add_avu('-d', path, 'Research_Group',
+                        metadata['Research_Group'], constants.UUFLATINDEX)
+    if 'Collection_Name' in metadata:
+        ctx.msi_add_avu('-d', path, 'Collection_Name',
+                        metadata['Collection_Name'], constants.UUFLATINDEX)
+    if 'Collected' in metadata:
+        if 'Start_Date' in metadata['Collected']:
+            ctx.msi_add_avu('-d', path, 'Collected_Start_Year',
+                            metadata['Collected']['Start_Date'][:4],
+                            constants.UUFLATINDEX)
+        if 'End_Date' in metadata['Collected']:
+            ctx.msi_add_avu('-d', path, 'Collected_End_Year',
+                            metadata['Collected']['End_Date'][:4],
+                            constants.UUFLATINDEX)
 
     ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
+                    constants.UUFLATINDEX)
+    ctx.msi_add_avu('-d', path, 'Creation_Year',
+                    str(datetime.fromtimestamp(int(creation_time)).year),
                     constants.UUFLATINDEX)
 
     if config.enable_data_package_reference:

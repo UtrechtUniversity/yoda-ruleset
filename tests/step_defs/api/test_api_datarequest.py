@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+from io import BytesIO
+
 from pytest_bdd import (
     given,
     parsers,
@@ -41,23 +43,24 @@ def api_datarequest_save(user):
         "datarequest_submit",
         {
             "data": {
-                "introduction": {},
                 "contact": {
-                    "given_name": "test",
-                    "family_name": "test",
-                    "institution": "test",
-                    "department": "test",
-                    "academic_role": "test",
-                    "work_address": "test",
-                    "phone": "test"
+                    "principal_investigator": {
+                        "name": "Jane Doe",
+                        "institution": "Utrecht University",
+                        "department": "RDMS",
+                        "work_address": "Heidelberglaan 8",
+                        "phone": "+31 30 1234 5678"
+                    },
+                    "pi_is_contact": "Yes",
+                    "participating_researchers": "No"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 2,
+                                "expId": 1,
                                 "expCohort": 1,
-                                "expWave": 8,
+                                "expWave": 7,
                                 "expType": 0,
                                 "expSubject": 0,
                                 "expName": 5,
@@ -67,34 +70,28 @@ def api_datarequest_save(user):
                         ]
                     },
                     "study_information": {
-                        "title": "test",
-                        "attachments": "Yes",
+                        "title": "API test datarequest",
                         "research_questions": "test",
-                        "hypotheses": "test"
+                        "hypotheses": "test",
+                        "data_returned": "test"
                     },
                     "variables": {
-                        "variables": "test",
-                        "unit_of_analysis": "test",
-                        "missing_data": "test",
-                        "statistical_outliers": "test"
+                        "variables": "test"
                     },
                     "knowledge_of_data": {
-                        "prior_publication": "test",
                         "prior_knowledge": "test"
                     },
                     "analyses": {
                         "statistical_models": "test",
-                        "effect_size": "test",
                         "statistical_power": "test",
-                        "inference_criteria": "test",
-                        "assumption_violation": "test",
-                        "reliability_and_robustness_testing": "test",
-                        "exploratory_analysis": "test"
+                        "assumption_violation": "test"
+                    },
+                    "attachments": {
+                        "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report"
+                    "publication_type": "Article or report in a peer-reviewed journal"
                 },
-                "owner": "researcher"
             },
             "draft": True
         })
@@ -105,7 +102,7 @@ def datarequest_exists(user):
     http_status, body = api_request(
         user,
         "datarequest_browse",
-        {"sort_order": "desc"}
+        {"limit": 1, "sort_order": "desc", "sort_on": "modified"}
     )
 
     assert http_status == 200
@@ -121,23 +118,24 @@ def api_datarequest_submit(user, datarequest_id):
         "datarequest_submit",
         {
             "data": {
-                "introduction": {},
                 "contact": {
-                    "given_name": "test",
-                    "family_name": "test",
-                    "institution": "test",
-                    "department": "test",
-                    "academic_role": "test",
-                    "work_address": "test",
-                    "phone": "test"
+                    "principal_investigator": {
+                        "name": "Jane Doe",
+                        "institution": "Utrecht University",
+                        "department": "RDMS",
+                        "work_address": "Heidelberglaan 8",
+                        "phone": "+31 30 1234 5678"
+                    },
+                    "pi_is_contact": "Yes",
+                    "participating_researchers": "No"
                 },
                 "datarequest": {
                     "data": {
                         "selectedRows": [
                             {
-                                "expId": 2,
+                                "expId": 1,
                                 "expCohort": 1,
-                                "expWave": 8,
+                                "expWave": 7,
                                 "expType": 0,
                                 "expSubject": 0,
                                 "expName": 5,
@@ -147,44 +145,45 @@ def api_datarequest_submit(user, datarequest_id):
                         ]
                     },
                     "study_information": {
-                        "title": "test",
+                        "title": "API test datarequest",
                         "research_questions": "test",
-                        "hypotheses": "test"
+                        "hypotheses": "test",
+                        "data_returned": "test"
                     },
                     "variables": {
-                        "variables": "test",
-                        "unit_of_analysis": "test",
-                        "missing_data": "test",
-                        "statistical_outliers": "test"
+                        "variables": "test"
                     },
                     "knowledge_of_data": {
-                        "prior_publication": "test",
                         "prior_knowledge": "test"
                     },
                     "analyses": {
                         "statistical_models": "test",
-                        "effect_size": "test",
                         "statistical_power": "test",
-                        "inference_criteria": "test",
-                        "assumption_violation": "test",
-                        "reliability_and_robustness_testing": "test",
-                        "exploratory_analysis": "test"
+                        "assumption_violation": "test"
                     },
                     "attachments": {
                         "attachments": "Yes"
                     },
                     "purpose": "Analyses in order to publish",
-                    "publication_type": "Article or report"
+                    "publication_type": "Article or report in a peer-reviewed journal"
                 },
-                "owner": "researcher"
             },
             "draft": False,
             "draft_request_id": datarequest_id
         })
 
 
+@given('the Yoda datarequest roles get API is queried', target_fixture="api_response")
+def api_datarequest_roles_get(user):
+    return api_request(
+        user,
+        "datarequest_roles_get",
+        {"request_id": None}
+    )
+
+
 @given('the Yoda datarequest roles get API is queried with request id', target_fixture="api_response")
-def api_datarequest_roles_get(user, datarequest_id):
+def api_datarequest_roles_get_with_id(user, datarequest_id):
     return api_request(
         user,
         "datarequest_roles_get",
@@ -224,7 +223,15 @@ def api_datarequest_preliminary_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_preliminary_review_submit",
-        {"data": {"preliminary_review": "Accepted for data manager review", "internal_remarks": "test"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "requestee_credentials": True,
+                "framework_and_ic_fit": True,
+                "preliminary_review": "Accepted for data manager review",
+                "internal_remarks": "test"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -242,7 +249,14 @@ def api_datarequest_datamanager_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_datamanager_review_submit",
-        {"data": {"datamanager_review": "Accepted", "datamanager_remarks": "test"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "datamanager_review": "Accepted",
+                "datamanager_remarks": "test",
+                "reviewing_dm": "datamanager"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -260,7 +274,17 @@ def api_datarequest_assignment_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_assignment_submit",
-        {"data": {"decision": "Accepted for review", "assign_to": ["dacmember"]}, "request_id": datarequest_id}
+        {
+            "data": {
+                "review_period_length": 21,
+                "assign_to": [
+                    "dacmember"
+                ],
+                "decision": "Accepted for review",
+                "response_to_dm_remarks": "test"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -278,7 +302,18 @@ def api_datarequest_review_submit(user, datarequest_id):
     return api_request(
         user,
         "datarequest_review_submit",
-        {"data": {"biological_samples": True, "for_publishing": True, "evaluation": "Approve", "evaluation_rationale": "i", "biological_samples_volume": "io", "biological_samples_committee_approval": "i", "informed_consent_fit": "i", "research_question_answerability": "i", "study_quality": "i", "logistical_feasibility": "i", "study_value": "i", "researcher_expertise": "i", "username": "dacmember"}, "request_id": datarequest_id}
+        {
+            "data": {
+                "introduction": {},
+                "for_publishing": True,
+                "biological_samples": True,
+                "evaluation": "Approve",
+                "evaluation_rationale": "test",
+                "involvement_requested": "No",
+                "username": "dacmember"
+            },
+            "request_id": datarequest_id
+        }
     )
 
 
@@ -309,21 +344,43 @@ def api_datarequest_feedback_get(user, datarequest_id):
     )
 
 
+@given('the datarequest preregistration submit API is queried with request id', target_fixture="api_response")
+def api_datarequest_preregistration_submit(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_preregistration_submit",
+        {"data": {"preregistration_url": "https://osf.io/example"}, "request_id": datarequest_id}
+    )
+
+
+@given('the datarequest preregistration confirm API is queried with request id', target_fixture="api_response")
+def api_datarequest_preregistration_confirm(user, datarequest_id):
+    return api_request(
+        user,
+        "datarequest_preregistration_confirm",
+        {"request_id": datarequest_id}
+    )
+
+
 @given('DTA is uploaded', target_fixture="api_response")
 def api_datarequest_dta_upload(user, datarequest_id):
+    dta_path = open("files/dta.pdf", "rb")
+    dta      = BytesIO(dta_path.read())
     return post_form_data(
         user,
         "/datarequest/upload_dta/{}".format(datarequest_id),
-        {"file": ("dta.pdf", "test")}
+        {"file": ("dta.pdf", dta)}
     )
 
 
 @given('signed DTA is uploaded', target_fixture="api_response")
 def api_datarequest_signed_dta_upload(user, datarequest_id):
+    signed_dta_path = open("files/signed_dta.pdf", "rb")
+    signed_dta      = BytesIO(signed_dta_path.read())
     return post_form_data(
         user,
-        "/datarequest/datarequest/upload_signed_dta/{}".format(datarequest_id),
-        {"file": ("signed_dta.pdf", "test")}
+        "/datarequest/upload_signed_dta/{}".format(datarequest_id),
+        {"file": ("signed_dta.pdf", signed_dta)}
     )
 
 

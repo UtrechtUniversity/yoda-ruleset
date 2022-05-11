@@ -44,6 +44,15 @@ Feature: Datarequest API
             | researcher        | ['OWN'] |
             | projectmanager    | ['PM']  |
             | datamanager       | ['DM']  |
+
+    Scenario: Confirm that the DAC member user has appropriate role
+        Given user "<user>" is authenticated
+        And the Yoda datarequest roles get API is queried
+        Then the response status code is "200"
+        And the result is "<result>"
+
+        Examples:
+            | user              | result  |
             | dacmember         | ['DAC'] |
 
     Scenario: Upload attachments
@@ -125,6 +134,20 @@ Feature: Datarequest API
         And the datarequest evaluation submit API is queried with request id
         Then the response status code is "200"
         And request status is "APPROVED"
+
+    Scenario: Datarequest preregistration submit
+        Given user "researcher" is authenticated
+        And datarequest exists
+        And the datarequest preregistration submit API is queried with request id
+        Then the response status code is "200"
+        And request status is "PREREGISTRATION_SUBMITTED"
+
+    Scenario: Datarequest preregistration confirm
+        Given user "projectmanager" is authenticated
+        And datarequest exists
+        And the datarequest preregistration confirm API is queried with request id
+        Then the response status code is "200"
+        And request status is "PREREGISTRATION_CONFIRMED"
 
     Scenario: Datarequest feedback get
         Given user "researcher" is authenticated

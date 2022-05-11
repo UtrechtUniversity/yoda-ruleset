@@ -587,7 +587,7 @@ def api_datarequest_resubmission_id_get(ctx, request_id):
     :returns:              String containing the request ID of the resubmitted data request
     """
     coll      = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=query.AS_DICT))
+    coll_path = list(Query(ctx, ['COLL_NAME'], "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'previous_request_id' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, request_id), output=AS_DICT))
     if len(coll_path) == 1:
         # We're extracting the request ID from the pathname of the collection as that's the most
         # straightforward way of getting it, and is also stable.
@@ -606,7 +606,7 @@ def datarequest_provenance_write(ctx, request_id, request_status):
     :returns:              Nothing
     """
     # Check if request ID is valid
-    if re.search("^\d{10}$", request_id) is None:
+    if re.search("^\d+$", request_id) is None:
         return api.Error("input_error", "Invalid request ID supplied: {}.".format(request_id))
 
     # Check if status parameter is valid
@@ -690,7 +690,7 @@ def rule_datarequest_review_period_expiration_check(ctx):
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'endOfReviewPeriod' AND META_DATA_ATTR_VALUE < '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE = 'UNDER_REVIEW'".format(coll, DATAREQUEST + JSON_EXT, int(time.time()))
     ccols    = ['COLL_NAME']
-    qcoll    = Query(ctx, ccols, criteria, output=query.AS_DICT)
+    qcoll    = Query(ctx, ccols, criteria, output=AS_DICT)
     if len(list(qcoll)) > 0:
         datarequest_process_expired_review_periods(ctx, [result['COLL_NAME'].split('/')[-1] for result in list(qcoll)])
 
@@ -716,6 +716,10 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
 
     :returns:           Dict with paginated datarequests
     """
+    # Convert parameters that couldn't be passed as actual boolean values to booleans
+    archived    = archived == "True"
+    dacrequests = dacrequests == "True"
+
     dac_member = user.is_member_of(ctx, GROUP_DAC)
     coll       = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
 
@@ -777,11 +781,17 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     elif dac_member and not dacrequests and archived:
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
-    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=query.AS_DICT)
+    qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
     if len(list(qcoll)) > 0:
-        coll_names   = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
-        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
-        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=query.AS_DICT)
+        if sort_on == 'modified':
+            coll_names = [result['COLL_NAME'] for result in list(qcoll)]
+        else:
+            if sort_order == 'desc':
+                coll_names = [result['ORDER_DESC(COLL_NAME)'] for result in list(qcoll)]
+            else:
+                coll_names = [result['ORDER(COLL_NAME)'] for result in list(qcoll)]
+        qcoll_title  = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'title' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
+        qcoll_status = Query(ctx, ccols, "META_DATA_ATTR_NAME = 'status' and COLL_NAME = '" + "' || = '".join(coll_names) + "'", offset=offset, limit=limit, output=AS_DICT)
     else:
         return OrderedDict([('total', 0), ('items', [])])
 
@@ -2104,7 +2114,7 @@ def datarequest_submit_emails(ctx, request_id, dao=False):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     study_title      = datarequest['datarequest']['study_information']['title']
     truncated_title  = truncated_title_get(ctx, request_id)
     pm_members       = group.members(ctx, GROUP_PM)
@@ -2147,7 +2157,7 @@ def preliminary_review_emails(ctx, request_id, datarequest_status):
         datarequest             = json.loads(datarequest_get(ctx, request_id))
         researcher              = datarequest['contact']['principal_investigator']
         researcher_email        = datarequest_owner_get(ctx, request_id)
-        cc                      = cc_email_addresses_get(researcher)
+        cc                      = cc_email_addresses_get(datarequest['contact'])
         pm_email, _             = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
         preliminary_review      = json.loads(datarequest_preliminary_review_get(ctx, request_id))
         feedback_for_researcher = preliminary_review['feedback_for_researcher']
@@ -2187,7 +2197,7 @@ def assignment_emails(ctx, request_id, datarequest_status):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     study_title      = datarequest['datarequest']['study_information']['title']
     assignment       = json.loads(datarequest_assignment_get(ctx, request_id))
     truncated_title  = truncated_title_get(ctx, request_id)
@@ -2220,7 +2230,7 @@ def review_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     pm_members       = group.members(ctx, GROUP_PM)
     truncated_title  = truncated_title_get(ctx, request_id)
 
@@ -2237,7 +2247,7 @@ def evaluation_emails(ctx, request_id, datarequest_status):
     datarequest             = json.loads(datarequest_get(ctx, request_id))
     researcher              = datarequest['contact']['principal_investigator']
     researcher_email        = datarequest_owner_get(ctx, request_id)
-    cc                      = cc_email_addresses_get(researcher)
+    cc                      = cc_email_addresses_get(datarequest['contact'])
     evaluation              = json.loads(datarequest_evaluation_get(ctx, request_id))
     feedback_for_researcher = (evaluation['feedback_for_researcher'] if 'feedback_for_researcher' in
                                evaluation else "")
@@ -2270,7 +2280,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']['principal_investigator']
     researcher_email    = datarequest_owner_get(ctx, request_id)
-    cc                  = cc_email_addresses_get(researcher)
+    cc                  = cc_email_addresses_get(datarequest['contact'])
     datamanager_members = group.members(ctx, GROUP_DM)
     truncated_title     = truncated_title_get(ctx, request_id)
 
@@ -2293,7 +2303,7 @@ def dta_post_upload_actions_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     # (Also) cc project manager
     pm_email, _      = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
     cc               = cc + ',{}'.format(pm_email) if cc else pm_email
@@ -2321,7 +2331,7 @@ def data_ready_emails(ctx, request_id):
     datarequest      = json.loads(datarequest_get(ctx, request_id))
     researcher       = datarequest['contact']['principal_investigator']
     researcher_email = datarequest_owner_get(ctx, request_id)
-    cc               = cc_email_addresses_get(researcher)
+    cc               = cc_email_addresses_get(datarequest['contact'])
     truncated_title  = truncated_title_get(ctx, request_id)
 
     # Send email
