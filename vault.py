@@ -42,8 +42,6 @@ __all__ = ['api_vault_submit',
            'api_revoke_read_access_research_group',
            'rule_process_ending_retention_packages']
 
-# @rule.make(inputs=range(1), outputs=range(1, 3))
-# def rule_process_publication(ctx, vault_package):
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
 def rule_process_ending_retention_packages(ctx, dummy):
@@ -54,22 +52,19 @@ def rule_process_ending_retention_packages(ctx, dummy):
 
     :return: "OK" if all went ok
     """
-    # return ['OK', 'NOK']
     return process_ending_retention_packages(ctx)
 
 
 def process_ending_retention_packages(ctx):
-    # Find all vault packages
+    zone = user.zone(ctx)
 
-    # "COLL_PARENT_NAME = '/tempZone/home'
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_PARENT_NAME = '/tempZone/home' AND COLL_NAME like '/tempZone/home/vault-%%'",
+        "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME like '/{}/home/vault-%%'".format(zone, zone),
         genquery.AS_LIST, ctx
     )
     for row in iter:
         vault_coll = row[0]
-        log.write(ctx, vault_coll)
 
         # per vault get each package and get deposit-date and retention period.
         iter_dp = genquery.row_iterator(
@@ -108,12 +103,10 @@ def process_ending_retention_packages(ctx):
                 if log_item_list[1] == "submitted for vault":
                     deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
                     deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
-                    date_deposit = deposit_timestamp.strftime('%Y-%m-%d')
+                    date_deposit = deposit_timestamp.date()
                     break
 
             retention = int(metadata['End_Preservation'])
-
-            date_deposit = deposit_timestamp.date()
 
             try:
                 date_end_retention = date_deposit.replace(year = date_deposit.year + retention)
@@ -128,26 +121,14 @@ def process_ending_retention_packages(ctx):
                 datamanager_group_name = "datamanager-" + category
 
                 if group.exists(ctx, datamanager_group_name):
-                    # Send notifications to datamanagers.
-                    datamanagers = folder.get_datamanagers(ctx, '/tempZone/home/' + datamanager_group_name)
-                    message = "Datapackage reaching end of preservation date"
+                    # Send notifications to datamanager(s).
+                    datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                    message = "Datapackage reaching end of preservation date: " + deposit_timestamp.strftime('%Y-%m-%d')
                     for datamanager in datamanagers:
                         datamanager = '{}#{}'.format(*datamanager)
                         actor = 'System'
-                        if datamanager == 'datamanager#tempZone':
-                            notifications.set(ctx, actor, datamanager, dp_coll, message)
-                            log.write(ctx, 'notification: ' + datamanager)
-
-
-        # Send notifications to submitter and accepter
-        # data_package = folder.get_vault_data_package(ctx, path)
-        # submitter = folder.get_submitter(ctx, path)
-        # accepter = folder.get_accepter(ctx, path)
-        # message = "Data package secured in vault"
-        # notifications.set(ctx, actor, submitter, data_package, message)
-        # notifications.set(ctx, actor, accepter, data_package, message)
-
-
+                        notifications.set(ctx, actor, datamanager, dp_coll, message)
+                        log.write(ctx, 'notification: ' + datamanager)
 
     return 'ALL DONE'
 
