@@ -43,8 +43,9 @@ __all__ = ['api_vault_submit',
            'rule_process_ending_retention_packages']
 
 
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_ending_retention_packages(ctx, dummy):
+# @rule.make(inputs=range(1), outputs=range(1, 3))
+@rule.make(inputs=range(0), outputs=range(2))
+def rule_process_ending_retention_packages(ctx):
     """Rule interface for processing vault status transition request.
 
     :param ctx:           Combined type of a callback and rei struct
@@ -57,6 +58,8 @@ def rule_process_ending_retention_packages(ctx, dummy):
 
 def process_ending_retention_packages(ctx):
     zone = user.zone(ctx)
+    errors = 0
+    dp_notify_count = 0
 
     iter = genquery.row_iterator(
         "COLL_NAME",
@@ -83,11 +86,20 @@ def process_ending_retention_packages(ctx):
                 metadata = jsonutil.read(ctx, meta_path)
                 current_schema_id = meta.metadata_get_schema_id(metadata)
                 if current_schema_id is None:
+                    log.write(ctx, dp_coll)
                     log.write(ctx, 'Schema id missing - Please check the structure of this file.')
+                    errors += 1
+                    break
             except jsonutil.ParseError:
+                log.write(ctx, dp_coll)
                 log.write(ctx, 'JSON invalid - Please check the structure of this file.')
+                errors += 1
+                break
             except msi.Error as e:
+                log.write(ctx, dp_coll)
                 log.write(ctx,'The metadata file could not be read.' + e)
+                errors += 1
+                break
 
             # Get deposit date and end preservation date based upon retention period
             # "submitted for vault"
@@ -102,7 +114,7 @@ def process_ending_retention_packages(ctx):
                 log_item_list = jsonutil.parse(row2[1])
                 if log_item_list[1] == "submitted for vault":
                     deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-                    deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
+                    # deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
                     date_deposit = deposit_timestamp.date()
                     break
 
@@ -111,26 +123,26 @@ def process_ending_retention_packages(ctx):
             try:
                 date_end_retention = date_deposit.replace(year = date_deposit.year + retention)
             except ValueError:
-                date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
+                date_end_retention = datetime(year = (date_deposit.year + retention), month = 3, day = 1).date()
 
             r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
 
-            if r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
+            if 1 == 1: #r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
                 group_name = folder.collection_group_name(ctx, vault_coll)
                 category = group.get_category(ctx, group_name)
                 datamanager_group_name = "datamanager-" + category
 
                 if group.exists(ctx, datamanager_group_name):
+                    dp_notify_count += 1
                     # Send notifications to datamanager(s).
                     datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-                    message = "Datapackage reaching end of preservation date: " + deposit_timestamp.strftime('%Y-%m-%d')
+                    message = "Datapackage reaching end of preservation date: " + date_end_retention.strftime('%Y-%m-%d')
                     for datamanager in datamanagers:
                         datamanager = '{}#{}'.format(*datamanager)
                         actor = 'System'
                         notifications.set(ctx, actor, datamanager, dp_coll, message)
-                        log.write(ctx, 'notification: ' + datamanager)
 
-    return 'ALL DONE'
+    return 'Finished successfully', 'Datapackages notified: {}, Errors: {}'.format(dp_notify_count, errors)
 
 
 @api.make()
