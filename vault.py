@@ -8,8 +8,8 @@ import itertools
 import os
 import time
 from datetime import datetime
-from dateutil import relativedelta
 
+from dateutil import relativedelta
 import genquery
 import irods_types
 
@@ -97,7 +97,7 @@ def process_ending_retention_packages(ctx):
                 break
             except msi.Error as e:
                 log.write(ctx, dp_coll)
-                log.write(ctx,'The metadata file could not be read.' + e)
+                log.write(ctx, 'The metadata file could not be read.' + e)
                 errors += 1
                 break
 
@@ -121,13 +121,13 @@ def process_ending_retention_packages(ctx):
             retention = int(metadata['End_Preservation'])
 
             try:
-                date_end_retention = date_deposit.replace(year = date_deposit.year + retention)
+                date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
             except ValueError:
-                date_end_retention = datetime(year = (date_deposit.year + retention), month = 3, day = 1).date()
+                date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
 
             r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
 
-            if 1 == 1: #r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
+            if r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
                 group_name = folder.collection_group_name(ctx, vault_coll)
                 category = group.get_category(ctx, group_name)
                 datamanager_group_name = "datamanager-" + category
