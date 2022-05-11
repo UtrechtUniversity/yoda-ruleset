@@ -10,8 +10,8 @@ import time
 from datetime import datetime
 
 import genquery
-from dateutil import relativedelta
 import irods_types
+from dateutil import relativedelta
 
 import folder
 import group
