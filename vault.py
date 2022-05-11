@@ -9,8 +9,8 @@ import os
 import time
 from datetime import datetime
 
-from dateutil import relativedelta
 import genquery
+from dateutil import relativedelta
 import irods_types
 
 import folder
