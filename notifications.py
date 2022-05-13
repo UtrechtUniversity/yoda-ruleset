@@ -11,8 +11,8 @@ import string
 import time
 from datetime import datetime
 
-from genquery import Query
 import genquery
+from genquery import Query
 
 import mail
 import settings
@@ -83,7 +83,7 @@ def api_notifications_load(ctx, sort_order="desc"):
                 notification["link"] = "/vault/browse?dir=/{}/{}".format(group, subpath)
 
                 # Deposit situation required different information to be presented
-                if subpath.startswith('deposit-'): 
+                if subpath.startswith('deposit-'):
                     data_package_reference = ""
                     iter = genquery.row_iterator(
                         "META_COLL_ATTR_VALUE",
