@@ -43,12 +43,17 @@ __all__ = ['api_vault_submit',
            'rule_process_ending_retention_packages']
 
 
-@rule.make(inputs=range(0), outputs=range(0))
+@rule.make()
 def rule_process_ending_retention_packages(ctx):
     """Rule interface for checking vault packages for ending retention.
 
     :param ctx: Combined type of a callback and rei struct
     """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "[RETENTION] Insufficient permissions - should only be called by rodsadmin")
+        return
+
     log.write(ctx, '[RETENTION] Checking Vault packages for ending retention')
 
     zone = user.zone(ctx)
