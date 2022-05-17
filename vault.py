@@ -104,7 +104,10 @@ def rule_process_ending_retention_packages(ctx):
                 date_deposit = deposit_timestamp.date()
                 break
 
-        retention = int(metadata['End_Preservation'])
+        try:
+            retention = int(metadata['End_Preservation'])
+        except KeyError:
+            log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
 
         try:
             date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
