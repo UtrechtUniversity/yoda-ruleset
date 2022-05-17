@@ -67,7 +67,7 @@ def rule_process_ending_retention_packages(ctx):
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        dp_coll = row_dp[0]
+        dp_coll = row[0]
         meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
 
         # Try to load the metadata file.
