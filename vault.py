@@ -131,8 +131,9 @@ def rule_process_ending_retention_packages(ctx):
                     datamanager = '{}#{}'.format(*datamanager)
                     actor = 'System'
                     notifications.set(ctx, actor, datamanager, dp_coll, message)
+                    log.write(ctx, '[RETENTION] Set notification for ending retention. <{}>'.format(dp_coll))
 
-    log.write(ctx, '[RETENTION] Datapackages notified: {}, Errors: {}'.format(dp_notify_count, errors))
+    log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
 
 
 @api.make()
