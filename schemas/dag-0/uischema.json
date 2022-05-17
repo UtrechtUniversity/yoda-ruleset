@@ -69,7 +69,7 @@
   "Personal_Data": {
     "ui:help": "Indicate whether the data package contains personal information"
   },
-  "End_Preservation": {
+  "Retention_Period": {
     "ui:help": "The minimum number of years that the data must be kept"
   },
   "Data_Access_Restriction": {
