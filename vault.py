@@ -87,9 +87,7 @@ def rule_process_ending_retention_packages(ctx):
             errors += 1
             continue
 
-        # Get deposit date and end preservation date based upon retention period
-        # "submitted for vault"
-        # deposit_date = '2016-02-29'  # To be gotten from the action log
+        # Get deposit date and end preservation date based upon retention period.
         iter2 = genquery.row_iterator(
             "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
             "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
@@ -100,7 +98,6 @@ def rule_process_ending_retention_packages(ctx):
             log_item_list = jsonutil.parse(row2[1])
             if log_item_list[1] == "submitted for vault":
                 deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-                # deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
                 date_deposit = deposit_timestamp.date()
                 break
 
@@ -113,12 +110,15 @@ def rule_process_ending_retention_packages(ctx):
         try:
             date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
         except ValueError:
-            date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
+            log.write(ctx, '[RETENTION] Could not determine retention end date. Retention period: <{}>'.format(retention))
+            continue
 
         r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
+        formatted_date = date_end_retention.strftime('%Y-%m-%d')
 
-        if r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
-            group_name = folder.collection_group_name(ctx, vault_coll)
+        log.write(ctx, '[RETENTION] Retention period ending in {} years, {} months and {} days ({}): <{}>'.format(r.years, r.months, r.days, formatted_date, retention))
+        if r.years == 0 and r.months <= 1:
+            group_name = folder.collection_group_name(ctx, dp_coll)
             category = group.get_category(ctx, group_name)
             datamanager_group_name = "datamanager-" + category
 
@@ -126,12 +126,12 @@ def rule_process_ending_retention_packages(ctx):
                 dp_notify_count += 1
                 # Send notifications to datamanager(s).
                 datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-                message = "Datapackage reaching end of preservation date: " + date_end_retention.strftime('%Y-%m-%d')
+                message = "Data package reaching end of preservation date: {}".formay(formatted_date))
                 for datamanager in datamanagers:
                     datamanager = '{}#{}'.format(*datamanager)
-                    actor = 'System'
+                    actor = 'system'
                     notifications.set(ctx, actor, datamanager, dp_coll, message)
-                    log.write(ctx, '[RETENTION] Set notification for ending retention. <{}>'.format(dp_coll))
+                log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
 
