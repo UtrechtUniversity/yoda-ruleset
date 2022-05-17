@@ -43,106 +43,87 @@ __all__ = ['api_vault_submit',
            'rule_process_ending_retention_packages']
 
 
-# @rule.make(inputs=range(1), outputs=range(1, 3))
-@rule.make(inputs=range(0), outputs=range(2))
+@rule.make(inputs=range(0), outputs=range(0))
 def rule_process_ending_retention_packages(ctx):
-    """Rule interface for processing vault status transition request.
+    """Rule interface for checking vault packages for ending retention.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
+    :param ctx: Combined type of a callback and rei struct
     """
-    return process_ending_retention_packages(ctx)
+    log.write(ctx, '[RETENTION] Checking Vault packages for ending retention')
 
-
-def process_ending_retention_packages(ctx):
     zone = user.zone(ctx)
     errors = 0
     dp_notify_count = 0
 
+    # Retrieve all data packages in this vault.
     iter = genquery.row_iterator(
         "COLL_NAME",
-        "COLL_PARENT_NAME = '/{}/home' AND COLL_NAME like '/{}/home/vault-%%'".format(zone, zone),
+        "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME not like '%/original'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
-        vault_coll = row[0]
+        dp_coll = row_dp[0]
+        meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
 
-        # per vault get each package and get deposit-date and retention period.
-        iter_dp = genquery.row_iterator(
-            "COLL_NAME",
-            "COLL_PARENT_NAME = '" + vault_coll + "'",
+        # Try to load the metadata file.
+        try:
+            metadata = jsonutil.read(ctx, meta_path)
+            current_schema_id = meta.metadata_get_schema_id(metadata)
+            if current_schema_id is None:
+                log.write(ctx, '[RETENTION] Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
+                errors += 1
+                break
+        except jsonutil.ParseError:
+            log.write(ctx, '[RETENTION] JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
+            errors += 1
+            break
+        except msi.Error as e:
+            log.write(ctx, '[RETENTION] The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
+            errors += 1
+            break
+
+        # Get deposit date and end preservation date based upon retention period
+        # "submitted for vault"
+        # deposit_date = '2016-02-29'  # To be gotten from the action log
+        iter2 = genquery.row_iterator(
+            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
             genquery.AS_LIST, ctx
         )
-        for row_dp in iter_dp:
-            # each datapackage of the perticular vault
-            dp_coll = row_dp[0]
-
-            meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
-
-            # Try to load the metadata file.
-            try:
-                metadata = jsonutil.read(ctx, meta_path)
-                current_schema_id = meta.metadata_get_schema_id(metadata)
-                if current_schema_id is None:
-                    log.write(ctx, dp_coll)
-                    log.write(ctx, 'Schema id missing - Please check the structure of this file.')
-                    errors += 1
-                    break
-            except jsonutil.ParseError:
-                log.write(ctx, dp_coll)
-                log.write(ctx, 'JSON invalid - Please check the structure of this file.')
-                errors += 1
-                break
-            except msi.Error as e:
-                log.write(ctx, dp_coll)
-                log.write(ctx, 'The metadata file could not be read.' + e)
-                errors += 1
+        for row2 in iter2:
+            # row2 contains json encoded [str(int(time.time())), action, actor]
+            log_item_list = jsonutil.parse(row2[1])
+            if log_item_list[1] == "submitted for vault":
+                deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+                # deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
+                date_deposit = deposit_timestamp.date()
                 break
 
-            # Get deposit date and end preservation date based upon retention period
-            # "submitted for vault"
-            # deposit_date = '2016-02-29'  # To be gotten from the action log
-            iter2 = genquery.row_iterator(
-                "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
-                "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
-                genquery.AS_LIST, ctx
-            )
-            for row2 in iter2:
-                # row2 contains json encoded [str(int(time.time())), action, actor]
-                log_item_list = jsonutil.parse(row2[1])
-                if log_item_list[1] == "submitted for vault":
-                    deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
-                    # deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]) - 365*24*3600 - 351*24*3600)
-                    date_deposit = deposit_timestamp.date()
-                    break
+        retention = int(metadata['End_Preservation'])
 
-            retention = int(metadata['End_Preservation'])
+        try:
+            date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
+        except ValueError:
+            date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
 
-            try:
-                date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
-            except ValueError:
-                date_end_retention = datetime(year=(date_deposit.year + retention), month=3, day=1).date()
+        r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
 
-            r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
+        if r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
+            group_name = folder.collection_group_name(ctx, vault_coll)
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
 
-            if r.years == 0 and (r.months == 0 or (r.months == 1 and r.days == 0)):
-                group_name = folder.collection_group_name(ctx, vault_coll)
-                category = group.get_category(ctx, group_name)
-                datamanager_group_name = "datamanager-" + category
+            if group.exists(ctx, datamanager_group_name):
+                dp_notify_count += 1
+                # Send notifications to datamanager(s).
+                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                message = "Datapackage reaching end of preservation date: " + date_end_retention.strftime('%Y-%m-%d')
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    actor = 'System'
+                    notifications.set(ctx, actor, datamanager, dp_coll, message)
 
-                if group.exists(ctx, datamanager_group_name):
-                    dp_notify_count += 1
-                    # Send notifications to datamanager(s).
-                    datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-                    message = "Datapackage reaching end of preservation date: " + date_end_retention.strftime('%Y-%m-%d')
-                    for datamanager in datamanagers:
-                        datamanager = '{}#{}'.format(*datamanager)
-                        actor = 'System'
-                        notifications.set(ctx, actor, datamanager, dp_coll, message)
-
-    return 'Finished successfully', 'Datapackages notified: {}, Errors: {}'.format(dp_notify_count, errors)
+    log.write(ctx, '[RETENTION] Datapackages notified: {}, Errors: {}'.format(dp_notify_count, errors))
 
 
 @api.make()
