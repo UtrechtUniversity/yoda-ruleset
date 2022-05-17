@@ -116,7 +116,7 @@ def rule_process_ending_retention_packages(ctx):
         r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
         formatted_date = date_end_retention.strftime('%Y-%m-%d')
 
-        log.write(ctx, '[RETENTION] Retention period ({} years} ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
+        log.write(ctx, '[RETENTION] Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
         if r.years == 0 and r.months <= 1:
             group_name = folder.collection_group_name(ctx, dp_coll)
             category = group.get_category(ctx, group_name)
