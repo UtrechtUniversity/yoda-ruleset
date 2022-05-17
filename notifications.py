@@ -82,7 +82,7 @@ def api_notifications_load(ctx, sort_order="desc"):
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
                 notification["link"] = "/vault/browse?dir=/{}/{}".format(group, subpath)
 
-                # Deposit situation required different information to be presented
+                # Deposit situation required different information to be presented.
                 if subpath.startswith('deposit-'):
                     data_package_reference = ""
                     iter = genquery.row_iterator(
@@ -107,7 +107,6 @@ def api_notifications_load(ctx, sort_order="desc"):
                     notification["link"] = "/vault/yoda/{}".format(data_package_reference)
 
                     # Find real actor when
-                    log.write(ctx, notification['actor'])
                     if notification["actor"] == 'system':
                         # Get actor from action log on action = "submitted for vault"
                         iter2 = genquery.row_iterator(
@@ -116,7 +115,6 @@ def api_notifications_load(ctx, sort_order="desc"):
                             genquery.AS_LIST, ctx
                         )
                         for row2 in iter2:
-                            log.write(ctx, row2[1])
                             # row2 contains json encoded [str(int(time.time())), action, actor]
                             log_item_list = jsonutil.parse(row2[1])
                             if log_item_list[1] == "submitted for vault":
