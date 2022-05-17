@@ -126,7 +126,7 @@ def rule_process_ending_retention_packages(ctx):
                 dp_notify_count += 1
                 # Send notifications to datamanager(s).
                 datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
-                message = "Data package reaching end of preservation date: {}".formay(formatted_date))
+                message = "Data package reaching end of preservation date: {}".format(formatted_date)
                 for datamanager in datamanagers:
                     datamanager = '{}#{}'.format(*datamanager)
                     actor = 'system'
