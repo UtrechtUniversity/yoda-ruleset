@@ -77,15 +77,15 @@ def rule_process_ending_retention_packages(ctx):
             if current_schema_id is None:
                 log.write(ctx, '[RETENTION] Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
                 errors += 1
-                break
+                continue
         except jsonutil.ParseError:
             log.write(ctx, '[RETENTION] JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
             errors += 1
-            break
+            continue
         except msi.Error as e:
             log.write(ctx, '[RETENTION] The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
             errors += 1
-            break
+            continue
 
         # Get deposit date and end preservation date based upon retention period
         # "submitted for vault"
@@ -108,7 +108,7 @@ def rule_process_ending_retention_packages(ctx):
             retention = int(metadata['End_Preservation'])
         except KeyError:
             log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
-            break
+            continue
 
         try:
             date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
