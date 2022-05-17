@@ -105,7 +105,7 @@ def rule_process_ending_retention_packages(ctx):
                 break
 
         try:
-            retention = int(metadata['End_Preservation'])
+            retention = int(metadata['Retention_Period'])
         except KeyError:
             log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
             continue

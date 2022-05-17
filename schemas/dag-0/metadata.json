@@ -769,7 +769,7 @@
     "Collection_Name",
     "Collected",
     "Tag",
-    "End_Preservation",
+    "Retention_Period",
     "Data_Type",
     "Creator",
     "Contributor",
@@ -926,7 +926,7 @@
         }
       }
     },
-    "End_Preservation": {
+    "Retention_Period": {
       "$ref": "#/definitions/optionsRetentionPeriod",
       "title": "Retention period (years)"
     },
