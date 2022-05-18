@@ -46,7 +46,7 @@ def api_intake_list_studies(ctx):
     groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-
+    log.write(ctx, 'LIST NO DM STUDIES')
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
         "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
@@ -56,6 +56,8 @@ def api_intake_list_studies(ctx):
     for row in iter:
         if row[0].startswith('grp-intake-'):
             groups.append(row[0][11:])
+        elif row[0].startswith('intake-'):
+            groups.append(row[0][7:])
 
     groups.sort()
     return groups
@@ -72,7 +74,7 @@ def api_intake_list_dm_studies(ctx):
     datamanager_groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-
+    log.write(ctx, 'LIST DM STUDIES')
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
         "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
@@ -80,8 +82,13 @@ def api_intake_list_dm_studies(ctx):
     )
 
     for row in iter:
+        study = ''
         if row[0].startswith('grp-intake-'):
             study = row[0][11:]
+        elif row[0].startswith('intake-'):
+            study = row[0][7:]
+        log.write(ctx, study)
+        if study:
             # Is a member of this study ... check whether member of corresponding datamanager group
             iter2 = genquery.row_iterator(
                 "USER_NAME",
@@ -133,7 +140,11 @@ def api_intake_list_unrecognized_files(ctx, coll):
     # check permissions
     parts = coll.split('/')
     group = parts[3]
+
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if user.is_member_of(ctx, group):
         pass
@@ -441,7 +452,15 @@ def _intake_check_authorized_to_scan(ctx, coll):
     """
     parts = coll.split('/')
     group = parts[3]
+    log.write(ctx, group)
+
+    # ?? datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+
 
     if (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         return True
@@ -496,7 +515,11 @@ def api_intake_lock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
+
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
@@ -535,7 +558,11 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
+
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to unlock dataset(s)")
@@ -570,12 +597,13 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
 
     :returns: indication correct
     """
-    coll = '/' + user.zone(ctx) + '/home/grp-intake-' + study_id
+    coll = '/' + user.zone(ctx) + '/home/' + study_id
+    group = study_id
 
-    # check permissions - can be researcher or datamanager
-    parts = coll.split('/')
-    group = parts[3]
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -614,7 +642,11 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
+
+    # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
+    # intake-FOO => grp-datamanager-FOO
+    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
