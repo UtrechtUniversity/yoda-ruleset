@@ -180,11 +180,9 @@ def folder_secure(ctx, coll, target):
 
     :returns: '0' when nu error occurred
     """
-    """
     # Following code is overturned by code in the rule language.
     # This, as large files were not properly copied to the vault.
     # Using the rule language this turned out to work fine.
-
     log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
 
     if user.user_type(ctx) != 'rodsadmin':
@@ -200,7 +198,7 @@ def folder_secure(ctx, coll, target):
     if modify_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:write", user.full_name(ctx), coll)
-        except msi.Error as e:
+        except msi.Error:
             log.write(ctx, "Could not set acl (admin:write) for collection: " + coll)
             return '1'
 
@@ -222,7 +220,7 @@ def folder_secure(ctx, coll, target):
     if modify_access != b'\x01':
         try:
             msi.set_acl(ctx, "default", "admin:null", user.full_name(ctx), coll)
-        except msi.Error as e:
+        except msi.Error:
             log.write(ctx, "Could not set acl (admin:null) for collection: " + coll)
             return '1'
 
@@ -238,14 +236,12 @@ def folder_secure(ctx, coll, target):
         avu.set_on_coll(ctx, target, constants.IIVAULTSTATUSATTRNAME, constants.vault_package_state.INCOMPLETE)
 
     # Copy all original info to vault
-    # try:
-    # vault.copy_folder_to_vault(ctx, coll, target)
-    # except Exception as e:
-    # log.write(ctx, e)
-    # return '1'
+    try:
+        vault.copy_folder_to_vault(ctx, coll, target)
+    except Exception as e:
+        log.write(ctx, "folder_secure:" + e)
+        return '1'
 
-    ctx.iiCopyFolderToVault(coll, target)
-    """
     # Starting point of last part of securing a folder into the vault
     msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
     modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
@@ -353,6 +349,8 @@ def folder_secure(ctx, coll, target):
             log.write(ctx, "Could not set ACL (admin:null) on " + parent)
 
         parent, chopped_coll = pathutil.chop(parent)
+
+    log.write(ctx, 'folder_secure: Finish securing folder <{}>'.format(coll))
 
     # All went well
     return '0'
