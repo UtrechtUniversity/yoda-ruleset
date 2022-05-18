@@ -922,7 +922,7 @@
           }
         },
         "dependencies": {
-          "Relation_Type": ["Title"]
+          "Title": ["Relation_Type"]
         }
       }
     },
