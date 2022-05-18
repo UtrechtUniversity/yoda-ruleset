@@ -205,69 +205,6 @@ iiRemoveMetadataFromItem(*itemParent, *itemName, *itemIsCollection, *buffer, *er
 	}
 }
 
-# \brief iiFolderSecure   Secure a folder to the vault. This function should only be called by a rodsadmin
-#			  and should not be called from the portal. Thus no statusInfo is returned, but
-#			  log messages are sent to stdout instead
-#
-# \param[in] folder
-#
-iiFolderSecure(*folder) {
-	uuGetUserType(uuClientFullName, *userType);
-	if (*userType != "rodsadmin") {
-		writeLine("stdout", "iiFolderSecure: Should only be called by a rodsadmin");
-		fail;
-	}
-
-	# Check modify access on research folder.
-	msiCheckAccess(*folder, "modify object", *modifyAccess);
-
-	# Set cronjob status.
-	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PROCESSING, *kvp);
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:write", uuClientFullName, *folder);
-	}
-	msiSetKeyValuePairsToObj(*kvp, *folder, "-C");
-	*found = false;
-	foreach (*row in SELECT META_COLL_ATTR_VALUE
-			 WHERE COLL_NAME = '*folder'
-			 AND META_COLL_ATTR_NAME = IICOPYPARAMSNAME) {
-		# retry with previous parameters
-		*target = *row.META_COLL_ATTR_VALUE;
-		*found = true;
-	}
-	if (*found) {
-		# Remove parameters from metadata
-		msiString2KeyValPair("", *kvp);
-		*key = IICOPYPARAMSNAME;
-		*kvp."*key" = *target;
-		msiRemoveKeyValuePairsFromObj(*kvp, *folder, "-C");
-	}
-	if (*modifyAccess != 1) {
-		msiSetACL("default", "admin:null", uuClientFullName, *folder);
-	}
-
-	if (!*found) {
-                # this file
-		*target = iiDetermineVaultTarget(*folder);
-	}
-
-	# Copy to vault.
-	iiCopyFolderToVault(*folder, *target);
-
-    # Enable indexing on vault target.
-    iiCollectionGroupName(*folder, *groupName);
-    *groupElems = split(*groupName, "-");
-    *groupSpace = elem(*groupElems, 0);
-    if (*groupSpace == "deposit") {
-        iiEnableIndexing(*target);
-    }
-
-    # Continue securing process in PREP.
-    *return = "";
-    rule_folder_secure(*folder, *target, *return);
-}
-
-
 # \brief iiDetermineVaultTarget
 #
 # \param[in] folder

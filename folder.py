@@ -168,7 +168,7 @@ def rule_folder_secure(ctx, coll, target):
     return folder_secure(ctx, coll, target)
 
 
-def folder_secure(ctx, coll, target):
+def folder_secure(ctx, coll):
     """Secure a folder to the vault.
 
     This function should only be called by a rodsadmin
@@ -176,7 +176,6 @@ def folder_secure(ctx, coll, target):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Folder to secure
-    :param target: Target folder in vault
 
     :returns: '0' when nu error occurred
     """
