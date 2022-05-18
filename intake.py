@@ -461,7 +461,6 @@ def _intake_check_authorized_to_scan(ctx, coll):
     # intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
-
     if (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         return True
     else:
