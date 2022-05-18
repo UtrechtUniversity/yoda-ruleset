@@ -511,7 +511,7 @@ def api_intake_lock_dataset(ctx, path, dataset_ids):
     # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
     # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
@@ -542,7 +542,7 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
     # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
     # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to unlock dataset")
@@ -576,7 +576,7 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
     # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -622,7 +622,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
     # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
