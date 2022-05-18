@@ -155,7 +155,7 @@ def api_folder_reject(ctx, coll):
     return set_status_as_datamanager(ctx, coll, constants.research_package_state.REJECTED)
 
 
-@rule.make()
+@rule.make(inputs=[0], outputs=[1])
 def rule_folder_secure(ctx, coll):
     """Secure a folder to the vault.
 
