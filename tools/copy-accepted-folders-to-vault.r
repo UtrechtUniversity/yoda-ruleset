@@ -16,10 +16,9 @@ copyToVault {
 		foreach(*row in *GenQOut) {
 			*folder = *row.COLL_NAME;
 			# When rule_folder_secure fails continue with the other folders.
-                        # *errorcode = '0';
-                        # rule_folder_secure(*folder, *errorcode);
-			# if (*errorcode == '0') {
-                        if (errorcode(iiFolderSecure(*folder)) == 0) {
+            *errorcode = '0';
+            rule_folder_secure(*folder, *errorcode);
+			if (*errorcode == '0') {
 				*cronjobState = UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_OK;
 				msiString2KeyValPair(*cronjobState, *cronjobStateKvp);
 				*err = errormsg(msiRemoveKeyValuePairsFromObj(*cronjobStateKvp, *folder, "-C"), *msg);
