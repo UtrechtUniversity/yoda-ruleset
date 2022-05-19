@@ -167,9 +167,6 @@ def rule_folder_secure(ctx, coll):
 
     :returns: '0' when nu error occurred
     """
-    # Following code is overturned by code in the rule language.
-    # This, as large files were not properly copied to the vault.
-    # Using the rule language this turned out to work fine.
     log.write(ctx, 'folder_secure: Start securing folder <{}>'.format(coll))
 
     if user.user_type(ctx) != 'rodsadmin':
