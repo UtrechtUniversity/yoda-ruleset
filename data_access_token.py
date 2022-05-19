@@ -8,9 +8,9 @@ import secrets
 from datetime import datetime, timedelta
 from traceback import print_exc
 
-from util import *
-
 from pysqlcipher3 import dbapi2 as sqlite3
+
+from util import *
 
 __all__ = ['api_token_generate',
            'api_token_load',
