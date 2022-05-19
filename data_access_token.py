@@ -5,11 +5,12 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import secrets
-from pysqlcipher3 import dbapi2 as sqlite3
 from datetime import datetime, timedelta
 from traceback import print_exc
 
 from util import *
+
+from pysqlcipher3 import dbapi2 as sqlite3
 
 __all__ = ['api_token_generate',
            'api_token_load',
