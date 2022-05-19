@@ -41,10 +41,10 @@ def set(ctx, actor, receiver, target, message):
     :param message:  Notification message for user
     """
     if user.exists(ctx, receiver):
+        identifier = generate_random_id(ctx)
         timestamp = int(time.time())
-        id = generate_random_id(ctx)
-        notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
-        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, id), json.dumps(notification), '', '')
+        notification = {"identifier": identifier, "timestamp": timestamp, "actor": actor, "target": target, "message": message}
+        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, identifier), json.dumps(notification), '', '')
 
         # Send mail notification if immediate notifications are on.
         receiver = user.from_str(ctx, receiver)[0]
