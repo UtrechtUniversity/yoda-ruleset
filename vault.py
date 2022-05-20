@@ -1136,54 +1136,29 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
             log.write(ctx, "depublication request - User is no rodsadmin")
             return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
 
-    # Determine vault group and actor
-    # Find group
-    coll_parts = coll.split('/')
-    vault_group_name = coll_parts[3]
-
-    group_type = coll_parts[4].split('-')[0]
-
-    group_parts = vault_group_name.split('-')
-    # create the research equivalent in order to get the category
-    group_name = group_type + '-' + '-'.join(group_parts[1:])
-
-    # Find category
-    category = group.get_category(ctx, group_name)
-
     zone = user.zone(ctx)
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
 
-    # User/actor specific stuff
+    # Find actor and actor group.
     actor = user.full_name(ctx)
-
     actor_group = folder.collection_group_name(ctx, coll)
     if actor_group == '':
         log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
         return ['1', '']
-
-    is_datamanager = meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']
-
     actor_group_path = '/' + zone + '/home/'
+
+    # Check if user is datamanager.
+    category = meta_form.group_category(ctx, vault_group_name)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
     # Status UNPUBLISHED can be called by researcher and datamanager.
-    # HIER NOG FF NAAR KIJKEN
     if not is_datamanager:
         if new_vault_status in [constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, constants.vault_package_state.UNPUBLISHED]:
             actor_group_path = '/' + zone + '/home/' + actor_group
     else:
         actor_group_path = '/' + zone + '/home/datamanager-' + category
-
-#        if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        # Status UNPUBLISHED can be called by researcher and datamanager.
-#        } else  if (*newVaultStatus == UNPUBLISHED && !*isDatamanager) {
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        } else  if (*isDatamanager) {
-#                iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        }
 
     # Retrieve collection id.
     coll_id = collection.id_from_name(ctx, coll)
