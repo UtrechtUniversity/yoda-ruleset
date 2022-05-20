@@ -15,7 +15,14 @@ def is_data_in_locked_dataset(ctx, actor, path):
     dataset_id = ''
     coll = pathutil.chop(path)[0]
     data_name = pathutil.chop(path)[1]
+    intake_group = _get_intake_group(coll)
 
+    log.write(ctx, 'IS_DATA_IN_LOCKED_DATASET')
+    log.write(ctx, path)
+    log.write(ctx, coll)
+    log.write(ctx, intake_group)
+
+    # look for DATA based info first.
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
         "DATA_NAME = '" + data_name + "' AND META_DATA_ATTR_NAME = 'dataset_id' AND COLL_NAME = '" + coll + "' ",
@@ -23,13 +30,25 @@ def is_data_in_locked_dataset(ctx, actor, path):
     )
     for row in iter:
         dataset_id = row[0]
-        log.debug(ctx, 'dataset found: ' + dataset_id)
+        log.debug(ctx, 'DATA - dataset found: ' + dataset_id)
 
+    if not dataset_id:
+        # look for COLL based info
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "META_COLL_ATTR_NAME = 'dataset_id' AND COLL_NAME = '" + coll + "' ",
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            dataset_id = row[0]
+            log.debug(ctx, 'COLL - dataset found: ' + dataset_id)
+    
+    if dataset_id: 
         # now check whether a lock exists
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '" + dataset_id + "' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -42,7 +61,7 @@ def is_data_in_locked_dataset(ctx, actor, path):
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME, DATA_NAME",
-                "META_DATA_ATTR_VALUE = '" + dataset_id + "' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -65,6 +84,12 @@ def is_data_in_locked_dataset(ctx, actor, path):
 def is_coll_in_locked_dataset(ctx, actor, coll):
     """ Check whether given collection is within a locked dataset """
     dataset_id = ''
+    intake_group = _get_intake_group(coll)
+
+    log.write(ctx, 'is_coll_in_locked_dataset')
+    log.write(ctx, coll)
+    log.write(ctx, intake_group)
+
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_id' ",
@@ -80,7 +105,7 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '" + dataset_id + "' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -93,7 +118,7 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME",
-                "META_DATA_ATTR_VALUE = '" + dataset_id + "' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -116,6 +141,12 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
 def coll_in_path_of_locked_dataset(ctx, actor, coll):
     """ If collection is part of a locked dataset, or holds one on a deeper level, then deletion is not allowed """
     dataset_id = ''
+    intake_group = _get_intake_group(coll)
+
+    log.write(ctx, 'coll_in_path_of_locked_dataset')
+    log.write(ctx, coll)
+    log.write(ctx, intake_group)
+
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_id' ",
@@ -130,7 +161,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
         # Now find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "META_COLL_ATTR_VALUE = '" + dataset_id + "' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+            "META_COLL_ATTR_VALUE = '{}' AND META_COLL_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
             genquery.AS_LIST, ctx
         )
         toplevel_collection = ''
@@ -143,7 +174,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
             # dataset is based on a data object
             iter = genquery.row_iterator(
                 "COLL_NAME",
-                "META_DATA_ATTR_VALUE = '" + dataset_id + "' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/" + user.zone(ctx) + "/home/grp-intake-%'",
+                "META_DATA_ATTR_VALUE = '{}' AND  META_DATA_ATTR_NAME = 'dataset_toplevel' AND COLL_NAME like '/{}/home/{}-%'".format(dataset_id, user.zone(ctx), intake_group),
                 genquery.AS_LIST, ctx
             )
             for row in iter:
@@ -184,3 +215,9 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
 
         # There is no lock present
         return False
+
+def _get_intake_group(coll):
+    """ Get the group type defining part of the entire groupname. 'grp-intake' or 'intake' """
+    parts = coll.split('/')[3].split('-')
+    del parts[-1]
+    return '-'.join(parts)
