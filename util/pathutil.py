@@ -121,6 +121,7 @@ def info(path):
             or test('^/([^/]+)/home/(deposit-[^/]+)(?:/(.+))?$',      Space.DEPOSIT)
             or test('^/([^/]+)/home/(datamanager-[^/]+)(?:/(.+))?$',  Space.DATAMANAGER)
             or test('^/([^/]+)/home/(grp-intake-[^/]+)(?:/(.+))?$',   Space.INTAKE)
+            or test('^/([^/]+)/home/(intake-[^/]+)(?:/(.+))?$',   Space.INTAKE)
             or test('^/([^/]+)/home/(datarequests-[^/]+)(?:/(.+))?$', Space.DATAREQUEST)
             or test('^/([^/]+)/home/([^/]+)(?:/(.+))?$',              Space.OTHER)
             or test('^/([^/]+)()(?:/(.+))?$',                         Space.OTHER)
