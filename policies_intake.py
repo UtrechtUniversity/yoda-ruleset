@@ -17,11 +17,6 @@ def is_data_in_locked_dataset(ctx, actor, path):
     data_name = pathutil.chop(path)[1]
     intake_group = _get_intake_group(coll)
 
-    log.write(ctx, 'IS_DATA_IN_LOCKED_DATASET')
-    log.write(ctx, path)
-    log.write(ctx, coll)
-    log.write(ctx, intake_group)
-
     # look for DATA based info first.
     iter = genquery.row_iterator(
         "META_DATA_ATTR_VALUE",
@@ -42,8 +37,8 @@ def is_data_in_locked_dataset(ctx, actor, path):
         for row in iter:
             dataset_id = row[0]
             log.debug(ctx, 'COLL - dataset found: ' + dataset_id)
-    
-    if dataset_id: 
+
+    if dataset_id:
         # now check whether a lock exists
         # Find the toplevel and get the collection check whether is locked
         iter = genquery.row_iterator(
@@ -215,6 +210,7 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
 
         # There is no lock present
         return False
+
 
 def _get_intake_group(coll):
     """ Get the group type defining part of the entire groupname. 'grp-intake' or 'intake' """
