@@ -70,6 +70,7 @@ def api_token_load(ctx):
 
     try:
         with conn:
+            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
             for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
                                     {"user_id": user_id, "now": datetime.now()}):
                 result.append({"label": row[0], "exp_time": row[1]})
