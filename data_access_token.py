@@ -100,6 +100,7 @@ def api_token_delete(ctx, label):
 
     try:
         with conn:
+            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
             conn.execute('''DELETE FROM tokens WHERE user = ? AND label = ?''', (user_id, label))
             result = api.Result.ok()
     except Exception:
