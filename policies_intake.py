@@ -81,10 +81,6 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
     dataset_id = ''
     intake_group = _get_intake_group(coll)
 
-    log.write(ctx, 'is_coll_in_locked_dataset')
-    log.write(ctx, coll)
-    log.write(ctx, intake_group)
-
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '" + coll + "' AND META_COLL_ATTR_NAME = 'dataset_id' ",
@@ -137,10 +133,6 @@ def coll_in_path_of_locked_dataset(ctx, actor, coll):
     """ If collection is part of a locked dataset, or holds one on a deeper level, then deletion is not allowed """
     dataset_id = ''
     intake_group = _get_intake_group(coll)
-
-    log.write(ctx, 'coll_in_path_of_locked_dataset')
-    log.write(ctx, coll)
-    log.write(ctx, intake_group)
 
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
