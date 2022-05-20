@@ -5,9 +5,10 @@ __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import secrets
-import sqlite3
 from datetime import datetime, timedelta
 from traceback import print_exc
+
+from pysqlcipher3 import dbapi2 as sqlite3
 
 from util import *
 
@@ -39,7 +40,7 @@ def api_token_generate(ctx, label=None):
 
     try:
         with conn:
-            # TODO: encrypt database so tokens cannot (easily) be read
+            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
             conn.execute('''INSERT INTO tokens VALUES (?, ?, ?, ?, ?)''', (user_id, label, token, gen_time, exp_time))
             result = token
     except sqlite3.IntegrityError:
