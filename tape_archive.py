@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import subprocess
 from enum import Enum
 from time import time
 
@@ -18,7 +17,7 @@ __all__ = ['api_tape_archive_stage',
 DMGET = "/var/lib/irods/msiExecCmd_bin/dmget"
 DMATTR = "/var/lib/irods/msiExecCmd_bin/dmattr"
 
-TAPE_ARCHIVE_RESC = "mockTapeArchive"
+TAPE_ARCHIVE_RESC = "testArchiveVault"
 
 
 class State(Enum):
@@ -81,22 +80,20 @@ def api_tape_archive_stage(ctx, path):
     if physical_path is None:
         return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
 
-    dmget_command = "{} {}".format(DMGET, physical_path)
-    process = subprocess.Popen(dmget_command.split(), stdout=subprocess.PIPE)
-    _, error = process.communicate()
+    state = ""
+    timestamp = int(time())
+    ctx.dmattr(physical_path, timestamp, state)
 
-    if error is not None:
-        return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
-
-    dmattr_command = "{} {}".format(DMATTR, physical_path)
-    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
-    state, error = process.communicate()
-
-    if error is None:
-        timestamp = int(time())
+    if state != "INV":
         ctx.uuTapeArchiveSetState(path, timestamp, state)
     else:
         return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
+
+    state = ""
+    ctx.dmattr(physical_path, state)
+
+    # if error is not None:
+    #     return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
 
     return api.Result.ok()
 
@@ -115,12 +112,11 @@ def api_tape_archive_state(ctx, path):
     if physical_path is None:
         return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
 
-    dmattr_command = "{} {}".format(DMATTR, physical_path)
-    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
-    state, error = process.communicate()
+    state = ""
+    timestamp = int(time())
+    ctx.dmattr(physical_path, timestamp, state)
 
-    if error is None:
-        timestamp = int(time())
+    if state != "INV":
         ctx.uuTapeArchiveSetState(path, timestamp, state)
         return state
     else:
