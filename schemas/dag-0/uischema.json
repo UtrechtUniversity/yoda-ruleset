@@ -85,6 +85,10 @@
         "Family_Name": {
           "ui:help": "The surname or last name of the person(s) performing the deposit"
         }
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite",
+        "ui:widget": "hidden"
       }
     }
   },
