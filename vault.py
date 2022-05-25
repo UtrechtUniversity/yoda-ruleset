@@ -946,7 +946,8 @@ def ingest_object(ctx, parent, item, item_is_collection, destination, origin):
     else:
         # CREATE COPY OF DATA OBJECT
         try:
-            data_object.copy(ctx, source_path, dest_path)
+            # msi.data_obj_copy(ctx, source_path, dest_path, '', irods_types.BytesBuf())
+            ctx.msiDataObjCopy(source_path, dest_path, 'verifyChksum=', 0)
         except msi.Error:
             return 1
 

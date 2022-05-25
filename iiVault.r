@@ -5,6 +5,86 @@
 # \copyright Copyright (c) 2016-2022, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+
+# \brief iiCopyFolderToVault
+#
+# \param[in] folder  folder to copy to the vault
+# \param[in] target  path of the vault package
+#
+iiCopyFolderToVault(*folder, *target) {
+
+	writeLine("serverLog", "iiCopyFolderToVault: Copying *folder to *target")
+	*buffer.source = *folder;
+	*buffer.destination = *target ++ "/original";
+	uuTreeWalk("forward", *folder, "iiIngestObject", *buffer, *error);
+	if (*error != 0) {
+		msiGetValByKey(*buffer, "msg", *msg); # using . syntax here lead to type error
+		writeLine("stdout", "iiIngestObject: *error: *msg");
+		fail;
+	}
+}
+
+# \brief Called by uuTreeWalk for each collection and dataobject to copy to the vault.
+#
+# \param[in] itemParent
+# \param[in] itemName
+# \param[in] itemIsCollection
+# \param[in/out] buffer
+# \param[in/out] error
+#
+iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
+	*sourcePath = "*itemParent/*itemName";
+	msiCheckAccess(*sourcePath, "read object", *readAccess);
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to acquire read access to *sourcePath";
+			succeed;
+		} else {
+			writeLine("stdout", "iiIngestObject: Read access to *sourcePath acquired");
+		}
+	}
+
+	*destPath = *buffer.destination;
+	if (*sourcePath != *buffer."source") {
+		# rewrite path to copy objects that are located underneath the toplevel collection
+		*sourceLength = strlen(*sourcePath);
+		*relativePath = substr(*sourcePath, strlen(*buffer."source") + 1, *sourceLength);
+		*destPath = *buffer."destination" ++ "/" ++ *relativePath;
+		*markIncomplete = false;
+	} else {
+		*markIncomplete = true;
+	}
+
+	if (*itemIsCollection) {
+		*error = errorcode(msiCollCreate(*destPath, 1, *status));
+		if (*error < 0) {
+			*buffer.msg = "Failed to create collection *destPath";
+		} else if (*markIncomplete) {
+			# The root collection of the vault package is marked incomplete until the last step in FolderSecure
+			*vaultStatus = IIVAULTSTATUSATTRNAME;
+			msiString2KeyValPair("*vaultStatus=" ++ INCOMPLETE, *kvp);
+			msiAssociateKeyValuePairsToObj(*kvp, *destPath, "-C");
+		}
+	} else {
+	    # Copy data object to vault and compute checksum.
+	    *resource = "";
+	    *err = errorcode(rule_resource_vault(*resource));
+	    *error = errorcode(msiDataObjCopy(*sourcePath, *destPath, "destRescName=" ++ *resource ++ "++++verifyChksum=", *status));
+	    if (*error < 0) {
+		    *buffer.msg = "Failed to copy *sourcePath to *destPath";
+	    }
+	}
+	if (*readAccess != 1) {
+		*error = errorcode(msiSetACL("default", "admin:null", uuClientFullName, *sourcePath));
+		if (*error < 0) {
+			*buffer.msg = "Failed to revoke read access to *sourcePath";
+		} else {
+			writeLine("stdout", "iiIngestObject: Read access to *sourcePath revoked");
+		}
+	}
+}
+
 # \brief Called by uuTreeWalk for each collection and dataobject to copy to the research area.
 #
 # \param[in] itemParent
