@@ -241,5 +241,7 @@ iiAdminVaultActions() {
 
 # \brief Enable indexing on vault target.
 iiEnableIndexing(*target) {
-    msiExecCmd("enable-indexing.sh", *target, "", "", 0, *out);
+    remote("localhost", "null") {
+        msiModAVUMetadata("-C", *target, "add", "irods::indexing::index", "yoda::metadata", "elasticsearch");
+    }
 }
