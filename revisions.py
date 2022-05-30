@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import datetime
 import os
 import time
 
@@ -17,7 +18,291 @@ from util import *
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
-           'rule_revisions_clean_up']
+           'rule_revisions_clean_up',
+           'rule_revision_batch']
+
+
+def resource_modified_post_revision(ctx, resource, zone, path):
+    """  Create revisions on file modifications.
+
+    This policy should trigger whenever a new file is added or modified
+    in the workspace of a Research team. This should be done asynchronously.
+    Triggered from instance specific rulesets.
+
+    :param resource:       The resource where the original is written to
+    :param zone:           Zone where the original can be found
+    :param path:           path of the original
+    """
+    # Only create revisions for research space
+    log.write(ctx, 'in res_mod_post_rev: {}   /   {}   /   {}'.format(resource, zone, path))
+    if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
+        log.write(ctx, 'in res_mod_post_rev: 1')
+        if not pathutil.basename(ctx, path) in constants.UUBLOCKLIST:
+            log.write(ctx, 'in res_mod_post_rev: 2')
+            # if data_object.size(ctx, path) < constants.UUMAXREVISIONSIZE:  # ? MOet ik dat hier al doen??
+            # now create revision asynchronously
+            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(zone), path) 
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
+            log.write(ctx, 'in res_mod_post_rev: revision_scheduled')
+
+    log.write(ctx, 'in res_mod_post_rev: OUT')
+
+
+# @rule.make(inputs=range(2), outputs=range(2, 3))
+# def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
+# in rule revision_cleanup.r:
+# rule_revisions_clean_up(*bucketcase, str(*endOfCalendarDay), *status);
+
+
+@rule.make(inputs=range(1), outputs=range(1, 2))
+def revision_batch(ctx, verbose):
+    """ Scheduled revision creation batch job.
+
+    Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
+
+    :param verbose:      whether to log verbose messages for troubleshooting (1: yes, 0: no)
+
+    :returns: String with status of the batch process
+    """
+    log.write(ctx, 'REVISION BATCH STARTED')
+    stopped = False
+    zone = user.zone(ctx)
+
+    iter = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        stopped = True
+        break
+
+    if stopped:
+        log.write(ctx, "Batch revision job is stopped")
+        return "return value after stopped batch"
+
+    log.write(ctx, "Batch revision job started");
+    count        = 0
+    count_ok      = 0
+    count_ignored = 0
+    print_verbose = verbose
+ 
+    attr      = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+    errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
+
+    # get list of data objects scheduled for revision
+    iter = genquery.row_iterator(
+        "COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
+        "META_DATA_ATTR_NAME = '" + "' + attr + '",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        count += 1
+
+        # Stop scheduled revision if stop flag is set.  # ? waarom hier nog een keer???
+        iter2 = genquery.row_iterator(
+            "DATA_ID",
+            "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            log.write(ctx, "Batch revision job is stopped")
+            return "Batch for revision creation has been stopped"
+
+        # Perform scheduled revision creation for one data object.
+        path  = row[0]+ "/" + row[1]
+        resc  = row[3]
+        size  = row[2]
+
+        if print_verbose: 
+            log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
+
+        id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
+
+        # Remove revision_scheduled flag no matter if it succeeded or not.
+        # rods should have been given own access via policy to allow AVU
+        # changes.
+        if print_verbose:
+            log.write(ctx, "Batch revision: removing AVU for {}".format(path))
+
+        # try removing attr/resc meta data
+        loop = 0
+        while loop < 2:
+            try:
+                if not loop:
+                    avu.rm_from_data(ctx, path, attr, resc)
+                else:
+                    acl_kv = misc.kvpair(ctx, "attr", resc)
+                    research_group_name = '???'
+                    msi.sudo_obj_acl_set(ctx, "", "own", research_group_name, path, acl_kv)
+
+                break
+            except:
+                # The object's ACLs may have changed.
+                # Force the ACL and try one more time.
+                # msi.SudoObjAclSet("", "own", uuClientFullName, path, "")) # ?  sudo obj acl set???
+                # msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
+                if loop == 1: # if last doesn't work, what to do???
+                    log.write(ctx, "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)")
+                    continue
+                    # ? MOET het hier stoppen??
+            loop += 1
+
+        # hier alleen komen als bovenstaande goed is gegaan!!???
+
+
+        # now back to the revisions
+        if id:
+            log.write(ctx, "iiRevisionCreate: Revision created for {} ID={}".format(path, id));
+            count_ok += 1
+            # Revision creation OK. Remove any existing error indication attribute.
+            iter2 = genquery.row_iterator(
+                "DATA_NAME",
+                "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "'"
+                " AND META_DATA_ATTR_NAME  = '" + errorattr + "' AND META_DATA_ATTR_VALUE = 'true'",
+                genquery.AS_LIST, ctx
+            )
+            for row2 in iter2:
+                # Only try to remove it if we know for sure it exists,
+                # otherwise we get useless errors in the log.
+                avu.rm_from_data(ctx, path, errorattr, 'true')
+                break
+        else:
+            count_ignored += 1
+            log.write(ctx, "Scheduled revision creation of <*path> failed (*revstatus)")
+            avu.set_on_data(ctx, path, errorattr, "true")
+
+    log.write(ctx, "Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
+
+
+def revision_create(ctx, resource, path, max_size, verbose):
+    """ Create a revision of a dataobject in a revision folder.
+
+    :param[in] resource		resource to retrieve original from
+    :param[in] path		path of data object to create a revision for
+    :param[in] max_size		max size of files in bytes
+    :param[in] verbose		whether to print messages for troubleshooting to log (1: yes, 0: no)
+
+    return id		data object id of created revision
+    """
+    id = ""
+    print_verbose = verbose
+    parent, basename = pathutil.chop(path) 
+    found = False
+
+    iter = genquery.row_iterator(
+        "DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER",
+        "DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_RESC_HIER like '*resource%'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        data_id = row[0]
+        modify_time = row[1]
+        data_size = row[3]
+        coll_id = row[4]
+        data_owner = row[2]
+        found = True
+        break
+
+    if not found:
+        log.write(ctx, "DataObject was not found or path was collection")
+        return ""
+
+    if int(data_size) > max_size:
+        log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
+        return ""
+
+    iter = genquery.row_iterator(
+        "USER_NAME, USER_ZONE",
+        "DATA_ID = '" + data_id + "' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        group_name = row[0]
+        user_zone = row[1]
+
+    # All revisions are stored in a group with the same name as the research group in a system collection
+    # When this collection is missing, no revisions will be created. When the group manager is used to
+    # create new research groups, the revision collection will be created as well.
+
+    revision_store = "/" + user_zone + constants.UUREVISIONCOLLECTION + "/" + group_name
+    revision_store_exists = False
+
+    iter = genquery.row_iterator(
+        "COLL_ID",
+        "COLL_NAME = '" + revision_store + "'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        revision_store_exists = True
+
+    if revisionStoreExists:
+        # Exists: Revisions are enabled.
+
+        # Allow rodsadmin to create subcollections.
+        msi.set_acl("default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
+
+        # generate a timestamp in iso8601 format to append to the filename of the revised file.
+        # 2019-09-07T15:50-04:00
+
+        iso8601 = datetime.datetime.now().replace(microsecond=0).isoformat()
+
+        rev_filename = basename + "_" + iso8601 + data_owner
+        rev_coll = revision_store + "/" + coll_id
+
+        read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
+        if read_access != b'\x01':
+            try:
+                msi.set_acl(ctx, "default", "admin:read", "rods#{}".format(user.zone(ctx)), path)
+            except msi.Error:
+                return ""
+
+        if collection.exists(ctx, rev_coll):
+            # Rods may not have own access yet.
+            msi.set_acl("default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_coll)
+        else:
+            # Inheritance is enabled - ACLs are already good.
+            # (rods and the research group both have own)
+            try:
+                msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
+            except error.UUError:
+                log.write(ctx, 'Failed to create staging area at <{}>'.format(rev_coll))
+                return ""
+
+        rev_path = rev_coll + "/" + rev_filename
+
+        if print_verbose:
+            log.write(ctx, "iiRevisionCreate: creating revision {} -> {}".format(path, rev_path))
+
+        # actual copying to revision store
+        try:
+            # Workaround the PREP deadlock issue: Restrict threads to 1.
+            ofFlags = 'forceFlag=++++numThreads=1'
+            msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
+            iter = genquery.row_iterator(
+                "DATA_ID",
+                "COLL_NAME = '" + rev_coll + "' DATA_NAME = '" + rev_filename + "'",
+                genquery.AS_LIST, ctx
+              )
+            for row in iter:
+                id = row[0]
+
+            # Add original metadata to revision data object.
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_path", path)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_group_name", groupname)
+            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
+        except msi.Error as e:
+            log.write(ctx, 'The file could not be copied: {}'.format(str(e)))
+            return False
+
+    return id
+
 
 
 @rule.make(inputs=range(2), outputs=range(2, 3))
