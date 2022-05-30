@@ -37,11 +37,11 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     log.write(ctx, 'in res_mod_post_rev: {}   /   {}   /   {}'.format(resource, zone, path))
     if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
         log.write(ctx, 'in res_mod_post_rev: 1')
-        if not pathutil.basename(ctx, path) in constants.UUBLOCKLIST:
+        if not pathutil.basename(path) in constants.UUBLOCKLIST:
             log.write(ctx, 'in res_mod_post_rev: 2')
             # if data_object.size(ctx, path) < constants.UUMAXREVISIONSIZE:  # ? MOet ik dat hier al doen??
             # now create revision asynchronously
-            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(zone), path) 
+            msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path) 
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
             log.write(ctx, 'in res_mod_post_rev: revision_scheduled')
 
@@ -55,7 +55,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
 
 
 @rule.make(inputs=range(1), outputs=range(1, 2))
-def revision_batch(ctx, verbose):
+def rule_revision_batch(ctx, verbose):
     """ Scheduled revision creation batch job.
 
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
@@ -85,7 +85,7 @@ def revision_batch(ctx, verbose):
     count        = 0
     count_ok      = 0
     count_ignored = 0
-    print_verbose = verbose
+    print_verbose = True # verbose
  
     attr      = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
@@ -93,7 +93,7 @@ def revision_batch(ctx, verbose):
     # get list of data objects scheduled for revision
     iter = genquery.row_iterator(
         "COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = '" + "' + attr + '",
+        "META_DATA_ATTR_NAME = '" + attr + "'",
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -117,7 +117,9 @@ def revision_batch(ctx, verbose):
         if print_verbose: 
             log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
+        log.write(ctx, 'before rev_create')
         id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
+        log.write(ctx, 'after rev_create')
 
         # Remove revision_scheduled flag no matter if it succeeded or not.
         # rods should have been given own access via policy to allow AVU
@@ -126,27 +128,30 @@ def revision_batch(ctx, verbose):
             log.write(ctx, "Batch revision: removing AVU for {}".format(path))
 
         # try removing attr/resc meta data
-        loop = 0
-        while loop < 2:
-            try:
-                if not loop:
-                    avu.rm_from_data(ctx, path, attr, resc)
-                else:
-                    acl_kv = misc.kvpair(ctx, "attr", resc)
-                    research_group_name = '???'
-                    msi.sudo_obj_acl_set(ctx, "", "own", research_group_name, path, acl_kv)
+        avu_deleted = False
+        try:
+            # avu.rm_from_data(ctx, path, attr, resc)
+            avu_deleted = True
+        except:
+            avu_deleted = False
 
-                break
+        # try removing attr/resc meta data
+        if not avu_deleted:
+            try:
+                log.write(ctx, '3')
+                acl_kv = misc.kvpair(ctx, attr, resc)
+                research_group_name = '???'
+                msi.sudo_obj_acl_set(ctx, "default", "own", 'research-default-2', path, acl_kv)
             except:
+                log.write(ctx, '4')
                 # The object's ACLs may have changed.
                 # Force the ACL and try one more time.
                 # msi.SudoObjAclSet("", "own", uuClientFullName, path, "")) # ?  sudo obj acl set???
                 # msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
-                if loop == 1: # if last doesn't work, what to do???
-                    log.write(ctx, "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)")
-                    continue
-                    # ? MOET het hier stoppen??
-            loop += 1
+                # if loop == 1: # if last doesn't work, what to do???
+                log.write(ctx, "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)")
+                return ''
+
 
         # hier alleen komen als bovenstaande goed is gegaan!!???
 
@@ -183,16 +188,16 @@ def revision_create(ctx, resource, path, max_size, verbose):
     :param[in] max_size		max size of files in bytes
     :param[in] verbose		whether to print messages for troubleshooting to log (1: yes, 0: no)
 
-    return id		data object id of created revision
+    return revision_id		data object id of created revision
     """
-    id = ""
+    revision_id = ""
     print_verbose = verbose
     parent, basename = pathutil.chop(path) 
     found = False
 
     iter = genquery.row_iterator(
         "DATA_ID, DATA_MODIFY_TIME, DATA_OWNER_NAME, DATA_SIZE, COLL_ID, DATA_RESC_HIER",
-        "DATA_NAME = *basename AND COLL_NAME = *parent AND DATA_RESC_HIER like '*resource%'",
+        "DATA_NAME = '{}' AND COLL_NAME = '{}' AND DATA_RESC_HIER like '{}%'".format(basename, parent, resource),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -236,11 +241,11 @@ def revision_create(ctx, resource, path, max_size, verbose):
     for row in iter:
         revision_store_exists = True
 
-    if revisionStoreExists:
+    if revision_store_exists:
         # Exists: Revisions are enabled.
 
         # Allow rodsadmin to create subcollections.
-        msi.set_acl("default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
+        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
 
         # generate a timestamp in iso8601 format to append to the filename of the revised file.
         # 2019-09-07T15:50-04:00
@@ -250,7 +255,10 @@ def revision_create(ctx, resource, path, max_size, verbose):
         rev_filename = basename + "_" + iso8601 + data_owner
         rev_coll = revision_store + "/" + coll_id
 
-        read_access = msi.check_access(ctx, source_path, 'read object', irods_types.BytesBuf())['arguments'][2]
+        log.write(ctx, rev_filename)
+        log.write(ctx, rev_coll)
+
+        read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
         if read_access != b'\x01':
             try:
                 msi.set_acl(ctx, "default", "admin:read", "rods#{}".format(user.zone(ctx)), path)
@@ -259,7 +267,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
 
         if collection.exists(ctx, rev_coll):
             # Rods may not have own access yet.
-            msi.set_acl("default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_coll)
+            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), rev_coll)
         else:
             # Inheritance is enabled - ACLs are already good.
             # (rods and the research group both have own)
@@ -285,23 +293,24 @@ def revision_create(ctx, resource, path, max_size, verbose):
                 genquery.AS_LIST, ctx
               )
             for row in iter:
-                id = row[0]
+                revision_id = row[0]
 
             # Add original metadata to revision data object.
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_path", path)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_group_name", groupname)
-            avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
+            groupname = 'research-default-2'
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_owner_name", data_owner)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", groupname)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
             log.write(ctx, 'The file could not be copied: {}'.format(str(e)))
             return False
 
-    return id
+    return revision_id
 
 
 
