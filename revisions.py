@@ -112,7 +112,7 @@ def rule_revision_batch(ctx, verbose):
         # Perform scheduled revision creation for one data object.
         path = row[0] + "/" + row[1]
         resc = row[3]
-        size = row[2] # ??? wordt hier niks mee gedaan
+        size = row[2]  # ??? wordt hier niks mee gedaan
 
         if print_verbose:
             log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
@@ -132,7 +132,7 @@ def rule_revision_batch(ctx, verbose):
         try:
             # avu.rm_from_data(ctx, path, attr, resc)
             avu_deleted = True
-        except:
+        except Exception:
             avu_deleted = False
 
         # try removing attr/resc meta data
@@ -142,7 +142,7 @@ def rule_revision_batch(ctx, verbose):
                 acl_kv = misc.kvpair(ctx, attr, resc)
                 research_group_name = 'research-default-2'  # ???
                 msi.sudo_obj_acl_set(ctx, "default", "own", research_group_name, path, acl_kv)
-            except:
+            except Exception:
                 log.write(ctx, '4')
                 # The object's ACLs may have changed.
                 # Force the ACL and try one more time.
