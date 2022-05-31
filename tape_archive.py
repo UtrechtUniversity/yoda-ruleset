@@ -82,7 +82,7 @@ def api_tape_archive_stage(ctx, path):
 
     state = ""
     timestamp = int(time())
-    ctx.dmattr(physical_path, timestamp, state)
+    ctx.dmattr(physical_path, state)
 
     if state != "INV":
         ctx.uuTapeArchiveSetState(path, timestamp, state)
@@ -114,7 +114,7 @@ def api_tape_archive_state(ctx, path):
 
     state = ""
     timestamp = int(time())
-    ctx.dmattr(physical_path, timestamp, state)
+    ctx.dmattr(physical_path, state)
 
     if state != "INV":
         ctx.uuTapeArchiveSetState(path, timestamp, state)
