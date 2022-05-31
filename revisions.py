@@ -34,24 +34,11 @@ def resource_modified_post_revision(ctx, resource, zone, path):
     :param path:           path of the original
     """
     # Only create revisions for research space
-    log.write(ctx, 'in res_mod_post_rev: {}   /   {}   /   {}'.format(resource, zone, path))
     if path.startswith("/{}/home/{}".format(zone, constants.IIGROUPPREFIX)):
-        log.write(ctx, 'in res_mod_post_rev: 1')
         if not pathutil.basename(path) in constants.UUBLOCKLIST:
-            log.write(ctx, 'in res_mod_post_rev: 2')
-            # if data_object.size(ctx, path) < constants.UUMAXREVISIONSIZE:  # ? MOet ik dat hier al doen??
-            # now create revision asynchronously
+            # now create revision asynchronously by adding indication org_revision_scheduled
             msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
-            log.write(ctx, 'in res_mod_post_rev: revision_scheduled')
-
-    log.write(ctx, 'in res_mod_post_rev: OUT')
-
-
-# @rule.make(inputs=range(2), outputs=range(2, 3))
-# def rule_revisions_clean_up(ctx, bucketcase, endOfCalendarDay):
-# in rule revision_cleanup.r:
-# rule_revisions_clean_up(*bucketcase, str(*endOfCalendarDay), *status);
 
 
 @rule.make(inputs=range(1), outputs=range(1, 2))
@@ -85,7 +72,7 @@ def rule_revision_batch(ctx, verbose):
     count        = 0
     count_ok      = 0
     count_ignored = 0
-    print_verbose = True  # verbose
+    print_verbose = (verbose == 1)
 
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
@@ -99,7 +86,7 @@ def rule_revision_batch(ctx, verbose):
     for row in iter:
         count += 1
 
-        # Stop scheduled revision if stop flag is set.  # ? waarom hier nog een keer???
+        # Stop scheduled revision if stop flag is set. This could happen during batch processing
         iter2 = genquery.row_iterator(
             "DATA_ID",
             "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
@@ -112,14 +99,12 @@ def rule_revision_batch(ctx, verbose):
         # Perform scheduled revision creation for one data object.
         path = row[0] + "/" + row[1]
         resc = row[3]
-        size = row[2]  # ??? wordt hier niks mee gedaan
+        # size = row[2]  # For now nothing's done with size
 
         if print_verbose:
             log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
-        log.write(ctx, 'before rev_create')
         id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
-        log.write(ctx, 'after rev_create')
 
         # Remove revision_scheduled flag no matter if it succeeded or not.
         # rods should have been given own access via policy to allow AVU
@@ -131,28 +116,22 @@ def rule_revision_batch(ctx, verbose):
         avu_deleted = False
         try:
             # avu.rm_from_data(ctx, path, attr, resc)
+            avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
             avu_deleted = True
         except Exception:
             avu_deleted = False
 
-        # try removing attr/resc meta data
+        # try removing attr/resc meta data again with other ACL's
         if not avu_deleted:
             try:
-                log.write(ctx, '3')
-                acl_kv = misc.kvpair(ctx, attr, resc)
-                research_group_name = 'research-default-2'  # ???
-                msi.sudo_obj_acl_set(ctx, "default", "own", research_group_name, path, acl_kv)
-            except Exception:
-                log.write(ctx, '4')
                 # The object's ACLs may have changed.
                 # Force the ACL and try one more time.
-                # msi.SudoObjAclSet("", "own", uuClientFullName, path, "")) # ?  sudo obj acl set???
-                # msi.sudo_obj_acl_set(ctx, "recursive", "null", research_group_name, coll, acl_kv)
-                # if loop == 1: # if last doesn't work, what to do???
-                log.write(ctx, "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)")
-                return ''
+                msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
+                avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+            except Exception:
+                log.write(ctx, "revision error: Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
-        # now back to the revisions
+        # now back to the created revision
         if id:
             log.write(ctx, "iiRevisionCreate: Revision created for {} ID={}".format(path, id))
             count_ok += 1
@@ -166,11 +145,11 @@ def rule_revision_batch(ctx, verbose):
             for row2 in iter2:
                 # Only try to remove it if we know for sure it exists,
                 # otherwise we get useless errors in the log.
-                avu.rm_from_data(ctx, path, errorattr, 'true')
+                avu.rmw_from_data(ctx, path, errorattr, "%")
                 break
         else:
             count_ignored += 1
-            log.write(ctx, "Scheduled revision creation of <*path> failed (*revstatus)")
+            log.write(ctx, "Scheduled revision creation of <{}> failed".format(path))
             avu.set_on_data(ctx, path, errorattr, "true")
 
     log.write(ctx, "Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
@@ -225,7 +204,6 @@ def revision_create(ctx, resource, path, max_size, verbose):
     # All revisions are stored in a group with the same name as the research group in a system collection
     # When this collection is missing, no revisions will be created. When the group manager is used to
     # create new research groups, the revision collection will be created as well.
-
     revision_store = "/" + user_zone + constants.UUREVISIONCOLLECTION + "/" + group_name
     revision_store_exists = False
 
@@ -238,32 +216,26 @@ def revision_create(ctx, resource, path, max_size, verbose):
         revision_store_exists = True
 
     if revision_store_exists:
-        # Exists: Revisions are enabled.
-
         # Allow rodsadmin to create subcollections.
         msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
 
         # generate a timestamp in iso8601 format to append to the filename of the revised file.
         # 2019-09-07T15:50-04:00
-
         iso8601 = datetime.datetime.now().replace(microsecond=0).isoformat()
 
         rev_filename = basename + "_" + iso8601 + data_owner
         rev_coll = revision_store + "/" + coll_id
 
-        log.write(ctx, rev_filename)
-        log.write(ctx, rev_coll)
-
         read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
         if read_access != b'\x01':
             try:
-                msi.set_acl(ctx, "default", "admin:read", "rods#{}".format(user.zone(ctx)), path)
+                msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)
             except msi.Error:
                 return ""
 
         if collection.exists(ctx, rev_coll):
             # Rods may not have own access yet.
-            msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), rev_coll)
+            msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), rev_coll)
         else:
             # Inheritance is enabled - ACLs are already good.
             # (rods and the research group both have own)
@@ -283,16 +255,16 @@ def revision_create(ctx, resource, path, max_size, verbose):
             # Workaround the PREP deadlock issue: Restrict threads to 1.
             ofFlags = 'forceFlag=++++numThreads=1'
             msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
+
             iter = genquery.row_iterator(
                 "DATA_ID",
-                "COLL_NAME = '" + rev_coll + "' DATA_NAME = '" + rev_filename + "'",
+                "COLL_NAME = '" + rev_coll + "' AND DATA_NAME = '" + rev_filename + "'",
                 genquery.AS_LIST, ctx
             )
             for row in iter:
                 revision_id = row[0]
 
             # Add original metadata to revision data object.
-            groupname = 'research-default-2'
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_name", parent)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_name", basename)
@@ -300,11 +272,11 @@ def revision_create(ctx, resource, path, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_data_id", data_id)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_coll_id", coll_id)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_modify_time", modify_time)
-            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", groupname)
+            avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
             log.write(ctx, 'The file could not be copied: {}'.format(str(e)))
-            return False
+            return ''
 
     return revision_id
 
