@@ -41,7 +41,7 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             log.write(ctx, 'in res_mod_post_rev: 2')
             # if data_object.size(ctx, path) < constants.UUMAXREVISIONSIZE:  # ? MOet ik dat hier al doen??
             # now create revision asynchronously
-            msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path) 
+            msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
             log.write(ctx, 'in res_mod_post_rev: revision_scheduled')
 
@@ -81,13 +81,13 @@ def rule_revision_batch(ctx, verbose):
         log.write(ctx, "Batch revision job is stopped")
         return "return value after stopped batch"
 
-    log.write(ctx, "Batch revision job started");
+    log.write(ctx, "Batch revision job started")
     count        = 0
     count_ok      = 0
     count_ignored = 0
-    print_verbose = True # verbose
- 
-    attr      = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+    print_verbose = True  # verbose
+
+    attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
 
     # get list of data objects scheduled for revision
@@ -110,11 +110,11 @@ def rule_revision_batch(ctx, verbose):
             return "Batch for revision creation has been stopped"
 
         # Perform scheduled revision creation for one data object.
-        path  = row[0]+ "/" + row[1]
-        resc  = row[3]
-        size  = row[2]
+        path = row[0] + "/" + row[1]
+        resc = row[3]
+        size = row[2] # ??? wordt hier niks mee gedaan
 
-        if print_verbose: 
+        if print_verbose:
             log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
         log.write(ctx, 'before rev_create')
@@ -140,8 +140,8 @@ def rule_revision_batch(ctx, verbose):
             try:
                 log.write(ctx, '3')
                 acl_kv = misc.kvpair(ctx, attr, resc)
-                research_group_name = '???'
-                msi.sudo_obj_acl_set(ctx, "default", "own", 'research-default-2', path, acl_kv)
+                research_group_name = 'research-default-2'  # ???
+                msi.sudo_obj_acl_set(ctx, "default", "own", research_group_name, path, acl_kv)
             except:
                 log.write(ctx, '4')
                 # The object's ACLs may have changed.
@@ -152,13 +152,9 @@ def rule_revision_batch(ctx, verbose):
                 log.write(ctx, "revision error: Scheduled revision creation of <*path>: could not remove schedule flag (*rmstatus)")
                 return ''
 
-
-        # hier alleen komen als bovenstaande goed is gegaan!!???
-
-
         # now back to the revisions
         if id:
-            log.write(ctx, "iiRevisionCreate: Revision created for {} ID={}".format(path, id));
+            log.write(ctx, "iiRevisionCreate: Revision created for {} ID={}".format(path, id))
             count_ok += 1
             # Revision creation OK. Remove any existing error indication attribute.
             iter2 = genquery.row_iterator(
@@ -192,7 +188,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
     """
     revision_id = ""
     print_verbose = verbose
-    parent, basename = pathutil.chop(path) 
+    parent, basename = pathutil.chop(path)
     found = False
 
     iter = genquery.row_iterator(
@@ -291,7 +287,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
                 "DATA_ID",
                 "COLL_NAME = '" + rev_coll + "' DATA_NAME = '" + rev_filename + "'",
                 genquery.AS_LIST, ctx
-              )
+            )
             for row in iter:
                 revision_id = row[0]
 
@@ -311,7 +307,6 @@ def revision_create(ctx, resource, path, max_size, verbose):
             return False
 
     return revision_id
-
 
 
 @rule.make(inputs=range(2), outputs=range(2, 3))
