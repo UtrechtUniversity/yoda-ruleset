@@ -227,6 +227,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         collection_name = ''
 
     tm = Template(template)
+    tm.globals['custom_function'] = custom_function
     landing_page = tm.render(
         title=title,
         description=description,
@@ -255,3 +256,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         covered_geolocation_place=covered_geolocation_place)
 
     return landing_page
+
+
+def custom_function(a):
+    return "AAAAAAAAAAAA: " + a

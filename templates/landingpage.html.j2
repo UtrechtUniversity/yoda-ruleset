@@ -44,7 +44,7 @@
             <div class="creators">
                 <div class="row">
                     <div class="col-sm-12">
-                        {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ creator.Name.Given_Name }} {{ "&" if not loop.last }} {% endfor %}
+                        {% for creator in creators %} {{ creator.Name.Family_Name }}, {{ custom_function(creator.Name.Given_Name) }} {{ "&" if not loop.last }} {% endfor %}
                     </div>
                 </div>
 
