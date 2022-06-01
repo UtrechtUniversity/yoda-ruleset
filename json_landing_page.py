@@ -9,6 +9,26 @@ import jinja2
 from util import *
 
 
+def custom_function(schema_id, identifier):
+    if identifier.upper().startswith('HTTPS://'):
+        return id
+
+    # Find the correct hyperlink
+    domain = ''
+    id = ''
+    if schema_id == 'ORCID':
+        domain = 'https://orcid.org/'
+        id = identifier
+    elif schema_id == 'DOI':
+        domain = 'https://doi.org/'
+        id = identifier  # 10.1234/ABC
+    else:
+        domain = 'https://' + schema_id + '.org/' 
+        id = identifier
+
+    return domain + id
+
+
 def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
     """Get the landing page of published YoDa metadata as a string.
 
@@ -256,7 +276,3 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         covered_geolocation_place=covered_geolocation_place)
 
     return landing_page
-
-
-def custom_function(a):
-    return "AAAAAAAAAAAA: " + a
