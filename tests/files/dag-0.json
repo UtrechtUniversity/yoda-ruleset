@@ -25,7 +25,10 @@
     "Data_Type": "Dataset",
     "Contributor": [
         {
-            "Name": {}
+            "Name": {
+                "Given_Name": "John",
+                "Family_Name": "Doe"
+            }
         }
     ],
     "Creator": [
