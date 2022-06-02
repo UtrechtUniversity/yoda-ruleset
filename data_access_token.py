@@ -27,7 +27,9 @@ def api_token_generate(ctx, label=None):
     :returns: Generated token or API error
     """
     def generate_token():
-        return secrets.token_urlsafe(config.token_length)
+        length = int(config.token_length)
+        token = secrets.token_urlsafe(length)
+        return data[:length]
 
     user_id = user.name(ctx)
     token = generate_token()
