@@ -8,20 +8,77 @@ import jinja2
 
 from util import *
 
+def orcid():
+    """ example of presentation of orcid - not used at the moment """
+
+    return ('<a href="https://orcid.org/0000-0001-5727-2427">'
+            '<img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />'
+            'https://orcid.org/0000-0001-2345-6789'
+            '</a>')
+
+def orcid_schema_id_to_identifier(identifier):
+    """ in case of ORCID -> return only the id part of, what could be, a complete uri that is passed as identifier """
+
+    if identifier.startswith('https://orcid.org'):
+        return identifier.split('/')[-1]  # final part contains the actual id
+    return identifier
+
 
 def schema_id_to_uri(schema_id, identifier):
-    if identifier.upper().startswith('HTTPS://'):
-        return id
+    """
+    DAG:
+    Creator / Contributor => ORCID not at the moment.
+    Related Data Package => URL, Handle en DOI
 
-    # Find the correct hyperlink
+    DEFAULT:
+    Namen tbv Creator/Contributor
+
+        "ORCID",
+        "DAI", URI-fied a DAI looks like this: info:eu-repo/dai/nl/123456785
+        "Author identifier (Scopus)", https://www.scopus.com/authid/detail.uri?authorId=
+        "ResearcherID (Web of Science)", https://www.researcherid.com/rid/$1
+        "ISNI", http://isni.org/isni/000000012146438X
+
+    Related datapackage:
+        "ARK",  https://nl.wikipedia.org/wiki/Archival_Resource_Key
+        "arXiv",
+        "bibcode",
+        "DOI",
+        "EAN13",
+        "EISSN",
+        "Handle",
+        "ISBN",
+        "ISSN",
+        "ISTC",
+        "LISSN",
+        "LSID",
+        "PMID",
+        "PURL",
+        "UPC",
+        "URL",
+        "URN"
+    """
+    # if not identifier:
+    #    return 'NO IDENTIFIER'
+
+    if identifier.upper().startswith('HTTPS://'):
+        return identifier
+
+    # Create a hyperlink from the raw schema information
     domain = ''
     id = ''
-    if schema_id == 'ORCID':
+    if schema_id == 'DOI':
+        domain = 'https://doi.org/'  # ff checken of identifier niet begint met /
+        id = identifier
+    elif schema_id == 'ORCID':
         domain = 'https://orcid.org/'
         id = identifier
-    elif schema_id == 'DOI':
-        domain = 'https://doi.org/'
-        id = identifier  # 10.1234/ABC
+    elif schema_id == 'Handle':
+        domain = 'https://hdl.handle.net/'
+        id = identifier
+    elif schema_id == 'URL':
+        domain = identifier
+        id = ''
     else:
         domain = 'https://' + schema_id + '.org/' 
         id = identifier
@@ -249,7 +306,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
     tm = Template(template)
     # tm.globals['custom_function'] = custom_function
     tm.globals['schema_id_to_uri'] = schema_id_to_uri
-    # schema_id_to_uri
+    tm.globals['orcid_schema_id_to_identifier'] = orcid_schema_id_to_identifier
     landing_page = tm.render(
         title=title,
         description=description,

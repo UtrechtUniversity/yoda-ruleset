@@ -363,7 +363,12 @@
                                 <span>
                                             {% for id in creator.Person_Identifier %}
                                                 <a href="{{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
-                                                {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                {% if id.Name_Identifier_Scheme == 'ORCID' %}
+                                                    <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                                                    {{ orcid_schema_id_to_identifier(id.Name_Identifier) }}
+                                                {% else %}
+                                                    {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                {% endif %}
                                                 </a>
                                                 {{ ", " if not loop.last }}
                                             {% endfor %}
@@ -409,7 +414,12 @@
                                 <span>
                                             {% for id in contributor.Person_Identifier %}
                                                 <a href="{{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
-                                                {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                {% if id.Name_Identifier_Scheme == 'ORCID' %}
+                                                    <img alt="ORCID logo" src="https://info.orcid.org/wp-content/uploads/2019/11/orcid_16x16.png" width="16" height="16" />
+                                                    {{ orcid_schema_id_to_identifier(id.Name_Identifier) }}
+                                                {% else %}
+                                                    {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                {% endif %}
                                                 </a>
                                                 {{ ", " if not loop.last }}
                                             {% endfor %}
