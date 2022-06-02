@@ -273,8 +273,8 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
-                                <a href="{{ custom_function(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}" target="_blank">
-                                  {{ custom_function(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}
+                                <a href="{{ schema_id_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}" target="_blank">
+                                  {{ schema_id_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}
                                 </a>
                                 </span>
                             </div>
@@ -329,8 +329,8 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
-                                <a href="{{ custom_function(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
-                                  {{ custom_function(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
+                                <a href="{{ schema_id_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
+                                  {{ schema_id_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
                                 </a>
                                 </span>
                             </div>
@@ -362,8 +362,8 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in creator.Person_Identifier %}
-                                                <a href="{{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
-                                                {{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                <a href="{{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
+                                                {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
                                                 </a>
                                                 {{ ", " if not loop.last }}
                                             {% endfor %}
@@ -408,8 +408,8 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contributor.Person_Identifier %}
-                                                <a href="{{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
-                                                {{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                <a href="{{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
+                                                {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
                                                 </a>
                                                 {{ ", " if not loop.last }}
                                             {% endfor %}
@@ -471,8 +471,8 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contact.Person_Identifier %}
-                                                <a href="{{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
-                                                {{ custom_function(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                <a href="{{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
+                                                {{ schema_id_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
                                                 </a>
                                                 {{ ", " if not loop.last }}
                                             {% endfor %}

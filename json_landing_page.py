@@ -9,7 +9,7 @@ import jinja2
 from util import *
 
 
-def custom_function(schema_id, identifier):
+def schema_id_to_uri(schema_id, identifier):
     if identifier.upper().startswith('HTTPS://'):
         return id
 
@@ -247,7 +247,9 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         collection_name = ''
 
     tm = Template(template)
-    tm.globals['custom_function'] = custom_function
+    # tm.globals['custom_function'] = custom_function
+    tm.globals['schema_id_to_uri'] = schema_id_to_uri
+    # schema_id_to_uri
     landing_page = tm.render(
         title=title,
         description=description,
