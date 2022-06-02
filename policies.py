@@ -459,6 +459,10 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     # No restrictions for rodsadmin and priv group.
     if user.is_admin(ctx, actor):
         return policy.succeed()
+
+    if config.enable_tape_archive and cmd in ['dmattr', 'dmget']:
+        return policy.succeed()
+
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
         return policy.succeed()
 
