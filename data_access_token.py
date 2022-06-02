@@ -29,7 +29,7 @@ def api_token_generate(ctx, label=None):
     def generate_token():
         length = int(config.token_length)
         token = secrets.token_urlsafe(length)
-        return data[:length]
+        return token[:length]
 
     user_id = user.name(ctx)
     token = generate_token()
