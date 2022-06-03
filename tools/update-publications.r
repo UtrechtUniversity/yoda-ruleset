@@ -17,10 +17,10 @@ updatePublications() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-                *status = ''
-                *statusInfo = '';
-                rule_update_publication(*collName, *status, *statusInfo);
-                writeLine("stdout", "*collName: *status *statusInfo");
+                            *status = ''
+                            *statusInfo = '';
+                            rule_update_publication(*collName, *updateDatacite, *updateLandingpage, *updateMOAI, *status, *statusInfo);
+                            writeLine("stdout", "*collName: *status *statusInfo");
 			}
 		}
 
@@ -32,5 +32,5 @@ updatePublications() {
 	msiCloseGenQuery(*GenQ2Inp, *GenQ2Out);
     writeLine("stdout", "[UPDATE PUBLICATIONS] Finished scan");
 }
-input null
+input *updateDatacite="Yes", *updateLandingpage="Yes", *updateMOAI="Yes"
 output ruleExecOut
