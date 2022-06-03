@@ -1036,10 +1036,10 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
     :return: "OK" if all went ok
     """
     log.write(ctx, "UPDATE PUBLICATION: datacite={} landingpage={} moai={}".format(update_datacite, update_landingpage, update_moai))
-    return update_publication(ctx, vault_package, update_datacite=='Yes', update_landingpage=='Yes', update_moai=='Yes')
+    return update_publication(ctx, vault_package, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
 
 
-def update_publication(ctx, vault_package, update_datacite = True, update_landingpage = True, update_moai = True):
+def update_publication(ctx, vault_package, update_datacite=True, update_landingpage=True, update_moai=True):
     """Routine to update a publication with sanity checks at every step."""
     publication_state = {}
 
