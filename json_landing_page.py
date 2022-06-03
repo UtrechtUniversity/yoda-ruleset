@@ -1,12 +1,43 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
 
 from util import *
+
+
+def persistent_identifier_to_uri(identifier_scheme, identifier):
+    """
+    Transform a persistent identifier to URI.
+
+    Supported identifier schemes are Handle, DOI, ORCID and URL.
+
+    :param identifier_scheme: Schema of identifier to transform
+    :param identifier:        Identifier to transform to URI
+
+    :returns: URI of persistent identifier
+    """
+    # Identifier already is an URI.
+    if identifier.lower().startswith('https://') or identifier.lower().startswith('http://'):
+        return identifier
+
+    # Create a URI from the identifier scheme and identifier.
+    uri = ""
+    if identifier_scheme == 'DOI':
+        uri = "https://doi.org/{}".format(identifier)
+    elif identifier_scheme == 'ORCID':
+        uri = "https://orcid.org/{}".format(identifier)
+    elif identifier_scheme == 'Handle':
+        uri = "https://hdl.handle.net/{}".format(identifier)
+    elif identifier_scheme == 'URL':
+        uri = identifier
+    else:
+        uri = "#{}".format(identifier)
+
+    return uri
 
 
 def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
@@ -227,6 +258,8 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
         collection_name = ''
 
     tm = Template(template)
+    # tm.globals['custom_function'] = custom_function
+    tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
     landing_page = tm.render(
         title=title,
         description=description,
