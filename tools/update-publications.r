@@ -17,10 +17,10 @@ updatePublications() {
 
 			# Check if this really is a vault package
 			if (*collName like regex "/[^/]+/home/vault-.*") {
-                            *status = ''
-                            *statusInfo = '';
-                            rule_update_publication(*collName, *updateDatacite, *updateLandingpage, *updateMOAI, *status, *statusInfo);
-                            writeLine("stdout", "*collName: *status *statusInfo");
+			    *status = ''
+			    *statusInfo = '';
+			    rule_update_publication(*collName, *updateDatacite, *updateLandingpage, *updateMOAI, *status, *statusInfo);
+			    writeLine("stdout", "*collName: *status *statusInfo");
 			}
 		}
 
