@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -1029,21 +1029,29 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
 
     :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
-    :update_datacite:     Flag that indicates updating datacite
-    :update_landingpage:  Flag that indicates updating landingpage
-    :update_moai:         Flag that indicates updating moai
+    :param update_datacite:     Flag that indicates updating DataCite
+    :param update_landingpage:  Flag that indicates updating landingpage
+    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
 
-    :return: "OK" if all went ok
+    :returns: "OK" if all went ok
     """
-    log.write(ctx, "UPDATE PUBLICATION: datacite={} landingpage={} moai={}".format(update_datacite, update_landingpage, update_moai))
     return update_publication(ctx, vault_package, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
 
 
-def update_publication(ctx, vault_package, update_datacite=True, update_landingpage=True, update_moai=True):
-    """Routine to update a publication with sanity checks at every step."""
+def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
+    """Routine to update a publication with sanity checks at every step.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+    :param update_datacite:     Flag that indicates updating DataCite
+    :param update_landingpage:  Flag that indicates updating landingpage
+    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+
+    :returns: "OK" if all went ok
+    """
     publication_state = {}
 
-    log.write(ctx, "update_publication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':

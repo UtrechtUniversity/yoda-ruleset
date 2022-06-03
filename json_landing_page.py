@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for transforming JSON to landingpage HTML."""
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import jinja2
@@ -9,74 +9,35 @@ import jinja2
 from util import *
 
 
-def orcid_schema_id_to_identifier(identifier):
-    """ in case of ORCID -> return only the id part of, what could be, a complete uri that is passed as identifier """
-
-    if identifier.startswith('https://orcid.org'):
-        return identifier.split('/')[-1]  # final part contains the actual id
-    return identifier
-
-
-def schema_id_to_uri(schema_id, identifier):
+def persistent_identifier_to_uri(identifier_scheme, identifier):
     """
-    DAG:
-    Creator / Contributor => ORCID not at the moment.
-    Related Data Package => URL, Handle en DOI
+    Transform a persistent identifier to URI.
 
-    DEFAULT:
-    Namen tbv Creator/Contributor
+    Supported identifier schemes are Handle, DOI, ORCID and URL.
 
-        "ORCID",
-        "DAI", URI-fied a DAI looks like this: info:eu-repo/dai/nl/123456785
-        "Author identifier (Scopus)", https://www.scopus.com/authid/detail.uri?authorId=
-        "ResearcherID (Web of Science)", https://www.researcherid.com/rid/$1
-        "ISNI", http://isni.org/isni/000000012146438X
+    :param identifier_scheme: Schema of identifier to transform
+    :param identifier:        Identifier to transform to URI
 
-    Related datapackage:
-        "ARK",  https://nl.wikipedia.org/wiki/Archival_Resource_Key
-        "arXiv",
-        "bibcode",
-        "DOI",
-        "EAN13",
-        "EISSN",
-        "Handle",
-        "ISBN",
-        "ISSN",
-        "ISTC",
-        "LISSN",
-        "LSID",
-        "PMID",
-        "PURL",
-        "UPC",
-        "URL",
-        "URN"
+    :returns: URI of persistent identifier
     """
-    # if not identifier:
-    #    return 'NO IDENTIFIER'
-
-    if identifier.upper().startswith('HTTPS://'):
+    # Identifier already is an URI.
+    if identifier.lower().startswith('https://') or identifier.lower().startswith('http://'):
         return identifier
 
-    # Create a hyperlink from the raw schema information
-    domain = ''
-    id = ''
-    if schema_id == 'DOI':
-        domain = 'https://doi.org/'  # ff checken of identifier niet begint met /
-        id = identifier
-    elif schema_id == 'ORCID':
-        domain = 'https://orcid.org/'
-        id = identifier
-    elif schema_id == 'Handle':
-        domain = 'https://hdl.handle.net/'
-        id = identifier
-    elif schema_id == 'URL':
-        domain = identifier
-        id = ''
+    # Create a URI from the identifier scheme and identifier.
+    uri = ""
+    if identifier_scheme == 'DOI':
+        uri = "https://doi.org/{}".format(identifier)
+    elif identifier_scheme == 'ORCID':
+        uri = "https://orcid.org/{}".format(identifier)
+    elif identifier_scheme == 'Handle':
+        uri = "https://hdl.handle.net/{}".format(identifier)
+    elif identifier_scheme == 'URL':
+        uri = identifier
     else:
-        domain = 'https://' + schema_id + '.org/'
-        id = identifier
+        uri = "#{}".format(identifier)
 
-    return domain + id
+    return uri
 
 
 def json_landing_page_create_json_landing_page(callback, rodsZone, template_name, combiJsonPath, json_schema):
@@ -298,8 +259,7 @@ def json_landing_page_create_json_landing_page(callback, rodsZone, template_name
 
     tm = Template(template)
     # tm.globals['custom_function'] = custom_function
-    tm.globals['schema_id_to_uri'] = schema_id_to_uri
-    tm.globals['orcid_schema_id_to_identifier'] = orcid_schema_id_to_identifier
+    tm.globals['persistent_identifier_to_uri'] = persistent_identifier_to_uri
     landing_page = tm.render(
         title=title,
         description=description,
