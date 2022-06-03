@@ -144,12 +144,12 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
 # \param[in] dmfs Current DMF state of data object.
 #
 dmget(*data, *dmfs) {
-    if (*dmfs not like "DUL" && *dmfs not like "REG" && *dmfs not like "UNM" && *dmfs not like "MIG") {
+    #if (*dmfs not like "DUL" && *dmfs not like "REG" && *dmfs not like "UNM" && *dmfs not like "MIG") {
         *hostAddress = ARCHIVERESOURCEHOST;
         msiExecCmd("dmget", *data, *hostAddress, "", "", *dmRes);
         msiGetStdoutInExecCmdOut(*dmRes, *dmStat);
         writeLine("serverLog", "DEBUG: $userNameClient:$clientAddr - Archive dmget started: *data. Returned Status - *dmStat.");
-    }
+    #}
 }
 
 
@@ -176,7 +176,8 @@ dmattr(*data, *dmfs) {
 # \param[in] time  UNIX timestamp.
 # \param[in] state Current DMF state of data object.
 #
-uuTapeArchiveSetState(*path, *timestamp, *state) {
-    *argv = " *path *timestamp *state";
-    msiExecCmd("admin-tape-archive-set-state.sh", *argv, "", "", 0, *out);
+uuTapeArchiveSetState(*path, *physical_path, *timestamp) {
+    *hostAddress = ARCHIVERESOURCEHOST;
+    *argv = " *path *physical_path *timestamp";
+    msiExecCmd("admin-tape-archive-set-state.sh", *argv, *hostAddress, "", 0, *out);
 }
