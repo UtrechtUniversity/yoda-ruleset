@@ -61,7 +61,8 @@
           "ui:help": "Type of Persistent identifier of the related resource"
         },
         "Identifier": {
-          "ui:help": "The identifier as it can be resolved on the appropriate service"
+          "ui:help": "The identifier as it can be resolved on the appropriate service",
+          "ui:placeholder": "https://"
         }
       }
     }
