@@ -14,17 +14,15 @@ Feature: Deposit UI
     Given data file is uploaded to deposit
     And "<data_access_restriction>" metadata is uploaded
 
-    When user clicks on document data button
-    Then document data step is shown
+    When user clicks on add metadata button
+    Then add metadata step is shown
 
-    And module "deposit" is shown
-    When user clicks on deposit containing "<data_access_restriction>" in title
-
-    When user clicks on document data button
-    Then document data step is shown
+    When module "deposit" is shown
+    And user clicks on deposit containing "<data_access_restriction>" in title
+    And user clicks on add metadata button
+    Then add metadata step is shown
 
     When user goes to submission page
-    And user accepts terms
     And user submits data
     And submission is confirmed
 

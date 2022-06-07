@@ -14,3 +14,4 @@ lxml==4.6.5
 requests_cache==0.5.2
 irods-avu-json==2.2.0
 python2-secrets==1.0.5
+python-dateutil==2.7.0

@@ -124,11 +124,6 @@ def ui_deposit_to_submission_page(browser):
     browser.find_by_css('button.btn.btn-primary.float-end', wait_time=10).click()
 
 
-@when('user accepts terms')
-def ui_deposit_accept_terms(browser):
-    browser.find_by_id('accept_terms', wait_time=5)[0].click()
-
-
 @when('user submits data')
 def ui_deposit_dp_submission(browser):
     browser.find_by_css('.btn-submit-data')[0].click()
@@ -151,9 +146,9 @@ def ui_deposit_click_active(browser):
     browser.links.find_by_partial_text('[No title]')[0].click()
 
 
-@when('user clicks on document data button')
+@when('user clicks on add metadata button')
 def ui_deposit_click_document(browser):
-    browser.links.find_by_partial_text('Document data').click()
+    browser.links.find_by_partial_text('Add metadata').click()
 
 
 @then('new deposit is created')
@@ -167,6 +162,6 @@ def ui_deposit_upload_data_shown(browser):
     assert browser.is_text_present("Upload data")
 
 
-@then('document data step is shown')
+@then('add metadata step is shown')
 def ui_deposit_document_data(browser):
-    assert browser.is_text_present("Upload data")
+    assert browser.is_text_present("Add metadata")

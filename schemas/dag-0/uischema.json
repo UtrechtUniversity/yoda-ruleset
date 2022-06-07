@@ -16,7 +16,7 @@
     "ui:help": "Specify the research group responsible for the data package"
   },
   "Collection_Name": {
-    "ui:help": "Identification of the Program or Project responsible for collecting the data"
+    "ui:help": "Identification of the project in which data has been collected. Use https://dag.sites.uu.nl/projects to find the correct project name"
   },
   "Data_Type": {
     "ui:help": "What is the type of your data",
@@ -61,7 +61,8 @@
           "ui:help": "Type of Persistent identifier of the related resource"
         },
         "Identifier": {
-          "ui:help": "The identifier as it can be resolved on the appropriate service"
+          "ui:help": "The identifier as it can be resolved on the appropriate service",
+          "ui:placeholder": "https://"
         }
       }
     }
@@ -69,7 +70,7 @@
   "Personal_Data": {
     "ui:help": "Indicate whether the data package contains personal information"
   },
-  "End_Preservation": {
+  "Retention_Period": {
     "ui:help": "The minimum number of years that the data must be kept"
   },
   "Data_Access_Restriction": {
@@ -85,6 +86,10 @@
         "Family_Name": {
           "ui:help": "The surname or last name of the person(s) performing the deposit"
         }
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite",
+        "ui:widget": "hidden"
       }
     }
   },

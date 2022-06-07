@@ -11,11 +11,13 @@ from datetime import datetime
 
 import genquery
 import irods_types
+from dateutil import relativedelta
 
 import folder
 import group
 import meta
 import meta_form
+import notifications
 import policies_datamanager
 import policies_datapackage_status
 from util import *
@@ -37,7 +39,101 @@ __all__ = ['api_vault_submit',
            'api_vault_get_publication_terms',
            'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
-           'api_revoke_read_access_research_group']
+           'api_revoke_read_access_research_group',
+           'rule_process_ending_retention_packages']
+
+
+@rule.make()
+def rule_process_ending_retention_packages(ctx):
+    """Rule interface for checking vault packages for ending retention.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "[RETENTION] Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, '[RETENTION] Checking Vault packages for ending retention')
+
+    zone = user.zone(ctx)
+    errors = 0
+    dp_notify_count = 0
+
+    # Retrieve all data packages in this vault.
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME not like '%/original'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        dp_coll = row[0]
+        meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
+
+        # Try to load the metadata file.
+        try:
+            metadata = jsonutil.read(ctx, meta_path)
+            current_schema_id = meta.metadata_get_schema_id(metadata)
+            if current_schema_id is None:
+                log.write(ctx, '[RETENTION] Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
+                errors += 1
+                continue
+        except jsonutil.ParseError:
+            log.write(ctx, '[RETENTION] JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
+            errors += 1
+            continue
+        except msi.Error as e:
+            log.write(ctx, '[RETENTION] The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
+            errors += 1
+            continue
+
+        # Get deposit date and end preservation date based upon retention period.
+        iter2 = genquery.row_iterator(
+            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            # row2 contains json encoded [str(int(time.time())), action, actor]
+            log_item_list = jsonutil.parse(row2[1])
+            if log_item_list[1] == "submitted for vault":
+                deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+                date_deposit = deposit_timestamp.date()
+                break
+
+        try:
+            retention = int(metadata['Retention_Period'])
+        except KeyError:
+            log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
+            continue
+
+        try:
+            date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
+        except ValueError:
+            log.write(ctx, '[RETENTION] Could not determine retention end date. Retention period: <{}>'.format(retention))
+            continue
+
+        r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
+        formatted_date = date_end_retention.strftime('%Y-%m-%d')
+
+        log.write(ctx, '[RETENTION] Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
+        if r.years == 0 and r.months <= 1:
+            group_name = folder.collection_group_name(ctx, dp_coll)
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
+
+            if group.exists(ctx, datamanager_group_name):
+                dp_notify_count += 1
+                # Send notifications to datamanager(s).
+                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                message = "Data package reaching end of preservation date: {}".format(formatted_date)
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    actor = 'system'
+                    notifications.set(ctx, actor, datamanager, dp_coll, message)
+                log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
+
+    log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
 
 
 @api.make()
@@ -1041,54 +1137,29 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
             log.write(ctx, "depublication request - User is no rodsadmin")
             return ['PermissionDenied', 'Insufficient permissions - Vault status transition to published can only be requested by a rodsadmin.']
 
-    # Determine vault group and actor
-    # Find group
-    coll_parts = coll.split('/')
-    vault_group_name = coll_parts[3]
-
-    group_type = coll_parts[4].split('-')[0]
-
-    group_parts = vault_group_name.split('-')
-    # create the research equivalent in order to get the category
-    group_name = group_type + '-' + '-'.join(group_parts[1:])
-
-    # Find category
-    category = group.get_category(ctx, group_name)
-
     zone = user.zone(ctx)
     coll_parts = coll.split('/')
     vault_group_name = coll_parts[3]
 
-    # User/actor specific stuff
+    # Find actor and actor group.
     actor = user.full_name(ctx)
-
     actor_group = folder.collection_group_name(ctx, coll)
     if actor_group == '':
         log.write(ctx, "Cannot determine which research group " + coll + " belongs to")
         return ['1', '']
-
-    is_datamanager = meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']
-
     actor_group_path = '/' + zone + '/home/'
+
+    # Check if user is datamanager.
+    category = meta_form.group_category(ctx, vault_group_name)
+    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
     # Status UNPUBLISHED can be called by researcher and datamanager.
-    # HIER NOG FF NAAR KIJKEN
     if not is_datamanager:
         if new_vault_status in [constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, constants.vault_package_state.UNPUBLISHED]:
             actor_group_path = '/' + zone + '/home/' + actor_group
     else:
         actor_group_path = '/' + zone + '/home/datamanager-' + category
-
-#        if (*newVaultStatus == SUBMITTED_FOR_PUBLICATION && !*isDatamanager) {
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        # Status UNPUBLISHED can be called by researcher and datamanager.
-#        } else  if (*newVaultStatus == UNPUBLISHED && !*isDatamanager) {
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        } else  if (*isDatamanager) {
-#                iiDatamanagerGroupFromVaultGroup(*vaultGroup, *actorGroup);
-#                *actorGroupPath = "/*rodsZone/home/*actorGroup";
-#        }
 
     # Retrieve collection id.
     coll_id = collection.id_from_name(ctx, coll)
