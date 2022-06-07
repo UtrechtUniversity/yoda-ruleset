@@ -1,8 +1,8 @@
 Feature: Vault UI
 
     Examples:
-        | vault             |
-        | research-initial1 |
+        | vault          |
+        | vault-initial1 |
 
     Scenario: Vault submit
         Given user "researcher" is logged in
@@ -146,7 +146,7 @@ Feature: Vault UI
         Then open datapackage details are visible
         When user clicks for map details
         Then map is shown
-        When user clicks to copy reference 
+        When user clicks to copy reference
         Then reference confirmation is shown
         When user clicks for data access
         Then vault browser is shown
