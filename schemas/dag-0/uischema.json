@@ -23,7 +23,7 @@
     "ui:widget": "hidden"
   },
   "Data_Classification": {
-    "ui:help": "How is your data classified with regards to information security policy"
+    "ui:help": "How is your data classified with regard to information security policy"
   },
   "Collected": {
     "Start_Date": {
