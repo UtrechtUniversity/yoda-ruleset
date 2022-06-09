@@ -14,6 +14,7 @@ import policies_datapackage_status
 import policies_datarequest_status
 import policies_folder_status
 import policies_intake
+import replication
 from util import *
 
 
@@ -503,7 +504,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     info = pathutil.info(path)
 
     if config.resource_replica:
-        ctx.uuReplicateAsynchronously(path, instance_name, config.resource_replica)
+        replication.replicate_asynchronously(ctx, path, instance_name, config.resource_replica)
 
     if config.enable_tape_archive:
         ctx.uuTapeArchiveReplicateAsynchronously(path)
