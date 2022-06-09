@@ -14,6 +14,7 @@ import policies_datapackage_status
 import policies_datarequest_status
 import policies_folder_status
 import policies_intake
+import revisions
 from util import *
 
 
@@ -534,7 +535,8 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
         # Log errors, but continue with revisions.
         log.write(ctx, 'rule_meta_modified_post failed: ' + str(e))
 
-    ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
+    # ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
+    revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
 
 
 @rule.make()
