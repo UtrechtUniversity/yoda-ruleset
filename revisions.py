@@ -18,8 +18,234 @@ from util import *
 __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
-           'rule_revisions_clean_up',
-           'rule_revision_batch']
+           'rule_revision_batch',
+           'rule_revisions_clean_up']
+
+
+@api.make()
+def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
+    """Search revisions of a file in a research folder and return list of corresponding revisions.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param searchString: String to search for as part of a file name
+    :param offset:       Starting point in total resultset to start fetching
+    :param limit:        Max size of the resultset to be returned
+
+    :returns: Paginated revision search result
+    """
+    zone = user.zone(ctx)
+
+    revisions = []
+    dict_org_paths = {}
+    multiple_counted = 0
+
+    # Return nothing if search string is empty.
+    if len(searchString) == 0:
+        return {'total': 0,
+                'items': revisions}
+
+    originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
+    startpath = '/' + zone + constants.UUREVISIONCOLLECTION
+
+    qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
+                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                           "AND COLL_NAME like '" + startpath + "%' ",
+                           offset=offset, limit=limit, output=genquery.AS_DICT)
+
+    # step through results and enrich with wanted data
+    for rev in list(qdata):
+        rev_data = {}
+        rev_data['main_revision_coll'] = rev['COLL_NAME']
+        rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
+
+        # Situations in which a data_object including its parent folder is removed.
+        # And after a while gets reintroduced
+
+        # Hier de daadwerkelijke revisies ophalen
+        # Dit bepaalt het TOTAL REVISIONS
+        iter = genquery.row_iterator(
+            "DATA_ID",
+            "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
+            "AND META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+            "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
+            genquery.AS_DICT, ctx)
+
+        for row in iter:
+            # based on data id get original_coll_name
+            iter2 = genquery.row_iterator(
+                "META_DATA_ATTR_VALUE",
+                "DATA_ID = '" + row['DATA_ID'] + "' "
+                "AND META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "' ",
+                genquery.AS_DICT, ctx)
+            for row2 in iter2:
+                rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
+
+            rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
+            rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
+
+            # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
+            try:
+                # This is a double entry and has to be corrected in the total returned to the frontend
+                detail = dict_org_paths[rev_data['original_coll_name']]
+                total = detail[0] + 1
+                dict_org_paths[rev_data['original_coll_name']] = [total, detail[1], detail[2]]
+                # Increment correction as the main total is based on the first query.
+                # This however can have multiple entries which require correction
+                multiple_counted += 1
+            except KeyError:
+                # [count, collect-exists, data-name]
+                dict_org_paths[rev_data['original_coll_name']] = [1, rev_data['collection_exists'], rev['META_DATA_ATTR_VALUE']]
+
+    # Create a list from collected data in dict_org_paths.
+    for key, value in dict_org_paths.items():
+        revisions.append({'main_original_dataname': value[2],
+                          'collection_exists': value[1],
+                          'original_coll_name': key,
+                          'revision_count': value[0]})
+
+    # Alas an extra genquery.Query is required to get the total number of rows
+    qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
+                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
+                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                                "AND COLL_NAME like '" + startpath + "%' ",
+                                offset=0, limit=None, output=genquery.AS_DICT)
+
+    # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
+    return {'total': qtotalrows.total_rows() - multiple_counted,
+            'items': revisions}
+
+
+@api.make()
+def api_revisions_list(ctx, path):
+    """Get list revisions of a file in a research folder.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to data object to find revisions for
+
+    :returns: List revisions of a file in a research folder
+    """
+    originalPathKey = ''
+    startpath = ''
+
+    zone = user.zone(ctx)
+
+    revisions = []
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+    startpath = '/' + zone + constants.UUREVISIONCOLLECTION
+
+    iter = genquery.row_iterator(
+        "DATA_ID, COLL_NAME, order(DATA_NAME)",
+        "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+        "AND META_DATA_ATTR_VALUE = '" + path + "' "
+        "AND COLL_NAME like '" + startpath + "%' ",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        iter2 = genquery.row_iterator(
+            "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE ",
+            "DATA_ID = '" + row[0] + "' ",
+            genquery.AS_LIST, ctx
+        )
+
+        meta_data = {"data_id": row[0]}
+        for row2 in iter2:
+            meta_data[row2[0]] = row2[1]
+
+        meta_data["dezoned_coll_name"] = '/' + '/'.join(meta_data["org_original_coll_name"].split(os.path.sep)[3:])
+
+        meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
+                                                              time.localtime(int(meta_data["org_original_modify_time"])))
+
+        revisions.append(meta_data)
+
+    return {"revisions": revisions}
+
+
+@api.make()
+def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename):
+    """Copy selected revision to target collection with given name.
+
+    :param ctx:          Combined type of a callback and rei struct
+    :param revision_id:  Data id of the revision to be restored
+    :param overwrite:    Overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
+    :param coll_target:  Target collection to place the file
+    :param new_filename: New file name as entered by user (in case of duplicate)
+
+    :returns: API status
+    """
+    # New file name should not contain '\\' or '/'
+    if '/' in new_filename or '\\' in new_filename:
+        return api.Error('invalid_filename', 'It is not allowed to use slashes in a filename')
+
+    target_group_name = coll_target.split('/')[3]
+    if target_group_name.startswith('vault-'):
+        return api.Error('not_allowed', 'It is not allowed to store file in the vault')
+
+    # Check existence of target_coll
+    if not collection.exists(ctx, coll_target):
+        return api.Error('invalid_target', 'The target collection does not exist or is not accessible for you')
+
+    user_full_name = user.full_name(ctx)
+
+    # Target collection write access?
+    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+        return api.Error('not_allowed', 'You are not allowed to write in the selected collection')
+
+    # Target_coll locked?
+    if folder.is_locked(ctx, coll_target):
+        return api.Error('not_allowed', 'The target collection is locked and therefore this revision cannot be written to the indicated collection')
+
+    # Read access in org collection?
+    # Find actual revision inf on revision_id
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+    original_path   = ''
+    source_path     = ''
+    coll_origin     = ''
+    filename_origin = ''
+    iter = genquery.row_iterator(
+        "DATA_NAME, COLL_NAME, META_DATA_ATTR_VALUE",
+        "DATA_ID = '" + revision_id + "' "
+        " AND META_DATA_ATTR_NAME = '" + originalPathKey + "' ",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        coll_origin = row[1]
+        filename_origin = row[0]
+        original_path = row[2]
+
+    origin_group_name = original_path.split('/')[3]
+
+    if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
+        return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
+
+    source_path = coll_origin + "/"  + filename_origin
+
+    if source_path == '':
+        return api.Error('invalid_revision', 'The indicated revision does not exist')
+
+    if overwrite in ["restore_no_overwrite", "restore_next_to"]:
+        if data_object.exists(ctx, coll_target + '/' + new_filename):
+            return api.Error('duplicate_file', 'The file is already present at the indicated location')
+
+    elif overwrite in ["restore_overwrite"]:
+        pass
+
+    else:
+        return api.Error('invalid_action', 'Unknown requested action: {}'.format(overwrite))
+
+    # Allowed to restore revision
+    # Start actual restoration of the revision
+    try:
+        # Workaround the PREP deadlock issue: Restrict threads to 1.
+        ofFlags = 'forceFlag=++++numThreads=1'
+        msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
+    except msi.Error as e:
+        return api.Error('copy_failed', 'The file could not be copied', str(e))
+
+    return api.Result.ok()
 
 
 def resource_modified_post_revision(ctx, resource, zone, path):
@@ -530,229 +756,3 @@ def calculate_end_of_calendar_day(ctx):
 
     # Convert tomorrow to unix timestamp.
     return int(tomorrow.strftime("%s"))
-
-
-@api.make()
-def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
-    """Search revisions of a file in a research folder and return list of corresponding revisions.
-
-    :param ctx:          Combined type of a callback and rei struct
-    :param searchString: String to search for as part of a file name
-    :param offset:       Starting point in total resultset to start fetching
-    :param limit:        Max size of the resultset to be returned
-
-    :returns: Paginated revision search result
-    """
-    zone = user.zone(ctx)
-
-    revisions = []
-    dict_org_paths = {}
-    multiple_counted = 0
-
-    # Return nothing if search string is empty.
-    if len(searchString) == 0:
-        return {'total': 0,
-                'items': revisions}
-
-    originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
-    startpath = '/' + zone + constants.UUREVISIONCOLLECTION
-
-    qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                           "AND COLL_NAME like '" + startpath + "%' ",
-                           offset=offset, limit=limit, output=genquery.AS_DICT)
-
-    # step through results and enrich with wanted data
-    for rev in list(qdata):
-        rev_data = {}
-        rev_data['main_revision_coll'] = rev['COLL_NAME']
-        rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
-
-        # Situations in which a data_object including its parent folder is removed.
-        # And after a while gets reintroduced
-
-        # Hier de daadwerkelijke revisies ophalen
-        # Dit bepaalt het TOTAL REVISIONS
-        iter = genquery.row_iterator(
-            "DATA_ID",
-            "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
-            "AND META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-            "AND META_DATA_ATTR_VALUE = '" + rev_data['main_original_dataname'] + "' ",  # *originalDataName
-            genquery.AS_DICT, ctx)
-
-        for row in iter:
-            # based on data id get original_coll_name
-            iter2 = genquery.row_iterator(
-                "META_DATA_ATTR_VALUE",
-                "DATA_ID = '" + row['DATA_ID'] + "' "
-                "AND META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "' ",
-                genquery.AS_DICT, ctx)
-            for row2 in iter2:
-                rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
-
-            rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
-            rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
-
-            # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
-            try:
-                # This is a double entry and has to be corrected in the total returned to the frontend
-                detail = dict_org_paths[rev_data['original_coll_name']]
-                total = detail[0] + 1
-                dict_org_paths[rev_data['original_coll_name']] = [total, detail[1], detail[2]]
-                # Increment correction as the main total is based on the first query.
-                # This however can have multiple entries which require correction
-                multiple_counted += 1
-            except KeyError:
-                # [count, collect-exists, data-name]
-                dict_org_paths[rev_data['original_coll_name']] = [1, rev_data['collection_exists'], rev['META_DATA_ATTR_VALUE']]
-
-    # Create a list from collected data in dict_org_paths.
-    for key, value in dict_org_paths.items():
-        revisions.append({'main_original_dataname': value[2],
-                          'collection_exists': value[1],
-                          'original_coll_name': key,
-                          'revision_count': value[0]})
-
-    # Alas an extra genquery.Query is required to get the total number of rows
-    qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                                "AND COLL_NAME like '" + startpath + "%' ",
-                                offset=0, limit=None, output=genquery.AS_DICT)
-
-    # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
-    return {'total': qtotalrows.total_rows() - multiple_counted,
-            'items': revisions}
-
-
-@api.make()
-def api_revisions_list(ctx, path):
-    """Get list revisions of a file in a research folder.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path to data object to find revisions for
-
-    :returns: List revisions of a file in a research folder
-    """
-    originalPathKey = ''
-    startpath = ''
-
-    zone = user.zone(ctx)
-
-    revisions = []
-    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
-    startpath = '/' + zone + constants.UUREVISIONCOLLECTION
-
-    iter = genquery.row_iterator(
-        "DATA_ID, COLL_NAME, order(DATA_NAME)",
-        "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
-        "AND META_DATA_ATTR_VALUE = '" + path + "' "
-        "AND COLL_NAME like '" + startpath + "%' ",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        iter2 = genquery.row_iterator(
-            "META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE ",
-            "DATA_ID = '" + row[0] + "' ",
-            genquery.AS_LIST, ctx
-        )
-
-        meta_data = {"data_id": row[0]}
-        for row2 in iter2:
-            meta_data[row2[0]] = row2[1]
-
-        meta_data["dezoned_coll_name"] = '/' + '/'.join(meta_data["org_original_coll_name"].split(os.path.sep)[3:])
-
-        meta_data["org_original_modify_time"] = time.strftime('%Y/%m/%d %H:%M:%S',
-                                                              time.localtime(int(meta_data["org_original_modify_time"])))
-
-        revisions.append(meta_data)
-
-    return {"revisions": revisions}
-
-
-@api.make()
-def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename):
-    """Copy selected revision to target collection with given name.
-
-    :param ctx:          Combined type of a callback and rei struct
-    :param revision_id:  Data id of the revision to be restored
-    :param overwrite:    Overwrite indication from front end {restore_no_overwrite, restore_overwrite, restore_next_to}
-    :param coll_target:  Target collection to place the file
-    :param new_filename: New file name as entered by user (in case of duplicate)
-
-    :returns: API status
-    """
-    # New file name should not contain '\\' or '/'
-    if '/' in new_filename or '\\' in new_filename:
-        return api.Error('invalid_filename', 'It is not allowed to use slashes in a filename')
-
-    target_group_name = coll_target.split('/')[3]
-    if target_group_name.startswith('vault-'):
-        return api.Error('not_allowed', 'It is not allowed to store file in the vault')
-
-    # Check existence of target_coll
-    if not collection.exists(ctx, coll_target):
-        return api.Error('invalid_target', 'The target collection does not exist or is not accessible for you')
-
-    user_full_name = user.full_name(ctx)
-
-    # Target collection write access?
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
-        return api.Error('not_allowed', 'You are not allowed to write in the selected collection')
-
-    # Target_coll locked?
-    if folder.is_locked(ctx, coll_target):
-        return api.Error('not_allowed', 'The target collection is locked and therefore this revision cannot be written to the indicated collection')
-
-    # Read access in org collection?
-    # Find actual revision inf on revision_id
-    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
-    original_path   = ''
-    source_path     = ''
-    coll_origin     = ''
-    filename_origin = ''
-    iter = genquery.row_iterator(
-        "DATA_NAME, COLL_NAME, META_DATA_ATTR_VALUE",
-        "DATA_ID = '" + revision_id + "' "
-        " AND META_DATA_ATTR_NAME = '" + originalPathKey + "' ",
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        coll_origin = row[1]
-        filename_origin = row[0]
-        original_path = row[2]
-
-    origin_group_name = original_path.split('/')[3]
-
-    if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
-        return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
-
-    source_path = coll_origin + "/"  + filename_origin
-
-    if source_path == '':
-        return api.Error('invalid_revision', 'The indicated revision does not exist')
-
-    if overwrite in ["restore_no_overwrite", "restore_next_to"]:
-        if data_object.exists(ctx, coll_target + '/' + new_filename):
-            return api.Error('duplicate_file', 'The file is already present at the indicated location')
-
-    elif overwrite in ["restore_overwrite"]:
-        pass
-
-    else:
-        return api.Error('invalid_action', 'Unknown requested action: {}'.format(overwrite))
-
-    # Allowed to restore revision
-    # Start actual restoration of the revision
-    try:
-        # Workaround the PREP deadlock issue: Restrict threads to 1.
-        ofFlags = 'forceFlag=++++numThreads=1'
-        msi.data_obj_copy(ctx, source_path, coll_target + '/' + new_filename, ofFlags, irods_types.BytesBuf())
-    except msi.Error as e:
-        return api.Error('copy_failed', 'The file could not be copied', str(e))
-
-    return api.Result.ok()
