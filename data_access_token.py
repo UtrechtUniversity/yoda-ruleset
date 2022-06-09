@@ -27,7 +27,9 @@ def api_token_generate(ctx, label=None):
     :returns: Generated token or API error
     """
     def generate_token():
-        return secrets.token_urlsafe(config.token_length)
+        length = int(config.token_length)
+        token = secrets.token_urlsafe(length)
+        return token[:length]
 
     user_id = user.name(ctx)
     token = generate_token()
@@ -40,7 +42,7 @@ def api_token_generate(ctx, label=None):
 
     try:
         with conn:
-            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             conn.execute('''INSERT INTO tokens VALUES (?, ?, ?, ?, ?)''', (user_id, label, token, gen_time, exp_time))
             result = token
     except sqlite3.IntegrityError:
@@ -70,7 +72,7 @@ def api_token_load(ctx):
 
     try:
         with conn:
-            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
                                     {"user_id": user_id, "now": datetime.now()}):
                 result.append({"label": row[0], "exp_time": row[1]})
@@ -100,7 +102,7 @@ def api_token_delete(ctx, label):
 
     try:
         with conn:
-            conn.execute("PRAGMA key='%s'" % (config.token_db_password))
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             conn.execute('''DELETE FROM tokens WHERE user = ? AND label = ?''', (user_id, label))
             result = api.Result.ok()
     except Exception:

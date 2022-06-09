@@ -15,6 +15,7 @@ import policies_datarequest_status
 import policies_folder_status
 import policies_intake
 import replication
+import revisions
 from util import *
 
 
@@ -460,6 +461,10 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     # No restrictions for rodsadmin and priv group.
     if user.is_admin(ctx, actor):
         return policy.succeed()
+
+    if config.enable_tape_archive and cmd in ['dmattr', 'dmget']:
+        return policy.succeed()
+
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
         return policy.succeed()
 
@@ -531,7 +536,8 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
         # Log errors, but continue with revisions.
         log.write(ctx, 'rule_meta_modified_post failed: ' + str(e))
 
-    ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
+    # ctx.uuResourceModifiedPostRevision(instance_name, zone, path)
+    revisions.resource_modified_post_revision(ctx, instance_name, zone, path)
 
 
 @rule.make()

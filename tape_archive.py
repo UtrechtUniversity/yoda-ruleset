@@ -11,11 +11,7 @@ import genquery
 
 from util import *
 
-__all__ = ['api_tape_archive_stage',
-           'api_tape_archive_state']
-
-DMGET = "/var/lib/irods/msiExecCmd_bin/dmget"
-DMATTR = "/var/lib/irods/msiExecCmd_bin/dmattr"
+__all__ = ['api_tape_archive_stage']
 
 TAPE_ARCHIVE_RESC = "testArchiveVault"
 
@@ -81,43 +77,16 @@ def api_tape_archive_stage(ctx, path):
         return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
 
     state = ""
-    timestamp = int(time())
-    ctx.dmattr(physical_path, state)
+    timestamp = str(int(time()))
 
-    if state != "INV":
-        ctx.uuTapeArchiveSetState(path, timestamp, state)
-    else:
+    try:
+        ctx.uuTapeArchiveSetState(path, physical_path, timestamp)
+    except Exception:
         return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
 
-    state = ""
-    ctx.dmattr(physical_path, state)
-
-    # if error is not None:
-    #     return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
+    try:
+        ctx.dmget(physical_path, state)
+    except Exception:
+        return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
 
     return api.Result.ok()
-
-
-@api.make()
-def api_tape_archive_state(ctx, path):
-    """Get the state of a file in the tape archive.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path to file in the tape archive
-
-    :returns: API status
-    """
-    physical_path = get_physical_path(ctx, path)
-
-    if physical_path is None:
-        return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
-
-    state = ""
-    timestamp = int(time())
-    ctx.dmattr(physical_path, state)
-
-    if state != "INV":
-        ctx.uuTapeArchiveSetState(path, timestamp, state)
-        return state
-    else:
-        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))

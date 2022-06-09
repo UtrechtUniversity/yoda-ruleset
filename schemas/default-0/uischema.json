@@ -72,7 +72,7 @@
     "ui:help": "If there is an embargo on the data package; when will it end?"
   },
   "Data_Classification": {
-    "ui:help": "How is your data classified with regards to information security policy"
+    "ui:help": "How is your data classified with regard to information security policy"
   },
   "Collection_Name": {
     "ui:help": "Collection this data package is a part of. E.g. Project Name"
