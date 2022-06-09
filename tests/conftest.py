@@ -48,6 +48,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
+    config.addinivalue_line("markers", "oidc: Run login OIDC tests")
 
     global portal_url
     portal_url = config.getoption("--url")
