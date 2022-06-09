@@ -53,10 +53,11 @@ def rule_revision_batch(ctx, verbose):
 
     :returns: String with status of the batch process
     """
-    log.write(ctx, 'REVISION BATCH STARTED')
+    log.write(ctx, '[revisons] Batch revision job is started')
     stopped = False
     zone = user.zone(ctx)
 
+    # Stop scheduled revision if stop flag is set. This could happen during batch processing
     iter = genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
@@ -67,10 +68,9 @@ def rule_revision_batch(ctx, verbose):
         break
 
     if stopped:
-        log.write(ctx, "Batch revision job is stopped")
-        return "return value after stopped batch"
+        log.write(ctx, "[revisons] Batch revision job is stopped")
+        return "Batch for revision creation has been stopped"
 
-    log.write(ctx, "Batch revision job started")
     count        = 0
     count_ok      = 0
     count_ignored = 0
@@ -95,7 +95,7 @@ def rule_revision_batch(ctx, verbose):
             genquery.AS_LIST, ctx
         )
         for row2 in iter2:
-            log.write(ctx, "Batch revision job is stopped")
+            log.write(ctx, "[revisons] Batch revision job is stopped")
             return "Batch for revision creation has been stopped"
 
         # Perform scheduled revision creation for one data object.
@@ -104,7 +104,7 @@ def rule_revision_batch(ctx, verbose):
         # size = row[2]  # For now nothing's done with size
 
         if print_verbose:
-            log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
+            log.write(ctx, "[revisons] Batch revision: creating revision for {} on resc {}".format(path, resc))
 
         id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
 
@@ -112,7 +112,7 @@ def rule_revision_batch(ctx, verbose):
         # rods should have been given own access via policy to allow AVU
         # changes.
         if print_verbose:
-            log.write(ctx, "Batch revision: removing AVU for {}".format(path))
+            log.write(ctx, "[revisons] Batch revision: removing AVU for {}".format(path))
 
         # try removing attr/resc meta data
         avu_deleted = False
@@ -131,11 +131,11 @@ def rule_revision_batch(ctx, verbose):
                 msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
                 avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
             except Exception:
-                log.write(ctx, "revision error: Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
+                log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
         # now back to the created revision
         if id:
-            log.write(ctx, "iiRevisionCreate: Revision created for {} ID={}".format(path, id))
+            log.write(ctx, "[revisons] Revision created for {} ID={}".format(path, id))
             count_ok += 1
             # Revision creation OK. Remove any existing error indication attribute.
             iter2 = genquery.row_iterator(
@@ -151,10 +151,10 @@ def rule_revision_batch(ctx, verbose):
                 break
         else:
             count_ignored += 1
-            log.write(ctx, "Scheduled revision creation of <{}> failed".format(path))
+            log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}> failed".format(path))
             avu.set_on_data(ctx, path, errorattr, "true")
 
-    log.write(ctx, "Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
+    log.write(ctx, "[revisons] Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
 
 
 def revision_create(ctx, resource, path, max_size, verbose):
@@ -188,11 +188,11 @@ def revision_create(ctx, resource, path, max_size, verbose):
         break
 
     if not found:
-        log.write(ctx, "DataObject was not found or path was collection")
+        log.write(ctx, "[revisons] Data object <{}> was not found or path was collection".format(path))
         return ""
 
     if int(data_size) > max_size:
-        log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
+        log.write(ctx, "[revisons] Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
 
     iter = genquery.row_iterator(
@@ -245,13 +245,13 @@ def revision_create(ctx, resource, path, max_size, verbose):
             try:
                 msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
             except error.UUError:
-                log.write(ctx, 'Failed to create staging area at <{}>'.format(rev_coll))
+                log.write(ctx, "[revisons] ERROR - Failed to create staging area at <{}>".format(rev_coll))
                 return ""
 
         rev_path = rev_coll + "/" + rev_filename
 
         if print_verbose:
-            log.write(ctx, "iiRevisionCreate: creating revision {} -> {}".format(path, rev_path))
+            log.write(ctx, "[revisons] Creating revision {} -> {}".format(path, rev_path))
 
         # actual copying to revision store
         try:
@@ -278,7 +278,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
-            log.write(ctx, 'The file could not be copied: {}'.format(str(e)))
+            log.write(ctx, '[revisons] ERROR - The file could not be copied: {}'.format(str(e)))
             return ''
 
     return revision_id
@@ -359,10 +359,10 @@ def revision_remove(ctx, revision_id):
             msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
             return True
         except msi.Error:
-            log.write(ctx, "revision_remove('" + revision_id + "'): Error when deleting.")
+            log.write(ctx, "[revisons] ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
             return False
 
-    log.write(ctx, "revision_remove('" + revision_id + "'): Revision ID not found or permission denied.")
+    log.write(ctx, "[revisons] ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
     return False
 
 
