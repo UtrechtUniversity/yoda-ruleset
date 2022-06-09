@@ -33,6 +33,7 @@ intake = False
 login_oidc = False
 run_all = False
 
+
 def pytest_addoption(parser):
     parser.addoption("--url", action="store", default="https://portal.yoda.test")
     parser.addoption("--password", action="store", default="test")
