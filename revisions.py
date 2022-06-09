@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for revision management."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import datetime
@@ -23,12 +23,13 @@ __all__ = ['api_revisions_restore',
 
 
 def resource_modified_post_revision(ctx, resource, zone, path):
-    """  Create revisions on file modifications.
+    """Create revisions on file modifications.
 
     This policy should trigger whenever a new file is added or modified
     in the workspace of a Research team. This should be done asynchronously.
     Triggered from instance specific rulesets.
 
+    :param ctx:           Combined type of a callback and rei struct
     :param resource:       The resource where the original is written to
     :param zone:           Zone where the original can be found
     :param path:           path of the original
@@ -43,11 +44,12 @@ def resource_modified_post_revision(ctx, resource, zone, path):
 
 @rule.make(inputs=range(1), outputs=range(1, 2))
 def rule_revision_batch(ctx, verbose):
-    """ Scheduled revision creation batch job.
+    """Scheduled revision creation batch job.
 
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 
-    :param verbose:      whether to log verbose messages for troubleshooting (1: yes, 0: no)
+    :param ctx:     Combined type of a callback and rei struct
+    :param verbose: Whether to log verbose messages for troubleshooting (1: yes, 0: no)
 
     :returns: String with status of the batch process
     """
@@ -156,14 +158,15 @@ def rule_revision_batch(ctx, verbose):
 
 
 def revision_create(ctx, resource, path, max_size, verbose):
-    """ Create a revision of a dataobject in a revision folder.
+    """Create a revision of a dataobject in a revision folder.
 
-    :param[in] resource		resource to retrieve original from
-    :param[in] path		path of data object to create a revision for
-    :param[in] max_size		max size of files in bytes
-    :param[in] verbose		whether to print messages for troubleshooting to log (1: yes, 0: no)
+    :param ctx:      Combined type of a callback and rei struct
+    :param resource: Resource to retrieve original from
+    :param path:     Path of data object to create a revision for
+    :param max_size: Max size of files in bytes
+    :param verbose:	 Whether to print messages for troubleshooting to log (1: yes, 0: no)
 
-    return revision_id		data object id of created revision
+    :returns: Data object ID of created revision
     """
     revision_id = ""
     print_verbose = verbose
@@ -459,9 +462,9 @@ def get_revision_list(ctx, path):
 def get_deletion_candidates(ctx, buckets, revisions, initial_upper_time_bound):
     """Get the candidates for deletion based on the active strategy case
 
-    :param ctx:                     Combined type of a callback and rei struct
-    :param buckets:                 List of buckets
-    :param revisions:               List of revisions
+    :param ctx:                      Combined type of a callback and rei struct
+    :param buckets:                  List of buckets
+    :param revisions:                List of revisions
     :param initial_upper_time_bound: Initial upper time bound for first bucket
 
     :returns: List of candidates for deletion based on the active strategy case
