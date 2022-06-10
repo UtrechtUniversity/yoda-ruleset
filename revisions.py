@@ -268,36 +268,30 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
 
 
-@rule.make(inputs=range(1), outputs=range(1, 2))
-def rule_revision_batch(ctx, verbose):
+@rule.make(inputs=range(4), outputs=range(4, 5))
+def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 
     :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting (1: yes, 0: no)
+    :param verbose: Whether to log verbose messages for troubleshooting ('True': yes, anything else: no)
+    :param data_id:        The start id to be searching from for new data objects
+    :param max_batch_size: Max amount of accumulated data sizes to be handled in one batch
+    :param delay:          The delay time before a new batch job is kicked off
 
     :returns: String with status of the batch process
     """
     log.write(ctx, '[revisons] Batch revision job is started')
-    stopped = False
     zone = user.zone(ctx)
 
     # Stop scheduled revision if stop flag is set. This could happen during batch processing
-    iter = genquery.row_iterator(
-        "DATA_ID",
-        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        stopped = True
-        break
-
-    if stopped:
-        log.write(ctx, "[revisons] Batch revision job is stopped")
+    if is_revision_blocked_by_admin(ctx, zone):
+        log.write(ctx, "[revisons] Batch revision job is stopped due to admin interference")
         return "Batch for revision creation has been stopped"
 
-    count        = 0
+    bucket        = 0 # holds the accumulated values of the individual datasizes
+    count         = 0
     count_ok      = 0
     count_ignored = 0
     print_verbose = (verbose == 1)
@@ -307,27 +301,22 @@ def rule_revision_batch(ctx, verbose):
 
     # get list of data objects scheduled for revision
     iter = genquery.row_iterator(
-        "COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = '" + attr + "'",
+        "ORDER(DATA_ID), COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
+        "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, data_id),
         genquery.AS_LIST, ctx
     )
     for row in iter:
         count += 1
 
         # Stop scheduled revision if stop flag is set. This could happen during batch processing
-        iter2 = genquery.row_iterator(
-            "DATA_ID",
-            "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            log.write(ctx, "[revisons] Batch revision job is stopped")
+        if is_revision_blocked_by_admin(ctx, zone):
+            log.write(ctx, "[revisons] Batch revision job is stopped due to admin interference")
             return "Batch for revision creation has been stopped"
 
         # Perform scheduled revision creation for one data object.
-        path = row[0] + "/" + row[1]
-        resc = row[3]
-        # size = row[2]  # For now nothing's done with size
+        path = row[1] + "/" + row[2]
+        resc = row[4]
+        size = row[3]  # For now nothing's done with size
 
         if print_verbose:
             log.write(ctx, "[revisons] Batch revision: creating revision for {} on resc {}".format(path, resc))
@@ -366,7 +355,7 @@ def rule_revision_batch(ctx, verbose):
             # Revision creation OK. Remove any existing error indication attribute.
             iter2 = genquery.row_iterator(
                 "DATA_NAME",
-                "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "'"
+                "COLL_NAME = '" + row[1] + "' AND DATA_NAME = '" + row[2] + "'"
                 " AND META_DATA_ATTR_NAME  = '" + errorattr + "' AND META_DATA_ATTR_VALUE = 'true'",
                 genquery.AS_LIST, ctx
             )
@@ -374,13 +363,43 @@ def rule_revision_batch(ctx, verbose):
                 # Only try to remove it if we know for sure it exists,
                 # otherwise we get useless errors in the log.
                 avu.rmw_from_data(ctx, path, errorattr, "%")
+                # all items removed in one go -> so break from this loop through each individual item
                 break
         else:
             count_ignored += 1
             log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}> failed".format(path))
             avu.set_on_data(ctx, path, errorattr, "true")
 
-    log.write(ctx, "[revisons] Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
+        # Determine new bucket size
+        bucket += size
+
+        # max_batch_size exceeded -> then stop current batch and kickoff the next one through a delayed rule
+        if bucket >= max_batch_size:
+            # Kickoff the next batch
+            log.write(ctx, "[revisions] Batch revision job partly finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
+
+            # Set off the next batch from correct starting point
+            data_id = int(row[0]) + 1
+            # ?? Dit moet nog de PYTHON variant worden
+            ctx.delayExec(
+                "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
+                "rule_revision_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, max_batch_size, delay),
+                "")
+            # break out of the iteration as max_batch_size has been exceeded
+            return '[replication] New batch initiated'
+
+    # Total revision process completed
+    log.write(ctx, "[revisions] Batch revision job partly finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
+
+
+def is_revision_blocked_by_admin(ctx, zone):
+    """ Admin can put the revision process on a hold by adding a file called 'stop_revisions' in collection /yoda/flags """
+    iter = genquery.row_iterator(
+        "DATA_ID",
+        "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
+        genquery.AS_LIST, ctx
+    )
+    return (len(iter)>0)
 
 
 def revision_create(ctx, resource, path, max_size, verbose):
