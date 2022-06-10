@@ -63,8 +63,8 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     for row in iter:
         # Stop further execution if admin has blocked replication process
         if is_replication_blocked_by_admin(ctx, zone):
-            log.write(ctx, "Batch replication job is stopped through admin interference")
-            break
+            log.write(ctx, "[replication] Batch replication job is stopped through admin interference")
+            return '[replication] Batch replication job is stopped'
 
         count += 1
         path = row[1] + "/" + row[2]
@@ -73,34 +73,29 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
         if len(xs) is not 2:
             # not replicable
             avu.set_on_data(ctx, path, errorattr, "true")
-            log.write(ctx, "Invalid replication data for {}".format(path))
+            log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
+            # Go to next record and skip further processing
             continue
 
         from = xs[0]
         to = xs[1]
 
         if print_verbose:
-            log.write(ctx, "Batch replication: copying  copying {} from {} to {} ...".format(path, from, to))
+            log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {} ...".format(path, from, to))
 
-        if is_replication_blocked_by_admin(ctx, zone):
-            log.write(ctx, "Batch replication job is stopped by admin interference")
-            break
-
-        # actual replication
+        # Actual replication
         try:
             # Workaround the PREP deadlock issue: Restrict threads to 1.
             ofFlags = "forceFlag=++++numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from, to)
             msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
+            # Mark as correctly replicated
+            count_ok += 1
         except msi.Error as e:
-            log.write(ctx, 'The file could not be replicated: {}'.format(str(e)))
+            log.write(ctx, '[replication] ERROR - The file could not be replicated: {}'.format(str(e)))
             avu.set_on_data(ctx, path, errorattr, "true")
 
-        # Remove replication_scheduled flag no matter if replication
-        # succeeded or not.
-        # rods should have been given own access via policy to allow AVU
-        # changes.
-
-        # Try removing attr/resc meta data
+        # Remove replication_scheduled flag no matter if replication succeeded or not.
+        # rods should have been given own access via policy to allow AVU changes
         avu_deleted = False
         try:
             avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
@@ -116,9 +111,8 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
                 msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
                 avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
             except Exception:
-                log.write(ctx, "replication error: Scheduled replication of <{}>: could not remove schedule flag".format(path))
-
-        count_ok += 1
+                # error => report it but still continue
+                log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
         # Determine new bucket
         bucket += int(row[4])
@@ -126,19 +120,24 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
         # max_batch_size exceeded -> then stopp current batch and kickoff the next one through a delayed rule
         if bucket >= max_batch_size:
             # Kickoff the next batch
-            log.write(ctx, "Batch replication job partly finished. {}/{} objects succesfully replicated.".format(count_ok, count))
+            log.write(ctx, "[replication] Batch replication job partly finished. {}/{} objects succesfully replicated.".format(count_ok, count))
 
             # Set off the next batch from correct starting point
             data_id = int(row[0]) + 1
+            # ?? Dit moet nog de PYTHON variant worden
             ctx.delayExec(
                 "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
                 "rule_replication_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, max_batch_size, delay),
                 "")
             # break out of the iteration as max_batch_size has been exceeded
-            break
+            return '[replication] New batch initiated'
+
+    # Total replication process completed
+    log.write(ctx, "[replication] Batch replication job finished. {}/{} objects succesfully replicated.".format(count_ok, count))
 
 
 def is_replication_blocked_by_admin(ctx, zone):
+    """ Admin can put the replication process on a hold by adding a file called 'stop_replication' in collection /yoda/flags """
     iter = genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
