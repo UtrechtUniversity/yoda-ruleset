@@ -31,6 +31,7 @@ datarequest = False
 deposit = False
 intake = False
 login_oidc = False
+run_all = False
 
 
 def pytest_addoption(parser):
@@ -40,12 +41,14 @@ def pytest_addoption(parser):
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
+    parser.addoption("--all", action="store_true", default=False, help="Run all tests")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
+    config.addinivalue_line("markers", "oidc: Run login OIDC tests")
 
     global portal_url
     portal_url = config.getoption("--url")
@@ -67,6 +70,14 @@ def pytest_configure(config):
 
     global login_oidc
     login_oidc = config.getoption("--oidc")
+
+    global run_all
+    run_all = config.getoption("--all")
+    if run_all:
+        datarequest = True
+        deposit = True
+        intake = True
+        login_oidc = True
 
     global users
     if datarequest:
