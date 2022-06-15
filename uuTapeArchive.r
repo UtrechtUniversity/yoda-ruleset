@@ -116,7 +116,7 @@ pep_resource_open_pre(*INSTANCE_NAME, *CONTEXT, *OUT) {
         # per each file, until interrupted or data is staged.
         if(*MDcounter == 0) {
               dmattr(*CONTEXT.physical_path, *dmfs);
-              uuTapeArchiveSetState(*CONTEXT.logical_path, *time, *dmfs);
+              uuTapeArchiveSetState(*CONTEXT.logical_path, *CONTEXT.physical_path, *time);
         }
 
         # The block that checks status and permits action if status is good
@@ -178,6 +178,7 @@ dmattr(*data, *dmfs) {
 #
 uuTapeArchiveSetState(*path, *physical_path, *timestamp) {
     *hostAddress = ARCHIVERESOURCEHOST;
-    *argv = " *path *physical_path *timestamp";
+    *actor = uuClientFullName;
+    *argv = " *actor *path *physical_path *timestamp";
     msiExecCmd("admin-tape-archive-set-state.sh", *argv, *hostAddress, "", 0, *out);
 }
