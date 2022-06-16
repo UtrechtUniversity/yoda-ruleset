@@ -268,26 +268,33 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
 
 
-@rule.make(inputs=range(4), outputs=range(4, 5))
+# @rule.make(inputs=range(4))
+@rule.make()
 def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 
-    :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting ('True': yes, anything else: no)
+    :param ctx:            Combined type of a callback and rei struct
+    :param verbose:        Whether to log verbose messages for troubleshooting ('True': yes, anything else: no)
     :param data_id:        The start id to be searching from for new data objects
     :param max_batch_size: Max amount of accumulated data sizes to be handled in one batch
     :param delay:          The delay time before a new batch job is kicked off
 
     :returns: String with status of the batch process
     """
-    log.write(ctx, '[revisons] Batch revision job is started')
+    log.write(ctx, '[revisions] Batch revision job is started')
+    log.write(ctx, 'HDR 1')
+    log.write(ctx, verbose)
+    log.write(ctx, data_id)
+    log.write(ctx, max_batch_size)
+    log.write(ctx, delay)
+
     zone = user.zone(ctx)
 
     # Stop scheduled revision if stop flag is set. This could happen during batch processing
     if is_revision_blocked_by_admin(ctx, zone):
-        log.write(ctx, "[revisons] Batch revision job is stopped due to admin interference")
+        log.write(ctx, "[revisions] Batch revision job is stopped due to admin interference")
         return "Batch for revision creation has been stopped"
 
     bucket        = 0 # holds the accumulated values of the individual datasizes
@@ -302,7 +309,7 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
     # get list of data objects scheduled for revision
     iter = genquery.row_iterator(
         "ORDER(DATA_ID), COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, data_id),
+        "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, int(data_id)),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -316,10 +323,10 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
         # Perform scheduled revision creation for one data object.
         path = row[1] + "/" + row[2]
         resc = row[4]
-        size = row[3]  # For now nothing's done with size
+        size = int(row[3])
 
         if print_verbose:
-            log.write(ctx, "[revisons] Batch revision: creating revision for {} on resc {}".format(path, resc))
+            log.write(ctx, "[revisions] Batch revision: creating revision for {} on resc {}".format(path, resc))
 
         id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
 
@@ -327,7 +334,7 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
         # rods should have been given own access via policy to allow AVU
         # changes.
         if print_verbose:
-            log.write(ctx, "[revisons] Batch revision: removing AVU for {}".format(path))
+            log.write(ctx, "[revisions] Batch revision: removing AVU for {}".format(path))
 
         # try removing attr/resc meta data
         avu_deleted = False
@@ -346,11 +353,11 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
                 msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
                 avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
             except Exception:
-                log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
+                log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
         # now back to the created revision
         if id:
-            log.write(ctx, "[revisons] Revision created for {} ID={}".format(path, id))
+            log.write(ctx, "[revisions] Revision created for {} ID={}".format(path, id))
             count_ok += 1
             # Revision creation OK. Remove any existing error indication attribute.
             iter2 = genquery.row_iterator(
@@ -367,29 +374,31 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
                 break
         else:
             count_ignored += 1
-            log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}> failed".format(path))
+            log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}> failed".format(path))
             avu.set_on_data(ctx, path, errorattr, "true")
 
         # Determine new bucket size
         bucket += size
 
         # max_batch_size exceeded -> then stop current batch and kickoff the next one through a delayed rule
-        if bucket >= max_batch_size:
+        if bucket >= int(max_batch_size):
             # Kickoff the next batch
             log.write(ctx, "[revisions] Batch revision job partly finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
 
             # Set off the next batch from correct starting point
-            data_id = int(row[0]) + 1
+            next_data_id = int(row[0]) + 1
+            log.write(ctx, "NEW ID: {}".format(next_data_id))
             # ?? Dit moet nog de PYTHON variant worden
             ctx.delayExec(
                 "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
-                "rule_revision_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, max_batch_size, delay),
+                "rule_revision_batch('%s', '%d', '%d', '%d')" % (verbose, next_data_id, int(max_batch_size), int(delay)),
                 "")
             # break out of the iteration as max_batch_size has been exceeded
-            return '[replication] New batch initiated'
+            log.write(ctx, '[revisions] New batch initiated')
+            return '[revisions] New batch initiated'
 
     # Total revision process completed
-    log.write(ctx, "[revisions] Batch revision job partly finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
+    log.write(ctx, "[revisions] Batch revision job finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
 
 
 def is_revision_blocked_by_admin(ctx, zone):
@@ -399,7 +408,7 @@ def is_revision_blocked_by_admin(ctx, zone):
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
         genquery.AS_LIST, ctx
     )
-    return (len(iter)>0)
+    return (len(list(iter))>0)
 
 
 def revision_create(ctx, resource, path, max_size, verbose):

@@ -15,7 +15,7 @@
 
 uuYcRunRevisionBatch {
     *verbose='True';
-    uuRevisionBatch(*verbose)
+    uuRevisionBatch2(*verbose)
 
 }
 

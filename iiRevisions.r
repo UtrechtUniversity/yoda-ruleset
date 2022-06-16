@@ -13,8 +13,26 @@
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 uuRevisionBatch(*verbose) {
+    *data_id = '0';
+    *max_batch_size = '1000';
+    *delay = '1000';
     *status = '';
-    rule_revision_batch(*verbose, *status);
+    
+    # rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay, *status);
+}
+
+# Scheduled revision creation batch job.
+#
+# Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
+#
+# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+uuRevisionBatch2(*verbose) {
+    writeLine("serverLog", "HALLO");
+    *data_id = '0';
+    *max_batch_size = '1';
+    *delay = '1';
+    *status = '';
+    rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay);
 }
 
 
