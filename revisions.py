@@ -301,7 +301,7 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
     count         = 0
     count_ok      = 0
     count_ignored = 0
-    print_verbose = (verbose == 1)
+    print_verbose = (verbose == '1')
 
     attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"

@@ -47,7 +47,7 @@ def lock_or_die():
 if 'replicate' in NAME:
     rule_name = 'uuReplicateBatch(*verbose)'
 elif 'revision' in NAME:
-    rule_name = 'uuRevisionBatch(*verbose)'
+    rule_name = 'uuRevisionBatch2(*verbose)'
 else:
     print('bad command "{}"'.format(NAME), file=sys.stderr)
     exit(1)
