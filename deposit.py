@@ -23,6 +23,7 @@ __all__ = ['api_deposit_create',
 
 DEPOSIT_GROUP = "deposit-pilot"
 
+
 @api.make()
 def api_deposit_dp_copy(ctx, reference):
     """Create deposit collection and copies selected datapackage into the newly created deposit
@@ -36,8 +37,8 @@ def api_deposit_dp_copy(ctx, reference):
     if result["deposit_path"] == "not_allowed":
         return api.Error('not_allowed', 'Could not create deposit collection.')
 
-    new_deposit_path =  result["deposit_path"]
-    coll_target =  "/" + user.zone(ctx) + "/home/" + new_deposit_path
+    new_deposit_path = result["deposit_path"]
+    coll_target = "/" + user.zone(ctx) + "/home/" + new_deposit_path
 
     log.write(ctx, coll_target)
 
@@ -77,13 +78,13 @@ def api_deposit_dp_copy(ctx, reference):
     delay = 10
 
     ctx.delayExec(
-       "<PLUSET>%ds</PLUSET>" % delay,
-       "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
-       "")
+        "<PLUSET>%ds</PLUSET>" % delay,
+        "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
+        "")
 
-    log.write(ctx, 'delayed rule initiated for ' + coll_target + ' copied from: ' + coll_data_package)
+    log.write(ctx, 'Delayed rule initiated for ' + coll_target + ' copied from: ' + coll_data_package)
 
-    return {"data": new_deposit_path} 
+    return {"data": new_deposit_path}
 
 
 @api.make()
