@@ -38,7 +38,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
     The metadata value indicates the source and destination resource.
 
-    :param verbose:        Whether to log verbose messages for troubleshooting ('True': yes, anything else: no)
+    :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     :param data_id:        The start id to be searching from for new data objects
     :param max_batch_size: Max amount of accumulated data sizes to be handled in one batch
     :param delay:          The delay time before a new batch job is kicked off
@@ -48,7 +48,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     bucket = 0
     count        = 0
     count_ok      = 0
-    print_verbose = (verbose == 'True')
+    print_verbose = (verbose == '1')
     zone = user.zone(ctx)
 
     attr = constants.UUORGMETADATAPREFIX + "replication_scheduled"
@@ -57,7 +57,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     # Get list of data objects scheduled for replication => only user First??
     iter = genquery.row_iterator(
         "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE, DATA_SIZE",
-        "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, data_id),
+        "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, int(data_id)),
         genquery.AS_LIST, ctx
     )
     for row in iter:
@@ -118,7 +118,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
         bucket += int(row[4])
 
         # max_batch_size exceeded -> then stopp current batch and kickoff the next one through a delayed rule
-        if bucket >= max_batch_size:
+        if bucket >= int(max_batch_size):
             # Kickoff the next batch
             log.write(ctx, "[replication] Batch replication job partly finished. {}/{} objects succesfully replicated.".format(count_ok, count))
 
@@ -127,7 +127,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
             # ?? Dit moet nog de PYTHON variant worden
             ctx.delayExec(
                 "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
-                "rule_replication_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, max_batch_size, delay),
+                "rule_replication_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, int(max_batch_size), int(delay)),
                 "")
             # break out of the iteration as max_batch_size has been exceeded
             return '[replication] New batch initiated'
