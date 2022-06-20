@@ -25,7 +25,7 @@ uuRevisionBatch(*verbose) {
 #
 # Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 #
-# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+# \param[in] verbose           whether to log verbose messages for troubleshooting ('1': yes, not '1': no)
 uuRevisionBatch2(*verbose) {
     writeLine("serverLog", "HALLO");
     *data_id = '0';
