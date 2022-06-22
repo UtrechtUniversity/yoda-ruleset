@@ -19,7 +19,23 @@ __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
            'rule_revision_batch',
+           'rule_harm',
            'rule_revisions_clean_up']
+
+
+@rule.make(inputs=range(1))
+def rule_harm(ctx, verbose):
+    """Step through entire revision store and apply the chosen bucket strategy.
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param verbose:          Multiple ways of cleaning up revisions can be chosen.
+
+    :returns: String with status of cleanup
+    """
+    log.write(ctx, "HARM")
+    log.write(ctx, verbose)
+    log.write(ctx, "blabla")
+    # return 'BLABLA'
 
 
 @api.make()
