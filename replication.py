@@ -77,16 +77,16 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
             # Go to next record and skip further processing
             continue
 
-        from = xs[0]
-        to = xs[1]
+        from_path = xs[0]
+        to_path = xs[1]
 
         if print_verbose:
-            log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {} ...".format(path, from, to))
+            log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {} ...".format(path, from_path, to_path))
 
         # Actual replication
         try:
             # Workaround the PREP deadlock issue: Restrict threads to 1.
-            ofFlags = "forceFlag=++++numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from, to)
+            ofFlags = "forceFlag=++++numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
             msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
             # Mark as correctly replicated
             count_ok += 1
@@ -143,4 +143,4 @@ def is_replication_blocked_by_admin(ctx, zone):
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
         genquery.AS_LIST, ctx
     )
-    return (len(iter)>0)
+    return (len(iter) > 0)
