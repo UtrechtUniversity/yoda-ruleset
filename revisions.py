@@ -297,7 +297,7 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
         log.write(ctx, "[revisions] Batch revision job is stopped due to admin interference")
         return "Batch for revision creation has been stopped"
 
-    bucket        = 0 # holds the accumulated values of the individual datasizes
+    bucket        = 0  # holds the accumulated values of the individual datasizes
     count         = 0
     count_ok      = 0
     count_ignored = 0
@@ -409,7 +409,7 @@ def is_revision_blocked_by_admin(ctx, zone):
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
         genquery.AS_LIST, ctx
     )
-    return (len(list(iter))>0)
+    return (len(list(iter)) > 0)
 
 
 def revision_create(ctx, resource, path, max_size, verbose):
