@@ -19,23 +19,7 @@ __all__ = ['api_revisions_restore',
            'api_revisions_search_on_filename',
            'api_revisions_list',
            'rule_revision_batch',
-           'rule_harm',
            'rule_revisions_clean_up']
-
-
-@rule.make(inputs=range(1))
-def rule_harm(ctx, verbose):
-    """Step through entire revision store and apply the chosen bucket strategy.
-
-    :param ctx:              Combined type of a callback and rei struct
-    :param verbose:          Multiple ways of cleaning up revisions can be chosen.
-
-    :returns: String with status of cleanup
-    """
-    log.write(ctx, "HARM")
-    log.write(ctx, verbose)
-    log.write(ctx, "blabla")
-    # return 'BLABLA'
 
 
 @api.make()
@@ -407,8 +391,9 @@ def rule_revision_batch(ctx, verbose, data_id, max_batch_size, delay):
             # ?? Dit moet nog de PYTHON variant worden
             ctx.delayExec(
                 "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
-                "rule_revision_batch('%s', '%d', '%d', '%d')" % (verbose, next_data_id, int(max_batch_size), int(delay)),
+                "uuRevisionBatchRule('%s', '%d', '%d', '%d')" % (verbose, next_data_id, int(max_batch_size), int(delay)),
                 "")
+
             # break out of the iteration as max_batch_size has been exceeded
             log.write(ctx, '[revisions] New batch initiated')
             return '[revisions] New batch initiated'

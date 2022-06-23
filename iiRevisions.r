@@ -11,6 +11,22 @@
 #
 # Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 #
+# \param[in] verbose           whether to log verbose messages for troubleshooting ('1': yes, not '1': no)
+# \param[in] data_id
+# \param[in] max_batch_size
+# \param[in] delay
+uuRevisionBatchRule(*verbose, *data_id, *max_batch_size, *delay) {
+    writeLine("serverLog", "[uuRevisionBatchRule] *data_id, *max_batch_size, *delay");
+
+    # Directly pass the parameters to the python batch script
+    rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay);
+}
+
+
+# Scheduled revision creation batch job.
+#
+# Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
+#
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 uuRevisionBatch(*verbose) {
     *data_id = '0';
@@ -19,20 +35,6 @@ uuRevisionBatch(*verbose) {
     *status = '';
     
     # rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay, *status);
-}
-
-# Scheduled revision creation batch job.
-#
-# Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
-#
-# \param[in] verbose           whether to log verbose messages for troubleshooting ('1': yes, not '1': no)
-uuRevisionBatch2(*verbose) {
-    writeLine("serverLog", "HALLO");
-    *data_id = '0';
-    *max_batch_size = '1';
-    *delay = '1';
-    *status = '';
-    rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay);
 }
 
 
