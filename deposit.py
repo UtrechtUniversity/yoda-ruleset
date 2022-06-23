@@ -19,13 +19,13 @@ __all__ = ['api_deposit_create',
            'api_deposit_status',
            'api_deposit_submit',
            'api_deposit_overview',
-           'api_deposit_dp_copy']
+           'api_deposit_copy_data_package']
 
 DEPOSIT_GROUP = "deposit-pilot"
 
 
 @api.make()
-def api_deposit_dp_copy(ctx, reference):
+def api_deposit_copy_data_package(ctx, reference):
     """Create deposit collection and copies selected datapackage into the newly created deposit
 
     :param ctx: Combined type of a callback and rei struct
@@ -39,8 +39,6 @@ def api_deposit_dp_copy(ctx, reference):
 
     new_deposit_path = result["deposit_path"]
     coll_target = "/" + user.zone(ctx) + "/home/" + new_deposit_path
-
-    log.write(ctx, coll_target)
 
     coll_data_package = ""
     iter = genquery.row_iterator(
@@ -57,7 +55,7 @@ def api_deposit_dp_copy(ctx, reference):
     parts = coll_target.split('/')
     group_name = parts[3]
 
-    # Check if user has READ ACCESS to specific vault packatge in collection coll_data_package.
+    # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
     user_full_name = user.full_name(ctx)
     category = meta_form.group_category(ctx, group_name)
     is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
@@ -75,14 +73,10 @@ def api_deposit_dp_copy(ctx, reference):
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
-    delay = 10
-
     ctx.delayExec(
-        "<PLUSET>%ds</PLUSET>" % delay,
+        "<PLUSET>1s</PLUSET>",
         "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
         "")
-
-    log.write(ctx, 'Delayed rule initiated for ' + coll_target + ' copied from: ' + coll_data_package)
 
     return {"data": new_deposit_path}
 
