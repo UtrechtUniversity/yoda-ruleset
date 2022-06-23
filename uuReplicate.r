@@ -5,6 +5,22 @@
 # \copyright Copyright (c) 2015-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
+
+#############################################################
+# Scheduled replication batch job.
+#
+# \param[in] verbose           whether to log verbose messages for troubleshooting ('1': yes, not '1': no)
+# \param[in] data_id
+# \param[in] max_batch_size
+# \param[in] delay
+uuReplicationBatchRule(*verbose, *data_id, *max_batch_size, *delay) {
+    writeLine("serverLog", "[uuReplicationBatchRule] *data_id, *max_batch_size, *delay");
+
+    # Directly pass the parameters to the python batch script
+    rule_replication_batch(*verbose, *data_id, *max_batch_size, *delay);
+}
+
+
 # \brief Schedule replication of a data object.
 #
 #  to implement asynchronous replication call this rule as part of pep_resource_write_post

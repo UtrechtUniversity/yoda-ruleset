@@ -127,7 +127,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
             # ?? Dit moet nog de PYTHON variant worden
             ctx.delayExec(
                 "<INST_NAME>irods_rule_engine_plugin-irods_rule_language-instance</INST_NAME><PLUSET>%ds</PLUSET>" % int(delay),
-                "rule_replication_batch('%s', '%d', '%d', '%d')" % (verbose, data_id, int(max_batch_size), int(delay)),
+                "uuReplicationBatchRule('%s', '%d', '%d', '%d')" % (verbose, data_id, int(max_batch_size), int(delay)),
                 "")
             # break out of the iteration as max_batch_size has been exceeded
             return '[replication] New batch initiated'
