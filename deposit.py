@@ -28,7 +28,7 @@ DEPOSIT_GROUP = "deposit-pilot"
 def api_deposit_copy_data_package(ctx, reference):
     """Create deposit collection and copies selected datapackage into the newly created deposit
 
-    :param ctx: Combined type of a callback and rei struct
+    :param ctx:       Combined type of a callback and rei struct
     :param reference: Data Package Reference (UUID4)
 
     :returns: Path to created deposit collection or API error
