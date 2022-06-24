@@ -353,9 +353,13 @@ def metadata_set(ctx, request_id, key, value):
 
 def generate_request_id(ctx):
     coll                            = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    number_of_existing_datarequests = collection.collection_count(ctx, coll, recursive=False)
+    max_request_id = 0
 
-    return number_of_existing_datarequests + 1
+    for collection in subcollections(ctx, coll, recursive=False):
+        if str.isdigit(basename(collection)) and int(basename(collection)) > max_request:
+            max_request_id = int(basename(collection))
+
+    return max_request_id + 1
 
 
 @api.make()
@@ -896,8 +900,13 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         request_id = generate_request_id(ctx)
 
         # Check if request ID collection exists, generate new request ID if it exists.
+        max_generate_id_tries = 10
+        generate_id_try = 0
         while collection.exists(ctx, "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
             request_id = generate_request_id(ctx)
+            generate_id_try += 1
+            if generate_id_try >= max_generate_id_tries:
+                return api.Error("Internal error while generating request ID for new request.")
 
     # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)

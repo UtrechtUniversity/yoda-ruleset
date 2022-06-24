@@ -80,6 +80,40 @@ def collection_count(ctx, path, recursive=True):
                genquery.AS_LIST, ctx))
 
 
+def subcollections(ctx, path, recursive=False):
+    """Get a list of all subcollections in a collection.
+
+    Note: the returned value is a generator / lazy list, so that large
+          collections can be handled without keeping everything in memory.
+          use list(...) on the result to get an actual list if necessary.
+
+    The returned paths are absolute paths (e.g. ['/tempZone/home/x']).
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param path:      Path of collection
+    :param recursive: List subcollections recursively
+
+    :returns: List of all subcollections in a collection
+    """
+    # coll+subcoll name -> path
+    def to_absolute(row):
+        return '{}/{}'.format(*row)
+
+    q_root = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
+                                   "COLL_PARENT_NAME = '{}'".format(path),
+                                   genquery.AS_LIST, ctx)
+
+    if not recursive:
+        return itertools.imap(to_absolute, q_root)
+
+    # Recursive? Return a generator combining both queries.
+    q_sub = genquery.row_iterator("COLL_PARENT_NAME, COLL_NAME",
+                                  "COLL_PARENT_NAME like '{}/%'".format(path),
+                                  genquery.AS_LIST, ctx)
+
+    return itertools.imap(to_absolute, itertools.chain(q_root, q_sub))
+
+
 def data_objects(ctx, path, recursive=False):
     """Get a list of all data objects in a collection.
 
