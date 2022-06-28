@@ -350,10 +350,15 @@ def metadata_set(ctx, request_id, key, value):
 
 
 def generate_request_id(ctx):
-    coll                            = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
-    number_of_existing_datarequests = collection.collection_count(ctx, coll, recursive=False)
+    coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    max_request_id = 0
 
-    return number_of_existing_datarequests + 1
+    # Find highest request ID currently in use
+    for current_collection in collection.subcollections(ctx, coll, recursive=False):
+        if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
+            max_request_id = int(pathutil.basename(current_collection))
+
+    return max_request_id + 1
 
 
 @api.make()
@@ -902,10 +907,6 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
     else:
         # Generate request ID and construct data request collection path.
         request_id = generate_request_id(ctx)
-
-        # Check if request ID collection exists, generate new request ID if it exists.
-        while collection.exists(ctx, "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
-            request_id = generate_request_id(ctx)
 
     # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
