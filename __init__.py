@@ -17,6 +17,9 @@ __author__    =  ('Felix Croes'
 # Import all modules containing rules into the package namespace,
 # so that they become visible to iRODS.
 
+import sys
+sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
+
 from browse                 import *
 from folder                 import *
 from group                  import *
