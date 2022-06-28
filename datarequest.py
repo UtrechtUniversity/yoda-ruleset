@@ -908,15 +908,6 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         # Generate request ID and construct data request collection path.
         request_id = generate_request_id(ctx)
 
-        # Check if request ID collection exists, generate new request ID if it exists.
-        max_generate_id_tries = 10
-        generate_id_try = 0
-        while collection.exists(ctx, "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)):
-            request_id = generate_request_id(ctx)
-            generate_id_try += 1
-            if generate_id_try >= max_generate_id_tries:
-                return api.Error("Internal error while generating request ID for new request.")
-
     # Construct data request collection and file path.
     coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
     file_path = "{}/{}".format(coll_path, DATAREQUEST + JSON_EXT)
