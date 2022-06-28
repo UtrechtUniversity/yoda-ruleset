@@ -352,12 +352,13 @@ def metadata_set(ctx, request_id, key, value):
 
 
 def generate_request_id(ctx):
-    coll                            = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
+    coll           = "/{}/{}".format(user.zone(ctx), DRCOLLECTION)
     max_request_id = 0
 
-    for collection in subcollections(ctx, coll, recursive=False):
-        if str.isdigit(basename(collection)) and int(basename(collection)) > max_request:
-            max_request_id = int(basename(collection))
+    # Find highest request ID currently in use
+    for current_collection in collection.subcollections(ctx, coll, recursive=False):
+        if str.isdigit(pathutil.basename(current_collection)) and int(pathutil.basename(current_collection)) > max_request_id:
+            max_request_id = int(pathutil.basename(current_collection))
 
     return max_request_id + 1
 
