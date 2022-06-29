@@ -97,6 +97,7 @@ data_obj_read,    DataObjReadError   = make('DataObjRead',    'Could not read da
 data_obj_write,   DataObjWriteError  = make('DataObjWrite',   'Could not write data object')
 data_obj_close,   DataObjCloseError  = make('DataObjClose',   'Could not close data object')
 data_obj_copy,    DataObjCopyError   = make('DataObjCopy',    'Could not copy data object')
+data_obj_repl,   DataObjReplError    = make('DataObjRepl',   'Could not replicate data object')
 data_obj_unlink,  DataObjUnlinkError = make('DataObjUnlink',  'Could not remove data object')
 data_obj_rename,  DataObjRenameError = make('DataObjRename',  'Could not rename data object')
 coll_create,      CollCreateError    = make('CollCreate',     'Could not create collection')
