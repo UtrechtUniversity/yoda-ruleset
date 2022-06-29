@@ -275,7 +275,7 @@ def rule_revision_batch(ctx, verbose):
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 
     :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting ('True': yes, anything else: no)
+    :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     """
     count         = 0
     count_ok      = 0
@@ -286,7 +286,7 @@ def rule_revision_batch(ctx, verbose):
     errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
 
     # Stop further execution if admin has blocked revision process.
-    if is_replication_blocked_by_admin(ctx):
+    if is_revision_blocked_by_admin(ctx):
         log.write(ctx, "[revisions] Batch revision job is stopped")
     else:
         log.write(ctx, "[revisions] Batch revision job started")
