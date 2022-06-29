@@ -2,10 +2,8 @@
 # \brief     Revision management. Each new file or file modification creates
 #            a timestamped backup file in the revision store.
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2017-2021, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2017-2022, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
-
-
 
 # Scheduled revision creation batch job.
 #
@@ -13,25 +11,10 @@
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 uuRevisionBatch(*verbose) {
-    *status = '';
-    rule_revision_batch(*verbose, *status);
+    rule_revision_batch(*verbose);
 }
 
 
-# \brief Calculate the unix timestamp for the end of the current day (Same as start of next day).   ## KAN WEG ##
-#
-# param[out] endOfCalendarDay		Timestamp of the end of the current day
-#
-iiRevisionCalculateEndOfCalendarDay(*endOfCalendarDay) {
-		msiGetIcatTime(*timestamp, "unix"); # Get current Timestamp
-		*bdY = timestrf(datetime(double(*timestamp)), "%b %d %Y"); # Generate string of current date (e.g. Jan 14 1982).
-
-		*endofcalendarday_dt = datetime(*bdY ++ " 23:59:59"); # Append the last second of the day and convert to datetime
-		*endofcalendarday_str = timestrf(*endofcalendarday_dt, "%s"); # Generate string of unix timestamp of the last second of the day
-		*endOfCalendarDay =  double(*endofcalendarday_str) + 1.0; # Convert to double and add 1 second to get 00:00 of the next day
-}
-
-# Deze moet blijven
 # \datatype iirevisioncandidate    Represents a revision with a timestamp with an double for the timestamp and a string for the DATA_ID.
 #                                  A removed candidate is represented with an empty data constructor
 data iirevisioncandidate =
@@ -39,7 +22,7 @@ data iirevisioncandidate =
 	| iirevisionremoved : iirevisioncandidate
 
 
-# \brief iiRevisionListOfCollectionBeforeTimestamp   ## BLIJFT ##
+# \brief iiRevisionListOfCollectionBeforeTimestamp
 #
 # \param[in] collName      name of collection
 # \param[in] timestamp     only revisions created before this timestamp will be returned
@@ -57,7 +40,7 @@ iiRevisionListOfCollectionBeforeTimestamp(*collName, *timestamp, *revisions) {
         }
 }
 
-# \brief iiRevisionLastBefore   ## BLIJFT ##
+# \brief iiRevisionLastBefore
 #
 # \param[in] path        original path
 # \param[in] timestamp   the first revision before this timestamp will be returned

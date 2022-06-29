@@ -268,119 +268,117 @@ def resource_modified_post_revision(ctx, resource, zone, path):
             avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "revision_scheduled", resource)
 
 
-@rule.make(inputs=range(1), outputs=range(1, 2))
+@rule.make()
 def rule_revision_batch(ctx, verbose):
     """Scheduled revision creation batch job.
 
     Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 
     :param ctx:     Combined type of a callback and rei struct
-    :param verbose: Whether to log verbose messages for troubleshooting (1: yes, 0: no)
-
-    :returns: String with status of the batch process
+    :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     """
-    log.write(ctx, '[revisons] Batch revision job is started')
-    stopped = False
-    zone = user.zone(ctx)
+    count         = 0
+    count_ok      = 0
+    count_ignored = 0
+    print_verbose = (verbose == '1')
 
-    # Stop scheduled revision if stop flag is set. This could happen during batch processing
+    attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
+    errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
+
+    # Stop further execution if admin has blocked revision process.
+    if is_revision_blocked_by_admin(ctx):
+        log.write(ctx, "[revisions] Batch revision job is stopped")
+    else:
+        log.write(ctx, "[revisions] Batch revision job started")
+
+        # Get list of data objects scheduled for revision
+        iter = genquery.row_iterator(
+            "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
+            "META_DATA_ATTR_NAME = '{}'".format(attr),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            count += 1
+
+            # Stop further execution if admin has blocked revision process.
+            if is_revision_blocked_by_admin(ctx):
+                log.write(ctx, "[revisions] Batch revision job is stopped")
+                break
+
+            # Perform scheduled revision creation for one data object.
+            path = row[1] + "/" + row[2]
+            resc = row[3]
+
+            if print_verbose:
+                log.write(ctx, "[revisions] Batch revision: creating revision for {} on resc {}".format(path, resc))
+
+            id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
+
+            # Remove revision_scheduled flag no matter if it succeeded or not.
+            # rods should have been given own access via policy to allow AVU
+            # changes.
+            if print_verbose:
+                log.write(ctx, "[revisions] Batch revision: removing AVU for {}".format(path))
+
+            # try removing attr/resc meta data
+            avu_deleted = False
+            try:
+                # avu.rm_from_data(ctx, path, attr, resc)
+                avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+                avu_deleted = True
+            except Exception:
+                avu_deleted = False
+
+            # try removing attr/resc meta data again with other ACL's
+            if not avu_deleted:
+                try:
+                    # The object's ACLs may have changed.
+                    # Force the ACL and try one more time.
+                    msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
+                    avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
+                except Exception:
+                    log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
+
+            # now back to the created revision
+            if id:
+                log.write(ctx, "[revisions] Revision created for {} ID={}".format(path, id))
+                count_ok += 1
+                # Revision creation OK. Remove any existing error indication attribute.
+                iter2 = genquery.row_iterator(
+                    "DATA_NAME",
+                    "COLL_NAME = '" + row[1] + "' AND DATA_NAME = '" + row[2] + "'"
+                    " AND META_DATA_ATTR_NAME  = '" + errorattr + "' AND META_DATA_ATTR_VALUE = 'true'",
+                    genquery.AS_LIST, ctx
+                )
+                for row2 in iter2:
+                    # Only try to remove it if we know for sure it exists,
+                    # otherwise we get useless errors in the log.
+                    avu.rmw_from_data(ctx, path, errorattr, "%")
+                    # all items removed in one go -> so break from this loop through each individual item
+                    break
+            else:
+                count_ignored += 1
+                log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}> failed".format(path))
+                avu.set_on_data(ctx, path, errorattr, "true")
+
+        # Total revision process completed
+        log.write(ctx, "[revisions] Batch revision job finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
+
+
+def is_revision_blocked_by_admin(ctx):
+    """Admin can put the revision process on a hold by adding a file called 'stop_revisions' in collection /yoda/flags.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Boolean indicating if admin put replication on hold.
+    """
+    zone = user.zone(ctx)
     iter = genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
         genquery.AS_LIST, ctx
     )
-    for row in iter:
-        stopped = True
-        break
-
-    if stopped:
-        log.write(ctx, "[revisons] Batch revision job is stopped")
-        return "Batch for revision creation has been stopped"
-
-    count        = 0
-    count_ok      = 0
-    count_ignored = 0
-    print_verbose = (verbose == 1)
-
-    attr = constants.UUORGMETADATAPREFIX + "revision_scheduled"
-    errorattr = constants.UUORGMETADATAPREFIX + "revision_failed"
-
-    # get list of data objects scheduled for revision
-    iter = genquery.row_iterator(
-        "COLL_NAME, DATA_NAME, DATA_SIZE, META_DATA_ATTR_VALUE",
-        "META_DATA_ATTR_NAME = '" + attr + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        count += 1
-
-        # Stop scheduled revision if stop flag is set. This could happen during batch processing
-        iter2 = genquery.row_iterator(
-            "DATA_ID",
-            "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_revisions'",
-            genquery.AS_LIST, ctx
-        )
-        for row2 in iter2:
-            log.write(ctx, "[revisons] Batch revision job is stopped")
-            return "Batch for revision creation has been stopped"
-
-        # Perform scheduled revision creation for one data object.
-        path = row[0] + "/" + row[1]
-        resc = row[3]
-        # size = row[2]  # For now nothing's done with size
-
-        if print_verbose:
-            log.write(ctx, "[revisons] Batch revision: creating revision for {} on resc {}".format(path, resc))
-
-        id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
-
-        # Remove revision_scheduled flag no matter if it succeeded or not.
-        # rods should have been given own access via policy to allow AVU
-        # changes.
-        if print_verbose:
-            log.write(ctx, "[revisons] Batch revision: removing AVU for {}".format(path))
-
-        # try removing attr/resc meta data
-        avu_deleted = False
-        try:
-            # avu.rm_from_data(ctx, path, attr, resc)
-            avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-            avu_deleted = True
-        except Exception:
-            avu_deleted = False
-
-        # try removing attr/resc meta data again with other ACL's
-        if not avu_deleted:
-            try:
-                # The object's ACLs may have changed.
-                # Force the ACL and try one more time.
-                msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
-                avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
-            except Exception:
-                log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
-
-        # now back to the created revision
-        if id:
-            log.write(ctx, "[revisons] Revision created for {} ID={}".format(path, id))
-            count_ok += 1
-            # Revision creation OK. Remove any existing error indication attribute.
-            iter2 = genquery.row_iterator(
-                "DATA_NAME",
-                "COLL_NAME = '" + row[0] + "' AND DATA_NAME = '" + row[1] + "'"
-                " AND META_DATA_ATTR_NAME  = '" + errorattr + "' AND META_DATA_ATTR_VALUE = 'true'",
-                genquery.AS_LIST, ctx
-            )
-            for row2 in iter2:
-                # Only try to remove it if we know for sure it exists,
-                # otherwise we get useless errors in the log.
-                avu.rmw_from_data(ctx, path, errorattr, "%")
-                break
-        else:
-            count_ignored += 1
-            log.write(ctx, "[revisons] ERROR - Scheduled revision creation of <{}> failed".format(path))
-            avu.set_on_data(ctx, path, errorattr, "true")
-
-    log.write(ctx, "[revisons] Batch revision job finished. {}/{} successfully processed, of which {} resulted in new revisions".format(count_ok + count_ignored, count, count_ok))
+    return (len(list(iter)) > 0)
 
 
 def revision_create(ctx, resource, path, max_size, verbose):

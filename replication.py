@@ -46,6 +46,7 @@ def rule_replicate_batch(ctx, verbose):
     attr = constants.UUORGMETADATAPREFIX + "replication_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "replication_failed"
 
+    # Stop further execution if admin has blocked replication process.
     if is_replication_blocked_by_admin(ctx):
         log.write(ctx, "[replication] Batch replication job is stopped")
     else:
