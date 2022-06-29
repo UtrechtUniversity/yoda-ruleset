@@ -6,7 +6,7 @@ With this module, we aim to unify microservice error handling by converting
 all errors to unambiguous Python exceptions.
 """
 
-__copyright__ = 'Copyright (c) 2019, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import error
@@ -91,22 +91,22 @@ def _make_exception(name, message):
 # Note: there is no 'msi_' prefix:
 # When imported without '*', these msis are callable as msi.coll_create(), etc.
 
-data_obj_create, DataObjCreateError = make('DataObjCreate', 'Could not create data object')
-data_obj_open,   DataObjOpenError   = make('DataObjOpen',   'Could not open data object')
-data_obj_read,   DataObjReadError   = make('DataObjRead',   'Could not read data object')
-data_obj_write,  DataObjWriteError  = make('DataObjWrite',  'Could not write data object')
-data_obj_close,  DataObjCloseError  = make('DataObjClose',  'Could not close data object')
-data_obj_copy,   DataObjCopyError   = make('DataObjCopy',   'Could not copy data object')
-data_obj_repl,   DataObjReplError   = make('DataObjRepl',   'Could not replicate data object')
-data_obj_unlink, DataObjUnlinkError = make('DataObjUnlink', 'Could not remove data object')
-data_obj_rename, DataObjRenameError = make('DataObjRename', 'Could not rename data object')
-coll_create,     CollCreateError    = make('CollCreate',    'Could not create collection')
-coll_rsync,      CollRsyncError     = make('CollRsync',     'Could not rsync collection')
-rm_coll,         RmCollError        = make('RmColl',        'Could not remove collection')
-check_access,    CheckAccessError   = make('CheckAccess',   'Could not check access')
-set_acl,         SetACLError        = make('SetACL',        'Could not set ACL')
-get_icat_time,   GetIcatTimeError   = make('GetIcatTime',   'Could not get Icat time')
-get_obj_type,    GetObjTypeError    = make('GetObjType',    'Could not get object type')
+data_obj_create,  DataObjCreateError = make('DataObjCreate',  'Could not create data object')
+data_obj_open,    DataObjOpenError   = make('DataObjOpen',    'Could not open data object')
+data_obj_read,    DataObjReadError   = make('DataObjRead',    'Could not read data object')
+data_obj_write,   DataObjWriteError  = make('DataObjWrite',   'Could not write data object')
+data_obj_close,   DataObjCloseError  = make('DataObjClose',   'Could not close data object')
+data_obj_copy,    DataObjCopyError   = make('DataObjCopy',    'Could not copy data object')
+data_obj_unlink,  DataObjUnlinkError = make('DataObjUnlink',  'Could not remove data object')
+data_obj_rename,  DataObjRenameError = make('DataObjRename',  'Could not rename data object')
+coll_create,      CollCreateError    = make('CollCreate',     'Could not create collection')
+coll_rsync,       CollRsyncError     = make('CollRsync',      'Could not rsync collection')
+rm_coll,          RmCollError        = make('RmColl',         'Could not remove collection')
+check_access,     CheckAccessError   = make('CheckAccess',    'Could not check access')
+set_acl,          SetACLError        = make('SetACL',         'Could not set ACL')
+get_icat_time,    GetIcatTimeError   = make('GetIcatTime',    'Could not get Icat time')
+get_obj_type,     GetObjTypeError    = make('GetObjType',     'Could not get object type')
+mod_avu_metadata, ModAVUMetadata     = make('ModAVUMetadata', 'Could not modify AVU metadata')
 
 register_epic_pid, RegisterEpicPIDError = make('RegisterEpicPID', 'Could not register EpicPID')
 
@@ -124,11 +124,4 @@ associate_key_value_pairs_to_obj, AssociateKeyValuePairsToObjError = \
 remove_key_value_pairs_from_obj, RemoveKeyValuePairsFromObjError = \
     make('RemoveKeyValuePairsFromObj', 'Could not remove metadata from object')
 
-add_avu, AddAvuError = make('_add_avu', 'Could not add metadata to object')
-rmw_avu, RmwAvuError = make('_rmw_avu', 'Could not remove metadata to object')
-
 sudo_obj_acl_set, SudoObjAclSetError = make('SudoObjAclSet', 'Could not set ACLs as admin')
-
-# Add new msis here as needed.
-
-# }}}

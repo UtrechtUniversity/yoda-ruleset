@@ -102,14 +102,29 @@ def rm_from_group(ctx, group, a, v):
 
 def rmw_from_coll(ctx, obj, a, v, u=''):
     """Remove AVU from collection with wildcards."""
-    msi.rmw_avu(ctx, '-C', obj, a, v, u)
+    msi.mod_avu_metadata(ctx, '-C', obj, 'rmw', a, v, u)
 
 
 def rmw_from_data(ctx, obj, a, v, u=''):
     """Remove AVU from data object with wildcards."""
-    msi.rmw_avu(ctx, '-d', obj, a, v, u)
+    msi.mod_avu_metadata(ctx, '-d', obj, 'rmw', a, v, u)
 
 
 def rmw_from_group(ctx, group, a, v, u=''):
     """Remove AVU from group with wildcards."""
-    msi.rmw_avu(ctx, '-u', group, a, v, u)
+    msi.mod_avu_metadata(ctx, '-u', group, 'rmw', a, v, u)
+
+
+def add_to_coll(ctx, obj, a, v, u=''):
+    """Add AVU to collection."""
+    msi.mod_avu_metadata(ctx, '-C', obj, 'add', a, v, u)
+
+
+def add_to_data(ctx, obj, a, v, u=''):
+    """Add AVU to data object."""
+    msi.mod_avu_metadata(ctx, '-d', obj, 'add', a, v, u)
+
+
+def add_to_group(ctx, group, a, v, u=''):
+    """Add AVU to group."""
+    msi.mod_avu_metadata(ctx, '-u', group, 'add', a, v, u)
