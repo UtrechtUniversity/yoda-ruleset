@@ -301,7 +301,7 @@ def rule_revision_batch(ctx, verbose):
             count += 1
 
             # Stop further execution if admin has blocked revision process.
-            if is_revision_blocked_by_admin(ctx, zone):
+            if is_revision_blocked_by_admin(ctx):
                 log.write(ctx, "[revisions] Batch revision job is stopped")
                 break
 
