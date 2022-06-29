@@ -5,36 +5,13 @@
 # \copyright Copyright (c) 2017-2021, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-
-
-# Scheduled revision creation batch job.
-#
-# Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
-#
-# \param[in] verbose           whether to log verbose messages for troubleshooting ('1': yes, not '1': no)
-# \param[in] data_id
-# \param[in] max_batch_size
-# \param[in] delay
-uuRevisionBatchRule(*verbose, *data_id, *max_batch_size, *delay) {
-    writeLine("serverLog", "[uuRevisionBatchRule] *data_id, *max_batch_size, *delay");
-
-    # Directly pass the parameters to the python batch script
-    rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay);
-}
-
-
 # Scheduled revision creation batch job.
 #
 # Creates revisions for all data objects marked with 'org_revision_scheduled' metadata.
 #
 # \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
 uuRevisionBatch(*verbose) {
-    *data_id = '0';
-    *max_batch_size = '1000';
-    *delay = '1000';
-    *status = '';
-    
-    # rule_revision_batch(*verbose, *data_id, *max_batch_size, *delay, *status);
+    rule_revision_batch(*verbose);
 }
 
 
