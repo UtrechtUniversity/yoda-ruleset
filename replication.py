@@ -9,7 +9,7 @@ import irods_types
 
 from util import *
 
-__all__ = ['rule_replication_batch']
+__all__ = ['rule_replicate_batch']
 
 
 def replicate_asynchronously(ctx, path, source_resource, target_resource):
