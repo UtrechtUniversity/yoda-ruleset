@@ -54,7 +54,7 @@ def rule_replicate_batch(ctx, verbose):
         # Get list of data objects scheduled for replication.
         iter = genquery.row_iterator(
             "ORDER(DATA_ID), COLL_NAME, DATA_NAME, META_DATA_ATTR_VALUE",
-            "META_DATA_ATTR_NAME = '{}' AND DATA_ID >='{}'".format(attr, int(data_id)),
+            "META_DATA_ATTR_NAME = '{}'".format(attr),
             genquery.AS_LIST, ctx
         )
         for row in iter:
