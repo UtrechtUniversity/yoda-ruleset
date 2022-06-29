@@ -2,8 +2,7 @@
 """Bidirectional conversion between JSON(-LD) and iRODS AVUs."""
 
 __copyright__ = ['Copyright (c) 2019, Maastricht University',
-                 'Copyright (c) 2020, Utrecht University',
-                 'Copyright (c) 2022, Utrecht University']
+                 'Copyright (c) 2020, Utrecht University']
 __license__   = 'Apache License 2.0, see LICENSE'
 
 import json
@@ -63,15 +62,14 @@ def set_json_to_obj(ctx, object_name, object_type, json_namespace, json_string):
     global activelyUpdatingAVUs
     activelyUpdatingAVUs = True
 
-    ret_val = ctx.msiModAVUMetadata(object_type, object_name, "rmw", "%", "%", json_namespace + "_%")
-
+    ret_val = ctx.msi_rmw_avu(object_type, object_name, "%", "%", json_namespace + "_%")
     if ret_val['status'] is False and ret_val['code'] != -819000:
         return
 
     avu = jsonavu.json2avu(data, json_namespace)
 
     for i in avu:
-        ctx.msiModAVUMetadata(object_type, object_name, "add", i["a"], i["v"], i["u"])
+        ctx.msi_add_avu(object_type, object_name, i["a"], i["v"], i["u"])
 
     # Set global variable activelyUpdatingAVUs to false. At this point we are done updating AVU and want
     # to enable some of the checks.

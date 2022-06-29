@@ -150,7 +150,8 @@ uuDatarequestProcessMetadataChange(*datarequestColl, *attributeName,
                         *alreadyAssigned = true;
                 }
                 if (*alreadyAssigned) {
-                        *err = msiModAVUMetadata("-d", *filePath, "rmw", "assignedForReview", "%", "%");
+                        *err = msi_rmw_avu("-d", *filePath, "assignedForReview",
+                                   "%", "%");
                 }
 
                 # Convert JSON array of assignees to list
