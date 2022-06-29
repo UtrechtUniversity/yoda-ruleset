@@ -36,6 +36,7 @@ from datacite               import *
 from epic                   import *
 from publication            import *
 from policies               import *
+from replication            import *
 from revisions              import *
 from settings               import *
 from notifications          import *

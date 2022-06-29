@@ -3,47 +3,8 @@
 #        within iRODS functions are defined differently from rules. A function should have
 #        no side effects and should always return a value instead of mutating an output parameter
 # \author    Paul Frederiks
-# \copyright Copyright (c) 2015-2017, Utrecht University. All rights reserved.
+# \copyright Copyright (c) 2015-2022, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
-
-# \brief orderclause	helper functions to determine order clause
-#
-# \param[in] column	Column to check
-# \param[in] orderby	The column to orderby
-# \param[in] ascdesc	"asc" for ascending order, "desc" for descending order. Defaults to Ascending
-# \returnvalue		Returns either "" for no ordering, "ORDER_DESC" or "ORDER" when column needs ordering
-#
-uuorderclause(*column, *orderby, *ascdesc) = if *column == *orderby then uuorderdirection(*ascdesc) else ""
-uuorderdirection(*ascdesc) = if *ascdesc == "desc" then "ORDER_DESC" else "ORDER"
-
-uuiscollection(*collectionOrDataObject) = if *collectionOrDataObject == "Collection" then true else false
-
-# \datatype	uucondition
-#
-# \brief  a triple of strings to represent the elements of a condition query
-#         first string represents the irods column, i.e. COLL_NAME
-#         second string represents the operator, i.e. '=' or 'like'
-#         third string represents the expression, i.e. '/tempZone/home'
-# \constructor uucondition	Construct new conditions with condition(*column, *operator, *expression)
-#
-data uucondition =
-	| uucondition : string * string * string -> uucondition
-
-# \function uumakelikecondition	Helper function to create the most used condition. A searchstring
-#				surrounded by wildcards
-# \param[in] column		The irods column to search
-# \param[in] searchstring	Part of the string to search on.
-# \returnvalue	uucondition	A triple of strings of type uucondition
-#
-uumakelikecondition(*column, *searchstring) = uucondition(*column, "like", "%%*searchstring%%")
-
-# \function uumakestartswithcondition	Helper function to create a condition for strings starting
-#					with the searchstring
-# \param[in] column		The irods column to search
-# \param[in] searchstring	Part of the string to search on.
-# \returnvalue uucondition	A triple of strings of type uucondition
-#
-uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like", "*searchstring%%")
 
 # \function uuiso8601  Return irods style timestamp in iso8601 format
 # \param[in] *timestamp		irods style timestamp (epoch as string)
@@ -51,6 +12,74 @@ uumakestartswithcondition(*column, *searchstring) = uucondition(*column, "like",
 #
 uuiso8601(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y%m%dT%H%M%S%z")
 
-# \function uuisod8601date Return irods style timestamp as a iso8601 date
+
+# \brief Checks if a collection exists.
+#        Used to be iicollectionexists from Jan de Mooij.
 #
-uuiso8601date(*timestamp) = timestrf(datetime(int(*timestamp)), "%Y-%m-%d")
+# \param[in] collectionname	name of the collection
+# \returnvalue boolean, true if collection exists, false if not
+#
+uuCollectionExists(*collectionname) {
+	*exists = false;
+	foreach (*row in SELECT COLL_NAME WHERE COLL_NAME = '*collectionname') {
+		*exists = true;
+		break;
+	}
+	*exists;
+}
+
+# \brief Check if a file exists in the catalog.
+#
+# \param[in] *path
+# \returnvalue  boolean, true if collection exists, false if not
+#
+uuFileExists(*path) {
+	*exists = false;
+	uuChopPath(*path, *collName, *dataName);
+	foreach (*row in SELECT DATA_ID WHERE COLL_NAME = *collName AND DATA_NAME = *dataName) {
+		*exists = true;
+		break;
+	}
+	*exists;
+}
+
+# \brief Return a key-value-pair of metadata associated with a dataobject.
+#	 If a key is defined multiple times, the last found will be returned.
+#
+# \param[in]  data_id	Unique DataObject ID. Used because it is Unique
+# \param[in]  prefix	Only include metadata with this prefix
+# \param[in,out] kvp	key-value-pair to add the metadata to
+#
+uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
+	*ContInxOld = 1;
+	msiMakeGenQuery("META_DATA_ATTR_NAME, META_DATA_ATTR_VALUE", "DATA_ID = '*data_id'", *GenQInp);
+	if (*prefix != "") {
+		#| writeLine("stdout", "prefix is *prefix");
+		msiAddConditionToGenQuery("META_DATA_ATTR_NAME", " like ", "*prefix%%", *GenQInp);
+	}
+	msiExecGenQuery(*GenQInp, *GenQOut);
+	msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
+	while(*ContInxOld > 0) {
+		foreach(*meta in *GenQOut) {
+			*name = *meta.META_DATA_ATTR_NAME;
+			*val = *meta.META_DATA_ATTR_VALUE;
+			msiAddKeyVal(*kvp, *name, *val);
+		}
+		*ContInxOld = *ContInxNew;
+		if(*ContInxOld > 0) {
+			msiGetMoreRows(*GenQInp, *GenQOut, *ContInxNew);
+		}
+	}
+	msiCloseGenQuery(*GenQInp, *GenQOut);
+}
+
+
+# Scheduled replication batch job.
+#
+# Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
+# The metadata value indicates the source and destination resource.
+#
+# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+uuReplicateBatch(*verbose) {
+    rule_replicate_batch(*verbose);
+}
