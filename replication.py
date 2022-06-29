@@ -1,43 +1,42 @@
 # -*- coding: utf-8 -*-
 """Functions for replication management."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
-
-import datetime
-import os
-import time
 
 import genquery
 import irods_types
 
-import folder
-import meta_form
 from util import *
 
 __all__ = ['rule_replication_batch']
 
 
 def replicate_asynchronously(ctx, path, source_resource, target_resource):
-    """ Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
+    """Schedule replication of a data object.
 
-    Give rods 'own' access so that they can remove the AVU.
-
-    :param[in] path:              data object to be replicated
-    :param[in] source_resource    resource to be used as source
-    :param[in] target_resource    resource to be used as destination
+    :param ctx:             Combined type of a callback and rei struct
+    :param path:            Data object to be replicated
+    :param source_resource: Resource to be used as source
+    :param target_resource: Resource to be used as destination
     """
+    zone = user.zone(ctx)
+
+    # Give rods 'own' access so that they can remove the AVU.
     msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
+
+    # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
     avu.set_on_data(ctx, path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource))
 
 
 @rule.make(inputs=range(4), outputs=range(4, 5))
 def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
-    """ Scheduled replication batch job.
+    """Scheduled replication batch job.
 
     Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
     The metadata value indicates the source and destination resource.
 
+    :param ctx:            Combined type of a callback and rei struct
     :param verbose:        Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     :param data_id:        The start id to be searching from for new data objects
     :param max_batch_size: Max amount of accumulated data sizes to be handled in one batch
@@ -49,7 +48,6 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     count        = 0
     count_ok      = 0
     print_verbose = (verbose == '1')
-    zone = user.zone(ctx)
 
     attr = constants.UUORGMETADATAPREFIX + "replication_scheduled"
     errorattr = constants.UUORGMETADATAPREFIX + "replication_failed"
@@ -62,7 +60,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     )
     for row in iter:
         # Stop further execution if admin has blocked replication process
-        if is_replication_blocked_by_admin(ctx, zone):
+        if is_replication_blocked_by_admin(ctx):
             log.write(ctx, "[replication] Batch replication job is stopped through admin interference")
             return '[replication] Batch replication job is stopped'
 
@@ -70,7 +68,7 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
         path = row[1] + "/" + row[2]
         rescs = row[3]
         xs = rescs.split(',')
-        if len(xs) is not 2:
+        if len(xs) != 2:
             # not replicable
             avu.set_on_data(ctx, path, errorattr, "true")
             log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
@@ -136,8 +134,14 @@ def rule_replication_batch(ctx, verbose, data_id, max_batch_size, delay):
     log.write(ctx, "[replication] Batch replication job finished. {}/{} objects succesfully replicated.".format(count_ok, count))
 
 
-def is_replication_blocked_by_admin(ctx, zone):
-    """ Admin can put the replication process on a hold by adding a file called 'stop_replication' in collection /yoda/flags """
+def is_replication_blocked_by_admin(ctx):
+    """Admin can put the replication process on a hold by adding a file called 'stop_replication' in collection /yoda/flags.
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Boolean indicating if admin put replication on hold.
+    """
+    zone = user.zone(ctx)
     iter = genquery.row_iterator(
         "DATA_ID",
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
