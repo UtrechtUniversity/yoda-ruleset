@@ -17,33 +17,9 @@ uuReplicationBatchRule(*verbose, *data_id, *max_batch_size, *delay) {
     writeLine("serverLog", "[uuReplicationBatchRule] *data_id, *max_batch_size, *delay");
 
     # Directly pass the parameters to the python batch script
-    rule_replication_batch(*verbose, *data_id, *max_batch_size, *delay);
+    rule_replicate_batch(*verbose);
 }
 
-
-# \brief Schedule replication of a data object.
-#
-#  to implement asynchronous replication call this rule as part of pep_resource_write_post
-#  e.g.  pep_resource_write_post(*out) {
-#           *sourceResource = $pluginInstanceName;
-#           if (*sourceResource == 'yournamehere') {
-#              uuReplicateAsynchronously($KVPairs.logical_path, *sourceResource, 'yourdestinationhere');
-#           }
-#        }
-#
-# \param[in] object	       data object to be replicated
-# \param[in] sourceResource    resource to be used as source
-# \param[in] targetResource    resource to be used as destination
-uuReplicateAsynchronously(*object, *sourceResource, *targetResource) {
-    # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
-    # Give rods 'own' access so that they can remove the AVU.
-    errorcode(msiSetACL("default", "own", "rods#$rodsZoneClient", *object));
-
-    msiString2KeyValPair("", *kv);
-    msiAddKeyVal(*kv, UUORGMETADATAPREFIX ++ "replication_scheduled", "*sourceResource,*targetResource");
-    msiSetKeyValuePairsToObj(*kv, *object, "-d");
-    #writeLine("serverLog", "uuReplicateAsynchronously: Replication scheduled for *object");
-}
 
 # Scheduled replication batch job.
 #
