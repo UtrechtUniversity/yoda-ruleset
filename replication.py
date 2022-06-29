@@ -39,7 +39,6 @@ def rule_replicate_batch(ctx, verbose):
     :param ctx:     Combined type of a callback and rei struct
     :param verbose: Whether to log verbose messages for troubleshooting ('1': yes, anything else: no)
     """
-    bucket        = 0
     count         = 0
     count_ok      = 0
     print_verbose = (verbose == '1')
