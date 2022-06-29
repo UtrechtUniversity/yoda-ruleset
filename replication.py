@@ -128,4 +128,4 @@ def is_replication_blocked_by_admin(ctx):
         "COLL_NAME = '" + "/{}/yoda/flags".format(zone) + "' AND DATA_NAME = 'stop_replication'",
         genquery.AS_LIST, ctx
     )
-    return len(iter) > 0
+    return len(list(iter)) > 0
