@@ -83,7 +83,7 @@ def rule_replicate_batch(ctx, verbose):
             # Actual replication
             try:
                 # Workaround the PREP deadlock issue: Restrict threads to 1.
-                ofFlags = "forceFlag=++++numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
+                ofFlags = "numThreads=1++++rescName={}++++destRescName={}++++irodsAdmin=++++verifyChksum=".format(from_path, to_path)
                 msi.data_obj_repl(ctx, path, ofFlags, irods_types.BytesBuf())
                 # Mark as correctly replicated
                 count_ok += 1
