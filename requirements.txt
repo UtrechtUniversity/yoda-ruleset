@@ -10,7 +10,7 @@ contextlib2==0.6.0.post1
 importlib-metadata==2.1.1
 jsonschema==3.2.0
 pathvalidate==0.29.1
-lxml==4.6.5
+lxml==4.9.1
 requests_cache==0.5.2
 irods-avu-json==2.2.0
 python2-secrets==1.0.5
