@@ -131,7 +131,7 @@ def login(user, password):
     # Login as user.
     login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
     response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
-    session = client.cookies['session']
+    session = client.cookies['__Host-session']
     client.close()
 
     # Retrieve the authenticated CSRF token.
@@ -153,7 +153,7 @@ def api_request(user, request, data, timeout=10):
     # Make API request.
     url = api_url + "/" + request
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
@@ -187,7 +187,7 @@ def upload_data(user, file, folder):
              "flowTotalChunks": (None, "1"),
              "file": (file, "test")}
 
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
@@ -204,7 +204,7 @@ def post_form_data(user, request, files):
     # Make POST request.
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
