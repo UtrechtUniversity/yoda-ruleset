@@ -48,14 +48,23 @@
         "10",
         "20",
         "50"
+      ],
+      "enumNames": [
+        "2 - appriopiate period when data can be considered as a snapshot which is outdated in the short term",
+        "5 - appriopiate period when the value of data decreases significantly after a longer period of time",
+        "10 - default retention period according to UU's policy framework for research data, maximum retention period for personal data (GDPR)",
+        "20 - appriopiate period when the value of the data decreases slowly over a long period of time",
+        "50 - appriopiate period when data will always be relevant"
       ]
     },
     "optionsOwnerRole": {
       "type": "string",
       "enum": [
          "Principal Investigator",
-         "3rd Party Data Owner",
-         "Group Leader"
+         "Group Leader",
+         "Researcher",
+         "Contact Person from External Institute",
+         "Project Team Member"
       ]
     },
     "optionsRelationType": {
@@ -696,7 +705,7 @@
         "Restricted - available upon request"
       ],
       "enumNames": [
-        "Open - Accessible for researchers of Geosciences",
+        "Open - Readily downloadable for faculty members",
         "Restricted - Accessible on request"
       ]
     },
@@ -852,7 +861,7 @@
       }
     },
     "Related_Datapackage": {
-      "title": "Reference",
+      "title": "Related work",
       "type": "array",
       "minItems": 1,
       "items": {

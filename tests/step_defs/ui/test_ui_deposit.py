@@ -131,7 +131,7 @@ def ui_deposit_dp_submission(browser):
 
 @when('submission is confirmed')
 def ui_deposit_dp_submission_confirmed(browser):
-    time.sleep(10)
+    time.sleep(20)
     assert browser.is_text_present('Thank you for your deposit')
 
 
