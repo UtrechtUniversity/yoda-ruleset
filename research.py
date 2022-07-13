@@ -23,7 +23,8 @@ __all__ = ['api_research_folder_add',
            'api_research_file_delete',
            'api_research_system_metadata',
            'api_research_collection_details',
-           'api_research_list_temporary_files']
+           'api_research_list_temporary_files',
+           'api_research_manifest']
 
 
 @api.make()
@@ -644,3 +645,21 @@ def api_research_collection_details(ctx, path):
             "is_datamanager": is_datamanager,
             "lock_count": lock_count,
             "vault_path": vault_path}
+
+
+@api.make()
+def api_research_manifest(ctx, coll):
+    """Produce a manifest of data objects in a collection
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+
+    :returns: List of json objects with name and checksum
+    """
+    length = len(coll) + 1
+    iter = genquery.row_iterator(
+        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
+        "COLL_NAME like '" + coll + "%'",
+        genquery.AS_LIST, ctx
+    )
+    return [{"name": (row[0] + "/")[length:] + row[1], "checksum": row[2]} for row in iter]
