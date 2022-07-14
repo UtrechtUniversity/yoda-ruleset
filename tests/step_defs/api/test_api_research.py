@@ -1,7 +1,7 @@
 # coding=utf-8
 """Research API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -129,7 +129,7 @@ def object_exists(user, object, collection):
     http_status, body = api_request(
         user,
         "browse_folder",
-        {"coll": collection}
+        {"coll": collection, "limit": 99}
     )
 
     assert http_status == 200
