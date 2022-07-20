@@ -5,7 +5,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os
-import time
 from collections import OrderedDict
 
 from pytest_bdd import (
@@ -26,6 +25,13 @@ scenarios('../../features/ui/ui_deposit.feature')
 def ui_deposit_open_search(browser, search_argument):
     browser.fill('q', search_argument)
     browser.find_by_name('q').type(Keys.RETURN)
+
+    for _i in range(25):
+        if browser.is_text_present(search_argument, wait_time=3):
+            return True
+        browser.find_by_css('button.search-btn')[0].click()
+
+    raise AssertionError()
 
 
 @when(parsers.parse('clicks on "{title}" data package'))
@@ -121,7 +127,7 @@ def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
 
 @when('user goes to submission page')
 def ui_deposit_to_submission_page(browser):
-    browser.find_by_css('button.btn.btn-primary.float-end', wait_time=10).click()
+    browser.find_by_css('button.btn.btn-primary.float-end', wait_time=3).click()
 
 
 @when('user submits data')
@@ -131,7 +137,6 @@ def ui_deposit_dp_submission(browser):
 
 @when('submission is confirmed')
 def ui_deposit_dp_submission_confirmed(browser):
-    time.sleep(20)
     assert browser.is_text_present('Thank you for your deposit')
 
 
