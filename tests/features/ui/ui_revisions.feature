@@ -1,5 +1,15 @@
 Feature: Revisions UI
 
+    Background:
+        Given user "researcher" is authenticated
+        And collection "<collection>" exists
+        And "<collection>" is unlocked
+
+        Examples:
+            | collection                       |
+            | /tempZone/home/research-initial  |
+
+
     Scenario Outline: Search revisions on file name
         Given user "researcher" is logged in
         And module "search" is shown

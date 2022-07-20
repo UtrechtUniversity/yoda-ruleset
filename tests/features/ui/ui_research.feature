@@ -1,13 +1,13 @@
 Feature: Research UI
 
-    Examples:
-        | collection                       |
-        | /tempZone/home/research-initial  |
-
     Background:
         Given user "researcher" is authenticated
         And collection "<collection>" exists
         And "<collection>" is unlocked
+
+        Examples:
+            | collection                       |
+            | /tempZone/home/research-initial  |
 
     Scenario Outline: Copying a file
         Given user "researcher" is logged in
