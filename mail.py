@@ -49,9 +49,11 @@ def send(ctx, to, actor, subject, body, cc=None):
            for k, v in [('from',      'notifications_sender_email'),
                         ('from_name', 'notifications_sender_name'),
                         ('reply_to',  'notifications_reply_to'),
-                        ('server',    'smtp_server'),
-                        ('username',  'smtp_username'),
-                        ('password',  'smtp_password')]}
+                        ('server',    'smtp_server')]}
+
+    if getattr(config, "smtp_auth"):
+        cfg['username'] = getattr(config, "smtp_username")
+        cfg['password'] = getattr(config, "smtp_password")
 
     try:
         # e.g. 'smtps://smtp.gmail.com:465' for SMTP over TLS, or
@@ -69,7 +71,7 @@ def send(ctx, to, actor, subject, body, cc=None):
     try:
         smtp = (smtplib.SMTP_SSL if proto == 'smtps' else smtplib.SMTP)(host, port)
 
-        if proto != 'smtps':
+        if proto != 'smtps' and getattr(config, "smtp_starttls"):
             # Enforce TLS.
             smtp.starttls()
 
@@ -78,7 +80,8 @@ def send(ctx, to, actor, subject, body, cc=None):
         return api.Error('internal', 'Mail configuration error')
 
     try:
-        smtp.login(cfg['username'], cfg['password'])
+        if getattr(config, "smtp_auth"):
+            smtp.login(cfg['username'], cfg['password'])
 
     except Exception:
         log.write(ctx, '[EMAIL] Could not login to mail server with configured credentials')

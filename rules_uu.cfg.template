@@ -22,6 +22,8 @@ notifications_reply_to         = 'noreply@yoda.test'
 smtp_server                    =
 smtp_username                  =
 smtp_password                  =
+smtp_auth                      =
+smtp_starttls                  =
 
 datacite_url                   =
 datacite_username              =
