@@ -50,4 +50,5 @@ def ui_revisions_found(browser, revision):
 
 @then('revision is restored')
 def ui_revisions_restored(browser):
-    assert browser.is_text_present("Successfully made a copy of revision")
+    assert browser.is_text_present("Successfully restored file")
+    assert browser.is_text_present("Successfully restored your revision in")
