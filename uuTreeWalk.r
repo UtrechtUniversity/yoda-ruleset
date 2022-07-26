@@ -4,25 +4,6 @@
 # \copyright Copyright (c) 2015, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-#test {
-#	*buffer."count" = "0";   # initialize buffer
-#	uuTreeWalk(*direction, *topLevelCollection, *ruleToProcess, *buffer, *error);
-#	writeLine("stdout","result treewalk = *error");
-#}
-
-# here is an example of a rule that can be processed via uuTreeWalk:
-#
-uuTreeWalkTestrule(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
-	writeLine("stdout","*itemParent - *itemName - *itemIsCollection - " ++ *buffer."count");
-	*error = 0; # zero means no error
-   if (*itemName == "tutorial.pdf" ) {
-		*error = 1;
-	} else {
-		*buffer."count" = str( int(*buffer."count") + 1);
-	}
-}
-
-
 # \brief Walks through a collection tree and calls an arbitrary rule for each tree-item.
 #
 # \param[in] direction           can be "forward" or "reverse"

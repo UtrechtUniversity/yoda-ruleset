@@ -22,7 +22,6 @@ uuTapeArchiveReplicateAsynchronously(*path) {
     if (*path like "/"++*zoneName++"/home/vault-*") {
         # Not possible to re-use the existing function here because the AVUs are set and not just added,
         # so multiple calls would overwrite the previous AVUs.
-        # uuReplicateAsynchronously(*object, *sourceResource, *targetResource)
         msiString2KeyValPair("*offlineSpaceKey=*archiveResource", *kvp);
         msiSetKeyValuePairsToObj(*kvp, *path, "-d");
     }
