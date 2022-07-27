@@ -211,13 +211,14 @@ def post_form_data(user, request, files):
     return (response.status_code, response)
 
 
-@given('user "<user>" is authenticated', target_fixture="user")
-@given(parsers.parse('user "{user}" is authenticated'), target_fixture="user")
+@given(parsers.parse("user {user:w} is authenticated"), target_fixture="user")
 def api_user_authenticated(user):
     assert user in users
     return user
 
 
+@given(parsers.parse('user {user} is logged in'))
+@when(parsers.parse('user {user} logs in'))
 @given('user "<user>" is logged in')
 @given(parsers.parse('user "{user}" is logged in'))
 @when('user "<user>" logs in')
@@ -242,7 +243,7 @@ def ui_logout(browser):
     browser.visit(url)
 
 
-@when('user "<user>" enters email address')
+@when(parsers.parse("user {user} enters email address"))
 def ui_gate_username(browser, user):
     browser.find_by_id('f-login-username').fill(user)
     browser.find_by_id('f-login-submit').click()
@@ -283,6 +284,7 @@ def api_response_code(api_response, code):
 
 
 @given('collection "<collection>" exists')
+@given(parsers.parse("collection {collection} exists"))
 def collection_exists(user, collection):
     http_status, _ = api_request(
         user,
@@ -292,7 +294,7 @@ def collection_exists(user, collection):
     assert http_status == 200
 
 
-@given('"<collection>" is unlocked')
+@given(parsers.parse("{collection} is unlocked"))
 def collection_is_unlocked(user, collection):
     _, body = api_request(
         user,
@@ -311,7 +313,7 @@ def collection_is_unlocked(user, collection):
         assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED"
 
 
-@given('"<collection>" is locked')
+@given(parsers.parse("{collection} is locked"))
 def collection_is_locked(user, collection):
     _, body = api_request(
         user,
@@ -329,20 +331,23 @@ def collection_is_locked(user, collection):
     else:
         assert body["data"]["status"] == "LOCKED"
 
-
+@given(parsers.parse("the user navigates to {page}"))
+@when(parsers.parse("the user navigates to {page}"))
 @given('the user navigates to "<page>"')
 @when('the user navigates to "<page>"')
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
 
 
-@then('the user is redirected to "<page>"')
+@then(parsers.parse("the user is redirected to {page}"))
 def ui_user_redirected(browser, page):
     target = "{}{}".format(portal_url, page)
 
     assert browser.url == target
 
 
+@when(parsers.parse("user browses to folder {folder}"))
+@then(parsers.parse("user browses to folder {folder}"))
 @when('user browses to folder "<folder>"')
 @then('user browses to folder "<folder>"')
 def ui_browse_folder(browser, folder):

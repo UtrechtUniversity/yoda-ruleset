@@ -1,85 +1,158 @@
 Feature: Vault API
 
-    Examples:
-        | vault                          |
-        | /tempZone/home/vault-core-0    |
-        | /tempZone/home/vault-default-1 |
-        | /tempZone/home/vault-core-1    |
-        | /tempZone/home/vault-default-2 |
-
-    Scenario: Vault submit
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault submit API is queried on datapackage in "<vault>"
+    Scenario Outline: Vault submit
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault submit API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package status is "SUBMITTED_FOR_PUBLICATION"
 
-    Scenario: Vault cancel
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault cancel API is queried on datapackage in "<vault>"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault cancel
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault cancel API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package status is "UNPUBLISHED"
 
-    Scenario: Vault submit after cancel
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault submit API is queried on datapackage in "<vault>"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault submit after cancel
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault submit API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package status is "SUBMITTED_FOR_PUBLICATION"
 
-    Scenario: Vault approve
-        Given user "datamanager" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault approve API is queried on datapackage in "<vault>"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault approve
+        Given user datamanager is authenticated
+        And data package exists in <vault>
+        And the Yoda vault approve API is queried on datapackage in <vault>
         Then the response status code is "200"
         And data package status is "APPROVED_FOR_PUBLICATION"
 
-    Scenario: Vault preservable formats lists
-        Given user "researcher" is authenticated
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault preservable formats lists
+        Given user researcher is authenticated
         And the Yoda vault preservable formats lists API is queried
         Then the response status code is "200"
         And preservable formats lists are returned
 
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
     Scenario Outline: Vault unpreservable files
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault unpreservable files API is queried with "<list>" on datapackage in "<vault>"
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault unpreservable files API is queried with <list> on datapackage in <vault>
         Then the response status code is "200"
         And unpreservable files are returned
 
         Examples:
-            | list |
-            | 4TU  |
-            | DANS |
+            | vault                          | list |
+            | /tempZone/home/vault-core-0    | 4TU  |
+            | /tempZone/home/vault-default-1 | DANS |
+            | /tempZone/home/vault-core-1    | 4TU  |
+            | /tempZone/home/vault-default-2 | DANS |
 
-    Scenario: Vault system metadata
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault system metadata API is queried on datapackage in "<vault>"
+
+    Scenario Outline: Vault system metadata
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault system metadata API is queried on datapackage in <vault>
         Then the response status code is "200"
         And system metadata is returned
 
-    Scenario: Vault collection details
-        Given user "researcher" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault collection details API is queried on datapackage in "<vault>"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault collection details
+        Given user researcher is authenticated
+        And data package exists in <vault>
+        And the Yoda vault collection details API is queried on datapackage in <vault>
         Then the response status code is "200"
 
-    Scenario: Revoke read access to research group
-        Given user "datamanager" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault revoke read access research group API is queried on datapackage in "<vault>"
-        Then the response status code is "200"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
 
-    Scenario: Revoke grant access to research group
-        Given user "datamanager" is authenticated
-        And data package exists in "<vault>"
-        And the Yoda vault grant read access research group API is queried on datapackage in "<vault>"
-        Then the response status code is "200"
 
-    Scenario: Vault get publication terms
-        Given user "researcher" is authenticated
+    Scenario Outline: Revoke read access to research group
+        Given user datamanager is authenticated
+        And data package exists in <vault>
+        And the Yoda vault revoke read access research group API is queried on datapackage in <vault>
+        Then the response status code is "200"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Revoke grant access to research group
+        Given user datamanager is authenticated
+        And data package exists in <vault>
+        And the Yoda vault grant read access research group API is queried on datapackage in <vault>
+        Then the response status code is "200"
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |
+
+
+    Scenario Outline: Vault get publication terms
+        Given user researcher is authenticated
         And the Yoda vault get publication terms API is queried
         Then the response status code is "200"
         And publication terms are returned
+
+        Examples:
+            | vault                          |
+            | /tempZone/home/vault-core-0    |
+            | /tempZone/home/vault-default-1 |
+            | /tempZone/home/vault-core-1    |
+            | /tempZone/home/vault-default-2 |

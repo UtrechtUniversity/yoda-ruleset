@@ -1,8 +1,8 @@
 @intake
-Feature: INTAKE UI
+Feature: Intake UI
 
     Scenario: Intake scan only and find datasets and unrecognized files
-        Given user "datamanager" is logged in
+        Given user datamanager is logged in
         And module "intake" is shown
         When activate study "test"
         And total datasets is "0"
@@ -17,7 +17,7 @@ Feature: INTAKE UI
 
         When click for details of first dataset row
 
-        When add "COMMENTS" to comment field and press comment button 
+        When add "COMMENTS" to comment field and press comment button
 
         When check first dataset for locking
         And lock and unlock buttons are "enabled"
@@ -27,13 +27,13 @@ Feature: INTAKE UI
 
         When check all datasets for locking
 
-        Then click lock button 
+        Then click lock button
         And wait for all datasets to be in locked state successfully
         And wait for all datasets to be in frozen state
         And wait for frozen sets to be added to vault
 
     Scenario: Intake reporting
-        Given user "datamanager" is logged in
+        Given user datamanager is logged in
         And module "intake" is shown
 
         When open intake reporting area

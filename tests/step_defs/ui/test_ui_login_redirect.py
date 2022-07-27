@@ -1,10 +1,11 @@
 # coding=utf-8
 """Login redirect UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     when,
 )
@@ -17,7 +18,7 @@ scenarios('../../features/ui/ui_login_redirect.feature')
 restricted_page = "{}/test".format(portal_url)
 
 
-@when('user "<user>" logs in after being redirected')
+@when(parsers.parse("user {user} logs in after being redirected"))
 def ui_login_directly(browser, user):
     assert "{}/user/gate".format(portal_url) in browser.url
 

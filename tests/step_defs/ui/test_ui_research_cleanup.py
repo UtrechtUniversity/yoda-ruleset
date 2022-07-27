@@ -16,7 +16,7 @@ from conftest import upload_data
 scenarios('../../features/ui/ui_research_cleanup.feature')
 
 
-@given(parsers.parse('"{file}" is uploaded to folder "<folder>"'), target_fixture="api_response")
+@given(parsers.parse('"{file}" is uploaded to folder {folder}'), target_fixture="api_response")
 def api_cleanup_file_upload(user, file, folder):
     return upload_data(
         user,

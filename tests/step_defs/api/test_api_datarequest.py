@@ -1,7 +1,7 @@
 # coding=utf-8
 """Datarequest API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from io import BytesIO
@@ -27,7 +27,7 @@ def api_datarequest_browse(user):
     )
 
 
-@given('the Yoda datarequest schema get API is queried with schema name "<schema_name>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda datarequest schema get API is queried with schema name {schema_name}"), target_fixture="api_response")
 def api_datarequest_schema_get(user, schema_name):
     return api_request(
         user,
@@ -411,7 +411,7 @@ def request_status(user, datarequest_id, status):
     assert body['data']['requestStatus'] == status
 
 
-@then('the result is "<result>"')
+@then(parsers.parse("the result is {result}"))
 def result_is(api_response, result):
     _, body = api_response
 

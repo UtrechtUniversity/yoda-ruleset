@@ -1,14 +1,14 @@
 Feature: Research cleanup temporary files UI
 
   Scenario: Deposit open and restricted data package
-    Given user "<user>" is logged in
+    Given user <user> is logged in
     And module "research" is shown
-    When user browses to folder "<folder>"
+    When user browses to folder <folder>
 
-    Given "Thumbs.db" is uploaded to folder "<folder>"
-    Given ".DS_Store" is uploaded to folder "<folder>"
-    Given "._test1" is uploaded to folder "<folder>"
-    Given "._test2" is uploaded to folder "<folder>"
+    Given "Thumbs.db" is uploaded to folder <folder>
+    Given ".DS_Store" is uploaded to folder <folder>
+    Given "._test1" is uploaded to folder <folder>
+    Given "._test2" is uploaded to folder <folder>
 
     When user opens cleanup dialog
     And delete first file directly

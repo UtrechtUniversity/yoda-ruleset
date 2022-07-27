@@ -1,7 +1,7 @@
 # coding=utf-8
 """Vault UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import time
@@ -16,7 +16,7 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_vault.feature')
 
 
-@when('user browses to data package in "<vault>"')
+@when(parsers.parse("user browses to data package in {vault}"))
 def ui_browse_data_package(browser, vault):
     link = []
     while len(link) == 0:
@@ -180,7 +180,7 @@ def ui_data_package_copy_to_resarch(browser):
     browser.find_by_css('a.action-copy-vault-package-to-research').click()
 
 
-@when('user chooses research folder corresponding to "<vault>"')
+@when(parsers.parse("user chooses research folder corresponding to {vault}"))
 def ui_browse_research_to_copy_data_package_to(browser, vault):
     research = vault.replace("vault-", "research-")
     href = "?dir=%2F{}".format(research)
@@ -227,7 +227,7 @@ def ui_data_package_go_to_research(browser):
     browser.find_by_css('a.action-go-to-research').click()
 
 
-@then('the research space of "<vault>" is shown')
+@then(parsers.parse("the research space of {vault} is shown"))
 def ui_vault_research_space(browser, vault):
     research = vault.replace("vault-", "research-")
     assert browser.is_text_present(research, wait_time=3)

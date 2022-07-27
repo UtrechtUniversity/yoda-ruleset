@@ -1,10 +1,11 @@
 # coding=utf-8
 """Revisions UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     then,
     when,
@@ -14,7 +15,7 @@ from selenium.webdriver.common.keys import Keys
 scenarios('../../features/ui/ui_revisions.feature')
 
 
-@when('the user searches revision by name with "<name>"')
+@when(parsers.parse("the user searches revision by name with {name}"))
 def ui_revisions_search(browser, name):
     browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=revision]').click()
@@ -22,7 +23,7 @@ def ui_revisions_search(browser, name):
     browser.find_by_css('input#search-filter').type(Keys.RETURN)
 
 
-@when('user restores revision "<revision>"')
+@when(parsers.parse("user restores revision {revision}"))
 def ui_revisions_restore(browser, revision):
     link = []
     while len(link) == 0:
@@ -37,7 +38,7 @@ def ui_revisions_restore(browser, revision):
     browser.find_by_css("#btn-restore-overwrite").click()
 
 
-@then('revision "<revision>" is found')
+@then(parsers.parse("revision {revision} is found"))
 def ui_revisions_found(browser, revision):
     link = []
     while len(link) == 0:

@@ -95,7 +95,7 @@ def api_deposit_file_upload(user, deposit_name):
     )
 
 
-@given('"<data_access_restriction>" metadata is uploaded', target_fixture="api_response")
+@given(parsers.parse("{data_access_restriction} metadata is uploaded"), target_fixture="api_response")
 def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_restriction):
     cwd = os.getcwd()
     with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
@@ -119,7 +119,7 @@ def ui_deposit_click_deposit_on_dp_access(browser):
     return datapackage
 
 
-@when('user clicks on deposit containing "<data_access_restriction>" in title')
+@when(parsers.parse("user clicks on deposit containing {data_access_restriction} in title"))
 def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
     package_title_contains = 'UI test ' + data_access_restriction.title()
     browser.links.find_by_partial_text(package_title_contains)[0].click()

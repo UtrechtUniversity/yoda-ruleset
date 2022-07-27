@@ -1,12 +1,12 @@
 # coding=utf-8
 """Revisions API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../../features/api/api_revisions.feature')
 
 
-@given('the Yoda revision API is queried with "<filename>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda revision API is queried with {filename}"), target_fixture="api_response")
 def api_search_revisions_on_filename(user, filename):
     return api_request(
         user,
@@ -25,7 +25,7 @@ def api_search_revisions_on_filename(user, filename):
     )
 
 
-@then('"<revision_search_result>" is found')
+@then(parsers.parse("{revision_search_result} is found"))
 def api_response_revision_search_result(api_response, revision_search_result):
     _, body = api_response
 
@@ -41,7 +41,7 @@ def api_response_revision_search_result(api_response, revision_search_result):
     assert found
 
 
-@given('the Yoda revision API is queried with "<path>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda revision API is queried with {path}"), target_fixture="api_response")
 def api_get_revision_list(user, path):
     return api_request(
         user,
@@ -58,7 +58,7 @@ def api_response_list_found(api_response):
         assert body['data']['revisions'][0][key]
 
 
-@given('the Yoda revision API is requested for first revision for "<path>"', target_fixture="revision_id")
+@given(parsers.parse("the Yoda revision API is requested for first revision for {path}"), target_fixture="revision_id")
 def api_get_first_revision_id_for_path(user, path):
     api_response = api_request(
         user,
@@ -71,7 +71,7 @@ def api_get_first_revision_id_for_path(user, path):
     return body['data']['revisions'][0]['data_id']
 
 
-@given('the Yoda revision API is requested to restore revision in collection "<coll_target>" with name "<new_filename>" with revision id', target_fixture="api_response")
+@given(parsers.parse("the Yoda revision API is requested to restore revision in collection {coll_target} with name {new_filename} with revision id"), target_fixture="api_response")
 def api_restore_revision(user, revision_id, coll_target, new_filename):
     return api_request(
         user,

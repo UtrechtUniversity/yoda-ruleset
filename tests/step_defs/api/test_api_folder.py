@@ -18,7 +18,7 @@ from conftest import api_request
 scenarios('../../features/api/api_folder.feature')
 
 
-@given('the Yoda folder lock API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder lock API is queried with {folder}"), target_fixture="api_response")
 def api_folder_lock(user, folder):
     return api_request(
         user,
@@ -27,7 +27,7 @@ def api_folder_lock(user, folder):
     )
 
 
-@given('the Yoda folder get locks API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder get locks API is queried with {folder}"), target_fixture="api_response")
 def api_folder_get_locks(user, folder):
     return api_request(
         user,
@@ -36,7 +36,7 @@ def api_folder_get_locks(user, folder):
     )
 
 
-@given('the Yoda folder unlock API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder unlock API is queried with {folder}"), target_fixture="api_response")
 def api_folder_unlock(user, folder):
     return api_request(
         user,
@@ -45,7 +45,7 @@ def api_folder_unlock(user, folder):
     )
 
 
-@given('the Yoda folder submit API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder submit API is queried with {folder}"), target_fixture="api_response")
 def api_folder_submit(user, folder):
     return api_request(
         user,
@@ -54,7 +54,7 @@ def api_folder_submit(user, folder):
     )
 
 
-@given('the Yoda folder unsubmit API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder unsubmit API is queried with {folder}"), target_fixture="api_response")
 def api_folder_unsubmit(user, folder):
     return api_request(
         user,
@@ -63,7 +63,7 @@ def api_folder_unsubmit(user, folder):
     )
 
 
-@given('the Yoda folder reject API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder reject API is queried with {folder}"), target_fixture="api_response")
 def api_folder_reject(user, folder):
     return api_request(
         user,
@@ -72,7 +72,7 @@ def api_folder_reject(user, folder):
     )
 
 
-@given('the Yoda folder accept API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda folder accept API is queried with {folder}"), target_fixture="api_response")
 def api_folder_accept(user, folder):
     return api_request(
         user,
@@ -81,7 +81,7 @@ def api_folder_accept(user, folder):
     )
 
 
-@given('metadata JSON exists in "<folder>"')
+@given(parsers.parse("metadata JSON exists in {folder}"))
 def api_response(user, folder):
     _, body = api_request(
         user,
@@ -105,7 +105,7 @@ def api_response(user, folder):
     assert http_status == 200
 
 
-@then(parsers.parse('folder "<folder>" status is "{status}"'))
+@then(parsers.parse("folder {folder} status is {status}"))
 def folder_status(user, folder, status):
     # Status FOLDER is empty.
     if status == "FOLDER":
@@ -120,7 +120,7 @@ def folder_status(user, folder, status):
     assert body["data"]["status"] == status
 
 
-@then('folder locks contains "<folder>"')
+@then(parsers.parse("folder locks contains {folder}"))
 def folder_locks(api_response, folder):
     _, body = api_response
     x = folder.split('/')

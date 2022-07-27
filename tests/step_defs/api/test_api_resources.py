@@ -1,12 +1,12 @@
 # coding=utf-8
 """Resources API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -25,7 +25,7 @@ def api_get_groups_of_datamanger(user):
     )
 
 
-@then('"<group>" is found')
+@then(parsers.parse("{group} is found"))
 def api_response_group_is_found(api_response, group):
     _, body = api_response
 
@@ -39,7 +39,7 @@ def api_response_group_is_found(api_response, group):
     assert found_group
 
 
-@given('the Yoda resources full year group data API is queried with "<group>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda resources full year group data API is queried with {group}"), target_fixture="api_response")
 def api_resource_full_year_group_data(user, group):
     return api_request(
         user,
@@ -124,7 +124,7 @@ def api_response_list_of_resources_and_tiers(api_response):
     assert body['data'][0]['id']
 
 
-@given('the Yoda resources API is queried for tier_name of "<resource_name>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda resources API is queried for tier_name of {resource_name}"), target_fixture="api_response")
 def api_get_tier_on_resource(user, resource_name):
     return api_request(
         user,
@@ -133,7 +133,7 @@ def api_get_tier_on_resource(user, resource_name):
     )
 
 
-@then('"<tier_name>" is found')
+@then(parsers.parse("{tier_name} is found"))
 def api_response_tier_name_for_resource(api_response, tier_name):
     _, body = api_response
 
@@ -149,14 +149,14 @@ def api_get_tiers(user):
     )
 
 
-@then('list with "<tier_name>" is found')
+@then(parsers.parse("list with {tier_name} is found"))
 def api_response_all_tiers(api_response, tier_name):
     _, body = api_response
 
     assert tier_name in body['data']
 
 
-@given('the Yoda resources API is requested to save tier "<tier_name>" for resource "<resource_name>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda resources API is requested to save tier {tier_name} for resource {resource_name}"), target_fixture="api_response")
 def api_save_tier_for_resource(user, resource_name, tier_name):
     return api_request(
         user,
@@ -170,18 +170,6 @@ def api_response_save_tier_name_successful(api_response):
     _, body = api_response
 
     assert body['status'] == 'ok'
-
-
-@given('the Yoda resources API is queried for full year of monthly data for group "<group_name>" starting from current month backward', target_fixture="api_response")
-def api_get_monthly_user_research_groups(user, group_name):
-    from datetime import datetime
-    current_month = datetime.now().month
-
-    return api_request(
-        user,
-        "resource_full_year_group_data",
-        {"group_name": group_name, "current_month": current_month}
-    )
 
 
 @then('full year storage data is found')

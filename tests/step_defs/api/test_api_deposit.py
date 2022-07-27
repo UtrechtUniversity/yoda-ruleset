@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from pytest_bdd import (
     given,
+    parsers,
     scenarios,
     then,
 )
@@ -66,7 +67,7 @@ def api_deposit_clear(user, deposit_name):
     )
 
 
-@given('a file "<file>" is uploaded in deposit', target_fixture="api_response")
+@given(parsers.parse("a file {file} is uploaded in deposit"), target_fixture="api_response")
 def api_deposit_file_upload(user, file, deposit_name):
     return upload_data(
         user,
@@ -133,7 +134,7 @@ def data_access_restriction_restricted(user, deposit_name):
     )
 
 
-@given('the Yoda browse collections API is queried with "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda browse collections API is queried with {collection}"), target_fixture="api_response")
 def api_browse_collections(user, collection):
     return api_request(
         user,

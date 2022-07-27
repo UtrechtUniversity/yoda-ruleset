@@ -1,7 +1,7 @@
 # coding=utf-8
 """Group API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
@@ -34,7 +34,7 @@ def api_group_categories(user):
     )
 
 
-@given('the Yoda group subcategories API is queried with "<category>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda group subcategories API is queried with {category}"), target_fixture="api_response")
 def api_group_subcategories(user, category):
     return api_request(
         user,
@@ -43,7 +43,7 @@ def api_group_subcategories(user, category):
     )
 
 
-@given('the user searches for users matching "<pattern>"', target_fixture="api_response")
+@given(parsers.parse("the user searches for users matching {pattern}"), target_fixture="api_response")
 def api_group_search_users(user, pattern):
     return api_request(
         user,
@@ -157,7 +157,7 @@ def api_group_delete_user(user, new_user, group_name):
     )
 
 
-@then('the result is equal to "<users>"')
+@then(parsers.parse("the result is equal to {users}"))
 def then_users_found_match(api_response, users):
     _, body = api_response
 
@@ -166,7 +166,7 @@ def then_users_found_match(api_response, users):
     assert body["data"] == users
 
 
-@then('group "<group>" exists')
+@then(parsers.parse("group {group} exists"))
 def group_exists(api_response, group):
     _, body = api_response
 
@@ -185,7 +185,7 @@ def group_exists(api_response, group):
     assert found
 
 
-@then('category "<category>" exists')
+@then(parsers.parse("category {category} exists"))
 def category_exists(api_response, category):
     _, body = api_response
 

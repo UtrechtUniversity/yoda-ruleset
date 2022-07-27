@@ -1,12 +1,12 @@
 # coding=utf-8
 """Meta form API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -102,7 +102,7 @@ LONG_METADATA = {
 }
 
 
-@given('the Yoda meta form save API is queried with metadata and "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda meta form save API is queried with metadata and {collection}"), target_fixture="api_response")
 def api_meta_form_save(user, collection):
     return api_request(
         user,
@@ -133,7 +133,7 @@ def api_meta_form_save(user, collection):
     )
 
 
-@given('the Yoda meta form save API is queried with long metadata and "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda meta form save API is queried with long metadata and {collection}"), target_fixture="api_response")
 def api_meta_form_save_long(user, collection):
     return api_request(
         user,
@@ -143,7 +143,7 @@ def api_meta_form_save_long(user, collection):
     )
 
 
-@given('the Yoda meta form load API is queried with "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda meta form load API is queried with {collection}"), target_fixture="api_response")
 def api_meta_form_load(user, collection):
     return api_request(
         user,
@@ -152,7 +152,7 @@ def api_meta_form_load(user, collection):
     )
 
 
-@then('file "<file>" exists in "<collection>"')
+@then('file {file} exists in {collection}')
 def file_exists(user, file, collection):
     http_status, body = api_request(
         user,
@@ -171,7 +171,7 @@ def file_exists(user, file, collection):
     assert found
 
 
-@then('metadata is returned for "<collection>"')
+@then(parsers.parse("metadata is returned for {collection}"))
 def metadata_returned(api_response, collection):
     http_status, body = api_response
 
