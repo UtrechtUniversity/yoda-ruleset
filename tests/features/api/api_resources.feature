@@ -4,7 +4,7 @@ Feature: Resources API
         Given user <user> is authenticated
         And the Yoda resources API is queried for all research groups
         Then the response status code is "200"
-        And <group> is found
+        And group <group> is found
 
         Examples:
             | user        | group             |
@@ -63,7 +63,7 @@ Feature: Resources API
         Given user <user> is authenticated
         And the Yoda resources API is queried for tier_name of <resource_name>
         Then the response status code is "200"
-        And <tier_name> is found
+        And tier name <tier_name> is found
 
         Examples:
             | user           | resource_name | tier_name |

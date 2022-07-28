@@ -25,7 +25,7 @@ def api_get_groups_of_datamanger(user):
     )
 
 
-@then(parsers.parse("{group} is found"))
+@then(parsers.parse("group {group} is found"))
 def api_response_group_is_found(api_response, group):
     _, body = api_response
 
@@ -133,7 +133,7 @@ def api_get_tier_on_resource(user, resource_name):
     )
 
 
-@then(parsers.parse("{tier_name} is found"))
+@then(parsers.parse("tier name {tier_name} is found"))
 def api_response_tier_name_for_resource(api_response, tier_name):
     _, body = api_response
 

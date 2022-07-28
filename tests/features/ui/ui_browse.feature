@@ -29,6 +29,6 @@ Feature: Browse UI
 
 
     Scenario: Browsing to a non existing page
-        Given user "researcher" is logged in
+        Given user researcher is logged in
         When module "nonexisting" is shown
         Then the 404 error page is shown

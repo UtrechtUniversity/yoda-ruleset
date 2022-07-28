@@ -130,7 +130,7 @@ def ui_research_multi_copy(browser, folder):
 
 
 @when(parsers.parse("user multi-select deletes files / folders"))
-def ui_research_multi_delete(browser, folder):
+def ui_research_multi_delete(browser):
     browser.find_by_css('input[data-name="testdata"]').click()
     browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
     browser.find_by_id('multiSelect').click()

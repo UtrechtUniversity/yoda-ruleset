@@ -2,7 +2,7 @@ Feature: Revisions API
 
     Scenario Outline: Search revisions on file name
         Given user <user> is authenticated
-        And the Yoda revision API is queried with <filename>
+        And the Yoda revision search API is queried with <filename>
 	    Then the response status code is "200"
 	    And <revision_search_result> is found
 
@@ -13,7 +13,7 @@ Feature: Revisions API
 
     Scenario Outline: Find actual revisions for one particular data object
         Given user <user> is authenticated
-        Given the Yoda revision API is queried with <path>
+        Given the Yoda revision list API is queried with <path>
 	    Then the response status code is "200"
 	    And revisions list is found
 

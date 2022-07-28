@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../../features/api/api_revisions.feature')
 
 
-@given(parsers.parse("the Yoda revision API is queried with {filename}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda revision search API is queried with {filename}"), target_fixture="api_response")
 def api_search_revisions_on_filename(user, filename):
     return api_request(
         user,
@@ -41,7 +41,7 @@ def api_response_revision_search_result(api_response, revision_search_result):
     assert found
 
 
-@given(parsers.parse("the Yoda revision API is queried with {path}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda revision list API is queried with {path}"), target_fixture="api_response")
 def api_get_revision_list(user, path):
     return api_request(
         user,

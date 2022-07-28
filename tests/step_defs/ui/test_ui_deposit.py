@@ -85,7 +85,7 @@ def ui_user_clicks_for_data_access(browser, title):
     assert browser.is_text_present(title)
 
 
-@given('data file is uploaded to deposit', target_fixture="api_response")
+@given(parsers.parse("data file is uploaded to deposit by user {user}"), target_fixture="api_response")
 def api_deposit_file_upload(user, deposit_name):
     file = 'ui_test.file'
     return upload_data(
@@ -95,7 +95,7 @@ def api_deposit_file_upload(user, deposit_name):
     )
 
 
-@given(parsers.parse("{data_access_restriction} metadata is uploaded"), target_fixture="api_response")
+@given(parsers.parse("{data_access_restriction} metadata is uploaded by user {user}"), target_fixture="api_response")
 def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_restriction):
     cwd = os.getcwd()
     with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
