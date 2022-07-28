@@ -68,26 +68,26 @@ Feature: Group API
 
     Scenario: Adding user to group
         Given user technicaladmin is authenticated
-        And the user X "sterlingarcher" is not a member of group "testGroupie"
-        And the user adds user X to the group
+        And the user "sterlingarcher" is not a member of group "testGroupie"
+        And the user adds user "sterlingarcher" to the group "testGroupie"
         Then the response status code is "200"
-        And user X is now a member of the group
+        And user "sterlingarcher" is now a member of the group "testGroupie"
 
 
     Scenario: Group user update role
         Given user technicaladmin is authenticated
-        And the user X "sterlingarcher" is a member of group "testGroupie"
-        And the user updates the role of user X
+        And the user "sterlingarcher" is a member of group "testGroupie"
+        And the user updates the role of user "sterlingarcher" in group "testGroupie"
         Then the response status code is "200"
-        And the update is persisted
+        And the role of user "sterlingarcher" in group "testGroupie" is updated
 
 
     Scenario: Remove user from group
         Given user technicaladmin is authenticated
-        And the user X "sterlingarcher" is a member of group "testGroupie"
-        And the user removes user X from the group
+        And the user "sterlingarcher" is a member of group "testGroupie"
+        And the user removes user "sterlingarcher" from the group "testGroupie"
         Then the response status code is "200"
-        And user X is no longer a member of the group
+        And user "sterlingarcher" is no longer a member of the group "testGroupie"
 
 
     Scenario: Group delete

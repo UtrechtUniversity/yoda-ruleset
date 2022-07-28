@@ -1,6 +1,6 @@
 Feature: Research cleanup temporary files UI
 
-  Scenario: Deposit open and restricted data package
+  Scenario Outline: Deposit open and restricted data package
     Given user <user> is logged in
     And module "research" is shown
     When user browses to folder <folder>

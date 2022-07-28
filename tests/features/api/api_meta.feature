@@ -1,13 +1,9 @@
 Feature: Meta API
 
-    Examples:
-        | collection                       |
-        | /tempZone/home/research-initial  |
-
     Background:
         Given user researcher is authenticated
-        And collection <collection> exists
-        And <collection> is unlocked
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
 
 
     Scenario Outline: Meta clone file
@@ -19,8 +15,8 @@ Feature: Meta API
         And metadata JSON is cloned into <target_coll>
 
         Examples:
-            | target_coll                           |
-            | /tempZone/home/research-initial/clone |
+            | collection                      | target_coll                           |
+            | /tempZone/home/research-initial | /tempZone/home/research-initial/clone |
 
 
     Scenario Outline: Meta remove

@@ -1,13 +1,9 @@
 Feature: Research API
 
-    Examples:
-        | collection                      |
-        | /tempZone/home/research-initial |
-
     Background:
         Given user researcher is authenticated
-        And collection <collection> exists
-        And <collection> is unlocked
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
 
 
     Scenario Outline: Research folder add
@@ -17,11 +13,11 @@ Feature: Research API
         And folder <folder> exists in <collection>
 
         Examples:
-            | folder                      |
-            | api_test_folder             |
-            | api_test_copy               |
-            | api_test_move               |
-            | api_test_1234567890         |
+            | collection                      | folder                      |
+            | /tempZone/home/research-initial | api_test_folder             |
+            | /tempZone/home/research-initial | api_test_copy               |
+            | /tempZone/home/research-initial | api_test_move               |
+            | /tempZone/home/research-initial | api_test_1234567890         |
 
 
     Scenario Outline: Research folder copy
@@ -32,9 +28,9 @@ Feature: Research API
         And folder <copy> exists in <collection>
 
         Examples:
-            | folder             | copy                    |
-            | api_test_copy      | api_test_copy2          |
-            | api_test_copy      | api_test_move1          |
+            | collection                      | folder             | copy                    |
+            | /tempZone/home/research-initial | api_test_copy      | api_test_copy2          |
+            | /tempZone/home/research-initial | api_test_copy      | api_test_move1          |
 
 
     Scenario Outline: Research folder move
@@ -45,8 +41,8 @@ Feature: Research API
         And folder <move> exists in <collection>
 
         Examples:
-            | folder             | move                |
-            | api_test_move1     | api_test_move2      |
+            | collection                      | folder             | move                |
+            | /tempZone/home/research-initial | api_test_move1     | api_test_move2      |
 
 
     Scenario Outline: Research folder rename
@@ -57,8 +53,8 @@ Feature: Research API
         And folder <folder> exists in <collection>
 
         Examples:
-            | folder_old       | folder                  |
-            | api_test_folder  | api_test_folder_renamed |
+            | collection                      | folder_old       | folder                  |
+            | /tempZone/home/research-initial | api_test_folder  | api_test_folder_renamed |
 
 
     Scenario Outline: Research file copy
@@ -69,9 +65,9 @@ Feature: Research API
         And file <copy> exists in <copy_collection>
 
         Examples:
-            | file               | copy                    | copy_collection                               |
-            | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial               |
-            | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial/api_test_copy |
+            | collection                      | file               | copy                    | copy_collection                               |
+            | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial               |
+            | /tempZone/home/research-initial | yoda-metadata.json | yoda-metadata_copy.json | /tempZone/home/research-initial/api_test_copy |
 
 
     Scenario Outline: Research file rename
@@ -82,8 +78,8 @@ Feature: Research API
         And file <file_renamed> exists in <collection>
 
         Examples:
-            | file                    | file_renamed               |
-            | yoda-metadata_copy.json | yoda-metadata_renamed.json |
+            | collection                      | file                    | file_renamed               |
+            | /tempZone/home/research-initial | yoda-metadata_copy.json | yoda-metadata_renamed.json |
 
 
     Scenario Outline: Research file move
@@ -94,8 +90,8 @@ Feature: Research API
         And file <file> does not exist in <collection>
 
         Examples:
-            | file                       | move_collection                               |
-            | yoda-metadata_renamed.json | /tempZone/home/research-initial/api_test_move |
+            | collection                      | file                       | move_collection                               |
+            | /tempZone/home/research-initial | yoda-metadata_renamed.json | /tempZone/home/research-initial/api_test_move |
 
 
     Scenario Outline: Research file upload
@@ -105,9 +101,9 @@ Feature: Research API
         And file <file> exists in <collection>
 
         Examples:
-            | file                 | folder                                        |
-            | upload_test_file.txt | /research-initial                             |
-            | upload_test_file.txt | /research-initial/api_test_1234567890         |
+            | collection                      | file                 | folder                                        |
+            | /tempZone/home/research-initial | upload_test_file.txt | /research-initial                             |
+            | /tempZone/home/research-initial | upload_test_file.txt | /research-initial/api_test_1234567890         |
 
 
     Scenario Outline: Research file delete
@@ -117,8 +113,8 @@ Feature: Research API
         And file <file> does not exist in <collection>
 
         Examples:
-            | file                       |
-            | upload_test_file.txt       |
+            | collection                      | file                       |
+            | /tempZone/home/research-initial | upload_test_file.txt       |
 
 
     Scenario Outline: Research folder delete
@@ -128,10 +124,10 @@ Feature: Research API
         And folder <folder> does not exist in <collection>
 
         Examples:
-            | folder                      |
-            | api_test_folder_renamed     |
-            | api_test_copy               |
-            | api_test_copy2              |
-            | api_test_move               |
-            | api_test_move2              |
-            | api_test_1234567890         |
+            | collection                      | folder                      |
+            | /tempZone/home/research-initial | api_test_folder_renamed     |
+            | /tempZone/home/research-initial | api_test_copy               |
+            | /tempZone/home/research-initial | api_test_copy2              |
+            | /tempZone/home/research-initial | api_test_move               |
+            | /tempZone/home/research-initial | api_test_move2              |
+            | /tempZone/home/research-initial | api_test_1234567890         |

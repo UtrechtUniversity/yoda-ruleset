@@ -112,8 +112,8 @@ def api_group_delete(user, group_name):
     )
 
 
-@given(parsers.parse('the user X "{new_user}" is not a member of group "{group_name}"'))
-@then('user X is no longer a member of the group')
+@given(parsers.parse('the user "{new_user}" is not a member of group "{group_name}"'))
+@then(parsers.parse('user "{new_user}" is no longer a member of the group "{group_name}"'))
 def given_user_is_not_member(user, new_user, group_name):
     _, body = api_request(
         user,
@@ -126,7 +126,7 @@ def given_user_is_not_member(user, new_user, group_name):
     assert not is_member
 
 
-@given('the user adds user X to the group', target_fixture="api_response")
+@given(parsers.parse('the user adds user "{new_user}" to the group "{group_name}"'), target_fixture="api_response")
 def api_group_create_user(user, new_user, group_name):
     return api_request(
         user,
@@ -136,7 +136,7 @@ def api_group_create_user(user, new_user, group_name):
     )
 
 
-@given('the user updates the role of user X', target_fixture="api_response")
+@given(parsers.parse('the user updates the role of user "{new_user}" in group "{group_name}"'), target_fixture="api_response")
 def api_group_update_user(user, new_user, group_name):
     return api_request(
         user,
@@ -147,7 +147,7 @@ def api_group_update_user(user, new_user, group_name):
     )
 
 
-@given('the user removes user X from the group', target_fixture="api_response")
+@given(parsers.parse('the user removes user "{new_user}" from the group "{group_name}"'), target_fixture="api_response")
 def api_group_delete_user(user, new_user, group_name):
     return api_request(
         user,
@@ -228,8 +228,8 @@ def then_group_updated(user, group_name, api_response):
     assert description == tobeDescription
 
 
-@then('user X is now a member of the group')
-@given(parsers.parse('the user X "{new_user}" is a member of group "{group_name}"'))
+@given(parsers.parse('the user "{new_user}" is a member of group "{group_name}"'))
+@then(parsers.parse('user "{new_user}" is now a member of the group "{group_name}"'))
 def then_user_is_member(user, new_user, group_name):
     _, body = api_request(
         user,
@@ -242,7 +242,7 @@ def then_user_is_member(user, new_user, group_name):
     assert is_member
 
 
-@then('the update is persisted')
+@then(parsers.parse('the role of user "{new_user}" in group "{group_name}" is updated'))
 def then_user_update_persisted(user, new_user, group_name):
     _, body = api_request(
         user,

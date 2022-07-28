@@ -5,7 +5,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault submit API is queried on datapackage in <vault>
         Then the response status code is "200"
-        And data package status is "SUBMITTED_FOR_PUBLICATION"
+        And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
             | vault                          |
@@ -20,7 +20,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault cancel API is queried on datapackage in <vault>
         Then the response status code is "200"
-        And data package status is "UNPUBLISHED"
+        And data package in <vault> status is "UNPUBLISHED"
 
         Examples:
             | vault                          |
@@ -35,7 +35,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault submit API is queried on datapackage in <vault>
         Then the response status code is "200"
-        And data package status is "SUBMITTED_FOR_PUBLICATION"
+        And data package in <vault> status is "SUBMITTED_FOR_PUBLICATION"
 
         Examples:
             | vault                          |
@@ -50,7 +50,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault approve API is queried on datapackage in <vault>
         Then the response status code is "200"
-        And data package status is "APPROVED_FOR_PUBLICATION"
+        And data package in <vault> status is "APPROVED_FOR_PUBLICATION"
 
         Examples:
             | vault                          |
@@ -136,6 +136,7 @@ Feature: Vault API
         And data package exists in <vault>
         And the Yoda vault grant read access research group API is queried on datapackage in <vault>
         Then the response status code is "200"
+
         Examples:
             | vault                          |
             | /tempZone/home/vault-core-0    |

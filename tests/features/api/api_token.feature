@@ -1,6 +1,6 @@
 Feature: Token API
 
-    Scenario: Token generate
+    Scenario Outline: Token generate
         Given user researcher is authenticated
         And the Yoda token generate API is queried with <label>
         Then the response status code is "200"
@@ -21,7 +21,7 @@ Feature: Token API
         And all tokens are returned
 
 
-    Scenario: Token delete
+    Scenario Outline: Token delete
         Given user researcher is authenticated
         And the Yoda token delete API is queried with <label>
         Then the response status code is "200"

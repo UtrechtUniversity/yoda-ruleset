@@ -35,7 +35,6 @@ Feature: Search API
         Examples:
             | metadata | result             |
             | yoda     | /research-initial  |
-            | yoda     | /research-initial1 |
 
 
     Scenario Outline: Search folder status

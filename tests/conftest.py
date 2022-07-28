@@ -217,11 +217,8 @@ def api_user_authenticated(user):
     return user
 
 
-@given(parsers.parse('user {user} is logged in'))
+@given(parsers.parse('user {user} is logged in'), target_fixture="user")
 @when(parsers.parse('user {user} logs in'))
-@given('user "<user>" is logged in')
-@given(parsers.parse('user "{user}" is logged in'))
-@when('user "<user>" logs in')
 def ui_login(browser, user):
     url = "{}/user/gate".format(portal_url)
     browser.visit(url)
@@ -283,7 +280,6 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@given('collection "<collection>" exists')
 @given(parsers.parse("collection {collection} exists"))
 def collection_exists(user, collection):
     http_status, _ = api_request(
@@ -331,10 +327,9 @@ def collection_is_locked(user, collection):
     else:
         assert body["data"]["status"] == "LOCKED"
 
+
 @given(parsers.parse("the user navigates to {page}"))
 @when(parsers.parse("the user navigates to {page}"))
-@given('the user navigates to "<page>"')
-@when('the user navigates to "<page>"')
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
 
@@ -348,8 +343,6 @@ def ui_user_redirected(browser, page):
 
 @when(parsers.parse("user browses to folder {folder}"))
 @then(parsers.parse("user browses to folder {folder}"))
-@when('user browses to folder "<folder>"')
-@then('user browses to folder "<folder>"')
 def ui_browse_folder(browser, folder):
     link = []
     while len(link) == 0:

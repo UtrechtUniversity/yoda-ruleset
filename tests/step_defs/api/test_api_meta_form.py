@@ -152,7 +152,7 @@ def api_meta_form_load(user, collection):
     )
 
 
-@then('file {file} exists in {collection}')
+@then(parsers.parse("file {file} exists in {collection}"))
 def file_exists(user, file, collection):
     http_status, body = api_request(
         user,

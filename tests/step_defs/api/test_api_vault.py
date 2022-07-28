@@ -120,7 +120,7 @@ def api_vault_get_publication_terms(user):
     )
 
 
-@then(parsers.parse('data package status is "{status}"'))
+@then(parsers.parse('data package in {vault} status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
     _, body = api_request(
         user,

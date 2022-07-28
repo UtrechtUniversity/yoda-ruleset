@@ -48,6 +48,7 @@ def api_response_contains(api_response, result):
 
     assert found
 
+
 @then(parsers.parse("the browse result does not contain {notresult}"))
 def api_response_not_contain(api_response, notresult):
     _, body = api_response

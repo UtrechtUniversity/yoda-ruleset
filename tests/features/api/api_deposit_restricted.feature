@@ -8,7 +8,7 @@ Feature: Deposit API (restricted)
         And deposit path is returned
 
 
-    Scenario: Deposit upload data
+    Scenario Outline: Deposit upload data
         Given user researcher is authenticated
         And deposit exists
         And a file <file> is uploaded in deposit
@@ -44,7 +44,7 @@ Feature: Deposit API (restricted)
         Then the response status code is "200"
 
 
-    Scenario: Deposit not accessible for viewer
+    Scenario Outline: Deposit not accessible for viewer
         Given user researcher is authenticated
         And deposit exists
         And deposit is archived

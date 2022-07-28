@@ -1,14 +1,9 @@
 Feature: Meta form API
 
-    Examples:
-        | collection                       |
-        | /tempZone/home/research-initial  |
-        | /tempZone/home/research-initial1 |
-
     Background:
         Given user researcher is authenticated
-        And collection <collection> exists
-        And <collection> is unlocked
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
 
 
     Scenario Outline: Meta form save
@@ -18,8 +13,9 @@ Feature: Meta form API
         And file <file> exists in <collection>
 
         Examples:
-            | file               |
-            | yoda-metadata.json |
+            | collection                       | file               |
+            | /tempZone/home/research-initial  | yoda-metadata.json |
+            | /tempZone/home/research-initial1 | yoda-metadata.json |
 
 
     Scenario Outline: Meta form save long content
@@ -29,12 +25,17 @@ Feature: Meta form API
         And file <file> exists in <collection>
 
         Examples:
-            | file               |
-            | yoda-metadata.json |
+            | collection                       | file               |
+            | /tempZone/home/research-initial  | yoda-metadata.json |
+            | /tempZone/home/research-initial1 | yoda-metadata.json |
 
-
-    Scenario: Meta form load
+    Scenario Outline: Meta form load
         Given user researcher is authenticated
         And the Yoda meta form load API is queried with <collection>
         Then the response status code is "200"
         And metadata is returned for <collection>
+
+        Examples:
+            | collection                       |
+            | /tempZone/home/research-initial  |
+            | /tempZone/home/research-initial1 |

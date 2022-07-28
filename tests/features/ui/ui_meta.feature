@@ -1,13 +1,9 @@
 Feature: Meta UI
 
-      Examples:
-          | collection                       |
-          | /tempZone/home/research-initial  |
-
     Background:
         Given user researcher is authenticated
-        And collection <collection> exists
-        And <collection> is unlocked
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
 
 
     Scenario Outline: Save metadata

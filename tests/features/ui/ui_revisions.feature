@@ -2,12 +2,8 @@ Feature: Revisions UI
 
     Background:
         Given user researcher is authenticated
-        And collection <collection> exists
-        And <collection> is unlocked
-
-        Examples:
-            | collection                       |
-            | /tempZone/home/research-initial  |
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
 
 
     Scenario Outline: Search revisions on file name
