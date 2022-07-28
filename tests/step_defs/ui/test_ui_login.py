@@ -53,3 +53,8 @@ def ui_login_oidc_form(browser, user):
 @then(parsers.parse("user {user} is logged in"))
 def ui_user_login(browser, user):
     assert browser.is_text_present("{}".format(user), wait_time=10)
+
+
+@then("incorrect username / password message is shown")
+def ui_user_incorrect(browser):
+    assert browser.is_text_present("Username/password was incorrect", wait_time=10)
