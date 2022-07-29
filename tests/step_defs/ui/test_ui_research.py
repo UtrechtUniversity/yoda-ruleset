@@ -19,14 +19,14 @@ scenarios('../../features/ui/ui_research.feature')
 @then(parsers.parse("user browses to subfolder {subfolder}"))
 @when(parsers.parse("user browses to subfolder {subfolder}"))
 def ui_browse_subfolder(browser, subfolder):
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(subfolder).click()
 
 
 @then(parsers.parse("user browses to subfolder {folder_new}"))
 @when(parsers.parse("user browses to subfolder {folder_new}"))
 def ui_browse_newsubfolder(browser, folder_new):
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
 
 
@@ -34,7 +34,7 @@ def ui_browse_newsubfolder(browser, folder_new):
 def ui_research_file_copy(browser, file, folder):
     browser.find_by_css('button[data-name="{}"]'.format(file)).click()
     browser.find_by_css('a.file-copy[data-name="{}"]'.format(file)).click()
-    time.sleep(3)
+    time.sleep(1)
     browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
     browser.find_by_css('.dlg-action-button').click()
 
@@ -43,7 +43,7 @@ def ui_research_file_copy(browser, file, folder):
 def ui_research_file_move(browser, file, subfolder):
     browser.find_by_css('button[data-name="{}"]'.format(file)).click()
     browser.find_by_css('a.file-move[data-name="{}"]'.format(file)).click()
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(subfolder).click()
     browser.find_by_css('.dlg-action-button').click()
 
@@ -82,7 +82,7 @@ def ui_research_folder_rename(browser, folder_old, folder_new):
 def ui_research_folder_copy(browser, folder_old, folder_new):
     browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
     browser.find_by_css('a.folder-copy[data-name={}]'.format(folder_old)).click()
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
     browser.find_by_css('.dlg-action-button').click()
 
@@ -91,7 +91,7 @@ def ui_research_folder_copy(browser, folder_old, folder_new):
 def ui_research_folder_move(browser, folder_old, folder_new):
     browser.find_by_css('button[data-name={}]'.format(folder_old)).click()
     browser.find_by_css('a.folder-move[data-name={}]'.format(folder_old)).click()
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
     browser.find_by_css('.dlg-action-button').click()
 
@@ -109,10 +109,10 @@ def ui_research_multi_move(browser, folder_new):
     browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-move').click()
-    time.sleep(3)
+    time.sleep(1)
     browser.links.find_by_partial_text(folder_new).click()
     browser.find_by_css('.dlg-action-button').click()
-    time.sleep(5)
+    time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
 
@@ -122,10 +122,10 @@ def ui_research_multi_copy(browser, folder):
     browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-copy').click()
-    time.sleep(3)
+    time.sleep(1)
     browser.find_by_css('[data-path="/{}"]'.format(folder)).click()
     browser.find_by_css('.dlg-action-button').click()
-    time.sleep(3)
+    time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
 
@@ -136,7 +136,7 @@ def ui_research_multi_delete(browser):
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-delete').click()
     browser.find_by_css('.dlg-action-button').click()
-    time.sleep(3)
+    time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
 
