@@ -21,7 +21,7 @@ Feature: Meta API
 
     Scenario Outline: Meta remove
         Given user researcher is authenticated
-        And metadata JSON exists in <clone_collection>
+        And cloned metadata JSON exists in <clone_collection>
         And the Yoda meta remove API is queried with metadata and <clone_collection>
         Then the response status code is "200"
         And metadata JSON is removed from <clone_collection>

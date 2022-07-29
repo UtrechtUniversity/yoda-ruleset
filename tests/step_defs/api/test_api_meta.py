@@ -45,7 +45,7 @@ def api_meta_form_save(user, collection):
     assert http_status == 200
 
 
-@given(parsers.parse("metadata JSON exists in {clone_collection}"))
+@given(parsers.parse("cloned metadata JSON exists in {clone_collection}"))
 def metadata_removed(user, clone_collection):
     http_status, body = api_request(
         user,
