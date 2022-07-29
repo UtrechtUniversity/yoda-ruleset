@@ -1,7 +1,7 @@
 # coding=utf-8
 """Publication process geo teclab tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -10,6 +10,7 @@ import time
 from pathlib import Path
 
 from pytest_bdd import (
+    given,
     parsers,
     scenarios,
     then,
@@ -19,12 +20,13 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_publication.feature')
 
 
+@given('all notifications are reset')
 @when('all notifications are reset')
 def ui_reset_notifcations(browser):
     browser.find_by_id('userDropdown').click()
     browser.links.find_by_partial_text('Notifications')[0].click()
 
-    time.sleep(5)
+    time.sleep(3)
 
     # reset all present notifications if any present
     if len(browser.find_by_css('.list-group-item-action')) > 0:
@@ -33,6 +35,7 @@ def ui_reset_notifcations(browser):
 
 @when(parsers.parse('user checks and clears notifications for status "{status}"'))
 def ui_notifications(browser, status):
+    time.sleep(3)
     status_text = {'Submitted': ['Data package submitted'],
                    'Accepted': ['Data package secured', 'Data package accepted for vault'],
                    'Submitted for publication': ['Data package submitted for publication', 'Data package secured'],
@@ -52,7 +55,7 @@ def ui_notifications(browser, status):
 
     browser.find_by_id('notifications_dismiss_all').click()
 
-    time.sleep(5)
+    time.sleep(3)
 
     # Check whether all notifications were cleared
     assert len(browser.find_by_css('.list-group-item-action')) == 0
@@ -64,7 +67,7 @@ def ui_check_provenance_research(browser):
     # precondition is that in the correct research folder already
     # This test can be executed repeatedly as always the n top statuses of the package in research will be checked
     # eventhough the folder is used several times in a different test run
-    time.sleep(10)  # This sleep cannot be added to next line as wait_time -> it doesn't work then
+    time.sleep(3)
     browser.find_by_css('.actionlog-icon')[0].click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
     # Chronological (backwards) status changes
@@ -77,7 +80,7 @@ def ui_check_provenance_research(browser):
 def ui_check_provenance_vault(browser):
     # Check presence and chronological order of provenance
     # precondition is that in the correct vault folder (highest level datapackage) already
-    time.sleep(10)  # This sleep cannot be added to next line as wait_time -> it doesn't work then
+    time.sleep(3)
     browser.find_by_css('.actionlog-icon')[0].click()
     action_log_rows = browser.find_by_css('.list-group-item-action')
     # Chronological (backward) status changes
@@ -86,32 +89,18 @@ def ui_check_provenance_vault(browser):
         assert action_log_rows[index].value.find(prov_statuses[index]) != -1
 
 
-@then('user downloads relevant files of datapackage')
-def ui_pub_download_relevant_files(browser):
-    # License file and yoda-metadata.json are present at toplevel
-    assert len(browser.find_by_css('.fa-file-o')) == 2
-
-    # Download each file - only yoda-metadata is required for testing purposes
-    # But for some reason it was impossible to distinghuish one from the other.
-    browser.find_by_css('.fa-ellipsis-h')[0].click()
-    browser.links.find_by_partial_text('Download')[0].click()
-
-    browser.find_by_css('.fa-ellipsis-h')[1].click()
-    browser.links.find_by_partial_text('Download')[1].click()
-
-
 @then('user opens landingpage through system metadata')
 def ui_pub_open_system_metadata(browser):
     browser.find_by_css('.system-metadata-icon')[0].click()
 
-    link = browser.links.find_by_partial_text('allinone')
+    link = browser.links.find_by_partial_text('.html')
     link.click()
 
 
 @then('user checks landingpage content')
 def ui_pub_check_landingpage_content(browser, tmpdir):
     tags = browser.find_by_css('.tag')
-    assert len(tags) == 10  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
+    assert len(tags) == 9  # Directly linked to the yoda-metadata.json file that is put here by ansible for testing purposes.
 
     # Build list with tag values
     landingpage_tag_values = []
@@ -129,8 +118,8 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
         if str(child)[-5:] == ".json":
 
             # This is dependant on the metadata schema. Now hardcoded and tested only for geo-teclab
-            metadata_tags = ['Main_Setting', 'Process_Hazard', 'Geological_Structure', 'Geomorphical_Feature',
-                             'Material', 'Apparatus', 'Monitoring', 'Software', 'Measured_Property', 'Tag']
+            metadata_tags = ['Main_Setting', 'Process_Hazard', 'Geological_Structure', 'Material',
+                             'Apparatus', 'Monitoring', 'Software', 'Measured_Property', 'Tag']
             with open(str(child)) as json_file:
                 data = json.load(json_file)
 
@@ -143,7 +132,18 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
     raise AssertionError()
 
 
-@when('user browses to data package in "<vault>"')
+@then('user downloads relevant files of datapackage')
+def ui_pub_download_relevant_files(browser):
+    # Download each file - only yoda-metadata is required for testing purposes
+    # But for some reason it was impossible to distinghuish one from the other.
+    browser.find_by_css('.fa-ellipsis-h')[0].click()
+    browser.links.find_by_partial_text('Download')[0].click()
+
+    browser.find_by_css('.fa-ellipsis-h')[1].click()
+    browser.links.find_by_partial_text('Download')[1].click()
+
+
+@when(parsers.parse("user browses to data package in {vault}"))
 def ui_browse_data_package(browser, vault):
     link = []
     while len(link) == 0:
@@ -154,7 +154,7 @@ def ui_browse_data_package(browser, vault):
             browser.find_by_id('file-browser_next').click()
 
     browser.find_by_css('.sorting_asc').click()
-    time.sleep(10)
+
     research = vault.replace("vault-", "research-")
     data_packages = browser.links.find_by_partial_text(research)
     data_packages.click()
@@ -177,7 +177,7 @@ def ui_folder_accept(browser):
 # folder
 @then(parsers.parse('the folder status is "{status}"'))
 def ui_folder_status(browser, status):
-    time.sleep(20)
+    time.sleep(5)
     badge = browser.find_by_id('statusBadge')
     if status in ["Unlocked", "Unsubmitted"]:
         assert badge.value == ""
