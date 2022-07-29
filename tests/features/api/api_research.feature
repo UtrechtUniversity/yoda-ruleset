@@ -117,17 +117,12 @@ Feature: Research API
             | /tempZone/home/research-initial | upload_test_file.txt       |
 
 
-    Scenario Outline: Research folder delete
+    Scenario Outline: Research manifest
         Given user researcher is authenticated
-        And the Yoda research folder delete API is queried with <folder> and <collection>
+        And the Yoda research manifest API is queried with <collection>
         Then the response status code is "200"
-        And folder <folder> does not exist in <collection>
+        And checksum manifest is returned
 
         Examples:
-            | collection                      | folder                      |
-            | /tempZone/home/research-initial | api_test_folder_renamed     |
-            | /tempZone/home/research-initial | api_test_copy               |
-            | /tempZone/home/research-initial | api_test_copy2              |
-            | /tempZone/home/research-initial | api_test_move               |
-            | /tempZone/home/research-initial | api_test_move2              |
-            | /tempZone/home/research-initial | api_test_1234567890         |
+            | collection                      |
+            | /tempZone/home/research-initial |

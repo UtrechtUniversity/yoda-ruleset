@@ -89,6 +89,15 @@ def api_research_file_move(user, file, move_collection, collection):
     )
 
 
+@given(parsers.parse("the Yoda research manifest API is queried with {collection}"), target_fixture="api_response")
+def api_research_manifest(user, collection):
+    return api_request(
+        user,
+        "research_manifest",
+        {"coll": collection}
+    )
+
+
 @given(parsers.parse("a file {file} is uploaded in {folder}"), target_fixture="api_response")
 def api_research_file_upload(user, file, folder):
     return upload_data(
@@ -201,3 +210,10 @@ def file_renamed_not_exist(user, file_renamed, collection):
 @then(parsers.parse("file {file} exists in {move_collection}"))
 def file_move_exists(user, file, move_collection):
     assert object_exists(user, file, move_collection)
+
+
+@then("checksum manifest is returned")
+def research_manifest_checksums(api_response):
+    _, body = api_response
+
+    assert len(body['data']) > 0
