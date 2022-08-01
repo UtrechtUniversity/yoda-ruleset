@@ -1,9 +1,9 @@
-Feature: Homepage logged in
+Feature: Homepage UI
 
     Scenario Outline: Viewing homepage logged in
-        Given user "<user>" is logged in
+        Given user <user> is logged in
         And page "/" is shown
-        Then username "<user>" is shown
+        Then username <user> is shown
 
         Examples:
           | user            |

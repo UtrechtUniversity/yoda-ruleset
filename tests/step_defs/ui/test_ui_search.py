@@ -1,10 +1,11 @@
 # coding=utf-8
 """Search UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     then,
     when,
@@ -14,7 +15,7 @@ from selenium.webdriver.common.keys import Keys
 scenarios('../../features/ui/ui_search.feature')
 
 
-@when('the user searches by filename with "<file>"')
+@when(parsers.parse("the user searches by filename with {file}"))
 def ui_search_file(browser, file):
     browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=filename]').click()
@@ -22,7 +23,7 @@ def ui_search_file(browser, file):
     browser.find_by_css('input#search-filter').type(Keys.RETURN)
 
 
-@when('the user searches by folder with "<folder>"')
+@when(parsers.parse("the user searches by folder with {folder}"))
 def ui_search_folder(browser, folder):
     browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=folder]').click()
@@ -30,7 +31,7 @@ def ui_search_folder(browser, folder):
     browser.find_by_css('input#search-filter').type(Keys.RETURN)
 
 
-@when('the user searches by metadata with "<metadata>"')
+@when(parsers.parse("the user searches by metadata with {metadata}"))
 def ui_search_metadata(browser, metadata):
     browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=metadata]').click()
@@ -38,7 +39,7 @@ def ui_search_metadata(browser, metadata):
     browser.find_by_css('input#search-filter').type(Keys.RETURN)
 
 
-@when('the user searches by folder status with "<status>"')
+@when(parsers.parse("the user searches by folder status with {status}"))
 def ui_search_status(browser, status):
     browser.find_by_css('.page button.dropdown-toggle').click()
     browser.find_by_css('a.dropdown-item[data-type=status]').click()
@@ -46,7 +47,7 @@ def ui_search_status(browser, status):
     browser.find_by_value(status).click()
 
 
-@then('result "<result>" is found')
+@then(parsers.parse("result {result} is found"))
 def ui_search_result(browser, result):
     link = []
     while len(link) == 0:

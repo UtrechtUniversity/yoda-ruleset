@@ -548,11 +548,11 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     if access_restriction.startswith('Open'):
         access_level = "read"
 
-        try:
-            msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-        except msi.Error:
-            publication_state["status"] = "Unrecoverable"
-            return
+    try:
+        msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
+    except msi.Error:
+        publication_state["status"] = "Unrecoverable"
+        return
 
     # We cannot set "null" as value in a kvp as this will crash msi_json_objops if we ever perform a uuKvp2JSON on it.
     if access_level == "null":

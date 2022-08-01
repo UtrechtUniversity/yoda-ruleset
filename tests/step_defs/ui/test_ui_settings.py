@@ -1,7 +1,7 @@
 # coding=utf-8
 """Settings UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (

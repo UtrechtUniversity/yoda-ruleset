@@ -144,6 +144,7 @@ def api_meta_form_load(ctx, coll):
     """
     can_edit  = False
     can_clone = False
+    is_locked = False
     metadata  = None
     errors    = []
 
@@ -169,7 +170,8 @@ def api_meta_form_load(ctx, coll):
     org_metadata = folder.get_org_metadata(ctx, coll)
 
     if space in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT]:
-        can_edit = is_member and not folder.is_locked(ctx, coll, org_metadata)
+        is_locked = folder.is_locked(ctx, coll, org_metadata)
+        can_edit = is_member and not is_locked
 
         # Analyze a possibly existing metadata JSON file.
         meta_path = meta.get_collection_metadata_path(ctx, coll)
@@ -288,7 +290,8 @@ def api_meta_form_load(ctx, coll):
             'can_clone': can_clone,
             'schema': schema,
             'uischema': uischema,
-            'metadata': metadata}
+            'metadata': metadata,
+            'is_locked': is_locked}
 
 
 @api.make()

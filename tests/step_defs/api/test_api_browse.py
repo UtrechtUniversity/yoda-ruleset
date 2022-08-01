@@ -1,12 +1,12 @@
 # coding=utf-8
 """Browse API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../../features/api/api_browse.feature')
 
 
-@given('the Yoda browse folder API is queried with "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda browse folder API is queried with {collection}"), target_fixture="api_response")
 def api_browse_folder(user, collection):
     return api_request(
         user,
@@ -25,7 +25,7 @@ def api_browse_folder(user, collection):
     )
 
 
-@given('the Yoda browse collections API is queried with "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda browse collections API is queried with {collection}"), target_fixture="api_response")
 def api_browse_collections(user, collection):
     return api_request(
         user,
@@ -34,7 +34,7 @@ def api_browse_collections(user, collection):
     )
 
 
-@then('the browse result contains "<result>"')
+@then(parsers.parse("the browse result contains {result}"))
 def api_response_contains(api_response, result):
     _, body = api_response
 
@@ -49,7 +49,7 @@ def api_response_contains(api_response, result):
     assert found
 
 
-@then('the browse result does not contain "<notresult>"')
+@then(parsers.parse("the browse result does not contain {notresult}"))
 def api_response_not_contain(api_response, notresult):
     _, body = api_response
 

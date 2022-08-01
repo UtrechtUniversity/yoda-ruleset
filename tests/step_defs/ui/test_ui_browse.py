@@ -1,10 +1,11 @@
 # coding=utf-8
 """Browse UI feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     then,
     when,
@@ -13,7 +14,7 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_browse.feature')
 
 
-@when('user browses to data package "<data_package>"')
+@when(parsers.parse("user browses to data package {data_package}"))
 def ui_browse_data_package(browser, data_package):
     browser.links.find_by_partial_text(data_package).click()
 

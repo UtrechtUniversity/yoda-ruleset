@@ -2,7 +2,7 @@ Feature: Login Redirects
 
     Scenario Outline: Redirected to login page
         Given user is not logged in
-        When the user navigates to "<page>"
+        When the user navigates to <page>
         Then the user is redirected to the login page
 
         Examples:
@@ -11,8 +11,8 @@ Feature: Login Redirects
 
     Scenario Outline: After direct login redirected to homepage
         Given user is not logged in
-        When user "<user>" logs in
-        Then the user is redirected to "<page>"
+        When user <user> logs in
+        Then the user is redirected to <page>
 
         Examples:
         | user          | page      |
@@ -21,9 +21,9 @@ Feature: Login Redirects
 
     Scenario Outline: After redirected login redirected to original target
         Given user is not logged in
-        And the user navigates to "<page>"
-        When user "<user>" logs in after being redirected
-        Then the user is redirected to "<page>"
+        And the user navigates to <page>
+        When user <user> logs in after being redirected
+        Then the user is redirected to <page>
 
         Examples:
         | user          | page       |

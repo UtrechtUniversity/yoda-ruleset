@@ -1,12 +1,12 @@
 # coding=utf-8
 """Intake API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -34,7 +34,7 @@ def api_intake_list_dm_studies(user):
     )
 
 
-@given('the Yoda intake count total files API is queried with collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake count total files API is queried with collection {collection}"), target_fixture="api_response")
 def api_intake_count_total_files(user, collection):
     return api_request(
         user,
@@ -43,7 +43,7 @@ def api_intake_count_total_files(user, collection):
     )
 
 
-@given('the Yoda intake list unrecognized files API is queried with collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake list unrecognized files API is queried with collection {collection}"), target_fixture="api_response")
 def api_intake_list_unrecognized_files(user, collection):
     return api_request(
         user,
@@ -52,7 +52,7 @@ def api_intake_list_unrecognized_files(user, collection):
     )
 
 
-@given('the Yoda intake list datasets API is queried with collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake list datasets API is queried with collection {collection}"), target_fixture="api_response")
 def api_intake_list_datasets(user, collection):
     return api_request(
         user,
@@ -61,7 +61,7 @@ def api_intake_list_datasets(user, collection):
     )
 
 
-@given('the Yoda intake scan for datasets API is queried with collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake scan for datasets API is queried with collection {collection}"), target_fixture="api_response")
 def api_intake_scan_for_datasets(user, collection):
     return api_request(
         user,
@@ -70,7 +70,7 @@ def api_intake_scan_for_datasets(user, collection):
     )
 
 
-@given('the Yoda intake lock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake lock API is queried with dataset id and collection {collection}"), target_fixture="api_response")
 def api_intake_lock_dataset(user, dataset_id, collection):
     return api_request(
         user,
@@ -79,7 +79,7 @@ def api_intake_lock_dataset(user, dataset_id, collection):
     )
 
 
-@given('the Yoda intake unlock API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake unlock API is queried with dataset id and collection {collection}"), target_fixture="api_response")
 def api_intake_unlock_dataset(user, dataset_id, collection):
     return api_request(
         user,
@@ -88,7 +88,7 @@ def api_intake_unlock_dataset(user, dataset_id, collection):
     )
 
 
-@given('the Yoda intake dataset get details API is queried with dataset id and collection "<collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake dataset get details API is queried with dataset id and collection {collection}"), target_fixture="api_response")
 def api_intake_dataset_get_details(user, dataset_id, collection):
     return api_request(
         user,
@@ -97,7 +97,7 @@ def api_intake_dataset_get_details(user, dataset_id, collection):
     )
 
 
-@given('the Yoda intake dataset add comment API is queried with dataset id, study id "<study_id>" and comment "<comment>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake dataset add comment API is queried with dataset id, study id {study_id} and comment {comment}"), target_fixture="api_response")
 def api_intake_dataset_add_comment(user, dataset_id, study_id, comment):
     return api_request(
         user,
@@ -106,7 +106,7 @@ def api_intake_dataset_add_comment(user, dataset_id, study_id, comment):
     )
 
 
-@given('the Yoda intake report vault dataset counts per study API is queried with study id "<study_id>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake report vault dataset counts per study API is queried with study id {study_id}"), target_fixture="api_response")
 def api_intake_report_vault_dataset_counts_per_study(user, study_id):
     return api_request(
         user,
@@ -115,7 +115,7 @@ def api_intake_report_vault_dataset_counts_per_study(user, study_id):
     )
 
 
-@given('the Yoda intake report vault aggregated info API is queried with study id "<study_id>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake report vault aggregated info API is queried with study id {study_id}"), target_fixture="api_response")
 def api_intake_report_vault_aggregated_info(user, study_id):
     return api_request(
         user,
@@ -124,7 +124,7 @@ def api_intake_report_vault_aggregated_info(user, study_id):
     )
 
 
-@given('the Yoda intake report export study data API is queried with study id "<study_id>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda intake report export study data API is queried with study id {study_id}"), target_fixture="api_response")
 def api_intake_report_export_study_data(user, study_id):
     return api_request(
         user,
@@ -138,7 +138,7 @@ def dataset_exists(user):
     return "dataset id"
 
 
-@then('study "<study>" is returned')
+@then(parsers.parse("study {study} is returned"))
 def study_returned(api_response, study):
     _, body = api_response
 
