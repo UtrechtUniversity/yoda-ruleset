@@ -106,7 +106,7 @@ def ui_resource_tier_is_updated_for_resource(browser, resource_name, old_tier, n
         index = index + 1
 
     # Check if tier is set correctly
-    assert(browser.find_by_css('.resource-tier')[index].value.find(old_tier) >= 0)
+    assert(browser.find_by_css('.resource-tier')[index].value.find(old_tier) >= 0)  # noqa
 
     # Click in resource table on row resource_name
     browser.find_by_css('.resource')[index].click()
