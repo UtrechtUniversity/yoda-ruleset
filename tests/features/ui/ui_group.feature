@@ -46,3 +46,27 @@ Feature: Group UI
             | category | group            | user_remove |
             | initial  | research-initial | uipromote   |
             | initial  | research-initial | uidemote    |
+
+
+    Scenario Outline: Group member search
+        Given user researcher is logged in
+        And module "group_manager" is shown
+        When user has access to group <group> in category <category>
+        And searches for member <member>
+        Then only member <member> is shown
+
+        Examples:
+            | category | group            | member     |
+            | initial  | research-initial | researcher |
+
+
+    Scenario Outline: Group search
+        Given user researcher is logged in
+        And module "group_manager" is shown
+        When user has access to group <group> in category <category>
+        And searches for group <group>
+        Then only group <group> is shown
+
+        Examples:
+            | category | group            |
+            | initial  | research-initial |

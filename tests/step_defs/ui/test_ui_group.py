@@ -60,3 +60,27 @@ def ui_group_user_removed(browser, user_remove):
     with pytest.raises(splinter.exceptions.ElementDoesNotExist):
         browser.is_text_not_present(user_remove, wait_time=1)
         browser.find_by_id('user-list').links.find_by_partial_text(user_remove).value
+
+
+@when(parsers.parse("searches for member {member}"))
+def ui_group_member_search(browser, member):
+    browser.find_by_id('user-list-search').fill(member)
+
+
+@then(parsers.parse("only member {member} is shown"))
+def ui_group_member_filtered(browser, member):
+    assert browser.is_text_present(member, wait_time=1)
+    assert browser.is_text_not_present("groupmanager", wait_time=1)
+    assert browser.is_text_not_present("functionaladminpriv", wait_time=1)
+
+
+@when(parsers.parse("searches for group {group}"))
+def ui_group_search(browser, group):
+    browser.find_by_id('group-list-search').fill(group)
+
+
+@then(parsers.parse("only group {group} is shown"))
+def ui_group_filtered(browser, group):
+    assert browser.is_text_present(group, wait_time=1)
+    assert browser.is_text_not_present("core", wait_time=1)
+    assert browser.is_text_not_present("default", wait_time=1)
