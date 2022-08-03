@@ -320,9 +320,9 @@ def get_rights_list(combi):
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    rights_list = [{'rights': combi['Data_Access_Restriction'], 'rightsURI': options[combi['Data_Access_Restriction'].split()[0]]}]
+    rights_list = [{'rights': combi['Data_Access_Restriction'], 'rightsUri': options[combi['Data_Access_Restriction'].split()[0]]}]
     if combi['License'] != 'Custom':
-        rights_list.append({'rights': combi['License'], 'rightsURI': combi['System']['License_URI']})
+        rights_list.append({'rights': combi['License'], 'rightsUri': combi['System']['License_URI']})
 
     return rights_list
 
