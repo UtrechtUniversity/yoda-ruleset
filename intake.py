@@ -46,7 +46,7 @@ def api_intake_list_studies(ctx):
     groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-    log.write(ctx, 'LIST NO DM STUDIES')
+
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
         "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
@@ -74,7 +74,7 @@ def api_intake_list_dm_studies(ctx):
     datamanager_groups = []
     user_name = user.name(ctx)
     user_zone = user.zone(ctx)
-    log.write(ctx, 'LIST DM STUDIES')
+
     iter = genquery.row_iterator(
         "USER_GROUP_NAME",
         "USER_NAME = '" + user_name + "' AND USER_ZONE = '" + user_zone + "'",
@@ -87,7 +87,7 @@ def api_intake_list_dm_studies(ctx):
             study = row[0][11:]
         elif row[0].startswith('intake-'):
             study = row[0][7:]
-        log.write(ctx, study)
+
         if study:
             # Is a member of this study ... check whether member of corresponding datamanager group
             iter2 = genquery.row_iterator(
@@ -444,9 +444,6 @@ def _intake_check_authorized_to_scan(ctx, coll):
     """
     parts = coll.split('/')
     group = parts[3]
-    log.write(ctx, group)
-
-    # ?? datamanager_group = group.replace("-intake-", "-datamanager-", 1)
 
     # grp-intake-FOO => grp-datamanager-FOO
     datamanager_group = group.replace("-intake-", "-datamanager-", 1)
@@ -565,8 +562,6 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     :returns: indication correct
     """
     coll = '/' + user.zone(ctx) + '/home/' + study_id
-    log.write(ctx, 'INTAKE COLLECTION')
-    log.write(ctx, coll)
 
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
@@ -588,8 +583,6 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     timestamp = int(time.time())  # int(datetime.timestamp(datetime.now()))
 
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
-
-    log.write(ctx, comment_data)
 
     for tl in tl_objects:
         if is_collection:
@@ -689,8 +682,6 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
 
     level = '0'
     files = coll_objects(ctx, level, coll, dataset_id)
-
-    log.write(ctx, files)
 
     if len(scanned.split(':')) != 2:
         # Retrieve scannedby/when information in a different way
@@ -829,7 +820,6 @@ def api_intake_report_vault_aggregated_info(ctx, study_id):
 
     :returns: Dictionary with data for analysis
     """
-    log.write(ctx, 'ERIN VAULT AGGREGATED INFO')
     # check permissions - datamanager only
     datamanager_group = "grp-datamanager-" + study_id
 
