@@ -84,3 +84,30 @@ def ui_group_filtered(browser, group):
     assert browser.is_text_present(group, wait_time=1)
     assert browser.is_text_not_present("core", wait_time=1)
     assert browser.is_text_not_present("default", wait_time=1)
+
+
+@when("user opens group search dialog")
+def ui_group_click_group_search_dlg_button(browser):
+    browser.find_by_css('.user-search-groups').click()
+
+
+@when(parsers.parse("searches for groups of user <user_search>"))
+def ui_group_fill_in_user_for_groups(browser, user_search):
+    browser.find_by_id('input-user-search-groups').fill(user_search)
+    browser.find_by_css('.btn-user-search-groups').click()
+
+
+@then("a list of groups is shown in the dialog")
+def ui_group_list_of_groups_for_user_is_shown(browser):
+    assert len(browser.find_by_css('.user-search-result-group')) > 0
+
+
+@when("user clicks first found group")
+def ui_group_click_first_item_in_group(browser):
+    group_clicked = browser.find_by_css('.user-search-result-group')[0].value
+    browser.find_by_css('.user-search-result-group')[0].click()
+
+    group_properties_type = browser.find_by_id('inputGroupPrepend').value
+    group_properties_name = browser.find_by_id('f-group-update-name').value
+    # Make sure that row clicked has been set in the group manager as the group to be managed
+    assert group_clicked == group_properties_type + group_properties_name

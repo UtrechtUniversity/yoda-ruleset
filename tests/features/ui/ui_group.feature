@@ -47,7 +47,6 @@ Feature: Group UI
             | initial  | research-initial | uipromote   |
             | initial  | research-initial | uidemote    |
 
-
     Scenario Outline: Group member search
         Given user researcher is logged in
         And module "group_manager" is shown
@@ -70,3 +69,16 @@ Feature: Group UI
         Examples:
             | category | group            |
             | initial  | research-initial |
+
+
+    Scenario Outline: For one specific user retrieve a list of its groups. Click one group
+        Given user datamanager is logged in
+        And module "group_manager" is shown
+        When user opens group search dialog
+        And searches for groups of user <user_search>
+        Then a list of groups is shown in the dialog
+		When user clicks first found group
+
+        Examples:
+            | user_search |
+            | researcher  |
