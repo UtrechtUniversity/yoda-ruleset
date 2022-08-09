@@ -673,7 +673,7 @@ def api_research_manifest(ctx, coll):
 
     iter_sub = genquery.row_iterator(
         "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
-        "COLL_PARENT_NAME = '{}'".format(coll),
+        "COLL_PARENT_NAME like '{}%'".format(coll),
         genquery.AS_LIST, ctx
     )
     length = len(coll) + 1
