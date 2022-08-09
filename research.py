@@ -4,9 +4,10 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import binascii
+
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
-
 
 import folder
 import meta_form
@@ -647,6 +648,13 @@ def api_research_collection_details(ctx, path):
             "vault_path": vault_path}
 
 
+def decode_checksum(checksum: str) -> str:
+    if checksum is None:
+        return "0"
+    else:
+        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
+
+
 @api.make()
 def api_research_manifest(ctx, coll):
     """Produce a manifest of data objects in a collection
@@ -662,4 +670,4 @@ def api_research_manifest(ctx, coll):
         "COLL_NAME like '" + coll + "%'",
         genquery.AS_LIST, ctx
     )
-    return [{"name": (row[0] + "/")[length:] + row[1], "checksum": row[2]} for row in iter]
+    return [{"name": (row[0] + "/")[length:] + row[1], "checksum": decode_checksum(row[2])} for row in iter]
