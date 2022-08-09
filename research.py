@@ -648,7 +648,7 @@ def api_research_collection_details(ctx, path):
             "vault_path": vault_path}
 
 
-def decode_checksum(checksum: str) -> str:
+def decode_checksum(checksum):
     if checksum is None:
         return "0"
     else:
