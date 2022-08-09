@@ -91,7 +91,7 @@ def ui_group_click_group_search_dlg_button(browser):
     browser.find_by_css('.user-search-groups').click()
 
 
-@when(parsers.parse("searches for groups of user <user_search>"))
+@when(parsers.parse("searches for groups of user {user_search}"))
 def ui_group_fill_in_user_for_groups(browser, user_search):
     browser.find_by_id('input-user-search-groups').fill(user_search)
     browser.find_by_css('.btn-user-search-groups').click()
