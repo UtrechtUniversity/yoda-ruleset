@@ -116,7 +116,7 @@ def rule_replicate_batch(ctx, verbose):
                     log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
         # Total replication process completed
-        log.write(ctx, "[replication] Batch replication job finished. {}/{} objects succesfully replicated.".format(count_ok, count))
+        log.write(ctx, "[replication] Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
 
 
 def is_replication_blocked_by_admin(ctx):
