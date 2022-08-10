@@ -267,6 +267,11 @@ def api_group_data(ctx):
     for cat in cat_list:
         new_group_hierarchy[cat] = group_hierarchy[cat]
 
+    # Python 3 solution:
+    # Put System category as first category.
+    # if "System" in group_hierarchy:
+    #    group_hierarchy.move_to_end("System", last=False)
+
     return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
