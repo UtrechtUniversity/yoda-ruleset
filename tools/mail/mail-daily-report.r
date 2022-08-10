@@ -1,5 +1,25 @@
 mail_daily_report
 {
+    # Any users subscribed to a daily notification report?
+    msiAddSelectFieldToGenQuery("USER_NAME", "COUNT", *GenQInpCount);
+    msiAddConditionToGenQuery("META_USER_ATTR_NAME", "=", "org_settings_mail_notifications", *GenQInpCount);
+    msiAddConditionToGenQuery("META_USER_ATTR_VALUE", "=", "DAILY", *GenQInpCount);
+
+    msiExecGenQuery(*GenQInpCount, *GenQOutCount);
+
+    *count = 0;
+    foreach(*row in *GenQOutCount) {
+        *count = int(*row.USER_NAME);
+        break;
+    }
+    msiCloseGenQuery(*GenQInpCount, *GenQOutCount);
+
+    if (*count==0) {
+        writeLine("serverLog", "------- No daily notification mail was sent out -----");
+        writeLine("serverLog", "(No users were found subscribed to the daily notification report)");
+        succeed;
+    }
+
     # Scan for all users with mail notifications enabled.
     *ContInxOld = 1;
     msiAddSelectFieldToGenQuery("USER_NAME", "", *GenQInp);
