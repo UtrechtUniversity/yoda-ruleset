@@ -108,7 +108,7 @@ def getCategories(ctx):
     categories = []
 
     iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE",
+        "ORDER_DESC(META_USER_ATTR_VALUE)",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
         genquery.AS_LIST, ctx
     )
@@ -251,7 +251,23 @@ def api_group_data(ctx):
             'members': members
         }
 
-    return {'group_hierarchy': group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    # order the resulting group_hierarchy and put System in as first category
+    cat_list = []
+    system_present = False
+    for cat in group_hierarchy:
+        if cat != 'System':
+            cat_list.append(cat)
+        else:
+            system_present = True
+    cat_list.sort()
+    if system_present:
+        cat_list.insert(0, 'System')
+
+    new_group_hierarchy = OrderedDict()
+    for cat in cat_list:
+        new_group_hierarchy[cat] = group_hierarchy[cat]
+
+    return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
