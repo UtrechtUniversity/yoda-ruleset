@@ -72,3 +72,14 @@ uuObjectMetadataKvp(*data_id, *prefix, *kvp) {
 	}
 	msiCloseGenQuery(*GenQInp, *GenQOut);
 }
+
+
+# Scheduled replication batch job.
+#
+# Performs replication for all data objects marked with 'org_replication_scheduled' metadata.
+# The metadata value indicates the source and destination resource.
+#
+# \param[in] verbose           whether to log verbose messages for troubleshooting (1: yes, 0: no)
+uuReplicateBatch(*verbose) {
+    rule_replicate_batch(*verbose);
+}

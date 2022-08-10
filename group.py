@@ -119,6 +119,27 @@ def getCategories(ctx):
     return categories
 
 
+def getDatamanagerCategories(ctx):
+    """Get a list of all datamanager group categories."""
+    categories = []
+
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        datamanager_group = row[0]
+
+        if user.is_member_of(ctx, datamanager_group):
+            # Example: 'datamanager-initial' is groupname of datamanager, second part is category
+            category = '-'.join(datamanager_group.split('-')[1:])
+            categories.append(category)
+
+    return categories
+
+
 def getSubcategories(ctx, category):
     """Get a list of all subcategories within a given group category.
 
@@ -192,8 +213,11 @@ def api_group_data(ctx):
     else:
         groups    = getGroupData(ctx)
         full_name = user.full_name(ctx)
+
+        categories = getDatamanagerCategories(ctx)
+
         # Filter groups (only return groups user is part of), convert to json and write to stdout.
-        groups = list(filter(lambda group: full_name in group['read'] + group['members'], groups))
+        groups = list(filter(lambda group: full_name in group['read'] + group['members'] or group['category'] in categories, groups))
 
     # Sort groups on name.
     groups = sorted(groups, key=lambda d: d['name'])
