@@ -629,7 +629,7 @@ def api_research_collection_details(ctx, path):
     status = folder.get_status(ctx, path)
 
     # Check if user is datamanager.
-    category = meta_form.group_category(ctx, group)
+    category = groups.group_category(ctx, group)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Retrieve lock count.

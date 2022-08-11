@@ -13,7 +13,6 @@ from genquery import AS_DICT, Query
 import folder
 import groups
 import meta
-import meta_form
 from util import *
 
 __all__ = ['api_deposit_create',
@@ -58,7 +57,7 @@ def api_deposit_copy_data_package(ctx, reference):
 
     # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
     user_full_name = user.full_name(ctx)
-    category = meta_form.group_category(ctx, group_name)
+    category = groups.group_category(ctx, group_name)
     is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     if not is_datamanager:

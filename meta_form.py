@@ -20,19 +20,6 @@ __all__ = ['api_meta_form_load',
            'api_meta_form_save']
 
 
-# TODO: These belong in the group manager part of our rulesets. {{{
-#       (and they should be plain python rules, not just wrappers for iRODS rules)
-#
-# Since a group manager overhaul is pending, this is left as it is for now.
-
-def group_category(ctx, group):
-    if group.startswith('vault-'):
-        group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
-    return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
-
-# }}}
-
-
 def get_coll_lock(ctx, path, org_metadata=None):
     """Check for existence of locks on a collection.
 
@@ -147,7 +134,7 @@ def api_meta_form_load(ctx, coll):
     if space not in [pathutil.Space.RESEARCH, pathutil.Space.DEPOSIT, pathutil.Space.VAULT]:
         return {}
 
-    category = group_category(ctx, group)
+    category = groups.group_category(ctx, group)
 
     # - What rights does the client have?
     is_member = groups.user_role(ctx, group, user_full_name) in ['normal', 'manager']

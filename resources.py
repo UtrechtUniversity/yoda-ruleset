@@ -11,7 +11,6 @@ from math import ceil
 import genquery
 
 import groups
-import meta_form
 from util import *
 
 __all__ = ['api_resource_list_groups',
@@ -62,7 +61,7 @@ def api_resource_full_year_group_data(ctx, group_name):
     # Member of this group?
     member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
     if member_type not in ['reader', 'normal', 'manager']:
-        category = meta_form.group_category(ctx, group_name)
+        category = groups.group_category(ctx, group_name)
         if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')

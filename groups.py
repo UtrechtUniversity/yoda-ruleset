@@ -223,6 +223,19 @@ def user_is_datamanager(ctx, category, user):
         in ('normal', 'manager')
 
 
+def group_category(ctx, group):
+    """Return category of group.
+
+    :param ctx:   Combined type of a ctx and rei struct
+    :param group: Group to return category of
+
+    :returns: Category name of group
+    """
+    if group.startswith('vault-'):
+        group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
+    return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
+
+
 @api.make()
 def api_group_data(ctx):
     """Retrieve group data as hierarchy for user.
