@@ -318,7 +318,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 
 	uuGroupGetMemberCount(*groupName, *members);
 
-	if (size(*members) == 0 && *newMember == *actor) {
+	if (int(*members) == 0 && *newMember == *actor) {
 		# Special case for empty groups.
 		# This is run if a group has just been created. We then allow
 		# the group creator (already set in the 'manager' field by the
