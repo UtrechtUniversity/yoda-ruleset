@@ -503,7 +503,7 @@ uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
 # \param[out] members       number of members of group
 #
 uuGroupGetMemberCount(*groupName, *members) {
-    *members = 0;
+    *count = 0;
 
 	# Fetch members.
 	foreach (
@@ -513,7 +513,7 @@ uuGroupGetMemberCount(*groupName, *members) {
 		WHERE  USER_GROUP_NAME = '*groupName'
 		  AND  USER_TYPE != 'rodsgroup'
 	) {
-        *members = *members + 1;
+        *count = *count + 1;
 	}
 
 	# Fetch read-only members.
@@ -526,9 +526,11 @@ uuGroupGetMemberCount(*groupName, *members) {
 			WHERE  USER_GROUP_NAME == 'read-*groupBaseName'
 			AND    USER_TYPE != 'rodsgroup'
 		) {
-            *members = *members + 1;
+            *count = *count + 1;
 		}
 	}
+
+    *members = int(*count);
 }
 
 
