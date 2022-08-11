@@ -183,6 +183,45 @@ def getSubcategories(ctx, category):
     return list(categories)
 
 
+def user_role(ctx, group_name, user):
+    """Return role of user in group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Group name of user
+    :param user:       User to return type of
+
+    :returns: User role ('none' | 'reader' | 'normal' | 'manager')
+    """
+    groups = getGroupData(ctx)
+    if '#' not in user:
+        import session_vars
+        user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+
+    groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
+
+    if user in groups[0]["managers"]:
+        return "manager"
+    elif user in groups[0]["members"]:
+        return "normal"
+    elif user in groups[0]["read"]:
+        return "reader"
+    else:
+        return "none"
+
+
+def user_is_datamanager(ctx, category, user):
+    """Return if user is datamanager of category.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param category: Category to check if user is datamanger of
+    :param user:     User to check if user is datamanger
+
+    :returns: Boolean indicating if user is datamanager
+    """
+    return user_role(ctx, 'datamanager-{}'.format(category), user) \
+        in ('normal', 'manager')
+
+
 @api.make()
 def api_group_data(ctx):
     """Retrieve group data as hierarchy for user.

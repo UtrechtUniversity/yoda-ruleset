@@ -11,6 +11,7 @@ import genquery
 from genquery import AS_DICT, Query
 
 import folder
+import groups
 import meta
 import meta_form
 from util import *
@@ -58,7 +59,7 @@ def api_deposit_copy_data_package(ctx, reference):
     # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
     user_full_name = user.full_name(ctx)
     category = meta_form.group_category(ctx, group_name)
-    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.
@@ -69,7 +70,7 @@ def api_deposit_copy_data_package(ctx, reference):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
+    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.

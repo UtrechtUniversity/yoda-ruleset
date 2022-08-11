@@ -9,6 +9,7 @@ import re
 import irods_types
 
 import folder
+import groups
 import meta
 import schema as schema_
 import schema_transformation
@@ -28,17 +29,6 @@ def group_category(ctx, group):
     if group.startswith('vault-'):
         group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
     return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
-
-
-def user_member_type(ctx, group, user):
-    """returns: 'none' | 'reader' | 'normal' | 'manager'"""
-    return ctx.uuGroupGetMemberType(group, user, '')['arguments'][2]
-
-
-def user_is_datamanager(ctx, category, user):
-    return user_member_type(ctx, 'datamanager-{}'.format(category), user) \
-        in ('normal', 'manager')
-
 
 # }}}
 
@@ -160,7 +150,7 @@ def api_meta_form_load(ctx, coll):
     category = group_category(ctx, group)
 
     # - What rights does the client have?
-    is_member = user_member_type(ctx, group, user_full_name) in ['normal', 'manager']
+    is_member = groups.user_role(ctx, group, user_full_name) in ['normal', 'manager']
 
     # - What is the active schema for this category?
     schema, uischema = schema_.get_active_schema_uischema(ctx, coll)
@@ -248,7 +238,7 @@ def api_meta_form_load(ctx, coll):
 
     elif space is pathutil.Space.VAULT:
         status    = vault.get_coll_vault_status(ctx, coll, org_metadata)
-        can_edit  = (user_is_datamanager(ctx, category, user_full_name)
+        can_edit  = (groups.user_is_datamanager(ctx, category, user_full_name)
                      and (status == constants.vault_package_state.UNPUBLISHED
                           or status == constants.vault_package_state.PUBLISHED
                           or status == constants.vault_package_state.DEPUBLISHED))
