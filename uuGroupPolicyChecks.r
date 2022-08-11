@@ -316,7 +316,7 @@ uuGroupPolicyCanGroupUserAdd(*actor, *groupName, *newMember, *allowed, *reason) 
 	*allowed = 0;
 	*reason  = "";
 
-	uuGroupGetMembers(*groupName, true, false, *members);
+	uuGroupGetMemberCount(*groupName, *members);
 
 	if (size(*members) == 0 && *newMember == *actor) {
 		# Special case for empty groups.
