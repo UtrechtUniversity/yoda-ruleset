@@ -199,12 +199,13 @@ def user_role(ctx, group_name, user):
 
     groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
 
-    if user in groups[0]["managers"]:
-        return "manager"
-    elif user in groups[0]["members"]:
-        return "normal"
-    elif user in groups[0]["read"]:
-        return "reader"
+    if groups:
+        if user in groups[0]["managers"]:
+            return "manager"
+        elif user in groups[0]["members"]:
+            return "normal"
+        elif user in groups[0]["read"]:
+            return "reader"
     else:
         return "none"
 
