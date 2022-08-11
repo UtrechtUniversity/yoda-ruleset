@@ -10,7 +10,6 @@ import genquery
 import irods_types
 
 import epic
-import groups
 import meta
 import policies_folder_status
 import provenance
