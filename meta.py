@@ -496,7 +496,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     actor = actor[0]  # Discard zone name.
 
     # Make sure rods has access to the json file.
-    client_full_name = user.get_client_full_name(rei)
+    client_full_name = user.full_name(ctx)
 
     try:
         ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
