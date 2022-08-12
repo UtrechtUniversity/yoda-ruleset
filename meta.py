@@ -549,7 +549,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
 
     # Cleanup staging area.
     try:
-        data_object.remove(ctx, json_path)
+        data_object.remove(ctx, json_path, force=True)
     except Exception:
         set_result('FailedToRemoveDatamanagerMetadata', 'Failed to remove <{}>'.format(json_path))
         return
