@@ -85,7 +85,7 @@ def read(ctx, path, max_size=constants.IIDATA_MAX_SLURP_SIZE):
 
     msi.data_obj_close(ctx, handle, 0)
 
-    return ''.join(buf.buf[:buf.len])
+    return str(buf.buf)
 
 
 def copy(ctx, path_org, path_copy, force=True):

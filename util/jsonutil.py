@@ -77,9 +77,6 @@ def _promote_strings(json_data):
 def parse(text, want_bytes=True):
     """Parse JSON into an OrderedDict.
 
-    All strings are UTF-8 encoded with Python2 in mind.
-    This behavior is disabled if want_bytes is False.
-
     :param text:       JSON to parse into an OrderedDict
     :param want_bytes: Should strings be UTF-8 encoded?
 
@@ -89,21 +86,16 @@ def parse(text, want_bytes=True):
     """
     try:
         x = json.loads(text, object_pairs_hook=OrderedDict)
-        return _demote_strings(x) if want_bytes else x
+        return x
     except ValueError:
         raise ParseError('JSON file format error')
 
 
 def dump(data, **options):
     """Dump an object to a JSON string."""
-    # json.dumps seems to not like mixed str/unicode input, so make sure
-    # everything is of the same type first.
-    data = _promote_strings(data)
     return json.dumps(data,
                       ensure_ascii=False,  # Don't unnecessarily use \u0000 escapes.
-                      encoding='utf-8',
-                      **({'indent': 4} if options == {} else options)) \
-               .encode('utf-8')  # turn unicode json string back into an encoded str
+                      **({'indent': 4} if options == {} else options))
 
 
 def read(callback, path, **options):
