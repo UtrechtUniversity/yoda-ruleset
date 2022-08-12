@@ -570,7 +570,7 @@ def api_research_file_delete(ctx, coll, file_name):
 
     # All requirements OK
     try:
-        data_object.remove(ctx, path_target)
+        data_object.remove(ctx, path_target, force=False)
     except msi.Error:
         return api.Error('internal', 'Something went wrong. Please try again')
 
