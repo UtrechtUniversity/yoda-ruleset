@@ -31,6 +31,7 @@ datarequest = False
 deposit = False
 intake = False
 login_oidc = False
+run_all = False
 
 
 def pytest_addoption(parser):
@@ -40,12 +41,14 @@ def pytest_addoption(parser):
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
+    parser.addoption("--all", action="store_true", default=False, help="Run all tests")
 
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
+    config.addinivalue_line("markers", "oidc: Run login OIDC tests")
 
     global portal_url
     portal_url = config.getoption("--url")
@@ -67,6 +70,14 @@ def pytest_configure(config):
 
     global login_oidc
     login_oidc = config.getoption("--oidc")
+
+    global run_all
+    run_all = config.getoption("--all")
+    if run_all:
+        datarequest = True
+        deposit = True
+        intake = True
+        login_oidc = True
 
     global users
     if datarequest:
@@ -120,7 +131,7 @@ def login(user, password):
     # Login as user.
     login_data = dict(csrf_token=csrf, username=user, password=password, next='/')
     response = client.post(url, data=login_data, headers=dict(Referer=url), verify=False)
-    session = client.cookies['session']
+    session = client.cookies['__Host-session']
     client.close()
 
     # Retrieve the authenticated CSRF token.
@@ -142,7 +153,7 @@ def api_request(user, request, data, timeout=10):
     # Make API request.
     url = api_url + "/" + request
     files = {'csrf_token': (None, csrf), 'data': (None, json.dumps(data))}
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=timeout)
 
@@ -176,7 +187,7 @@ def upload_data(user, file, folder):
              "flowTotalChunks": (None, "1"),
              "file": (file, "test")}
 
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
@@ -193,23 +204,21 @@ def post_form_data(user, request, files):
     # Make POST request.
     url = portal_url + "/" + request
     files['csrf_token'] = (None, csrf)
-    cookies = {'session': session}
+    cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
     response = requests.post(url, headers=headers, files=files, cookies=cookies, verify=False, timeout=10)
 
     return (response.status_code, response)
 
 
-@given('user "<user>" is authenticated', target_fixture="user")
-@given(parsers.parse('user "{user}" is authenticated'), target_fixture="user")
+@given(parsers.parse("user {user:w} is authenticated"), target_fixture="user")
 def api_user_authenticated(user):
     assert user in users
     return user
 
 
-@given('user "<user>" is logged in')
-@given(parsers.parse('user "{user}" is logged in'))
-@when('user "<user>" logs in')
+@given(parsers.parse('user {user} is logged in'), target_fixture="user")
+@when(parsers.parse('user {user} logs in'))
 def ui_login(browser, user):
     url = "{}/user/gate".format(portal_url)
     browser.visit(url)
@@ -231,7 +240,7 @@ def ui_logout(browser):
     browser.visit(url)
 
 
-@when('user "<user>" enters email address')
+@when(parsers.parse("user {user} enters email address"))
 def ui_gate_username(browser, user):
     browser.find_by_id('f-login-username').fill(user)
     browser.find_by_id('f-login-submit').click()
@@ -271,7 +280,7 @@ def api_response_code(api_response, code):
     assert http_status == code
 
 
-@given('collection "<collection>" exists')
+@given(parsers.parse("collection {collection} exists"))
 def collection_exists(user, collection):
     http_status, _ = api_request(
         user,
@@ -281,7 +290,7 @@ def collection_exists(user, collection):
     assert http_status == 200
 
 
-@given('"<collection>" is unlocked')
+@given(parsers.parse("{collection} is unlocked"))
 def collection_is_unlocked(user, collection):
     _, body = api_request(
         user,
@@ -300,7 +309,7 @@ def collection_is_unlocked(user, collection):
         assert body["data"]["status"] == "" or body["data"]["status"] == "SECURED"
 
 
-@given('"<collection>" is locked')
+@given(parsers.parse("{collection} is locked"))
 def collection_is_locked(user, collection):
     _, body = api_request(
         user,
@@ -319,21 +328,21 @@ def collection_is_locked(user, collection):
         assert body["data"]["status"] == "LOCKED"
 
 
-@given('the user navigates to "<page>"')
-@when('the user navigates to "<page>"')
+@given(parsers.parse("the user navigates to {page}"))
+@when(parsers.parse("the user navigates to {page}"))
 def ui_login_visit_groupmngr(browser, page):
     browser.visit("{}{}".format(portal_url, page))
 
 
-@then('the user is redirected to "<page>"')
+@then(parsers.parse("the user is redirected to {page}"))
 def ui_user_redirected(browser, page):
     target = "{}{}".format(portal_url, page)
 
     assert browser.url == target
 
 
-@when('user browses to folder "<folder>"')
-@then('user browses to folder "<folder>"')
+@when(parsers.parse("user browses to folder {folder}"))
+@then(parsers.parse("user browses to folder {folder}"))
 def ui_browse_folder(browser, folder):
     link = []
     while len(link) == 0:

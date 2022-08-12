@@ -16,7 +16,7 @@
     "ui:help": "What is the type of your data"
   },
   "Data_Classification": {
-    "ui:help": "How is your data classified with regards to information security policy"
+    "ui:help": "How is your data classified with regard to information security policy"
   },
   "Creator": {
     "ui:description": "The person(s) who created (a version of) the data package.",

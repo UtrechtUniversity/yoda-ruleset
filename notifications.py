@@ -11,6 +11,7 @@ import string
 import time
 from datetime import datetime
 
+import genquery
 from genquery import Query
 
 import mail
@@ -40,10 +41,10 @@ def set(ctx, actor, receiver, target, message):
     :param message:  Notification message for user
     """
     if user.exists(ctx, receiver):
+        identifier = generate_random_id(ctx)
         timestamp = int(time.time())
-        id = generate_random_id(ctx)
-        notification = {"timestamp": timestamp, "actor": actor, "target": target, "message": message}
-        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, id), json.dumps(notification), '', '')
+        notification = {"identifier": identifier, "timestamp": timestamp, "actor": actor, "target": target, "message": message}
+        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, identifier), json.dumps(notification), '', '')
 
         # Send mail notification if immediate notifications are on.
         receiver = user.from_str(ctx, receiver)[0]
@@ -80,6 +81,45 @@ def api_notifications_load(ctx, sort_order="desc"):
             elif space is pathutil.Space.VAULT:
                 notification["data_package"] = group if subpath == '' else pathutil.basename(subpath)
                 notification["link"] = "/vault/browse?dir=/{}/{}".format(group, subpath)
+
+                # Deposit situation required different information to be presented.
+                if subpath.startswith('deposit-'):
+                    data_package_reference = ""
+                    iter = genquery.row_iterator(
+                        "META_COLL_ATTR_VALUE",
+                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(notification["target"], constants.DATA_PACKAGE_REFERENCE),
+                        genquery.AS_LIST, ctx
+                    )
+
+                    for row in iter:
+                        data_package_reference = row[0]
+
+                    deposit_title = '(no title)'
+                    iter = genquery.row_iterator(
+                        "META_COLL_ATTR_VALUE",
+                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(notification["target"]),
+                        genquery.AS_LIST, ctx
+                    )
+                    for row in iter:
+                        deposit_title = row[0]
+
+                    notification["data_package"] = deposit_title
+                    notification["link"] = "/vault/yoda/{}".format(data_package_reference)
+
+                    # Find real actor when
+                    if notification["actor"] == 'system':
+                        # Get actor from action log on action = "submitted for vault"
+                        iter2 = genquery.row_iterator(
+                            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+                            "COLL_NAME = '" + notification["target"] + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+                            genquery.AS_LIST, ctx
+                        )
+                        for row2 in iter2:
+                            # row2 contains json encoded [str(int(time.time())), action, actor]
+                            log_item_list = jsonutil.parse(row2[1])
+                            if log_item_list[1] == "submitted for vault":
+                                notification["actor"] = log_item_list[2].split('#')[0]
+                                break
 
             notifications.append(notification)
         except Exception:

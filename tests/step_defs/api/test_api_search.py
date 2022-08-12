@@ -1,12 +1,12 @@
 # coding=utf-8
 """Search API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../../features/api/api_search.feature')
 
 
-@given('the Yoda search file API is queried with "<file>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda search file API is queried with {file}"), target_fixture="api_response")
 def api_search_file(user, file):
     return api_request(
         user,
@@ -25,7 +25,7 @@ def api_search_file(user, file):
     )
 
 
-@given('the Yoda search folder API is queried with "<folder>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda search folder API is queried with {folder}"), target_fixture="api_response")
 def api_search_folder(user, folder):
     return api_request(
         user,
@@ -34,7 +34,7 @@ def api_search_folder(user, folder):
     )
 
 
-@given('the Yoda search metadata API is queried with "<metadata>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda search metadata API is queried with {metadata}"), target_fixture="api_response")
 def api_search_metadata(user, metadata):
     return api_request(
         user,
@@ -43,7 +43,7 @@ def api_search_metadata(user, metadata):
     )
 
 
-@given('the Yoda search folder status API is queried with "<status>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda search folder status API is queried with {status}"), target_fixture="api_response")
 def api_search_folder_status(user, status):
     return api_request(
         user,
@@ -52,7 +52,7 @@ def api_search_folder_status(user, status):
     )
 
 
-@then('result "<result>" is found')
+@then(parsers.parse("result {result} is found"))
 def api_response_contents(api_response, result):
     _, body = api_response
 

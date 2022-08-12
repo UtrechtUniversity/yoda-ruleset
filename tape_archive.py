@@ -4,7 +4,6 @@
 __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-import subprocess
 from enum import Enum
 from time import time
 
@@ -12,13 +11,9 @@ import genquery
 
 from util import *
 
-__all__ = ['api_tape_archive_stage',
-           'api_tape_archive_state']
+__all__ = ['api_tape_archive_stage']
 
-DMGET = "/var/lib/irods/msiExecCmd_bin/dmget"
-DMATTR = "/var/lib/irods/msiExecCmd_bin/dmattr"
-
-TAPE_ARCHIVE_RESC = "mockTapeArchive"
+TAPE_ARCHIVE_RESC = "testArchiveVault"
 
 
 class State(Enum):
@@ -81,49 +76,17 @@ def api_tape_archive_stage(ctx, path):
     if physical_path is None:
         return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
 
-    dmget_command = "{} {}".format(DMGET, physical_path)
-    process = subprocess.Popen(dmget_command.split(), stdout=subprocess.PIPE)
-    _, error = process.communicate()
+    state = ""
+    timestamp = str(int(time()))
 
-    if error is not None:
+    try:
+        ctx.uuTapeArchiveSetState(path, physical_path, timestamp)
+    except Exception:
+        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
+
+    try:
+        ctx.dmget(physical_path, state)
+    except Exception:
         return api.Error('dmget_failed', 'Request to bring file <{}> back online failed'.format(path))
 
-    dmattr_command = "{} {}".format(DMATTR, physical_path)
-    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
-    state, error = process.communicate()
-
-    if error is None:
-        timestamp = int(time())
-        avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
-        avu.set_on_data(ctx, path, "org_tape_archive_state", state)
-    else:
-        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))
-
     return api.Result.ok()
-
-
-@api.make()
-def api_tape_archive_state(ctx, path):
-    """Get the state of a file in the tape archive.
-
-    :param ctx:  Combined type of a callback and rei struct
-    :param path: Path to file in the tape archive
-
-    :returns: API status
-    """
-    physical_path = get_physical_path(ctx, path)
-
-    if physical_path is None:
-        return api.Error('file_not_found', 'Could not find file <{}> on tape archive resource'.format(path))
-
-    dmattr_command = "{} {}".format(DMATTR, physical_path)
-    process = subprocess.Popen(dmattr_command.split(), stdout=subprocess.PIPE)
-    state, error = process.communicate()
-
-    if error is None:
-        timestamp = int(time())
-        avu.set_on_data(ctx, path, "org_tape_archive_time", timestamp)
-        avu.set_on_data(ctx, path, "org_tape_archive_state", state)
-        return state
-    else:
-        return api.Error('dmattr_failed', 'Retrieving file <{}> DMF state failed'.format(path))

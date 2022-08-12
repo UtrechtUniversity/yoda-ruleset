@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for publication."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import genquery
@@ -548,11 +548,11 @@ def set_access_restrictions(ctx, vault_package, publication_state):
     if access_restriction.startswith('Open'):
         access_level = "read"
 
-        try:
-            msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
-        except msi.Error:
-            publication_state["status"] = "Unrecoverable"
-            return
+    try:
+        msi.set_acl(ctx, "recursive", access_level, "anonymous", vault_package)
+    except msi.Error:
+        publication_state["status"] = "Unrecoverable"
+        return
 
     # We cannot set "null" as value in a kvp as this will crash msi_json_objops if we ever perform a uuKvp2JSON on it.
     if access_level == "null":
@@ -1023,23 +1023,35 @@ def process_republication(ctx, vault_package):
     return publication_state["status"]
 
 
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_update_publication(ctx, vault_package):
+@rule.make(inputs=range(4), outputs=range(4, 6))
+def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
     """Rule interface for updating the publication of a vault package.
 
     :param ctx:           Combined type of a callback and rei struct
     :param vault_package: Path to the package in the vault
+    :param update_datacite:     Flag that indicates updating DataCite
+    :param update_landingpage:  Flag that indicates updating landingpage
+    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
 
-    :return: "OK" if all went ok
+    :returns: "OK" if all went ok
     """
-    return update_publication(ctx, vault_package)
+    return update_publication(ctx, vault_package, update_datacite == 'Yes', update_landingpage == 'Yes', update_moai == 'Yes')
 
 
-def update_publication(ctx, vault_package):
-    """Routine to update a publication with sanity checks at every step."""
+def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
+    """Routine to update a publication with sanity checks at every step.
+
+    :param ctx:           Combined type of a callback and rei struct
+    :param vault_package: Path to the package in the vault
+    :param update_datacite:     Flag that indicates updating DataCite
+    :param update_landingpage:  Flag that indicates updating landingpage
+    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+
+    :returns: "OK" if all went ok
+    """
     publication_state = {}
 
-    log.write(ctx, "update_publication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "update_publication: Process vault package <{}> DataCite={} landingpage={} MOAI={}".format(vault_package, update_datacite, update_landingpage, update_moai))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -1080,54 +1092,60 @@ def update_publication(ctx, vault_package):
     if publication_state["status"] in ["Unrecoverable", "Retry"]:
         return publication_state["status"]
 
-    # Generate DataCite JSON
-    try:
-        generate_datacite_json(ctx, publication_config, publication_state)
-    except msi.Error:
-        publication_state["status"] = "Unrecoverable"
+    if update_datacite:
+        # Generate DataCite JSON
+        log.write(ctx, 'Update datacite for package {}'.format(vault_package))
+        try:
+            generate_datacite_json(ctx, publication_config, publication_state)
+        except msi.Error:
+            publication_state["status"] = "Unrecoverable"
 
-    save_publication_state(ctx, vault_package, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] in ["Unrecoverable", "Retry"]:
-        return publication_state["status"]
+        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            return publication_state["status"]
 
-    # Send DataCite JSON to metadata end point
-    try:
-        post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
-    except msi.Error:
-        publication_state["status"] = "Retry"
+        # Send DataCite JSON to metadata end point
+        try:
+            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
+        except msi.Error:
+            publication_state["status"] = "Retry"
 
-    save_publication_state(ctx, vault_package, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] in ["Unrecoverable", "Retry"]:
-        return publication_state["status"]
+        if publication_state["status"] in ["Unrecoverable", "Retry"]:
+            return publication_state["status"]
 
-    # Create landing page
-    try:
-        generate_landing_page(ctx, publication_config, publication_state, "publish")
-    except msi.Error:
-        publication_state["status"] = "Unrecoverable"
+    if update_landingpage:
+        # Create landing page
+        log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
+        try:
+            generate_landing_page(ctx, publication_config, publication_state, "publish")
+        except msi.Error:
+            publication_state["status"] = "Unrecoverable"
 
-    save_publication_state(ctx, vault_package, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] == "Unrecoverable":
-        return publication_state["status"]
+        if publication_state["status"] == "Unrecoverable":
+            return publication_state["status"]
 
-    # Use secure copy to push landing page to the public host
-    copy_landingpage_to_public_host(ctx, publication_config, publication_state)
-    save_publication_state(ctx, vault_package, publication_state)
+        # Use secure copy to push landing page to the public host
+        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] == "Retry":
-        return publication_state["status"]
+        if publication_state["status"] == "Retry":
+            return publication_state["status"]
 
-    # Use secure copy to push combi JSON to MOAI server
-    copy_metadata_to_moai(ctx, publication_config, publication_state)
-    save_publication_state(ctx, vault_package, publication_state)
+    if update_moai:
+        # Use secure copy to push combi JSON to MOAI server
+        log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
+        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        save_publication_state(ctx, vault_package, publication_state)
 
-    if publication_state["status"] == "Retry":
-        return publication_state["status"]
+        if publication_state["status"] == "Retry":
+            return publication_state["status"]
 
-    # Updating the landingpage was a success
+    # Updating was a success
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
 

@@ -8,18 +8,46 @@
 # Either 'production' or 'development'
 environment                = 'development'
 
-notifications_sender_email = 'noreply@yoda.test'
-notifications_sender_name  = 'Yoda system'
-notifications_reply_to     = 'noreply@yoda.test'
+resource_primary               = 'irodsResc'
+resource_replica               = 'irodsRescRepl'
+resource_research              = 'irodsResc'
+resource_vault                 = 'irodsResc'
+resource_trigger_pol           = ''
 
-smtp_server                =
-smtp_username              =
-smtp_password              =
+notifications_enabled          = 'true'
+notifications_sender_email     = 'noreply@yoda.test'
+notifications_sender_name      = 'Yoda system'
+notifications_reply_to         = 'noreply@yoda.test'
 
-datacite_url               =
-datacite_username          =
-datacite_password          =
+smtp_server                    =
+smtp_username                  =
+smtp_password                  =
+smtp_auth                      =
+smtp_starttls                  =
 
-eus_api_fqdn               =
-eus_api_port               =
-eus_api_secret             =
+datacite_url                   =
+datacite_username              =
+datacite_password              =
+
+eus_api_fqdn                   =
+eus_api_port                   =
+eus_api_secret                 =
+
+enable_deposit                 =
+enable_open_search             =
+enable_intake                  =
+enable_datarequest             =
+yoda_portal_fqdn               =
+
+epic_pid_enabled               =
+
+enable_data_package_reference  =
+
+enable_tokens                  =
+token_database                 =
+token_length                   =
+token_lifetime                 =
+
+enable_tape_archive            =
+
+temporary_files                =

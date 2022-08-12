@@ -273,7 +273,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
-                                {{ persistent_identifier_datapackage.Identifier_Scheme }}: {{ persistent_identifier_datapackage.Identifier }}
+                                <a href="{{ persistent_identifier_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}" target="_blank">
+                                  {{ persistent_identifier_to_uri(persistent_identifier_datapackage.Identifier_Scheme, persistent_identifier_datapackage.Identifier) }}
+                                </a>
                                 </span>
                             </div>
                         </div>
@@ -327,7 +329,9 @@
                             </div>
                             <div class="col-sm-10">
                                 <span>
-                                {{ pack.Persistent_Identifier.Identifier_Scheme }}: {{ pack.Persistent_Identifier.Identifier }}
+                                <a href="{{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}" target="_blank">
+                                  {{ persistent_identifier_to_uri(pack.Persistent_Identifier.Identifier_Scheme, pack.Persistent_Identifier.Identifier) }}
+                                </a>
                                 </span>
                             </div>
                         </div>
@@ -358,7 +362,7 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in creator.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier }}{{ ", " if not loop.last }}
                                             {% endfor %}
                                 </span>
                             </div>
@@ -401,7 +405,7 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contributor.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
+                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier }}{{ ", " if not loop.last }}
                                             {% endfor %}
                                 </span>
                             </div>
@@ -461,7 +465,10 @@
                             <div class="col-sm-10">
                                 <span>
                                             {% for id in contact.Person_Identifier %}
-                                                {{ id.Name_Identifier_Scheme }}: {{ id.Name_Identifier  }}{{ ", " if not loop.last }}
+                                                <a href="{{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}" target="_blank">
+                                                {{ persistent_identifier_to_uri(id.Name_Identifier_Scheme, id.Name_Identifier) }}
+                                                </a>
+                                                {{ ", " if not loop.last }}
                                             {% endfor %}
                                 </span>
                             </div>

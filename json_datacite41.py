@@ -21,7 +21,6 @@ def rule_json_datacite41_create_combi_metadata_json(ctx,
                                                     licenseUri):
     """Frontend function to add system info to yoda-metadata in json format.
 
-
     :param ctx:                  Combined type of a callback and rei struct
     :param metadataJsonPath:     Path to the most recent vault yoda-metadata.json in the corresponding vault
     :param combiJsonPath:        Path to where the combined info will be placed so it can be used for DataciteXml & landingpage generation
@@ -131,48 +130,6 @@ def json_datacite41_create_datacite_json(ctx, combi_path):
         }
     }
     return metadata
-
-    """
-
-      "doi": "10.5438/0012",
-      ? "prefix": "10.5438",
-      ? "suffix": "0012",
-      "identifiers": [{
-        "identifier": "https://doi.org/10.5438/0012",
-        "identifierType": "DOI"
-      }],
-      "creators": getCreators(combi)[],
-      "titles": getTitles(combi)[],
-      "publisher": getPublisher(combi),
-      # "container": {},
-      "publicationYear": getPublicationYear(combi),
-      "subjects": getSubjects(combi)[],
-      "contributors": getContributors(combi)[],
-      "dates": getDates(combi)[],
-      "language": getLanguage(combi),
-      "types": getResourceType(combi)?? {},
-      "relatedIdentifiers": getRelatedDataPackage(combi) ??[],
-      # "sizes": [],
-      # "formats": [],
-      "version": getVersion(combi),
-      "rightsList": getRightsList(combi)[],
-      "descriptions": getDescriptions(combi)[],
-      "geoLocations": getGeoLocations(combi)[],
-      "fundingReferences": getFunders(combi)[],
-      # "xml": null,
-      # "url":null,
-      # "contentUrl": null,
-      # "metadataVersion": 1,
-      # "schemaVersion": "http://datacite.org/schema/kernel-4",
-      # "source": null,
-      # "isActive": true,
-      # "state": "draft",
-      # "reason": null,
-      # "created": ### "2016-09-19T21:53:56.000Z",
-      # "registered": null,
-      # "updated": ### "2019-02-06T14:31:27.000Z"
-
-    """
 
 
 def get_DOI(combi):
@@ -363,8 +320,11 @@ def get_rights_list(combi):
                'Restricted': 'info:eu-repo/semantics/restrictedAccess',
                'Closed':     'info:eu-repo/semantics/closedAccess'}
 
-    # {'rights': 'Custom'}
-    return [{'rights': combi['Data_Access_Restriction'], 'rightsURI': options[combi['Data_Access_Restriction'].split()[0]]}]
+    rights_list = [{'rights': combi['Data_Access_Restriction'], 'rightsUri': options[combi['Data_Access_Restriction'].split()[0]]}]
+    if combi['License'] != 'Custom':
+        rights_list.append({'rights': combi['License'], 'rightsUri': combi['System']['License_URI']})
+
+    return rights_list
 
 
 def get_language(combi):

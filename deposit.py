@@ -11,19 +11,91 @@ import genquery
 from genquery import AS_DICT, Query
 
 import folder
+import groups
 import meta
 from util import *
 
 __all__ = ['api_deposit_create',
            'api_deposit_status',
            'api_deposit_submit',
-           'api_deposit_overview']
+           'api_deposit_overview',
+           'api_deposit_copy_data_package']
 
 DEPOSIT_GROUP = "deposit-pilot"
 
 
 @api.make()
+def api_deposit_copy_data_package(ctx, reference):
+    """Create deposit collection and copies selected datapackage into the newly created deposit
+
+    :param ctx:       Combined type of a callback and rei struct
+    :param reference: Data Package Reference (UUID4)
+
+    :returns: Path to created deposit collection or API error
+    """
+    result = deposit_create(ctx)
+    if result["deposit_path"] == "not_allowed":
+        return api.Error('not_allowed', 'Could not create deposit collection.')
+
+    new_deposit_path = result["deposit_path"]
+    coll_target = "/" + user.zone(ctx) + "/home/" + new_deposit_path
+
+    coll_data_package = ""
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = '{}' and META_COLL_ATTR_VALUE = '{}'".format(constants.DATA_PACKAGE_REFERENCE, reference),
+        genquery.AS_LIST, ctx)
+
+    for row in iter:
+        coll_data_package = row[0]
+
+    if coll_data_package == "":
+        return api.Error('not_found', 'Could not find data package with provided reference.')
+
+    parts = coll_target.split('/')
+    group_name = parts[3]
+
+    # Check if user has READ ACCESS to specific vault package in collection coll_data_package.
+    user_full_name = user.full_name(ctx)
+    category = groups.group_category(ctx, group_name)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
+
+    if not is_datamanager:
+        # Check if research group has access by checking of research-group exists for this user.
+        research_group_access = collection.exists(ctx, coll_data_package)
+
+        if not research_group_access:
+            return api.Error('NoPermissions', 'Insufficient rights to perform this action')
+
+    # Check if user has write access to research folder.
+    # Only normal user has write access.
+    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
+        return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
+
+    # Register to delayed rule queue.
+    ctx.delayExec(
+        "<PLUSET>1s</PLUSET>",
+        "iiCopyFolderToResearch('%s', '%s')" % (coll_data_package, coll_target),
+        "")
+
+    return {"data": new_deposit_path}
+
+
+@api.make()
 def api_deposit_create(ctx):
+    """Create deposit collection through API
+
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Path to created deposit collection or API error
+    """
+    result = deposit_create(ctx)
+    if result["deposit_path"] == "not_allowed":
+        return api.Error('not_allowed', 'Could not create deposit collection.')
+    return {"deposit_path": result["deposit_path"]}
+
+
+def deposit_create(ctx):
     """Create deposit collection.
 
     :param ctx: Combined type of a callback and rei struct
@@ -51,7 +123,7 @@ def api_deposit_create(ctx):
     try:
         collection.create(ctx, deposit_path)
     except msi.CollCreateError:
-        return api.Error('not_allowed', 'Could not create deposit collection.')
+        return {"deposit_path": "not_allowed"}
 
     space, zone, group, subpath = pathutil.info(deposit_path)
     deposit_path = "{}/{}".format(group, subpath)

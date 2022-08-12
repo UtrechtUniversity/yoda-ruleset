@@ -25,7 +25,10 @@
     "Data_Type": "Dataset",
     "Contributor": [
         {
-            "Name": {}
+            "Name": {
+                "Given_Name": "John",
+                "Family_Name": "Doe"
+            }
         }
     ],
     "Creator": [
@@ -44,7 +47,7 @@
     "Description": "API test dag-0",
     "Research_Group": "Earth sciences - Experimental rock deformation",
     "Collection_Name": "API test dag-0",
-    "End_Preservation": "10",
+    "Retention_Period": "10",
     "Data_Classification": "Basic",
     "links": [
         {

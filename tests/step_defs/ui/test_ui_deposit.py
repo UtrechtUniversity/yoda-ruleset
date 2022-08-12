@@ -5,7 +5,6 @@ __license__   = 'GPLv3, see LICENSE'
 
 import json
 import os
-import time
 from collections import OrderedDict
 
 from pytest_bdd import (
@@ -26,6 +25,13 @@ scenarios('../../features/ui/ui_deposit.feature')
 def ui_deposit_open_search(browser, search_argument):
     browser.fill('q', search_argument)
     browser.find_by_name('q').type(Keys.RETURN)
+
+    for _i in range(25):
+        if browser.is_text_present(search_argument, wait_time=3):
+            return True
+        browser.find_by_css('button.search-btn')[0].click()
+
+    raise AssertionError()
 
 
 @when(parsers.parse('clicks on "{title}" data package'))
@@ -79,7 +85,7 @@ def ui_user_clicks_for_data_access(browser, title):
     assert browser.is_text_present(title)
 
 
-@given('data file is uploaded to deposit', target_fixture="api_response")
+@given(parsers.parse("data file is uploaded to deposit by user {user}"), target_fixture="api_response")
 def api_deposit_file_upload(user, deposit_name):
     file = 'ui_test.file'
     return upload_data(
@@ -89,7 +95,7 @@ def api_deposit_file_upload(user, deposit_name):
     )
 
 
-@given('"<data_access_restriction>" metadata is uploaded', target_fixture="api_response")
+@given(parsers.parse("{data_access_restriction} metadata is uploaded by user {user}"), target_fixture="api_response")
 def ui_deposit_metadata_json_upload_on_access(user, deposit_name, data_access_restriction):
     cwd = os.getcwd()
     with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
@@ -113,7 +119,7 @@ def ui_deposit_click_deposit_on_dp_access(browser):
     return datapackage
 
 
-@when('user clicks on deposit containing "<data_access_restriction>" in title')
+@when(parsers.parse("user clicks on deposit containing {data_access_restriction} in title"))
 def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
     package_title_contains = 'UI test ' + data_access_restriction.title()
     browser.links.find_by_partial_text(package_title_contains)[0].click()
@@ -121,12 +127,7 @@ def ui_deposit_click_deposit_in_overview(browser, data_access_restriction):
 
 @when('user goes to submission page')
 def ui_deposit_to_submission_page(browser):
-    browser.find_by_css('button.btn.btn-primary.float-end', wait_time=10).click()
-
-
-@when('user accepts terms')
-def ui_deposit_accept_terms(browser):
-    browser.find_by_id('accept_terms', wait_time=5)[0].click()
+    browser.find_by_css('button.btn.btn-primary.float-end', wait_time=3).click()
 
 
 @when('user submits data')
@@ -136,7 +137,6 @@ def ui_deposit_dp_submission(browser):
 
 @when('submission is confirmed')
 def ui_deposit_dp_submission_confirmed(browser):
-    time.sleep(10)
     assert browser.is_text_present('Thank you for your deposit')
 
 
@@ -151,9 +151,9 @@ def ui_deposit_click_active(browser):
     browser.links.find_by_partial_text('[No title]')[0].click()
 
 
-@when('user clicks on document data button')
+@when('user clicks on add metadata button')
 def ui_deposit_click_document(browser):
-    browser.links.find_by_partial_text('Document data').click()
+    browser.links.find_by_partial_text('Add metadata').click()
 
 
 @then('new deposit is created')
@@ -167,6 +167,6 @@ def ui_deposit_upload_data_shown(browser):
     assert browser.is_text_present("Upload data")
 
 
-@then('document data step is shown')
+@then('add metadata step is shown')
 def ui_deposit_document_data(browser):
-    assert browser.is_text_present("Upload data")
+    assert browser.is_text_present("Add metadata")

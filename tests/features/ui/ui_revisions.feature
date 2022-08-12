@@ -1,10 +1,16 @@
 Feature: Revisions UI
 
+    Background:
+        Given user researcher is authenticated
+        And collection /tempZone/home/research-initial exists
+        And /tempZone/home/research-initial is unlocked
+
+
     Scenario Outline: Search revisions on file name
-        Given user "researcher" is logged in
+        Given user researcher is logged in
         And module "search" is shown
-        When the user searches revision by name with "<name>"
-        Then revision "<revision>" is found
+        When the user searches revision by name with <name>
+        Then revision <revision> is found
 
         Examples:
             | name  | revision                                                |
@@ -13,10 +19,10 @@ Feature: Revisions UI
 
 
     Scenario Outline: Restore a revision
-        Given user "researcher" is logged in
+        Given user researcher is logged in
         And module "search" is shown
-        When the user searches revision by name with "<name>"
-        And user restores revision "<revision>"
+        When the user searches revision by name with <name>
+        And user restores revision <revision>
         Then revision is restored
 
     Examples:

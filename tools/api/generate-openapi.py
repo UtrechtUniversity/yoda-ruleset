@@ -14,7 +14,7 @@ Do not run it on untrusted codebases.
 """
 from __future__ import print_function
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 __author__    =  ('Chris Smeele')
@@ -279,7 +279,7 @@ for name, fn in api.fns:
     name = re.sub('^api_', '', name)
 
     if core:
-        modules = ['datarequest', 'intake']
+        modules = ['datarequest', 'deposit', 'intake']
         if name.startswith(tuple(modules)):
             continue
 

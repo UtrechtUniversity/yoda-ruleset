@@ -1,7 +1,7 @@
 # coding=utf-8
 """Meta API feature tests."""
 
-__copyright__ = 'Copyright (c) 2020, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import json
@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -21,7 +21,7 @@ from conftest import api_request
 scenarios('../../features/api/api_meta.feature')
 
 
-@given('metadata JSON exists in "<collection>"')
+@given(parsers.parse("metadata JSON exists in {collection}"))
 def api_meta_form_save(user, collection):
     _, body = api_request(
         user,
@@ -45,7 +45,7 @@ def api_meta_form_save(user, collection):
     assert http_status == 200
 
 
-@given('metadata JSON exists in "<clone_collection>"')
+@given(parsers.parse("cloned metadata JSON exists in {clone_collection}"))
 def metadata_removed(user, clone_collection):
     http_status, body = api_request(
         user,
@@ -64,7 +64,7 @@ def metadata_removed(user, clone_collection):
     assert found
 
 
-@given('subcollection "<target_coll>" exists')
+@given(parsers.parse("subcollection {target_coll} exists"))
 def subcollection_exists(user, target_coll):
     http_status, _ = api_request(
         user,
@@ -86,7 +86,7 @@ def subcollection_exists(user, target_coll):
         assert True
 
 
-@given('the Yoda meta remove API is queried with metadata and "<clone_collection>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda meta remove API is queried with metadata and {clone_collection}"), target_fixture="api_response")
 def api_meta_remove(user, clone_collection):
     return api_request(
         user,
@@ -95,7 +95,7 @@ def api_meta_remove(user, clone_collection):
     )
 
 
-@given('the Yoda meta clone file API is queried with "<target_coll>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda meta clone file API is queried with {target_coll}"), target_fixture="api_response")
 def api_response(user, target_coll):
     return api_request(
         user,
@@ -104,7 +104,7 @@ def api_response(user, target_coll):
     )
 
 
-@then('metadata JSON is removed from "<clone_collection>"')
+@then(parsers.parse("metadata JSON is removed from {clone_collection}"))
 def metadata_removed_collection(user, clone_collection):
     http_status, body = api_request(
         user,
@@ -123,7 +123,7 @@ def metadata_removed_collection(user, clone_collection):
     assert found
 
 
-@then('metadata JSON is cloned into "<target_coll>"')
+@then(parsers.parse("metadata JSON is cloned into {target_coll}"))
 def metadata_cloned(user, target_coll):
     http_status, body = api_request(
         user,

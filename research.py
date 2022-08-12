@@ -4,11 +4,13 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import binascii
+
 import genquery
 from pathvalidate import validate_filename, validate_filepath, ValidationError
 
-
 import folder
+import groups
 import meta_form
 from util import *
 
@@ -23,7 +25,8 @@ __all__ = ['api_research_folder_add',
            'api_research_file_delete',
            'api_research_system_metadata',
            'api_research_collection_details',
-           'api_research_list_temporary_files']
+           'api_research_list_temporary_files',
+           'api_research_manifest']
 
 
 @api.make()
@@ -65,7 +68,7 @@ def api_research_folder_add(ctx, coll, new_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to add new folders')
 
     # Collection exists?
@@ -122,7 +125,7 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected folder')
 
     # Folder not locked?
@@ -175,7 +178,7 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected folder')
 
     # Folder not locked?
@@ -239,7 +242,7 @@ def api_research_folder_rename(ctx, new_folder_name, coll, org_folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected folder')
 
     # Collection exists?
@@ -290,7 +293,7 @@ def api_research_folder_delete(ctx, coll, folder_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected folder')
 
     # Folder not locked?
@@ -381,7 +384,7 @@ def api_research_file_copy(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to copy the selected file')
 
     # Folder not locked?
@@ -445,7 +448,7 @@ def api_research_file_rename(ctx, new_file_name, coll, org_file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to rename the selected file')
 
     # Folder not locked?
@@ -508,7 +511,7 @@ def api_research_file_move(ctx, filepath, new_filepath):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to move the selected file')
 
     # Folder not locked?
@@ -555,7 +558,7 @@ def api_research_file_delete(ctx, coll, file_name):
 
     # permissions ok for group?
     user_full_name = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You do not have sufficient permissions to delete the selected file')
 
     # Folder not locked?
@@ -620,14 +623,14 @@ def api_research_collection_details(ctx, path):
     basename = pathutil.chop(path)[1]
 
     # Retrieve user type.
-    member_type = meta_form.user_member_type(ctx, group, user.full_name(ctx))
+    member_type = groups.user_role(ctx, group, user.full_name(ctx))
 
     # Retrieve research folder status.
     status = folder.get_status(ctx, path)
 
     # Check if user is datamanager.
-    category = meta_form.group_category(ctx, group)
-    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+    category = groups.group_category(ctx, group)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Retrieve lock count.
     lock_count = meta_form.get_coll_lock_count(ctx, path)
@@ -644,3 +647,37 @@ def api_research_collection_details(ctx, path):
             "is_datamanager": is_datamanager,
             "lock_count": lock_count,
             "vault_path": vault_path}
+
+
+def decode_checksum(checksum):
+    if checksum is None:
+        return "0"
+    else:
+        return binascii.hexlify(binascii.a2b_base64(checksum[5:])).decode("UTF-8")
+
+
+@api.make()
+def api_research_manifest(ctx, coll):
+    """Produce a manifest of data objects in a collection
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Parent collection of data objects to include
+
+    :returns: List of json objects with name and checksum
+    """
+    iter = genquery.row_iterator(
+        "ORDER(DATA_NAME), DATA_CHECKSUM",
+        "COLL_NAME = '{}'".format(coll),
+        genquery.AS_LIST, ctx
+    )
+    checksums = [{"name": row[0], "checksum": decode_checksum(row[1])} for row in iter]
+
+    iter_sub = genquery.row_iterator(
+        "ORDER(COLL_NAME), ORDER(DATA_NAME), DATA_CHECKSUM",
+        "COLL_PARENT_NAME like '{}%'".format(coll),
+        genquery.AS_LIST, ctx
+    )
+    length = len(coll) + 1
+    checksums_sub = [{"name": (row[0] + "/")[length:] + row[1], "checksum": decode_checksum(row[2])} for row in iter_sub]
+
+    return checksums + checksums_sub

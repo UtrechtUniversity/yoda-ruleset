@@ -19,7 +19,7 @@ __author__    =  ('Felix Croes'
 
 from browse                 import *
 from folder                 import *
-from group                  import *
+from groups                 import *
 from json_datacite41        import *
 from json_landing_page      import *
 from mail                   import *
@@ -36,6 +36,7 @@ from datacite               import *
 from epic                   import *
 from publication            import *
 from policies               import *
+from replication            import *
 from revisions              import *
 from settings               import *
 from notifications          import *

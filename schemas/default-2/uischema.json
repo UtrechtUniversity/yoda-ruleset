@@ -75,7 +75,7 @@
     "ui:help": "What is the type of your data"
   },
   "Data_Classification": {
-    "ui:help": "How is your data classified with regards to information security policy"
+    "ui:help": "How is your data classified with regard to information security policy"
   },
   "Collection_Name": {
     "ui:help": "Collection this data package is a part of. E.g. Project Name"

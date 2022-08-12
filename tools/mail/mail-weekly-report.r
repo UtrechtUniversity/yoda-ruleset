@@ -1,5 +1,24 @@
 mail_weekly_report
 {
+    # Any users subscribed to a weekly notification report?
+    msiAddSelectFieldToGenQuery("USER_NAME", "COUNT", *GenQInpCount);
+    msiAddConditionToGenQuery("META_USER_ATTR_NAME", "=", "org_settings_mail_notifications", *GenQInpCount);
+    msiAddConditionToGenQuery("META_USER_ATTR_VALUE", "=", "WEEKLY", *GenQInpCount);
+
+    msiExecGenQuery(*GenQInpCount, *GenQOutCount);
+
+    *count = 0;
+    foreach(*row in *GenQOutCount) {
+        *count = int(*row.USER_NAME);
+        break;
+    }
+    msiCloseGenQuery(*GenQInpCount, *GenQOutCount);
+
+    if (*count==0) {
+        writeLine("serverLog", "[EMAIL] No weekly notification mail was sent out, no users are subscribed");
+        succeed;
+    }
+
     # Scan for all users with mail notifications enabled.
     *ContInxOld = 1;
     msiAddSelectFieldToGenQuery("USER_NAME", "", *GenQInp);
@@ -9,6 +28,7 @@ mail_weekly_report
     msiExecGenQuery(*GenQInp, *GenQOut);
     msiGetContInxFromGenQueryOut(*GenQOut, *ContInxNew);
 
+    *ContInxOld = *ContInxNew;
     while(*ContInxOld > 0) {
         foreach(*row in *GenQOut) {
             *user = *row.USER_NAME;

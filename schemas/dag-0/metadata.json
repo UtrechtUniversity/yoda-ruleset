@@ -48,32 +48,29 @@
         "10",
         "20",
         "50"
+      ],
+      "enumNames": [
+        "2 - appriopiate period when data can be considered as a snapshot which is outdated in the short term",
+        "5 - appriopiate period when the value of data decreases significantly after a longer period of time",
+        "10 - default retention period according to UU's policy framework for research data, maximum retention period for personal data (GDPR)",
+        "20 - appriopiate period when the value of the data decreases slowly over a long period of time",
+        "50 - appriopiate period when data will always be relevant"
       ]
     },
     "optionsOwnerRole": {
       "type": "string",
       "enum": [
          "Principal Investigator",
-         "3rd Party Data Owner",
-         "Group Leader"
+         "Group Leader",
+         "Researcher",
+         "Contact Person from External Institute",
+         "Project Team Member"
       ]
     },
     "optionsRelationType": {
       "type": "string",
       "enum": [
-        "IsSupplementTo: Current datapackage is supplement to",
-        "IsSupplementedBy: Current datapackage is supplemented by",
-        "IsContinuedBy: Current datadatapackage is continued by",
-        "Continues: Continues this current dataset",
-        "IsNewVersionOf: Current datapackage is new version of",
-        "IsPreviousVersionOf: Current datapackage is previous version of",
-        "IsPartOf: Current datapackage is part of",
-        "HasPart: Is part of current datapackage",
-        "IsReferencedBy: Current datapackage is referenced by",
-        "References: Current datapackages references",
-        "IsVariantFormOf: Current datapackage is variant of",
-        "IsOriginalFormOf: Current datapackage is original of",
-        "IsSourceOf: Raw data for this current datapackage"
+        "References: Current datapackages references"
       ]
     },
     "optionsPersistentIdentifierScheme": {
@@ -698,26 +695,7 @@
     "optionsContributorType": {
       "type": "string",
       "enum": [
-        "ContactPerson",
-        "DataCollector",
-        "DataCurator",
-        "DataManager",
-        "Distributor",
-        "Editor",
-        "HostingInstitution",
-        "Producer",
-        "ProjectLeader",
-        "ProjectManager",
-        "ProjectMember",
-        "RegistrationAgency",
-        "RegistrationAuthority",
-        "RelatedPerson",
-        "Researcher",
-        "ResearchGroup",
-        "RightsHolder",
-        "Sponsor",
-        "Supervisor",
-        "WorkPackageLeader"
+        "ContactPerson"
       ]
     },
     "optionsDataAccessRestriction": {
@@ -727,7 +705,7 @@
         "Restricted - available upon request"
       ],
       "enumNames": [
-        "Open - Accessible for researchers of Geosciences",
+        "Open - Readily downloadable for faculty members",
         "Restricted - Accessible on request"
       ]
     },
@@ -769,7 +747,7 @@
     "Collection_Name",
     "Collected",
     "Tag",
-    "End_Preservation",
+    "Retention_Period",
     "Data_Type",
     "Creator",
     "Contributor",
@@ -883,7 +861,7 @@
       }
     },
     "Related_Datapackage": {
-      "title": "Reference",
+      "title": "Related work",
       "type": "array",
       "minItems": 1,
       "items": {
@@ -922,11 +900,11 @@
           }
         },
         "dependencies": {
-          "Relation_Type": ["Title"]
+          "Title": ["Relation_Type"]
         }
       }
     },
-    "End_Preservation": {
+    "Retention_Period": {
       "$ref": "#/definitions/optionsRetentionPeriod",
       "title": "Retention period (years)"
     },
@@ -956,6 +934,10 @@
             "type": "object",
             "additionalProperties": false,
             "yoda:structure": "compound",
+            "required": [
+              "Given_Name",
+              "Family_Name"
+            ],
             "properties": {
               "Given_Name": {
                 "$ref": "#/definitions/stringNormal",
@@ -970,7 +952,15 @@
               "Given_Name": ["Family_Name"],
               "Family_Name": ["Given_Name"]
             }
+          },
+          "Contributor_Type": {
+            "$ref": "#/definitions/optionsContributorType",
+            "title": "Contributor type",
+            "default": "ContactPerson"
           }
+        },
+        "dependencies": {
+          "Given_Name": ["Contributor_Type"]
         }
       }
     },

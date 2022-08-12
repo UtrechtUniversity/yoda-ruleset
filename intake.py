@@ -134,6 +134,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
 
     :param ctx:  Combined type of a callback and rei struct
     :param coll: Collection from which to list all unrecognized files
+
     :returns: List of unrecognized files
     """
     # check permissions
@@ -146,11 +147,10 @@ def api_intake_list_unrecognized_files(ctx, coll):
     datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
 
     if user.is_member_of(ctx, group):
-        log.write(ctx, "IS GROUP MEMBER")
+        pass
     elif user.is_member_of(ctx, datamanager_group):
-        log.write(ctx, "IS DM")
+        pass
     else:
-        log.write(ctx, "NO PERMISSION")
         return {}
 
     # Include coll name as equal names do occur and genquery delivers distinct results.
@@ -581,7 +581,6 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     tl_objects = tl_info['objects']
 
     timestamp = int(time.time())  # int(datetime.timestamp(datetime.now()))
-
     comment_data = user.name(ctx) + ':' + str(timestamp) + ':' + comment
 
     for tl in tl_objects:

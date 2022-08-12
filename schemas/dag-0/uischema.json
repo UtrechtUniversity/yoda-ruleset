@@ -3,7 +3,7 @@
     "ui:help": "Provide a title or name for your data package"
   },
   "Description": {
-    "ui:help": "Describe the data package. Please refer to projects or grants responsible for the data package",
+    "ui:help": "Give here the most essential information of the dataset, so interested people can determine if this data is in their level of interest. Please include aspects as collection and processing methods, used instruments, standards, tools and data structure. Also mention a reference to a data documentation file",
     "ui:widget": "textarea"
   },
   "Discipline": {
@@ -13,17 +13,17 @@
     "ui:widget": "hidden"
   },
   "Research_Group": {
-    "ui:help": "Specify the research group responsible for the data package"
+    "ui:help": "Specify the research group in which the data package is created"
   },
   "Collection_Name": {
-    "ui:help": "Identification of the Program or Project responsible for collecting the data"
+    "ui:help": "Formal project name in which the data collection was created. Use the following list to find the correct project name; https://dag.sites.uu.nl/projects/"
   },
   "Data_Type": {
     "ui:help": "What is the type of your data",
     "ui:widget": "hidden"
   },
   "Data_Classification": {
-    "ui:help": "How is your data classified with regards to information security policy"
+    "ui:help": "How is your data classified with regard to information security policy"
   },
   "Collected": {
     "Start_Date": {
@@ -34,19 +34,22 @@
     }
   },
   "GeoLocation": {
-    "ui:description": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
+    "ui:description": "Specify the location where materials for or the data itself is collected, in an appropriate level of detail in respect to the research type. Please use the ' Open Map'  button for define a bounding box and place a marker, so its coordinates will be registered. Or use description field to give in geographic location name(s)",
     "items": {
       "geoLocationBox": {
-        "ui:description": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
+        "ui:help": "Specify the location where the data is collected, in an appropriate level of detail in respect to the research type",
         "ui:field": "geo"
+      },
+      "Description_Spatial": {
+        "ui:help": "Specify the geographical indication where materials for or data itself is collected"
       }
     }
   },
   "Tag": {
-    "ui:description": "Free text field for adding (searchable) key words to your data package"
+    "ui:description": "Free text field to add characteristic words or terms that typify and describe the data, so it becomes better searchable. Please fill in one word or term per field, use the + if you want to add more keywords"
   },
   "Related_Datapackage": {
-    "ui:description": "Reference to other resources, such as another data package, or an online publication",
+    "ui:description": "Reference to other resources which are used to create the data set, such as another data package an online publication. Please fill in the title or citing information of the resource, together with type persistant identifier (select an option) and the identifier itself",
     "items": {
       "Relation_Type": {
         "ui:help": "Relation to this data package",
@@ -61,19 +64,20 @@
           "ui:help": "Type of Persistent identifier of the related resource"
         },
         "Identifier": {
-          "ui:help": "The identifier as it can be resolved on the appropriate service"
+          "ui:help": "The identifier as it can be resolved on the appropriate service",
+          "ui:placeholder": "https://"
         }
       }
     }
   },
   "Personal_Data": {
-    "ui:help": "Indicate whether the data package contains personal information"
+    "ui:help": "Indication if the data set contains data which can be related to identify or identifable natural persons. For more information, check the concerning question at the FAQ on the guidance website: https://dag.sites.uu.nl/qa/?frm_search=personal+data"
   },
-  "End_Preservation": {
+  "Retention_Period": {
     "ui:help": "The minimum number of years that the data must be kept"
   },
   "Data_Access_Restriction": {
-    "ui:help": "Select how the data should be shared within the faculty of Geosciences. Personal data may only be accessed on request"
+    "ui:help": "Select how the data should be shared within the faculty. Personal data may only be accessed on request. When you choose for 'Restricted', there are conditions to meet for interested persons to be able to get access to the data, please check https://dag.sites.uu.nl/find-and-retrieve-data/"
   },
   "Contributor": {
     "ui:description": "Person performing the deposit will also act as first contact person",
@@ -85,25 +89,29 @@
         "Family_Name": {
           "ui:help": "The surname or last name of the person(s) performing the deposit"
         }
+      },
+      "Contributor_Type": {
+        "ui:help": "The type of contributor. List of values is derived from DataCite",
+        "ui:widget": "hidden"
       }
     }
   },
   "Creator": {
-    "ui:description": "The person(s) within the faculty responsible for collecting the data",
+    "ui:description": "Person(s) who can be considered responsible for the generation of the dataset and establishing access controls to the data, now and in the future. Common examples are; principal researcher of the project or research group leader",
     "items": {
       "Name": {
         "Given_Name": {
-          "ui:help": "The personal or first name of the person(s) responsible for collecting the data"
+          "ui:help": "The personal or first name of the person responsible for the data package"
         },
         "Family_Name": {
-          "ui:help": "The surname or last name of the person(s) responsible for collecting the data"
+          "ui:help": "The surname or last name of the person responsible for the data package"
         }
       },
       "Affiliation": {
-        "ui:description": "The organizational or institutional affiliation of the contributor"
+        "ui:help": "Organizational or institutional affliation of the data owner"
       },
       "Owner_Role": {
-        "ui:help": "What is the role of the owner in the data collection"
+        "ui:help": "Which role does the data owner have in the context in which the data package originated?"
       }
     }
   },

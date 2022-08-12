@@ -1,12 +1,12 @@
 # coding=utf-8
 """Settings API feature tests."""
 
-__copyright__ = 'Copyright (c) 2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
     given,
-    # parsers,
+    parsers,
     scenarios,
     then,
 )
@@ -16,7 +16,7 @@ from conftest import api_request
 scenarios('../../features/api/api_settings.feature')
 
 
-@given('the Yoda settings save API is queried with "<attribute>" and "<value>"', target_fixture="api_response")
+@given(parsers.parse("the Yoda settings save API is queried with {attribute} and {value}"), target_fixture="api_response")
 def api_settings_save(user, attribute, value):
     settings = {attribute: value}
     return api_request(
@@ -35,7 +35,7 @@ def api_settings_load(user):
     )
 
 
-@then('"<attribute>" contains "<value>"')
+@then(parsers.parse("{attribute} contains {value}"))
 def api_attribute_value(api_response, attribute, value):
     _, body = api_response
     assert body["data"][attribute] == value

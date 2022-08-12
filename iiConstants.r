@@ -7,9 +7,6 @@
 # \copyright Copyright (c) 2016-2018, Utrecht University. All rights reserved.
 # \license   GPLv3, see LICENSE.
 
-# \constant GENQMAXROWS Maximum number of rows returned by an iRODS GenQuery or msiGetMoreRows call
-GENQMAXROWS = 256
-
 # \constant IIGROUPPREFIX
 IIGROUPPREFIX = "research-"
 
