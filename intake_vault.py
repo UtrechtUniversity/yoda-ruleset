@@ -228,7 +228,7 @@ def dataset_objects_only_move_2_vault(ctx, toplevel_collection, dataset_id, vaul
         intake_path = toplevel_collection + "/" + row[0]
         # Now remove data object in intake
         try:
-            data_object.remove(ctx, intake_path)
+            data_object.remove(ctx, intake_path, force=True)
         except Exception:
             log.write(ctx, "ERROR: unable to remove intake object " + intake_path)
             # error occurred during ingest, cleanup vault area and relay the error to user
@@ -312,7 +312,7 @@ def vault_walk_remove_object(ctx, item_parent, item_name, is_collection):
         if is_collection:
             collection.remove(ctx, item_parent + '/' + item_name)
         else:
-            data_object.remove(ctx, item_parent + '/' + item_name)
+            data_object.remove(ctx, item_parent + '/' + item_name, force=True)
     except Exception:
         status = 1
 
