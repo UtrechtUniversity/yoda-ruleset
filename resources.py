@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for statistics module."""
 
-__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from math import ceil
 
 import genquery
 
-import meta_form
+import groups
 from util import *
 
 __all__ = ['api_resource_list_groups',
@@ -59,10 +59,10 @@ def api_resource_full_year_group_data(ctx, group_name):
 
     # Check permissions for this function
     # Member of this group?
-    member_type = meta_form.user_member_type(ctx, group_name, user.full_name(ctx))
+    member_type = groups.user_role(ctx, group_name, user.full_name(ctx))
     if member_type not in ['reader', 'normal', 'manager']:
-        category = meta_form.group_category(ctx, group_name)
-        if not meta_form.user_is_datamanager(ctx, category, user.full_name(ctx)):
+        category = groups.group_category(ctx, group_name)
+        if not groups.user_is_datamanager(ctx, category, user.full_name(ctx)):
             if user.user_type(ctx) != 'rodsadmin':
                 return api.Error('not_allowed', 'Insufficient permissions')
 

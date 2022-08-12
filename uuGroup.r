@@ -25,6 +25,7 @@ uuGetUserType(*user, *userType) {
 	}
 }
 
+
 # \brief Extract username and zone in separate fields.
 #
 # \param[in] user       name of the irods user
@@ -434,24 +435,6 @@ uuGroupGetDescription(*groupName, *description) {
 	}
 }
 
-# \brief Get a list of both manager and non-manager members of a group.
-#
-# This function ignores zone names, this is usually a bad idea.
-#
-# \deprecated Use uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) instead
-#
-# \param[in]  groupName
-# \param[out] members a list of user names
-#
-uuGroupGetMembers(*groupName, *members) {
-	uuGroupGetMembers(*groupName, false, false, *m);
-	*members = list();
-	foreach (*member in *m) {
-		# Throw away the zone name for backward compat.
-		uuChop(*member, *name, *_, "#", true);
-		*members = cons(*name, *members);
-	}
-}
 
 # \brief Get a list of a group's members.
 #
@@ -512,6 +495,44 @@ uuGroupGetMembers(*groupName, *includeRo, *addTypePrefix, *members) {
 		}
 	}
 }
+
+
+# \brief Get a group's member count.
+#
+# \param[in]  groupName
+# \param[out] members       number of members of group
+#
+uuGroupGetMemberCount(*groupName, *members) {
+    *count = 0;
+
+	# Fetch members.
+	foreach (
+		*member in
+		SELECT USER_NAME,
+		       USER_ZONE
+		WHERE  USER_GROUP_NAME = '*groupName'
+		  AND  USER_TYPE != 'rodsgroup'
+	) {
+        *count = *count + 1;
+	}
+
+	# Fetch read-only members.
+	if (*groupName like regex ``(research|intake)-.+``) {
+		uuChop(*groupName, *_, *groupBaseName, '-', true);
+		foreach (
+			*member in
+			SELECT USER_NAME,
+			       USER_ZONE
+			WHERE  USER_GROUP_NAME == 'read-*groupBaseName'
+			AND    USER_TYPE != 'rodsgroup'
+		) {
+            *count = *count + 1;
+		}
+	}
+
+    *members = int(*count);
+}
+
 
 # \brief Get a list of managers for the given group.
 #

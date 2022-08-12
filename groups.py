@@ -108,7 +108,7 @@ def getCategories(ctx):
     categories = []
 
     iter = genquery.row_iterator(
-        "META_USER_ATTR_VALUE",
+        "ORDER_DESC(META_USER_ATTR_VALUE)",
         "USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'category'",
         genquery.AS_LIST, ctx
     )
@@ -183,6 +183,59 @@ def getSubcategories(ctx, category):
     return list(categories)
 
 
+def user_role(ctx, group_name, user):
+    """Return role of user in group.
+
+    :param ctx:        Combined type of a ctx and rei struct
+    :param group_name: Group name of user
+    :param user:       User to return type of
+
+    :returns: User role ('none' | 'reader' | 'normal' | 'manager')
+    """
+    groups = getGroupData(ctx)
+    if '#' not in user:
+        import session_vars
+        user = user + "#" + session_vars.get_map(ctx.rei)["client_user"]["irods_zone"]
+
+    groups = list(filter(lambda group: group_name == group["name"] and (user in group["read"] or user in group["members"]), groups))
+
+    if groups:
+        if user in groups[0]["managers"]:
+            return "manager"
+        elif user in groups[0]["members"]:
+            return "normal"
+        elif user in groups[0]["read"]:
+            return "reader"
+    else:
+        return "none"
+
+
+def user_is_datamanager(ctx, category, user):
+    """Return if user is datamanager of category.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param category: Category to check if user is datamanger of
+    :param user:     User to check if user is datamanger
+
+    :returns: Boolean indicating if user is datamanager
+    """
+    return user_role(ctx, 'datamanager-{}'.format(category), user) \
+        in ('normal', 'manager')
+
+
+def group_category(ctx, group):
+    """Return category of group.
+
+    :param ctx:   Combined type of a ctx and rei struct
+    :param group: Group to return category of
+
+    :returns: Category name of group
+    """
+    if group.startswith('vault-'):
+        group = ctx.uuGetBaseGroup(group, '')['arguments'][1]
+    return ctx.uuGroupGetCategory(group, '', '')['arguments'][1]
+
+
 @api.make()
 def api_group_data(ctx):
     """Retrieve group data as hierarchy for user.
@@ -251,7 +304,28 @@ def api_group_data(ctx):
             'members': members
         }
 
-    return {'group_hierarchy': group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+    # order the resulting group_hierarchy and put System in as first category
+    cat_list = []
+    system_present = False
+    for cat in group_hierarchy:
+        if cat != 'System':
+            cat_list.append(cat)
+        else:
+            system_present = True
+    cat_list.sort()
+    if system_present:
+        cat_list.insert(0, 'System')
+
+    new_group_hierarchy = OrderedDict()
+    for cat in cat_list:
+        new_group_hierarchy[cat] = group_hierarchy[cat]
+
+    # Python 3 solution:
+    # Put System category as first category.
+    # if "System" in group_hierarchy:
+    #    group_hierarchy.move_to_end("System", last=False)
+
+    return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):

@@ -22,7 +22,7 @@ sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
 
 from browse                 import *
 from folder                 import *
-from group                  import *
+from groups                 import *
 from json_datacite41        import *
 from json_landing_page      import *
 from mail                   import *
