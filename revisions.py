@@ -12,7 +12,7 @@ import genquery
 import irods_types
 
 import folder
-import meta_form
+import groups
 from util import *
 
 __all__ = ['api_revisions_restore',
@@ -190,7 +190,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     user_full_name = user.full_name(ctx)
 
     # Target collection write access?
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You are not allowed to write in the selected collection')
 
     # Target_coll locked?
@@ -218,7 +218,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
 
     origin_group_name = original_path.split('/')[3]
 
-    if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
+    if groups.user_role(ctx, origin_group_name, user_full_name) in ['none']:
         return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
 
     source_path = coll_origin + "/"  + filename_origin
