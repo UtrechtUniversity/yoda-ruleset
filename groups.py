@@ -664,10 +664,7 @@ def api_group_get_user_role(ctx, username, group_name):
 
     :returns: Role of the user
     """
-    ruleResult = ctx.uuGroupGetMemberType(group_name, username, '')
-
-    role = ruleResult["arguments"][2]
-    return role
+    return user_role(ctx, group_name, username)
 
 
 @api.make()
