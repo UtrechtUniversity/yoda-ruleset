@@ -45,11 +45,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                 'items': revisions}
 
     originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
     qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                           "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                           "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
                            "AND COLL_NAME like '" + startpath + "%' ",
                            offset=offset, limit=limit, output=genquery.AS_DICT)
 
@@ -57,13 +59,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     for rev in list(qdata):
         rev_data = {}
         rev_data['main_revision_coll'] = rev['COLL_NAME']
-        rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
+        rev_data['main_original_dataname'] = pathutil.basename(rev['META_DATA_ATTR_VALUE'])
+        rev_data['original_path'] = rev['META_DATA_ATTR_VALUE']
+        # strip off data object name
+        rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_path'].split(os.path.sep)[:-1]))
+        # strip off /zone/home/
+        rev_data['original_coll_name'] = '/'.join(rev_data['original_path'].split(os.path.sep)[3:])
 
-        # Situations in which a data_object including its parent folder is removed.
-        # And after a while gets reintroduced
-
-        # Hier de daadwerkelijke revisies ophalen
-        # Dit bepaalt het TOTAL REVISIONS
         iter = genquery.row_iterator(
             "DATA_ID",
             "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
@@ -72,18 +74,6 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             genquery.AS_DICT, ctx)
 
         for row in iter:
-            # based on data id get original_coll_name
-            iter2 = genquery.row_iterator(
-                "META_DATA_ATTR_VALUE",
-                "DATA_ID = '" + row['DATA_ID'] + "' "
-                "AND META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "' ",
-                genquery.AS_DICT, ctx)
-            for row2 in iter2:
-                rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
-
-            rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
-            rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
-
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
                 # This is a double entry and has to be corrected in the total returned to the frontend
@@ -106,9 +96,9 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
     # Alas an extra genquery.Query is required to get the total number of rows
     qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
-                                "AND COLL_NAME like '" + startpath + "%' ",
+                               "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                               "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
+                               "AND COLL_NAME like '" + startpath + "%' ",
                                 offset=0, limit=None, output=genquery.AS_DICT)
 
     # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
