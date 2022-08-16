@@ -14,7 +14,7 @@ import irods_types
 from dateutil import relativedelta
 
 import folder
-import group
+import groups
 import meta
 import meta_form
 import notifications
@@ -268,8 +268,8 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has READ ACCESS to specific vault packatge in collection coll_origin.
     user_full_name = user.full_name(ctx)
-    category = meta_form.group_category(ctx, group_name)
-    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+    category = groups.group_category(ctx, group_name)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     if not is_datamanager:
         # Check if research group has access by checking of research-group exists for this user.
@@ -285,7 +285,7 @@ def api_vault_copy_to_research(ctx, coll_origin, coll_target):
 
     # Check if user has write access to research folder.
     # Only normal user has write access.
-    if not meta_form.user_member_type(ctx, group_name, user_full_name) in ['normal', 'manager']:
+    if not groups.user_role(ctx, group_name, user_full_name) in ['normal', 'manager']:
         return api.Error('NoWriteAccessTargetCollection', 'Not permitted to write in selected folder')
 
     # Register to delayed rule queue.
@@ -418,7 +418,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
         if data_object.exists(ctx, license_file):
-            data_object.remove(ctx, license_file)
+            data_object.remove(ctx, license_file, force=True)
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.
@@ -598,8 +598,8 @@ def api_vault_collection_details(ctx, path):
     has_datamanager = True
 
     # Check if user is datamanager.
-    category = meta_form.group_category(ctx, group)
-    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+    category = groups.group_category(ctx, group)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Check if a vault action is pending.
     vault_action_pending = False
@@ -777,11 +777,11 @@ def api_grant_read_access_research_group(ctx, coll):
         research_group_name = 'deposit-' + '-'.join(group_parts[1:])
     else:
         research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = meta_form.group_category(ctx, group)
+    category = groups.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
             acl_kv = misc.kvpair(ctx, "actor", actor)
@@ -824,11 +824,11 @@ def api_revoke_read_access_research_group(ctx, coll):
         research_group_name = 'deposit-' + '-'.join(group_parts[1:])
     else:
         research_group_name = 'research-' + '-'.join(group_parts[1:])
-    category = meta_form.group_category(ctx, group)
+    category = groups.group_category(ctx, group)
 
     # Is datamanager?
     actor = user.full_name(ctx)
-    if meta_form.user_member_type(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
+    if groups.user_role(ctx, 'datamanager-' + category, actor) in ['normal', 'manager']:
         # Grant research group read access to vault package.
         try:
             acl_kv = misc.kvpair(ctx, "actor", actor)
@@ -1150,8 +1150,8 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     actor_group_path = '/' + zone + '/home/'
 
     # Check if user is datamanager.
-    category = meta_form.group_category(ctx, vault_group_name)
-    is_datamanager = meta_form.user_is_datamanager(ctx, category, user.full_name(ctx))
+    category = groups.group_category(ctx, vault_group_name)
+    is_datamanager = groups.user_is_datamanager(ctx, category, user.full_name(ctx))
 
     # Status SUBMITTED_FOR_PUBLICATION can only be requested by researcher.
     # Status UNPUBLISHED can be called by researcher and datamanager.

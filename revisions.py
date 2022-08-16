@@ -12,7 +12,7 @@ import genquery
 import irods_types
 
 import folder
-import meta_form
+import groups
 from util import *
 
 __all__ = ['api_revisions_restore',
@@ -45,11 +45,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                 'items': revisions}
 
     originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
     qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                           "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                           "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
                            "AND COLL_NAME like '" + startpath + "%' ",
                            offset=offset, limit=limit, output=genquery.AS_DICT)
 
@@ -57,13 +59,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     for rev in list(qdata):
         rev_data = {}
         rev_data['main_revision_coll'] = rev['COLL_NAME']
-        rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
+        rev_data['main_original_dataname'] = pathutil.basename(rev['META_DATA_ATTR_VALUE'])
+        rev_data['original_path'] = rev['META_DATA_ATTR_VALUE']
+        # strip off data object name
+        rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_path'].split(os.path.sep)[:-1]))
+        # strip off /zone/home/
+        rev_data['original_coll_name'] = '/'.join(rev_data['original_path'].split(os.path.sep)[3:])
 
-        # Situations in which a data_object including its parent folder is removed.
-        # And after a while gets reintroduced
-
-        # Hier de daadwerkelijke revisies ophalen
-        # Dit bepaalt het TOTAL REVISIONS
         iter = genquery.row_iterator(
             "DATA_ID",
             "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
@@ -72,18 +74,6 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             genquery.AS_DICT, ctx)
 
         for row in iter:
-            # based on data id get original_coll_name
-            iter2 = genquery.row_iterator(
-                "META_DATA_ATTR_VALUE",
-                "DATA_ID = '" + row['DATA_ID'] + "' "
-                "AND META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "' ",
-                genquery.AS_DICT, ctx)
-            for row2 in iter2:
-                rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
-
-            rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
-            rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
-
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
                 # This is a double entry and has to be corrected in the total returned to the frontend
@@ -106,8 +96,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
     # Alas an extra genquery.Query is required to get the total number of rows
     qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                                "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                                "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
                                 "AND COLL_NAME like '" + startpath + "%' ",
                                 offset=0, limit=None, output=genquery.AS_DICT)
 
@@ -190,7 +180,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
     user_full_name = user.full_name(ctx)
 
     # Target collection write access?
-    if meta_form.user_member_type(ctx, target_group_name, user_full_name) in ['none', 'reader']:
+    if groups.user_role(ctx, target_group_name, user_full_name) in ['none', 'reader']:
         return api.Error('not_allowed', 'You are not allowed to write in the selected collection')
 
     # Target_coll locked?
@@ -218,7 +208,7 @@ def api_revisions_restore(ctx, revision_id, overwrite, coll_target, new_filename
 
     origin_group_name = original_path.split('/')[3]
 
-    if meta_form.user_member_type(ctx, origin_group_name, user_full_name) in ['none']:
+    if groups.user_role(ctx, origin_group_name, user_full_name) in ['none']:
         return api.Error('not_allowed', 'You are not allowed to view the information from this group {}'.format(origin_group_name))
 
     source_path = coll_origin + "/"  + filename_origin
@@ -362,7 +352,7 @@ def rule_revision_batch(ctx, verbose):
                 avu.set_on_data(ctx, path, errorattr, "true")
 
         # Total revision process completed
-        log.write(ctx, "[revisions] Batch revision job finished. {}/{} objects succesfully processed. {} ignored.".format(count_ok, count, count_ignored))
+        log.write(ctx, "[revisions] Batch revision job finished. {}/{} objects processed successfully. {} objects ignored.".format(count_ok, count, count_ignored))
 
 
 def is_revision_blocked_by_admin(ctx):
@@ -412,11 +402,11 @@ def revision_create(ctx, resource, path, max_size, verbose):
         break
 
     if not found:
-        log.write(ctx, "[revisons] Data object <{}> was not found or path was collection".format(path))
+        log.write(ctx, "[revisions] Data object <{}> was not found or path was collection".format(path))
         return ""
 
     if int(data_size) > max_size:
-        log.write(ctx, "[revisons] Files larger than {} bytes cannot store revisions".format(max_size))
+        log.write(ctx, "[revisions] Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
 
     iter = genquery.row_iterator(
@@ -469,13 +459,13 @@ def revision_create(ctx, resource, path, max_size, verbose):
             try:
                 msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
             except error.UUError:
-                log.write(ctx, "[revisons] ERROR - Failed to create staging area at <{}>".format(rev_coll))
+                log.write(ctx, "[revisions] ERROR - Failed to create staging area at <{}>".format(rev_coll))
                 return ""
 
         rev_path = rev_coll + "/" + rev_filename
 
         if print_verbose:
-            log.write(ctx, "[revisons] Creating revision {} -> {}".format(path, rev_path))
+            log.write(ctx, "[revisions] Creating revision {} -> {}".format(path, rev_path))
 
         # actual copying to revision store
         try:
@@ -502,7 +492,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
-            log.write(ctx, '[revisons] ERROR - The file could not be copied: {}'.format(str(e)))
+            log.write(ctx, '[revisions] ERROR - The file could not be copied: {}'.format(str(e)))
             return ''
 
     return revision_id
@@ -583,10 +573,10 @@ def revision_remove(ctx, revision_id):
             msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
             return True
         except msi.Error:
-            log.write(ctx, "[revisons] ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
+            log.write(ctx, "[revisions] ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
             return False
 
-    log.write(ctx, "[revisons] ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
+    log.write(ctx, "[revisions] ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
     return False
 
 

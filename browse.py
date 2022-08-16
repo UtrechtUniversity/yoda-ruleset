@@ -254,6 +254,7 @@ def api_search(ctx,
 
     zone = user.zone(ctx)
 
+    query_is_case_sensitive = False
     if search_type == 'filename':
         cols = ['ORDER(DATA_NAME)', 'COLL_NAME', 'MIN(DATA_CREATE_TIME)', 'MAX(DATA_MODIFY_TIME)', 'DATA_SIZE']
         where = "COLL_NAME like '{}%%' AND DATA_NAME like '%%{}%%'".format("/" + zone + "/home", search_string)
@@ -266,6 +267,7 @@ def api_search(ctx,
                 constants.UUUSERMETADATAROOT + "_", search_string, "/" + zone + "/home"
         )
     elif search_type == 'status':
+        query_is_case_sensitive = True
         status = search_string.split(":")
         status_value = status[1]
         if status[0] == "research":
@@ -282,7 +284,7 @@ def api_search(ctx,
         cols = [x.replace('ORDER(', 'ORDER_DESC(') for x in cols]
 
     qdata = Query(ctx, cols, where, offset=max(0, int(offset)),
-                  limit=int(limit), case_sensitive=False, output=AS_DICT)
+                  limit=int(limit), case_sensitive=query_is_case_sensitive, output=AS_DICT)
 
     datas = map(transform, list(qdata))
 

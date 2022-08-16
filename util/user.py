@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utility / convenience functions for querying user info."""
 
-__copyright__ = 'Copyright (c) 2019-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from collections import namedtuple
@@ -97,24 +97,10 @@ def is_member_of(ctx, group, user=None):
                           .format(*list(user) + [group])).first() is not None
 
 
-# TODO: Remove. {{{
-def get_client_name_zone(rei):
-    """Obtain client name and zone, as a tuple."""
-    client = session_vars.get_map(rei)['client_user']
-    return client['user_name'], client['irods_zone']
-
-
-# TODO: Replace calls (meta.py) with full_name.
-def get_client_full_name(rei):
-    """Obtain client name and zone, formatted as a 'x#y' string."""
-    return '{}#{}'.format(*get_client_name_zone(rei))
-# }}}
-
-
-def name_from_id(callback, user_id):
+def name_from_id(ctx, user_id):
     """Retrieve username from user ID."""
     for row in genquery.row_iterator("USER_NAME",
                                      "USER_ID = '{}'".format(user_id),
-                                     genquery.AS_LIST, callback):
+                                     genquery.AS_LIST, ctx):
         return row[0]
     return ''
