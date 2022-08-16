@@ -35,11 +35,9 @@ Feature: Login UI
         Then user <user> is logged in
 
         Examples:
-            | user                      |
-            | yodaresearcher@gmail.com  |
-            | yodadatamanager@gmail.com |
-            | researcher@yoda.test      |
-            | datamanager@yoda.test     |
+            | user                  |
+            | researcher@yoda.test  |
+            | datamanager@yoda.test |
 
 
     Scenario Outline: Invalid OIDC login flow
@@ -63,6 +61,6 @@ Feature: Login UI
         Then the user is redirected to <page>
 
         Examples:
-        | user                     | page       |
-        | yodaresearcher@gmail.com | /research/ |
-        | researcher@yoda.test     | /research/ |
+        | user                  | page       |
+        | researcher@yoda.test  | /research/ |
+        | datamanager@yoda.test | /research/ |
