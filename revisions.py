@@ -96,9 +96,9 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
     # Alas an extra genquery.Query is required to get the total number of rows
     qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                               "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
-                               "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
-                               "AND COLL_NAME like '" + startpath + "%' ",
+                                "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                                "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
+                                "AND COLL_NAME like '" + startpath + "%' ",
                                 offset=0, limit=None, output=genquery.AS_DICT)
 
     # qtotalrows.total_rows() moet worden verminderd met het aantal ontdubbelde entries
