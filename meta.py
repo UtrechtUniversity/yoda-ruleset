@@ -47,7 +47,7 @@ def metadata_get_schema_id(metadata):
 
 
 def metadata_set_schema_id(metadata, schema_id):
-    other_links = filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata))
+    other_links = list(filter(lambda x: x['rel'] != 'describedby', metadata_get_links(metadata)))
 
     metadata['links'] = [OrderedDict([
         ['rel',  'describedby'],
@@ -102,7 +102,7 @@ def get_json_metadata_errors(callback,
                 'schema_path': list(e.schema_path),
                 'validator':   e.validator}
 
-    return map(transform_error, errors)
+    return list(map(transform_error, errors))
 
 
 def is_json_metadata_valid(callback,

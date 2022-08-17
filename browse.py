@@ -88,11 +88,11 @@ def api_browse_folder(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, list(qcoll))
+    colls = list(map(transform, list(qcoll)))
 
     qdata = Query(ctx, dcols, "COLL_NAME = '{}'".format(coll),
                   offset=max(0, offset - qcoll.total_rows()), limit=limit - len(colls), output=AS_DICT)
-    datas = map(transform, list(qdata))
+    datas = list(map(transform, list(qdata)))
 
     if len(colls) + len(datas) == 0:
         # No results at all?
@@ -188,7 +188,7 @@ def api_browse_collections(ctx,
         qcoll = Query(ctx, ccols, "COLL_PARENT_NAME = '{}'".format(coll),
                       offset=offset, limit=limit, output=AS_DICT)
 
-    colls = map(transform, list(qcoll))
+    colls = list(map(transform, list(qcoll)))
 
     if len(colls) == 0:
         # No results at all?

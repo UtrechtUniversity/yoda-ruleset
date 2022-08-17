@@ -254,7 +254,7 @@ def api_deposit_overview(ctx,
     qcoll = Query(ctx, ccols,
                   "COLL_PARENT_NAME = '{}' AND COLL_NAME not like '/{}/home/vault-%' AND COLL_NAME not like '/{}/home/grp-vault-%'".format(coll, zone, zone),
                   offset=offset, limit=limit, output=AS_DICT)
-    colls = map(transform, list(qcoll))
+    colls = list(map(transform, list(qcoll)))
 
     if len(colls) == 0:
         # No results at all?

@@ -801,7 +801,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         return OrderedDict([('total', 0), ('items', [])])
 
     # Execute query
-    colls = map(transform, list(qcoll))
+    colls = list(map(transform, list(qcoll)))
     #
     # Merge datarequest title into results
     colls_title = map(transform_title, list(qcoll_title))
@@ -1135,7 +1135,7 @@ def datarequest_attachments_get(ctx, request_id):
     # Return list of attachment filepaths
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id,
                                       ATTACHMENTS_PATHNAME)
-    return map(get_filename, list(collection.data_objects(ctx, coll_path)))
+    return list(map(get_filename, list(collection.data_objects(ctx, coll_path))))
 
 
 @api.make()
