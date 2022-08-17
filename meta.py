@@ -41,7 +41,7 @@ def metadata_get_links(metadata):
 
 
 def metadata_get_schema_id(metadata):
-    desc = filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata))
+    desc = list(filter(lambda x: x['rel'] == 'describedby', metadata_get_links(metadata)))
     if len(desc) > 0:
         return desc[0]['href']
 
