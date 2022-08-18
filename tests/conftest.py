@@ -127,6 +127,7 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         # Prevent spamming log after keyboard interrupt.
         pass
 
+
 def login(user, password):
     """Login portal and retrieve CSRF and session cookies."""
     # Disable unsecure connection warning.
