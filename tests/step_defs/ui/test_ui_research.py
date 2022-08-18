@@ -135,7 +135,8 @@ def ui_research_multi_delete(browser):
     browser.find_by_css('input[data-name="yoda-metadata.json"]').click()
     browser.find_by_id('multiSelect').click()
     browser.find_by_css('a.multiple-delete').click()
-    browser.find_by_css('.dlg-action-button').click()
+    time.sleep(1)
+    browser.find_by_css('button[data-action="multiple-delete"]').click()
     time.sleep(1)
     browser.find_by_id('finishMultiSelect').click()
 
