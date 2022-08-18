@@ -116,16 +116,17 @@ def pytest_bdd_apply_tag(tag, function):
 
 def pytest_bdd_after_scenario(request, feature, scenario):
     """Logout user after scenario when we have a browser."""
-    try:
-        browser = request.getfixturevalue('browser')
-        url = "{}/user/logout".format(portal_url)
-        browser.visit(url)
-    except pytest.FixtureLookupError:
-        # No UI logout for API tests.
-        pass
-    except urllib3.exceptions.MaxRetryError:
-        # Prevent spamming log after keyboard interrupt.
-        pass
+    if feature.startswith("ui_"):
+        try:
+            browser = request.getfixturevalue('browser')
+            url = "{}/user/logout".format(portal_url)
+            browser.visit(url)
+        except pytest.FixtureLookupError:
+            # No UI logout for API tests.
+            pass
+        except urllib3.exceptions.MaxRetryError:
+            # Prevent spamming log after keyboard interrupt.
+            pass
 
 
 def login(user, password):
