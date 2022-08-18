@@ -121,8 +121,11 @@ def pytest_bdd_after_scenario(request, feature, scenario):
         url = "{}/user/logout".format(portal_url)
         browser.visit(url)
     except pytest.FixtureLookupError:
+        # No UI logout for API tests.
         pass
-
+    except urllib3.exceptions.MaxRetryError:
+        # Prevent spamming log after keyboard interrupt.
+        pass
 
 def login(user, password):
     """Login portal and retrieve CSRF and session cookies."""
