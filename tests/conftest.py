@@ -114,6 +114,16 @@ def pytest_bdd_apply_tag(tag, function):
         return None
 
 
+def pytest_bdd_after_scenario(request, feature, scenario):
+    """Logout user after scenario when we have a browser."""
+    try:
+        browser = request.getfixturevalue('browser')
+        url = "{}/user/logout".format(portal_url)
+        browser.visit(url)
+    except pytest.FixtureLookupError:
+        pass
+
+
 def login(user, password):
     """Login portal and retrieve CSRF and session cookies."""
     # Disable unsecure connection warning.
