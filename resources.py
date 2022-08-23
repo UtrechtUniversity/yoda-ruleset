@@ -89,8 +89,9 @@ def api_resource_full_year_group_data(ctx, group_name):
         for row in iter:
             data = jsonutil.parse(row[0])
             tierName = data[1]
-            total_storage += data[2]
-            data_size = ceil((data[2] / 1000000000000.0) * 10) / 10  # bytes to terabytes
+            monthly_storage = int(data[2])  # historic scripts sometimes used string
+            total_storage += monthly_storage
+            data_size = ceil((monthly_storage / 1000000000000.0) * 10) / 10  # bytes to terabytes
             try:
                 full_year_data[tierName][referenceMonth - 1] = data_size
             except KeyError:
