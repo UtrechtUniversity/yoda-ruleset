@@ -326,7 +326,7 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     datacite_json_path = temp_coll + "/" + randomId + "-dataCite.json"
 
     # Based on content of *combiJsonPath, get DataciteJson as string
-    datacite_json = json_datacite41.json_datacite41_create_datacite_json(ctx, combiJsonPath)
+    datacite_json = json_datacite41.json_datacite41_create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
 
     data_object.write(ctx, datacite_json_path, jsonutil.dump(datacite_json))
 
