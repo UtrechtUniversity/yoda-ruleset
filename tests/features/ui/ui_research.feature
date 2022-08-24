@@ -169,3 +169,17 @@ Feature: Research UI
         Examples:
             | folder           | subfolder |
             | research-initial | clone     |
+
+
+    Scenario Outline: Research download checksum report
+        Given user researcher is logged in
+        And module "research" is shown
+        When user browses to folder <folder>
+        And user open checksum report
+        And downloads checksum report as <format>
+        Then checksum report is downloaded as <format>
+
+        Examples:
+            | folder           | format |
+            | research-initial | csv    |
+            | research-initial | txt    |

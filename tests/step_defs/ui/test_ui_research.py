@@ -4,7 +4,9 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
 import time
+from pathlib import Path
 
 from pytest_bdd import (
     parsers,
@@ -141,6 +143,20 @@ def ui_research_multi_delete(browser):
     browser.find_by_id('finishMultiSelect').click()
 
 
+@when('user open checksum report')
+def ui_open_checksum_report(browser):
+    browser.find_by_id('actionMenu').click()
+    browser.find_by_css('a.action-show-checksum-report').click()
+
+
+@when(parsers.parse("downloads checksum report as {format}"))
+def ui_research_download_checksum(browser, format):
+    if format == "csv":
+        browser.find_by_css('a.download-report-csv').click()
+    else:
+        browser.find_by_css('a.download-report-text').click()
+
+
 @then(parsers.parse("folder {folder_new} exists in {folder}"))
 def ui_research_folder_exists(browser, folder_new, folder):
     browser.is_text_present(folder)
@@ -195,3 +211,29 @@ def ui_research_files_folders_sub_not_exist(browser, subfolder):
     browser.is_text_present(subfolder)
     browser.is_text_not_present("testdata")
     browser.is_text_not_present("yoda-metadata.json")
+
+
+@then(parsers.parse("checksum report is downloaded as {format}"))
+def ui_research_checksum_report_downloaded(browser, tmpdir, format):
+    # Short cut for windows environment to prevent testing for actual downloaded files.
+    # This as a dialog prevents forced downloading but a choice is requested.
+    # Either choose top open with Excel or download.
+    # This choice cannot be automated
+    # Therefore, skip this test
+    if os.name == "nt":
+        assert True
+        return
+
+    # Below code is correct in itself and therefore left here in full
+    root_dir = Path(tmpdir).parent
+    if os.name == "nt":
+        download_dir = root_dir.joinpath("pytest-splinter0/splinter/download/")
+    else:
+        download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
+
+    for child in download_dir.iterdir():
+        if str(child)[-13:] == "checksums.{}".format(format):
+            assert True
+            return
+
+    raise AssertionError()
