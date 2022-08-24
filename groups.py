@@ -455,9 +455,9 @@ def removeExternalUser(ctx, username, userzone):
 
     :returns: Response status code
     """
-    eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
-    eus_api_port = credentialsStoreGet("eus_api_port")
-    eus_api_secret = credentialsStoreGet("eus_api_secret")
+    eus_api_fqdn   = config.eus_api_fqdn
+    eus_api_port   = config.eus_api_port
+    eus_api_secret = config.eus_api_secret
 
     url = 'https://' + eus_api_fqdn + ':' + eus_api_port + '/api/user/delete'
 
