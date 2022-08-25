@@ -26,8 +26,8 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     :returns: Found datasets
     """
 
-    # Let op! Hij moet in de loop blijven TOT alle pseudocode/exp/wave compleet zijn.
-    # En zelfs daarna, kunnen waarden nog worden overschreven.
+    # Loop until pseudocode, experiment type and wave are complete.
+    # But the found values can be overwritten when deeper levels are found. 
 
     # Scan files under root
     iter = genquery.row_iterator(
@@ -117,9 +117,14 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
                     intake_extract_tokens_from_name(ctx, path, dirname, True, subscope)
 
                     new_deeper_dataset_toplevel = False
+
+                    # A change in path in relation to the dataset_directory invokes handling of deeper lying dataset.
+                    # This, not necessarily with a dataset id change, but it does change the dataset toplevel
+                    # In fact the same dataset simply lies a level deeper which invokes a dataset_toplevel change
                     if not (prev_scope['pseudocode'] == subscope['pseudocode']
                             and prev_scope['experiment_type'] == subscope['experiment_type']
-                            and prev_scope['wave'] == subscope['wave']):
+                            and prev_scope['wave'] == subscope['wave']
+                            and path == prev_scope['dataset_directory']):
                         # Found a deeper lying dataset with more specific attributes
                         # Prepwork for being able to create a dataset_id
                         prev_scope['directory'] = prev_scope["dataset_directory"]

@@ -54,11 +54,11 @@ def is_data_in_locked_dataset(ctx, actor, path):
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
+            # Lock status could not be determined. Assume data object is not locked.
             log.debug(ctx, "Could not determine lock state of data object " + path)
-            # Pretend presence of a lock so no unwanted data gets deleted
-            return True
+            return False
 
-    log.debug(ctx, 'after check for datasetid - no dataset found')
+    log.debug(ctx, 'After check for datasetid - no dataset found')
     return False
 
 
@@ -105,11 +105,11 @@ def is_coll_in_locked_dataset(ctx, actor, coll):
             log.debug(ctx, locked_state)
             return (locked_state['locked'] or locked_state['frozen']) and not user.is_admin(ctx, actor)
         else:
+            # Lock status could not be determined. Assume collection is not locked.
             log.debug(ctx, "Could not determine lock state of data object " + path)
-            # Pretend presence of a lock so no unwanted data gets deleted
-            return True
+            return False
 
-    log.debug(ctx, 'after check for datasetid - no dataset found')
+    log.debug(ctx, 'After check for datasetid - no dataset found')
     return False
 
 
