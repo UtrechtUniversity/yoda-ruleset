@@ -27,7 +27,7 @@ def intake_scan_collection(ctx, root, scope, in_dataset, found_datasets):
     """
 
     # Loop until pseudocode, experiment type and wave are complete.
-    # But the found values can be overwritten when deeper levels are found. 
+    # But the found values can be overwritten when deeper levels are found.
 
     # Scan files under root
     iter = genquery.row_iterator(
