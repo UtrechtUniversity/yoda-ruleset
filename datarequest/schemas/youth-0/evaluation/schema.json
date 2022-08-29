@@ -32,6 +32,17 @@
             "approval_conditions": {
               "type": "string",
               "title": "Approval conditions, if any. The researcher will be informed of these conditions and will have to consent to them to proceed with the data request."
+            },
+            "dta_type": {
+              "type": "string",
+              "enum": [
+                "YOUth researcher employed at the UU",
+                "Researchers employed at the UU outside of YOUth",
+                "Researchers employed at UMCU",
+                "Researchers employed outside of the UU and outside the UMCU",
+                "Other (please specify below)"
+              ],
+              "title": "Please specify the type of DTA to be used for processing this data request."
             }
           }
         },
@@ -52,6 +63,35 @@
           "required": [
             "internal_remarks", "feedback_for_researcher"
           ]
+        }
+      ]
+    },
+    "dta_type": {
+      "oneOf": [
+        {
+          "properties": {
+            "dta_type": {
+              "enum": [
+                "YOUth researcher employed at the UU",
+                "Researchers employed at the UU outside of YOUth",
+                "Researchers employed at UMCU",
+                "Researchers employed outside of the UU and outside the UMCU"
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "dta_type": {
+              "enum": [
+                "Other (please specify below)"
+              ]
+            },
+            "dta_type_other": {
+              "type": "string",
+              "title": "Please describe the DTA to be used."
+            }
+          }
         }
       ]
     }

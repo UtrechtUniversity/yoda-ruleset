@@ -5,6 +5,12 @@
       "rows": 8
     }
   },
+  "dta_type": {
+    "ui:widget": "radio"
+  },
+  "dta_type_other": {
+    "ui:widget": "textarea"
+  },
   "internal_remarks": {
     "ui:widget": "textarea",
     "ui:options": {
