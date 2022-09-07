@@ -428,17 +428,8 @@ def revision_create(ctx, resource, path, max_size, verbose):
     # When this collection is missing, no revisions will be created. When the group manager is used to
     # create new research groups, the revision collection will be created as well.
     revision_store = "/" + user_zone + constants.UUREVISIONCOLLECTION + "/" + group_name
-    revision_store_exists = False
 
-    iter = genquery.row_iterator(
-        "COLL_ID",
-        "COLL_NAME = '" + revision_store + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        revision_store_exists = True
-
-    if revision_store_exists:
+    if collection.exists(ctx, revision_store):
         # Allow rodsadmin to create subcollections.
         msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
 
