@@ -116,7 +116,7 @@ def pytest_bdd_apply_tag(tag, function):
 
 def pytest_bdd_after_scenario(request, feature, scenario):
     """Logout user after scenario when we have a browser."""
-    if feature.name.startswith("ui_"):
+    if feature.rel_filename.startswith("ui/"):
         try:
             browser = request.getfixturevalue('browser')
             url = "{}/user/logout".format(portal_url)
