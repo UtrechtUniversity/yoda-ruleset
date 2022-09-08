@@ -14,7 +14,8 @@ from util import *
 
 __all__ = ['api_token_generate',
            'api_token_load',
-           'api_token_delete']
+           'api_token_delete',
+           'api_token_get_lifetime']
 
 
 @api.make()
@@ -114,3 +115,14 @@ def api_token_delete(ctx, label):
     conn.close()
 
     return result
+
+
+@api.make()
+def api_token_get_lifetime(ctx):
+    """Returns the lifetime of data access tokens
+
+    :param ctx:   Combined type of a callback and rei struct
+
+    :returns: Lifetime in hours
+    """
+    return config.token_lifetime
