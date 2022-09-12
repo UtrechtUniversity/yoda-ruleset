@@ -7,13 +7,16 @@ __license__   = 'GPLv3, see LICENSE'
 from collections import OrderedDict
 
 import genquery
+import re
 import requests
 
 from util import *
 
+
 __all__ = ['api_group_data',
            'api_group_categories',
            'api_group_subcategories',
+           'api_group_process_csv',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
            'rule_group_user_exists',
@@ -27,7 +30,41 @@ __all__ = ['api_group_data',
            'api_group_user_add',
            'api_group_user_update_role',
            'api_group_get_user_role',
-           'api_group_remove_user_from_group']
+           'api_group_remove_user_from_group',
+           'api_user_is_a_datamanager']
+
+
+@api.make()
+def api_user_is_a_datamanager(ctx):
+    """Return groups whether current user is datamanager of a group, not specifically of a specific group
+    :param ctx: Combined type of a ctx and rei struct
+
+    :returns: Boolean indication of whether current user is a datamanager of any group
+    """
+    return {'user_is_a_datamanager': user_is_a_datamanager(ctx)}
+
+
+def user_is_a_datamanager(ctx):
+    """Return groups whether current user is datamanager of a group, not specifically of a specific group
+    :param ctx: Combined type of a ctx and rei struct
+
+    :returns: Group hierarchy, user type and user zone
+    """
+
+    is_a_datamanager = False
+
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        if group.is_member(ctx, row[0]):
+            is_a_datamanager = True
+            # no need to check for more - this user is a datamanager
+            break
+
+    return is_a_datamanager
 
 
 def getGroupData(ctx):
@@ -326,6 +363,418 @@ def api_group_data(ctx):
     #    group_hierarchy.move_to_end("System", last=False)
 
     return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+
+
+@api.make()
+def api_group_process_csv(ctx, csv_filename, allow_update, delete_user):
+    """ process contents of csv file containing group definitions
+        Parsing is stopped immediately when an error is found and the rownumber is returned to the user
+
+    :param ctx:          Combined type of a ctx and rei struct
+    :param csv_filename: Category to retrieve subcategories of
+    :param allow_update: Allow updates in groups
+    :param delete_user:  Allow for deleting of users from groups
+
+    :returns: dict containing status, error(s) and the resulting group definitions so the frontend can present the results
+
+    """
+    # definition of what are considered internal users, based on domain name of their email address.
+    internal_domains = 'uu.nl'
+
+    # only datamanagers are allowed to use this functionality
+    if not user_is_a_datamanager(ctx):
+        return {'status': 'permissions_error', 'errors': ['insufficient rights to perform this operation']}
+
+    # step 1. Parse the data in the uploaded file
+    data, error = parse_data(ctx, csv_filename)
+    if len(error):
+        return {'status': 'parse_error', 'group-data': data, 'errors': [error]}
+
+    # step 2. validate the data
+    validation_errors = validate_data(ctx, data, internal_domains, allow_update)
+    if len(validation_errors) > 0:
+        return {'status': 'validation_error', 'errors': validation_errors}
+
+    # step 3. create/update groups
+    # if not args.online_check: ????
+    error = apply_data(ctx, data, allow_update, delete_user)
+    if len(error):
+        return {'status': 'permissions_error', 'errors': 'insufficient rights'}
+
+    # all went well
+    return {'status': 'ok', 'group-data': data, 'errors': []}
+
+
+def parse_data(ctx, csv_filename):
+    """ process contents of csv file containing group definitions
+        Parsing is stopped immediately when an error is found and the rownumber is returned to the user
+
+    :param ctx:          Combined type of a ctx and rei struct
+    :param csv_filename: Category to retrieve subcategories of
+
+    :returns: dict containing error and the extracted data
+
+    """
+
+    extracted_data = []
+    header = 'category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1'
+
+    example_lines = ['default-2,default-2,harm33,man1@uu.nl,member1@uu.nl,member2@uu.nl,']
+                     # 'default-1,default-1,harm21,man1@uu.nl,member1@uu.nl,member2@uu.nl,viewer1@uu.nl',
+                     # 'default-2,default-2,harm22,m.manager@uu.nl,p.member@uu.nl']
+
+    csv_content = data_object.read(ctx, '/tempZone/home/research-default-2/' + csv_filename)
+    log.write(ctx, csv_content)
+
+    csv_lines = csv_content.splitlines()
+    header = csv_lines[0]
+
+    example_lines = csv_lines[1:]
+
+    # list of dicts each containg label / value pairs
+    lines = []
+    header_cols = header.split(',')
+    for example in example_lines:
+        data = example.split(',')
+        line_dict = {}
+        for x in range (0, len(header_cols)):
+            try:
+                line_dict[header_cols[x]] = data[x]
+            except:
+                line_dict[header_cols[x]] = ''
+
+        lines.append(line_dict)
+
+    row_number = 1
+    for line in lines:
+        rowdata, error = _process_csv_line(ctx, line)
+        log.write(ctx, rowdata)
+
+        if error is None:
+            extracted_data.append(rowdata)
+            row_number += 1
+        else:
+           # End processing of csv data due to erroneous input
+           return extracted_data, "Data error in row {}: {}".format(str(row_number), error)
+
+    return extracted_data, ''
+
+
+def validate_data(ctx, data, internal_domains, allow_update):
+    """ validation of extracted data
+
+    :param ctx:          Combined type of a ctx and rei struct
+    :param internal_domains: String containing domain names that are considered 'internal'
+    :param allow_update:  Allow for updating of groups
+
+    :returns: errors if found any 
+    """
+    errors = []
+    for (category, subcategory, groupname, managers, members, viewers) in data:
+
+        if group.exists(ctx, groupname) and not allow_update:
+            errors.append('Group "{}" already exists'.format(groupname))
+
+        for userbla in managers + members + viewers:
+            if not is_internal_user(userbla, internal_domains.split(",")):
+                # ensure that external users already have an iRODS account
+                # we do not want to be the actor that creates them
+                if not user.exists(ctx, userbla):
+                    errors.append('Group {} has nonexisting external user {}'.format(groupname, userbla))
+    return errors
+
+
+def apply_data(ctx, data, allow_update, delete_user):
+    """ Update groups with the validated data
+
+    :param ctx:          Combined type of a ctx and rei struct
+    :param data:         data to be processed
+    :param allow_update: Allow updates in groups
+    :param delete_user:  Allow for deleting of users from groups
+
+    :returns: errors if found any
+    """
+
+    for (category, subcategory, groupname, managers, members, viewers) in data:
+        new_group = False
+
+        log.write(ctx, 'Adding and updating group: {}'.format(groupname))
+
+        # First create the group. Note that the rodsadmin actor will become a groupmanager
+        response = ctx.uuGroupAdd(groupname, category, subcategory, '', 'unspecified', '', '')['arguments']
+        status = response[5]
+        message = response[6]
+
+        if ((status == '-1089000') | (status == '-809000')) and allow_update:
+            log.write(ctx, 'WARNING: group "{}" not created, it already exists'.format(groupname))
+        elif status != '0':
+            return "Error while attempting to create group {}. Status/message: {} / {}".format(groupname, status, message)
+        else:
+            new_group = True
+
+        # Now add the users and set their role if other than member
+        allusers = managers + members + viewers
+        for username in list(set(allusers)):   # duplicates removed
+
+            currentrole = user_role(ctx, groupname, username)
+            # currentrole = ctx.uuGroupGetMemberType(groupname, username)
+
+            if currentrole == "none":
+
+                response = ctx.uuGroupUserAdd(groupname, username, '', '')['arguments']
+                status = response[2]
+                message = response[3]
+                # if status == '0':
+                #    return api.Result.ok()
+                # else:
+                #    return api.Error('policy_error', message)
+                # [status, msg] = ctx.uuGroupUserAdd(groupname, username)
+                if status == '0':
+                     currentrole = "member"
+                     log.write(ctx, "Notice: added user {} to group {}".format(username,groupname))
+                else:
+                    log.write(ctx, "Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
+                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+            else:
+                log.write(ctx, "Notice: user {} is already present in group {}.".format(username,groupname))
+
+
+            # Set requested role. Note that user could be listed in multiple roles.
+            # In case of multiple roles, manager takes precedence over normal,
+            # and normal over reader
+            role = 'reader'
+            if username in members:
+                role = 'normal'
+            if username in managers:
+                role = 'manager'
+
+            if _are_roles_equivalent(role, currentrole):
+                log.write(ctx, "Notice: user {} already has role {} in group {}.".format(username, role, groupname))
+            else:
+                # try:
+                #    response = ctx.uuGroupUserChangeRole(groupname, username, new_role, '', '')['arguments']
+                #    status = response[3]
+                #    message = response[4]
+                #    if status == '0':
+                #        return api.Result.ok()
+                #    else:
+                #        return api.Error('policy_error', message)
+                # except Exception:
+                #    return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
+
+
+                response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
+                status = response[3]
+                message = response[4]
+
+                # [status, msg] = ctx.uuGroupUserChangeRole(groupname, username, role)
+                if status == '0':
+                    log.write(ctx, "Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
+                else:
+                    log.write(ctx, "Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+
+        # Always remove the rods user for new groups, unless it is in the
+        # CSV file.
+        if (new_group and "rods" not in allusers and
+            user_role(ctx, groupname, "rods") != "none"):
+            # ctx.uuGroupGetMemberType(groupname, "rods") != "none" ):
+
+            response = ctx.uuGroupUserRemove(groupname, "rods", '', '')['arguments']
+            status = response[2]
+            message = response[3]
+            if status == "0":
+                log.write(ctx, "Notice: removed rods user from group " + groupname)
+            else:
+                if status !=0:
+                    log.write(ctx, "Warning: error while attempting to remove user rods from group {}".format(groupname))
+                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+
+        # Remove users not in sheet
+        if delete_user: ## Hier gaat nog iets fout!! ????
+            try:
+                currentusers = group.members(ctx, groupname)
+                # currentusers = ctx.uuGroupGetMembers(groupname)
+            except SizeNotSupportedException:
+                log.write(ctx, "Unable to check whether members of group {} need to be deleted.".format(groupname))
+                log.write(ctx, "Number of current members group is too large.")
+                continue
+
+            for user in currentusers:
+                if user not in allusers:
+                    if user in managers:
+                        if len(managers) == 1:
+                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, groupname))
+                            continue
+                        else:
+                            managers.remove(user)
+                    log.write(ctx, "Removing user {} from group {}".format(user,groupname))
+
+                    # (status,msg) = ctx.uuGroupUserRemove(groupname, user)
+                    response = ctx.uuGroupUserRemove(groupname, user, '', '')['arguments']
+                    status = response[2]
+                    message = response[3]
+
+                    if status != "0":
+                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user,groupname))
+                        log.write(ctx, "Status: {} , Message: {}".format(status, message))
+
+    return ''
+
+
+def parse_csv_file(ctx):
+    extracted_data = []
+    row_number = 0
+
+    # Validate header columns (should be first row in file)
+
+    # are all all required fields present?
+    for label in _get_csv_predefined_labels():
+        if label not in reader.fieldnames:
+            _exit_with_error(
+                'CSV header is missing compulsory field "{}"'.format(label))
+
+    # duplicate fieldnames present?
+    duplicate_columns = _get_duplicate_columns(reader.fieldnames)
+    if ( len(duplicate_columns) > 0 ):
+        _exit_with_error("File has duplicate column(s): " + str(duplicate_columns) )
+
+    # Start processing the actual group data rows
+    for line in lines:
+        row_number += 1
+        rowdata, error = _process_csv_line(line)
+
+        if error is None:
+            extracted_data.append(rowdata)
+        else:
+            _exit_with_error("Data error in in row {}: {}".format(
+                str(row_number), error))
+
+    return extracted_data 
+
+
+def _get_csv_predefined_labels():
+    return ['category', 'subcategory', 'groupname']
+
+
+def _get_duplicate_columns(fields_list):
+    fields_seen = set()
+    duplicate_fields = set()
+
+    for field in fields_list:
+        if ( field in _get_csv_predefined_labels() or
+             field.startswith( ("manager:", "viewer:", "member:"))):
+            if field in fields_seen:
+                duplicate_fields.add(field)
+            else:
+                fields_seen.add(field)
+
+    return duplicate_fields
+
+
+def _process_csv_line(ctx, line):
+    # Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers
+
+    category = line['category'].strip().lower().replace('.', '')
+    subcategory = line['subcategory'].strip()
+    groupname = "research-" + line['groupname'].strip().lower()
+    managers = []
+    members = []
+    viewers = []
+
+    for column_name in line.keys():
+        if column_name == '':
+            return None, 'Column cannot have an empty label'
+        elif column_name in _get_csv_predefined_labels():
+            continue
+
+        username = line.get(column_name)
+
+        if isinstance(username, list):
+            return None, "Data is present in an unlabelled column"
+
+        username = username.strip().lower()
+
+        if username == '':    # empty value
+            continue
+        elif not is_email(username):
+            return None, 'Username "{}" is not a valid email address.'.format(
+                username)
+        # elif not is_valid_domain(username.split('@')[1]):
+        #    return None, 'Username "{}" failed DNS domain validation - domain does not exist or has no MX records.'.format(username)
+
+        if column_name.lower().startswith('manager:'):
+            managers.append(username)
+        elif column_name.lower().startswith('member:'):
+            members.append(username)
+        elif column_name.lower().startswith('viewer:'):
+            viewers.append(username)
+        else:
+            return None, "Column label '{}' is neither predefined nor a valid role label.".format(column_name)
+
+    if len(managers) == 0:
+        return None, "Group must have a group manager"
+
+    if not is_valid_category(category):
+        return None, '"{}" is not a valid category name.'.format(category)
+
+    if not is_valid_category(subcategory):
+        return None, '"{}" is not a valid subcategory name.'.format(subcategory)
+
+    if not is_valid_groupname(groupname):
+        return None, '"{}" is not a valid group name.'.format(groupname)
+
+    row_data = (category, subcategory, groupname, managers, members, viewers)
+    return row_data, None
+
+
+def is_email(username):
+    return True
+    return re.search(r'@.*[^\.]+\.[^\.]+$', username) is not None
+
+
+def _are_roles_equivalent(a,b):
+    """Checks whether two roles are equivalent. Needed because Yoda and Yoda-clienttools
+       use slightly different names for the roles."""
+    r_role_names = [ "viewer", "reader" ]
+    m_role_names = [ "member", "normal" ]
+
+    if a == b:
+        return True
+    elif a in r_role_names and b in r_role_names:
+        return True
+    elif a in m_role_names and b in m_role_names:
+        return True
+    else:
+        return False
+
+
+## ?????????????
+# @lru_cache(maxsize=100)
+# def is_valid_domain(domain):
+#    try:
+#      return bool(resolver.query(domain, 'MX'))
+#    except (resolver.NXDOMAIN, resolver.NoAnswer):
+#      return False
+
+
+def is_valid_category(name):
+    """Is this name a valid (sub)category name?"""
+    return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
+
+
+def is_valid_groupname(name):
+    """Is this name a valid group name (prefix such as "research-" can be omitted"""
+    return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
+
+
+def is_internal_user(username, internal_domains):
+    for domain in internal_domains:
+        domain_pattern = '@{}$'.format(domain)
+        if re.search(domain_pattern, username) is not None:
+            return True
+
+    return False
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
