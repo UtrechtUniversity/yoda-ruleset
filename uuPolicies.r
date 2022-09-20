@@ -89,10 +89,14 @@ acPostProcForDeleteUser {
 		*userZone = $rodsZoneProxy;
 	}
 
-	# Remove external user
-	if (*userZone == $rodsZoneProxy && uuExternalUser(*userName)) {
-		rule_group_remove_external_user(*userName, *userZone);
-	}
+    # Remove external user
+    if (*userZone == $rodsZoneProxy) {
+        *externalUser = "";
+        rule_group_check_external_user(*userName, *externalUser)
+        if (*externalUser == "1") {
+            rule_group_remove_external_user(*userName, *userZone);
+        }
+    }
 
 	# Log removal of user.
 	*actor = uuClientFullName;
