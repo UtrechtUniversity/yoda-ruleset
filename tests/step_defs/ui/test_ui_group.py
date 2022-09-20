@@ -24,7 +24,7 @@ def ui_group_access(browser, category, group):
 
 @when(parsers.parse("user adds {user_add} to group"))
 def ui_group_user_add(browser, user_add):
-    browser.find_by_css('a.user-create-text').click()
+    browser.find_by_css('div#s2id_f-user-create-name').click()
     browser.find_by_xpath('//*[@id="s2id_autogen5_search"]').fill(user_add)
     browser.find_by_css('.select2-results .select2-highlighted').click()
     browser.find_by_css('#f-user-create-submit').click()
