@@ -140,11 +140,7 @@ def api_intake_list_unrecognized_files(ctx, coll):
     # check permissions
     parts = coll.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if user.is_member_of(ctx, group):
         pass
@@ -452,11 +448,7 @@ def _intake_check_authorized_to_scan(ctx, coll):
     """
     parts = coll.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         return True
@@ -511,11 +503,7 @@ def api_intake_lock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to lock dataset")
@@ -554,11 +542,7 @@ def api_intake_unlock_dataset(ctx, path, dataset_ids):
     # check permissions - datamanager only
     parts = path.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not user.is_member_of(ctx, datamanager_group):
         log.write(ctx, "No permissions to unlock dataset(s)")
@@ -598,11 +582,7 @@ def api_intake_dataset_add_comment(ctx, study_id, dataset_id, comment):
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -641,11 +621,7 @@ def api_intake_dataset_get_details(ctx, coll, dataset_id):
     # check permissions - can be researcher or datamanager
     parts = coll.split('/')
     group = parts[3]
-
-    # grp-intake-FOO => grp-datamanager-FOO
-    datamanager_group = group.replace("-intake-", "-datamanager-", 1)
-    # intake-FOO => grp-datamanager-FOO
-    datamanager_group = datamanager_group.replace("intake-", "grp-datamanager-", 1)
+    datamanager_group = intake_group_to_datamanager_group(group)
 
     if not (user.is_member_of(ctx, group) or user.is_member_of(ctx, datamanager_group)):
         log.write(ctx, "No permissions to scan collection")
@@ -880,3 +856,20 @@ def api_intake_report_export_study_data(ctx, study_id):
         return {}
 
     return intake_dataset.intake_report_export_study_data(ctx, study_id)
+
+
+def intake_group_to_datamanager_group(intake_group):
+    """Determines the name of the data manager group of a particular intake group.
+
+    :param intake_group: name of intake group
+
+    :returns: name of datamanager group
+
+    :raises ValueError: if provided group name is not a valid intake group name
+    """
+    if intake_group.startswith("grp-intake-"):
+        return intake_group.replace("-intake-", "-datamanager-", 1)
+    elif intake_group.startswith("intake-"):
+        return intake_group.replace("intake-", "grp-datamanager-", 1)
+    else:
+        raise ValueError("Unexpected intake group format for group " + intake_group)
