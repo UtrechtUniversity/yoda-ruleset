@@ -434,7 +434,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
 
     if revision_store_exists:
         # Allow rodsadmin to create subcollections.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
+        msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
 
         # generate a timestamp in iso8601 format to append to the filename of the revised file.
         # 2019-09-07T15:50-04:00
