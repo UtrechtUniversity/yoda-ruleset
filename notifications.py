@@ -64,7 +64,7 @@ def api_notifications_load(ctx, sort_order="desc"):
     """
     results = [v for v
                in Query(ctx, "META_USER_ATTR_VALUE",
-                             "USER_NAME = '{}' AND USER_TYPE = 'rodsuser' AND META_USER_ATTR_NAME like '{}_%%'".format(user.name(ctx), NOTIFICATION_KEY))]
+                             "USER_NAME = '{}' AND USER_TYPE != 'rodsgroup' AND META_USER_ATTR_NAME like '{}_%%'".format(user.name(ctx), NOTIFICATION_KEY))]
 
     notifications = []
     for result in results:
