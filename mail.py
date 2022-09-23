@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Rules for sending e-mails."""
 
-__copyright__ = 'Copyright (c) 2020-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import email
@@ -9,11 +9,9 @@ import re
 import smtplib
 from email.mime.text import MIMEText
 
-import settings
 from util import *
 
-__all__ = ['rule_mail_notification_report',
-           'rule_mail_test']
+__all__ = ['rule_mail_test']
 
 
 def send(ctx, to, actor, subject, body, cc=None):
@@ -32,16 +30,12 @@ def send(ctx, to, actor, subject, body, cc=None):
     :returns: API status
     """
     if not config.notifications_enabled:
-        log.write(ctx, '[EMAIL] Notifications are disabled')
+        log.write(ctx, '[EMAIL] Sending mail notifications is disabled')
         return
 
     if '@' not in to:
         log.write(ctx, '[EMAIL] Ignoring invalid destination <{}>'.format(to))
         return  # Silently ignore obviously invalid destinations (mimic old behavior).
-
-    if settings.load(ctx, 'mail_notifications', username=to) == "OFF":
-        log.write(ctx, '[EMAIL] User <{}> disabled mail notifications'.format(to))
-        return
 
     log.write(ctx, '[EMAIL] Sending mail for <{}> to <{}>, subject <{}>'.format(actor, to, subject))
 
@@ -121,42 +115,6 @@ def _wrapper(ctx, to, actor, subject, body):
     if type(x) is api.Error:
         return '1', x.info
     return '0', ''
-
-
-def notification(ctx, to, actor, message):
-    return _wrapper(ctx,
-                    to=to,
-                    actor=actor,
-                    subject='[Yoda] {}'.format(message),
-                    body="""
-You received a new notification: {}
-
-Login to view all your notifications: https://{}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
-
-Best regards,
-Yoda system
-""".format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
-
-
-@rule.make(inputs=range(2), outputs=range(2, 4))
-def rule_mail_notification_report(ctx, to, notifications):
-    if not user.is_admin(ctx):
-        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
-
-    return _wrapper(ctx,
-                    to=to,
-                    actor='system',
-                    subject='[Yoda] {} notification(s)'.format(notifications),
-                    body="""
-You have {} notification(s).
-
-Login to view all your notifications: https://{}/user/notifications
-If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
-
-Best regards,
-Yoda system
-""".format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
 
 
 @rule.make(inputs=range(1), outputs=range(1, 3))
