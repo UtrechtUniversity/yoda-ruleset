@@ -20,7 +20,8 @@ from util import *
 
 __all__ = ['api_notifications_load',
            'api_notifications_dismiss',
-           'api_notifications_dismiss_all']
+           'api_notifications_dismiss_all',
+           'rule_mail_notification_report']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -50,7 +51,7 @@ def set(ctx, actor, receiver, target, message):
         receiver = user.from_str(ctx, receiver)[0]
         mail_notifications = settings.load(ctx, 'mail_notifications', username=receiver)
         if mail_notifications == "IMMEDIATE":
-            mail.notification(ctx, receiver, actor, message)
+            send_notification(ctx, receiver, actor, message)
 
 
 @api.make()
@@ -153,3 +154,39 @@ def api_notifications_dismiss_all(ctx):
     key = "{}_%".format(NOTIFICATION_KEY)
     user_name = user.full_name(ctx)
     ctx.uuUserMetaRemove(user_name, key, '', '')
+
+
+def send_notification(ctx, to, actor, message):
+    return mail.send(ctx,
+                     to=to,
+                     actor=actor,
+                     subject='[Yoda] {}'.format(message),
+                     body="""
+You received a new notification: {}
+
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
+
+Best regards,
+Yoda system
+""".format(message, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
+
+
+@rule.make(inputs=range(2), outputs=range(2, 4))
+def rule_mail_notification_report(ctx, to, notifications):
+    if not user.is_admin(ctx):
+        return api.Error('not_allowed', 'Only rodsadmin can send test mail')
+
+    return _wrapper(ctx,
+                    to=to,
+                    actor='system',
+                    subject='[Yoda] {} notification(s)'.format(notifications),
+                    body="""
+You have {} notification(s).
+
+Login to view all your notifications: https://{}/user/notifications
+If you do not want to receive these emails, you can change your notification preferences here: https://{}/user/settings
+
+Best regards,
+Yoda system
+""".format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
