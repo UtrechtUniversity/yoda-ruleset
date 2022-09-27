@@ -869,6 +869,13 @@ uuUserModify(*userName, *property, *value, *status, *message) {
 	}
 }
 
+#
+# unsecured POC code
+#
+uuAdminUserModify(*userName, *property, *b64blob) {
+	msiExecCmd("scheduled-user-modify.sh", "*userName *property *b64blob", "", "", 0, *out);
+}
+
 # \brief Remove user metadata.
 #
 # \param[in]  userName

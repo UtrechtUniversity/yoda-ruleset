@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 
+import base64
 import json
 import random
 import string
@@ -44,7 +45,7 @@ def set(ctx, actor, receiver, target, message):
         identifier = generate_random_id(ctx)
         timestamp = int(time.time())
         notification = {"identifier": identifier, "timestamp": timestamp, "actor": actor, "target": target, "message": message}
-        ctx.uuUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, identifier), json.dumps(notification), '', '')
+        ctx.uuAdminUserModify(receiver, "{}_{}".format(NOTIFICATION_KEY, identifier), str(base64.b64encode(bytes(json.dumps(notification), "utf-8")), "utf-8"))
 
         # Send mail notification if immediate notifications are on.
         receiver = user.from_str(ctx, receiver)[0]
