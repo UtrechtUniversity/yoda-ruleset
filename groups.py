@@ -16,6 +16,7 @@ __all__ = ['api_group_data',
            'api_group_subcategories',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
+           'rule_group_check_external_user',
            'rule_group_user_exists',
            'api_group_search_users',
            'api_group_exists',
@@ -454,9 +455,9 @@ def removeExternalUser(ctx, username, userzone):
 
     :returns: Response status code
     """
-    eus_api_fqdn = credentialsStoreGet("eus_api_fqdn")
-    eus_api_port = credentialsStoreGet("eus_api_port")
-    eus_api_secret = credentialsStoreGet("eus_api_secret")
+    eus_api_fqdn   = config.eus_api_fqdn
+    eus_api_port   = config.eus_api_port
+    eus_api_secret = config.eus_api_secret
 
     url = 'https://' + eus_api_fqdn + ':' + eus_api_port + '/api/user/delete'
 
@@ -476,6 +477,25 @@ def removeExternalUser(ctx, username, userzone):
 def rule_group_remove_external_user(rule_args, ctx, rei):
     """Remove external user."""
     log.write(ctx, removeExternalUser(ctx, rule_args[0], rule_args[1]))
+
+
+@rule.make(inputs=[0], outputs=[1])
+def rule_group_check_external_user(ctx, username):
+    """Check that a user is external.
+
+    :param ctx:      Combined type of a ctx and rei struct
+    :param username: Name of the user (without zone) to check if external
+
+    :returns: String indicating if user is external ('1': yes, '0': no)
+    """
+    user_and_domain = username.split("@")
+
+    if len(user_and_domain) == 2:
+        domain = user_and_domain[1]
+        if domain not in config.external_users_domain_filter:
+            return '1'
+
+    return '0'
 
 
 @api.make()
@@ -664,10 +684,7 @@ def api_group_get_user_role(ctx, username, group_name):
 
     :returns: Role of the user
     """
-    ruleResult = ctx.uuGroupGetMemberType(group_name, username, '')
-
-    role = ruleResult["arguments"][2]
-    return role
+    return user_role(ctx, group_name, username)
 
 
 @api.make()

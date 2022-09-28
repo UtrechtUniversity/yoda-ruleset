@@ -45,11 +45,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
                 'items': revisions}
 
     originalDataNameKey = constants.UUORGMETADATAPREFIX + 'original_data_name'
+    originalPathKey = constants.UUORGMETADATAPREFIX + 'original_path'
+
     startpath = '/' + zone + constants.UUREVISIONCOLLECTION
 
     qdata = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                           "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                           "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                           "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                           "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
                            "AND COLL_NAME like '" + startpath + "%' ",
                            offset=offset, limit=limit, output=genquery.AS_DICT)
 
@@ -57,13 +59,13 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
     for rev in list(qdata):
         rev_data = {}
         rev_data['main_revision_coll'] = rev['COLL_NAME']
-        rev_data['main_original_dataname'] = rev['META_DATA_ATTR_VALUE']
+        rev_data['main_original_dataname'] = pathutil.basename(rev['META_DATA_ATTR_VALUE'])
+        rev_data['original_path'] = rev['META_DATA_ATTR_VALUE']
+        # strip off data object name
+        rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_path'].split(os.path.sep)[:-1]))
+        # strip off /zone/home/
+        rev_data['original_coll_name'] = '/'.join(rev_data['original_path'].split(os.path.sep)[3:])
 
-        # Situations in which a data_object including its parent folder is removed.
-        # And after a while gets reintroduced
-
-        # Hier de daadwerkelijke revisies ophalen
-        # Dit bepaalt het TOTAL REVISIONS
         iter = genquery.row_iterator(
             "DATA_ID",
             "COLL_NAME = '" + rev_data['main_revision_coll'] + "' "
@@ -72,18 +74,6 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
             genquery.AS_DICT, ctx)
 
         for row in iter:
-            # based on data id get original_coll_name
-            iter2 = genquery.row_iterator(
-                "META_DATA_ATTR_VALUE",
-                "DATA_ID = '" + row['DATA_ID'] + "' "
-                "AND META_DATA_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'original_path' + "' ",
-                genquery.AS_DICT, ctx)
-            for row2 in iter2:
-                rev_data['original_coll_name'] = row2['META_DATA_ATTR_VALUE']
-
-            rev_data['collection_exists'] = collection.exists(ctx, '/'.join(rev_data['original_coll_name'].split(os.path.sep)[:-1]))
-            rev_data['original_coll_name'] = '/'.join(rev_data['original_coll_name'].split(os.path.sep)[3:])
-
             # Data is collected on the basis of ORG_COLL_NAME, duplicates can be present
             try:
                 # This is a double entry and has to be corrected in the total returned to the frontend
@@ -106,8 +96,8 @@ def api_revisions_search_on_filename(ctx, searchString, offset=0, limit=10):
 
     # Alas an extra genquery.Query is required to get the total number of rows
     qtotalrows = genquery.Query(ctx, ['COLL_NAME', 'META_DATA_ATTR_VALUE'],
-                                "META_DATA_ATTR_NAME = '" + originalDataNameKey + "' "
-                                "AND META_DATA_ATTR_VALUE like '" + searchString + "%' "
+                                "META_DATA_ATTR_NAME = '" + originalPathKey + "' "
+                                "AND META_DATA_ATTR_VALUE like '/" + zone + "/home/%" + searchString + "%' "
                                 "AND COLL_NAME like '" + startpath + "%' ",
                                 offset=0, limit=None, output=genquery.AS_DICT)
 
@@ -419,32 +409,29 @@ def revision_create(ctx, resource, path, max_size, verbose):
         log.write(ctx, "[revisions] Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
 
-    iter = genquery.row_iterator(
+    groups = list(genquery.row_iterator(
         "USER_NAME, USER_ZONE",
         "DATA_ID = '" + data_id + "' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
         genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        group_name = row[0]
-        user_zone = row[1]
+    ))
+
+    if len(groups) == 1:
+        (group_name, user_zone) = groups[0]
+    elif len(groups) == 0:
+        log.write(ctx, "[revisions] Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
+        return ""
+    else:
+        log.write(ctx, "[revisions] Cannot find unique owner of data object <{}>. Skipping.".format(path))
+        return ""
 
     # All revisions are stored in a group with the same name as the research group in a system collection
     # When this collection is missing, no revisions will be created. When the group manager is used to
     # create new research groups, the revision collection will be created as well.
     revision_store = "/" + user_zone + constants.UUREVISIONCOLLECTION + "/" + group_name
-    revision_store_exists = False
 
-    iter = genquery.row_iterator(
-        "COLL_ID",
-        "COLL_NAME = '" + revision_store + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        revision_store_exists = True
-
-    if revision_store_exists:
+    if collection.exists(ctx, revision_store):
         # Allow rodsadmin to create subcollections.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
+        msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
 
         # generate a timestamp in iso8601 format to append to the filename of the revised file.
         # 2019-09-07T15:50-04:00
@@ -483,13 +470,20 @@ def revision_create(ctx, resource, path, max_size, verbose):
             ofFlags = 'forceFlag=++++numThreads=1'
             msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
 
-            iter = genquery.row_iterator(
+            revision_ids = list(genquery.row_iterator(
                 "DATA_ID",
                 "COLL_NAME = '" + rev_coll + "' AND DATA_NAME = '" + rev_filename + "'",
                 genquery.AS_LIST, ctx
-            )
-            for row in iter:
-                revision_id = row[0]
+            ))
+
+            if len(revision_ids) == 0:
+                log.write(ctx, "[revisions] failed to find data object id for revision <{}>. Aborting.".format(rev_path))
+                return ""
+            elif len(revision_ids) == 1:
+                revision_id = revision_ids[0][0]
+            else:
+                log.write(ctx, "[revisions] failed to find unique data object id for revision <{}>. Aborting.".format(rev_path))
+                return ""
 
             # Add original metadata to revision data object.
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)

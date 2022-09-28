@@ -418,7 +418,7 @@ def vault_write_license(ctx, vault_pkg_coll):
         # Custom license set in user metadata, no License.txt should exist in package.
         license_file = vault_pkg_coll + "/License.txt"
         if data_object.exists(ctx, license_file):
-            data_object.remove(ctx, license_file)
+            data_object.remove(ctx, license_file, force=True)
     else:
         # License set in user metadata, a License.txt should exist in package.
         # Check if license text exists.

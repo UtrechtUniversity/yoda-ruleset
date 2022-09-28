@@ -898,25 +898,6 @@ uuUserMetaRemove(*userName, *property, *status, *message) {
 	}
 }
 
-# \brief Check that a user is external.
-#
-# \param[in] userName   the user to check
-#
-uuExternalUser(*userName) {
-	*nameAndDomain = split(*userName, "@");
-	if (size(*nameAndDomain) == 2) {
-		*domain = elem(*nameAndDomain, 1);
-		if (*domain != "uu.nl" && *domain not like "*.uu.nl") {
-			# is external
-			true;
-		} else {
-			false;
-		}
-	} else {
-		false;
-	}
-}
-
 # \brief Add a user to a group.
 #
 # \param[in]  groupName
@@ -946,7 +927,9 @@ uuGroupUserAdd(*groupName, *user, *status, *message) {
 		}
 
                 # Provision external user.
-                if (uuExternalUser(*userName)) {
+                *externalUser = "";
+                rule_group_check_external_user(*userName, *externalUser)
+                if (*externalUser == "1") {
                         *http_code = ""
                         *message = ""
                         rule_group_provision_external_user(*userName, $userNameClient, $rodsZoneClient, *http_code, *message);

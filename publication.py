@@ -326,7 +326,7 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     datacite_json_path = temp_coll + "/" + randomId + "-dataCite.json"
 
     # Based on content of *combiJsonPath, get DataciteJson as string
-    datacite_json = json_datacite41.json_datacite41_create_datacite_json(ctx, combiJsonPath)
+    datacite_json = json_datacite41.json_datacite41_create_datacite_json(ctx, publication_state["landingPageUrl"], combiJsonPath)
 
     data_object.write(ctx, datacite_json_path, jsonutil.dump(datacite_json))
 
@@ -663,6 +663,9 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
+    # Create Landing page URL
+    generate_landing_page_url(ctx, publication_config, publication_state)
+
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         try:
@@ -717,9 +720,6 @@ def process_publication(ctx, vault_package):
 
         if publication_state["status"] == "Unrecoverable":
             return publication_state["status"]
-
-    # Create Landing page URL
-    generate_landing_page_url(ctx, publication_config, publication_state)
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:

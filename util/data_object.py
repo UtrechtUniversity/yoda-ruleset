@@ -106,7 +106,7 @@ def copy(ctx, path_org, path_copy, force=True):
                       irods_types.BytesBuf())
 
 
-def remove(ctx, path, force=True):
+def remove(ctx, path, force=False):
     """Delete a data object.
 
     :param ctx:   Combined type of a callback and rei struct

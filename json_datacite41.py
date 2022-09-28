@@ -81,15 +81,16 @@ def json_datacite41_create_combi_metadata_json(ctx,
 
 
 @rule.make(inputs=[0], outputs=[1])
-def rule_json_datacite41_create_datacite_json(ctx, combi_path):
-    return json_datacite41_create_datacite_json(ctx, combi_path)
+def rule_json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path):
+    return json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path)
 
 
-def json_datacite41_create_datacite_json(ctx, combi_path):
+def json_datacite41_create_datacite_json(ctx, landing_page_url, combi_path):
     """Based on content of combi json, get Datacite metadata as a dict.
 
-    :param ctx:        Combined type of a callback and rei struct
-    :param combi_path: Path to the combined JSON file that holds both user and system metadata
+    :param ctx:              Combined type of a callback and rei struct
+    :param landing_page_url: URL of the landing page
+    :param combi_path:       Path to the combined JSON file that holds both user and system metadata
 
     :returns: dict -- Holding Datacite formatted metadata of Yoda
     """
@@ -125,7 +126,7 @@ def json_datacite41_create_datacite_json(ctx, combi_path):
             "descriptions": get_descriptions(combi),
             "geoLocations": get_geo_locations(combi),
             "fundingReferences": get_funders(combi),
-            "url": "https://schema.datacite.org/meta/kernel-4.0/index.html",
+            "url": landing_page_url,
             "schemaVersion": "http://datacite.org/schema/kernel-4"
         }
     }

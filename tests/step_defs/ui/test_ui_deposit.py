@@ -26,7 +26,7 @@ def ui_deposit_open_search(browser, search_argument):
     browser.fill('q', search_argument)
     browser.find_by_name('q').type(Keys.RETURN)
 
-    for _i in range(25):
+    for _i in range(30):
         if browser.is_text_present(search_argument, wait_time=3):
             return True
         browser.find_by_css('button.search-btn')[0].click()

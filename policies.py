@@ -211,7 +211,7 @@ def py_acPostProcForPut(ctx):
     x = can_data_create(ctx, user.user_and_zone(ctx), path)
 
     if not x:
-        data_object.remove(ctx, path)
+        data_object.remove(ctx, path, force=True)
 
     return x
 
@@ -225,7 +225,7 @@ def py_acPostProcForCopy(ctx):
     x = can_data_create(ctx, user.user_and_zone(ctx), path)
 
     if not x:
-        data_object.remove(ctx, path)
+        data_object.remove(ctx, path, force=True)
 
     return x
 
