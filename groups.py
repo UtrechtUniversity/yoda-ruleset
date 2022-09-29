@@ -30,18 +30,7 @@ __all__ = ['api_group_data',
            'api_group_user_add',
            'api_group_user_update_role',
            'api_group_get_user_role',
-           'api_group_remove_user_from_group',
-           'api_user_is_a_datamanager']
-
-
-@api.make()
-def api_user_is_a_datamanager(ctx):
-    """Return groups whether current user is datamanager of a group, not specifically of a specific group
-    :param ctx: Combined type of a ctx and rei struct
-
-    :returns: Boolean indication of whether current user is a datamanager of any group
-    """
-    return {'user_is_a_datamanager': user_is_a_datamanager(ctx)}
+           'api_group_remove_user_from_group']
 
 
 def user_is_a_datamanager(ctx):
@@ -366,12 +355,12 @@ def api_group_data(ctx):
 
 
 @api.make()
-def api_group_process_csv(ctx, csv_filename, allow_update, delete_user):
+def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
     """ process contents of csv file containing group definitions
         Parsing is stopped immediately when an error is found and the rownumber is returned to the user
 
     :param ctx:          Combined type of a ctx and rei struct
-    :param csv_filename: Category to retrieve subcategories of
+    :param csv_header_and_data: CSV data holding a head conform description and the actual row data.
     :param allow_update: Allow updates in groups
     :param delete_user:  Allow for deleting of users from groups
 
@@ -379,14 +368,16 @@ def api_group_process_csv(ctx, csv_filename, allow_update, delete_user):
 
     """
     # definition of what are considered internal users, based on domain name of their email address.
-    internal_domains = 'uu.nl'
+    internal_domains = 'uu.nl'  # ???? Waar komt dit vandaan
 
     # only datamanagers are allowed to use this functionality
     if not user_is_a_datamanager(ctx):
         return {'status': 'permissions_error', 'errors': ['insufficient rights to perform this operation']}
 
+    log.write(ctx, csv_header_and_data)
+
     # step 1. Parse the data in the uploaded file
-    data, error = parse_data(ctx, csv_filename)
+    data, error = parse_data(ctx, csv_header_and_data)
     if len(error):
         return {'status': 'parse_error', 'group-data': data, 'errors': [error]}
 
@@ -405,9 +396,8 @@ def api_group_process_csv(ctx, csv_filename, allow_update, delete_user):
     return {'status': 'ok', 'group-data': data, 'errors': []}
 
 
-def parse_data(ctx, csv_filename):
-    """ process contents of csv file containing group definitions
-        Parsing is stopped immediately when an error is found and the rownumber is returned to the user
+def parse_data(ctx, csv_header_and_data):
+    """ process contents of csv data consisting of header and 1 row of data.
 
     :param ctx:          Combined type of a ctx and rei struct
     :param csv_filename: Category to retrieve subcategories of
@@ -417,18 +407,15 @@ def parse_data(ctx, csv_filename):
     """
 
     extracted_data = []
-    header = 'category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1'
+    # header = 'category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1'
 
-    example_lines = ['default-2,default-2,harm33,man1@uu.nl,member1@uu.nl,member2@uu.nl,']
-                     # 'default-1,default-1,harm21,man1@uu.nl,member1@uu.nl,member2@uu.nl,viewer1@uu.nl',
-                     # 'default-2,default-2,harm22,m.manager@uu.nl,p.member@uu.nl']
+    # example_lines = ['default-2,default-2,harm33,man1@uu.nl,member1@uu.nl,member2@uu.nl,']
+    #                 # 'default-1,default-1,harm21,man1@uu.nl,member1@uu.nl,member2@uu.nl,viewer1@uu.nl',
+    #                 # 'default-2,default-2,harm22,m.manager@uu.nl,p.member@uu.nl']
 
-    csv_content = data_object.read(ctx, '/tempZone/home/research-default-2/' + csv_filename)
-    log.write(ctx, csv_content)
-
-    csv_lines = csv_content.splitlines()
+    csv_lines = csv_header_and_data.splitlines()
     header = csv_lines[0]
-
+    
     example_lines = csv_lines[1:]
 
     # list of dicts each containg label / value pairs
