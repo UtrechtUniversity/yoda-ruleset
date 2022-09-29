@@ -109,6 +109,10 @@ def pytest_bdd_apply_tag(tag, function):
         marker = pytest.mark.skip(reason="Skip login OIDC")
         marker(function)
         return True
+    elif tag == "fail":
+        marker = pytest.mark.xfail(reason="Test is expected to fail", run=True, strict=False)
+        marker(function)
+        return True
     else:
         # Fall back to pytest-bdd's default behavior
         return None
