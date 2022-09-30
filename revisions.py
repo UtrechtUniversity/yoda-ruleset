@@ -409,32 +409,29 @@ def revision_create(ctx, resource, path, max_size, verbose):
         log.write(ctx, "[revisions] Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
 
-    iter = genquery.row_iterator(
+    groups = list(genquery.row_iterator(
         "USER_NAME, USER_ZONE",
         "DATA_ID = '" + data_id + "' AND USER_TYPE = 'rodsgroup' AND DATA_ACCESS_NAME = 'own'",
         genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        group_name = row[0]
-        user_zone = row[1]
+    ))
+
+    if len(groups) == 1:
+        (group_name, user_zone) = groups[0]
+    elif len(groups) == 0:
+        log.write(ctx, "[revisions] Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
+        return ""
+    else:
+        log.write(ctx, "[revisions] Cannot find unique owner of data object <{}>. Skipping.".format(path))
+        return ""
 
     # All revisions are stored in a group with the same name as the research group in a system collection
     # When this collection is missing, no revisions will be created. When the group manager is used to
     # create new research groups, the revision collection will be created as well.
     revision_store = "/" + user_zone + constants.UUREVISIONCOLLECTION + "/" + group_name
-    revision_store_exists = False
 
-    iter = genquery.row_iterator(
-        "COLL_ID",
-        "COLL_NAME = '" + revision_store + "'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        revision_store_exists = True
-
-    if revision_store_exists:
+    if collection.exists(ctx, revision_store):
         # Allow rodsadmin to create subcollections.
-        msi.set_acl(ctx, "default", "own", "rods#{}".format(user.zone(ctx)), revision_store)
+        msi.set_acl(ctx, "default", "admin:own", "rods#{}".format(user.zone(ctx)), revision_store)
 
         # generate a timestamp in iso8601 format to append to the filename of the revised file.
         # 2019-09-07T15:50-04:00
@@ -473,13 +470,20 @@ def revision_create(ctx, resource, path, max_size, verbose):
             ofFlags = 'forceFlag=++++numThreads=1'
             msi.data_obj_copy(ctx, path, rev_path, ofFlags, irods_types.BytesBuf())
 
-            iter = genquery.row_iterator(
+            revision_ids = list(genquery.row_iterator(
                 "DATA_ID",
                 "COLL_NAME = '" + rev_coll + "' AND DATA_NAME = '" + rev_filename + "'",
                 genquery.AS_LIST, ctx
-            )
-            for row in iter:
-                revision_id = row[0]
+            ))
+
+            if len(revision_ids) == 0:
+                log.write(ctx, "[revisions] failed to find data object id for revision <{}>. Aborting.".format(rev_path))
+                return ""
+            elif len(revision_ids) == 1:
+                revision_id = revision_ids[0][0]
+            else:
+                log.write(ctx, "[revisions] failed to find unique data object id for revision <{}>. Aborting.".format(rev_path))
+                return ""
 
             # Add original metadata to revision data object.
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_path", path)

@@ -45,6 +45,7 @@ def ui_notifications(browser, status):
     browser.links.find_by_partial_text('Notifications')[0].click()
 
     time.sleep(1)
+    assert len(browser.find_by_css('.list-group-item-action')) == len(status_text[status])
 
     index = 0
     for status_item in status_text[status]:

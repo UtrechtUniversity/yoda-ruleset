@@ -1,8 +1,15 @@
 Feature: Settings UI
 
-    Scenario: Save user settings
+    Scenario Outline: Save user settings
         Given user researcher is logged in
         And module "user/settings" is shown
-        When user checks mail notifications checkbox
+        When user sets mail notifications to <type>
         And clicks the save button
-        Then mail notifications checkbox is checked
+        Then mail notifications is set to <type>
+
+        Examples:
+            | type      |
+            | WEEKLY    |
+            | DAILY     |
+            | IMMEDIATE |
+            | OFF       |

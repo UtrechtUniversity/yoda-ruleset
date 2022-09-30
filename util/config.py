@@ -109,7 +109,8 @@ config = Config(environment=None,
                 epic_handle_prefix=None,
                 epic_key=None,
                 epic_certificate=None,
-                temporary_files=[])
+                temporary_files=[],
+                external_users_domain_filter=[])
 
 # }}}
 

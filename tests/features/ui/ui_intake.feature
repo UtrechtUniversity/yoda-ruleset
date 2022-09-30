@@ -1,6 +1,7 @@
 @intake
 Feature: Intake UI
 
+    @fail
     Scenario: Intake scan only and find datasets and unrecognized files
         Given user datamanager is logged in
         And module "intake" is shown
