@@ -368,33 +368,28 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
     :returns: dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
     """
-    # definition of what are considered internal users, based on domain name of their email address.
-    internal_domains = 'uu.nl'  # ???? Waar komt dit vandaan
-
     # only datamanagers are allowed to use this functionality
     if not user_is_a_datamanager(ctx):
-        return {'status': 'permissions_error', 'errors': ['insufficient rights to perform this operation']}
-
-    log.write(ctx, csv_header_and_data)
+        return api.Error('errors', ['Insufficient rights to perform this operation'])
 
     # step 1. Parse the data in the uploaded file
     data, error = parse_data(ctx, csv_header_and_data)
     if len(error):
-        return {'status': 'parse_error', 'group-data': data, 'errors': [error]}
+        return api.Error('errors', [error])
 
     # step 2. validate the data
-    validation_errors = validate_data(ctx, data, internal_domains, allow_update)
+    validation_errors = validate_data(ctx, data, allow_update)
     if len(validation_errors) > 0:
-        return {'status': 'validation_error', 'errors': validation_errors}
+        return api.Error('errors', validation_errors)
 
     # step 3. create/update groups
     # if not args.online_check: ????
     error = apply_data(ctx, data, allow_update, delete_user)
     if len(error):
-        return {'status': 'permissions_error', 'errors': 'insufficient rights'}
+        return api.Error('errors', [error])
 
     # all went well
-    return {'status': 'ok', 'group-data': data, 'errors': []}
+    return api.Result.ok()
 
 
 def parse_data(ctx, csv_header_and_data):
@@ -408,15 +403,9 @@ def parse_data(ctx, csv_header_and_data):
     """
 
     extracted_data = []
-    # header = 'category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1'
-
-    # example_lines = ['default-2,default-2,harm33,man1@uu.nl,member1@uu.nl,member2@uu.nl,']
-    #                 # 'default-1,default-1,harm21,man1@uu.nl,member1@uu.nl,member2@uu.nl,viewer1@uu.nl',
-    #                 # 'default-2,default-2,harm22,m.manager@uu.nl,p.member@uu.nl']
 
     csv_lines = csv_header_and_data.splitlines()
     header = csv_lines[0]
-    
     example_lines = csv_lines[1:]
 
     # list of dicts each containg label / value pairs
@@ -448,11 +437,10 @@ def parse_data(ctx, csv_header_and_data):
     return extracted_data, ''
 
 
-def validate_data(ctx, data, internal_domains, allow_update):
+def validate_data(ctx, data, allow_update):
     """ validation of extracted data
 
     :param ctx:          Combined type of a ctx and rei struct
-    :param internal_domains: String containing domain names that are considered 'internal'
     :param allow_update:  Allow for updating of groups
 
     :returns: errors if found any 
@@ -463,12 +451,12 @@ def validate_data(ctx, data, internal_domains, allow_update):
         if group.exists(ctx, groupname) and not allow_update:
             errors.append('Group "{}" already exists'.format(groupname))
 
-        for userbla in managers + members + viewers:
-            if not is_internal_user(userbla, internal_domains.split(",")):
+        for the_user in managers + members + viewers:
+            if not is_internal_user(the_user):
                 # ensure that external users already have an iRODS account
                 # we do not want to be the actor that creates them
-                if not user.exists(ctx, userbla):
-                    errors.append('Group {} has nonexisting external user {}'.format(groupname, userbla))
+                if not user.exists(ctx, the_user):
+                    errors.append('Group {} has nonexisting external user {}'.format(groupname, the_user))
     return errors
 
 
@@ -756,8 +744,8 @@ def is_valid_groupname(name):
     return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
 
 
-def is_internal_user(username, internal_domains):
-    for domain in internal_domains:
+def is_internal_user(username):
+    for domain in config.external_users_domain_filter:
         domain_pattern = '@{}$'.format(domain)
         if re.search(domain_pattern, username) is not None:
             return True
