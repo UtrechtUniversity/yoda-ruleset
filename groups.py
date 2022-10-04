@@ -5,9 +5,9 @@ __copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from collections import OrderedDict
+import re
 
 import genquery
-import re
 import requests
 
 from util import *
@@ -431,8 +431,8 @@ def parse_data(ctx, csv_header_and_data):
             extracted_data.append(rowdata)
             row_number += 1
         else:
-           # End processing of csv data due to erroneous input
-           return extracted_data, "Data error in row {}: {}".format(str(row_number), error)
+            # End processing of csv data due to erroneous input
+            return extracted_data, "Data error in row {}: {}".format(str(row_number), error)
 
     return extracted_data, ''
 
@@ -443,7 +443,7 @@ def validate_data(ctx, data, allow_update):
     :param ctx:          Combined type of a ctx and rei struct
     :param allow_update:  Allow for updating of groups
 
-    :returns: errors if found any 
+    :returns: errors if found any
     """
     errors = []
     for (category, subcategory, groupname, managers, members, viewers) in data:
@@ -491,29 +491,19 @@ def apply_data(ctx, data, allow_update, delete_user):
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
         for username in list(set(allusers)):   # duplicates removed
-
             currentrole = user_role(ctx, groupname, username)
-            # currentrole = ctx.uuGroupGetMemberType(groupname, username)
-
             if currentrole == "none":
-
                 response = ctx.uuGroupUserAdd(groupname, username, '', '')['arguments']
                 status = response[2]
                 message = response[3]
-                # if status == '0':
-                #    return api.Result.ok()
-                # else:
-                #    return api.Error('policy_error', message)
-                # [status, msg] = ctx.uuGroupUserAdd(groupname, username)
                 if status == '0':
-                     currentrole = "member"
-                     log.write(ctx, "Notice: added user {} to group {}".format(username,groupname))
+                    currentrole = "member"
+                    log.write(ctx, "Notice: added user {} to group {}".format(username, groupname))
                 else:
                     log.write(ctx, "Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
                     log.write(ctx, "Status: {} , Message: {}".format(status, message))
             else:
-                log.write(ctx, "Notice: user {} is already present in group {}.".format(username,groupname))
-
+                log.write(ctx, "Notice: user {} is already present in group {}.".format(username, groupname))
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -527,23 +517,10 @@ def apply_data(ctx, data, allow_update, delete_user):
             if _are_roles_equivalent(role, currentrole):
                 log.write(ctx, "Notice: user {} already has role {} in group {}.".format(username, role, groupname))
             else:
-                # try:
-                #    response = ctx.uuGroupUserChangeRole(groupname, username, new_role, '', '')['arguments']
-                #    status = response[3]
-                #    message = response[4]
-                #    if status == '0':
-                #        return api.Result.ok()
-                #    else:
-                #        return api.Error('policy_error', message)
-                # except Exception:
-                #    return api.Error('error_internal', 'Something went wrong updating role for {} in group "{}". Please contact a system administrator'.format(username, group_name))
-
-
                 response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
                 status = response[3]
                 message = response[4]
 
-                # [status, msg] = ctx.uuGroupUserChangeRole(groupname, username, role)
                 if status == '0':
                     log.write(ctx, "Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
                 else:
@@ -552,22 +529,19 @@ def apply_data(ctx, data, allow_update, delete_user):
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
-        if (new_group and "rods" not in allusers and
-            user_role(ctx, groupname, "rods") != "none"):
-            # ctx.uuGroupGetMemberType(groupname, "rods") != "none" ):
-
+        if (new_group and "rods" not in allusers and user_role(ctx, groupname, "rods") != "none"):
             response = ctx.uuGroupUserRemove(groupname, "rods", '', '')['arguments']
             status = response[2]
             message = response[3]
             if status == "0":
                 log.write(ctx, "Notice: removed rods user from group " + groupname)
             else:
-                if status !=0:
+                if status != 0:
                     log.write(ctx, "Warning: error while attempting to remove user rods from group {}".format(groupname))
                     log.write(ctx, "Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
-        if delete_user: ## Hier gaat nog iets fout!! ????
+        if delete_user:
             try:
                 currentusers = group.members(ctx, groupname)
                 # currentusers = ctx.uuGroupGetMembers(groupname)
@@ -584,7 +558,7 @@ def apply_data(ctx, data, allow_update, delete_user):
                             continue
                         else:
                             managers.remove(user)
-                    log.write(ctx, "Removing user {} from group {}".format(user,groupname))
+                    log.write(ctx, "Removing user {} from group {}".format(user, groupname))
 
                     # (status,msg) = ctx.uuGroupUserRemove(groupname, user)
                     response = ctx.uuGroupUserRemove(groupname, user, '', '')['arguments']
@@ -592,7 +566,7 @@ def apply_data(ctx, data, allow_update, delete_user):
                     message = response[3]
 
                     if status != "0":
-                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user,groupname))
+                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user, groupname))
                         log.write(ctx, "Status: {} , Message: {}".format(status, message))
 
     return ''
@@ -612,8 +586,8 @@ def parse_csv_file(ctx):
 
     # duplicate fieldnames present?
     duplicate_columns = _get_duplicate_columns(reader.fieldnames)
-    if ( len(duplicate_columns) > 0 ):
-        _exit_with_error("File has duplicate column(s): " + str(duplicate_columns) )
+    if (len(duplicate_columns) > 0):
+        _exit_with_error("File has duplicate column(s): " + str(duplicate_columns))
 
     # Start processing the actual group data rows
     for line in lines:
@@ -626,7 +600,7 @@ def parse_csv_file(ctx):
             _exit_with_error("Data error in in row {}: {}".format(
                 str(row_number), error))
 
-    return extracted_data 
+    return extracted_data
 
 
 def _get_csv_predefined_labels():
@@ -638,8 +612,7 @@ def _get_duplicate_columns(fields_list):
     duplicate_fields = set()
 
     for field in fields_list:
-        if ( field in _get_csv_predefined_labels() or
-             field.startswith( ("manager:", "viewer:", "member:"))):
+        if (field in _get_csv_predefined_labels() or field.startswith(("manager:", "viewer:", "member:"))):
             if field in fields_seen:
                 duplicate_fields.add(field)
             else:
@@ -709,11 +682,11 @@ def is_email(username):
     return re.search(r'@.*[^\.]+\.[^\.]+$', username) is not None
 
 
-def _are_roles_equivalent(a,b):
+def _are_roles_equivalent(a, b):
     """Checks whether two roles are equivalent. Needed because Yoda and Yoda-clienttools
        use slightly different names for the roles."""
-    r_role_names = [ "viewer", "reader" ]
-    m_role_names = [ "member", "normal" ]
+    r_role_names = ["viewer", "reader"]
+    m_role_names = ["member", "normal"]
 
     if a == b:
         return True
@@ -725,7 +698,7 @@ def _are_roles_equivalent(a,b):
         return False
 
 
-## ?????????????
+# ?????????????
 # @lru_cache(maxsize=100)
 # def is_valid_domain(domain):
 #    try:
