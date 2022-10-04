@@ -414,7 +414,7 @@ def parse_data(ctx, csv_header_and_data):
     for example in example_lines:
         data = example.split(',')
         line_dict = {}
-        for x in range (0,len(header_cols)):
+        for x in range(0, len(header_cols)):
             try:
                 line_dict[header_cols[x]] = data[x]
             except KeyError:
