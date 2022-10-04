@@ -34,29 +34,6 @@ __all__ = ['api_group_data',
            'api_group_remove_user_from_group']
 
 
-def user_is_a_datamanager(ctx):
-    """Return groups whether current user is datamanager of a group, not specifically of a specific group
-    :param ctx: Combined type of a ctx and rei struct
-
-    :returns: Group hierarchy, user type and user zone
-    """
-
-    is_a_datamanager = False
-
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        if group.is_member(ctx, row[0]):
-            is_a_datamanager = True
-            # no need to check for more - this user is a datamanager
-            break
-
-    return is_a_datamanager
-
-
 def getGroupData(ctx):
     """Return groups and related data."""
     groups = {}
@@ -357,19 +334,20 @@ def api_group_data(ctx):
 
 @api.make()
 def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
-    """ process contents of csv file containing group definitions
-        Parsing is stopped immediately when an error is found and the rownumber is returned to the user
+    """Process contents of CSV file containing group definitions.
 
-    :param ctx:          Combined type of a ctx and rei struct
-    :param csv_header_and_data: CSV data holding a head conform description and the actual row data.
-    :param allow_update: Allow updates in groups
-    :param delete_user:  Allow for deleting of users from groups
+    Parsing is stopped immediately when an error is found and the rownumber is returned to the user.
 
-    :returns: dict containing status, error(s) and the resulting group definitions so the frontend can present the results
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param csv_header_and_data: CSV data holding a head conform description and the actual row data
+    :param allow_update:        Allow updates in groups
+    :param delete_user:         Allow for deleting of users from groups
+
+    :returns: Dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
     """
     # only datamanagers are allowed to use this functionality
-    if not user_is_a_datamanager(ctx):
+    if not user_is_datamanager(ctx):
         return api.Error('errors', ['Insufficient rights to perform this operation'])
 
     # step 1. Parse the data in the uploaded file
@@ -393,13 +371,12 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
 
 
 def parse_data(ctx, csv_header_and_data):
-    """ process contents of csv data consisting of header and 1 row of data.
+    """Process contents of csv data consisting of header and 1 row of data.
 
-    :param ctx:          Combined type of a ctx and rei struct
-    :param csv_filename: Category to retrieve subcategories of
+    :param ctx:                 Combined type of a ctx and rei struct
+    :param csv_header_and_data: CSV data holding a head conform description and the actual row data
 
-    :returns: dict containing error and the extracted data
-
+    :returns: Dict containing error and the extracted data
     """
 
     extracted_data = []
@@ -438,13 +415,22 @@ def parse_data(ctx, csv_header_and_data):
 
 
 def validate_data(ctx, data, allow_update):
-    """ validation of extracted data
+    """Validation of extracted data.
 
     :param ctx:          Combined type of a ctx and rei struct
-    :param allow_update:  Allow for updating of groups
+    :param data:         Data to be processed
+    :param allow_update: Allow for updating of groups
 
-    :returns: errors if found any
+    :returns: Errors if found any
     """
+    def is_internal_user(username):
+        for domain in config.external_users_domain_filter:
+            domain_pattern = '@{}$'.format(domain)
+            if re.search(domain_pattern, username) is not None:
+                return True
+
+        return False
+
     errors = []
     for (category, subcategory, groupname, managers, members, viewers) in data:
 
@@ -464,11 +450,11 @@ def apply_data(ctx, data, allow_update, delete_user):
     """ Update groups with the validated data
 
     :param ctx:          Combined type of a ctx and rei struct
-    :param data:         data to be processed
+    :param data:         Data to be processed
     :param allow_update: Allow updates in groups
     :param delete_user:  Allow for deleting of users from groups
 
-    :returns: errors if found any
+    :returns: Errors if found any
     """
 
     for (category, subcategory, groupname, managers, members, viewers) in data:
@@ -622,7 +608,18 @@ def _get_duplicate_columns(fields_list):
 
 
 def _process_csv_line(ctx, line):
-    # Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers
+    """Process a line as found in the csv consisting of category, subcategory, groupname, managers, members and viewers."""
+    def is_email(username):
+        """Is this email a valid email?"""
+        return re.search(r'@.*[^\.]+\.[^\.]+$', username) is not None
+
+    def is_valid_category(name):
+        """Is this name a valid (sub)category name?"""
+        return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
+
+    def is_valid_groupname(name):
+        """Is this name a valid group name (prefix such as "research-" can be omitted"""
+        return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
 
     category = line['category'].strip().lower().replace('.', '')
     subcategory = line['subcategory'].strip()
@@ -677,14 +674,8 @@ def _process_csv_line(ctx, line):
     return row_data, None
 
 
-def is_email(username):
-    return True
-    return re.search(r'@.*[^\.]+\.[^\.]+$', username) is not None
-
-
 def _are_roles_equivalent(a, b):
-    """Checks whether two roles are equivalent. Needed because Yoda and Yoda-clienttools
-       use slightly different names for the roles."""
+    """Checks whether two roles are equivalent, Yoda and Yoda-clienttools use slightly different names."""
     r_role_names = ["viewer", "reader"]
     m_role_names = ["member", "normal"]
 
@@ -696,34 +687,6 @@ def _are_roles_equivalent(a, b):
         return True
     else:
         return False
-
-
-# ?????????????
-# @lru_cache(maxsize=100)
-# def is_valid_domain(domain):
-#    try:
-#      return bool(resolver.query(domain, 'MX'))
-#    except (resolver.NXDOMAIN, resolver.NoAnswer):
-#      return False
-
-
-def is_valid_category(name):
-    """Is this name a valid (sub)category name?"""
-    return re.search(r"^[a-zA-Z0-9\-_]+$", name) is not None
-
-
-def is_valid_groupname(name):
-    """Is this name a valid group name (prefix such as "research-" can be omitted"""
-    return re.search(r"^[a-zA-Z0-9\-]+$", name) is not None
-
-
-def is_internal_user(username):
-    for domain in config.external_users_domain_filter:
-        domain_pattern = '@{}$'.format(domain)
-        if re.search(domain_pattern, username) is not None:
-            return True
-
-    return False
 
 
 def group_user_exists(ctx, group_name, username, include_readonly):
