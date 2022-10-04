@@ -4,8 +4,8 @@
 __copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
-from collections import OrderedDict
 import re
+from collections import OrderedDict
 
 import genquery
 import requests
@@ -414,10 +414,10 @@ def parse_data(ctx, csv_header_and_data):
     for example in example_lines:
         data = example.split(',')
         line_dict = {}
-        for x in range (0, len(header_cols)):
+        for x in range (0,len(header_cols)):
             try:
                 line_dict[header_cols[x]] = data[x]
-            except:
+            except KeyError:
                 line_dict[header_cols[x]] = ''
 
         lines.append(line_dict)
