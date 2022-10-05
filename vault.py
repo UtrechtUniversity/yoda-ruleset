@@ -40,7 +40,8 @@ __all__ = ['api_vault_submit',
            'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group',
-           'rule_process_ending_retention_packages']
+           'rule_process_ending_retention_packages',
+           'api_vault_get_published_packages']
 
 
 @rule.make()
@@ -1254,3 +1255,25 @@ def get_doi(ctx, path):
         return row[0]
 
     return None
+
+
+@api.make()
+def vault_get_published_packages(ctx, path):
+    """Get the path and DOI of published data package in a vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of vault with data packages
+
+    :return: Dict of data packages with DOI
+    """
+    iter = genquery.row_iterator(
+        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
+        genquery.AS_LIST, callback
+    )
+
+    data_packages = {}
+    for row in iter:
+        data_packages.append({row[0]: row[1]})
+
+    return data_packages
