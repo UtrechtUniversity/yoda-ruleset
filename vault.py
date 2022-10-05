@@ -1258,7 +1258,7 @@ def get_doi(ctx, path):
 
 
 @api.make()
-def vault_get_published_packages(ctx, path):
+def api_vault_get_published_packages(ctx, path):
     """Get the path and DOI of published data package in a vault.
 
     :param ctx:  Combined type of a callback and rei struct
