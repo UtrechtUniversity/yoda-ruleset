@@ -1269,7 +1269,7 @@ def api_vault_get_published_packages(ctx, path):
     iter = genquery.row_iterator(
         "COLL_NAME, META_COLL_ATTR_VALUE",
         "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     data_packages = {}
