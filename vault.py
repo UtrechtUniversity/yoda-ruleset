@@ -137,14 +137,20 @@ def rule_process_ending_retention_packages(ctx):
 
 
 @api.make()
-def api_vault_submit(ctx, coll):
+def api_vault_submit(ctx, coll, previous_version=None):
     """Submit data package for publication.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection of data package to submit
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Collection of data package to submit
+    :param previous_version: Path to previous versio of data package in the vault
 
     :returns: API status
     """
+    if previous_version:
+        # Get DOI of previous version of vault data package.
+        doi = vault.get_doi(ctx, previous_version)
+        log.write(ctx, "DOI: {}".format(doi))
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
 
     if ret[0] == '':
@@ -1228,3 +1234,23 @@ def get_approver(ctx, path):
         return org_metadata[attribute]
     else:
         return None
+
+
+def get_doi(ctx, path):
+    """Get the DOI of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the DOI of
+
+    :return: Data package DOI or None
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
