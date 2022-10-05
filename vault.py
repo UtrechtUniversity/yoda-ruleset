@@ -1274,6 +1274,6 @@ def api_vault_get_published_packages(ctx, path):
 
     data_packages = {}
     for row in iter:
-        data_packages.append({row[0]: row[1]})
+        data_packages[row[0]] = row[1]
 
     return data_packages
