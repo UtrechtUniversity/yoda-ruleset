@@ -120,6 +120,15 @@ def api_vault_get_publication_terms(user):
     )
 
 
+@given(parsers.parse('the Yoda vault get published packages API is queried with {vault}'), target_fixture="api_response")
+def api_vault_get_published_packages(user, vault):
+    return api_request(
+        user,
+        "vault_get_published_packages",
+        {"path": vault}
+    )
+
+
 @then(parsers.parse('data package in {vault} status is "{status}"'))
 def data_package_status(user, vault, data_package, status):
     _, body = api_request(
@@ -156,6 +165,13 @@ def system_metadata(api_response):
 
 @then('publication terms are returned')
 def publication_terms(api_response):
+    http_status, body = api_response
+    assert http_status == 200
+    assert len(body["data"]) > 0
+
+
+@then('published packages are returned')
+def published_packages(api_response):
     http_status, body = api_response
     assert http_status == 200
     assert len(body["data"]) > 0
