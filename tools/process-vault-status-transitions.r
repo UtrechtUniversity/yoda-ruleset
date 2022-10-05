@@ -47,7 +47,7 @@ processVaultActions() {
                         *status = 'Success';
 
 						# Check if rods can modify metadata and grant temporary write ACL if necessary.
-						msiCheckAccess(*collName, "modify metadata", *modifyPermission);
+						msiCheckAccess(*collName, "modify_metadata", *modifyPermission);
 						if (*modifyPermission == 0) {
 							writeLine("stdout", "Granting write access to *collName");
 							msiSetACL("default", "admin:write", uuClientFullName, *collName);

@@ -219,7 +219,7 @@ iiFolderSecure(*folder) {
 	}
 
 	# Check modify access on research folder.
-	msiCheckAccess(*folder, "modify object", *modifyAccess);
+	msiCheckAccess(*folder, "modify_object", *modifyAccess);
 
 	# Set cronjob status.
 	msiString2KeyValPair(UUORGMETADATAPREFIX ++ "cronjob_copy_to_vault=" ++ CRONJOB_PROCESSING, *kvp);

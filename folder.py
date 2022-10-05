@@ -191,9 +191,9 @@ def folder_secure(ctx, coll, target):
         return '1'
 
     # Check modify access on research folder.
-    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
+    msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())
 
-    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
+    modify_access = msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())['arguments'][2]
 
     # Set cronjob status
     if modify_access != b'\x01':
@@ -246,8 +246,8 @@ def folder_secure(ctx, coll, target):
     ctx.iiCopyFolderToVault(coll, target)
     """
     # Starting point of last part of securing a folder into the vault
-    msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())
-    modify_access = msi.check_access(ctx, coll, 'modify object', irods_types.BytesBuf())['arguments'][2]
+    msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())
+    modify_access = msi.check_access(ctx, coll, 'modify_object', irods_types.BytesBuf())['arguments'][2]
 
     # Generate UUID4 and set as Data Package Reference.
     if config.enable_data_package_reference:

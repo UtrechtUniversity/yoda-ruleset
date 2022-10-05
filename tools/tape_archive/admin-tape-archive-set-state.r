@@ -2,7 +2,7 @@ adminTapeArchiveSetState() {
 	writeLine("serverLog", "PATH: *path TIMESTAMP: *timestamp STATE: *state");
 
     # Check if rods can modify metadata and grant temporary write ACL if necessary.
-    msiCheckAccess(*path, "modify metadata", *modifyPermission);
+    msiCheckAccess(*path, "modify_metadata", *modifyPermission);
     if (*modifyPermission == 0) {
         writeLine("stdout", "Granting write access to *path");
         msiSetACL("default", "admin:write", uuClientFullName, *path);

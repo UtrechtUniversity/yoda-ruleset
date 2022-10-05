@@ -499,7 +499,7 @@ def rule_meta_datamanager_vault_ingest(rule_args, callback, rei):
     client_full_name = user.full_name(ctx)
 
     try:
-        ret = msi.check_access(ctx, json_path, 'modify object', irods_types.BytesBuf())
+        ret = msi.check_access(ctx, json_path, 'modify_object', irods_types.BytesBuf())
         if ret['arguments'][2] != b'\x01':
             msi.set_acl(ctx, 'default', 'admin:own', client_full_name, json_path)
     except error.UUError:

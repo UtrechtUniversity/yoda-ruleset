@@ -22,7 +22,7 @@ createRevisionStores {
 			# rodsadmin needs at least read access to research group to copy data
 			# unfortunately msiCheckAccess does not check for group membership, but it won't be a problem
 			# when we add a user level ACL.
-			msiCheckAccess(*groupColl, "read object", *readPermission);
+			msiCheckAccess(*groupColl, "read_object", *readPermission);
 
 			if (*readPermission == 0) {
 				writeLine("stdout", "Granting read access to *groupColl");
@@ -56,7 +56,7 @@ createRevisionStores {
 					# We need read access on the original object
 					# unfortunately msiCheckAccess does not check for group membership, but it won't be a problem
 					# when we add a user level ACL.
-					msiCheckAccess(*path, "read object", *objectReadPermission);
+					msiCheckAccess(*path, "read_object", *objectReadPermission);
 					if (*objectReadPermission == 0) {
 						writeLine("stdout", "Granting read access to *path");
 						msiSetACL("default", "admin:read", uuClientFullName, *path);
@@ -98,7 +98,7 @@ createRevisionStores {
 				}
 
 				if (!*skip) {
-					msiCheckAccess(*path, "read object", *objectReadPermission);
+					msiCheckAccess(*path, "read_object", *objectReadPermission);
 					if (*objectReadPermission == 0) {
 						writeLine("stdout", "Granting read access to *path");
 						msiSetACL("default", "admin:read", uuClientFullName, *path);

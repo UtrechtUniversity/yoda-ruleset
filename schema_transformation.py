@@ -137,10 +137,10 @@ def copy_acls_from_parent(ctx, path, recursive_flag):
         if access_name == "own":
             log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             ctx.msiSetACL(recursive_flag, "own", user_name, path)
-        elif access_name == "read object":
+        elif access_name == "read_object":
             log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             ctx.msiSetACL(recursive_flag, "read", user_name, path)
-        elif access_name == "modify object":
+        elif access_name == "modify_object":
             log.write(ctx, "iiCopyACLsFromParent: granting own to <" + user_name + "> on <" + path + "> with recursiveFlag <" + recursive_flag + ">")
             ctx.msiSetACL(recursive_flag, "write", user_name, path)
 

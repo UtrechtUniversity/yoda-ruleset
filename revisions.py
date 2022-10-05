@@ -440,7 +440,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
         rev_filename = basename + "_" + iso8601 + data_owner
         rev_coll = revision_store + "/" + coll_id
 
-        read_access = msi.check_access(ctx, path, 'read object', irods_types.BytesBuf())['arguments'][2]
+        read_access = msi.check_access(ctx, path, 'read_object', irods_types.BytesBuf())['arguments'][2]
         if read_access != b'\x01':
             try:
                 msi.set_acl(ctx, "default", "read", "rods#{}".format(user.zone(ctx)), path)

@@ -24,7 +24,7 @@ verifyChecksumBatch(*start, *max, *update) {
 }
 
 verifyChecksumData(*path, *chksum, *update) {
-    msiCheckAccess(*path, "read object", *access);
+    msiCheckAccess(*path, "read_object", *access);
     if (*access == 0) {
 	msiSetACL("default", "admin:read", uuClientFullName, *path);
     }

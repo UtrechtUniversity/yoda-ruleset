@@ -34,7 +34,7 @@ iiCopyFolderToVault(*folder, *target) {
 #
 iiIngestObject(*itemParent, *itemName, *itemIsCollection, *buffer, *error) {
 	*sourcePath = "*itemParent/*itemName";
-	msiCheckAccess(*sourcePath, "read object", *readAccess);
+	msiCheckAccess(*sourcePath, "read_object", *readAccess);
 	if (*readAccess != 1) {
 		*error = errorcode(msiSetACL("default", "admin:read", uuClientFullName, *sourcePath));
 		if (*error < 0) {
@@ -157,10 +157,10 @@ iiCopyACLsFromParent(*path, *recursiveFlag) {
                         if (*accessName == "own") {
                                 writeLine("serverLog", "iiCopyACLsFromParent: granting own to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "own", *userName, *path);
-                        } else if (*accessName == "read object") {
+                        } else if (*accessName == "read_object") {
                                 writeLine("serverLog", "iiCopyACLsFromParent: granting read to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "read", *userName, *path);
-                        } else if (*accessName == "modify object") {
+                        } else if (*accessName == "modify_object") {
                                 writeLine("serverLog", "iiCopyACLsFromParent: granting write to <*userName> on <*path> with recursiveFlag <*recursiveFlag>");
                                 msiSetACL(*recursiveFlag, "write", *userName, *path);
                         }
