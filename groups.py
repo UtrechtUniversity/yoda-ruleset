@@ -567,11 +567,11 @@ def apply_data(ctx, data, allow_update, delete_users):
 
                 for row in iter:
                     # append [user,groupname]
-                    currentusers.append([row[1],row[0]])
+                    currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
                 user = userdata[0]
-                usergroupname= userdata[1]
+                usergroupname = userdata[1]
                 if user not in allusers:
                     if user in managers:
                         if len(managers) == 1:
