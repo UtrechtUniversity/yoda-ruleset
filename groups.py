@@ -357,7 +357,7 @@ def api_group_data(ctx):
 
 
 @api.make()
-def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
+def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     """Process contents of CSV file containing group definitions.
 
     Parsing is stopped immediately when an error is found and the rownumber is returned to the user.
@@ -365,7 +365,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
     :param ctx:                 Combined type of a ctx and rei struct
     :param csv_header_and_data: CSV data holding a head conform description and the actual row data
     :param allow_update:        Allow updates in groups
-    :param delete_user:         Allow for deleting of users from groups
+    :param delete_users:         Allow for deleting of users from groups
 
     :returns: Dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
@@ -386,7 +386,7 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_user):
 
     # step 3. create/update groups
     # if not args.online_check: ????
-    error = apply_data(ctx, data, allow_update, delete_user)
+    error = apply_data(ctx, data, allow_update, delete_users)
     if len(error):
         return api.Error('errors', [error])
 
@@ -402,38 +402,41 @@ def parse_data(ctx, csv_header_and_data):
 
     :returns: Dict containing error and the extracted data
     """
-
     extracted_data = []
 
     csv_lines = csv_header_and_data.splitlines()
     header = csv_lines[0]
-    example_lines = csv_lines[1:]
+    import_lines = csv_lines[1:]
 
     # list of dicts each containg label / value pairs
     lines = []
     header_cols = header.split(',')
-    for example in example_lines:
-        data = example.split(',')
+    for import_line in import_lines:
+        data = import_line.split(',')
+        if len(data) != len(header_cols):
+            return [], 'Amount of header columns differs from data columns.'
         line_dict = {}
         for x in range(0, len(header_cols)):
+            if header_cols[x] == '':
+                if x == len(header_cols) - 1:
+                    return [], "Header row ends with ','"
+                else:
+                    return [], 'Empty column description found in header row.'
             try:
                 line_dict[header_cols[x]] = data[x]
-            except KeyError:
+            except (KeyError, IndexError):
                 line_dict[header_cols[x]] = ''
 
         lines.append(line_dict)
 
-    row_number = 1
     for line in lines:
         rowdata, error = _process_csv_line(ctx, line)
-        log.write(ctx, rowdata)
 
         if error is None:
             extracted_data.append(rowdata)
-            row_number += 1
         else:
             # End processing of csv data due to erroneous input
-            return extracted_data, "Data error in row {}: {}".format(str(row_number), error)
+            return extracted_data, "Data error: {}".format(error)
 
     return extracted_data, ''
 
@@ -452,7 +455,6 @@ def validate_data(ctx, data, allow_update):
             domain_pattern = '@{}$'.format(domain)
             if re.search(domain_pattern, username) is not None:
                 return True
-
         return False
 
     errors = []
@@ -470,13 +472,13 @@ def validate_data(ctx, data, allow_update):
     return errors
 
 
-def apply_data(ctx, data, allow_update, delete_user):
+def apply_data(ctx, data, allow_update, delete_users):
     """ Update groups with the validated data
 
     :param ctx:          Combined type of a ctx and rei struct
     :param data:         Data to be processed
     :param allow_update: Allow updates in groups
-    :param delete_user:  Allow for deleting of users from groups
+    :param delete_users:  Allow for deleting of users from groups
 
     :returns: Errors if found any
     """
@@ -500,6 +502,8 @@ def apply_data(ctx, data, allow_update, delete_user):
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
+        log.write(ctx, 'allusers')
+        log.write(ctx, allusers)
         for username in list(set(allusers)):   # duplicates removed
             currentrole = user_role(ctx, groupname, username)
             if currentrole == "none":
@@ -551,32 +555,37 @@ def apply_data(ctx, data, allow_update, delete_user):
                     log.write(ctx, "Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
-        if delete_user:
-            try:
-                currentusers = group.members(ctx, groupname)
-                # currentusers = ctx.uuGroupGetMembers(groupname)
-            except SizeNotSupportedException:
-                log.write(ctx, "Unable to check whether members of group {} need to be deleted.".format(groupname))
-                log.write(ctx, "Number of current members group is too large.")
-                continue
+        if delete_users:
+            # build list of current users
+            currentusers = []
+            for prefix in ['read-', 'initial-', 'research-']:
+                iter = genquery.row_iterator(
+                    "USER_GROUP_NAME, USER_NAME, USER_ZONE",
+                    "USER_TYPE != 'rodsgroup' AND USER_GROUP_NAME = '{}'".format(prefix + '-'.join(groupname.split('-')[1:])),
+                    genquery.AS_LIST, ctx
+                )
 
-            for user in currentusers:
+                for row in iter:
+                    # append [user,groupname]
+                    currentusers.append([row[1],row[0]])
+
+            for userdata in currentusers:
+                user = userdata[0]
+                usergroupname= userdata[1]
                 if user not in allusers:
                     if user in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, groupname))
+                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
                             continue
                         else:
                             managers.remove(user)
-                    log.write(ctx, "Removing user {} from group {}".format(user, groupname))
+                    log.write(ctx, "Removing user {} from group {}".format(user, usergroupname))
 
-                    # (status,msg) = ctx.uuGroupUserRemove(groupname, user)
-                    response = ctx.uuGroupUserRemove(groupname, user, '', '')['arguments']
+                    response = ctx.uuGroupUserRemove(usergroupname, user, '', '')['arguments']
                     status = response[2]
                     message = response[3]
-
                     if status != "0":
-                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user, groupname))
+                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
                         log.write(ctx, "Status: {} , Message: {}".format(status, message))
 
     return ''
