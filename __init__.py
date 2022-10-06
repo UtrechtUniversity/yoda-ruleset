@@ -18,7 +18,7 @@ __author__    =  ('Felix Croes'
 # so that they become visible to iRODS.
 
 import sys
-sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util' ])
+sys.path.extend([ '/etc/irods/rules_uu', '/etc/irods/rules_uu/util', '/etc/irods/rules_uu/avu_json' ])
 
 from browse                 import *
 from folder                 import *
