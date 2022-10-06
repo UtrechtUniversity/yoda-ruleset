@@ -12,7 +12,7 @@ import genquery
 import irods_types
 import jsonschema
 
-import avu_json
+from avu_json import avu_json
 import provenance
 import publication
 import schema as schema_

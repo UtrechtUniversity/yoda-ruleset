@@ -15,7 +15,7 @@ from enum import Enum
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
-import avu_json
+from avu_json import avu_json
 import mail
 from util import *
 
