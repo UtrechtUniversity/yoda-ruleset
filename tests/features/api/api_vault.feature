@@ -151,6 +151,13 @@ Feature: Vault API
         Then the response status code is "200"
         And publication terms are returned
 
+
+    Scenario Outline: Vault get published packages
+        Given user researcher is authenticated
+        And the Yoda vault get published packages API is queried with <vault>
+        Then the response status code is "200"
+        And published packages are returned
+
         Examples:
             | vault                          |
             | /tempZone/home/vault-core-0    |
