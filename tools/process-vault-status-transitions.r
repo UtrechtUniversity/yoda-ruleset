@@ -20,9 +20,11 @@ processVaultActions() {
 				*folder = "";
 				*action = "";
 				*actor = "";
+				*previous_version = "";
 				*err1 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *folder, "get", 0));
 				*err2 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *action, "get", 1));
 				*err3 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *actor, "get", 2));
+				*err4 = errorcode(msi_json_arrayops(*row.META_COLL_ATTR_VALUE, *previous_version, "get", 3));
 
 				if (*err1 < 0 || *err2 < 0 || *err3 < 0) {
 					writeLine("stdout", "Failed to process vault request on *collName");
@@ -43,7 +45,7 @@ processVaultActions() {
 					if (*pending) {
                         *status = '';
                         *statusInfo = '';
-                        rule_vault_process_status_transitions(*folder, *action, *actor, *status, *statusInfo);
+                        rule_vault_process_status_transitions(*folder, *action, *actor, *previous_version, *status, *statusInfo);
                         *status = 'Success';
 
 						# Check if rods can modify metadata and grant temporary write ACL if necessary.
@@ -59,6 +61,7 @@ processVaultActions() {
 							msi_json_arrayops(*json_str, *folder, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
+							msi_json_arrayops(*json_str, *previous_version, "add", *size);
 							msiString2KeyValPair("", *vaultActionKvp);
 							msiAddKeyVal(*vaultActionKvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
 
@@ -74,6 +77,7 @@ processVaultActions() {
 							msi_json_arrayops(*json_str, *folder, "add", *size);
 							msi_json_arrayops(*json_str, *action, "add", *size);
 							msi_json_arrayops(*json_str, *actor, "add", *size);
+							msi_json_arrayops(*json_str, *previous_version, "add", *size);
 							msiString2KeyValPair("", *vaultActionKvp);
 							msiAddKeyVal(*vaultActionKvp, UUORGMETADATAPREFIX ++ "vault_action_" ++ *collId, *json_str);
 

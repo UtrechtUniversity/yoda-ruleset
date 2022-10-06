@@ -143,16 +143,11 @@ def api_vault_submit(ctx, coll, previous_version=None):
 
     :param ctx:              Combined type of a callback and rei struct
     :param coll:             Collection of data package to submit
-    :param previous_version: Path to previous versio of data package in the vault
+    :param previous_version: Path to previous version of data package in the vault
 
     :returns: API status
     """
-    if previous_version:
-        # Get DOI of previous version of vault data package.
-        doi = get_doi(ctx, previous_version)
-        log.write(ctx, "DOI: {}".format(doi))
-
-    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, previous_version)
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
@@ -1052,28 +1047,30 @@ def set_vault_permissions(ctx, group_name, folder, target):
 
 
 @rule.make(inputs=range(3), outputs=range(3, 5))
-def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Rule interface for processing vault status transition request.
 
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Vault collection to change status for
     :param new_coll_status: New vault package status
     :param actor:           Actor of the status change
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo.
     """
-    vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+    vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version)
 
     return 'Success'
 
 
-def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Processing vault status transition request.
 
-    :param ctx:             Combined type of a callback and rei struct
-    :param coll:            Vault collection to change status for
-    :param new_coll_status: New vault package status
-    :param actor:           Actor of the status change
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault collection to change status for
+    :param new_coll_status:  New vault package status
+    :param actor:            Actor of the status change
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo
     """
@@ -1089,6 +1086,9 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 
     # Set new status
     try:
+        if previous_version:
+            avu.set_on_coll(ctx, coll, "org_publication_previous_version", previous_version)
+
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
         return ['Success', '']
     except msi.Error:
@@ -1126,12 +1126,13 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     return ['Success', '']
 
 
-def vault_request_status_transitions(ctx, coll, new_vault_status):
+def vault_request_status_transitions(ctx, coll, new_vault_status, previous_version=None):
     """Request vault status transition action.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Vault package to be changed of status in publication cycle
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault package to be changed of status in publication cycle
     :param new_vault_status: New vault status
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo
     """
@@ -1193,8 +1194,14 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     if not is_legal:
         return ['PermissionDenied', 'Illegal status transition']
 
+    # Data package is new version of existing data package with a DOI.
+    previous_version_path = ""
+    doi = get_doi(ctx, previous_version)
+    if previous_version and doi:
+        previous_version_path = previous_version
+
     # Add vault action request to actor group.
-    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
+    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor, previous_version_path]))
     # opposite is: jsonutil.parse('["coll","status","actor"]')[0] => coll
 
     # Add vault action status to actor group.
@@ -1247,8 +1254,8 @@ def get_doi(ctx, path):
     """
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
-        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
-        genquery.AS_LIST, callback
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (path),
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
