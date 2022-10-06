@@ -149,7 +149,7 @@ def api_vault_submit(ctx, coll, previous_version=None):
     """
     if previous_version:
         # Get DOI of previous version of vault data package.
-        doi = vault.get_doi(ctx, previous_version)
+        doi = get_doi(ctx, previous_version)
         log.write(ctx, "DOI: {}".format(doi))
 
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
