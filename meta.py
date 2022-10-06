@@ -12,11 +12,11 @@ import genquery
 import irods_types
 import jsonschema
 
-from avu_json import avu_json
 import provenance
 import publication
 import schema as schema_
 import vault
+from avu_json import avu_json
 from util import *
 
 __all__ = ['rule_meta_validate',

@@ -15,8 +15,8 @@ from enum import Enum
 import jsonschema
 from genquery import AS_DICT, AS_LIST, Query, row_iterator
 
-from avu_json import avu_json
 import mail
+from avu_json import avu_json
 from util import *
 
 __all__ = ['api_datarequest_roles_get',
