@@ -335,7 +335,12 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
         randomId = publication_state["randomId"]
 
     # Generate next version of random ID part of DOI.
-    randomId = "{}.v2".format(randomId)
+    if len(randomId.split(".")) == 2:
+        randomId, version = randomId.split(".")
+        version = str(int(version[1:]) + 1)
+        randomId = "{}.v{}".format(randomId, version)
+    else:
+        randomId = "{}.v2".format(randomId)
 
     publication_state["randomId"] = randomId
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
