@@ -329,7 +329,7 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
 
     # Retrieve random ID part of DOI.
     if "randomId" not in publication_state:
-        doi = vault.get_doi(ctx, previous_version)
+        doi = vault.get_doi(ctx, publication_state["previous_version"])
         randomId = doi.split("-").pop()
     else:
         randomId = publication_state["randomId"]
