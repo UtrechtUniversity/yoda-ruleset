@@ -1046,7 +1046,7 @@ def set_vault_permissions(ctx, group_name, folder, target):
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
 
 
-@rule.make(inputs=range(3), outputs=range(3, 5))
+@rule.make(inputs=range(4), outputs=range(4, 6))
 def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Rule interface for processing vault status transition request.
 
