@@ -664,7 +664,7 @@ def process_publication(ctx, vault_package):
 
     # DOI handling
     if "yodaDOI" not in publication_state:
-        if previous_version in publication_state:
+        if "previous_version" in publication_state:
             generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
         else:
             generate_preliminary_DOI(ctx, publication_config, publication_state)
@@ -673,7 +673,7 @@ def process_publication(ctx, vault_package):
 
     elif "DOIAvailable" in publication_state:
         if publication_state["DOIAvailable"] == "no":
-            if previous_version in publication_state:
+            if "previous_version" in publication_state:
                 generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
             else:
                 generate_preliminary_DOI(ctx, publication_config, publication_state)
