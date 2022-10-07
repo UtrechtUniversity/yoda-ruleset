@@ -499,6 +499,17 @@ def api_vault_system_metadata(callback, coll):
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
+    # Previous version.
+    previous_version = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        previous_version = row[0]
+
     # Persistent Identifier DOI.
     package_doi = ""
     iter = genquery.row_iterator(
@@ -509,7 +520,11 @@ def api_vault_system_metadata(callback, coll):
 
     for row in iter:
         package_doi = row[0]
-        persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
+        if previous_version:
+            previous_version_doi = get_doi(ctx, previous_version)
+            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
+        else:
+            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
 
     # Data Package Reference.
