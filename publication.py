@@ -328,7 +328,7 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
     yodaPrefix = publication_config["yodaPrefix"]
 
     # Retrieve random ID part of DOI.
-    if randomId not in publication_state:
+    if "randomId" not in publication_state:
         doi = vault.get_doi(ctx, previous_version)
         randomId = doi.split("-").pop()
     else:
