@@ -26,7 +26,10 @@ def replicate_asynchronously(ctx, path, source_resource, target_resource):
     msi.set_acl(ctx, "default", "own", "rods#{}".format(zone), path)
 
     # Mark data object for batch replication by setting 'org_replication_scheduled' metadata.
-    ctx.msi_add_avu('-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource), "")
+    try:
+        ctx.msi_add_avu('-d', path, constants.UUORGMETADATAPREFIX + "replication_scheduled", "{},{}".format(source_resource, target_resource), "")
+    except Exception:
+        pass
 
 
 @rule.make()
@@ -69,17 +72,21 @@ def rule_replicate_batch(ctx, verbose):
             rescs = row[3]
             xs = rescs.split(',')
             if len(xs) != 2:
-                # not replicable
-                ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                # Not replicable.
                 log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
-                # Go to next record and skip further processing
+                try:
+                    ctx.msi_add_avu('-d', path, errorattr, "Invalid,Invalid", "")
+                except Exception:
+                    pass
+
+                # Go to next record and skip further processing.
                 continue
 
             from_path = xs[0]
             to_path = xs[1]
 
             if print_verbose:
-                log.write(ctx, "[replication] Batch replication: copying  copying {} from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, "[replication] Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
 
             # Actual replication
             try:
@@ -93,7 +100,10 @@ def rule_replicate_batch(ctx, verbose):
                 count_ok += 1
             except msi.Error as e:
                 log.write(ctx, '[replication] ERROR - The file could not be replicated: {}'.format(str(e)))
-                ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                try:
+                    ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
+                except Exception:
+                    pass
 
             # Remove replication_scheduled flag no matter if replication succeeded or not.
             # rods should have been given own access via policy to allow AVU changes
