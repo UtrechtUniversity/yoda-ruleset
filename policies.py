@@ -508,7 +508,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     username = _ctx.map()['user_user_name']
     info = pathutil.info(path)
 
-    if config.resource_replica:
+    for resource in config.resource_replica:
         replication.replicate_asynchronously(ctx, path, instance_name, config.resource_replica)
 
     if config.enable_tape_archive:
