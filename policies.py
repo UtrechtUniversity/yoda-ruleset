@@ -509,7 +509,7 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     info = pathutil.info(path)
 
     for resource in config.resource_replica:
-        replication.replicate_asynchronously(ctx, path, instance_name, config.resource_replica)
+        replication.replicate_asynchronously(ctx, path, instance_name, resource)
 
     if config.enable_tape_archive:
         ctx.uuTapeArchiveReplicateAsynchronously(path)
