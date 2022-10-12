@@ -516,6 +516,7 @@ def api_vault_system_metadata(ctx, coll):
 
     for row in iter:
         previous_version = row[0]
+        previous_version_doi = get_doi(ctx, previous_version)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
 
     # Persistent Identifier DOI.
@@ -529,7 +530,6 @@ def api_vault_system_metadata(ctx, coll):
     for row in iter:
         package_doi = row[0]
         if previous_version:
-            previous_version_doi = get_doi(ctx, previous_version)
             persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
         else:
             persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
