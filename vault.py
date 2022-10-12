@@ -453,7 +453,7 @@ def vault_write_license(ctx, vault_pkg_coll):
 
 
 @api.make()
-def api_vault_system_metadata(callback, coll):
+def api_vault_system_metadata(ctx, coll):
     """Return collection statistics as JSON."""
     import math
 
@@ -470,9 +470,9 @@ def api_vault_system_metadata(callback, coll):
     system_metadata = {}
 
     # Package size.
-    data_count = collection.data_count(callback, coll)
-    collection_count = collection.collection_count(callback, coll)
-    size = collection.size(callback, coll)
+    data_count = collection.data_count(ctx, coll)
+    collection_count = collection.collection_count(ctx, coll)
+    size = collection.size(ctx, coll)
     size_readable = convert_size(size)
     system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
@@ -480,7 +480,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -492,7 +492,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -504,7 +504,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -515,7 +515,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -532,7 +532,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -544,7 +544,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_pid'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -554,7 +554,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_url'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -589,7 +589,13 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 @api.make()
 def api_vault_collection_details(ctx, path):
-    """Return details of a vault collection."""
+    """Return details of a vault collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to data package
+
+    :returns: Dict with collection details.
+    """
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
