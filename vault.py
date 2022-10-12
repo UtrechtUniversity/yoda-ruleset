@@ -454,7 +454,13 @@ def vault_write_license(ctx, vault_pkg_coll):
 
 @api.make()
 def api_vault_system_metadata(ctx, coll):
-    """Return collection statistics as JSON."""
+    """Return system metadata of a vault collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+
+    :returns: Dict system metadata of a vault collection
+    """
     import math
 
     def convert_size(size_bytes):
@@ -594,7 +600,7 @@ def api_vault_collection_details(ctx, path):
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path to data package
 
-    :returns: Dict with collection details.
+    :returns: Dict with collection details
     """
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
@@ -687,7 +693,7 @@ def api_vault_get_package_by_reference(ctx, reference):
     :param ctx:       Combined type of a callback and rei struct
     :param reference: Data Package Reference (UUID4)
 
-    :returns: Path to data package.
+    :returns: Path to data package
     """
     data_package = ""
     iter = genquery.row_iterator(
