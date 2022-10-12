@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
+import re
 import time
 from datetime import datetime
 
@@ -1293,7 +1294,7 @@ def get_doi(ctx, path):
 
 @api.make()
 def api_vault_get_published_packages(ctx, path):
-    """Get the path and DOI of published data package in a vault.
+    """Get the path and DOI of latest versions of published data package in a vault.
 
     :param ctx:  Combined type of a callback and rei struct
     :param path: Path of vault with data packages
@@ -1301,7 +1302,7 @@ def api_vault_get_published_packages(ctx, path):
     :return: Dict of data packages with DOI
     """
     iter = genquery.row_iterator(
-        "COLL_NAME, META_COLL_ATTR_VALUE",
+        "META_COLL_ATTR_VALUE, COLL_NAME",
         "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
         genquery.AS_LIST, ctx
     )
@@ -1309,5 +1310,19 @@ def api_vault_get_published_packages(ctx, path):
     data_packages = {}
     for row in iter:
         data_packages[row[0]] = row[1]
+
+    for doi, path in data_packages.items():
+        # Check if data package DOI has a version.
+        m = re.search("([0-9A-Z-/.]+).v(\d*)", doi)
+
+        # If data package DOI has a version.
+        if m:
+            doi = m.group(1)
+            version = int(m.group(2))
+
+            # Remove older versions of data packages.
+            data_packages.pop(doi, None)
+            for v in range(version - 1, 1, -1):
+                data_packages.pop("{}.v{}".format(doi, v), None)
 
     return data_packages
