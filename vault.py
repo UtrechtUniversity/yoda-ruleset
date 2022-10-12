@@ -516,6 +516,7 @@ def api_vault_system_metadata(ctx, coll):
 
     for row in iter:
         previous_version = row[0]
+        system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
 
     # Persistent Identifier DOI.
     package_doi = ""
@@ -1325,4 +1326,4 @@ def api_vault_get_published_packages(ctx, path):
             for v in range(version - 1, 1, -1):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
-    return dict(sorted(data_packages.items(), key=lambda x:x[1]))
+    return dict(sorted(data_packages.items(), key=lambda x: x[1]))
