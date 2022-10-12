@@ -1325,4 +1325,4 @@ def api_vault_get_published_packages(ctx, path):
             for v in range(version - 1, 1, -1):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
-    return data_packages
+    return dict(sorted(data_packages.items(), key=lambda x:x[1]))
