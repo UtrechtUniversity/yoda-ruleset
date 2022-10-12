@@ -38,6 +38,14 @@ def ui_data_package_submit(browser):
     browser.find_by_id('actionMenu').click()
     browser.find_by_css('a.action-submit-for-publication').click()
 
+
+@when('user chooses new publication')
+def ui_data_package_choose(browser):
+    browser.find_by_css('.action-confirm-data-package-select').click()
+
+
+@when('user agrees with terms and conditions')
+def ui_data_package_agree(browser):
     browser.find_by_id('checkbox-confirm-conditions').check()
     browser.find_by_css('.action-confirm-submit-for-publication').click()
 
