@@ -345,6 +345,7 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
         if 'Owner_Role' in creator:
             ctx.msi_add_avu('-d', path, 'Owner_Role', creator['Owner_Role'],
                             constants.UUFLATINDEX)
+
     if 'Contributor' in metadata:
         for contributor in metadata['Contributor']:
             name = contributor['Name']
@@ -352,6 +353,11 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
                 ctx.msi_add_avu('-d', path, 'Contributor',
                                 name['Given_Name'] + ' ' + name['Family_Name'],
                                 constants.UUFLATINDEX)
+
+    if 'Tag' in metadata:
+        for tag in metadata['Tag']:
+            ctx.msi_add_avu('-d', path, 'Tag', tag,
+                            constants.UUFLATINDEX)
 
     ctx.msi_add_avu('-d', path, 'Title', metadata['Title'],
                     constants.UUFLATINDEX)
@@ -374,6 +380,12 @@ def update_index_metadata(ctx, path, metadata, creation_time, data_package):
             ctx.msi_add_avu('-d', path, 'Collected_End_Year',
                             metadata['Collected']['End_Date'][:4],
                             constants.UUFLATINDEX)
+
+    if 'GeoLocation' in metadata:
+        for geoLocation in metadata['GeoLocation']:
+            if 'Description_Spatial' in geoLocation:
+                ctx.msi_add_avu('-d', path, 'Description_Spatial', geoLocation['Description_Spatial'],
+                                constants.UUFLATINDEX)
 
     ctx.msi_add_avu('-d', path, 'Creation_Time', creation_time,
                     constants.UUFLATINDEX)
