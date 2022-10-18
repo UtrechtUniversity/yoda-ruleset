@@ -15,6 +15,29 @@ from conftest import api_request
 
 scenarios('../../features/api/api_browse.feature')
 
+# size, name
+# he Yoda browse folder API is queried with <collection> and sort on <sort_on> in <sort_order> direction
+# @given(parsers.parse("the Yoda browse folder API is queried with {collection}"), target_fixture="api_response")
+@given(parsers.parse("the Yoda browse folder API is queried with {collection} and sort on {sort_on} in {sort_order} direction"), target_fixture="api_response")
+def api_browse_folder_ordering(user, collection, sort_on, sort_order):
+    return api_request(
+        user,
+        "browse_folder",
+        {"coll": collection, 
+         "sort_on": sort_on,
+         "sort_order": sort_order
+        }
+    )
+
+@then(parsers.parse("the first row in result contains {result}"))
+def api_response_first_row_contains(api_response, result):
+    _, body = api_response
+
+    assert len(body['data']['items']) > 0
+
+    # Check if expected result is in first row of found rows
+    assert body['data']['items'][0]['name'] == result
+
 
 @given(parsers.parse("the Yoda browse folder API is queried with {collection}"), target_fixture="api_response")
 def api_browse_folder(user, collection):
