@@ -82,3 +82,26 @@ Feature: Group UI
         Examples:
             | user_search |
             | researcher  |
+
+
+    Scenario Outline: A datamanager imports group definitions through uploading a CSV file
+        Given user datamanager is logged in
+        And module "group_manager" is shown
+        When user opens group import dialog
+        And user clicks upload button
+        And user clicks allow updates checkbox
+        And user clicks allow deletions checkbox
+        Then process csv
+		# And Click on first data row
+		# And check name of group
+        # And searches for groups of user <user_search>
+        # Then a list of groups is shown in the dialog
+		# When user clicks first found group
+
+        # met de gedachte dat er verschillende tests achter elkaar zullen gaan draaien.
+		
+
+        Examples:
+            | user_search |
+            | researcher  |
+

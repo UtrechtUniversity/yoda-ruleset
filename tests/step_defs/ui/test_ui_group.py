@@ -12,6 +12,7 @@ from pytest_bdd import (
     then,
     when,
 )
+import time
 
 scenarios('../../features/ui/ui_group.feature')
 
@@ -88,6 +89,63 @@ def ui_group_filtered(browser, group):
 @when("user opens group search dialog")
 def ui_group_click_group_search_dlg_button(browser):
     browser.find_by_css('.user-search-groups').click()
+
+
+
+
+@when("user opens group import dialog")
+def ui_group_click_group_import_dlg_button(browser):
+    browser.find_by_css('.import-groups-csv').click()
+
+
+@when("user clicks upload button")
+def ui_group_click_upload_button(browser):
+    browser.find_by_css('.csv-import-file')[0].fill("C:\\temp\\csv-import-test.csv")
+
+    # File contains 4 groups - check the number of rows presented
+    assert len(browser.find_by_css('.import-groupname')) == 4
+
+
+@when("user clicks allow updates checkbox")
+def ui_group_click_cb_allow_updates(browser):
+    browser.find_by_id('import-allow-updates').click()
+     
+
+@when("user clicks allow deletions checkbox")
+def ui_group_click_cb_allow_deletions(browser):
+    browser.find_by_id('import-delete-users').click()
+
+
+@then("process csv")
+def ui_group_process_csv(browser):
+    browser.find_by_css('.process-csv').click()
+    time.sleep(5)
+	
+    # Check whether 4 checkmarks are present so each row was processed
+    assert len(browser.find_by_css('.import-groupname-done')) == 4
+
+    # Check whether each row was processed correctly
+    assert len(browser.find_by_css('.import-csv-group-ok')) == 4
+
+    # find first row and click on it.
+    elem = browser.find_by_css('.import-csv-group-ok')[0]
+    groupname = elem['groupname']
+    # assert groupname == '2'
+    assert browser.is_element_visible_by_css('.import-csv-group-ok') == True
+    # ActionChains(browser).move_to_element(elem).click(elem).perform()
+
+    browser.find_by_css('.import-csv-group-ok').click()
+    time.sleep(2)
+
+    assert browser.find_by_id('group-properties-group-name') == '[research-' + groupname + ']'
+    time.sleep(5)	
+
+# ActionChains(driver).move_to_element(button).click(button).perform()
+	
+# import-groupname import-groupname-done import-csv-group-ok
+# elem[0]['groupname']
+
+#group-properties-group-name
 
 
 @when(parsers.parse("searches for groups of user {user_search}"))

@@ -96,3 +96,10 @@ Feature: Group API
         And the user deletes group "testGroupie"
         Then the response status code is "200"
         And the group "testGroupie" no longer exists
+
+
+    Scenario Outline: Import a header/data line conform a description to add/manipulate a group and its users
+        Given user datamanager is authenticated
+        And the Yoda API for processing csv group data API is queried
+        Then the response status code is "200"
+        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup1"
