@@ -5,8 +5,10 @@ __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+
 import pytest
 import splinter
+import time
 
 from pytest_bdd import (
     parsers,
@@ -14,7 +16,6 @@ from pytest_bdd import (
     then,
     when,
 )
-import time
 
 scenarios('../../features/ui/ui_group.feature')
 
@@ -93,8 +94,6 @@ def ui_group_click_group_search_dlg_button(browser):
     browser.find_by_css('.user-search-groups').click()
 
 
-
-
 @then("user opens group import dialog")
 @when("user opens group import dialog")
 def ui_group_click_group_import_dlg_button(browser):
@@ -118,7 +117,7 @@ def ui_group_click_upload_button(browser):
 @when("user clicks allow updates checkbox")
 def ui_group_click_cb_allow_updates(browser):
     browser.find_by_id('import-allow-updates').click()
-     
+ 
 
 @when("user clicks allow deletions checkbox")
 def ui_group_click_cb_allow_deletions(browser):
@@ -131,19 +130,20 @@ def ui_group_process_csv(browser):
     browser.find_by_css('.process-csv').click()
     # Take enough time so processing is complete
     time.sleep(4)
-	
+
     # Check whether 4 checkmarks are present so each row was processed
     assert len(browser.find_by_css('.import-groupname-done')) == 4
 
     # Check whether each row was processed correctly
     assert len(browser.find_by_css('.import-csv-group-ok')) == 4
 
+
 @then(parsers.parse("click on imported row {row} and check group properties"))
 def ui_group_csv_click_row(browser, row):
     # find the indicated row and click on it
     groupname = browser.find_by_css('.import-csv-group-ok')[int(row)]['groupname']
 
-    # Use the checkmark as that was the only way to circumvent 
+    # Use the checkmark as that was the only way to circumvent
     browser.find_by_id("processed-indicator-" + groupname).click()
 
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + groupname + ']'

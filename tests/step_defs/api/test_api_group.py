@@ -262,7 +262,6 @@ def api_group_import_csv_data(user):
         user,
         "group_process_csv",
         {"csv_header_and_data": header_and_data,
-		 "allow_update": True,
-		 "delete_users": True
-		}
+         "allow_update": True,
+         "delete_users": True}
     )
