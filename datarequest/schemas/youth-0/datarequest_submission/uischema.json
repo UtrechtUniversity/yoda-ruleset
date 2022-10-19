@@ -46,12 +46,6 @@
       }
     },
     "study_information": {
-      "title": {
-        "ui:widget": "textarea",
-        "ui:options": {
-            "rows": 2
-        }
-      },
       "research_questions": {
         "ui:widget": "textarea",
         "ui:options": {

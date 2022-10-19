@@ -87,10 +87,9 @@ Feature: Publication UI
         Given user researcher is logged in
         And module "vault" is shown
         When user browses to data package in <vault>
-        Then the data package status is "Published"
-        And user downloads relevant files of datapackage
+        And user downloads file yoda-metadata.json
         And user opens landingpage through system metadata
-        And user checks landingpage content
+        Then landingpage content matches yoda-metadata.json
 
         Examples:
             | vault          |

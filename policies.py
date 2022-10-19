@@ -462,7 +462,7 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if config.enable_tape_archive and cmd in ['dmattr', 'dmget']:
+    if config.enable_tape_archive and cmd in ['dmattr', 'dmget', 'admin-tape-archive-set-state.sh']:
         return policy.succeed()
 
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):

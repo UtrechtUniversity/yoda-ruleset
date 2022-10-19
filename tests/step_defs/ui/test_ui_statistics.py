@@ -83,11 +83,12 @@ def ui_statistics_csv_downloaded(browser, tmpdir):
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
 
     for child in download_dir.iterdir():
-        if str(child)[-4:] == ".csv":
+        if str(child)[-10:] == "export.csv":
             os.remove(child)
             assert True
-        else:
-            raise AssertionError()
+            return
+
+    raise AssertionError()
 
 
 # Resource tier management tests

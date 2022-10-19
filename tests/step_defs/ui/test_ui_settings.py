@@ -5,6 +5,7 @@ __copyright__ = 'Copyright (c) 2021-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
+    parsers,
     scenarios,
     then,
     when,
@@ -13,9 +14,10 @@ from pytest_bdd import (
 scenarios('../../features/ui/ui_settings.feature')
 
 
-@when('user checks mail notifications checkbox')
-def ui_settings_check_mail_notifications(browser):
-    browser.find_by_css('.form-check-label').check()
+@when(parsers.parse("user sets mail notifications to {type}"))
+def ui_settings_check_mail_notifications(browser, type):
+    browser.find_by_css('#mail_notifications').click()
+    browser.find_by_value(type).click()
 
 
 @when('clicks the save button')
@@ -23,6 +25,6 @@ def ui_settings_click_save_button(browser):
     browser.find_by_value("Save").click()
 
 
-@then('mail notifications checkbox is checked')
-def ui_settings_mail_notifications_checked(browser):
-    assert browser.find_by_css('input#mail_notifications').value == 'on'
+@then(parsers.parse("mail notifications is set to {type}"))
+def ui_settings_mail_notifications_checked(browser, type):
+    assert browser.find_by_css('#mail_notifications').value == type

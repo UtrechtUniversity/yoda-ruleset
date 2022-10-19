@@ -114,6 +114,10 @@ def api_research_folder_copy(ctx, folder_path, new_folder_path):
     if folder_path == new_folder_path:
         return api.Error('invalid_folder_path', 'Origin and copy folder paths are equal. Please choose another destination')
 
+    # Inside the same path makes no sense.
+    if "{}/".format(folder_path) in new_folder_path:
+        return api.Error('invalid_folder_path', 'Cannot copy folder inside itself. Please choose another destination')
+
     # not in home - a groupname must be present ie at least 2!?
     if not len(new_folder_path.split('/')) > 2:
         return api.Error('invalid_destination', 'It is not possible to copy folder at this location')
@@ -166,6 +170,10 @@ def api_research_folder_move(ctx, folder_path, new_folder_path):
     # Same folder path makes no sense.
     if folder_path == new_folder_path:
         return api.Error('invalid_folder_path', 'Origin and move folder paths are equal. Please choose another destination')
+
+    # Inside the same path makes no sense.
+    if "{}/".format(folder_path) in new_folder_path:
+        return api.Error('invalid_folder_path', 'Cannot move folder inside itself. Please choose another destination')
 
     # not in home - a groupname must be present ie at least 2!?
     if not len(new_folder_path.split('/')) > 2:

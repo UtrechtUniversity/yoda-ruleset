@@ -109,9 +109,28 @@ def pytest_bdd_apply_tag(tag, function):
         marker = pytest.mark.skip(reason="Skip login OIDC")
         marker(function)
         return True
+    elif tag == "fail":
+        marker = pytest.mark.xfail(reason="Test is expected to fail", run=True, strict=False)
+        marker(function)
+        return True
     else:
         # Fall back to pytest-bdd's default behavior
         return None
+
+
+def pytest_bdd_after_scenario(request, feature, scenario):
+    """Logout user after scenario when we have a browser."""
+    if feature.rel_filename.startswith("ui/"):
+        try:
+            browser = request.getfixturevalue('browser')
+            url = "{}/user/logout".format(portal_url)
+            browser.visit(url)
+        except pytest.FixtureLookupError:
+            # No UI logout for API tests.
+            pass
+        except urllib3.exceptions.MaxRetryError:
+            # Prevent spamming log after keyboard interrupt.
+            pass
 
 
 def login(user, password):

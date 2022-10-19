@@ -4,6 +4,7 @@
 __copyright__ = 'Copyright (c) 2021, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
 import secrets
 from datetime import datetime, timedelta
 from traceback import print_exc
@@ -30,6 +31,9 @@ def api_token_generate(ctx, label=None):
         length = int(config.token_length)
         token = secrets.token_urlsafe(length)
         return token[:length]
+
+    if not token_database_initialized():
+        return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
     user_id = user.name(ctx)
     token = generate_token()
@@ -66,6 +70,10 @@ def api_token_load(ctx):
 
     :returns: Valid tokens
     """
+
+    if not token_database_initialized():
+        return api.Error('DatabaseError', 'Internal error: token database unavailable')
+
     user_id = user.name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = []
@@ -96,6 +104,9 @@ def api_token_delete(ctx, label):
 
     :returns: Status of token deletion
     """
+    if not token_database_initialized():
+        return api.Error('DatabaseError', 'Internal error: token database unavailable')
+
     user_id = user.name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = None
@@ -114,3 +125,11 @@ def api_token_delete(ctx, label):
     conn.close()
 
     return result
+
+
+def token_database_initialized():
+    """Checks whether token database has been initialized
+
+    :returns: Boolean value
+    """
+    return os.path.isfile(config.token_database)
