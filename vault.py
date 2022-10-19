@@ -6,6 +6,7 @@ __license__   = 'GPLv3, see LICENSE'
 
 import itertools
 import os
+import re
 import time
 from datetime import datetime
 
@@ -40,7 +41,8 @@ __all__ = ['api_vault_submit',
            'api_vault_get_landingpage_data',
            'api_grant_read_access_research_group',
            'api_revoke_read_access_research_group',
-           'rule_process_ending_retention_packages']
+           'rule_process_ending_retention_packages',
+           'api_vault_get_published_packages']
 
 
 @rule.make()
@@ -137,15 +139,16 @@ def rule_process_ending_retention_packages(ctx):
 
 
 @api.make()
-def api_vault_submit(ctx, coll):
+def api_vault_submit(ctx, coll, previous_version=None):
     """Submit data package for publication.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Collection of data package to submit
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Collection of data package to submit
+    :param previous_version: Path to previous version of data package in the vault
 
     :returns: API status
     """
-    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION)
+    ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.SUBMITTED_FOR_PUBLICATION, previous_version)
 
     if ret[0] == '':
         log.write(ctx, 'api_vault_submit: iiAdminVaultActions')
@@ -451,8 +454,14 @@ def vault_write_license(ctx, vault_pkg_coll):
 
 
 @api.make()
-def api_vault_system_metadata(callback, coll):
-    """Return collection statistics as JSON."""
+def api_vault_system_metadata(ctx, coll):
+    """Return system metadata of a vault collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param coll: Path to data package
+
+    :returns: Dict system metadata of a vault collection
+    """
     import math
 
     def convert_size(size_bytes):
@@ -468,9 +477,9 @@ def api_vault_system_metadata(callback, coll):
     system_metadata = {}
 
     # Package size.
-    data_count = collection.data_count(callback, coll)
-    collection_count = collection.collection_count(callback, coll)
-    size = collection.size(callback, coll)
+    data_count = collection.data_count(ctx, coll)
+    collection_count = collection.collection_count(ctx, coll)
+    size = collection.size(ctx, coll)
     size_readable = convert_size(size)
     system_metadata["Data Package Size"] = "{} files, {} folders, total of {}".format(data_count, collection_count, size_readable)
 
@@ -478,7 +487,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_lastModifiedDateTime'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -490,24 +499,40 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_landingPageUrl'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
         landinpage_url = row[0]
         system_metadata["Landingpage"] = "<a href=\"{}\">{}</a>".format(landinpage_url, landinpage_url)
 
+    # Previous version.
+    previous_version = ""
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        previous_version = row[0]
+        previous_version_doi = get_doi(ctx, previous_version)
+        system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi = "previous version: <a href=\"https://doi.org/{}\">{}</a>".format(previous_version_doi, previous_version_doi)
+
     # Persistent Identifier DOI.
     package_doi = ""
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
         package_doi = row[0]
-        persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
+        if previous_version:
+            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a> (previous version: <a href=\"https://doi.org/{}\">{}</a>)".format(package_doi, package_doi, previous_version_doi, previous_version_doi)
+        else:
+            persistent_identifier_doi = "<a href=\"https://doi.org/{}\">{}</a>".format(package_doi, package_doi)
         system_metadata["Persistent Identifier DOI"] = persistent_identifier_doi
 
     # Data Package Reference.
@@ -515,7 +540,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = '{}'".format(coll, constants.DATA_PACKAGE_REFERENCE),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -527,7 +552,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_pid'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -537,7 +562,7 @@ def api_vault_system_metadata(callback, coll):
     iter = genquery.row_iterator(
         "META_COLL_ATTR_VALUE",
         "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_epic_url'" % (coll),
-        genquery.AS_LIST, callback
+        genquery.AS_LIST, ctx
     )
 
     for row in iter:
@@ -572,7 +597,13 @@ def get_coll_vault_status(ctx, path, org_metadata=None):
 
 @api.make()
 def api_vault_collection_details(ctx, path):
-    """Return details of a vault collection."""
+    """Return details of a vault collection.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path to data package
+
+    :returns: Dict with collection details
+    """
     if not collection.exists(ctx, path):
         return api.Error('nonexistent', 'The given path does not exist')
 
@@ -664,7 +695,7 @@ def api_vault_get_package_by_reference(ctx, reference):
     :param ctx:       Combined type of a callback and rei struct
     :param reference: Data Package Reference (UUID4)
 
-    :returns: Path to data package.
+    :returns: Path to data package
     """
     data_package = ""
     iter = genquery.row_iterator(
@@ -1044,29 +1075,31 @@ def set_vault_permissions(ctx, group_name, folder, target):
     msi.set_acl(ctx, "recursive", "admin:read", group_name, target)
 
 
-@rule.make(inputs=range(3), outputs=range(3, 5))
-def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+@rule.make(inputs=range(4), outputs=range(4, 6))
+def rule_vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Rule interface for processing vault status transition request.
 
     :param ctx:             Combined type of a callback and rei struct
     :param coll:            Vault collection to change status for
     :param new_coll_status: New vault package status
     :param actor:           Actor of the status change
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo.
     """
-    vault_process_status_transitions(ctx, coll, new_coll_status, actor)
+    vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version)
 
     return 'Success'
 
 
-def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
+def vault_process_status_transitions(ctx, coll, new_coll_status, actor, previous_version):
     """Processing vault status transition request.
 
-    :param ctx:             Combined type of a callback and rei struct
-    :param coll:            Vault collection to change status for
-    :param new_coll_status: New vault package status
-    :param actor:           Actor of the status change
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault collection to change status for
+    :param new_coll_status:  New vault package status
+    :param actor:            Actor of the status change
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo
     """
@@ -1082,6 +1115,9 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
 
     # Set new status
     try:
+        if previous_version:
+            avu.set_on_coll(ctx, coll, "org_publication_previous_version", previous_version)
+
         avu.set_on_coll(ctx, coll, constants.IIVAULTSTATUSATTRNAME, new_coll_status)
         return ['Success', '']
     except msi.Error:
@@ -1119,12 +1155,13 @@ def vault_process_status_transitions(ctx, coll, new_coll_status, actor):
     return ['Success', '']
 
 
-def vault_request_status_transitions(ctx, coll, new_vault_status):
+def vault_request_status_transitions(ctx, coll, new_vault_status, previous_version=None):
     """Request vault status transition action.
 
-    :param ctx:  Combined type of a callback and rei struct
-    :param coll: Vault package to be changed of status in publication cycle
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault package to be changed of status in publication cycle
     :param new_vault_status: New vault status
+    :param previous_version: Path to previous version of data package in the vault
 
     :return: Dict with status and statusinfo
     """
@@ -1186,8 +1223,14 @@ def vault_request_status_transitions(ctx, coll, new_vault_status):
     if not is_legal:
         return ['PermissionDenied', 'Illegal status transition']
 
+    # Data package is new version of existing data package with a DOI.
+    previous_version_path = ""
+    doi = get_doi(ctx, previous_version)
+    if previous_version and doi:
+        previous_version_path = previous_version
+
     # Add vault action request to actor group.
-    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor]))
+    avu.set_on_coll(ctx, actor_group_path,  constants.UUORGMETADATAPREFIX + 'vault_action_' + coll_id, jsonutil.dump([coll, str(new_vault_status), actor, previous_version_path]))
     # opposite is: jsonutil.parse('["coll","status","actor"]')[0] => coll
 
     # Add vault action status to actor group.
@@ -1228,3 +1271,59 @@ def get_approver(ctx, path):
         return org_metadata[attribute]
     else:
         return None
+
+
+def get_doi(ctx, path):
+    """Get the DOI of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the DOI of
+
+    :return: Data package DOI or None
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'" % (path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
+
+
+@api.make()
+def api_vault_get_published_packages(ctx, path):
+    """Get the path and DOI of latest versions of published data package in a vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Path of vault with data packages
+
+    :return: Dict of data packages with DOI
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE, COLL_NAME",
+        "COLL_PARENT_NAME = '{}' AND META_COLL_ATTR_NAME = 'org_publication_yodaDOI'".format(path),
+        genquery.AS_LIST, ctx
+    )
+
+    data_packages = {}
+    for row in iter:
+        data_packages[row[0]] = row[1]
+
+    for doi, path in data_packages.items():
+        # Check if data package DOI has a version.
+        m = re.search("([0-9A-Z-/.]+).v(\d*)", doi)
+
+        # If data package DOI has a version.
+        if m:
+            doi = m.group(1)
+            version = int(m.group(2))
+
+            # Remove older versions of data packages.
+            data_packages.pop(doi, None)
+            for v in range(version - 1, 1, -1):
+                data_packages.pop("{}.v{}".format(doi, v), None)
+
+    return dict(sorted(data_packages.items(), key=lambda x: x[1]))

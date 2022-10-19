@@ -316,6 +316,36 @@ def generate_preliminary_DOI(ctx, publication_config, publication_state):
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
+def generate_preliminary_next_version_DOI(ctx, publication_config, publication_state):
+    """Generate a Preliminary next version DOI. Preliminary, because we check for collision later.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param publication_config: Dict with publication configuration
+    :param publication_state:  Dict with state of the publication process
+    """
+
+    dataCitePrefix = publication_config["dataCitePrefix"]
+    yodaPrefix = publication_config["yodaPrefix"]
+
+    # Retrieve random ID part of DOI.
+    if "randomId" not in publication_state:
+        doi = vault.get_doi(ctx, publication_state["previous_version"])
+        randomId = doi.split("-").pop()
+    else:
+        randomId = publication_state["randomId"]
+
+    # Generate next version of random ID part of DOI.
+    if len(randomId.split(".")) == 2:
+        randomId, version = randomId.split(".")
+        version = str(int(version[1:]) + 1)
+        randomId = "{}.v{}".format(randomId, version)
+    else:
+        randomId = "{}.v2".format(randomId)
+
+    publication_state["randomId"] = randomId
+    publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
+
+
 def generate_datacite_json(ctx, publication_config, publication_state):
     """Generate a DataCite compliant JSON based up yoda-metadata.json."""
     combiJsonPath = publication_state["combiJsonPath"]
@@ -639,11 +669,19 @@ def process_publication(ctx, vault_package):
 
     # DOI handling
     if "yodaDOI" not in publication_state:
-        generate_preliminary_DOI(ctx, publication_config, publication_state)
+        if "previous_version" in publication_state:
+            generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
+        else:
+            generate_preliminary_DOI(ctx, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
+
     elif "DOIAvailable" in publication_state:
         if publication_state["DOIAvailable"] == "no":
-            generate_preliminary_DOI(ctx, publication_config, publication_state)
+            if "previous_version" in publication_state:
+                generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
+            else:
+                generate_preliminary_DOI(ctx, publication_config, publication_state)
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
             save_publication_state(ctx, vault_package, publication_state)
