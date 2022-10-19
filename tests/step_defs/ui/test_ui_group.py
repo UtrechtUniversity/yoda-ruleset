@@ -9,7 +9,6 @@ import time
 
 import pytest
 import splinter
-
 from pytest_bdd import (
     parsers,
     scenarios,
