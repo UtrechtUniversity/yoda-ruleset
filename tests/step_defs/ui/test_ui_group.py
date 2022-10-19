@@ -5,10 +5,10 @@ __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import os
+import time
 
 import pytest
 import splinter
-import time
 
 from pytest_bdd import (
     parsers,
@@ -117,7 +117,7 @@ def ui_group_click_upload_button(browser):
 @when("user clicks allow updates checkbox")
 def ui_group_click_cb_allow_updates(browser):
     browser.find_by_id('import-allow-updates').click()
- 
+
 
 @when("user clicks allow deletions checkbox")
 def ui_group_click_cb_allow_deletions(browser):
