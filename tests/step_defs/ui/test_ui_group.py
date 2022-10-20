@@ -102,14 +102,12 @@ def ui_group_click_group_import_dlg_button(browser):
 @when("user clicks upload button")
 def ui_group_click_upload_button(browser):
     cwd = os.getcwd()
-    # with open("{}/files/dag-0-{}.json".format(cwd, data_access_restriction)) as f:
-
     if os.name == 'nt':
         browser.find_by_css('.csv-import-file')[0].fill("{}\\files\\csv-import-test.csv".format(cwd))
     else:
         browser.find_by_css('.csv-import-file')[0].fill("{}/files/csv-import-test.csv".format(cwd))
 
-    # File contains 4 groups - check the number of rows presented
+    # File contains 4 groups - check the number of rows presented.
     assert len(browser.find_by_css('.import-groupname')) == 4
 
 
@@ -125,24 +123,24 @@ def ui_group_click_cb_allow_deletions(browser):
 
 @then("process csv and check number of rows")
 def ui_group_process_csv(browser):
-    # Start processing the uploaded file
+    # Start processing the uploaded file.
     browser.find_by_css('.process-csv').click()
-    # Take enough time so processing is complete
+    # Take enough time so processing is complete.
     time.sleep(4)
 
-    # Check whether 4 checkmarks are present so each row was processed
+    # Check whether 4 checkmarks are present so each row was processed.
     assert len(browser.find_by_css('.import-groupname-done')) == 4
 
-    # Check whether each row was processed correctly
+    # Check whether each row was processed correctly.
     assert len(browser.find_by_css('.import-csv-group-ok')) == 4
 
 
 @then(parsers.parse("click on imported row {row} and check group properties"))
 def ui_group_csv_click_row(browser, row):
-    # find the indicated row and click on it
+    # Find the indicated row and click on it.
     groupname = browser.find_by_css('.import-csv-group-ok')[int(row)]['groupname']
 
-    # Use the checkmark as that was the only way to circumvent
+    # Use the checkmark as that was the only way to circumvent.
     browser.find_by_id("processed-indicator-" + groupname).click()
 
     assert browser.find_by_id('group-properties-group-name').value == '[research-' + groupname + ']'
@@ -151,9 +149,7 @@ def ui_group_csv_click_row(browser, row):
 
 @then(parsers.parse('find groupmember "{group_member}"'))
 def ui_group_csv_find_group_member(browser, group_member):
-    # find the groupmember in the group member list
-    # browser.links.find_by_text('Link for Example.com')
-    # assert group_member == 'man1@uu.nl'
+    # Find the groupmember in the group member list.
     if len(browser.links.find_by_partial_text(group_member)):
         assert True
         return
@@ -178,5 +174,6 @@ def ui_group_click_first_item_in_group(browser):
 
     group_properties_type = browser.find_by_id('inputGroupPrepend').value
     group_properties_name = browser.find_by_id('f-group-update-name').value
+
     # Make sure that row clicked has been set in the group manager as the group to be managed
     assert group_clicked == group_properties_type + group_properties_name

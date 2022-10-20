@@ -34,30 +34,6 @@ __all__ = ['api_group_data',
            'api_group_remove_user_from_group']
 
 
-def user_is_a_datamanager(ctx):
-    """Return groups whether current user is datamanager of a group, not specifically of a specific group.
-
-    :param ctx: Combined type of a ctx and rei struct
-
-    :returns: Boolean indicating if user is a datamanager.
-    """
-
-    is_a_datamanager = False
-
-    iter = genquery.row_iterator(
-        "USER_NAME",
-        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
-        genquery.AS_LIST, ctx
-    )
-    for row in iter:
-        if group.is_member(ctx, row[0]):
-            is_a_datamanager = True
-            # no need to check for more - this user is a datamanager
-            break
-
-    return is_a_datamanager
-
-
 def getGroupData(ctx):
     """Return groups and related data."""
     groups = {}
@@ -354,6 +330,30 @@ def api_group_data(ctx):
     #    group_hierarchy.move_to_end("System", last=False)
 
     return {'group_hierarchy': new_group_hierarchy, 'user_type': user.user_type(ctx), 'user_zone': user.zone(ctx)}
+
+
+def user_is_a_datamanager(ctx):
+    """Return groups whether current user is datamanager of a group, not specifically of a specific group.
+
+    :param ctx: Combined type of a ctx and rei struct
+
+    :returns: Boolean indicating if user is a datamanager.
+    """
+
+    is_a_datamanager = False
+
+    iter = genquery.row_iterator(
+        "USER_NAME",
+        "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-%'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        if group.is_member(ctx, row[0]):
+            is_a_datamanager = True
+            # no need to check for more - this user is a datamanager
+            break
+
+    return is_a_datamanager
 
 
 @api.make()

@@ -110,7 +110,7 @@ config = Config(environment=None,
                 epic_key=None,
                 epic_certificate=None,
                 temporary_files=[],
-                external_users_domain_filter=['uu.nl'])
+                external_users_domain_filter=[])
 
 # }}}
 
