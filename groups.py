@@ -12,7 +12,6 @@ import requests
 
 from util import *
 
-
 __all__ = ['api_group_data',
            'api_group_categories',
            'api_group_subcategories',
