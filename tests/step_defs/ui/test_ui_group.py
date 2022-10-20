@@ -4,6 +4,9 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import os
+import time
+
 import pytest
 import splinter
 from pytest_bdd import (
@@ -90,6 +93,69 @@ def ui_group_click_group_search_dlg_button(browser):
     browser.find_by_css('.user-search-groups').click()
 
 
+@then("user opens group import dialog")
+@when("user opens group import dialog")
+def ui_group_click_group_import_dlg_button(browser):
+    browser.find_by_css('.import-groups-csv').click()
+
+
+@when("user clicks upload button")
+def ui_group_click_upload_button(browser):
+    cwd = os.getcwd()
+    if os.name == 'nt':
+        browser.find_by_css('.csv-import-file')[0].fill("{}\\files\\csv-import-test.csv".format(cwd))
+    else:
+        browser.find_by_css('.csv-import-file')[0].fill("{}/files/csv-import-test.csv".format(cwd))
+
+    # File contains 4 groups - check the number of rows presented.
+    assert len(browser.find_by_css('.import-groupname')) == 4
+
+
+@when("user clicks allow updates checkbox")
+def ui_group_click_cb_allow_updates(browser):
+    browser.find_by_id('import-allow-updates').click()
+
+
+@when("user clicks allow deletions checkbox")
+def ui_group_click_cb_allow_deletions(browser):
+    browser.find_by_id('import-delete-users').click()
+
+
+@then("process csv and check number of rows")
+def ui_group_process_csv(browser):
+    # Start processing the uploaded file.
+    browser.find_by_css('.process-csv').click()
+    # Take enough time so processing is complete.
+    time.sleep(4)
+
+    # Check whether 4 checkmarks are present so each row was processed.
+    assert len(browser.find_by_css('.import-groupname-done')) == 4
+
+    # Check whether each row was processed correctly.
+    assert len(browser.find_by_css('.import-csv-group-ok')) == 4
+
+
+@then(parsers.parse("click on imported row {row} and check group properties"))
+def ui_group_csv_click_row(browser, row):
+    # Find the indicated row and click on it.
+    groupname = browser.find_by_css('.import-csv-group-ok')[int(row)]['groupname']
+
+    # Use the checkmark as that was the only way to circumvent.
+    browser.find_by_id("processed-indicator-" + groupname).click()
+
+    assert browser.find_by_id('group-properties-group-name').value == '[research-' + groupname + ']'
+    assert browser.find_by_id('f-group-update-name').value == groupname
+
+
+@then(parsers.parse('find groupmember "{group_member}"'))
+def ui_group_csv_find_group_member(browser, group_member):
+    # Find the groupmember in the group member list.
+    if len(browser.links.find_by_partial_text(group_member)):
+        assert True
+        return
+    assert False
+
+
 @when(parsers.parse("searches for groups of user {user_search}"))
 def ui_group_fill_in_user_for_groups(browser, user_search):
     browser.find_by_id('input-user-search-groups').fill(user_search)
@@ -108,5 +174,6 @@ def ui_group_click_first_item_in_group(browser):
 
     group_properties_type = browser.find_by_id('inputGroupPrepend').value
     group_properties_name = browser.find_by_id('f-group-update-name').value
+
     # Make sure that row clicked has been set in the group manager as the group to be managed
     assert group_clicked == group_properties_type + group_properties_name

@@ -90,6 +90,13 @@ Feature: Group API
         And user "sterlingarcher" is no longer a member of the group "testGroupie"
 
 
+    Scenario Outline: Group import CSV
+        Given user datamanager is authenticated
+        And the Yoda API for processing csv group data API is queried
+        Then the response status code is "200"
+        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup1"
+
+
     Scenario: Group delete
         Given user technicaladmin is authenticated
         And the group "testGroupie" exists
