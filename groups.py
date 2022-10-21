@@ -369,27 +369,25 @@ def api_group_process_csv(ctx, csv_header_and_data, allow_update, delete_users):
     :returns: Dict containing status, error(s) and the resulting group definitions so the frontend can present the results
 
     """
-    # only datamanagers are allowed to use this functionality
-    if not user_is_a_datamanager(ctx):
+    # Only admins and datamanagers are allowed to use this functionality.
+    if not user.is_admin(ctx) and not user_is_a_datamanager(ctx):
         return api.Error('errors', ['Insufficient rights to perform this operation'])
 
-    # step 1. Parse the data in the uploaded file
+    # Step 1: Parse the data in the uploaded file.
     data, error = parse_data(ctx, csv_header_and_data)
     if len(error):
         return api.Error('errors', [error])
 
-    # step 2. validate the data
+    # Step 2: Validate the data.
     validation_errors = validate_data(ctx, data, allow_update)
     if len(validation_errors) > 0:
         return api.Error('errors', validation_errors)
 
-    # step 3. create/update groups
-    # if not args.online_check: ????
+    # Step 3: Create / update groups.
     error = apply_data(ctx, data, allow_update, delete_users)
     if len(error):
         return api.Error('errors', [error])
 
-    # all went well
     return api.Result.ok()
 
 
