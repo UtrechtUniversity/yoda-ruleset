@@ -91,15 +91,20 @@ Feature: Group API
 
 
     Scenario Outline: Group import CSV
-        Given user datamanager is authenticated
+        Given user technicaladmin is authenticated
         And the Yoda API for processing csv group data API is queried
         Then the response status code is "200"
-        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup1"
+        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup"
 
 
-    Scenario: Group delete
+    Scenario Outline: Group delete
         Given user technicaladmin is authenticated
-        And the group "testGroupie" exists
-        And the user deletes group "testGroupie"
+        And the group "<group_name>" exists
+        And the user deletes group "<group_name>"
         Then the response status code is "200"
-        And the group "testGroupie" no longer exists
+        And the group "<group_name>" no longer exists
+
+        Examples:
+            | group_name            |
+            | testGroupie           |
+            | research-csvtestgroup |
