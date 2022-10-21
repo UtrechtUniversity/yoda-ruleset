@@ -688,7 +688,7 @@
             "required": [ "rel", "href" ],
             "properties": {
                 "rel":  { "const": "describedby" },
-                "href": { "const": "https://yoda.uu.nl/schemas/default-2/metadata.json" }
+                "href": { "const": "https://yoda.uu.nl/schemas/vollmer-0/metadata.json" }
             }
         }
     },
@@ -740,7 +740,8 @@
         "properties": {
           "Relation_Type": {
             "$ref": "#/definitions/optionsRelationType",
-            "title": "Relation type"
+            "title": "Relation type",
+            "default": "HasPart: Is part of current datapackage"
           },
           "Title": {
             "$ref": "#/definitions/stringNormal",

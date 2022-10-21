@@ -27,7 +27,8 @@
         "ui:help": "Relation to this data package"
       },
       "Title": {
-        "ui:help": "Title of the related data package"
+        "ui:help": "Title of the related data package",
+        "ui:placeholder": "[last name],[first initial]_[journal abbreviation]_[volume]_[page 1]"
       },
       "Persistent_Identifier": {
         "ui:help": "Persistent identifier of the related data package",
