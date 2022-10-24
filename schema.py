@@ -41,7 +41,6 @@ def get_group_category(callback, rods_zone, group_name):
         log.write(callback, "FOund GROUP level schema_id: " + row[0])
         return row[0]
 
-
     # Find out category based on current group_name.
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",

@@ -9,8 +9,8 @@ from collections import OrderedDict
 
 import genquery
 import requests
-import schema
 
+import schema
 from util import *
 
 __all__ = ['api_group_data',
