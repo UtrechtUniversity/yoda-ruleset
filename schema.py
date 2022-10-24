@@ -28,6 +28,20 @@ def get_group_category(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
 
+    # Find out where a schema_id has been set on group level
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        # return found schemaCategory directly on group level
+        # No further test is required here as the value found here was selected from /rodszone/yoda/schemas/ and therefore MUST be present
+        log.write(callback, "FOund GROUP level schema_id: " + row[0])
+        return row[0]
+
+
     # Find out category based on current group_name.
     iter = genquery.row_iterator(
         "META_USER_ATTR_NAME, META_USER_ATTR_VALUE",
@@ -53,6 +67,7 @@ def get_group_category(callback, rods_zone, group_name):
         for _row in iter:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
+    log.write(callback, "FOund CATEGORY level schema_id: " + schemaCategory)
     return schemaCategory
 
 

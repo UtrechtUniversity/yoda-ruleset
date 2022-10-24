@@ -9,12 +9,14 @@ from collections import OrderedDict
 
 import genquery
 import requests
+import schema
 
 from util import *
 
 __all__ = ['api_group_data',
            'api_group_categories',
            'api_group_subcategories',
+           'api_get_schemas',
            'api_group_process_csv',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
@@ -69,6 +71,8 @@ def getGroupData(ctx):
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
             group["managers"].append(value)
+        elif attr == "schema_id":
+            group["schema_id"] = value
 
     # Second query: obtain list of groups with memberships.
     iter = genquery.row_iterator(
@@ -301,8 +305,15 @@ def api_group_data(ctx):
         if not group_hierarchy[group['category']].get(group['subcategory']):
             group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
 
+        # check whether schema_id is present on group level.
+        # if not, collect it from the corresponding category
+        if "schema_id" not in group:
+            # group["schema_id"] = schema.get_active_schema_id
+            group["schema_id"] = 'Added by missing attr schema-id ' + schema.get_group_category(ctx, 'tempZone', group['name'])
+
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
+            'schema_id': group['schema_id'],
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -772,6 +783,25 @@ def api_group_subcategories(ctx, category):
     return getSubcategories(ctx, category)
 
 
+@api.make()
+def api_get_schemas(ctx):
+    """Retrieve schemas."""
+    schemas = []
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '/{}/yoda/schemas'".format(user.zone(ctx)),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        schema = row[0].split('/')[-1]
+        if schema != 'default':
+            schemas.append(row[0].split('/')[-1])
+
+    return schemas
+
+
 def provisionExternalUser(ctx, username, creatorUser, creatorZone):
     """Call External User Service API to add new user.
 
@@ -925,22 +955,23 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
     :param group_name:          Name of the group to create
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
+    :param schema_id:           Schema-id for the group to be created
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')['arguments']
-        status = response[5]
-        message = response[6]
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, description, data_classification, '', '')['arguments']
+        status = response[6]
+        message = response[7]
         if status == '0':
             return api.Result.ok()
         else:

@@ -698,7 +698,7 @@ uuGroupGetMemberType(*groupName, *user, *type) {
 # \param[out] status  '0' on success, non-zero on failure - as string value!
 # \param[out] message a user friendly error message, may contain the reason why an action was disallowed
 #
-uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassification, *status, *message) {
+uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *description, *dataClassification, *status, *message) {
 	*status  = '0';
 	*message = "An internal error occurred";
 
@@ -725,7 +725,8 @@ uuGroupAdd(*groupName, *category, *subcategory, *description, *dataClassificatio
 
 	*kv."category"            = *category;
 	*kv."subcategory"         = *subcategory;
-	*kv."description"         = *description;
+	*kv."schema_id"           = *schema_id;
+        *kv."description"         = *description;
 	*kv."data_classification" = *dataClassification;
 
 	# Shoot first, ask questions later.
