@@ -83,7 +83,9 @@ def api_token_load(ctx):
             conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
                                     {"user_id": user_id, "now": datetime.now()}):
-                result.append({"label": row[0], "exp_time": row[1]})
+                exp_time = datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S.%f')
+                exp_time = exp_time.strftime('%Y-%m-%d %H:%M:%S')
+                result.append({"label": row[0], "exp_time": exp_time})
     except Exception:
         print_exc()
         result = api.Error('DatabaseError', 'Error occurred while reading database')
