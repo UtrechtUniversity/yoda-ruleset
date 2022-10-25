@@ -510,7 +510,7 @@ def apply_data(ctx, data, allow_update, delete_users):
         for row in iter:
             schema_id = category
 
-        response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id,'', 'unspecified', '', '')['arguments']
+        response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id, '', 'unspecified', '', '')['arguments']
         status = response[5]
         message = response[6]
 
