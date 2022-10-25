@@ -71,10 +71,10 @@ def api_group_create(user, group_name):
         user,
         "group_create",
         {"group_name": group_name,
-         "category": "abs",
-         "subcategory": "cde",
+         "category": "api-test",
+         "subcategory": "api-test",
          "description": "",
-         "data_classification": "wat"}
+         "data_classification": "public"}
     )
 
 

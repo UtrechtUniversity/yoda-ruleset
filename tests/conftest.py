@@ -24,6 +24,7 @@ password = "test"
 users = ['researcher',
          'datamanager',
          'groupmanager',
+         'functionaladminpriv',
          'technicaladmin']
 user_cookies = {}
 
