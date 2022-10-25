@@ -741,6 +741,7 @@ uuGroupAdd(*groupName, *category, *subcategory, *schema_id, *description, *dataC
 			*groupName,
 			*category,
 			*subcategory,
+                        *schema_id,
 			*description,
 			*dataClassification,
 			*allowed,

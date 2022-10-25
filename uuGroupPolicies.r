@@ -85,6 +85,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*groupName,
 				*policyKv."category",
 				*policyKv."subcategory",
+                                *policyKv."schema_id",
 				*policyKv."description",
 				*policyKv."data_classification",
 				*allowed, *reason

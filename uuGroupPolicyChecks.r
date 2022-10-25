@@ -103,7 +103,7 @@ uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 # \param[out] allowed     whether the action is allowed
 # \param[out] reason      the reason why the action was disallowed, set if allowed is false
 #
-uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *description, *dataClassification, *allowed, *reason) {
+uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id, *description, *dataClassification, *allowed, *reason) {
     # Rodsadmin exception.
 	uuGetUserType(*actor, *actorUserType);
 	if (*actorUserType == "rodsadmin") { *allowed = 1; *reason = ""; succeed; }
@@ -135,8 +135,14 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *descripti
 					if (*roExists || *vaultExists) {
 						*reason = "This group name is not available.";
 					} else {
-						# Last check.
-						uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+                                             # Check validity of schema_id
+                                             *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id ++ "LLL";
+                                             foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
+                                                 uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+                                                 succeed;
+                                             }
+                                             # schema not valid -> report error
+                                             *reason = "Invalid schema-id used when adding group: '*schema-id'";
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";

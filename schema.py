@@ -28,7 +28,7 @@ def get_group_category(callback, rods_zone, group_name):
     category = '-1'
     schemaCategory = 'default'
 
-    # Find out where a schema_id has been set on group level
+    # Find out whether a schema_id has been set on group level
     iter = genquery.row_iterator(
         "META_USER_ATTR_VALUE",
         "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
@@ -66,7 +66,6 @@ def get_group_category(callback, rods_zone, group_name):
         for _row in iter:
             schemaCategory = category    # As collection is present, the schemaCategory can be assigned the category
 
-    log.write(callback, "FOund CATEGORY level schema_id: " + schemaCategory)
     return schemaCategory
 
 
