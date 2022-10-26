@@ -28,8 +28,8 @@ def ui_group_access(browser, category, group):
 
 @when(parsers.parse("user adds {user_add} to group"))
 def ui_group_user_add(browser, user_add):
+    time.sleep(3)
     browser.find_by_css('div#s2id_f-user-create-name').click()
-    time.sleep(1)
     browser.find_by_xpath('//*[@id="s2id_autogen5_search"]').fill(user_add)
     browser.find_by_css('.select2-results .select2-highlighted').click()
     browser.find_by_css('#f-user-create-submit').click()
@@ -139,7 +139,7 @@ def ui_group_process_csv(browser):
     browser.find_by_css('.process-csv').click()
 
     # Take enough time so processing is complete.
-    time.sleep(3)
+    time.sleep(5)
 
     # Check whether 4 checkmarks are present so each row was processed.
     assert len(browser.find_by_css('.import-groupname-done')) == 4

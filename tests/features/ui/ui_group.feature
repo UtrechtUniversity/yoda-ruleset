@@ -111,7 +111,6 @@ Feature: Group UI
         When user has access to group <group> in category <category>
         And user clicks remove group
         And user confirms group removal
-        And searches for group <group>
 
         Examples:
             | category  | group                    |
