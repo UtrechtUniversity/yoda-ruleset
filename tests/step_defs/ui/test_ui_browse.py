@@ -5,13 +5,12 @@ __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 from pytest_bdd import (
-    parsers,
     scenarios,
     then,
-    when,
 )
 
 scenarios('../../features/ui/ui_browse.feature')
+
 
 @then('the 404 error page is shown')
 def ui_browse_404(browser):
