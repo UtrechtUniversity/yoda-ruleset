@@ -125,3 +125,15 @@ Feature: Folder API
             | /tempZone/home/research-default-1 | ACCEPTED |
             | /tempZone/home/research-core-1    | ACCEPTED |
             | /tempZone/home/research-default-2 | ACCEPTED |
+
+
+    Scenario Outline: Folder secured
+        Given user datamanager is authenticated
+        Then folder <folder> status is <status>
+
+        Examples:
+            | folder                            | status   |
+            | /tempZone/home/research-core-0    | SECURED  |
+            | /tempZone/home/research-default-1 | SECURED  |
+            | /tempZone/home/research-core-1    | SECURED  |
+            | /tempZone/home/research-default-2 | SECURED  |
