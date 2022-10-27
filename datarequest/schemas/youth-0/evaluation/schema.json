@@ -44,7 +44,10 @@
               ],
               "title": "Please specify the type of DTA to be used for processing this data request."
             }
-          }
+          },
+          "required": [
+            "dta_type"
+          ]
         },
         {
           "properties": {
@@ -72,11 +75,35 @@
           "properties": {
             "dta_type": {
               "enum": [
-                "YOUth researcher employed at the UU",
+                "YOUth researcher employed at the UU"
+              ]
+            },
+            "dta_mandatee_approval_required": {
+              "type": "string",
+              "enum": [
+                "No"
+              ],
+              "default": "No",
+              "title": "Should the DTA be signed off by mandatees (i.e. the responsible scientist and the authorized official)?"
+            }
+          }
+        },
+        {
+          "properties": {
+            "dta_type": {
+              "enum": [
                 "Researchers employed at the UU outside of YOUth",
                 "Researchers employed at UMCU",
                 "Researchers employed outside of the UU and outside the UMCU"
               ]
+            },
+            "dta_mandatee_approval_required": {
+              "type": "string",
+              "enum": [
+                "Yes"
+              ],
+              "default": "Yes",
+              "title": "Should the DTA be signed off by mandatees (i.e. the responsible scientist and the authorized official)?"
             }
           }
         },
@@ -90,8 +117,20 @@
             "dta_type_other": {
               "type": "string",
               "title": "Please describe the DTA to be used."
+            },
+            "dta_mandatee_approval_required": {
+              "type": "string",
+              "enum": [
+                "Yes",
+                "No"
+              ],
+              "title": "Should the DTA be signed off by mandatees (i.e. the responsible scientist and the authorized official)?"
             }
-          }
+          },
+          "required": [
+            "dta_type_other",
+            "dta_mandatee_approval_required"
+          ]
         }
       ]
     }

@@ -11,6 +11,9 @@
   "dta_type_other": {
     "ui:widget": "textarea"
   },
+  "dta_mandatee_approval_required": {
+    "ui:widget": "select"
+  },
   "internal_remarks": {
     "ui:widget": "textarea",
     "ui:options": {

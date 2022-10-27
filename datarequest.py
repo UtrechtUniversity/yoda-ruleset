@@ -52,6 +52,12 @@ __all__ = ['api_datarequest_roles_get',
            'api_datarequest_signed_dta_upload_permission',
            'api_datarequest_signed_dta_post_upload_actions',
            'api_datarequest_signed_dta_path_get',
+           'api_datarequest_pi_dta_upload_permission',
+           'api_datarequest_pi_dta_post_upload_actions',
+           'api_datarequest_pi_dta_path_get',
+           'api_datarequest_fd_dta_upload_permission',
+           'api_datarequest_fd_dta_post_upload_actions',
+           'api_datarequest_fd_dta_path_get',
            'api_datarequest_data_ready',
            'rule_datarequest_review_period_expiration_check']
 
@@ -84,6 +90,7 @@ REVIEW               = "review"
 ASSIGNMENT           = "assignment"
 EVALUATION           = "evaluation"
 APPROVAL_CONDITIONS  = "approval_conditions"
+MANDATEE_APPROVAL    = "mandatee_approval"
 PREREGISTRATION      = "preregistration"
 FEEDBACK             = "feedback"
 DTA_PATHNAME         = "dta"
@@ -137,7 +144,9 @@ class status(Enum):
     DAO_APPROVED                      = 'DAO_APPROVED'
 
     DTA_READY                         = 'DTA_READY'
-    DTA_SIGNED                        = 'DTA_SIGNED'
+    DTA_SIGNED_BY_RESEARCHER          = 'DTA_SIGNED_BY_RESEARCHER'
+    DTA_AWAITING_MANDATEE_APPROVAL    = 'DTA_AWAITING_MANDATEE_APPROVAL'
+    DTA_SIGNED_BY_MANDATEES           = 'DTA_SIGNED_BY_MANDATEES'
     DATA_READY                        = 'DATA_READY'
 
 
@@ -193,9 +202,13 @@ status_transitions = [(status(x),
                                    ('PREREGISTRATION_CONFIRMED',         'DTA_READY'),
                                    ('DAO_APPROVED',                      'DTA_READY'),
 
-                                   ('DTA_READY',                         'DTA_SIGNED'),
+                                   ('DTA_READY',                         'DTA_SIGNED_BY_RESEARCHER'),
+                                   ('DTA_READY',                         'DTA_AWAITING_MANDATEE_APPROVAL'),
 
-                                   ('DTA_SIGNED',                        'DATA_READY')]]
+                                   ('DTA_AWAITING_MANDATEE_APPROVAL',    'DTA_SIGNED_BY_MANDATEES'),
+
+                                   ('DTA_SIGNED_BY_RESEARCHER',          'DATA_READY'),
+                                   ('DTA_SIGNED_BY_MANDATEES',           'DATA_READY')]]
 
 
 def status_transition_allowed(ctx, current_status, new_status):
@@ -300,19 +313,19 @@ def available_documents_get(ctx, request_id, datarequest_type, datarequest_statu
             available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW]
         elif datarequest_status in [status.APPROVED.value, status.REJECTED.value, status.RESUBMIT.value, status.RESUBMITTED.value]:
             available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION]
-        elif datarequest_status in [status.PREREGISTRATION_SUBMITTED.value, status.PREREGISTRATION_CONFIRMED.value, status.DTA_READY.value, status.DTA_SIGNED.value, status.DATA_READY.value]:
+        elif datarequest_status in [status.PREREGISTRATION_SUBMITTED.value, status.PREREGISTRATION_CONFIRMED.value, status.DTA_READY.value, status.DTA_SIGNED_BY_RESEARCHER.value, status.DATA_READY.value]:
             available_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION, PREREGISTRATION]
     elif datarequest_type == type.DAO.value:
         if datarequest_status == status.DAO_SUBMITTED.value:
             available_documents = [DATAREQUEST]
-        elif datarequest_status in [status.DAO_APPROVED.value, status.DTA_READY.value, status.DTA_SIGNED.value, status.DATA_READY.value]:
+        elif datarequest_status in [status.DAO_APPROVED.value, status.DTA_READY.value, status.DTA_SIGNED_BY_RESEARCHER.value, status.DATA_READY.value]:
             available_documents = [DATAREQUEST, EVALUATION]
 
     # Filter out documents which the user is not permitted to read
     roles = datarequest_roles_get(ctx, request_id)
     if "OWN" in roles:
         allowed_documents = [DATAREQUEST, PREREGISTRATION]
-    elif "PM" in roles:
+    elif "PM" in roles or "PI" in roles or "FD" in roles:
         allowed_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW, ASSIGNMENT, REVIEW, EVALUATION, PREREGISTRATION]
     elif "DM" in roles:
         allowed_documents = [DATAREQUEST, PR_REVIEW, DM_REVIEW]
@@ -772,6 +785,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
     #
     # a) Normal case
     if not dac_member and not archived:
+        log.write(ctx, '====================== HELLO ====================')
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'status' AND META_DATA_ATTR_VALUE != 'PRELIMINARY_REJECT' && != 'REJECTED_AFTER_DATAMANAGER_REVIEW' && != 'REJECTED' && != 'RESUBMITTED' && != 'DATA_READY'".format(coll, DATAREQUEST + JSON_EXT)
     # b) Archive case
     elif not dac_member and archived:
@@ -787,6 +801,7 @@ def api_datarequest_browse(ctx, sort_on='name', sort_order='asc', offset=0, limi
         criteria = "COLL_PARENT_NAME = '{}' AND DATA_NAME = '{}' AND META_DATA_ATTR_NAME = 'reviewedBy' AND META_DATA_ATTR_VALUE in '{}'".format(coll, DATAREQUEST + JSON_EXT, user.name(ctx))
     #
     qcoll = Query(ctx, ccols, criteria, offset=offset, limit=limit, output=AS_DICT)
+    log.write(ctx, len(list(qcoll)))
     if len(list(qcoll)) > 0:
         if sort_on == 'modified':
             coll_names = [result['COLL_NAME'] for result in list(qcoll)]
@@ -918,12 +933,16 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         try:
             dta_path         = "{}/{}".format(coll_path, DTA_PATHNAME)
             sigdta_path      = "{}/{}".format(coll_path, SIGDTA_PATHNAME)
+            pidta_path       = "{}/{}".format(coll_path, PIDTA_PATHNAME)
+            fddta_path       = "{}/{}".format(coll_path, FDDTA_PATHNAME)
             attachments_path = "{}/{}".format(coll_path, ATTACHMENTS_PATHNAME)
 
             collection.create(ctx, coll_path)
             collection.create(ctx, attachments_path)
             collection.create(ctx, dta_path)
             collection.create(ctx, sigdta_path)
+            collection.create(ctx, pidta_path)
+            collection.create(ctx, fddta_path)
         except error.UUError as e:
             return api.Error("create_collection_fail", "Could not create collection path: {}.".format(e))
 
@@ -945,6 +964,14 @@ def api_datarequest_submit(ctx, data, draft, draft_request_id=None):
         msi.set_acl(ctx, "default", "read", GROUP_DM, sigdta_path)
         msi.set_acl(ctx, "default", "read", user.full_name(ctx), sigdta_path)
         msi.set_acl(ctx, "default", "own", "rods", sigdta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, pidta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, pidta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), pidta_path)
+        msi.set_acl(ctx, "default", "own", "rods", pidta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_PM, fddta_path)
+        msi.set_acl(ctx, "default", "read", GROUP_DM, fddta_path)
+        msi.set_acl(ctx, "default", "read", user.full_name(ctx), fddta_path)
+        msi.set_acl(ctx, "default", "own", "rods", fddta_path)
 
         # Create provenance log
         provenance_path = "{}/{}".format(coll_path, PROVENANCE + JSON_EXT)
@@ -1631,10 +1658,18 @@ def api_datarequest_evaluation_submit(ctx, data, request_id):
         except error.UUError:
             return api.Error('write_error', 'Could not write approval conditions to disk')
 
+    # Write mandatee approval requirement boolean to disk if applicable
+    if 'dta_mandatee_approval_required' in data and data['dta_mandatee_approval_required'] == "Yes":
+        try:
+            file_write_and_lock(ctx, coll_path, MANDATEE_APPROVAL + JSON_EXT,
+                                True, [datarequest_owner_get(ctx, request_id)])
+        except error.UUError:
+            return api.Error('write_error', 'Could not write approval conditions to disk')
+
     # Write form data to disk
     try:
-        readers = [GROUP_PM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
-                                   datarequest_reviewers_get(ctx, request_id))
+        readers = [GROUP_PM, GROUP_DM] + map(lambda reviewer: reviewer + "#" + user.zone(ctx),
+                                             datarequest_reviewers_get(ctx, request_id))
         file_write_and_lock(ctx, coll_path, EVALUATION + JSON_EXT, data, readers)
     except error.UUError:
         return api.Error('write_error', 'Could not write evaluation data to disk')
@@ -1688,6 +1723,27 @@ def api_datarequest_approval_conditions_get(ctx, request_id):
     else:
         # If not, return None
         return None
+
+
+def datarequest_mandatee_approval_required(ctx, request_id):
+    """Check if DTA has be to be approved by the mandatees
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns: Boolean indicating whether DTA has to be approved by mandatees
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Construct filename
+    coll_path = "/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id)
+    file_name = MANDATEE_APPROVAL + JSON_EXT
+    file_path = "{}/{}".format(coll_path, file_name) 
+
+    # Return existence of mandatee approval file. If this file has been written during the
+    # processing of the evaluation, the mandatees must sign the DTA.
+    return data_object.exists(ctx, file_path)
 
 
 @api.make()
@@ -1994,7 +2050,7 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     request_id = str(request_id)
 
     # Permission check
-    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DATA_READY])
 
     # Set permissions
     file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
@@ -2003,8 +2059,12 @@ def api_datarequest_signed_dta_post_upload_actions(ctx, request_id, filename):
     msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
     msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
 
-    # Set status to dta_signed
-    status_set(ctx, request_id, status.DTA_SIGNED)
+    # Set status
+    mandatee_approval_required = datarequest_mandatee_approval_required(ctx, request_id)
+    if mandatee_approval_required:
+        status_set(ctx, request_id, status.DTA_AWAITING_MANDATEE_APPROVAL)
+    else:
+        status_set(ctx, request_id, status.DTA_SIGNED_BY_RESEARCHER)
 
 
 @api.make()
@@ -2025,6 +2085,143 @@ def api_datarequest_signed_dta_path_get(ctx, request_id):
     coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
     return list(collection.data_objects(ctx, coll_path))[0]
 
+###########################################################################################################
+@api.make()
+def api_datarequest_pi_dta_upload_permission(ctx, request_id, action):
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("revoke")
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+
+    # Check if action is valid
+    if action not in ["grant", "grantread"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    ctx.adminTempWritePermission(dta_coll_path, action)
+
+
+@api.make()
+def api_datarequest_pi_dta_post_upload_actions(ctx, request_id, filename):
+    """Grant read permissions on the signed DTA to the datamanagers group.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param filename:   Filename of signed DTA
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+
+    # Set permissions
+    file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
+                                         filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+
+    # Set status to dta_signed
+    status_set(ctx, request_id, status.DTA_SIGNED)
+
+
+@api.make()
+def api_datarequest_pi_dta_path_get(ctx, request_id):
+    """Get path to signed DTA
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          Path to signed DTA
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    return list(collection.data_objects(ctx, coll_path))[0]
+##################################################################################################################################
+@api.make()
+def api_datarequest_fd_dta_upload_permission(ctx, request_id, action):
+    """
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param action:     String specifying whether write permission must be granted ("grant") or
+                       revoked ("revoke")
+
+    :returns:          Nothing
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+
+    # Check if action is valid
+    if action not in ["grant", "grantread"]:
+        return api.Error("InputError", "Invalid action input parameter.")
+
+    # Grant/revoke temporary write permissions
+    dta_coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    ctx.adminTempWritePermission(dta_coll_path, action)
+
+
+@api.make()
+def api_datarequest_fd_dta_post_upload_actions(ctx, request_id, filename):
+    """Grant read permissions on the signed DTA to the datamanagers group.
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+    :param filename:   Filename of signed DTA
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["OWN"], [status.DTA_READY])
+
+    # Set permissions
+    file_path = "/{}/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME,
+                                         filename)
+    msi.set_acl(ctx, "default", "read", GROUP_DM, file_path)
+    msi.set_acl(ctx, "default", "read", GROUP_PM, file_path)
+    msi.set_acl(ctx, "default", "read", datarequest_owner_get(ctx, request_id), file_path)
+
+    # Set status to dta_signed
+    status_set(ctx, request_id, status.DTA_SIGNED)
+
+
+@api.make()
+def api_datarequest_fd_dta_path_get(ctx, request_id):
+    """Get path to signed DTA
+
+    :param ctx:        Combined type of a callback and rei struct
+    :param request_id: Unique identifier of the data request
+
+    :returns:          Path to signed DTA
+    """
+    # Force conversion of request_id to string
+    request_id = str(request_id)
+
+    # Permission check
+    datarequest_action_permitted(ctx, request_id, ["PM", "DM", "OWN"], None)
+
+    coll_path = "/{}/{}/{}/{}".format(user.zone(ctx), DRCOLLECTION, request_id, SIGDTA_PATHNAME)
+    return list(collection.data_objects(ctx, coll_path))[0]
+##################################################################################################################################
 
 @api.make()
 def api_datarequest_data_ready(ctx, request_id):
@@ -2103,7 +2300,11 @@ def send_emails(ctx, obj_name, status_to):
     elif datarequest_status == status.DTA_READY:
         dta_post_upload_actions_emails(ctx, request_id)
 
-    elif datarequest_status == status.DTA_SIGNED:
+    elif datarequest_status == status.DTA_AWAITING_MANDATEE_APPROVAL:
+        dta_mandatee_approval_pending_emails(ctx, request_id)
+
+    elif datarequest_status in (status.DTA_SIGNED_BY_RESEARCHER,
+                                status.DTA_SIGNED_BY_MANDATEES):
         signed_dta_post_upload_actions_emails(ctx, request_id)
 
     elif datarequest_status == status.DATA_READY:
@@ -2281,6 +2482,10 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
     datarequest         = json.loads(datarequest_get(ctx, request_id))
     researcher          = datarequest['contact']['principal_investigator']
     researcher_email    = datarequest_owner_get(ctx, request_id)
+    evaluation          = json.loads(datarequest_evaluation_get(ctx, request_id))
+    dta_template        = evaluation['dta_type']
+    if dta_template == "Other (please specify below)":
+        dta_template    = "Other ({})".format(evaluation['dta_type_other'])
     cc                  = cc_email_addresses_get(datarequest['contact'])
     datamanager_members = group.members(ctx, GROUP_DM)
     truncated_title     = truncated_title_get(ctx, request_id)
@@ -2295,7 +2500,7 @@ def datarequest_approved_emails(ctx, request_id, dao=False):
             mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, request_id)
         else:
             reviewing_dm = json.loads(datarequest_datamanager_review_get(ctx, request_id))['reviewing_dm']
-            mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager_email,
+            mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, dta_template, datamanager_email,
                                          request_id)
 
 
@@ -2314,7 +2519,20 @@ def dta_post_upload_actions_emails(ctx, request_id):
     mail_dta(ctx, truncated_title, researcher_email, researcher['name'], request_id, cc)
 
 
-def signed_dta_post_upload_actions_emails(ctx, request_id):
+def dta_mandatee_approval_pending_emails(ctx, request_id):
+    # Get (source data for) email input parameters
+    datamanager_members = group.members(ctx, GROUP_DM)
+    authoring_dm        = data_object.owner(ctx, datarequest_dta_path_get(ctx, request_id))[0]
+    cc, _ = pm_email, _ = filter(lambda x: x[0] != "rods", group.members(ctx, GROUP_PM))[0]
+    truncated_title     = truncated_title_get(ctx, request_id)
+
+    # Send email
+    for datamanager_member in datamanager_members:
+        datamanager_email, _ = datamanager_member
+        mail_mandatee_approval_pending(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc)
+
+
+def fd_dta_post_upload_actions_emails(ctx, request_id):
     # Get (source data for) email input parameters
     datamanager_members = group.members(ctx, GROUP_DM)
     authoring_dm        = data_object.owner(ctx, datarequest_dta_path_get(ctx, request_id))[0]
@@ -2582,20 +2800,20 @@ YOUth
 """.format(request_id, YODA_PORTAL_FQDN, request_id))
 
 
-def mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, datamanager_email, request_id):
+def mail_datarequest_approved_dm(ctx, truncated_title, reviewing_dm, dta_template, datamanager_email, request_id):
     return mail.send(ctx,
                      to=datamanager_email,
                      actor=user.full_name(ctx),
                      subject="YOUth data request {} (\"{}\"): approved".format(request_id, truncated_title),
                      body="""Dear data manager,
 
-Data request {} has been approved by the YOUth project manager (and has passed the data manager review of {}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher.
+Data request {} has been approved by the YOUth project manager (and has passed the data manager review of {}). Please sign in to Yoda to upload a Data Transfer Agreement for the researcher. Please use the following DTA template: {}.
 
 The following link will take you directly to the data request: https://{}/datarequest/view/{}.
 
 With kind regards,
 YOUth
-""".format(request_id, reviewing_dm, YODA_PORTAL_FQDN, request_id))
+""".format(request_id, reviewing_dm, dta_template, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_datarequest_approved_dao_dm(ctx, truncated_title, datamanager_email, request_id):
@@ -2695,6 +2913,25 @@ If you do not object to the agreement, please upload a signed copy of the agreem
 With kind regards,
 YOUth
 """.format(researcher_name, YODA_PORTAL_FQDN, request_id))
+
+
+def mail_mandatee_approval_pending(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc):
+    return mail.send(ctx,
+                     to=datamanager_email,
+                     cc=cc,
+                     actor=user.full_name(ctx),
+                     subject="YOUth data request {} (\"{}\"): DTA signed by researcher".format(request_id, truncated_title),
+                     body="""Dear data manager,
+
+The researcher has uploaded a signed copy of the Data Transfer Agreement for data request {}. The DTA was authored by {}.
+
+Please log in to Yoda to review this copy. The following link will take you directly to the data request: https://{}/datarequest/view/{}.
+
+If you do not object to the agreement, please upload a copy of the agreement signed by the YOUth responsible scientist and the YOUth authorized official. After uploading the DTA, you may prepare the data for download. When the data is ready for the researcher to download, please click the \"Data ready\" button. This will notify the researcher by email that the requested data is ready. The email will include instructions on downloading the data. 
+
+With kind regards,
+YOUth
+""".format(request_id, authoring_dm, YODA_PORTAL_FQDN, request_id))
 
 
 def mail_signed_dta(ctx, truncated_title, authoring_dm, datamanager_email, request_id, cc):
