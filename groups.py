@@ -500,19 +500,19 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         # First create the group. Note that the rodsadmin actor will become a groupmanager
 
-        schema_coll = '/' + user.zone(ctx) + '/yoda/schemas/' + category
+        # when no matching category schema-id is found, fall back to yoda instance default
         schema_id = 'default'
         iter = genquery.row_iterator(
             "COLL_NAME",
-            "COLL_NAME = '" + schema_coll + "'",
+            "COLL_NAME = '/{}/yoda/schemas/{}'".format(user.zone(ctx), category),
             genquery.AS_LIST, ctx
         )
         for row in iter:
             schema_id = category
 
         response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id, '', 'unspecified', '', '')['arguments']
-        status = response[5]
-        message = response[6]
+        status = response[6]
+        message = response[7]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
             log.write(ctx, 'WARNING: group "{}" not created, it already exists'.format(groupname))
@@ -523,8 +523,6 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
-        log.write(ctx, 'allusers')
-        log.write(ctx, allusers)
         for username in list(set(allusers)):   # duplicates removed
             currentrole = user_role(ctx, groupname, username)
             if currentrole == "none":
@@ -591,22 +589,22 @@ def apply_data(ctx, data, allow_update, delete_users):
                     currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
-                user = userdata[0]
+                username = userdata[0]
                 usergroupname = userdata[1]
-                if user not in allusers:
-                    if user in managers:
+                if username not in allusers:
+                    if username in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
+                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(username, usergroupname))
                             continue
                         else:
-                            managers.remove(user)
-                    log.write(ctx, "Removing user {} from group {}".format(user, usergroupname))
+                            managers.remove(username)
+                    log.write(ctx, "Removing user {} from group {}".format(username, usergroupname))
 
-                    response = ctx.uuGroupUserRemove(usergroupname, user, '', '')['arguments']
+                    response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
                     status = response[2]
                     message = response[3]
                     if status != "0":
-                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
+                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
                         log.write(ctx, "Status: {} , Message: {}".format(status, message))
 
     return ''

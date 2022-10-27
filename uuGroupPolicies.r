@@ -75,10 +75,8 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 	} else {
 
 		# This type of group is manually created.
-
 		if (*initialAttr == "manager" || *initialValue == uuClientFullName) {
 			# Normal groups must have an initial manager attribute.
-
 			# Now check the higher level policy.
 			uuGroupPolicyCanGroupAdd(
 				uuClientFullName,
@@ -90,6 +88,7 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 				*policyKv."data_classification",
 				*allowed, *reason
 			);
+
 			if (*allowed == 1) {
 				succeed;
 			}

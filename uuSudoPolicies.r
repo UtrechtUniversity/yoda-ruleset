@@ -51,6 +51,7 @@ acPreSudoUserRemove(*userName, *policyKv) {
 
 acPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *policyKv) {
 	writeLine("serverLog", "In acPreSudoGroupAdd, group is <*groupName>, actor is <$userNameClient#$rodsZoneClient>");
+
 	uuGetUserType(uuClientFullName, *userType);
 	if (*userType != "rodsadmin") { fail; }
 }

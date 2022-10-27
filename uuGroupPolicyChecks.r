@@ -136,13 +136,13 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 						*reason = "This group name is not available.";
 					} else {
                                              # Check validity of schema_id
-                                             *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id ++ "LLL";
+                                             *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id;
                                              foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
                                                  uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
                                                  succeed;
                                              }
                                              # schema not valid -> report error
-                                             *reason = "Invalid schema-id used when adding group: '*schema-id'";
+                                             *reason = "Invalid schema-id used when adding group: '*schema_id'";
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
