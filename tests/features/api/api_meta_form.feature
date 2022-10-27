@@ -40,17 +40,3 @@ Feature: Meta form API
             | collection                       |
             | /tempZone/home/research-initial  |
             | /tempZone/home/research-initial1 |
-
-
-    Scenario Outline: Meta form save in vault
-        Given user datamanager is authenticated
-        And data package exists in <vault>
-        And the Yoda meta form save API is queried with metadata on datapackage in <vault>
-        Then the response status code is "200"
-
-        Examples:
-            | vault                          |
-            | /tempZone/home/vault-core-0    |
-            | /tempZone/home/vault-default-1 |
-            | /tempZone/home/vault-core-1    |
-            | /tempZone/home/vault-default-2 |

@@ -50,56 +50,93 @@ Feature: Group API
             | groupmanager | tech       | technicaladmin#tempZone                                                                       |
 
 
-    Scenario: Group creation
-        Given user technicaladmin is authenticated
-        And the group "testGroupie" does not exist
-        And the user creates a new group "testGroupie"
+    Scenario Outline: Group creation
+        Given user <user> is authenticated
+        And the group "<group_name>" does not exist
+        And the user creates a new group "<group_name>"
         Then the response status code is "200"
-        And the group "testGroupie" is created
+        And the group "<group_name>" is created
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
 
 
-    Scenario: Group update
-        Given user technicaladmin is authenticated
-        And the group "testGroupie" exists
-        And the user updates group "testGroupie"
+    Scenario Outline: Group update
+        Given user <user> is authenticated
+        And the group "<group_name>" exists
+        And the user updates group "<group_name>"
         Then the response status code is "200"
-        And the update to group "testGroupie" is persisted
+        And the update to group "<group_name>" is persisted
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
 
 
-    Scenario: Adding user to group
-        Given user technicaladmin is authenticated
-        And the user "sterlingarcher" is not a member of group "testGroupie"
-        And the user adds user "sterlingarcher" to the group "testGroupie"
+    Scenario Outline: Adding user to group
+        Given user <user> is authenticated
+        And the user "sterlingarcher" is not a member of group "<group_name>"
+        And the user adds user "sterlingarcher" to the group "<group_name>"
         Then the response status code is "200"
-        And user "sterlingarcher" is now a member of the group "testGroupie"
+        And user "sterlingarcher" is now a member of the group "<group_name>"
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
 
 
-    Scenario: Group user update role
-        Given user technicaladmin is authenticated
-        And the user "sterlingarcher" is a member of group "testGroupie"
-        And the user updates the role of user "sterlingarcher" in group "testGroupie"
+    Scenario Outline: Group user update role
+        Given user <user> is authenticated
+        And the user "sterlingarcher" is a member of group "<group_name>"
+        And the user updates the role of user "sterlingarcher" in group "<group_name>"
         Then the response status code is "200"
-        And the role of user "sterlingarcher" in group "testGroupie" is updated
+        And the role of user "sterlingarcher" in group "<group_name>" is updated
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
 
 
-    Scenario: Remove user from group
-        Given user technicaladmin is authenticated
-        And the user "sterlingarcher" is a member of group "testGroupie"
-        And the user removes user "sterlingarcher" from the group "testGroupie"
+    Scenario Outline: Remove user from group
+        Given user <user> is authenticated
+        And the user "sterlingarcher" is a member of group "<group_name>"
+        And the user removes user "sterlingarcher" from the group "<group_name>"
         Then the response status code is "200"
-        And user "sterlingarcher" is no longer a member of the group "testGroupie"
+        And user "sterlingarcher" is no longer a member of the group "<group_name>"
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
 
 
     Scenario Outline: Group import CSV
-        Given user datamanager is authenticated
+        Given user technicaladmin is authenticated
         And the Yoda API for processing csv group data API is queried
         Then the response status code is "200"
-        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup1"
+        And user "man1@uu.nl" is now a member of the group "research-csvtestgroup"
 
 
-    Scenario: Group delete
-        Given user technicaladmin is authenticated
-        And the group "testGroupie" exists
-        And the user deletes group "testGroupie"
+    Scenario Outline: Group delete
+        Given user <user> is authenticated
+        And the group "<group_name>" exists
+        And the user deletes group "<group_name>"
         Then the response status code is "200"
-        And the group "testGroupie" no longer exists
+        And the group "<group_name>" no longer exists
+
+        Examples:
+            | user                  | group_name                 |
+            | functionaladminpriv   | research-api-test-group    |
+            | technicaladmin        | datamanager-api-test-group |
+            | technicaladmin        | testGroupie                |
+            | technicaladmin        | research-csvtestgroup      |

@@ -71,10 +71,10 @@ def api_group_create(user, group_name):
         user,
         "group_create",
         {"group_name": group_name,
-         "category": "abs",
-         "subcategory": "cde",
+         "category": "api-test",
+         "subcategory": "api-test",
          "description": "",
-         "data_classification": "wat"}
+         "data_classification": "public"}
     )
 
 
@@ -257,7 +257,7 @@ def then_user_update_persisted(user, new_user, group_name):
 
 @given('the Yoda API for processing csv group data API is queried', target_fixture="api_response")
 def api_group_import_csv_data(user):
-    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1\rdefault-2,default-2,csvtestgroup1,man1@uu.nl,member1@uu.nl,member2222@uu.nl,blabla@uu.nl"
+    header_and_data = "category,subcategory,groupname,manager:manager,member:member1,member:member2,viewer:viewer1\rdefault-2,default-2,csvtestgroup,man1@uu.nl,member1@uu.nl,member2222@uu.nl,blabla@uu.nl"
     return api_request(
         user,
         "group_process_csv",

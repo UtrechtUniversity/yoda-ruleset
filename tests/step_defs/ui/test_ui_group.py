@@ -22,11 +22,13 @@ scenarios('../../features/ui/ui_group.feature')
 @when(parsers.parse("user has access to group {group} in category {category}"))
 def ui_group_access(browser, category, group):
     if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=3):
+        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=3).click()
         browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=3).click()
 
 
 @when(parsers.parse("user adds {user_add} to group"))
 def ui_group_user_add(browser, user_add):
+    time.sleep(3)
     browser.find_by_css('div#s2id_f-user-create-name').click()
     browser.find_by_xpath('//*[@id="s2id_autogen5_search"]').fill(user_add)
     browser.find_by_css('.select2-results .select2-highlighted').click()
@@ -121,12 +123,23 @@ def ui_group_click_cb_allow_deletions(browser):
     browser.find_by_id('import-delete-users').click()
 
 
+@when("user clicks remove group")
+def ui_group_clicks_remove_group(browser):
+    browser.links.find_by_partial_text("Remove group")[0].click()
+
+
+@when("user confirms group removal")
+def ui_group_confirms_group_removal(browser):
+    browser.find_by_id('f-group-delete').click()
+
+
 @then("process csv and check number of rows")
 def ui_group_process_csv(browser):
     # Start processing the uploaded file.
     browser.find_by_css('.process-csv').click()
+
     # Take enough time so processing is complete.
-    time.sleep(4)
+    time.sleep(5)
 
     # Check whether 4 checkmarks are present so each row was processed.
     assert len(browser.find_by_css('.import-groupname-done')) == 4

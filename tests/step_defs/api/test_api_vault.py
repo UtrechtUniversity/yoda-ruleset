@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 from pytest_bdd import (
     given,
     parsers,
@@ -129,15 +131,58 @@ def api_vault_get_published_packages(user, vault):
     )
 
 
-@then(parsers.parse('data package in {vault} status is "{status}"'))
-def data_package_status(user, vault, data_package, status):
-    _, body = api_request(
+@given(parsers.parse("the Yoda meta form save API is queried with metadata on datapackage in {vault}"), target_fixture="api_response")
+def api_meta_form_save_vault(user, vault, data_package):
+    return api_request(
         user,
-        "vault_collection_details",
-        {"path": vault + "/" + data_package}
+        "meta_form_save",
+        {"coll": vault + "/" + data_package,
+         "metadata": {
+             "links": [{
+                 "rel": "describedby",
+                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
+             }],
+             "Language": "en - English",
+             "Retention_Period": 10,
+             "Creator": [{
+                 "Name": {
+                     "Given_Name": "Test",
+                     "Family_Name": "Test"
+                 },
+                 "Affiliation": ["Utrecht University"],
+                 "Person_Identifier": [{}]
+             }],
+             "Discipline": [
+                 "Natural Sciences - Computer and information sciences (1.2)"
+             ],
+             "Tag": [
+                 "Tag_youre_it",
+                 "No_tag_backs"
+             ],
+             "Data_Access_Restriction": "Restricted - available upon request",
+             "Title": "API test datamanager vault save metadata",
+             "Description": "Test",
+             "Data_Type": "Dataset",
+             "Data_Classification": "Public",
+             "License": "Creative Commons Attribution 4.0 International Public License"
+         }}
     )
 
-    assert body["data"]["status"] == status
+
+@then(parsers.parse('data package in {vault} status is "{status}"'))
+def data_package_status(user, vault, data_package, status):
+    for _i in range(25):
+        _, body = api_request(
+            user,
+            "vault_collection_details",
+            {"path": vault + "/" + data_package}
+        )
+
+        if body["data"]["status"] == status:
+            return True
+        time.sleep(5)
+
+    raise AssertionError()
 
 
 @then('preservable formats lists are returned')

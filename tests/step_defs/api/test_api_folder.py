@@ -3,6 +3,7 @@
 
 import json
 import os
+import time
 from collections import OrderedDict
 from urllib.parse import urlparse
 
@@ -111,13 +112,18 @@ def folder_status(user, folder, status):
     if status == "FOLDER":
         status = ""
 
-    _, body = api_request(
-        user,
-        "research_collection_details",
-        {"path": folder}
-    )
+    for _i in range(25):
+        _, body = api_request(
+            user,
+            "research_collection_details",
+            {"path": folder}
+        )
 
-    assert body["data"]["status"] == status
+        if body["data"]["status"] == status:
+            return True
+        time.sleep(5)
+
+    raise AssertionError()
 
 
 @then(parsers.parse("folder locks contains {folder}"))
