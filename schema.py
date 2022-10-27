@@ -38,7 +38,6 @@ def get_group_category(callback, rods_zone, group_name):
     for row in iter:
         # return found schemaCategory directly on group level
         # No further test is required here as the value found here was selected from /rodszone/yoda/schemas/ and therefore MUST be present
-        log.write(callback, "FOund GROUP level schema_id: " + row[0])
         return row[0]
 
     # Find out category based on current group_name.
