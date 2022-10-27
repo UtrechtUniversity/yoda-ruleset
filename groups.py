@@ -16,7 +16,6 @@ from util import *
 __all__ = ['api_group_data',
            'api_group_categories',
            'api_group_subcategories',
-           'api_get_schemas',
            'api_group_process_csv',
            'rule_group_provision_external_user',
            'rule_group_remove_external_user',
@@ -788,25 +787,6 @@ def api_group_subcategories(ctx, category):
     :returns: Subcategory list of specified category
     """
     return getSubcategories(ctx, category)
-
-
-@api.make()
-def api_get_schemas(ctx):
-    """Retrieve schemas."""
-    schemas = []
-
-    iter = genquery.row_iterator(
-        "COLL_NAME",
-        "COLL_PARENT_NAME = '/{}/yoda/schemas'".format(user.zone(ctx)),
-        genquery.AS_LIST, ctx
-    )
-
-    for row in iter:
-        schema = row[0].split('/')[-1]
-        if schema != 'default':
-            schemas.append(row[0].split('/')[-1])
-
-    return schemas
 
 
 def provisionExternalUser(ctx, username, creatorUser, creatorZone):

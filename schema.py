@@ -11,7 +11,26 @@ import genquery
 import meta
 from util import *
 
-__all__ = []
+__all__ = ['api_get_schemas']
+
+
+@api.make()
+def api_get_schemas(ctx):
+    """Retrieve schemas."""
+    schemas = []
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '/{}/yoda/schemas'".format(user.zone(ctx)),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        schema = row[0].split('/')[-1]
+        if schema != 'default':
+            schemas.append(row[0].split('/')[-1])
+
+    return schemas
 
 
 def get_group_category(callback, rods_zone, group_name):
