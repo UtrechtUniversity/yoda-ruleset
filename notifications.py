@@ -12,6 +12,7 @@ import time
 from datetime import datetime
 
 import genquery
+from dateutil import relativedelta
 from genquery import Query
 
 import mail
@@ -21,7 +22,8 @@ from util import *
 __all__ = ['api_notifications_load',
            'api_notifications_dismiss',
            'api_notifications_dismiss_all',
-           'rule_mail_notification_report']
+           'rule_mail_notification_report',
+           'rule_process_ending_retention_packages']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -190,3 +192,96 @@ If you do not want to receive these emails, you can change your notification pre
 Best regards,
 Yoda system
 """.format(notifications, config.yoda_portal_fqdn, config.yoda_portal_fqdn))
+
+
+@rule.make()
+def rule_process_ending_retention_packages(ctx):
+    """Rule interface for checking vault packages for ending retention.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "[RETENTION] Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, '[RETENTION] Checking Vault packages for ending retention')
+
+    zone = user.zone(ctx)
+    errors = 0
+    dp_notify_count = 0
+
+    # Retrieve all data packages in this vault.
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "META_COLL_ATTR_NAME = 'org_vault_status' AND COLL_NAME not like '%/original'",
+        genquery.AS_LIST, ctx
+    )
+    for row in iter:
+        dp_coll = row[0]
+        meta_path = meta.get_latest_vault_metadata_path(ctx, dp_coll)
+
+        # Try to load the metadata file.
+        try:
+            metadata = jsonutil.read(ctx, meta_path)
+            current_schema_id = meta.metadata_get_schema_id(metadata)
+            if current_schema_id is None:
+                log.write(ctx, '[RETENTION] Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
+                errors += 1
+                continue
+        except jsonutil.ParseError:
+            log.write(ctx, '[RETENTION] JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
+            errors += 1
+            continue
+        except msi.Error as e:
+            log.write(ctx, '[RETENTION] The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
+            errors += 1
+            continue
+
+        # Get deposit date and end preservation date based upon retention period.
+        iter2 = genquery.row_iterator(
+            "order_desc(META_COLL_MODIFY_TIME), META_COLL_ATTR_VALUE",
+            "COLL_NAME = '" + dp_coll + "' AND META_COLL_ATTR_NAME = '" + constants.UUORGMETADATAPREFIX + 'action_log' + "'",
+            genquery.AS_LIST, ctx
+        )
+        for row2 in iter2:
+            # row2 contains json encoded [str(int(time.time())), action, actor]
+            log_item_list = jsonutil.parse(row2[1])
+            if log_item_list[1] == "submitted for vault":
+                deposit_timestamp = datetime.fromtimestamp(int(log_item_list[0]))
+                date_deposit = deposit_timestamp.date()
+                break
+
+        try:
+            retention = int(metadata['Retention_Period'])
+        except KeyError:
+            log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
+            continue
+
+        try:
+            date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
+        except ValueError:
+            log.write(ctx, '[RETENTION] Could not determine retention end date. Retention period: <{}>'.format(retention))
+            continue
+
+        r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
+        formatted_date = date_end_retention.strftime('%Y-%m-%d')
+
+        log.write(ctx, '[RETENTION] Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
+        if r.years == 0 and r.months <= 1:
+            group_name = folder.collection_group_name(ctx, dp_coll)
+            category = group.get_category(ctx, group_name)
+            datamanager_group_name = "datamanager-" + category
+
+            if group.exists(ctx, datamanager_group_name):
+                dp_notify_count += 1
+                # Send notifications to datamanager(s).
+                datamanagers = folder.get_datamanagers(ctx, '/{}/home/'.format(zone) + datamanager_group_name)
+                message = "Data package reaching end of preservation date: {}".format(formatted_date)
+                for datamanager in datamanagers:
+                    datamanager = '{}#{}'.format(*datamanager)
+                    actor = 'system'
+                    notifications.set(ctx, actor, datamanager, dp_coll, message)
+                log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
+
+    log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
