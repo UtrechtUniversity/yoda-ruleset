@@ -15,6 +15,7 @@ import genquery
 from dateutil import relativedelta
 from genquery import Query
 
+import data_access_token
 import mail
 import settings
 from util import *
@@ -23,7 +24,8 @@ __all__ = ['api_notifications_load',
            'api_notifications_dismiss',
            'api_notifications_dismiss_all',
            'rule_mail_notification_report',
-           'rule_process_ending_retention_packages']
+           'rule_process_ending_retention_packages',
+           'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -285,3 +287,21 @@ def rule_process_ending_retention_packages(ctx):
                 log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
+
+
+@rule.make()
+def rule_process_data_access_token_expiry(ctx):
+    """Rule interface for checking for data access tokens that are expiring soon.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "[DATA ACCESS TOKEN] Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, '[DATA ACCESS TOKEN] Checking for expiring data access tokens')
+    tokens = data_access_token.get_all_tokens(ctx)
+    for token in tokens:
+        log.write(ctx, token)
+    log.write(ctx, '[DATA ACCESS TOKEN] Finished checking for expiring data access tokens')

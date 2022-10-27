@@ -129,6 +129,38 @@ def api_token_delete(ctx, label):
     return result
 
 
+def get_all_tokens(ctx):
+    """Retrieve all valid tokens.
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Valid tokens
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        return []
+
+    if not token_database_initialized():
+        return []
+
+    conn = sqlite3.connect(config.token_database)
+    result = []
+    try:
+        with conn:
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
+            for row in conn.execute('''SELECT user, label, exp_time FROM tokens WHERE exp_time > :now''',
+                                    {"user_id": user_id, "now": datetime.now()}):
+                result.append({"user": row[0], "label": row[1], "exp_time": row[2]})
+    except Exception:
+        print_exc()
+        result = api.Error('DatabaseError', 'Error occurred while reading database')
+
+    # Connection object used as context manager only commits or rollbacks transactions,
+    # so the connection object should be closed manually
+    conn.close()
+
+    return result
+
+
 def token_database_initialized():
     """Checks whether token database has been initialized
 
