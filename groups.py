@@ -483,7 +483,7 @@ def apply_data(ctx, data, allow_update, delete_users):
     for (category, subcategory, groupname, managers, members, viewers) in data:
         new_group = False
 
-        log.write(ctx, 'Adding and updating group: {}'.format(groupname))
+        log.write(ctx, '[CSV import] Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the rodsadmin actor will become a groupmanager
         response = ctx.uuGroupAdd(groupname, category, subcategory, '', 'unspecified', '', '')['arguments']
@@ -491,7 +491,7 @@ def apply_data(ctx, data, allow_update, delete_users):
         message = response[6]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
-            log.write(ctx, 'WARNING: group "{}" not created, it already exists'.format(groupname))
+            log.write(ctx, '[CSV import] WARNING: group "{}" not created, it already exists'.format(groupname))
         elif status != '0':
             return "Error while attempting to create group {}. Status/message: {} / {}".format(groupname, status, message)
         else:
@@ -499,8 +499,6 @@ def apply_data(ctx, data, allow_update, delete_users):
 
         # Now add the users and set their role if other than member
         allusers = managers + members + viewers
-        log.write(ctx, 'allusers')
-        log.write(ctx, allusers)
         for username in list(set(allusers)):   # duplicates removed
             currentrole = user_role(ctx, groupname, username)
             if currentrole == "none":
@@ -509,12 +507,12 @@ def apply_data(ctx, data, allow_update, delete_users):
                 message = response[3]
                 if status == '0':
                     currentrole = "member"
-                    log.write(ctx, "Notice: added user {} to group {}".format(username, groupname))
+                    log.write(ctx, "[CSV import] Notice: added user {} to group {}".format(username, groupname))
                 else:
-                    log.write(ctx, "Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
-                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "[CSV import] Warning: error occurred while attempting to add user {} to group {}".format(username, groupname))
+                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
             else:
-                log.write(ctx, "Notice: user {} is already present in group {}.".format(username, groupname))
+                log.write(ctx, "[CSV import] Notice: user {} is already present in group {}.".format(username, groupname))
 
             # Set requested role. Note that user could be listed in multiple roles.
             # In case of multiple roles, manager takes precedence over normal,
@@ -526,17 +524,17 @@ def apply_data(ctx, data, allow_update, delete_users):
                 role = 'manager'
 
             if _are_roles_equivalent(role, currentrole):
-                log.write(ctx, "Notice: user {} already has role {} in group {}.".format(username, role, groupname))
+                log.write(ctx, "[CSV import] Notice: user {} already has role {} in group {}.".format(username, role, groupname))
             else:
                 response = ctx.uuGroupUserChangeRole(groupname, username, role, '', '')['arguments']
                 status = response[3]
                 message = response[4]
 
                 if status == '0':
-                    log.write(ctx, "Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "[CSV import] Notice: changed role of user {} in group {} to {}".format(username, groupname, role))
                 else:
-                    log.write(ctx, "Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
-                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "[CSV import] Warning: error while attempting to change role of user {} in group {} to {}".format(username, groupname, role))
+                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
 
         # Always remove the rods user for new groups, unless it is in the
         # CSV file.
@@ -545,11 +543,11 @@ def apply_data(ctx, data, allow_update, delete_users):
             status = response[2]
             message = response[3]
             if status == "0":
-                log.write(ctx, "Notice: removed rods user from group " + groupname)
+                log.write(ctx, "[CSV import] Notice: removed rods user from group " + groupname)
             else:
                 if status != 0:
-                    log.write(ctx, "Warning: error while attempting to remove user rods from group {}".format(groupname))
-                    log.write(ctx, "Status: {} , Message: {}".format(status, message))
+                    log.write(ctx, "[CSV import] Warning: error while attempting to remove user rods from group {}".format(groupname))
+                    log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
 
         # Remove users not in sheet
         if delete_users:
@@ -572,18 +570,18 @@ def apply_data(ctx, data, allow_update, delete_users):
                 if user not in allusers:
                     if user in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
+                            log.write(ctx, "[CSV import] Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
                             continue
                         else:
                             managers.remove(user)
-                    log.write(ctx, "Removing user {} from group {}".format(user, usergroupname))
+                    log.write(ctx, "[CSV import] Removing user {} from group {}".format(user, usergroupname))
 
                     response = ctx.uuGroupUserRemove(usergroupname, user, '', '')['arguments']
                     status = response[2]
                     message = response[3]
                     if status != "0":
-                        log.write(ctx, "Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
-                        log.write(ctx, "Status: {} , Message: {}".format(status, message))
+                        log.write(ctx, "[CSV import] Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
+                        log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
 
     return ''
 
