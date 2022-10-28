@@ -85,6 +85,9 @@ sys.modules['irods_types']       = Sandbag()
 sys.modules['genquery']          = Sandbag()
 sys.modules['session_vars']      = Sandbag()
 
+# Inject other modules.
+sys.modules['pysqlcipher3']      = Sandbag()
+
 # Inject the API shim, and its parent modules if needed.
 if ruleset_name != 'rules_uu':
     sys.modules['rules_uu']      = Sandbag(util = Sandbag(api = api))
