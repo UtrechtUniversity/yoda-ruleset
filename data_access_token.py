@@ -35,7 +35,7 @@ def api_token_generate(ctx, label=None):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.name(ctx)
+    user_id = user.full_name(ctx)
     token = generate_token()
 
     gen_time = datetime.now()
@@ -74,7 +74,7 @@ def api_token_load(ctx):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.name(ctx)
+    user_id = user.full_name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = []
 
@@ -109,7 +109,7 @@ def api_token_delete(ctx, label):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.name(ctx)
+    user_id = user.full_name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = None
 
@@ -148,7 +148,7 @@ def get_all_tokens(ctx):
         with conn:
             conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             for row in conn.execute('''SELECT user, label, exp_time FROM tokens WHERE exp_time > :now''',
-                                    {"user_id": user_id, "now": datetime.now()}):
+                                    {"now": datetime.now()}):
                 result.append({"user": row[0], "label": row[1], "exp_time": row[2]})
     except Exception:
         print_exc()

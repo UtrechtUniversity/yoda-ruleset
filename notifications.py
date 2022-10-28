@@ -303,5 +303,13 @@ def rule_process_data_access_token_expiry(ctx):
     log.write(ctx, '[DATA ACCESS TOKEN] Checking for expiring data access tokens')
     tokens = data_access_token.get_all_tokens(ctx)
     for token in tokens:
-        log.write(ctx, token)
+        exp_time = datetime.strptime(token['exp_time'], '%Y-%m-%d %H:%M:%S.%f')
+        date_exp_time = exp_time.replace(day=exp_time.day - 1)
+        r = relativedelta.relativedelta(date_exp_time, datetime.now().date())
+        # Send notification if token expires in less than a day.
+        if r.years == 0 and r.months == 0 and r.days <= 1:
+            actor = 'system'
+            message = "Data access password with label {} is expiring".format(token["label"])
+            set(ctx, actor, token['user'], "/user/data_access", message)
+            log.write(ctx, '[DATA ACCESS TOKEN] Notification set for expiring data access token from user <{}>'.format(token["user"]))
     log.write(ctx, '[DATA ACCESS TOKEN] Finished checking for expiring data access tokens')
