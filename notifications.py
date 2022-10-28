@@ -125,6 +125,8 @@ def api_notifications_load(ctx, sort_order="desc"):
                             if log_item_list[1] == "submitted for vault":
                                 notification["actor"] = log_item_list[2].split('#')[0]
                                 break
+            elif notification["target"] != "":
+                notification["link"] = notification["target"]
 
             notifications.append(notification)
         except Exception:
@@ -309,7 +311,8 @@ def rule_process_data_access_token_expiry(ctx):
         # Send notification if token expires in less than a day.
         if r.years == 0 and r.months == 0 and r.days <= 1:
             actor = 'system'
-            message = "Data access password with label {} is expiring".format(token["label"])
-            set(ctx, actor, token['user'], "/user/data_access", message)
+            target = str(user.from_str(ctx, token['user']))
+            message = "Data access password with label <{}> is expiring".format(token["label"])
+            set(ctx, actor, target, "/user/data_access", message)
             log.write(ctx, '[DATA ACCESS TOKEN] Notification set for expiring data access token from user <{}>'.format(token["user"]))
     log.write(ctx, '[DATA ACCESS TOKEN] Finished checking for expiring data access tokens')
