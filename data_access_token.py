@@ -35,7 +35,7 @@ def api_token_generate(ctx, label=None):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.full_name(ctx)
+    user_id = user.name(ctx)
     token = generate_token()
 
     gen_time = datetime.now()
@@ -74,7 +74,7 @@ def api_token_load(ctx):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.full_name(ctx)
+    user_id = user.name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = []
 
@@ -109,7 +109,7 @@ def api_token_delete(ctx, label):
     if not token_database_initialized():
         return api.Error('DatabaseError', 'Internal error: token database unavailable')
 
-    user_id = user.full_name(ctx)
+    user_id = user.name(ctx)
     conn = sqlite3.connect(config.token_database)
     result = None
 
