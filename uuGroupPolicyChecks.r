@@ -91,21 +91,26 @@ uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 }
 
 # \brief Check if a schema-id is valid.
-##
-# \param[in]  groupName
+#
 # \param[in]  schema_id
 # \param[out] valid
 #
 uuGroupSchemaIdIsValid(*schema_id, *valid) {
     # Check validity of schema_id
     *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id;
+    *coll = "";
     foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
-        *valid = true;
+        *coll = *row.COLL_NAME;
         succeed;
     }
 
-	*valid = false;
+    if (*coll != "") {
+        *valid = true;
+    } else {
+        *valid = false;
+    }
 }
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
