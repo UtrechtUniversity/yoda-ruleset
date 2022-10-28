@@ -9,7 +9,7 @@ import json
 import random
 import string
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import genquery
 from dateutil import relativedelta
@@ -297,6 +297,10 @@ def rule_process_data_access_token_expiry(ctx):
 
     :param ctx: Combined type of a callback and rei struct
     """
+    # Only send notifications if expiration notifications are enabled.
+    if config.token_expiration_notification == 0:
+        return
+
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
         log.write(ctx, "[DATA ACCESS TOKEN] Insufficient permissions - should only be called by rodsadmin")
@@ -305,9 +309,11 @@ def rule_process_data_access_token_expiry(ctx):
     log.write(ctx, '[DATA ACCESS TOKEN] Checking for expiring data access tokens')
     tokens = data_access_token.get_all_tokens(ctx)
     for token in tokens:
+        # Calculate token expiration notification date.
         exp_time = datetime.strptime(token['exp_time'], '%Y-%m-%d %H:%M:%S.%f')
-        date_exp_time = exp_time.replace(day=exp_time.day - 1)
+        date_exp_time = exp_time - timedelta(hours=config.token_expiration_notification)
         r = relativedelta.relativedelta(date_exp_time, datetime.now().date())
+
         # Send notification if token expires in less than a day.
         if r.years == 0 and r.months == 0 and r.days <= 1:
             actor = 'system'
