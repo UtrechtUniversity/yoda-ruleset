@@ -90,6 +90,27 @@ uuGroupDataClassificationIsValid(*groupName, *dataClassification, *valid) {
 	}
 }
 
+# \brief Check if a schema-id is valid.
+#
+# \param[in]  schema_id
+# \param[out] valid
+#
+uuGroupSchemaIdIsValid(*schema_id, *valid) {
+    # Check validity of schema_id
+    *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id;
+    *coll = "";
+    foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
+        *coll = *row.COLL_NAME;
+        succeed;
+    }
+
+    if (*coll != "") {
+        *valid = true;
+    } else {
+        *valid = false;
+    }
+}
+
 # }}}
 
 # \brief Group Policy: Can the user create a new group?
@@ -125,7 +146,6 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 
 					# For research and intake groups: Make sure their ro and
 					# vault groups do not exist yet.
-
 					*roName = "read-*base";
 					uuGroupExists(*roName, *roExists);
 
@@ -135,14 +155,14 @@ uuGroupPolicyCanGroupAdd(*actor, *groupName, *category, *subcategory, *schema_id
 					if (*roExists || *vaultExists) {
 						*reason = "This group name is not available.";
 					} else {
-                                             # Check validity of schema_id
-                                             *schema_coll = "/$rodsZoneClient/yoda/schemas/" ++ *schema_id;
-                                             foreach(*row in SELECT COLL_NAME WHERE COLL_NAME = *schema_coll) {
-                                                 uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
-                                                 succeed;
-                                             }
-                                             # schema not valid -> report error
-                                             *reason = "Invalid schema-id used when adding group: '*schema_id'";
+						uuGroupSchemaIdIsValid(*schema_id, *schemaIdValid);
+						if (*schemaIdValid) {
+							# Last check.
+							uuGroupPolicyCanUseCategory(*actor, *category, *allowed, *reason);
+						} else {
+							# schema not valid -> report error
+							*reason = "Invalid schema-id used when adding group: '*schema_id'";
+						}
 					}
 				} else {
 					*reason = "The chosen data classification is invalid for this type of group.";
@@ -250,11 +270,18 @@ uuGroupPolicyCanGroupModify(*actor, *groupName, *attribute, *value, *allowed, *r
 		} else if (*attribute == "description") {
 			*allowed = 1;
 		} else if (*attribute == "data_classification") {
-			uuGroupDataClassificationIsValid(*groupName, *value, *dataclasValid);
-			if (*dataclasValid) {
+			uuGroupDataClassificationIsValid(*groupName, *value, *dataClassValid);
+			if (*dataClassValid) {
 				*allowed = 1;
 			} else {
 				*reason = "The chosen data classification is invalid for this type of group.";
+			}
+		} else if (*attribute == "schema_id") {
+			uuGroupSchemaIdIsValid(*value, *schemaIdValid);
+			if (*schemaIdValid) {
+				*allowed = 1;
+			} else {
+				*reason = "The chosen schema id is invalid for this group.";
 			}
 		} else {
 			*reason = "Invalid group attribute name.";

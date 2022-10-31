@@ -9,12 +9,13 @@ import json
 import random
 import string
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import genquery
 from dateutil import relativedelta
 from genquery import Query
 
+import data_access_token
 import mail
 import settings
 from util import *
@@ -23,7 +24,8 @@ __all__ = ['api_notifications_load',
            'api_notifications_dismiss',
            'api_notifications_dismiss_all',
            'rule_mail_notification_report',
-           'rule_process_ending_retention_packages']
+           'rule_process_ending_retention_packages',
+           'rule_process_data_access_token_expiry']
 
 NOTIFICATION_KEY = constants.UUORGMETADATAPREFIX + "notification"
 
@@ -123,6 +125,8 @@ def api_notifications_load(ctx, sort_order="desc"):
                             if log_item_list[1] == "submitted for vault":
                                 notification["actor"] = log_item_list[2].split('#')[0]
                                 break
+            elif notification["target"] != "":
+                notification["link"] = notification["target"]
 
             notifications.append(notification)
         except Exception:
@@ -285,3 +289,36 @@ def rule_process_ending_retention_packages(ctx):
                 log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
     log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
+
+
+@rule.make()
+def rule_process_data_access_token_expiry(ctx):
+    """Rule interface for checking for data access tokens that are expiring soon.
+
+    :param ctx: Combined type of a callback and rei struct
+    """
+    # Only send notifications if expiration notifications are enabled.
+    if config.token_expiration_notification == 0:
+        return
+
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        log.write(ctx, "[DATA ACCESS TOKEN] Insufficient permissions - should only be called by rodsadmin")
+        return
+
+    log.write(ctx, '[DATA ACCESS TOKEN] Checking for expiring data access tokens')
+    tokens = data_access_token.get_all_tokens(ctx)
+    for token in tokens:
+        # Calculate token expiration notification date.
+        exp_time = datetime.strptime(token['exp_time'], '%Y-%m-%d %H:%M:%S.%f')
+        date_exp_time = exp_time - timedelta(hours=config.token_expiration_notification)
+        r = relativedelta.relativedelta(date_exp_time, datetime.now().date())
+
+        # Send notification if token expires in less than a day.
+        if r.years == 0 and r.months == 0 and r.days <= 1:
+            actor = 'system'
+            target = str(user.from_str(ctx, token['user']))
+            message = "Data access password with label <{}> is expiring".format(token["label"])
+            set(ctx, actor, target, "/user/data_access", message)
+            log.write(ctx, '[DATA ACCESS TOKEN] Notification set for expiring data access token from user <{}>'.format(token["user"]))
+    log.write(ctx, '[DATA ACCESS TOKEN] Finished checking for expiring data access tokens')

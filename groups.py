@@ -62,7 +62,7 @@ def getGroupData(ctx):
             }
             groups[name] = group
 
-        if attr in ["data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
         elif attr == "description":
             # Deal with legacy use of '.' for empty description metadata.
@@ -70,8 +70,6 @@ def getGroupData(ctx):
             group[attr] = '' if value == '.' else value
         elif attr == "manager":
             group["managers"].append(value)
-        elif attr == "schema_id":
-            group["schema_id"] = value
 
     # Second query: obtain list of groups with memberships.
     iter = genquery.row_iterator(
@@ -304,11 +302,10 @@ def api_group_data(ctx):
         if not group_hierarchy[group['category']].get(group['subcategory']):
             group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
 
-        # check whether schema_id is present on group level.
-        # if not, collect it from the corresponding category
+        # Check whether schema_id is present on group level.
+        # If not, collect it from the corresponding category
         if "schema_id" not in group:
-            # group["schema_id"] = schema.get_active_schema_id
-            group["schema_id"] = 'Added by missing attr schema-id ' + schema.get_group_category(ctx, 'tempZone', group['name'])
+            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
 
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
