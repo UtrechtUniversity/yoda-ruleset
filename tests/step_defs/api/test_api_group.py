@@ -73,6 +73,7 @@ def api_group_create(user, group_name):
         {"group_name": group_name,
          "category": "api-test",
          "subcategory": "api-test",
+         "schema_id": "default-2",
          "description": "",
          "data_classification": "public"}
     )

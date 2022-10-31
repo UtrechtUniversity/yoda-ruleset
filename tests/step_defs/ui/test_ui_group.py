@@ -190,3 +190,62 @@ def ui_group_click_first_item_in_group(browser):
 
     # Make sure that row clicked has been set in the group manager as the group to be managed
     assert group_clicked == group_properties_type + group_properties_name
+
+
+@when("user opens add group dialog")
+def ui_group_schema_create_group(browser):
+    browser.find_by_css('.create-button-new').click()
+
+
+@when(parsers.parse("groupname is set to {group}"))
+def ui_group_schema_set_groupname(browser, group):
+    browser.find_by_id('f-group-create-name').fill(group)
+
+
+@when(parsers.parse("category is set to {category}"))
+def ui_group_schema_category_is_set(browser, category):
+    browser.find_by_id('s2id_f-group-create-category').click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == category:
+            option.click()
+            break
+
+    # subcategory handling simply choose first possible option
+    browser.find_by_id('s2id_f-group-create-subcategory').click()
+    browser.find_by_css('.select2-result')[0].click()
+
+
+@when(parsers.parse("schemaid is set to {schema_id}"))
+def ui_group_schema_assert_group_created(browser, schema_id):
+    browser.find_by_id('s2id_f-group-create-schema-id').click()
+
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == schema_id:
+            option.click()
+            break
+	
+
+@when("user submits new group data")
+def ui_schema_submit_new_group_data(browser):
+    browser.find_by_id('f-group-create-submit').click()
+
+
+@when(parsers.parse("group {group} is successfully created"))
+def ui_group_schema_assert_group_created(browser, group):
+    assert browser.find_by_css('.alert-success').text == 'Created group research-' + group + '.'
+    # time.sleep(2)
+
+
+@when(parsers.parse("check whether group properties {group}, {category} and {schema_id} are correct"))
+def ui_group_schema_properties_correct(browser, group, category, schema_id):
+    # browser.find_by_css('.list-group-item')[0].click()
+    item = browser.find_by_css('.list-group-item')[0]
+    item.links.find_by_partial_text(category).click()
+    item.links.find_by_partial_text(group).click()
+
+    assert browser.find_by_id('f-group-update-name').value == group
+    assert browser.find_by_id('f-group-update-schema-id').value == schema_id
+    div = browser.find_by_id('s2id_f-group-update-category')
+    assert div.find_by_css('.select2-chosen').text == category

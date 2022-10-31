@@ -29,10 +29,22 @@ Feature: Group API
         Given user <user> is authenticated
         And the Yoda group subcategories API is queried with <category>
         Then the response status code is "200"
-        And category <category> exists
+        And category <category> exists  ????? moet subcategory zijn
 
         Examples:
             | user        | category |
+            | researcher  | initial  |
+            | datamanager | initial  |
+
+
+    Scenario Outline: Group schema_ids
+        Given user <user> is authenticated
+        And the Yoda group  schema_ids API is queried
+        Then the response status code is "200"
+        And schemaid <schema_id> exists
+
+        Examples:
+            | user        | schema_id |
             | researcher  | initial  |
             | datamanager | initial  |
 

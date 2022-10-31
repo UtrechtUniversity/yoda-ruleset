@@ -118,3 +118,20 @@ Feature: Group UI
             | csv-test  | research-csv-test-group2 |
             | csv-test  | research-csv-test-group3 |
             | csv-test  | research-csv-test-group4 |
+
+
+    Scenario: Add new group
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And groupname is set to {group}
+        And category is set to {category}
+        And schemaid is set to {schema_id}
+        When user submits new group data
+        And group {group} is successfully created
+        And searches for group {group}
+        And check whether group properties {group}, {category} and {schema_id} are correct
+
+        Examples:
+        | group  | category | schema_id |
+        | hdr185 | core-0   | teclab-1  | 
