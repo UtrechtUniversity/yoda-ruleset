@@ -217,7 +217,7 @@ def ui_group_schema_category_is_set(browser, category):
 
 
 @when(parsers.parse("schemaid is set to {schema_id}"))
-def ui_group_schema_assert_group_created(browser, schema_id):
+def ui_group_schema_set_schema_id(browser, schema_id):
     browser.find_by_id('s2id_f-group-create-schema-id').click()
 
     options = browser.find_by_css('.select2-result')
@@ -225,7 +225,7 @@ def ui_group_schema_assert_group_created(browser, schema_id):
         if option.text == schema_id:
             option.click()
             break
-	
+
 
 @when("user submits new group data")
 def ui_schema_submit_new_group_data(browser):
