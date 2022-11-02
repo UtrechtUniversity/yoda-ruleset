@@ -11,11 +11,11 @@ import genquery
 import meta
 from util import *
 
-__all__ = ['api_schemas_get_schemas']
+__all__ = ['api_schema_get_schemas']
 
 
 @api.make()
-def api_schemas_get_schemas(ctx):
+def api_schema_get_schemas(ctx):
     """Retrieve schemas."""
     schemas = []
 
