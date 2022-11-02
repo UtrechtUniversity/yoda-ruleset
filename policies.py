@@ -462,7 +462,7 @@ def py_acPreProcForExecCmd(ctx, cmd, args, addr, hint):
     if user.is_admin(ctx, actor):
         return policy.succeed()
 
-    if config.enable_tape_archive and cmd in ['dmattr', 'dmget']:
+    if config.enable_tape_archive and cmd in ['dmattr', 'dmget', 'admin-tape-archive-set-state.sh']:
         return policy.succeed()
 
     if user.is_member_of(ctx, 'priv-execcmd-all', actor):
@@ -508,8 +508,8 @@ def pep_resource_modified_post(ctx, instance_name, _ctx, out):
     username = _ctx.map()['user_user_name']
     info = pathutil.info(path)
 
-    if config.resource_replica:
-        replication.replicate_asynchronously(ctx, path, instance_name, config.resource_replica)
+    for resource in config.resource_replica:
+        replication.replicate_asynchronously(ctx, path, instance_name, resource)
 
     if config.enable_tape_archive:
         ctx.uuTapeArchiveReplicateAsynchronously(path)

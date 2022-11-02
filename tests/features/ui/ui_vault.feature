@@ -5,6 +5,8 @@ Feature: Vault UI
         And module "vault" is shown
         When user browses to data package in <vault>
         And user submits the data package for publication
+        And user chooses new publication
+        And user agrees with terms and conditions
         Then the data package status is "Submitted for publication"
         And provenance log includes "Submitted for publication"
 
@@ -31,6 +33,8 @@ Feature: Vault UI
         And module "vault" is shown
         When user browses to data package in <vault>
         And user submits the data package for publication
+        And user chooses new publication
+        And user agrees with terms and conditions
         Then the data package status is "Submitted for publication"
         And provenance log includes "Submitted for publication"
 

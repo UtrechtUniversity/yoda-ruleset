@@ -83,7 +83,9 @@ def api_token_load(ctx):
             conn.execute("PRAGMA key='%s'" % (config.token_database_password))
             for row in conn.execute('''SELECT label, exp_time FROM tokens WHERE user=:user_id AND exp_time > :now''',
                                     {"user_id": user_id, "now": datetime.now()}):
-                result.append({"label": row[0], "exp_time": row[1]})
+                exp_time = datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S.%f')
+                exp_time = exp_time.strftime('%Y-%m-%d %H:%M:%S')
+                result.append({"label": row[0], "exp_time": exp_time})
     except Exception:
         print_exc()
         result = api.Error('DatabaseError', 'Error occurred while reading database')
@@ -119,6 +121,38 @@ def api_token_delete(ctx, label):
     except Exception:
         print_exc()
         result = api.Error('DatabaseError', 'Error during deletion from database')
+
+    # Connection object used as context manager only commits or rollbacks transactions,
+    # so the connection object should be closed manually
+    conn.close()
+
+    return result
+
+
+def get_all_tokens(ctx):
+    """Retrieve all valid tokens.
+    :param ctx: Combined type of a callback and rei struct
+
+    :returns: Valid tokens
+    """
+    # check permissions - rodsadmin only
+    if user.user_type(ctx) != 'rodsadmin':
+        return []
+
+    if not token_database_initialized():
+        return []
+
+    conn = sqlite3.connect(config.token_database)
+    result = []
+    try:
+        with conn:
+            conn.execute("PRAGMA key='%s'" % (config.token_database_password))
+            for row in conn.execute('''SELECT user, label, exp_time FROM tokens WHERE exp_time > :now''',
+                                    {"now": datetime.now()}):
+                result.append({"user": row[0], "label": row[1], "exp_time": row[2]})
+    except Exception:
+        print_exc()
+        result = api.Error('DatabaseError', 'Error occurred while reading database')
 
     # Connection object used as context manager only commits or rollbacks transactions,
     # so the connection object should be closed manually

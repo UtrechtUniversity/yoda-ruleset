@@ -71,14 +71,50 @@ Feature: Group UI
             | initial  | research-initial |
 
 
-    Scenario Outline: For one specific user retrieve a list of its groups. Click one group
+    Scenario Outline: List groups of users
         Given user datamanager is logged in
         And module "group_manager" is shown
         When user opens group search dialog
         And searches for groups of user <user_search>
         Then a list of groups is shown in the dialog
-		When user clicks first found group
+        When user clicks first found group
 
         Examples:
             | user_search |
             | researcher  |
+
+
+    Scenario: Imports group from CSV
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens group import dialog
+        And user clicks upload button
+        And user clicks allow updates checkbox
+        And user clicks allow deletions checkbox
+        Then process csv and check number of rows
+        And click on imported row 0 and check group properties
+        And find groupmember "groupmanager@yoda.test"
+        And user opens group import dialog
+        And click on imported row 1 and check group properties
+        And find groupmember "researcher@yoda.test"
+        And user opens group import dialog
+        And click on imported row 2 and check group properties
+        And find groupmember "datamanager@yoda.test"
+        And user opens group import dialog
+        And click on imported row 3 and check group properties
+        And find groupmember "viewer@yoda.test"
+
+
+    Scenario Outline: Group remove
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user has access to group <group> in category <category>
+        And user clicks remove group
+        And user confirms group removal
+
+        Examples:
+            | category  | group                    |
+            | csv-test  | research-csv-test-group1 |
+            | csv-test  | research-csv-test-group2 |
+            | csv-test  | research-csv-test-group3 |
+            | csv-test  | research-csv-test-group4 |

@@ -165,44 +165,6 @@ def api_vault_data_package(user, vault):
     return body["data"]["items"][0]["name"]
 
 
-@given(parsers.parse("the Yoda meta form save API is queried with metadata on datapackage in {vault}"), target_fixture="api_response")
-def api_meta_form_save_vault(user, vault, data_package):
-    return api_request(
-        user,
-        "meta_form_save",
-        {"coll": vault + "/" + data_package,
-         "metadata": {
-             "links": [{
-                 "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
-             }],
-             "Language": "en - English",
-             "Retention_Period": 10,
-             "Creator": [{
-                 "Name": {
-                     "Given_Name": "Test",
-                     "Family_Name": "Test"
-                 },
-                 "Affiliation": ["Utrecht University"],
-                 "Person_Identifier": [{}]
-             }],
-             "Discipline": [
-                 "Natural Sciences - Computer and information sciences (1.2)"
-             ],
-             "Tag": [
-                 "Tag_youre_it",
-                 "No_tag_backs"
-             ],
-             "Data_Access_Restriction": "Restricted - available upon request",
-             "Title": "API test datamanager vault save metadata",
-             "Description": "Test",
-             "Data_Type": "Dataset",
-             "Data_Classification": "Public",
-             "License": "Creative Commons Attribution 4.0 International Public License"
-         }}
-    )
-
-
 @then(parsers.parse("file {file} exists in {collection}"))
 def file_exists(user, file, collection):
     http_status, body = api_request(

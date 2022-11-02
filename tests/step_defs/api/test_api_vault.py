@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2020-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import time
+
 from pytest_bdd import (
     given,
     parsers,
@@ -120,15 +122,67 @@ def api_vault_get_publication_terms(user):
     )
 
 
-@then(parsers.parse('data package in {vault} status is "{status}"'))
-def data_package_status(user, vault, data_package, status):
-    _, body = api_request(
+@given(parsers.parse('the Yoda vault get published packages API is queried with {vault}'), target_fixture="api_response")
+def api_vault_get_published_packages(user, vault):
+    return api_request(
         user,
-        "vault_collection_details",
-        {"path": vault + "/" + data_package}
+        "vault_get_published_packages",
+        {"path": vault}
     )
 
-    assert body["data"]["status"] == status
+
+@given(parsers.parse("the Yoda meta form save API is queried with metadata on datapackage in {vault}"), target_fixture="api_response")
+def api_meta_form_save_vault(user, vault, data_package):
+    return api_request(
+        user,
+        "meta_form_save",
+        {"coll": vault + "/" + data_package,
+         "metadata": {
+             "links": [{
+                 "rel": "describedby",
+                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
+             }],
+             "Language": "en - English",
+             "Retention_Period": 10,
+             "Creator": [{
+                 "Name": {
+                     "Given_Name": "Test",
+                     "Family_Name": "Test"
+                 },
+                 "Affiliation": ["Utrecht University"],
+                 "Person_Identifier": [{}]
+             }],
+             "Discipline": [
+                 "Natural Sciences - Computer and information sciences (1.2)"
+             ],
+             "Tag": [
+                 "Tag_youre_it",
+                 "No_tag_backs"
+             ],
+             "Data_Access_Restriction": "Restricted - available upon request",
+             "Title": "API test datamanager vault save metadata",
+             "Description": "Test",
+             "Data_Type": "Dataset",
+             "Data_Classification": "Public",
+             "License": "Creative Commons Attribution 4.0 International Public License"
+         }}
+    )
+
+
+@then(parsers.parse('data package in {vault} status is "{status}"'))
+def data_package_status(user, vault, data_package, status):
+    for _i in range(25):
+        _, body = api_request(
+            user,
+            "vault_collection_details",
+            {"path": vault + "/" + data_package}
+        )
+
+        if body["data"]["status"] == status:
+            return True
+        time.sleep(5)
+
+    raise AssertionError()
 
 
 @then('preservable formats lists are returned')
@@ -156,6 +210,13 @@ def system_metadata(api_response):
 
 @then('publication terms are returned')
 def publication_terms(api_response):
+    http_status, body = api_response
+    assert http_status == 200
+    assert len(body["data"]) > 0
+
+
+@then('published packages are returned')
+def published_packages(api_response):
     http_status, body = api_response
     assert http_status == 200
     assert len(body["data"]) > 0

@@ -24,6 +24,7 @@ password = "test"
 users = ['researcher',
          'datamanager',
          'groupmanager',
+         'functionaladminpriv',
          'technicaladmin']
 user_cookies = {}
 
@@ -107,6 +108,10 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'oidc' and not login_oidc:
         marker = pytest.mark.skip(reason="Skip login OIDC")
+        marker(function)
+        return True
+    elif tag == "fail":
+        marker = pytest.mark.xfail(reason="Test is expected to fail", run=True, strict=False)
         marker(function)
         return True
     else:
