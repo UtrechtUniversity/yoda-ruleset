@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for finding the active schema."""
 
-__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -11,11 +11,11 @@ import genquery
 import meta
 from util import *
 
-__all__ = ['api_get_schemas']
+__all__ = ['api_schema_get_schemas']
 
 
 @api.make()
-def api_get_schemas(ctx):
+def api_schema_get_schemas(ctx):
     """Retrieve schemas."""
     schemas = []
 
