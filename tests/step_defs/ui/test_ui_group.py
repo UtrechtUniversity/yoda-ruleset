@@ -30,7 +30,7 @@ def ui_group_access(browser, category, group):
 def ui_group_user_add(browser, user_add):
     time.sleep(3)
     browser.find_by_css('div#s2id_f-user-create-name').click()
-    browser.find_by_xpath('//*[@id="s2id_autogen5_search"]').fill(user_add)
+    browser.find_by_xpath('//*[@id="s2id_autogen6_search"]').fill(user_add)
     browser.find_by_css('.select2-results .select2-highlighted').click()
     browser.find_by_css('#f-user-create-submit').click()
 
@@ -235,16 +235,10 @@ def ui_schema_submit_new_group_data(browser):
 @when(parsers.parse("group {group} is successfully created"))
 def ui_group_schema_assert_group_created(browser, group):
     assert browser.find_by_css('.alert-success').text == 'Created group research-' + group + '.'
-    # time.sleep(2)
 
 
 @when(parsers.parse("check whether group properties {group}, {category} and {schema_id} are correct"))
 def ui_group_schema_properties_correct(browser, group, category, schema_id):
-    # browser.find_by_css('.list-group-item')[0].click()
-    item = browser.find_by_css('.list-group-item')[0]
-    item.links.find_by_partial_text(category).click()
-    item.links.find_by_partial_text(group).click()
-
     assert browser.find_by_id('f-group-update-name').value == group
     assert browser.find_by_id('f-group-update-schema-id').value == schema_id
     div = browser.find_by_id('s2id_f-group-update-category')

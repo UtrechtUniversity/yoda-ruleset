@@ -1,5 +1,22 @@
 Feature: Group UI
 
+    Scenario Outline: Group create
+        Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And groupname is set to <group>
+        And category is set to <category>
+        And schemaid is set to <schema_id>
+        When user submits new group data
+        And group <group> is successfully created
+        And check whether group properties <group>, <category> and <schema_id> are correct
+        # alle testgroepen onderbrengen in ui category / groepen
+        # alle groepen gemaakt door ui tests ook weer verwijderd
+        Examples:
+            | group         | category | schema_id |
+            | ui-test-group | core-0   | teclab-1  |
+
+
     Scenario Outline: Group user add
         Given user groupmanager is logged in
         And module "group_manager" is shown
@@ -118,20 +135,4 @@ Feature: Group UI
             | csv-test  | research-csv-test-group2 |
             | csv-test  | research-csv-test-group3 |
             | csv-test  | research-csv-test-group4 |
-
-
-    Scenario: Add new group
-        Given user functionaladminpriv is logged in
-        And module "group_manager" is shown
-        When user opens add group dialog
-        And groupname is set to {group}
-        And category is set to {category}
-        And schemaid is set to {schema_id}
-        When user submits new group data
-        And group {group} is successfully created
-        And searches for group {group}
-        And check whether group properties {group}, {category} and {schema_id} are correct
-
-        Examples:
-        | group  | category | schema_id |
-        | hdr185 | core-0   | teclab-1  | 
+            | core-0    | research-ui-test-group   |
