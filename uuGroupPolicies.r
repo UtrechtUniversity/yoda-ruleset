@@ -75,20 +75,20 @@ uuGroupPreSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *p
 	} else {
 
 		# This type of group is manually created.
-
 		if (*initialAttr == "manager" || *initialValue == uuClientFullName) {
 			# Normal groups must have an initial manager attribute.
-
 			# Now check the higher level policy.
 			uuGroupPolicyCanGroupAdd(
 				uuClientFullName,
 				*groupName,
 				*policyKv."category",
 				*policyKv."subcategory",
+                                *policyKv."schema_id",
 				*policyKv."description",
 				*policyKv."data_classification",
 				*allowed, *reason
 			);
+
 			if (*allowed == 1) {
 				succeed;
 			}
@@ -527,6 +527,10 @@ uuPostSudoGroupAdd(*groupName, *initialAttr, *initialValue, *initialUnit, *polic
 		if (*policyKv."data_classification" != "") {
 			errorcode(msiSudoObjMetaSet(*groupName, "-u", "data_classification", *policyKv."data_classification", "", ""));
 		}
+                if (*policyKv."schema_id" != "") {
+                        errorcode(msiSudoObjMetaSet(*groupName, "-u", "schema_id", *policyKv."schema_id", "", ""));
+                }
+
 	}
 
     # Put the group name in the policyKv to assist the acl policy.

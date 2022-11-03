@@ -10,6 +10,7 @@ from collections import OrderedDict
 import genquery
 import requests
 
+import schema
 from util import *
 
 __all__ = ['api_group_data',
@@ -61,7 +62,7 @@ def getGroupData(ctx):
             }
             groups[name] = group
 
-        if attr in ["data_classification", "category", "subcategory"]:
+        if attr in ["schema_id", "data_classification", "category", "subcategory"]:
             group[attr] = value
         elif attr == "description":
             # Deal with legacy use of '.' for empty description metadata.
@@ -301,8 +302,14 @@ def api_group_data(ctx):
         if not group_hierarchy[group['category']].get(group['subcategory']):
             group_hierarchy[group['category']][group['subcategory']] = OrderedDict()
 
+        # Check whether schema_id is present on group level.
+        # If not, collect it from the corresponding category
+        if "schema_id" not in group:
+            group["schema_id"] = schema.get_group_category(ctx, user.zone(ctx), group['name'])
+
         group_hierarchy[group['category']][group['subcategory']][group['name']] = {
             'description': group['description'] if 'description' in group else '',
+            'schema_id': group['schema_id'],
             'data_classification': group['data_classification'] if 'data_classification' in group else '',
             'members': members
         }
@@ -486,9 +493,20 @@ def apply_data(ctx, data, allow_update, delete_users):
         log.write(ctx, '[CSV import] Adding and updating group: {}'.format(groupname))
 
         # First create the group. Note that the rodsadmin actor will become a groupmanager
-        response = ctx.uuGroupAdd(groupname, category, subcategory, '', 'unspecified', '', '')['arguments']
-        status = response[5]
-        message = response[6]
+
+        # when no matching category schema-id is found, fall back to yoda instance default
+        schema_id = 'default'
+        iter = genquery.row_iterator(
+            "COLL_NAME",
+            "COLL_NAME = '/{}/yoda/schemas/{}'".format(user.zone(ctx), category),
+            genquery.AS_LIST, ctx
+        )
+        for row in iter:
+            schema_id = category
+
+        response = ctx.uuGroupAdd(groupname, category, subcategory, schema_id, '', 'unspecified', '', '')['arguments']
+        status = response[6]
+        message = response[7]
 
         if ((status == '-1089000') | (status == '-809000')) and allow_update:
             log.write(ctx, '[CSV import] WARNING: group "{}" not created, it already exists'.format(groupname))
@@ -565,22 +583,22 @@ def apply_data(ctx, data, allow_update, delete_users):
                     currentusers.append([row[1], row[0]])
 
             for userdata in currentusers:
-                user = userdata[0]
+                username = userdata[0]
                 usergroupname = userdata[1]
-                if user not in allusers:
-                    if user in managers:
+                if username not in allusers:
+                    if username in managers:
                         if len(managers) == 1:
-                            log.write(ctx, "[CSV import] Error: cannot remove user {} from group {}, because he/she is the only group manager".format(user, usergroupname))
+                            log.write(ctx, "[CSV import] Error: cannot remove user {} from group {}, because he/she is the only group manager".format(username, usergroupname))
                             continue
                         else:
-                            managers.remove(user)
+                            managers.remove(username)
                     log.write(ctx, "[CSV import] Removing user {} from group {}".format(user, usergroupname))
 
-                    response = ctx.uuGroupUserRemove(usergroupname, user, '', '')['arguments']
+                    response = ctx.uuGroupUserRemove(usergroupname, username, '', '')['arguments']
                     status = response[2]
                     message = response[3]
                     if status != "0":
-                        log.write(ctx, "[CSV import] Warning: error while attempting to remove user {} from group {}".format(user, usergroupname))
+                        log.write(ctx, "[CSV import] Warning: error while attempting to remove user {} from group {}".format(username, usergroupname))
                         log.write(ctx, "[CSV import] Status: {} , Message: {}".format(status, message))
 
     return ''
@@ -921,22 +939,23 @@ def api_group_exists(ctx, group_name):
 
 
 @api.make()
-def api_group_create(ctx, group_name, category, subcategory, description, data_classification):
+def api_group_create(ctx, group_name, category, subcategory, schema_id, description, data_classification):
     """Create a new group.
 
     :param ctx:                 Combined type of a ctx and rei struct
     :param group_name:          Name of the group to create
     :param category:            Category of the group to create
     :param subcategory:         Subcategory of the group to create
+    :param schema_id:           Schema-id for the group to be created
     :param description:         Description of the group to create
     :param data_classification: Data classification of the group to create
 
     :returns: Dict with API status result
     """
     try:
-        response = ctx.uuGroupAdd(group_name, category, subcategory, description, data_classification, '', '')['arguments']
-        status = response[5]
-        message = response[6]
+        response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, description, data_classification, '', '')['arguments']
+        status = response[6]
+        message = response[7]
         if status == '0':
             return api.Result.ok()
         else:

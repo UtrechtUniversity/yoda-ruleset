@@ -29,7 +29,7 @@ Feature: Group API
         Given user <user> is authenticated
         And the Yoda group subcategories API is queried with <category>
         Then the response status code is "200"
-        And category <category> exists
+        And subcategory <category> exists
 
         Examples:
             | user        | category |

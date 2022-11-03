@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for finding the active schema."""
 
-__copyright__ = 'Copyright (c) 2018-2021, Utrecht University'
+__copyright__ = 'Copyright (c) 2018-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
 import re
@@ -11,7 +11,26 @@ import genquery
 import meta
 from util import *
 
-__all__ = []
+__all__ = ['api_schema_get_schemas']
+
+
+@api.make()
+def api_schema_get_schemas(ctx):
+    """Retrieve schemas."""
+    schemas = []
+
+    iter = genquery.row_iterator(
+        "COLL_NAME",
+        "COLL_PARENT_NAME = '/{}/yoda/schemas'".format(user.zone(ctx)),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        schema = row[0].split('/')[-1]
+        if schema != 'default':
+            schemas.append(row[0].split('/')[-1])
+
+    return schemas
 
 
 def get_group_category(callback, rods_zone, group_name):
@@ -27,6 +46,18 @@ def get_group_category(callback, rods_zone, group_name):
     """
     category = '-1'
     schemaCategory = 'default'
+
+    # Find out whether a schema_id has been set on group level
+    iter = genquery.row_iterator(
+        "META_USER_ATTR_VALUE",
+        "USER_NAME = '{}' AND USER_TYPE = 'rodsgroup' AND META_USER_ATTR_NAME = 'schema_id'".format(group_name),
+        genquery.AS_LIST, callback
+    )
+
+    for row in iter:
+        # return found schemaCategory directly on group level
+        # No further test is required here as the value found here was selected from /rodszone/yoda/schemas/ and therefore MUST be present
+        return row[0]
 
     # Find out category based on current group_name.
     iter = genquery.row_iterator(
