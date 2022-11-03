@@ -102,6 +102,11 @@ def get_active_schema_path(callback, path):
     rods_zone  = path_parts[1]
     group_name = path_parts[3]
 
+    # Metadata is updated in the vault, metadata is temporary stored in datamanager group.
+    # e.g. /tempZone/home/datamanager-bla/vault-bla/pkg1[1667478959]/yoda-metadata.json
+    if group_name.startswith("datamanager-"):
+        group_name = path_parts[4]
+
     if group_name.startswith("vault-"):
         temp_group_name = group_name.replace("vault-", "deposit-", 1)
         if group.exists(callback, temp_group_name):
