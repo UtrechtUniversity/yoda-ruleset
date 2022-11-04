@@ -125,14 +125,14 @@ Feature: Group UI
     Scenario Outline: Group remove
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
+        When user has access to group <group> in subcategory <subcategory> and category <category>
         And user clicks remove group
         And user confirms group removal
 
         Examples:
-            | category        | group                    |
-            | csv-test        | research-csv-test-group1 |
-            | csv-test        | research-csv-test-group2 |
-            | csv-test        | research-csv-test-group3 |
-            | csv-test        | research-csv-test-group4 |
-            | test-automation | research-ui-test-group   |
+            | category        | subcategory | group                    |
+            | test-automation | initial     | research-ui-test-group   |
+            | test-automation | csv-test    | research-csv-test-group1 |
+            | test-automation | csv-test    | research-csv-test-group2 |
+            | test-automation | csv-test    | research-csv-test-group3 |
+            | test-automation | csv-test    | research-csv-test-group4 |

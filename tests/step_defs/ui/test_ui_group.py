@@ -21,9 +21,17 @@ scenarios('../../features/ui/ui_group.feature')
 
 @when(parsers.parse("user has access to group {group} in category {category}"))
 def ui_group_access(browser, category, group):
-    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=3):
-        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=3).click()
-        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=3).click()
+    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=1):
+        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=1).click()
+        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=1).click()
+
+
+@when(parsers.parse("user has access to group {group} in subcategory {subcategory} and category {category}"))
+def ui_group_access(browser, category, subcategory, group):
+    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=1):
+        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=1).click()
+        browser.find_by_css('div.list-group-item.subcategory[data-name={}] a'.format(subcategory), wait_time=1).click()
+        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=1).click()
 
 
 @when(parsers.parse("user adds {user_add} to group"))
