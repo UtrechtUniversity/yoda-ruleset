@@ -1,22 +1,5 @@
 Feature: Group UI
 
-    Scenario Outline: Group create
-        Given user functionaladminpriv is logged in
-        And module "group_manager" is shown
-        When user opens add group dialog
-        And groupname is set to <group>
-        And category is set to <category>
-        And subcategory is set to <subcategory>
-        And schema id is set to <schema_id>
-        When user submits new group data
-        And group <group> is successfully created
-        And check whether group properties <group>, <category> and <schema_id> are correct
-
-        Examples:
-            | category        | subcategory| group         | schema_id |
-            | test-automation | initial    | ui-test-group | teclab-1  |
-
-
     Scenario Outline: Group user add
         Given user groupmanager is logged in
         And module "group_manager" is shown
@@ -122,17 +105,51 @@ Feature: Group UI
         And find groupmember "viewer@yoda.test"
 
 
-    Scenario Outline: Group remove
+    Scenario Outline: Group research create
         Given user functionaladminpriv is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And groupname is set to <group>
+        And category is set to <category>
+        And subcategory is set to <subcategory>
+        And schema id is set to <schema_id>
+        When user submits new group data
+        And research group <group> is successfully created
+        And check whether research group properties <group>, <category> and <schema_id> are correct
+
+        Examples:
+            | category        | subcategory| group         | schema_id |
+            | test-automation | initial    | ui-test-group | teclab-1  |
+
+
+    Scenario Outline: Group datamanager create
+        Given user technicaladmin is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And category is set to <category>
+        And subcategory is set to <subcategory>
+        And group type is set to datamanager
+        When user submits new group data
+        And datamanager group <group> is successfully created
+        And check whether datamanager group properties <group> and <category> are correct
+
+        Examples:
+            | category         | subcategory      | group            |
+            | test-datamanager | test-datamanager | test-datamanager |
+
+
+    Scenario Outline: Group remove
+        Given user <user> is logged in
         And module "group_manager" is shown
         When user has access to group <group> in subcategory <subcategory> and category <category>
         And user clicks remove group
         And user confirms group removal
 
         Examples:
-            | category        | subcategory | group                    |
-            | test-automation | initial     | research-ui-test-group   |
-            | test-automation | csv-test    | research-csv-test-group1 |
-            | test-automation | csv-test    | research-csv-test-group2 |
-            | test-automation | csv-test    | research-csv-test-group3 |
-            | test-automation | csv-test    | research-csv-test-group4 |
+            | user                | category         | subcategory      | group                        |
+            | functionaladminpriv | test-automation  | initial          | research-ui-test-group       |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group4     |
+            | technicaladmin      | test-datamanager | test-datamanager | datamanager-test-datamanager |
