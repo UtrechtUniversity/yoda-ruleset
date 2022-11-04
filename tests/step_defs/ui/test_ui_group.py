@@ -211,12 +211,18 @@ def ui_group_schema_category_is_set(browser, category):
             option.click()
             break
 
-    # subcategory handling simply choose first possible option
+
+@when(parsers.parse("subcategory is set to {subcategory}"))
+def ui_group_schema_subcategory_is_set(browser, subcategory):
     browser.find_by_id('s2id_f-group-create-subcategory').click()
-    browser.find_by_css('.select2-result')[0].click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == subcategory:
+            option.click()
+            break
 
 
-@when(parsers.parse("schemaid is set to {schema_id}"))
+@when(parsers.parse("schema id is set to {schema_id}"))
 def ui_group_schema_set_schema_id(browser, schema_id):
     browser.find_by_id('s2id_f-group-create-schema-id').click()
 

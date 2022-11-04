@@ -6,15 +6,15 @@ Feature: Group UI
         When user opens add group dialog
         And groupname is set to <group>
         And category is set to <category>
-        And schemaid is set to <schema_id>
+        And subcategory is set to <subcategory>
+        And schema id is set to <schema_id>
         When user submits new group data
         And group <group> is successfully created
         And check whether group properties <group>, <category> and <schema_id> are correct
-        # alle testgroepen onderbrengen in ui category / groepen
-        # alle groepen gemaakt door ui tests ook weer verwijderd
+
         Examples:
-            | group         | category | schema_id |
-            | ui-test-group | core-0   | teclab-1  |
+            | category        | subcategory| group         | schema_id |
+            | test-automation | initial    | ui-test-group | teclab-1  |
 
 
     Scenario Outline: Group user add
@@ -25,9 +25,9 @@ Feature: Group UI
         Then user <user_add> is added to the group
 
         Examples:
-            | category | group            | user_add  |
-            | initial  | research-initial | uipromote |
-            | initial  | research-initial | uidemote  |
+            | category        | group            | user_add  |
+            | test-automation | research-initial | uipromote |
+            | test-automation | research-initial | uidemote  |
 
 
     Scenario Outline: Group user promote
@@ -37,8 +37,8 @@ Feature: Group UI
         And user promotes <user_promote> to group manager
 
         Examples:
-            | category | group            | user_promote |
-            | initial  | research-initial | uipromote    |
+            | category        | group            | user_promote |
+            | test-automation | research-initial | uipromote    |
 
 
     Scenario Outline: Group user demote
@@ -48,8 +48,8 @@ Feature: Group UI
         And user demotes <user_demote> to viewer
 
         Examples:
-            | category | group            | user_demote |
-            | initial  | research-initial | uidemote    |
+            | category        | group            | user_demote |
+            | test-automation | research-initial | uidemote    |
 
 
     Scenario Outline: Group user remove
@@ -60,9 +60,9 @@ Feature: Group UI
         Then user <user_remove> is removed from the group
 
         Examples:
-            | category | group            | user_remove |
-            | initial  | research-initial | uipromote   |
-            | initial  | research-initial | uidemote    |
+            | category        | group            | user_remove |
+            | test-automation | research-initial | uipromote   |
+            | test-automation | research-initial | uidemote    |
 
     Scenario Outline: Group member search
         Given user researcher is logged in
@@ -72,8 +72,8 @@ Feature: Group UI
         Then only member <member> is shown
 
         Examples:
-            | category | group            | member     |
-            | initial  | research-initial | researcher |
+            | category        | group            | member     |
+            | test-automation | research-initial | researcher |
 
 
     Scenario Outline: Group search
@@ -84,8 +84,8 @@ Feature: Group UI
         Then only group <group> is shown
 
         Examples:
-            | category | group            |
-            | initial  | research-initial |
+            | category        | group            |
+            | test-automation | research-initial |
 
 
     Scenario Outline: List groups of users
@@ -130,9 +130,9 @@ Feature: Group UI
         And user confirms group removal
 
         Examples:
-            | category  | group                    |
-            | csv-test  | research-csv-test-group1 |
-            | csv-test  | research-csv-test-group2 |
-            | csv-test  | research-csv-test-group3 |
-            | csv-test  | research-csv-test-group4 |
-            | core-0    | research-ui-test-group   |
+            | category        | group                    |
+            | csv-test        | research-csv-test-group1 |
+            | csv-test        | research-csv-test-group2 |
+            | csv-test        | research-csv-test-group3 |
+            | csv-test        | research-csv-test-group4 |
+            | test-automation | research-ui-test-group   |
