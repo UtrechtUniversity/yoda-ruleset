@@ -100,9 +100,12 @@ def getGroupData(ctx):
                     except Exception:
                         pass
             elif not name.startswith("vault-"):
-                # Ardinary group.
-                group = groups[name]
-                group["members"].append(user)
+                try:
+                    # Ardinary group.
+                    group = groups[name]
+                    group["members"].append(user)
+                except KeyError:
+                    pass
 
     return groups.values()
 
