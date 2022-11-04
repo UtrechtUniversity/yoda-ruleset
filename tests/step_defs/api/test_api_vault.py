@@ -140,7 +140,7 @@ def api_meta_form_save_vault(user, vault, data_package):
          "metadata": {
              "links": [{
                  "rel": "describedby",
-                 "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
+                 "href": "https://yoda.uu.nl/schemas/default-2/metadata.json"
              }],
              "Language": "en - English",
              "Retention_Period": 10,

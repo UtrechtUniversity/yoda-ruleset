@@ -7,10 +7,10 @@ Feature: Group API
         And group <group> exists
 
         Examples:
-            | user        | group               |
-            | researcher  | research-initial    |
-            | researcher  | research-initial1   |
-            | datamanager | datamanager-initial |
+            | user        | group                       |
+            | researcher  | research-initial            |
+            | researcher  | research-initial1           |
+            | datamanager | datamanager-test-automation |
 
 
     Scenario Outline: Group categories
@@ -20,21 +20,23 @@ Feature: Group API
         And category <category> exists
 
         Examples:
-            | user        | category |
-            | researcher  | initial  |
-            | datamanager | initial  |
+            | user        | category        |
+            | researcher  | test-automation |
+            | datamanager | test-automation |
 
 
     Scenario Outline: Group subcategories
         Given user <user> is authenticated
         And the Yoda group subcategories API is queried with <category>
         Then the response status code is "200"
-        And subcategory <category> exists
+        And subcategory <subcategory> exists
 
         Examples:
-            | user        | category |
-            | researcher  | initial  |
-            | datamanager | initial  |
+            | user        | category        | subcategory      |
+            | researcher  | test-automation | metadata-schemas |
+            | datamanager | test-automation | metadata-schemas |
+            | researcher  | test-automation | metadata-schemas |
+            | datamanager | test-automation | metadata-schemas |
 
 
     Scenario Outline: Group search users
