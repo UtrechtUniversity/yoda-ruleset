@@ -494,10 +494,11 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     publication_state["landingPagePath"] = landing_page_path
 
 
-def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
+def copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state):
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of data package DOI
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -505,8 +506,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId = publication_state["randomId"]
-    publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
+    publicPath = yodaInstance + "/" + yodaPrefix + "/" + random_id + ".html"
 
     argv = publicHost + " inbox /var/www/landingpages/" + publicPath
 
@@ -519,20 +519,20 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
         log.write(ctx, "copy_landingpage_to_public: " + str(error))
 
 
-def copy_metadata_to_moai(ctx, publication_config, publication_state):
+def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state):
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of data package DOI
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId = publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
-    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
+    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + random_id + ".json"
     error = 0
     ctx.iiGenericSecureCopy(argv, combiJsonPath, error)
     if error >= 0:
@@ -745,7 +745,8 @@ def process_publication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -753,7 +754,8 @@ def process_publication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -884,7 +886,8 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -892,7 +895,8 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1020,7 +1024,8 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1028,7 +1033,8 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1158,7 +1164,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             return publication_state["status"]
 
         # Use secure copy to push landing page to the public host
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1167,7 +1174,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     if update_moai:
         # Use secure copy to push combi JSON to MOAI server
         log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
