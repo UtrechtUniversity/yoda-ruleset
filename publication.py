@@ -720,7 +720,7 @@ def process_publication(ctx, vault_package):
 
             if "previous_version" in publication_state:
                 # Remove version from DOI.
-                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
                 upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
@@ -773,7 +773,7 @@ def process_publication(ctx, vault_package):
 
         if "previous_version" in publication_state:
             # Remove version from DOI.
-            yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)
+            yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
             mint_doi(ctx, yoda_doi, publication_state)
 
         save_publication_state(ctx, vault_package, publication_state)
@@ -792,7 +792,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "procpublication_configess_publication: All steps for publication completed <{}>".format(vault_package))
+    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
     return publication_state["status"]
 
 
