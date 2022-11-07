@@ -365,7 +365,7 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
+def upload_metadata_to_datacite(ctx, publication_state):
     """Upload DataCite JSON to DataCite.
 
     This will register the DOI when posting, without minting it.
@@ -377,10 +377,11 @@ def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
-    # If Yoda DOI is present put instead of post to DataCite.
+    # If Yoda DOI is already minted, put instead of post to DataCite.
     send_method = 'post'
-    if yoda_doi is not None:
+    if publication_state['DOIMinted'] == 'yes' and "yodaDOI" in publication_state:
         send_method = 'put'
+        yoda_doi = publication_state["yodaDOI"]
 
     if send_method == 'post':
         httpCode = datacite.metadata_post(ctx, datacite_json)
@@ -424,14 +425,14 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-def mint_doi(ctx, yoda_doi, publication_state):
+def mint_doi(ctx, publication_state):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param yoda_doi:           DOI of data package in Yoda
     :param publication_state:  Dict with state of the publication process
     """
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
+    yoda_doi = publication_state['yodaDOI']
 
     httpCode = datacite.metadata_put(ctx, yoda_doi, payload)
 
@@ -708,15 +709,7 @@ def process_publication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            # Determine wether DOI is already minted.
-            yoda_doi = None
-            try:
-                if publication_state['DOIMinted'] == 'yes':
-                    yoda_doi = publication_state['yodaDOI']
-            except KeyError:
-                pass
-
-            upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
+            upload_metadata_to_datacite(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -764,7 +757,7 @@ def process_publication(ctx, vault_package):
 
     # Mint DOI with landing page URL.
     if "DOIMinted" not in publication_state:
-        mint_doi(ctx, publication_config['yodaDOI'], publication_state)
+        mint_doi(ctx, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -985,7 +978,7 @@ def process_republication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            upload_metadata_to_datacite(ctx, publication_state, publication_config['yodaDOI'])
+            upload_metadata_to_datacite(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1124,7 +1117,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Send DataCite JSON to metadata end point
         try:
-            upload_metadata_to_datacite(ctx, publication_state, publication_config['yodaDOI'])
+            upload_metadata_to_datacite(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Retry"
 
