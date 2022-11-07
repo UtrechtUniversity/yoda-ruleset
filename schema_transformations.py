@@ -150,7 +150,7 @@ def _dag0_default2(ctx, m):
     #     "Researcher",
     #     "Contact Person from External Institute",
     #     "Project Team Member"
- 
+
     for creator in m['Creator']:
         creator['Affiliation'] = [creator['Affiliation']]
         creator.pop('Owner_Role')
