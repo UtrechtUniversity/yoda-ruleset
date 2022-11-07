@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+
 import genquery
 
 import datacite
@@ -363,68 +365,46 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_config, publication_state, send_method):
-    """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
+def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
+    """Upload DataCite JSON to DataCite.
+
+    This will register the DOI when posting, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
-    :param send_method:        http verb (either 'post' or 'put')
+    :param yoda_doi:           DOI of data package in Yoda
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
+    # If Yoda DOI is present put instead of post to DataCite.
+    send_method = 'post'
+    if yoda_doi is not None:
+        send_method = 'put'
+
     if send_method == 'post':
         httpCode = datacite.metadata_post(ctx, datacite_json)
     else:
-        httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], datacite_json)
+        httpCode = datacite.metadata_put(ctx, yoda_doi, datacite_json)
 
     if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
         publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in [401, 403, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
         publication_state["status"] = "Retry"
     else:
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
-def post_draft_doi_to_datacite(ctx, publication_config, publication_state):
-    """Upload DOI to DataCite. This will register the DOI as a draft.
-    This function is also a draft, and will have to be reworked!
+def remove_metadata_from_datacite(ctx, publication_config, publication_state):
+    """Remove metadata XML from DataCite.
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
-    datacite_json_path = publication_state["dataCiteJsonPath"]
-    datacite_json = data_object.read(ctx, datacite_json_path)
-
-    # post the DOI only
-    httpCode = datacite.metadata_post(ctx, {
-        'data': {
-            'type': 'dois',
-            'attributes': {
-                'doi': datacite_json['data']['attributes']['doi']
-            }
-        }
-    })
-
-    if httpCode == 201:
-        publication_state["dataCiteMetadataPosted"] = "no"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
-        publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
-
-
-def remove_metadata_from_datacite(ctx, publication_config, publication_state):
-    """Remove metadata XML from DataCite."""
-    import json
     payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
 
     httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
@@ -444,17 +424,16 @@ def remove_metadata_from_datacite(ctx, publication_config, publication_state):
         publication_state["status"] = "Unrecoverable"
 
 
-def mint_doi(ctx, publication_config, publication_state):
+def mint_doi(ctx, yoda_doi, publication_state):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
+    :param yoda_doi:           DOI of data package in Yoda
     :param publication_state:  Dict with state of the publication process
     """
-    import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
+    httpCode = datacite.metadata_put(ctx, yoda_doi, payload)
 
     if httpCode == 200:  # 201:
         publication_state["DOIMinted"] = "yes"
@@ -726,18 +705,18 @@ def process_publication(ctx, vault_package):
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-    # Determine wether an update ('put') or create ('post') message has to be sent to datacite
-    datacite_action = 'post'
-    try:
-        if publication_state['DOIMinted'] == 'yes':
-            datacite_action = 'put'
-    except KeyError:
-        pass
-
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, datacite_action)
+            # Determine wether DOI is already minted.
+            yoda_doi = None
+            try:
+                if publication_state['DOIMinted'] == 'yes':
+                    yoda_doi = publication_state['yodaDOI']
+            except KeyError:
+                pass
+
+            upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -785,7 +764,7 @@ def process_publication(ctx, vault_package):
 
     # Mint DOI with landing page URL.
     if "DOIMinted" not in publication_state:
-        mint_doi(ctx, publication_config, publication_state)
+        mint_doi(ctx, publication_config['yodaDOI'], publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -1006,7 +985,7 @@ def process_republication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
+            upload_metadata_to_datacite(ctx, publication_state, publication_config['yodaDOI'])
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1145,7 +1124,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Send DataCite JSON to metadata end point
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
+            upload_metadata_to_datacite(ctx, publication_state, publication_config['yodaDOI'])
         except msi.Error:
             publication_state["status"] = "Retry"
 
