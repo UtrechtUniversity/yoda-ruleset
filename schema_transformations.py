@@ -117,7 +117,7 @@ def _dag0_default2(ctx, m):
     :returns: Transformed (default-2) JSON object
     """
     # dag0-project and research group => def2 collection name
-    m["Collection_Name"] = m["Research_Group"] + ', '+ m["Collection_Name"]
+    m["Collection_Name"] = m["Research_Group"] + ', ' + m["Collection_Name"]
     m.pop("Research_Group")
 
     # dag0-GeoLocation => def2-Covered_Geolocation_Place
@@ -141,7 +141,6 @@ def _dag0_default2(ctx, m):
 
     m["Retention_Period"] = int(m["Retention_Period"])
 
-
     # dag0-Creator => def2-Creator
     # m['Creator'][0]['Affiliation'] =  [m['Creator'][0]['Affiliation']]
 
@@ -151,9 +150,9 @@ def _dag0_default2(ctx, m):
     #     "Researcher",
     #     "Contact Person from External Institute",
     #     "Project Team Member"
-      
+ 
     for creator in m['Creator']:
-        creator['Affiliation'] =  [creator['Affiliation']]
+        creator['Affiliation'] = [creator['Affiliation']]
         creator.pop('Owner_Role')
 
     # Missing data in dag0 - License  "Internal License Data Archive Geosciences 2021-01"
