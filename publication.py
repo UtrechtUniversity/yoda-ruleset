@@ -372,14 +372,13 @@ def upload_metadata_to_datacite(ctx, publication_state):
 
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
-    :param yoda_doi:           DOI of data package in Yoda
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
     datacite_json = data_object.read(ctx, datacite_json_path)
 
     # If Yoda DOI is already minted, put instead of post to DataCite.
     send_method = 'post'
-    if publication_state['DOIMinted'] == 'yes' and "yodaDOI" in publication_state:
+    if "yodaDOI" in publication_state and "DOIMinted" in publication_state and publication_state['DOIMinted'] == 'yes':
         send_method = 'put'
         yoda_doi = publication_state["yodaDOI"]
 
