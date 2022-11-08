@@ -659,6 +659,7 @@ def process_publication(ctx, vault_package):
         if not v1_exists:
             log.write(ctx, "Creating v1 publication of vault package <{}>".format(previous_vault_package))
             generate_preliminary_next_version_DOI(ctx, publication_config, previous_publication_state)
+            previous_publication_state['DOIMinted'] = 'no'
             save_publication_state(ctx, previous_vault_package, previous_publication_state)
             set_update_publication_state(ctx, previous_vault_package)
             status = process_publication(ctx, previous_vault_package)
