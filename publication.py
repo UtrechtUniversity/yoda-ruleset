@@ -342,7 +342,7 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
         version = str(int(version[1:]) + 1)
         randomId = "{}.v{}".format(randomId, version)
     else:
-        randomId = "{}.v2".format(randomId)
+        randomId = "{}.v1".format(randomId)
 
     publication_state["randomId"] = randomId
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
@@ -642,10 +642,28 @@ def process_publication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
-    # Set flag to update base DOI when  this data package is the latest version.
+    # Set flag to update base DOI when this data package is the latest version.
     update_base_doi = False
-    if "previous_version" in publication_state and "next_version" in publication_state:
+    if "previous_version" in publication_state and "next_version" not in publication_state:
         update_base_doi = True
+        v1_exists = True
+
+        # Check if version 1 of data package exists.
+        previous_vault_package = publication_state["previous_version"]
+        previous_publication_state = get_publication_state(ctx, previous_vault_package)
+        random_id = previous_publication_state["randomId"]
+        if len(random_id.split(".")) != 2:
+            v1_exists = False
+
+        # If no version 1 exists for this data package, create it.
+        if not v1_exists:
+            log.write(ctx, "Creating v1 publication of vault package <{}>".format(previous_vault_package))
+            generate_preliminary_next_version_DOI(ctx, previous_publication_config, previous_publication_state)
+            save_publication_state(ctx, previous_vault_package, previous_publication_state)
+            set_update_publication_state(ctx, previous_vault_package)
+            status = process_publication(ctx, previous_vault_package)
+            if status in ["Unrecoverable", "Retry"]:
+                return status
 
     # Publication date
     if "publicationDate" not in publication_state:
