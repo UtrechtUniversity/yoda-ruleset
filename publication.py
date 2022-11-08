@@ -642,12 +642,18 @@ def process_publication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when  this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" in publication_state:
+        update_base_doi = True
+
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     # DOI handling
     if "yodaDOI" not in publication_state:
+        # If a previous version is set generate a versioned DOI.
         if "previous_version" in publication_state:
             generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
         else:
@@ -657,10 +663,12 @@ def process_publication(ctx, vault_package):
 
     elif "DOIAvailable" in publication_state:
         if publication_state["DOIAvailable"] == "no":
+            # If a previous version is set generate a versioned DOI.
             if "previous_version" in publication_state:
                 generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
             else:
                 generate_preliminary_DOI(ctx, publication_config, publication_state)
+
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
             save_publication_state(ctx, vault_package, publication_state)
@@ -718,7 +726,7 @@ def process_publication(ctx, vault_package):
 
             upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
 
-            if "previous_version" in publication_state:
+            if update_base_doi:
                 # Remove version from DOI.
                 yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
                 upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
@@ -748,7 +756,7 @@ def process_publication(ctx, vault_package):
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
 
-        if "previous_version" in publication_state:
+        if update_base_doi:
             # Remove version from DOI.
             random_id = random_id.rsplit(".", 1)[0]
             copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
@@ -763,7 +771,7 @@ def process_publication(ctx, vault_package):
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
 
-        if "previous_version" in publication_state:
+        if update_base_doi:
             # Remove version from DOI.
             random_id = random_id.rsplit(".", 1)[0]
             copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
@@ -785,7 +793,7 @@ def process_publication(ctx, vault_package):
     if "DOIMinted" not in publication_state:
         mint_doi(ctx, publication_state['yodaDOI'], publication_state)
 
-        if "previous_version" in publication_state:
+        if update_base_doi:
             # Remove version from DOI.
             yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
             mint_doi(ctx, yoda_doi, publication_state)
