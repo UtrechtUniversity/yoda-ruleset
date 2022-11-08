@@ -277,9 +277,9 @@ def rule_revision_batch(ctx, verbose):
 
     # Stop further execution if admin has blocked revision process.
     if is_revision_blocked_by_admin(ctx):
-        log.write(ctx, "[revisions] Batch revision job is stopped")
+        log.write(ctx, "Batch revision job is stopped")
     else:
-        log.write(ctx, "[revisions] Batch revision job started")
+        log.write(ctx, "Batch revision job started")
 
         # Get list of data objects scheduled for revision
         iter = genquery.row_iterator(
@@ -292,7 +292,7 @@ def rule_revision_batch(ctx, verbose):
 
             # Stop further execution if admin has blocked revision process.
             if is_revision_blocked_by_admin(ctx):
-                log.write(ctx, "[revisions] Batch revision job is stopped")
+                log.write(ctx, "Batch revision job is stopped")
                 break
 
             # Perform scheduled revision creation for one data object.
@@ -300,7 +300,7 @@ def rule_revision_batch(ctx, verbose):
             resc = row[3]
 
             if print_verbose:
-                log.write(ctx, "[revisions] Batch revision: creating revision for {} on resc {}".format(path, resc))
+                log.write(ctx, "Batch revision: creating revision for {} on resc {}".format(path, resc))
 
             id = revision_create(ctx, resc, path, constants.UUMAXREVISIONSIZE, verbose)
 
@@ -308,7 +308,7 @@ def rule_revision_batch(ctx, verbose):
             # rods should have been given own access via policy to allow AVU
             # changes.
             if print_verbose:
-                log.write(ctx, "[revisions] Batch revision: removing AVU for {}".format(path))
+                log.write(ctx, "Batch revision: removing AVU for {}".format(path))
 
             # try removing attr/resc meta data
             avu_deleted = False
@@ -327,11 +327,11 @@ def rule_revision_batch(ctx, verbose):
                     msi.sudo_obj_acl_set(ctx, "", "own", user.full_name(ctx), path, "")
                     avu.rmw_from_data(ctx, path, attr, "%")  # use wildcard cause rm_from_data causes problems
                 except Exception:
-                    log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
+                    log.write(ctx, "ERROR - Scheduled revision creation of <{}>: could not remove schedule flag".format(path))
 
             # now back to the created revision
             if id:
-                log.write(ctx, "[revisions] Revision created for {} ID={}".format(path, id))
+                log.write(ctx, "Revision created for {} ID={}".format(path, id))
                 count_ok += 1
                 # Revision creation OK. Remove any existing error indication attribute.
                 iter2 = genquery.row_iterator(
@@ -348,11 +348,11 @@ def rule_revision_batch(ctx, verbose):
                     break
             else:
                 count_ignored += 1
-                log.write(ctx, "[revisions] ERROR - Scheduled revision creation of <{}> failed".format(path))
+                log.write(ctx, "ERROR - Scheduled revision creation of <{}> failed".format(path))
                 avu.set_on_data(ctx, path, errorattr, "true")
 
         # Total revision process completed
-        log.write(ctx, "[revisions] Batch revision job finished. {}/{} objects processed successfully. {} objects ignored.".format(count_ok, count, count_ignored))
+        log.write(ctx, "Batch revision job finished. {}/{} objects processed successfully. {} objects ignored.".format(count_ok, count, count_ignored))
 
 
 def is_revision_blocked_by_admin(ctx):
@@ -402,11 +402,11 @@ def revision_create(ctx, resource, path, max_size, verbose):
         break
 
     if not found:
-        log.write(ctx, "[revisions] Data object <{}> was not found or path was collection".format(path))
+        log.write(ctx, "Data object <{}> was not found or path was collection".format(path))
         return ""
 
     if int(data_size) > max_size:
-        log.write(ctx, "[revisions] Files larger than {} bytes cannot store revisions".format(max_size))
+        log.write(ctx, "Files larger than {} bytes cannot store revisions".format(max_size))
         return ""
 
     groups = list(genquery.row_iterator(
@@ -418,10 +418,10 @@ def revision_create(ctx, resource, path, max_size, verbose):
     if len(groups) == 1:
         (group_name, user_zone) = groups[0]
     elif len(groups) == 0:
-        log.write(ctx, "[revisions] Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
+        log.write(ctx, "Cannot find owner of data object <{}>. It may have been removed. Skipping.".format(path))
         return ""
     else:
-        log.write(ctx, "[revisions] Cannot find unique owner of data object <{}>. Skipping.".format(path))
+        log.write(ctx, "Cannot find unique owner of data object <{}>. Skipping.".format(path))
         return ""
 
     # All revisions are stored in a group with the same name as the research group in a system collection
@@ -456,13 +456,13 @@ def revision_create(ctx, resource, path, max_size, verbose):
             try:
                 msi.coll_create(ctx, rev_coll, '1', irods_types.BytesBuf())
             except error.UUError:
-                log.write(ctx, "[revisions] ERROR - Failed to create staging area at <{}>".format(rev_coll))
+                log.write(ctx, "ERROR - Failed to create staging area at <{}>".format(rev_coll))
                 return ""
 
         rev_path = rev_coll + "/" + rev_filename
 
         if print_verbose:
-            log.write(ctx, "[revisions] Creating revision {} -> {}".format(path, rev_path))
+            log.write(ctx, "Creating revision {} -> {}".format(path, rev_path))
 
         # actual copying to revision store
         try:
@@ -477,12 +477,12 @@ def revision_create(ctx, resource, path, max_size, verbose):
             ))
 
             if len(revision_ids) == 0:
-                log.write(ctx, "[revisions] failed to find data object id for revision <{}>. Aborting.".format(rev_path))
+                log.write(ctx, "failed to find data object id for revision <{}>. Aborting.".format(rev_path))
                 return ""
             elif len(revision_ids) == 1:
                 revision_id = revision_ids[0][0]
             else:
-                log.write(ctx, "[revisions] failed to find unique data object id for revision <{}>. Aborting.".format(rev_path))
+                log.write(ctx, "failed to find unique data object id for revision <{}>. Aborting.".format(rev_path))
                 return ""
 
             # Add original metadata to revision data object.
@@ -496,7 +496,7 @@ def revision_create(ctx, resource, path, max_size, verbose):
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_group_name", group_name)
             avu.set_on_data(ctx, rev_path, constants.UUORGMETADATAPREFIX + "original_filesize", data_size)
         except msi.Error as e:
-            log.write(ctx, '[revisions] ERROR - The file could not be copied: {}'.format(str(e)))
+            log.write(ctx, 'ERROR - The file could not be copied: {}'.format(str(e)))
             return ''
 
     return revision_id
@@ -577,10 +577,10 @@ def revision_remove(ctx, revision_id):
             msi.data_obj_unlink(ctx, revision_path, irods_types.BytesBuf())
             return True
         except msi.Error:
-            log.write(ctx, "[revisions] ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
+            log.write(ctx, "ERROR - Something went wrong deleting revision <{}>: <{}>.".format(revision_id, revision_path))
             return False
 
-    log.write(ctx, "[revisions] ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
+    log.write(ctx, "ERROR - Revision ID <{}> not found or permission denied.".format(revision_id))
     return False
 
 

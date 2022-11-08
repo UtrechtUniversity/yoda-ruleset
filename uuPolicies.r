@@ -106,10 +106,10 @@ acPostProcForDeleteUser {
 # Log auth requests to server log (reproduce behaviour before https://github.com/irods/irods/commit/70144d8251fdf0528da554d529952823b008211b)
 pep_api_auth_request_pre(*instanceName, *comm, *request) {
     # XXX: These attributes currently cannot be extracted in python.
-    *proxy_user_name = *comm.proxy_user_name;
-    *user_user_name = *comm.user_user_name;
+    *user_name = *comm.user_user_name;
+    *zone_name = *comm.user_rods_zone;
     *client_addr = *comm.client_addr
-    writeLine("serverLog", "Agent process started for puser=*proxy_user_name and cuser=*user_user_name from *client_addr");
+    writeLine("serverLog", "{*user_name#*zone_name} Agent process started from *client_addr");
 }
 
 # Enforce server to use TLS encryption.

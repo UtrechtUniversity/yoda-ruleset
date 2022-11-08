@@ -51,9 +51,9 @@ def rule_replicate_batch(ctx, verbose):
 
     # Stop further execution if admin has blocked replication process.
     if is_replication_blocked_by_admin(ctx):
-        log.write(ctx, "[replication] Batch replication job is stopped")
+        log.write(ctx, "Batch replication job is stopped")
     else:
-        log.write(ctx, "[replication] Batch replication job started")
+        log.write(ctx, "Batch replication job started")
 
         # Get list of data objects scheduled for replication.
         iter = genquery.row_iterator(
@@ -64,7 +64,7 @@ def rule_replicate_batch(ctx, verbose):
         for row in iter:
             # Stop further execution if admin has blocked replication process.
             if is_replication_blocked_by_admin(ctx):
-                log.write(ctx, "[replication] Batch replication job is stopped")
+                log.write(ctx, "Batch replication job is stopped")
                 break
 
             count += 1
@@ -73,7 +73,7 @@ def rule_replicate_batch(ctx, verbose):
             xs = rescs.split(',')
             if len(xs) != 2:
                 # Not replicable.
-                log.write(ctx, "[replication] ERROR - Invalid replication data for {}".format(path))
+                log.write(ctx, "ERROR - Invalid replication data for {}".format(path))
                 try:
                     ctx.msi_add_avu('-d', path, errorattr, "Invalid,Invalid", "")
                 except Exception:
@@ -86,7 +86,7 @@ def rule_replicate_batch(ctx, verbose):
             to_path = xs[1]
 
             if print_verbose:
-                log.write(ctx, "[replication] Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
+                log.write(ctx, "Batch replication: copying {} from {} to {}".format(path, from_path, to_path))
 
             # Actual replication
             try:
@@ -99,7 +99,7 @@ def rule_replicate_batch(ctx, verbose):
                 # Mark as correctly replicated
                 count_ok += 1
             except msi.Error as e:
-                log.write(ctx, '[replication] ERROR - The file could not be replicated: {}'.format(str(e)))
+                log.write(ctx, 'ERROR - The file could not be replicated: {}'.format(str(e)))
                 try:
                     ctx.msi_add_avu('-d', path, errorattr, "{},{}".format(from_path, to_path), "")
                 except Exception:
@@ -123,10 +123,10 @@ def rule_replicate_batch(ctx, verbose):
                     avu.rmw_from_data(ctx, path, attr, "{},{}".format(from_path, to_path))  # use wildcard cause rm_from_data causes problems
                 except Exception:
                     # error => report it but still continue
-                    log.write(ctx, "[replication] ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
+                    log.write(ctx, "ERROR - Scheduled replication of <{}>: could not remove schedule flag".format(path))
 
         # Total replication process completed
-        log.write(ctx, "[replication] Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
+        log.write(ctx, "Batch replication job finished. {}/{} objects replicated successfully.".format(count_ok, count))
 
 
 def is_replication_blocked_by_admin(ctx):
