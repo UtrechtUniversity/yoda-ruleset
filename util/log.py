@@ -19,7 +19,7 @@ def write(ctx, message):
     """
     stack = inspect.stack()[1]
     module = inspect.getmodule(stack[0])
-    _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu", ""), message))
+    _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
 
 
 def _write(ctx, message):
