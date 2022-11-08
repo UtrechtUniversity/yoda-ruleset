@@ -615,7 +615,7 @@ def process_publication(ctx, vault_package):
 
     publication_state = {}
 
-    log.write(ctx, "process_publication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -800,13 +800,16 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
+
+        if "previous_version" in publication_state:
+            avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
     else:
         # The publication was a success
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished publication of vault package <{}>".format(vault_package))
     return publication_state["status"]
 
 
@@ -825,7 +828,7 @@ def rule_process_depublication(ctx, vault_package):
 def process_depublication(ctx, vault_package):
     status = "Unknown"
 
-    log.write(ctx, "process_depublication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -926,7 +929,7 @@ def process_depublication(ctx, vault_package):
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
-    log.write(ctx, "process_depublication: All steps for depublication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]
 
@@ -947,7 +950,7 @@ def process_republication(ctx, vault_package):
     """Routine to process a republication with sanity checks at every step."""
     publication_state = {}
 
-    log.write(ctx, "process_republication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -1064,7 +1067,7 @@ def process_republication(ctx, vault_package):
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
-    log.write(ctx, "process_republication: All steps for republication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]
 
