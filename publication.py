@@ -802,7 +802,7 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "procpublication_configess_publication: All steps for publication completed <{}>".format(vault_package))
+    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
     return publication_state["status"]
 
 
