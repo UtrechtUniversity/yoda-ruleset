@@ -747,6 +747,12 @@ def process_publication(ctx, vault_package):
     if "landingPageUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if "previous_version" in publication_state:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -756,6 +762,12 @@ def process_publication(ctx, vault_package):
     if "oaiUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if "previous_version" in publication_state:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
