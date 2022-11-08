@@ -8,9 +8,9 @@ Feature: Group UI
         Then user <user_add> is added to the group
 
         Examples:
-            | category | group            | user_add  |
-            | initial  | research-initial | uipromote |
-            | initial  | research-initial | uidemote  |
+            | category        | group            | user_add  |
+            | test-automation | research-initial | uipromote |
+            | test-automation | research-initial | uidemote  |
 
 
     Scenario Outline: Group user promote
@@ -20,8 +20,8 @@ Feature: Group UI
         And user promotes <user_promote> to group manager
 
         Examples:
-            | category | group            | user_promote |
-            | initial  | research-initial | uipromote    |
+            | category        | group            | user_promote |
+            | test-automation | research-initial | uipromote    |
 
 
     Scenario Outline: Group user demote
@@ -31,8 +31,8 @@ Feature: Group UI
         And user demotes <user_demote> to viewer
 
         Examples:
-            | category | group            | user_demote |
-            | initial  | research-initial | uidemote    |
+            | category        | group            | user_demote |
+            | test-automation | research-initial | uidemote    |
 
 
     Scenario Outline: Group user remove
@@ -43,9 +43,9 @@ Feature: Group UI
         Then user <user_remove> is removed from the group
 
         Examples:
-            | category | group            | user_remove |
-            | initial  | research-initial | uipromote   |
-            | initial  | research-initial | uidemote    |
+            | category        | group            | user_remove |
+            | test-automation | research-initial | uipromote   |
+            | test-automation | research-initial | uidemote    |
 
     Scenario Outline: Group member search
         Given user researcher is logged in
@@ -55,8 +55,8 @@ Feature: Group UI
         Then only member <member> is shown
 
         Examples:
-            | category | group            | member     |
-            | initial  | research-initial | researcher |
+            | category        | group            | member     |
+            | test-automation | research-initial | researcher |
 
 
     Scenario Outline: Group search
@@ -67,8 +67,8 @@ Feature: Group UI
         Then only group <group> is shown
 
         Examples:
-            | category | group            |
-            | initial  | research-initial |
+            | category        | group            |
+            | test-automation | research-initial |
 
 
     Scenario Outline: List groups of users
@@ -105,16 +105,51 @@ Feature: Group UI
         And find groupmember "viewer@yoda.test"
 
 
-    Scenario Outline: Group remove
+    Scenario Outline: Group research create
         Given user functionaladminpriv is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
+        When user opens add group dialog
+        And groupname is set to <group>
+        And category is set to <category>
+        And subcategory is set to <subcategory>
+        And schema id is set to <schema_id>
+        When user submits new group data
+        And research group <group> is successfully created
+        And check whether research group properties <group>, <category> and <schema_id> are correct
+
+        Examples:
+            | category        | subcategory| group         | schema_id |
+            | test-automation | initial    | ui-test-group | teclab-1  |
+
+
+    Scenario Outline: Group datamanager create
+        Given user technicaladmin is logged in
+        And module "group_manager" is shown
+        When user opens add group dialog
+        And category is set to <category>
+        And subcategory is set to <subcategory>
+        And group type is set to datamanager
+        When user submits new group data
+        And datamanager group <group> is successfully created
+        And check whether datamanager group properties <group> and <category> are correct
+
+        Examples:
+            | category         | subcategory      | group            |
+            | test-datamanager | test-datamanager | test-datamanager |
+
+
+    Scenario Outline: Group remove
+        Given user <user> is logged in
+        And module "group_manager" is shown
+        When user has access to group <group> in subcategory <subcategory> and category <category>
         And user clicks remove group
         And user confirms group removal
 
         Examples:
-            | category  | group                    |
-            | csv-test  | research-csv-test-group1 |
-            | csv-test  | research-csv-test-group2 |
-            | csv-test  | research-csv-test-group3 |
-            | csv-test  | research-csv-test-group4 |
+            | user                | category         | subcategory      | group                        |
+            | functionaladminpriv | test-automation  | initial          | research-ui-test-group       |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group1     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group2     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group3     |
+            | functionaladminpriv | test-automation  | csv-test         | research-csv-test-group4     |
+            | technicaladmin      | test-datamanager | test-datamanager | datamanager-test-datamanager |

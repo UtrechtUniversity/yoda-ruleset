@@ -16,89 +16,92 @@ from conftest import api_request
 scenarios('../../features/api/api_meta_form.feature')
 
 LONG_METADATA = {
-    "coll": "/tempZone/home/research-default-0",
-    "metadata": {
-        "links": [
-            {
-                "rel": "describedby",
-                "href": "https://yoda.uu.nl/schemas/default-0/metadata.json"
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/default-0/metadata.json"
+        }
+    ],
+    "Discipline": [
+        "Natural Sciences - Computer and information sciences (1.2)"
+    ],
+    "Language": "en - English",
+    "Collected": {
+        "Start_Date": "2021-07-01",
+        "End_Date": "2021-07-12"
+    },
+    "Covered_Geolocation_Place": [
+        "Heidelberglaan 8, 3584 CS, Utrecht, Netherlands"
+    ],
+    "Covered_Period": {
+        "Start_Date": "2021-07-02",
+        "End_Date": "2021-07-11"
+    },
+    "Tag": [
+        "Tag_youre_it",
+        "No_tag_backs"
+    ],
+    "Related_Datapackage": [
+        {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "ARK",
+                "Identifier": "Some_id1234"
+            },
+            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Title": "Some data package"
+        }
+    ],
+    "Retention_Period": 10,
+    "Funding_Reference": [
+        {
+            "Funder_Name": "Big organisation with money",
+            "Award_Number": "Super award #42"
+        }
+    ],
+    "Creator": [
+        {
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "Orchid_flower"
+                }
+            ],
+            "Name": {
+                "Given_Name": "Scientist",
+                "Family_Name": "Harry"
             }
-        ],
-        "Discipline": [
-            "Natural Sciences - Computer and information sciences (1.2)"
-        ],
-        "Language": "en - English",
-        "Collected": {
-            "Start_Date": "2021-07-01",
-            "End_Date": "2021-07-12"
-        },
-        "Covered_Geolocation_Place": [
-            "Heidelberglaan 8, 3584 CS, Utrecht, Netherlands"
-        ],
-        "Covered_Period": {
-            "Start_Date": "2021-07-02",
-            "End_Date": "2021-07-11"
-        },
-        "Tag": [
-            "Tag_youre_it",
-            "No_tag_backs"
-        ],
-        "Related_Datapackage": [
-            {
-                "Persistent_Identifier": {
-                    "Identifier_Scheme": "ARK",
-                    "Identifier": "Some_id1234"
-                },
-                "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
-                "Title": "Some data package"
-            }
-        ],
-        "Retention_Period": 10,
-        "Funding_Reference": [
-            {
-                "Funder_Name": "Big organisation with money",
-                "Award_Number": "Super award #42"
-            }
-        ],
-        "Creator": [
-            {
-                "Affiliation": [
-                    "Utrecht University"
-                ],
-                "Person_Identifier": [
-                    {
-                        "Name_Identifier_Scheme": "ORCID",
-                        "Name_Identifier": "Orchid_flower"
-                    }
-                ],
-                "Name": "Scientist Harry"
-            }
-        ],
-        "Contributor": [
-            {
-                "Affiliation": [
-                    "Utrecht University"
-                ],
-                "Person_Identifier": [
-                    {
-                        "Name_Identifier_Scheme": "ORCID",
-                        "Name_Identifier": "Orchid_2"
-                    }
-                ],
-                "Name": "Contribute",
-                "Contributor_Type": "ContactPerson"
-            }
-        ],
-        "Data_Access_Restriction": "Restricted - available upon request",
-        "Title": "Title of the data package",
-        "Description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vulputate, nulla a sollicitudin cursus, est nisl mattis nunc, nec convallis lectus libero eget dolor. Donec id nibh diam. Maecenas sagittis lacus at laoreet sodales. Phasellus sit amet pretium lorem. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Pellentesque sed ante vel dolor convallis vestibulum. Donec non blandit lorem, vitae pulvinar sem. Nullam a varius arcu. Etiam et nulla ante. Cras fermentum quis mauris id elementum. Proin est ante, iaculis eget tempor ac, ultrices tincidunt arcu.\n\nMorbi non finibus turpis, et maximus nisi. Donec nisi mauris, ultrices sit amet leo ut, egestas lacinia sapien. Donec ut elit a sapien blandit pellentesque. Ut tincidunt tortor a justo vulputate maximus. Maecenas vitae ullamcorper massa, ut faucibus ipsum. Fusce vulputate, tellus et cursus pretium, dolor quam ullamcorper dui, nec sollicitudin purus quam in est. Pellentesque purus risus, tristique rutrum erat vitae, cursus suscipit ipsum. Nam vehicula congue leo, sed accumsan massa blandit commodo. Maecenas id tortor elementum, consequat nibh vel, aliquet purus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed euismod ac velit ac facilisis. Fusce quis viverra mi. In sit amet ante et felis porta accumsan at nec turpis. Maecenas venenatis nec dui quis hendrerit.\n\nClass aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Etiam ut nisi fringilla felis posuere tempor. Duis mi ligula, pellentesque et mi sed, laoreet venenatis justo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in tincidunt ante. Nam ullamcorper felis eu metus fringilla, eu mollis purus faucibus. Pellentesque et pulvinar eros. In hac habitasse platea dictumst.\n\nDonec blandit, lacus et lobortis vulputate, leo purus tempus urna, vulputate porta nisi nulla eget quam. Sed vitae turpis risus. In hac habitasse platea dictumst. Pellentesque feugiat libero turpis, sed scelerisque libero rutrum in. Sed non sagittis ligula. Maecenas congue metus magna, ut sollicitudin leo mattis sed. Nunc sodales nec mi eget commodo. Praesent consectetur quis sapien ut vehicula.\n\nPhasellus vitae justo sed ipsum aliquet pretium. Nam posuere posuere ipsum eget efficitur. Morbi ultrices in est non posuere. Nulla dignissim libero sed mi tincidunt, sit amet mattis nunc iaculis. Mauris nunc erat, maximus sit amet sem vel, mattis vestibulum diam. Pellentesque libero lacus, fermentum finibus purus nec, bibendum auctor magna. Curabitur nisl purus, tristique in tempor tincidunt, molestie vitae lectus.Lorem ipsum dolor sit amet, consectetur adipis",
-        "Version": "3.384",
-        "Data_Classification": "Public",
-        "License": "Creative Commons Attribution 4.0 International Public License",
-        "Retention_Information": "Retention information: 10 years is just right",
-        "Embargo_End_Date": "2021-07-22",
-        "Collection_Name": "Yoda test project"
-    }
+        }
+    ],
+    "Contributor": [
+        {
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {
+                    "Name_Identifier_Scheme": "ORCID",
+                    "Name_Identifier": "Orchid_2"
+                }
+            ],
+            "Name": {
+                "Given_Name": "Contact",
+                "Family_Name": "Corry"
+            },
+            "Contributor_Type": "ContactPerson"
+        }
+    ],
+    "Data_Access_Restriction": "Restricted - available upon request",
+    "Title": "Title of the data package",
+    "Description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla vulputate, nulla a sollicitudin cursus, est nisl mattis nunc, nec convallis lectus libero eget dolor. Donec id nibh diam. Maecenas sagittis lacus at laoreet sodales. Phasellus sit amet pretium lorem. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Pellentesque sed ante vel dolor convallis vestibulum. Donec non blandit lorem, vitae pulvinar sem. Nullam a varius arcu. Etiam et nulla ante. Cras fermentum quis mauris id elementum. Proin est ante, iaculis eget tempor ac, ultrices tincidunt arcu.\n\nMorbi non finibus turpis, et maximus nisi. Donec nisi mauris, ultrices sit amet leo ut, egestas lacinia sapien. Donec ut elit a sapien blandit pellentesque. Ut tincidunt tortor a justo vulputate maximus. Maecenas vitae ullamcorper massa, ut faucibus ipsum. Fusce vulputate, tellus et cursus pretium, dolor quam ullamcorper dui, nec sollicitudin purus quam in est. Pellentesque purus risus, tristique rutrum erat vitae, cursus suscipit ipsum. Nam vehicula congue leo, sed accumsan massa blandit commodo. Maecenas id tortor elementum, consequat nibh vel, aliquet purus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed euismod ac velit ac facilisis. Fusce quis viverra mi. In sit amet ante et felis porta accumsan at nec turpis. Maecenas venenatis nec dui quis hendrerit.\n\nClass aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Etiam ut nisi fringilla felis posuere tempor. Duis mi ligula, pellentesque et mi sed, laoreet venenatis justo. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in tincidunt ante. Nam ullamcorper felis eu metus fringilla, eu mollis purus faucibus. Pellentesque et pulvinar eros. In hac habitasse platea dictumst.\n\nDonec blandit, lacus et lobortis vulputate, leo purus tempus urna, vulputate porta nisi nulla eget quam. Sed vitae turpis risus. In hac habitasse platea dictumst. Pellentesque feugiat libero turpis, sed scelerisque libero rutrum in. Sed non sagittis ligula. Maecenas congue metus magna, ut sollicitudin leo mattis sed. Nunc sodales nec mi eget commodo. Praesent consectetur quis sapien ut vehicula.\n\nPhasellus vitae justo sed ipsum aliquet pretium. Nam posuere posuere ipsum eget efficitur. Morbi ultrices in est non posuere. Nulla dignissim libero sed mi tincidunt, sit amet mattis nunc iaculis. Mauris nunc erat, maximus sit amet sem vel, mattis vestibulum diam. Pellentesque libero lacus, fermentum finibus purus nec, bibendum auctor magna. Curabitur nisl purus, tristique in tempor tincidunt, molestie vitae lectus.Lorem ipsum dolor sit amet, consectetur adipis",
+    "Version": "3.384",
+    "Data_Classification": "Public",
+    "License": "Creative Commons Attribution 4.0 International Public License",
+    "Retention_Information": "Retention information: 10 years is just right",
+    "Embargo_End_Date": "2021-07-22",
+    "Collection_Name": "Yoda test project"
 }
 
 
@@ -113,6 +116,12 @@ def api_meta_form_save(user, collection):
                  "rel": "describedby",
                  "href": "https://yoda.uu.nl/schemas/default-1/metadata.json"
              }],
+             "Discipline": [
+                 "Natural Sciences - Computer and information sciences (1.2)"
+             ],
+             "Tag": [
+                 "api_test"
+             ],
              "Language": "en - English",
              "Retention_Period": 10,
              "Creator": [{
@@ -138,7 +147,8 @@ def api_meta_form_save_long(user, collection):
     return api_request(
         user,
         "meta_form_save",
-        LONG_METADATA
+        {"coll": collection, "metadata": LONG_METADATA}
+
     )
 
 

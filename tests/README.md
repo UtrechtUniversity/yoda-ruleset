@@ -10,7 +10,7 @@ Install pip requirements for tests:
 $ python -m pip install -r requirements.txt
 ```
 
-To run the UI tests you need Firefox 91 ESR or later and [geckodriver 0.31.0](https://github.com/mozilla/geckodriver/releases/tag/v0.31.0).
+To run the UI tests you need Firefox 102 ESR or later and [geckodriver 0.32.0](https://github.com/mozilla/geckodriver/releases/tag/v0.32.0).
 Geckodriver should be in your path before running the UI tests:
 ```bash
 $ export PATH=$PATH:/path/to/geckodriver

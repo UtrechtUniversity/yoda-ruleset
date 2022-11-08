@@ -20,17 +20,25 @@ scenarios('../../features/ui/ui_group.feature')
 
 
 @when(parsers.parse("user has access to group {group} in category {category}"))
-def ui_group_access(browser, category, group):
-    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=3):
-        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=3).click()
-        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=3).click()
+def ui_group_category_access(browser, category, group):
+    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=1):
+        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=1).click()
+        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=1).click()
+
+
+@when(parsers.parse("user has access to group {group} in subcategory {subcategory} and category {category}"))
+def ui_group_subcategory_category_access(browser, category, subcategory, group):
+    if not browser.is_element_present_by_css('a.list-group-item.active[data-name={}]'.format(group), wait_time=1):
+        browser.find_by_css('div.list-group-item[data-name={}] a'.format(category), wait_time=1).click()
+        browser.find_by_css('div.list-group-item.subcategory[data-name={}] a'.format(subcategory), wait_time=1).click()
+        browser.find_by_css('a.list-group-item[data-name={}]'.format(group), wait_time=1).click()
 
 
 @when(parsers.parse("user adds {user_add} to group"))
 def ui_group_user_add(browser, user_add):
     time.sleep(3)
     browser.find_by_css('div#s2id_f-user-create-name').click()
-    browser.find_by_xpath('//*[@id="s2id_autogen5_search"]').fill(user_add)
+    browser.find_by_xpath('//*[@id="s2id_autogen6_search"]').fill(user_add)
     browser.find_by_css('.select2-results .select2-highlighted').click()
     browser.find_by_css('#f-user-create-submit').click()
 
@@ -190,3 +198,90 @@ def ui_group_click_first_item_in_group(browser):
 
     # Make sure that row clicked has been set in the group manager as the group to be managed
     assert group_clicked == group_properties_type + group_properties_name
+
+
+@when("user opens add group dialog")
+def ui_group_schema_create_group(browser):
+    browser.find_by_css('.create-button-new').click()
+
+
+@when(parsers.parse("groupname is set to {group}"))
+def ui_group_schema_set_groupname(browser, group):
+    browser.find_by_id('f-group-create-name').fill(group)
+
+
+@when(parsers.parse("group type is set to datamanager"))
+def ui_group_set_group_type(browser):
+    browser.find_by_id('f-group-create-prefix-button').click()
+    browser.find_by_id('f-group-create-prefix-datamanager').click()
+
+
+@when(parsers.parse("category is set to {category}"))
+def ui_group_schema_category_is_set(browser, category):
+    # Category already exists.
+    browser.find_by_id('s2id_f-group-create-category').click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == category:
+            option.click()
+            return True
+
+    # Category does not exist.
+    browser.find_by_xpath('//*[@id="s2id_autogen1_search"]').fill(category)
+    browser.find_by_css('.select2-results .select2-highlighted').click()
+
+
+@when(parsers.parse("subcategory is set to {subcategory}"))
+def ui_group_schema_subcategory_is_set(browser, subcategory):
+    # Subcategory already exists.
+    browser.find_by_id('s2id_f-group-create-subcategory').click()
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == subcategory:
+            option.click()
+            return True
+
+    # Subcategory does not exist.
+    browser.find_by_xpath('//*[@id="s2id_autogen3_search"]').fill(subcategory)
+    browser.find_by_css('.select2-results .select2-highlighted').click()
+
+
+@when(parsers.parse("schema id is set to {schema_id}"))
+def ui_group_schema_set_schema_id(browser, schema_id):
+    browser.find_by_id('s2id_f-group-create-schema-id').click()
+
+    options = browser.find_by_css('.select2-result')
+    for option in options:
+        if option.text == schema_id:
+            option.click()
+            break
+
+
+@when("user submits new group data")
+def ui_schema_submit_new_group_data(browser):
+    browser.find_by_id('f-group-create-submit').click()
+
+
+@when(parsers.parse("research group {group} is successfully created"))
+def ui_group_schema_assert_research_group_created(browser, group):
+    assert browser.find_by_css('.alert-success').text == 'Created group research-' + group + '.'
+
+
+@when(parsers.parse("datamanager group {group} is successfully created"))
+def ui_group_schema_assert_datamanager_group_created(browser, group):
+    assert browser.find_by_css('.alert-success').text == 'Created group datamanager-' + group + '.'
+
+
+@when(parsers.parse("check whether research group properties {group}, {category} and {schema_id} are correct"))
+def ui_group_schema_properties_schema_correct(browser, group, category, schema_id):
+    assert browser.find_by_id('f-group-update-name').value == group
+    assert browser.find_by_id('f-group-update-schema-id').value == schema_id
+    div = browser.find_by_id('s2id_f-group-update-category')
+    assert div.find_by_css('.select2-chosen').text == category
+
+
+@when(parsers.parse("check whether datamanager group properties {group} and {category} are correct"))
+def ui_group_schema_properties_correct(browser, group, category):
+    assert browser.find_by_id('f-group-update-name').value == group
+    div = browser.find_by_id('s2id_f-group-update-category')
+    assert div.find_by_css('.select2-chosen').text == category

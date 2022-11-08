@@ -73,6 +73,7 @@ def api_group_create(user, group_name):
         {"group_name": group_name,
          "category": "api-test",
          "subcategory": "api-test",
+         "schema_id": "default-2",
          "description": "",
          "data_classification": "public"}
     )
@@ -186,6 +187,7 @@ def group_exists(api_response, group):
 
 
 @then(parsers.parse("category {category} exists"))
+@then(parsers.parse("subcategory {category} exists"))
 def category_exists(api_response, category):
     _, body = api_response
 

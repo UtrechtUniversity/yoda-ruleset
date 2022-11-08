@@ -85,7 +85,7 @@ def api_intake_list_dm_studies(ctx):
             # Is a member of this study ... check whether member of corresponding datamanager group
             iter2 = genquery.row_iterator(
                 "USER_NAME",
-                "USER_TYPE = 'rodsgroup' AND USER_NAME like 'datamanager-" + study + "'",
+                "USER_TYPE = 'rodsgroup' AND USER_NAME like 'grp-datamanager-" + study + "'",
                 genquery.AS_LIST, ctx
             )
             for row2 in iter2:
