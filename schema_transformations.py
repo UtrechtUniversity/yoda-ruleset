@@ -119,27 +119,25 @@ def _dag0_default2(ctx, m):
     # dag0-research group => def2
     if m.get('Research_Group', False):
         resrch_grp_2_contrib = {'Name': {'Given_Name': m['Research_Group'], 'Family_Name': ''},
-                                'Affiliation': ['Affiliation'],
-                                'Person_Identifier': [{'Name_Identifier_Scheme': '',
-                                                       'Name_Identifier': ''}]}
-
+                                'Affiliation': ['Affiliation']}
         if m.get('Contributor', False):
             m['Contributor'].append(resrch_grp_2_contrib)
         else:
             m['Contributor'] = [resrch_grp_2_contrib] 
-
         # Finally, get rid of Research_Group element.
         m.pop("Research_Group")
 
-
     # dag0=> def2 collection name
-    m['Collection_Name'] =  "" if not m.get('Collection_Name', False) else m['Collection_Name']
 
     # dag0-GeoLocation => def2-Covered_Geolocation_Place
     geo_places = []
     for location in m['GeoLocation']:
-        geo_places.append(location['Description_Spatial'])
-    m['Covered_Geolocation_Place'] = geo_places
+        if 'Description_Spatial' in location:
+            geo_places.append(location['Description_Spatial'])
+    if len(geo_places):
+        m['Covered_Geolocation_Place'] = geo_places
+    else:
+        m['Covered_Geolocation_Place'] = [""]
     m.pop('GeoLocation')
 
     # dag0-Retention => def2-Retention
@@ -149,27 +147,23 @@ def _dag0_default2(ctx, m):
     retention_names_list = old_schema['definitions']['optionsRetentionPeriod']['enumNames']
     m["Retention_Information"] = ""
 
-    for i, value in enumerate(retention_years_list):
-        if value == m["Retention_Period"]:
-            m["Retention_Information"] = retention_names_list[i]
-            break
-
-    m["Retention_Period"] = int(m["Retention_Period"])
+    if m.get('Retention_Period', False):
+        for i, value in enumerate(retention_years_list):
+            if value == m["Retention_Period"]:
+                m["Retention_Information"] = retention_names_list[i]
+                break
+        m["Retention_Period"] = int(m["Retention_Period"])
+    else:
+        m["Retention_Period"] = 0
 
     # dag0-Creator => def2-Creator
-    # optionsOwnerRole gaat verloren
-    #     "Principal Investigator",
-    #     "Group Leader",
-    #     "Researcher",
-    #     "Contact Person from External Institute",
-    #     "Project Team Member"
-
     for creator in m['Creator']:
         creator['Affiliation'] = [creator['Affiliation']]
-        creator.pop('Owner_Role')
+        if 'Owner_Role' in creator:
+            creator.pop('Owner_Role')
 
     # Missing data in dag0 - License  "Internal License Data Archive Geosciences 2021-01"
-    m["License"] = ""
+    m["License"] = "Custom"
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-2/metadata.json')
 
