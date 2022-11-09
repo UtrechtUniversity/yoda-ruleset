@@ -206,10 +206,10 @@ def rule_process_ending_retention_packages(ctx):
     """
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "[RETENTION] Insufficient permissions - should only be called by rodsadmin")
+        log.write(ctx, "retention - Insufficient permissions - should only be called by rodsadmin")
         return
 
-    log.write(ctx, '[RETENTION] Checking Vault packages for ending retention')
+    log.write(ctx, 'retention - Checking Vault packages for ending retention')
 
     zone = user.zone(ctx)
     errors = 0
@@ -230,15 +230,15 @@ def rule_process_ending_retention_packages(ctx):
             metadata = jsonutil.read(ctx, meta_path)
             current_schema_id = meta.metadata_get_schema_id(metadata)
             if current_schema_id is None:
-                log.write(ctx, '[RETENTION] Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
+                log.write(ctx, 'retention - Schema id missing - Please check the structure of this file. <{}>'.format(dp_coll))
                 errors += 1
                 continue
         except jsonutil.ParseError:
-            log.write(ctx, '[RETENTION] JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
+            log.write(ctx, 'retention - JSON invalid - Please check the structure of this file. <{}>'.format(dp_coll))
             errors += 1
             continue
         except msi.Error as e:
-            log.write(ctx, '[RETENTION] The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
+            log.write(ctx, 'retention - The metadata file could not be read. ({}) <{}>'.format(e, dp_coll))
             errors += 1
             continue
 
@@ -259,19 +259,19 @@ def rule_process_ending_retention_packages(ctx):
         try:
             retention = int(metadata['Retention_Period'])
         except KeyError:
-            log.write(ctx, '[RETENTION] No retention period set in metadata. <{}>'.format(dp_coll))
+            log.write(ctx, 'retention - No retention period set in metadata. <{}>'.format(dp_coll))
             continue
 
         try:
             date_end_retention = date_deposit.replace(year=date_deposit.year + retention)
         except ValueError:
-            log.write(ctx, '[RETENTION] Could not determine retention end date. Retention period: <{}>'.format(retention))
+            log.write(ctx, 'retention - Could not determine retention end date. Retention period: <{}>'.format(retention))
             continue
 
         r = relativedelta.relativedelta(date_end_retention, datetime.now().date())
         formatted_date = date_end_retention.strftime('%Y-%m-%d')
 
-        log.write(ctx, '[RETENTION] Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
+        log.write(ctx, 'retention - Retention period ({} years) ending in {} years, {} months and {} days ({}): <{}>'.format(retention, r.years, r.months, r.days, formatted_date, dp_coll))
         if r.years == 0 and r.months <= 1:
             group_name = folder.collection_group_name(ctx, dp_coll)
             category = group.get_category(ctx, group_name)
@@ -286,9 +286,9 @@ def rule_process_ending_retention_packages(ctx):
                     datamanager = '{}#{}'.format(*datamanager)
                     actor = 'system'
                     notifications.set(ctx, actor, datamanager, dp_coll, message)
-                log.write(ctx, '[RETENTION] Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
+                log.write(ctx, 'retention - Notifications set for ending retention period on {}. <{}>'.format(formatted_date, dp_coll))
 
-    log.write(ctx, '[RETENTION] Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
+    log.write(ctx, 'retention - Finished checking vault packages for ending retention | notified: {} | errors: {}'.format(dp_notify_count, errors))
 
 
 @rule.make()
@@ -303,10 +303,10 @@ def rule_process_data_access_token_expiry(ctx):
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
-        log.write(ctx, "[DATA ACCESS TOKEN] Insufficient permissions - should only be called by rodsadmin")
+        log.write(ctx, "data access token - Insufficient permissions - should only be called by rodsadmin")
         return
 
-    log.write(ctx, '[DATA ACCESS TOKEN] Checking for expiring data access tokens')
+    log.write(ctx, 'data access token - Checking for expiring data access tokens')
     tokens = data_access_token.get_all_tokens(ctx)
     for token in tokens:
         # Calculate token expiration notification date.
@@ -320,5 +320,5 @@ def rule_process_data_access_token_expiry(ctx):
             target = str(user.from_str(ctx, token['user']))
             message = "Data access password with label <{}> is expiring".format(token["label"])
             set(ctx, actor, target, "/user/data_access", message)
-            log.write(ctx, '[DATA ACCESS TOKEN] Notification set for expiring data access token from user <{}>'.format(token["user"]))
-    log.write(ctx, '[DATA ACCESS TOKEN] Finished checking for expiring data access tokens')
+            log.write(ctx, 'data access token - Notification set for expiring data access token from user <{}>'.format(token["user"]))
+    log.write(ctx, 'data access token - Finished checking for expiring data access tokens')

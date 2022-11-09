@@ -156,7 +156,7 @@ def _api(f):
             result = f(ctx, **data)
             t = time.time() - t
 
-            log._debug(ctx, '%4dms %s' % (int(t * 1000), f.__name__))
+            log.debug(ctx, '%4dms %s' % (int(t * 1000), f.__name__))
 
             if type(result) is Error:
                 raise result  # Allow api.Errors to be either raised or returned.
