@@ -229,7 +229,7 @@ def set_update_publication_state(ctx, vault_package):
     # Set publication status
     publication_state["status"] = "Unknown"
 
-    # Generate new XML's
+    # Generate new JSONs
     publication_state["combiJsonPath"] = ""
     publication_state["dataCiteJsonPath"] = ""
 
