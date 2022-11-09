@@ -217,7 +217,9 @@ def set_update_publication_state(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     coll_status = vault.get_coll_vault_status(ctx, vault_package).value
-    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
+    if coll_status not in [str(constants.vault_package_state.PUBLISHED),
+                           str(constants.vault_package_state.PENDING_DEPUBLICATION),
+                           str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
 
     publication_state = get_publication_state(ctx, vault_package)
@@ -246,7 +248,6 @@ def set_update_publication_state(ctx, vault_package):
 
     # Save state
     save_publication_state(ctx, vault_package, publication_state)
-
     return ""
 
 
@@ -923,6 +924,12 @@ def process_depublication(ctx, vault_package):
     if "landingPageUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
