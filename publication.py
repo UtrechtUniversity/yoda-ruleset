@@ -365,7 +365,7 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
+def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None, hide=False):
     """Upload DataCite JSON to DataCite.
 
     This will register the DOI when posting, without minting it.
@@ -373,9 +373,15 @@ def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
     :param ctx:                Combined type of a callback and rei struct
     :param publication_state:  Dict with state of the publication process
     :param yoda_doi:           DOI of data package in Yoda
+    :param hide:               Boolean indicating if metadata should hidden on DataCite
     """
     datacite_json_path = publication_state["dataCiteJsonPath"]
-    datacite_json = data_object.read(ctx, datacite_json_path)
+
+    # Give metadata attribute hide if it should be hidden on DataCite.
+    if hide:
+        datacite_json = json.dumps({"data": {"attributes": {"event": "hide"}}})
+    else:
+        datacite_json = data_object.read(ctx, datacite_json_path)
 
     # If Yoda DOI is already minted, put instead of post to DataCite.
     send_method = 'post'
@@ -389,38 +395,16 @@ def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None):
 
     if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
         publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in [401, 403, 500, 503, 504]:
+    elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
         log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
         publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
-
-
-def remove_metadata_from_datacite(ctx, publication_config, publication_state):
-    """Remove metadata XML from DataCite.
-
-    :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
-    :param publication_state:  Dict with state of the publication process
-    """
-    payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
-
-    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
-
-    if httpCode == 200:
-        publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in [401, 403, 412, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
-        publication_state["status"] = "Retry"
     elif httpCode == 404:
         # Invalid DOI
-        log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
+        log.write(ctx, "upload_metadata_to_datacite: 404 Not Found - Invalid DOI")
         publication_state["status"] = "Unrecoverable"
     else:
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
@@ -886,6 +870,11 @@ def process_depublication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+
     # Determine last modification time. Always run, no matter if retry
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
@@ -901,10 +890,15 @@ def process_depublication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
-    # Remove metadata from DataCite
+    # Hide metadata from DataCite
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            remove_metadata_from_datacite(ctx, publication_config, publication_state)
+            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'], hide=True)
+
+            if update_base_doi:
+                # Remove version from DOI.
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+                upload_metadata_to_datacite(ctx, publication_state, yoda_doi, hide=True)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -939,6 +933,12 @@ def process_depublication(ctx, vault_package):
     if "oaiUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1008,6 +1008,11 @@ def process_republication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
@@ -1043,6 +1048,11 @@ def process_republication(ctx, vault_package):
     if "dataCiteMetadataPosted" not in publication_state:
         try:
             upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'])
+
+            if update_base_doi:
+                # Remove version from DOI.
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+                upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1068,6 +1078,12 @@ def process_republication(ctx, vault_package):
     if "landingPageUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1077,6 +1093,12 @@ def process_republication(ctx, vault_package):
     if "oaiUploaded" not in publication_state:
         random_id = publication_state["randomId"]
         copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
