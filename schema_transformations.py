@@ -116,9 +116,24 @@ def _dag0_default2(ctx, m):
 
     :returns: Transformed (default-2) JSON object
     """
-    # dag0-project and research group => def2 collection name
-    m["Collection_Name"] = m["Research_Group"] + ', ' + m["Collection_Name"]
-    m.pop("Research_Group")
+    # dag0-research group => def2
+    if m.get('Research_Group', False):
+        resrch_grp_2_contrib = {'Name': {'Given_Name': m['Research_Group'], 'Family_Name': ''},
+                                'Affiliation': ['Affiliation'],
+                                'Person_Identifier': [{'Name_Identifier_Scheme': '',
+                                                       'Name_Identifier': ''}]}
+
+        if m.get('Contributor', False):
+            m['Contributor'].append(resrch_grp_2_contrib)
+        else:
+            m['Contributor'] = [resrch_grp_2_contrib] 
+
+        # Finally, get rid of Research_Group element.
+        m.pop("Research_Group")
+
+
+    # dag0=> def2 collection name
+    m['Collection_Name'] =  "" if not m.get('Collection_Name', False) else m['Collection_Name']
 
     # dag0-GeoLocation => def2-Covered_Geolocation_Place
     geo_places = []
@@ -142,8 +157,6 @@ def _dag0_default2(ctx, m):
     m["Retention_Period"] = int(m["Retention_Period"])
 
     # dag0-Creator => def2-Creator
-    # m['Creator'][0]['Affiliation'] =  [m['Creator'][0]['Affiliation']]
-
     # optionsOwnerRole gaat verloren
     #     "Principal Investigator",
     #     "Group Leader",
@@ -156,7 +169,7 @@ def _dag0_default2(ctx, m):
         creator.pop('Owner_Role')
 
     # Missing data in dag0 - License  "Internal License Data Archive Geosciences 2021-01"
-    m["License"] = "Custom"
+    m["License"] = ""
 
     meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-2/metadata.json')
 
