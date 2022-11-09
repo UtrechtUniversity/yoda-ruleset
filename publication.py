@@ -375,12 +375,11 @@ def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None, hide=Fals
     :param yoda_doi:           DOI of data package in Yoda
     :param hide:               Boolean indicating if metadata should hidden on DataCite
     """
-    datacite_json_path = publication_state["dataCiteJsonPath"]
-
     # Give metadata attribute hide if it should be hidden on DataCite.
     if hide:
         datacite_json = json.dumps({"data": {"attributes": {"event": "hide"}}})
     else:
+        datacite_json_path = publication_state["dataCiteJsonPath"]
         datacite_json = data_object.read(ctx, datacite_json_path)
 
     # If Yoda DOI is already minted, put instead of post to DataCite.
