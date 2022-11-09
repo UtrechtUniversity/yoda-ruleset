@@ -123,7 +123,7 @@ def _dag0_default2(ctx, m):
         if m.get('Contributor', False):
             m['Contributor'].append(resrch_grp_2_contrib)
         else:
-            m['Contributor'] = [resrch_grp_2_contrib] 
+            m['Contributor'] = [resrch_grp_2_contrib]
         # Finally, get rid of Research_Group element.
         m.pop("Research_Group")
 
