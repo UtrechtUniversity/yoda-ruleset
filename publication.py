@@ -106,11 +106,10 @@ def generate_combi_json(ctx, publication_config, publication_state):
     publication_state["combiJsonPath"] = combiJsonPath
 
 
-def generate_system_json(ctx, publication_config, publication_state):
+def generate_system_json(ctx, publication_state):
     """Overwrite combi metadata json with system-only metadata.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
@@ -349,8 +348,12 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_datacite_json(ctx, publication_config, publication_state):
-    """Generate a DataCite compliant JSON based up yoda-metadata.json."""
+def generate_datacite_json(ctx, publication_state):
+    """Generate a DataCite compliant JSON based up yoda-metadata.json.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param publication_state:  Dict with state of the publication process
+    """
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
@@ -450,11 +453,10 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     publication_state["landingPageUrl"] = landingPageUrl
 
 
-def generate_landing_page(ctx, publication_config, publication_state, publish):
+def generate_landing_page(ctx, publication_state, publish):
     """Generate a dataCite compliant XML based up yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     :param publish:            Publication or depublication
     """
@@ -554,11 +556,10 @@ def set_access_restrictions(ctx, vault_package, publication_state):
         publication_state["anonymousAccess"] = "yes"
 
 
-def check_doi_availability(ctx, publication_config, publication_state):
+def check_doi_availability(ctx, publication_state):
     """Request DOI to check on availibity. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
@@ -574,18 +575,6 @@ def check_doi_availability(ctx, publication_config, publication_state):
         # DOI already in use
         publication_state["DOIAvailable"] = "no"
         publication_state["status"] = "Retry"
-
-
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_publication(ctx, vault_package):
-    """Rule interface for processing vault status transition request.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_publication(ctx, vault_package)
 
 
 def process_publication(ctx, vault_package):
@@ -697,7 +686,7 @@ def process_publication(ctx, vault_package):
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -709,7 +698,7 @@ def process_publication(ctx, vault_package):
     # Check if DOI is in use
     if "DOIAvailable" not in publication_state:
         try:
-            check_doi_availability(ctx, publication_config, publication_state)
+            check_doi_availability(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -745,7 +734,7 @@ def process_publication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -824,18 +813,6 @@ def process_publication(ctx, vault_package):
     return publication_state["status"]
 
 
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_depublication(ctx, vault_package):
-    """Rule interface for processing depublication of a vault package.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_depublication(ctx, vault_package)
-
-
 def process_depublication(ctx, vault_package):
     status = "Unknown"
 
@@ -881,7 +858,7 @@ def process_depublication(ctx, vault_package):
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
         try:
-            generate_system_json(ctx, publication_config, publication_state)
+            generate_system_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -911,7 +888,7 @@ def process_depublication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "depublish")
+            generate_landing_page(ctx, publication_state, "depublish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -965,18 +942,6 @@ def process_depublication(ctx, vault_package):
     log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]
-
-
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_republication(ctx, vault_package):
-    """Rule interface for processing republication of a vault package.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_republication(ctx, vault_package)
 
 
 def process_republication(ctx, vault_package):
@@ -1041,7 +1006,7 @@ def process_republication(ctx, vault_package):
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1071,7 +1036,7 @@ def process_republication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1131,11 +1096,11 @@ def process_republication(ctx, vault_package):
 def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
     """Rule interface for updating the publication of a vault package.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-    :param update_datacite:     Flag that indicates updating DataCite
-    :param update_landingpage:  Flag that indicates updating landingpage
-    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+    :param ctx:                Combined type of a callback and rei struct
+    :param vault_package:      Path to the package in the vault
+    :param update_datacite:    Flag that indicates updating DataCite
+    :param update_landingpage: Flag that indicates updating landingpage
+    :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
 
     :returns: "OK" if all went ok
     """
@@ -1145,11 +1110,11 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
 def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
     """Routine to update a publication with sanity checks at every step.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-    :param update_datacite:     Flag that indicates updating DataCite
-    :param update_landingpage:  Flag that indicates updating landingpage
-    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+    :param ctx:                Combined type of a callback and rei struct
+    :param vault_package:      Path to the package in the vault
+    :param update_datacite:    Flag that indicates updating DataCite
+    :param update_landingpage: Flag that indicates updating landingpage
+    :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
 
     :returns: "OK" if all went ok
     """
@@ -1200,7 +1165,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         # Generate DataCite JSON
         log.write(ctx, 'Update datacite for package {}'.format(vault_package))
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1224,7 +1189,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         # Create landing page
         log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1278,3 +1243,15 @@ def get_collection_metadata(ctx, coll, prefix):
         coll_metadata[row[0][len(prefix):]] = row[1]
 
     return coll_metadata
+
+
+"""Rule interface for processing publication of a vault package."""
+rule_process_publication = rule.make(inputs=range(1), outputs=range(1, 3))(process_publication)
+
+
+"""Rule interface for processing depublication of a vault package."""
+rule_process_depublication = rule.make(inputs=range(1), outputs=range(1, 3))(process_depublication)
+
+
+"""Rule interface for processing republication of a vault package."""
+rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(process_republication)
