@@ -163,8 +163,7 @@ def then_users_found_match(api_response, users):
     _, body = api_response
 
     users = users.split(", ")
-    users.sort()
-    assert body["data"] == users
+    assert set(users) <= set(body["data"])
 
 
 @then(parsers.parse("group {group} exists"))
