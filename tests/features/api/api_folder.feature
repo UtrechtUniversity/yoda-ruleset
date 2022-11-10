@@ -92,7 +92,7 @@ Feature: Folder API
         And folder <folder> status is <status>
 
         Examples:
-            | folder                            | status    |
+            | folder                            | status   |
             | /tempZone/home/research-core-0    | REJECTED |
             | /tempZone/home/research-default-1 | REJECTED |
             | /tempZone/home/research-core-1    | REJECTED |

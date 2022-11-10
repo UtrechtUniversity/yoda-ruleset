@@ -35,7 +35,7 @@ def ui_reset_notifcations(browser):
 
 @when(parsers.parse('user checks and clears notifications for status "{status}"'))
 def ui_notifications(browser, status):
-    time.sleep(5)
+    time.sleep(6)
     status_text = {'Submitted': ['Data package submitted'],
                    'Accepted': ['Data package secured', 'Data package accepted for vault'],
                    'Submitted for publication': ['Data package submitted for publication', 'Data package secured'],
@@ -44,7 +44,7 @@ def ui_notifications(browser, status):
     browser.find_by_id('userDropdown').click()
     browser.links.find_by_partial_text('Notifications')[0].click()
 
-    time.sleep(1)
+    time.sleep(3)
     assert len(browser.find_by_css('.list-group-item-action')) == len(status_text[status])
 
     index = 0
