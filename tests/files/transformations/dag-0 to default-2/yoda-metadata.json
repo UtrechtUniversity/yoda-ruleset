@@ -1,0 +1,87 @@
+{
+    "Discipline": [
+        "Natural Sciences - Earth and related environmental sciences (1.5)", 
+        "Natural Sciences - Physical sciences (1.3)"
+    ], 
+    "Language": "en - English", 
+    "Collected": {
+        "Start_Date": "2000-01-01", 
+        "End_Date": "2010-01-01"
+    }, 
+    "GeoLocation": [
+        {
+            "geoLocationBox": {
+                "northBoundLatitude": 54.67383096593114, 
+                "westBoundLongitude": 31.419565159652, 
+                "southBoundLatitude": 43.89789239125797, 
+                "eastBoundLongitude": 1.9783739792106483
+            }, 
+            "Description_Spatial": "eerste loc"
+        }, 
+        {
+            "geoLocationBox": {
+                "northBoundLatitude": 52.696361078274485, 
+                "westBoundLongitude": 36.07742525685615, 
+                "southBoundLatitude": 45.213003555993964, 
+                "eastBoundLongitude": 3.4724045764270848
+            }, 
+            "Description_Spatial": "tweede loc"
+        }
+    ], 
+    "Tag": [
+        "key1", 
+        "key2"
+    ], 
+    "Related_Datapackage": [
+        {
+            "Relation_Type": "References: Current datapackages references", 
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI", 
+                "Identifier": "https://doidoi.doi"
+            }, 
+            "Title": "rdp1"
+        }
+    ], 
+    "Data_Type": "Dataset", 
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "depositor", 
+                "Family_Name": "latname"
+            }, 
+            "Contributor_Type": "ContactPerson"
+        }
+    ], 
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "owner1", 
+                "Family_Name": "lastname"
+            }, 
+            "Affiliation": "Utrecht University", 
+            "Owner_Role": "Group Leader"
+        }, 
+        {
+            "Name": {
+                "Given_Name": "owner2", 
+                "Family_Name": "blabla"
+            }, 
+            "Affiliation": "Utrecht University", 
+            "Owner_Role": "Contact Person from External Institute"
+        }
+    ], 
+    "License": "Internal License Data Archive Geosciences 2021-01", 
+    "Data_Access_Restriction": "Open - freely retrievable", 
+    "Title": "title dag-0", 
+    "Description": "descript dag-0", 
+    "Research_Group": "Earth sciences - Geochemistry", 
+    "Collection_Name": "dag0-project", 
+    "Retention_Period": "5", 
+    "Data_Classification": "Sensitive", 
+    "links": [
+        {
+            "rel": "describedby", 
+            "href": "https://yoda.uu.nl/schemas/dag-0/metadata.json"
+        }
+    ]
+}
