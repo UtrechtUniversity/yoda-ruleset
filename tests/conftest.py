@@ -185,7 +185,7 @@ def api_request(user, request, data, timeout=10):
     return (response.status_code, body)
 
 
-def upload_data(user, file, folder):
+def upload_data(user, file, folder, file_content="test"):
     # Retrieve user cookies.
     csrf, session = user_cookies[user]
 
@@ -205,7 +205,7 @@ def upload_data(user, file, folder):
              "flowFilename": (None, file),
              "flowRelativePath": (None, file),
              "flowTotalChunks": (None, "1"),
-             "file": (file, "test")}
+             "file": (file, file_content)}
 
     cookies = {'__Host-session': session}
     headers = {'referer': portal_url}
