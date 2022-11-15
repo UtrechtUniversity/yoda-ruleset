@@ -4,6 +4,8 @@
 __copyright__ = 'Copyright (c) 2019-2022, Utrecht University'
 __license__   = 'GPLv3, see LICENSE'
 
+import json
+
 import genquery
 
 import datacite
@@ -104,11 +106,10 @@ def generate_combi_json(ctx, publication_config, publication_state):
     publication_state["combiJsonPath"] = combiJsonPath
 
 
-def generate_system_json(ctx, publication_config, publication_state):
+def generate_system_json(ctx, publication_state):
     """Overwrite combi metadata json with system-only metadata.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     temp_coll = "/" + user.zone(ctx) + constants.IIPUBLICATIONCOLLECTION
@@ -215,7 +216,9 @@ def set_update_publication_state(ctx, vault_package):
 
     # check current status, perhaps transitioned already
     coll_status = vault.get_coll_vault_status(ctx, vault_package).value
-    if coll_status not in [str(constants.vault_package_state.PUBLISHED), str(constants.vault_package_state.PENDING_DEPUBLICATION), str(constants.vault_package_state.PENDING_REPUBLICATION)]:
+    if coll_status not in [str(constants.vault_package_state.PUBLISHED),
+                           str(constants.vault_package_state.PENDING_DEPUBLICATION),
+                           str(constants.vault_package_state.PENDING_REPUBLICATION)]:
         return "NotAllowed"
 
     publication_state = get_publication_state(ctx, vault_package)
@@ -225,7 +228,7 @@ def set_update_publication_state(ctx, vault_package):
     # Set publication status
     publication_state["status"] = "Unknown"
 
-    # Generate new XML's
+    # Generate new JSONs
     publication_state["combiJsonPath"] = ""
     publication_state["dataCiteJsonPath"] = ""
 
@@ -244,7 +247,6 @@ def set_update_publication_state(ctx, vault_package):
 
     # Save state
     save_publication_state(ctx, vault_package, publication_state)
-
     return ""
 
 
@@ -340,14 +342,18 @@ def generate_preliminary_next_version_DOI(ctx, publication_config, publication_s
         version = str(int(version[1:]) + 1)
         randomId = "{}.v{}".format(randomId, version)
     else:
-        randomId = "{}.v2".format(randomId)
+        randomId = "{}.v1".format(randomId)
 
     publication_state["randomId"] = randomId
     publication_state["yodaDOI"] = dataCitePrefix + "/" + yodaPrefix + "-" + randomId
 
 
-def generate_datacite_json(ctx, publication_config, publication_state):
-    """Generate a DataCite compliant JSON based up yoda-metadata.json."""
+def generate_datacite_json(ctx, publication_state):
+    """Generate a DataCite compliant JSON based up yoda-metadata.json.
+
+    :param ctx:                Combined type of a callback and rei struct
+    :param publication_state:  Dict with state of the publication process
+    """
     combiJsonPath = publication_state["combiJsonPath"]
 
     randomId = publication_state["randomId"]
@@ -363,98 +369,58 @@ def generate_datacite_json(ctx, publication_config, publication_state):
     publication_state["dataCiteJsonPath"] = datacite_json_path
 
 
-def post_metadata_to_datacite(ctx, publication_config, publication_state, send_method):
-    """Upload DataCite JSON to DataCite. This will register the DOI, without minting it.
+def upload_metadata_to_datacite(ctx, publication_state, yoda_doi=None, hide=False):
+    """Upload DataCite JSON to DataCite.
+
+    This will register the DOI when posting, without minting it.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
-    :param send_method:        http verb (either 'post' or 'put')
+    :param yoda_doi:           DOI of data package in Yoda
+    :param hide:               Boolean indicating if metadata should hidden on DataCite
     """
-    datacite_json_path = publication_state["dataCiteJsonPath"]
-    datacite_json = data_object.read(ctx, datacite_json_path)
+    # Give metadata attribute hide if it should be hidden on DataCite.
+    if hide:
+        datacite_json = json.dumps({"data": {"attributes": {"event": "hide"}}})
+    else:
+        datacite_json_path = publication_state["dataCiteJsonPath"]
+        datacite_json = data_object.read(ctx, datacite_json_path)
+
+    # If Yoda DOI is already minted, put instead of post to DataCite.
+    send_method = 'post'
+    if yoda_doi is not None:
+        send_method = 'put'
 
     if send_method == 'post':
         httpCode = datacite.metadata_post(ctx, datacite_json)
     else:
-        httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], datacite_json)
+        httpCode = datacite.metadata_put(ctx, yoda_doi, datacite_json)
 
     if (send_method == 'post' and httpCode == 201) or (send_method == 'put' and httpCode == 200):
         publication_state["dataCiteMetadataPosted"] = "yes"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
-        publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "post_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
-
-
-def post_draft_doi_to_datacite(ctx, publication_config, publication_state):
-    """Upload DOI to DataCite. This will register the DOI as a draft.
-    This function is also a draft, and will have to be reworked!
-
-    :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
-    :param publication_state:  Dict with state of the publication process
-    """
-    datacite_json_path = publication_state["dataCiteJsonPath"]
-    datacite_json = data_object.read(ctx, datacite_json_path)
-
-    # post the DOI only
-    httpCode = datacite.metadata_post(ctx, {
-        'data': {
-            'type': 'dois',
-            'attributes': {
-                'doi': datacite_json['data']['attributes']['doi']
-            }
-        }
-    })
-
-    if httpCode == 201:
-        publication_state["dataCiteMetadataPosted"] = "no"
-    elif httpCode in [401, 403, 500, 503, 504]:
-        # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
-        publication_state["status"] = "Retry"
-    else:
-        log.write(ctx, "post_draft_doi_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
-        publication_state["status"] = "Unrecoverable"
-
-
-def remove_metadata_from_datacite(ctx, publication_config, publication_state):
-    """Remove metadata XML from DataCite."""
-    import json
-    payload = json.dumps({"data": {"attributes": {"event": "hide"}}})
-
-    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
-
-    if httpCode == 200:
-        publication_state["dataCiteMetadataPosted"] = "yes"
     elif httpCode in [401, 403, 412, 500, 503, 504]:
         # Unauthorized, Forbidden, Precondition failed, Internal Server Error
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Will be retried later")
+        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Will be retried later")
         publication_state["status"] = "Retry"
     elif httpCode == 404:
         # Invalid DOI
-        log.write(ctx, "remove metadata from datacite: 404 Not Found - Invalid DOI")
+        log.write(ctx, "upload_metadata_to_datacite: 404 Not Found - Invalid DOI")
         publication_state["status"] = "Unrecoverable"
     else:
-        log.write(ctx, "remove metadata from datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
+        log.write(ctx, "upload_metadata_to_datacite: httpCode " + str(httpCode) + " received. Unrecoverable error.")
         publication_state["status"] = "Unrecoverable"
 
 
-def mint_doi(ctx, publication_config, publication_state):
+def mint_doi(ctx, yoda_doi, publication_state):
     """Announce the landing page URL for a DOI to dataCite. This will mint the DOI.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
+    :param yoda_doi:           DOI of data package in Yoda
     :param publication_state:  Dict with state of the publication process
     """
-    import json
     payload = json.dumps({"data": {"attributes": {"url": publication_state["landingPageUrl"]}}})
 
-    httpCode = datacite.metadata_put(ctx, publication_state["yodaDOI"], payload)
+    httpCode = datacite.metadata_put(ctx, yoda_doi, payload)
 
     if httpCode == 200:  # 201:
         publication_state["DOIMinted"] = "yes"
@@ -487,11 +453,10 @@ def generate_landing_page_url(ctx, publication_config, publication_state):
     publication_state["landingPageUrl"] = landingPageUrl
 
 
-def generate_landing_page(ctx, publication_config, publication_state, publish):
+def generate_landing_page(ctx, publication_state, publish):
     """Generate a dataCite compliant XML based up yoda-metadata.json.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     :param publish:            Publication or depublication
     """
@@ -515,10 +480,11 @@ def generate_landing_page(ctx, publication_config, publication_state, publish):
     publication_state["landingPagePath"] = landing_page_path
 
 
-def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
+def copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state):
     """Copy the resulting landing page to configured public host.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of data package DOI
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
@@ -526,8 +492,7 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
     landingPagePath = publication_state["landingPagePath"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId = publication_state["randomId"]
-    publicPath = yodaInstance + "/" + yodaPrefix + "/" + randomId + ".html"
+    publicPath = yodaInstance + "/" + yodaPrefix + "/" + random_id + ".html"
 
     argv = publicHost + " inbox /var/www/landingpages/" + publicPath
 
@@ -540,20 +505,20 @@ def copy_landingpage_to_public_host(ctx, publication_config, publication_state):
         log.write(ctx, "copy_landingpage_to_public: " + str(error))
 
 
-def copy_metadata_to_moai(ctx, publication_config, publication_state):
+def copy_metadata_to_moai(ctx, random_id, publication_config, publication_state):
     """Copy the metadata json file to configured MOAI.
 
     :param ctx:                Combined type of a callback and rei struct
+    :param random_id:          Random ID part of data package DOI
     :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     publicHost = publication_config["publicHost"]
     yodaInstance = publication_config["yodaInstance"]
     yodaPrefix = publication_config["yodaPrefix"]
-    randomId = publication_state["randomId"]
     combiJsonPath = publication_state["combiJsonPath"]
 
-    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + randomId + ".json"
+    argv = publicHost + " inbox /var/www/moai/metadata/" + yodaInstance + "/" + yodaPrefix + "/" + random_id + ".json"
     error = 0
     ctx.iiGenericSecureCopy(argv, combiJsonPath, error)
     if error >= 0:
@@ -591,11 +556,10 @@ def set_access_restrictions(ctx, vault_package, publication_state):
         publication_state["anonymousAccess"] = "yes"
 
 
-def check_doi_availability(ctx, publication_config, publication_state):
+def check_doi_availability(ctx, publication_state):
     """Request DOI to check on availibity. We want a 404 as return code.
 
     :param ctx:                Combined type of a callback and rei struct
-    :param publication_config: Dict with publication configuration
     :param publication_state:  Dict with state of the publication process
     """
     yodaDOI = publication_state["yodaDOI"]
@@ -613,18 +577,6 @@ def check_doi_availability(ctx, publication_config, publication_state):
         publication_state["status"] = "Retry"
 
 
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_publication(ctx, vault_package):
-    """Rule interface for processing vault status transition request.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_publication(ctx, vault_package)
-
-
 def process_publication(ctx, vault_package):
     """Handling of publication of vault_package.
 
@@ -636,7 +588,7 @@ def process_publication(ctx, vault_package):
 
     publication_state = {}
 
-    log.write(ctx, "process_publication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process publication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -663,12 +615,37 @@ def process_publication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+        v1_exists = True
+
+        # Check if version 1 of data package exists.
+        previous_vault_package = publication_state["previous_version"]
+        previous_publication_state = get_publication_state(ctx, previous_vault_package)
+        random_id = previous_publication_state["randomId"]
+        if len(random_id.split(".")) != 2:
+            v1_exists = False
+
+        # If no version 1 exists for this data package, create it.
+        if not v1_exists:
+            log.write(ctx, "Creating v1 publication of vault package <{}>".format(previous_vault_package))
+            generate_preliminary_next_version_DOI(ctx, publication_config, previous_publication_state)
+            previous_publication_state['DOIMinted'] = 'no'
+            save_publication_state(ctx, previous_vault_package, previous_publication_state)
+            set_update_publication_state(ctx, previous_vault_package)
+            status = process_publication(ctx, previous_vault_package)
+            if status in ["Unrecoverable", "Retry"]:
+                return status
+
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
 
     # DOI handling
     if "yodaDOI" not in publication_state:
+        # If a previous version is set generate a versioned DOI.
         if "previous_version" in publication_state:
             generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
         else:
@@ -678,10 +655,12 @@ def process_publication(ctx, vault_package):
 
     elif "DOIAvailable" in publication_state:
         if publication_state["DOIAvailable"] == "no":
+            # If a previous version is set generate a versioned DOI.
             if "previous_version" in publication_state:
                 generate_preliminary_next_version_DOI(ctx, publication_config, publication_state)
             else:
                 generate_preliminary_DOI(ctx, publication_config, publication_state)
+
             publication_state["combiJsonPath"] = ""
             publication_state["dataCiteJsonPath"] = ""
             save_publication_state(ctx, vault_package, publication_state)
@@ -707,7 +686,7 @@ def process_publication(ctx, vault_package):
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -719,25 +698,30 @@ def process_publication(ctx, vault_package):
     # Check if DOI is in use
     if "DOIAvailable" not in publication_state:
         try:
-            check_doi_availability(ctx, publication_config, publication_state)
+            check_doi_availability(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Retry"
 
         if publication_state["status"] == "Retry":
             return publication_state["status"]
 
-    # Determine wether an update ('put') or create ('post') message has to be sent to datacite
-    datacite_action = 'post'
-    try:
-        if publication_state['DOIMinted'] == 'yes':
-            datacite_action = 'put'
-    except KeyError:
-        pass
-
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, datacite_action)
+            # Determine wether DOI is already minted.
+            yoda_doi = None
+            try:
+                if publication_state['DOIMinted'] == 'yes':
+                    yoda_doi = publication_state['yodaDOI']
+            except KeyError:
+                pass
+
+            upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
+
+            if update_base_doi:
+                # Remove version from DOI.
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+                upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -750,7 +734,7 @@ def process_publication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -761,7 +745,14 @@ def process_publication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -769,7 +760,14 @@ def process_publication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -785,7 +783,13 @@ def process_publication(ctx, vault_package):
 
     # Mint DOI with landing page URL.
     if "DOIMinted" not in publication_state:
-        mint_doi(ctx, publication_config, publication_state)
+        mint_doi(ctx, publication_state['yodaDOI'], publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+            mint_doi(ctx, yoda_doi, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
@@ -796,32 +800,23 @@ def process_publication(ctx, vault_package):
         save_publication_state(ctx, vault_package, publication_state)
 
         avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
+
+        if "previous_version" in publication_state:
+            avu.set_on_coll(ctx, publication_state["previous_version"], constants.UUORGMETADATAPREFIX + 'publication_next_version', vault_package)
     else:
         # The publication was a success
         publication_state["status"] = "OK"
         save_publication_state(ctx, vault_package, publication_state)
         provenance.log_action(ctx, "system", vault_package, "publication updated")
 
-    log.write(ctx, "process_publication: All steps for publication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished publication of vault package <{}>".format(vault_package))
     return publication_state["status"]
-
-
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_depublication(ctx, vault_package):
-    """Rule interface for processing depublication of a vault package.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_depublication(ctx, vault_package)
 
 
 def process_depublication(ctx, vault_package):
     status = "Unknown"
 
-    log.write(ctx, "process_depublication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process depublication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -852,13 +847,18 @@ def process_depublication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+
     # Determine last modification time. Always run, no matter if retry
     publication_state["lastModifiedDateTime"] = get_last_modified_datetime(ctx, vault_package)
 
     # Generate Combi Json consisting of user and system metadata
     if "combiJsonPath" not in publication_state:
         try:
-            generate_system_json(ctx, publication_config, publication_state)
+            generate_system_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -867,10 +867,15 @@ def process_depublication(ctx, vault_package):
         if publication_state["status"] in ["Unrecoverable", "Retry"]:
             return publication_state["status"]
 
-    # Remove metadata from DataCite
+    # Hide metadata from DataCite
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            remove_metadata_from_datacite(ctx, publication_config, publication_state)
+            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'], hide=True)
+
+            if update_base_doi:
+                # Remove version from DOI.
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+                upload_metadata_to_datacite(ctx, publication_state, yoda_doi, hide=True)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -883,7 +888,7 @@ def process_depublication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "depublish")
+            generate_landing_page(ctx, publication_state, "depublish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -894,7 +899,14 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -902,7 +914,14 @@ def process_depublication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -920,28 +939,16 @@ def process_depublication(ctx, vault_package):
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.DEPUBLISHED)
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
-    log.write(ctx, "process_depublication: All steps for depublication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished depublication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]
-
-
-@rule.make(inputs=range(1), outputs=range(1, 3))
-def rule_process_republication(ctx, vault_package):
-    """Rule interface for processing republication of a vault package.
-
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-
-    :return: "OK" if all went ok
-    """
-    return process_republication(ctx, vault_package)
 
 
 def process_republication(ctx, vault_package):
     """Routine to process a republication with sanity checks at every step."""
     publication_state = {}
 
-    log.write(ctx, "process_republication: Process vault package <{}>".format(vault_package))
+    log.write(ctx, "Process republication of vault package <{}>".format(vault_package))
 
     # check permissions - rodsadmin only
     if user.user_type(ctx) != 'rodsadmin':
@@ -972,6 +979,11 @@ def process_republication(ctx, vault_package):
         status = "Processing"
         publication_state['status'] = status
 
+    # Set flag to update base DOI when this data package is the latest version.
+    update_base_doi = False
+    if "previous_version" in publication_state and "next_version" not in publication_state:
+        update_base_doi = True
+
     # Publication date
     if "publicationDate" not in publication_state:
         publication_state["publicationDate"] = get_publication_date(ctx, vault_package)
@@ -994,7 +1006,7 @@ def process_republication(ctx, vault_package):
     # Generate DataCite JSON
     if "dataCiteJsonPath" not in publication_state:
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1006,7 +1018,12 @@ def process_republication(ctx, vault_package):
     # Send DataCite JSON to metadata end point
     if "dataCiteMetadataPosted" not in publication_state:
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
+            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'])
+
+            if update_base_doi:
+                # Remove version from DOI.
+                yoda_doi = publication_state['yodaDOI'].rsplit(".", 1)[0]
+                upload_metadata_to_datacite(ctx, publication_state, yoda_doi)
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1019,7 +1036,7 @@ def process_republication(ctx, vault_package):
     if "landingPagePath" not in publication_state:
         # Create landing page
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1030,7 +1047,14 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push landing page to the public host
     if "landingPageUploaded" not in publication_state:
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1038,7 +1062,14 @@ def process_republication(ctx, vault_package):
 
     # Use secure copy to push combi JSON to MOAI server
     if "oaiUploaded" not in publication_state:
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
+        if update_base_doi:
+            # Remove version from DOI.
+            random_id = random_id.rsplit(".", 1)[0]
+            copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
+
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1056,7 +1087,7 @@ def process_republication(ctx, vault_package):
     publication_state["status"] = "OK"
     save_publication_state(ctx, vault_package, publication_state)
     avu.set_on_coll(ctx, vault_package, constants.UUORGMETADATAPREFIX + 'vault_status', constants.vault_package_state.PUBLISHED)
-    log.write(ctx, "process_republication: All steps for republication completed <{}>".format(vault_package))
+    log.write(ctx, "Finished republication of vault package <{}>".format(vault_package))
 
     return publication_state["status"]
 
@@ -1065,11 +1096,11 @@ def process_republication(ctx, vault_package):
 def rule_update_publication(ctx, vault_package, update_datacite, update_landingpage, update_moai):
     """Rule interface for updating the publication of a vault package.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-    :param update_datacite:     Flag that indicates updating DataCite
-    :param update_landingpage:  Flag that indicates updating landingpage
-    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+    :param ctx:                Combined type of a callback and rei struct
+    :param vault_package:      Path to the package in the vault
+    :param update_datacite:    Flag that indicates updating DataCite
+    :param update_landingpage: Flag that indicates updating landingpage
+    :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
 
     :returns: "OK" if all went ok
     """
@@ -1079,11 +1110,11 @@ def rule_update_publication(ctx, vault_package, update_datacite, update_landingp
 def update_publication(ctx, vault_package, update_datacite=False, update_landingpage=False, update_moai=False):
     """Routine to update a publication with sanity checks at every step.
 
-    :param ctx:           Combined type of a callback and rei struct
-    :param vault_package: Path to the package in the vault
-    :param update_datacite:     Flag that indicates updating DataCite
-    :param update_landingpage:  Flag that indicates updating landingpage
-    :param update_moai:         Flag that indicates updating MOAI (OAI-PMH)
+    :param ctx:                Combined type of a callback and rei struct
+    :param vault_package:      Path to the package in the vault
+    :param update_datacite:    Flag that indicates updating DataCite
+    :param update_landingpage: Flag that indicates updating landingpage
+    :param update_moai:        Flag that indicates updating MOAI (OAI-PMH)
 
     :returns: "OK" if all went ok
     """
@@ -1134,7 +1165,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         # Generate DataCite JSON
         log.write(ctx, 'Update datacite for package {}'.format(vault_package))
         try:
-            generate_datacite_json(ctx, publication_config, publication_state)
+            generate_datacite_json(ctx, publication_state)
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1145,7 +1176,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
 
         # Send DataCite JSON to metadata end point
         try:
-            post_metadata_to_datacite(ctx, publication_config, publication_state, 'put')
+            upload_metadata_to_datacite(ctx, publication_state, publication_state['yodaDOI'])
         except msi.Error:
             publication_state["status"] = "Retry"
 
@@ -1158,7 +1189,7 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
         # Create landing page
         log.write(ctx, 'Update landingpage for package {}'.format(vault_package))
         try:
-            generate_landing_page(ctx, publication_config, publication_state, "publish")
+            generate_landing_page(ctx, publication_state, "publish")
         except msi.Error:
             publication_state["status"] = "Unrecoverable"
 
@@ -1168,7 +1199,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
             return publication_state["status"]
 
         # Use secure copy to push landing page to the public host
-        copy_landingpage_to_public_host(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_landingpage_to_public_host(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1177,7 +1209,8 @@ def update_publication(ctx, vault_package, update_datacite=False, update_landing
     if update_moai:
         # Use secure copy to push combi JSON to MOAI server
         log.write(ctx, 'Update MOAI for package {}'.format(vault_package))
-        copy_metadata_to_moai(ctx, publication_config, publication_state)
+        random_id = publication_state["randomId"]
+        copy_metadata_to_moai(ctx, random_id, publication_config, publication_state)
         save_publication_state(ctx, vault_package, publication_state)
 
         if publication_state["status"] == "Retry":
@@ -1210,3 +1243,15 @@ def get_collection_metadata(ctx, coll, prefix):
         coll_metadata[row[0][len(prefix):]] = row[1]
 
     return coll_metadata
+
+
+"""Rule interface for processing publication of a vault package."""
+rule_process_publication = rule.make(inputs=range(1), outputs=range(1, 3))(process_publication)
+
+
+"""Rule interface for processing depublication of a vault package."""
+rule_process_depublication = rule.make(inputs=range(1), outputs=range(1, 3))(process_depublication)
+
+
+"""Rule interface for processing republication of a vault package."""
+rule_process_republication = rule.make(inputs=range(1), outputs=range(1, 3))(process_republication)
