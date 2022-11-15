@@ -100,13 +100,9 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to):
     assert metadata["Collected"] == {"Start_Date": "2000-01-01", "End_Date": "2010-01-01"}
     assert metadata["Tag"] == ["key1", "key2"]
     # research group has to be converted to a contributer with type ResearchGroup
-    assert metadata["Contributor"][1] == {
-            "Affiliation": [
-                "Affiliation"
-            ],
-            "Name": {
-                "Family_Name": "",
-                "Given_Name": "Earth sciences - Geochemistry"
-            },
-            "Contributor_Type": "ResearchGroup"}
-
+    assert metadata["Contributor"][1] == {"Affiliation": ["Affiliation"],
+                                          "Name": {
+                                              "Family_Name": "",
+                                              "Given_Name": "Earth sciences - Geochemistry"
+                                          },
+                                          "Contributor_Type": "ResearchGroup"}
