@@ -103,6 +103,5 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to):
     assert metadata["Contributor"][1] == {"Affiliation": ["Affiliation"],
                                           "Name": {
                                               "Family_Name": "",
-                                              "Given_Name": "Earth sciences - Geochemistry"
-                                          },
+                                              "Given_Name": "Earth sciences - Geochemistry"},
                                           "Contributor_Type": "ResearchGroup"}
