@@ -18,13 +18,14 @@ from pytest_bdd import (
     when,
 )
 
-from conftest import api_request, upload_data
+from conftest import upload_data
 
 scenarios('../../features/ui/ui_schema_transformation.feature')
 
+
 @given(parsers.parse("metadata file <schema_from> for <schema_to> is uploaded by user {user}"), target_fixture="api_response")
 def api_schema_trans_upload_metadata(user, schema_from, schema_to):
-    cwd = os.getcwd()	
+    cwd = os.getcwd()
     with open("{}\\files\\transformations\\{} to {}\\yoda-metadata.json".format(cwd, schema_from, schema_to)) as f:
         metadata = f.read()
 
@@ -69,17 +70,16 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to):
     # open menu for the file
     browser.find_by_css('button[data-name="{}"]'.format(file)).click()
 
-    # click on download link
+    # Click on download link
     browser.find_by_css('a[data-name="{}"]'.format(file))[0].click()
 
-    # C:\Users\Harm\AppData\Local\Temp\pytest-of-Harm\pytest-144\pytest-splinter0\splinter\download
-	# Open the downloaded yoda-metadata.json file
+    # Open the downloaded yoda-metadata.json file
     root_dir = Path(tmpdir).parent
     if os.name == "nt":
         download_dir = root_dir.joinpath("pytest-splinter0/splinter/download/")
     else:
         download_dir = root_dir.joinpath("pytest-splintercurrent/splinter/download/")
-		
+
     with open("{}\\yoda-metadata.json".format(download_dir)) as f:
         metadata = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
@@ -94,9 +94,8 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to):
     assert metadata["Data_Classification"] == "Sensitive"
     assert metadata["Covered_Geolocation_Place"] == ["eerste loc", "tweede loc"]
     assert metadata["Data_Type"] == "Dataset"
-    assert metadata["Discipline"] == [
-	    "Natural Sciences - Earth and related environmental sciences (1.5)", 
-        "Natural Sciences - Physical sciences (1.3)"]
+    assert metadata["Discipline"] == ["Natural Sciences - Earth and related environmental sciences (1.5)",
+                                      "Natural Sciences - Physical sciences (1.3)"]
     assert metadata["Language"] == "en - English"
     assert metadata["Collected"] == {"Start_Date": "2000-01-01", "End_Date": "2010-01-01"}
     assert metadata["Tag"] == ["key1", "key2"]
@@ -104,10 +103,10 @@ def ui_schema_trans_download_file(browser, tmpdir, file, schema_to):
     assert metadata["Contributor"][1] == {
             "Affiliation": [
                 "Affiliation"
-            ], 
+            ],
             "Name": {
-                "Family_Name": "", 
+                "Family_Name": "",
                 "Given_Name": "Earth sciences - Geochemistry"
-            }, 
-            "Contributor_Type": "ResearchGroup"
-        }
+            },
+            "Contributor_Type": "ResearchGroup"}
+
