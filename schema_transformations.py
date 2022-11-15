@@ -119,7 +119,8 @@ def _dag0_default2(ctx, m):
     # dag0-research group => def2
     if m.get('Research_Group', False):
         resrch_grp_2_contrib = {'Name': {'Given_Name': m['Research_Group'], 'Family_Name': ''},
-                                'Affiliation': ['Affiliation']}
+                                'Affiliation': ['Affiliation'],
+                                'Contributor_Type': 'ResearchGroup'}
         if m.get('Contributor', False):
             m['Contributor'].append(resrch_grp_2_contrib)
         else:
