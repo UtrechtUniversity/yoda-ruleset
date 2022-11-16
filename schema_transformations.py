@@ -182,7 +182,7 @@ def _default1_teclab0(ctx, m):
     """
 
     # First bring to default2 level
-    m = _default1_default2(m)
+    m = _default1_default2(ctx, m)
 
     # 1) REQUIRED FIELDS
     m['Discipline'] = ['Analogue modelling of geologic processes']
@@ -303,7 +303,7 @@ def _default1_hptlab0(ctx, m):
 
     """
     # First bring to default2 level
-    m = _default1_default2(m)
+    m = _default1_default2(ctx, m)
 
     # 1) REQUIRED FIELDS
     m['Discipline'] = ['Rock and melt physical properties']
