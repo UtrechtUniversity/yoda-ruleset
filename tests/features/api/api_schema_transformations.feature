@@ -8,8 +8,8 @@ Feature: Schema transformations API
 
         Examples:
             | schema_from | schema_to |
-            | dag-0       | default-2 |
             | default-0   | default-1 |
             | default-1   | default-2 |
+            | dag-0       | default-2 |
             | teclab-0    | teclab-1  |
             | hptlab-0    | hptlab-1  |

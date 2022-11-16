@@ -66,10 +66,10 @@
             ]
         }
     ],
-    "License": "Creative Commons Attribution 4.0 International Public License",
+    "License": "Custom",
     "Data_Access_Restriction": "Open - freely retrievable",
     "Title": "API test hptlab-0",
     "Description": "API test hptlab-0",
     "Data_Type": "Dataset",
-    "Data_Classification": "Basic"
+    "Data_Classification": "Public"
 }

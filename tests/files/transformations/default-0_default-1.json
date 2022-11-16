@@ -18,10 +18,10 @@
             ]
         }
     ],
-    "Data_Access_Restriction": "Restricted - available upon request",
+    "Data_Access_Restriction": "Open - freely retrievable",
     "Title": "API test default-0",
     "Description": "API test default-0",
     "Data_Classification": "Public",
     "Version": "1.0",
-    "License": "Creative Commons Attribution-ShareAlike 4.0 International Public License"
+    "License": "Custom"
 }

@@ -72,12 +72,11 @@
     ],
     "License": "Internal License Data Archive Geosciences 2021-01",
     "Data_Access_Restriction": "Open - freely retrievable",
-    "Title": "title dag-0",
-    "Description": "descript dag-0",
+    "Title": "API test dag-0",
+    "Description": "API test dag-0",
     "Research_Group": "Earth sciences - Geochemistry",
     "Collection_Name": "dag0-project",
     "Retention_Period": "5",
-    "Data_Classification": "Sensitive",
     "links": [
         {
             "rel": "describedby",
