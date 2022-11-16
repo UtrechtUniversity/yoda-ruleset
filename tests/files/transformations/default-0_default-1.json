@@ -1,0 +1,27 @@
+{
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/default-0/metadata.json"
+        }
+    ],
+    "Language": "en - English",
+    "Retention_Period": 10,
+    "Creator": [
+        {
+            "Name": "Jane Doe",
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
+        }
+    ],
+    "Data_Access_Restriction": "Restricted - available upon request",
+    "Title": "API test default-0",
+    "Description": "API test default-0",
+    "Data_Classification": "Public",
+    "Version": "1.0",
+    "License": "Creative Commons Attribution-ShareAlike 4.0 International Public License"
+}

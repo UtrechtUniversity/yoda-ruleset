@@ -1,0 +1,75 @@
+{
+    "links": [
+        {
+            "rel": "describedby",
+            "href": "https://yoda.uu.nl/schemas/hptlab-0/metadata.json"
+        }
+    ],
+    "Discipline": [
+        "Rock and melt physical properties"
+    ],
+    "Lab": [
+        "e3a4f5d02528d02c516dbea19c20b32c"
+    ],
+    "Version": "Version 1.0",
+    "Language": "en - English",
+    "Collected": {
+        "Start_Date": "2022-11-01",
+        "End_Date": "2022-11-02"
+    },
+    "GeoLocation": [
+        {
+            "geoLocationBox": {},
+            "Description_Temporal": {}
+        }
+    ],
+    "Apparatus": [
+        "Uniaxial"
+    ],
+    "Material": [
+        "Powder Mixture"
+    ],
+    "Measured_Property": [
+        "Hardness"
+    ],
+    "Retention_Period": 10,
+    "Creator": [
+        {
+            "Name": {
+                "Given_Name": "John",
+                "Family_Name": "Doe"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ]
+        }
+    ],
+    "Contributor": [
+        {
+            "Name": {
+                "Given_Name": "Jane",
+                "Family_Name": "Doe"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ]
+        }
+    ],
+    "Contact": [
+        {
+            "Name": {
+                "Given_Name": "Jenny",
+                "Family_Name": "Doe"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ]
+        }
+    ],
+    "License": "Creative Commons Attribution 4.0 International Public License",
+    "Data_Access_Restriction": "Open - freely retrievable",
+    "Title": "API test hptlab-0",
+    "Description": "API test hptlab-0",
+    "Data_Type": "Dataset",
+    "Data_Classification": "Basic"
+}
