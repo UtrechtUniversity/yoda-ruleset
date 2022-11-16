@@ -131,6 +131,9 @@ def ui_pub_check_landingpage_content(browser, tmpdir):
             with open(str(child)) as json_file:
                 data = json.load(json_file)
 
+                # Remove the downloaded yoda-metadata.json file.
+                os.remove(child)
+
                 for tag in metadata_tags:
                     if data[tag][0] not in landingpage_tag_values:
                         assert False

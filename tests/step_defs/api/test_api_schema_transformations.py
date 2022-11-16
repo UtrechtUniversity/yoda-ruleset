@@ -19,7 +19,7 @@ scenarios('../../features/api/api_schema_transformations.feature')
 
 
 @given(parsers.parse("a metadata file with schema {schema_from} is uploaded to folder with schema {schema_to}"), target_fixture="api_response")
-def ui_transform_metadata_json_upload_on_access(user, schema_from, schema_to):
+def api_upload_transform_metadata_json(user, schema_from, schema_to):
     cwd = os.getcwd()
 
     with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to)) as f:
