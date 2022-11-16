@@ -107,6 +107,70 @@ def _default1_default2(ctx, m):
     return m
 
 
+def _dag0_default2(ctx, m):
+    """
+    Transform dag-0 data to the default-2 schema definition
+
+    :param ctx: Combined type of a callback and rei struct
+    :param m:   Metadata to be transformed (dag-0)
+
+    :returns: Transformed (default-2) JSON object
+    """
+    # dag0-research group => def2
+    if m.get('Research_Group', False):
+        resrch_grp_2_contrib = {'Name': {'Given_Name': m['Research_Group'], 'Family_Name': ''},
+                                'Affiliation': ['Affiliation'],
+                                'Contributor_Type': 'ResearchGroup'}
+        if m.get('Contributor', False):
+            m['Contributor'].append(resrch_grp_2_contrib)
+        else:
+            m['Contributor'] = [resrch_grp_2_contrib]
+        # Finally, get rid of Research_Group element.
+        m.pop("Research_Group")
+
+    # dag0=> def2 collection name
+
+    # dag0-GeoLocation => def2-Covered_Geolocation_Place
+    geo_places = []
+    for location in m['GeoLocation']:
+        if 'Description_Spatial' in location:
+            geo_places.append(location['Description_Spatial'])
+    if len(geo_places):
+        m['Covered_Geolocation_Place'] = geo_places
+    else:
+        m['Covered_Geolocation_Place'] = [""]
+    m.pop('GeoLocation')
+
+    # dag0-Retention => def2-Retention
+    # Get the entire metadata schema to be able to get some proper values based on the previous saved values
+    old_schema = jsonutil.read(ctx, '/{}/yoda/schemas/dag-0/metadata.json'.format(user.zone(ctx)))
+    retention_years_list = old_schema['definitions']['optionsRetentionPeriod']['enum']
+    retention_names_list = old_schema['definitions']['optionsRetentionPeriod']['enumNames']
+    m["Retention_Information"] = ""
+
+    if m.get('Retention_Period', False):
+        for i, value in enumerate(retention_years_list):
+            if value == m["Retention_Period"]:
+                m["Retention_Information"] = retention_names_list[i]
+                break
+        m["Retention_Period"] = int(m["Retention_Period"])
+    else:
+        m["Retention_Period"] = 0
+
+    # dag0-Creator => def2-Creator
+    for creator in m['Creator']:
+        creator['Affiliation'] = [creator['Affiliation']]
+        if 'Owner_Role' in creator:
+            creator.pop('Owner_Role')
+
+    # Missing data in dag0 - License  "Internal License Data Archive Geosciences 2021-01"
+    m["License"] = "Custom"
+
+    meta.metadata_set_schema_id(m, 'https://yoda.uu.nl/schemas/default-2/metadata.json')
+
+    return m
+
+
 def _default1_teclab0(ctx, m):
     """
     Transform Default-1 data to the teclab-0 schema definition
@@ -478,7 +542,9 @@ def get(src_id, dst_id):
         if dst_id == 'https://yoda.uu.nl/schemas/teclab-0/metadata.json':
             return _default1_teclab0
 
-    transformations = {'https://yoda.uu.nl/schemas/default-0/metadata.json':
+    transformations = {'https://yoda.uu.nl/schemas/dag-0/metadata.json':
+                       {'https://yoda.uu.nl/schemas/default-2/metadata.json': _dag0_default2},
+                       'https://yoda.uu.nl/schemas/default-0/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-1/metadata.json': _default0_default1},
                        'https://yoda.uu.nl/schemas/default-1/metadata.json':
                        {'https://yoda.uu.nl/schemas/default-2/metadata.json': _default1_default2},
