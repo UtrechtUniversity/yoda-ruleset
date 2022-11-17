@@ -18,14 +18,9 @@ from pytest_bdd import (
 )
 
 
-portal_url = "https://portal.yoda.test"
-api_url = "https://portal.yoda.test/api"
-password = "test"
-users = ['researcher',
-         'groupmanager',
-         'datamanager',
-         'functionaladminpriv',
-         'technicaladmin']
+portal_url = ""
+api_url = ""
+roles = {}
 user_cookies = {}
 
 datarequest = False
@@ -36,13 +31,12 @@ run_all = False
 
 
 def pytest_addoption(parser):
-    parser.addoption("--url", action="store", default="https://portal.yoda.test")
-    parser.addoption("--password", action="store", default="test")
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
     parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
+    parser.addoption("--environment", action="store", default="environments/development.json", help="Specify configuration file")
 
 
 def pytest_configure(config):
@@ -50,47 +44,39 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
     config.addinivalue_line("markers", "oidc: Run login OIDC tests")
+    config.addinivalue_line("markers", "all: Run all tests")
+
+    global environment
+    environment = config.getoption("--environment")
+
+    with open(environment) as f:
+        configuration = json.loads(f.read())
 
     global portal_url
-    portal_url = config.getoption("--url")
+    portal_url = configuration.get("url", "https://portal.yoda.test")
 
     global api_url
     api_url = "{}/api".format(portal_url)
 
-    global password
-    password = config.getoption("--password")
+    global roles
+    roles = configuration.get("roles", {})
 
-    global datarequest
+    # Store cookies for each user.
+    for role, user in roles.items():
+        csrf, session = login(user["username"], user["password"])
+        user_cookies[role] = (csrf, session)
+
+    global datarequest, deposit, intake, login_oidc, run_all
     datarequest = config.getoption("--datarequest")
-
-    global deposit
     deposit = config.getoption("--deposit")
-
-    global intake
     intake = config.getoption("--intake")
-
-    global login_oidc
     login_oidc = config.getoption("--oidc")
-
-    global run_all
     run_all = config.getoption("--all")
     if run_all:
         datarequest = True
         deposit = True
         intake = True
         login_oidc = True
-
-    global users
-    if datarequest:
-        users = users + ['projectmanager', 'dacmember']
-
-    if deposit:
-        users = users + ['viewer']
-
-    # Store cookies for each user.
-    for user in users:
-        csrf, session = login(user, password)
-        user_cookies[user] = (csrf, session)
 
 
 def pytest_bdd_apply_tag(tag, function):
@@ -233,7 +219,7 @@ def post_form_data(user, request, files):
 
 @given(parsers.parse("user {user:w} is authenticated"), target_fixture="user")
 def api_user_authenticated(user):
-    assert user in users
+    assert user in roles
     return user
 
 
@@ -244,11 +230,11 @@ def ui_login(browser, user):
     browser.visit(url)
 
     # Fill in username
-    browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-username').fill(roles[user]["username"])
     browser.find_by_id('f-login-submit').click()
 
     # Fill in password
-    browser.find_by_id('f-login-password').fill(password)
+    browser.find_by_id('f-login-password').fill(roles[user]["password"])
 
     # Find and click the 'Sign in' button
     browser.find_by_id('f-login-submit').click()

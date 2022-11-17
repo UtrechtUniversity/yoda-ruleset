@@ -10,7 +10,7 @@ from pytest_bdd import (
     when,
 )
 
-from conftest import password, portal_url
+from conftest import portal_url, roles
 
 
 scenarios('../../features/ui/ui_login_redirect.feature')
@@ -23,11 +23,11 @@ def ui_login_directly(browser, user):
     assert "{}/user/gate".format(portal_url) in browser.url
 
     # Fill in username
-    browser.find_by_id('f-login-username').fill(user)
+    browser.find_by_id('f-login-username').fill(roles[user]["username"])
     browser.find_by_id('f-login-submit').click()
 
     # Fill in password
-    browser.find_by_id('f-login-password').fill(password)
+    browser.find_by_id('f-login-password').fill(roles[user]["password"])
 
     # Find and click the 'Sign in' button
     browser.find_by_id('f-login-submit').click()
