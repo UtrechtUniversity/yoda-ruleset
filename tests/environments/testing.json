@@ -1,0 +1,13 @@
+{
+    "url": "https://portal.yoda.test",
+    "roles": {
+        "researcher":           {"username": "researcher@yoda.test",          "password": "test"},
+        "viewer":               {"username": "viewer@yoda.test",              "password": "test"},        
+        "groupmanager":         {"username": "groupmanager@yoda.test",        "password": "test"},
+        "datamanager":          {"username": "datamanager@yoda.test",         "password": "test"},
+        "functionaladminpriv":  {"username": "functionaladminpriv@yoda.test", "password": "test"},
+        "technicaladmin":       {"username": "technicaladmin@yoda.test",      "password": "test"},
+        "projectmanager":       {"username": "projectmanager@yoda.test",      "password": "test"},
+        "dacmember":            {"username": "dacmember@yoda.test",           "password": "test"}
+    }
+}
