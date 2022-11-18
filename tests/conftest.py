@@ -26,7 +26,6 @@ user_cookies = {}
 datarequest = False
 deposit = False
 intake = False
-login_oidc = False
 run_all = False
 
 
@@ -34,7 +33,6 @@ def pytest_addoption(parser):
     parser.addoption("--datarequest", action="store_true", default=False, help="Run datarequest tests")
     parser.addoption("--deposit", action="store_true", default=False, help="Run deposit tests")
     parser.addoption("--intake", action="store_true", default=False, help="Run intake tests")
-    parser.addoption("--oidc", action="store_true", default=False, help="Run login OIDC tests")
     parser.addoption("--all", action="store_true", default=False, help="Run all tests")
     parser.addoption("--environment", action="store", default="environments/development.json", help="Specify configuration file")
 
@@ -43,7 +41,6 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "datarequest: Run datarequest tests")
     config.addinivalue_line("markers", "deposit: Run deposit tests")
     config.addinivalue_line("markers", "intake: Run intake tests")
-    config.addinivalue_line("markers", "oidc: Run login OIDC tests")
     config.addinivalue_line("markers", "all: Run all tests")
 
     global environment
@@ -66,17 +63,15 @@ def pytest_configure(config):
         csrf, session = login(user["username"], user["password"])
         user_cookies[role] = (csrf, session)
 
-    global datarequest, deposit, intake, login_oidc, run_all
+    global datarequest, deposit, intake, run_all
     datarequest = config.getoption("--datarequest")
     deposit = config.getoption("--deposit")
     intake = config.getoption("--intake")
-    login_oidc = config.getoption("--oidc")
     run_all = config.getoption("--all")
     if run_all:
         datarequest = True
         deposit = True
         intake = True
-        login_oidc = True
 
 
 def pytest_bdd_apply_tag(tag, function):
@@ -90,10 +85,6 @@ def pytest_bdd_apply_tag(tag, function):
         return True
     elif tag == 'intake' and not intake:
         marker = pytest.mark.skip(reason="Skip intake")
-        marker(function)
-        return True
-    elif tag == 'oidc' and not login_oidc:
-        marker = pytest.mark.skip(reason="Skip login OIDC")
         marker(function)
         return True
     elif tag == "fail":
@@ -230,11 +221,17 @@ def ui_login(browser, user):
     browser.visit(url)
 
     # Fill in username
-    browser.find_by_id('f-login-username').fill(roles[user]["username"])
+    try:
+        browser.find_by_id('f-login-username').fill(roles[user]["username"])
+    except KeyError:
+        browser.find_by_id('f-login-username').fill(user)
     browser.find_by_id('f-login-submit').click()
 
     # Fill in password
-    browser.find_by_id('f-login-password').fill(roles[user]["password"])
+    try:
+        browser.find_by_id('f-login-password').fill(roles[user]["password"])
+    except KeyError:
+        browser.find_by_id('f-login-password').fill("test")
 
     # Find and click the 'Sign in' button
     browser.find_by_id('f-login-submit').click()
@@ -248,7 +245,13 @@ def ui_logout(browser):
 
 @when(parsers.parse("user {user} enters email address"))
 def ui_gate_username(browser, user):
-    browser.find_by_id('f-login-username').fill(user)
+    # Fill in username
+    try:
+        browser.find_by_id('f-login-username').fill(roles[user]["username"])
+    except KeyError:
+        browser.find_by_id('f-login-username').fill(user)
+
+    # Find and click the 'Next' button
     browser.find_by_id('f-login-submit').click()
 
 
