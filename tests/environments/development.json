@@ -1,13 +1,15 @@
 {
     "url": "https://portal.yoda.test",
     "roles": {
-        "researcher":           {"username": "researcher",          "password": "test"},
-        "viewer":               {"username": "viewer",              "password": "test"},
-        "groupmanager":         {"username": "groupmanager",        "password": "test"},
-        "datamanager":          {"username": "datamanager",         "password": "test"},
-        "functionaladminpriv":  {"username": "functionaladminpriv", "password": "test"},
-        "technicaladmin":       {"username": "technicaladmin",      "password": "test"},
-        "projectmanager":       {"username": "projectmanager",      "password": "test"},
-        "dacmember":            {"username": "dacmember",           "password": "test"}
+        "researcher":              {"username": "researcher",              "password": "test"},
+        "viewer":                  {"username": "viewer",                  "password": "test"},
+        "groupmanager":            {"username": "groupmanager",            "password": "test"},
+        "datamanager":             {"username": "datamanager",             "password": "test"},
+        "functionaladmingroup":    {"username": "functionaladmingroup",    "password": "test"},
+        "functionaladmincategory": {"username": "functionaladmincategory", "password": "test"},
+        "functionaladminpriv":     {"username": "functionaladminpriv",     "password": "test"},
+        "technicaladmin":          {"username": "technicaladmin",          "password": "test"},
+        "projectmanager":          {"username": "projectmanager",          "password": "test"},
+        "dacmember":               {"username": "dacmember",               "password": "test"}
     }
 }
