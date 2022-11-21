@@ -13,7 +13,7 @@ from pytest_bdd import (
     then,
 )
 
-from conftest import api_request, post_form_data
+from conftest import api_request, post_form_data, roles
 
 scenarios('../../features/api/api_datarequest.feature')
 
@@ -253,7 +253,7 @@ def api_datarequest_datamanager_review_submit(user, datarequest_id):
             "data": {
                 "datamanager_review": "Accepted",
                 "datamanager_remarks": "test",
-                "reviewing_dm": "datamanager"
+                "reviewing_dm": "{}".format(roles["datamanager"]["username"])
             },
             "request_id": datarequest_id
         }
@@ -278,7 +278,7 @@ def api_datarequest_assignment_submit(user, datarequest_id):
             "data": {
                 "review_period_length": 21,
                 "assign_to": [
-                    "dacmember"
+                    "{}".format(roles["dacmember"]["username"])
                 ],
                 "decision": "Accepted for review",
                 "response_to_dm_remarks": "test"
@@ -310,7 +310,7 @@ def api_datarequest_review_submit(user, datarequest_id):
                 "evaluation": "Approve",
                 "evaluation_rationale": "test",
                 "involvement_requested": "No",
-                "username": "dacmember"
+                "username": "{}".format(roles["dacmember"]["username"])
             },
             "request_id": datarequest_id
         }
