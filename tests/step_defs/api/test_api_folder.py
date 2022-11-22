@@ -84,6 +84,12 @@ def api_folder_accept(user, folder):
 
 @given(parsers.parse("metadata JSON exists in {folder}"))
 def api_response(user, folder):
+    api_request(
+        user,
+        "research_file_delete",
+        {"coll": folder, "file_name": "yoda-metadata.json"}
+    )
+
     _, body = api_request(
         user,
         "meta_form_load",

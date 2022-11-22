@@ -20,6 +20,12 @@ scenarios('../../features/api/api_schema_transformations.feature')
 
 @given(parsers.parse("a metadata file with schema {schema_from} is uploaded to folder with schema {schema_to}"), target_fixture="api_response")
 def api_upload_transform_metadata_json(user, schema_from, schema_to):
+    api_request(
+        user,
+        "research_file_delete",
+        {"coll": "/research-{}".format(schema_to), "file_name": "yoda-metadata.json"}
+    )
+
     cwd = os.getcwd()
 
     with open("{}/files/transformations/{}_{}.json".format(cwd, schema_from, schema_to)) as f:
