@@ -1,6 +1,6 @@
 Feature: Group UI
 
-    Scenario Outline: Group user add
+    Scenario Outline: Group member add
         Given user groupmanager is logged in
         And module "group_manager" is shown
         When user selects group <group> in subcategory <subcategory> and category <category>
@@ -13,14 +13,14 @@ Feature: Group UI
             | test-automation | initial     | research-initial | user2@yoda.test |
 
 
-    Scenario Outline: Change user role of multiple members in one group at once- requires two users to be added by preceding scenario
+    Scenario Outline: Group member change role
         Given user groupmanager is logged in
         And module "group_manager" is shown
         When user selects group <group> in subcategory <subcategory> and category <category>
         And user selects two members <member1> and <member2>
         And user changes roles to <new_role>
         Then role change is successful
-        
+
         Examples:
             | category        | subcategory | group            | member1         | member2         | new_role |
             | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test | manager  |
@@ -28,7 +28,7 @@ Feature: Group UI
             | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test | reader   |
 
 
-    Scenario Outline: Remove multiple members from a group at once - requires two users to be added by preceding scenario
+    Scenario Outline: Group member remove
         Given user groupmanager is logged in
         And module "group_manager" is shown
         When user selects group <group> in subcategory <subcategory> and category <category>
@@ -88,16 +88,16 @@ Feature: Group UI
         And user clicks allow deletions checkbox
         Then process csv and check number of rows
         And click on imported row 0 and check group properties
-        And find groupmember "groupmanager@yoda.test"
+        And find group member "groupmanager@yoda.test"
         And user opens group import dialog
         And click on imported row 1 and check group properties
-        And find groupmember "researcher@yoda.test"
+        And find group member "researcher@yoda.test"
         And user opens group import dialog
         And click on imported row 2 and check group properties
-        And find groupmember "datamanager@yoda.test"
+        And find group member "datamanager@yoda.test"
         And user opens group import dialog
         And click on imported row 3 and check group properties
-        And find groupmember "viewer@yoda.test"
+        And find group member "viewer@yoda.test"
 
 
     Scenario Outline: Group research create
@@ -131,7 +131,7 @@ Feature: Group UI
             | category         | subcategory      | group            |
             | test-datamanager | test-datamanager | test-datamanager |
 
-			
+
     Scenario Outline: Group remove
         Given user <user> is logged in
         And module "group_manager" is shown

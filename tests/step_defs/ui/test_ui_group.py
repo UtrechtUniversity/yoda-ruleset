@@ -16,6 +16,8 @@ from pytest_bdd import (
     when,
 )
 
+from conftest import roles
+
 scenarios('../../features/ui/ui_group.feature')
 
 
@@ -61,38 +63,30 @@ def ui_group_user_add(browser, member_add):
 def ui_group_select_multiple_users(browser, member1, member2):
     browser.find_by_id('user-list').links.find_by_partial_text(member1).click()
     browser.find_by_id('user-list').links.find_by_partial_text(member2).click()
-    # time.sleep(5)
 
 
 @when(parsers.parse("user changes roles to {new_role}"))
 def ui_group_userrole_change(browser, new_role):
-    # browser.find_by_id('user-list').links.find_by_partial_text(user_promote).click()
     browser.find_by_css('a.update-button[data-target-role={}]'.format(new_role), wait_time=1).click()
 
 
 @then("role change is successful")
 def ui_group_role_change_success(browser):
-    # browser.find_by_id('user-list').links.find_by_partial_text(user_promote).click()
-    # browser.find_by_css('a.update-button[data-target-role={}]'.format(new_role), wait_time=1).click()
     assert browser.find_by_text('User roles were updated successfully.')
 
 
 @when("user removes selected members")
 def ui_group_remove_users_from_group(browser):
-    # browser.find_by_id('user-list').links.find_by_partial_text(user_promote).click()
     browser.find_by_css('.users .delete-button', wait_time=1).click()
 
 
 @when('remove members from group is confirmed')
 def ui_group_remove_members_confirm(browser):
     browser.find_by_id('f-user-delete').click()
-    # time.sleep(5)
 
 
 @then("members successfully removed")
 def ui_group_remove_members_success(browser):
-    # browser.find_by_id('user-list').links.find_by_partial_text(user_promote).click()
-    # browser.find_by_css('a.update-button[data-target-role={}]'.format(new_role), wait_time=1).click()
     assert browser.find_by_text('Users were removed successfully.')
 
 
@@ -209,7 +203,7 @@ def ui_group_csv_click_row(browser, row):
     assert browser.find_by_id('f-group-update-name').value == groupname
 
 
-@then(parsers.parse('find groupmember "{group_member}"'))
+@then(parsers.parse('find group member "{group_member}"'))
 def ui_group_csv_find_group_member(browser, group_member):
     # Find the groupmember in the group member list.
     if len(browser.links.find_by_partial_text(group_member)):
@@ -220,7 +214,7 @@ def ui_group_csv_find_group_member(browser, group_member):
 
 @when(parsers.parse("searches for groups of user {user_search}"))
 def ui_group_fill_in_user_for_groups(browser, user_search):
-    browser.find_by_id('input-user-search-groups').fill(user_search)
+    browser.find_by_id('input-user-search-groups').fill(roles[user_search]["username"])
     browser.find_by_css('.btn-user-search-groups').click()
 
 
