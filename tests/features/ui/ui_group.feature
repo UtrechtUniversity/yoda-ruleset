@@ -3,72 +3,67 @@ Feature: Group UI
     Scenario Outline: Group user add
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
-        And user adds <user_add> to group
-        Then user <user_add> is added to the group
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user adds <member_add> to group
+        Then test if member <member_add> is added to the group
 
         Examples:
-            | category        | group            | user_add  |
-            | test-automation | research-initial | uipromote |
-            | test-automation | research-initial | uidemote  |
+            | category        | subcategory | group            | member_add      |
+            | test-automation | initial     | research-initial | user1@yoda.test |
+            | test-automation | initial     | research-initial | user2@yoda.test |
 
 
-    Scenario Outline: Group user promote
+    Scenario Outline: Change user role of multiple members in one group at once- requires two users to be added by preceding scenario
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
-        And user promotes <user_promote> to group manager
-
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects two members <member1> and <member2>
+        And user changes roles to <new_role>
+        Then role change is successful
+        
         Examples:
-            | category        | group            | user_promote |
-            | test-automation | research-initial | uipromote    |
+            | category        | subcategory | group            | member1         | member2         | new_role |
+            | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test | manager  |
+            | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test | normal   |
+            | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test | reader   |
 
 
-    Scenario Outline: Group user demote
+    Scenario Outline: Remove multiple members from a group at once - requires two users to be added by preceding scenario
         Given user groupmanager is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
-        And user demotes <user_demote> to viewer
+        When user selects group <group> in subcategory <subcategory> and category <category>
+        And user selects two members <member1> and <member2>
+        And user removes selected members
+        And remove members from group is confirmed
+        Then members successfully removed
 
         Examples:
-            | category        | group            | user_demote |
-            | test-automation | research-initial | uidemote    |
+            | category        | subcategory | group            | member1         | member2         |
+            | test-automation | initial     | research-initial | user1@yoda.test | user2@yoda.test |
 
-
-    Scenario Outline: Group user remove
-        Given user groupmanager is logged in
-        And module "group_manager" is shown
-        When user has access to group <group> in category <category>
-        And user removes <user_remove> from group
-        Then user <user_remove> is removed from the group
-
-        Examples:
-            | category        | group            | user_remove |
-            | test-automation | research-initial | uipromote   |
-            | test-automation | research-initial | uidemote    |
 
     Scenario Outline: Group member search
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
+        When user selects group <group> in subcategory <subcategory> and category <category>
         And searches for member <member>
         Then only member <member> is shown
 
         Examples:
-            | category        | group            | member     |
-            | test-automation | research-initial | researcher |
+            | category        | subcategory | group            | member     |
+            | test-automation | initial     | research-initial | researcher |
 
 
     Scenario Outline: Group search
         Given user researcher is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in category <category>
+        When user selects group <group> in subcategory <subcategory> and category <category>
         And searches for group <group>
         Then only group <group> is shown
 
         Examples:
-            | category        | group            |
-            | test-automation | research-initial |
+            | category        | subcategory | group            |
+            | test-automation | initial     | research-initial |
 
 
     Scenario Outline: List groups of users
@@ -121,7 +116,6 @@ Feature: Group UI
             | category        | subcategory| group         | schema_id |
             | test-automation | initial    | ui-test-group | teclab-1  |
 
-
     Scenario Outline: Group datamanager create
         Given user technicaladmin is logged in
         And module "group_manager" is shown
@@ -137,11 +131,11 @@ Feature: Group UI
             | category         | subcategory      | group            |
             | test-datamanager | test-datamanager | test-datamanager |
 
-
+			
     Scenario Outline: Group remove
         Given user <user> is logged in
         And module "group_manager" is shown
-        When user has access to group <group> in subcategory <subcategory> and category <category>
+        When user selects group <group> in subcategory <subcategory> and category <category>
         And user clicks remove group
         And user confirms group removal
 
