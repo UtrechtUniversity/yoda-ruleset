@@ -955,6 +955,10 @@ def api_group_create(ctx, group_name, category, subcategory, schema_id, descript
 
     :returns: Dict with API status result
     """
+    # Before taking any actions, check whether vault-group is not already present.
+    if collection.exists(ctx, '/{}/home/vault-{}'.format(user.zone(ctx), group_name.split('-')[1])):
+        return api.Error('policy_error', 'Cannot create research group because of name conflict with existing vault folder. Group is not created')
+
     try:
         response = ctx.uuGroupAdd(group_name, category, subcategory, schema_id, description, data_classification, '', '')['arguments']
         status = response[6]
