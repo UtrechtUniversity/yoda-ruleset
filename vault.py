@@ -1230,4 +1230,21 @@ def api_vault_get_published_packages(ctx, path):
             for v in range(version - 1, 1, -1):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
-    return dict(sorted(data_packages.items(), key=lambda x: x[1]))
+    # Sort on path with timestamp.
+    data_packages = dict(sorted(data_packages.items(), key=lambda x: x[1]))
+
+    # Retrieve title of data package.
+    published_packages = {}
+    for doi, path in data_packages.items():
+        iter = genquery.row_iterator(
+            "META_COLL_ATTR_VALUE",
+            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(path),
+            genquery.AS_LIST, ctx
+        )
+        title = "(no title)"
+        for row in iter:
+            title = row[0]
+
+        published_packages[doi] = {"path": path, "title": title}
+
+    return published_packages
