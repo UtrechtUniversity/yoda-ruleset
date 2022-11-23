@@ -62,19 +62,28 @@
     "Contributor": [
         {
             "Name": {
-                "Given_Name": "John",
-                "Family_Name": "Doe"
-            }
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Contributor_Type": "ContactPerson"
         }
     ],
     "Creator": [
         {
             "Name": {
-                "Given_Name": "Jane",
-                "Family_Name": "Doe"
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
             },
             "Affiliation": "Utrecht University",
-            "Owner_Role": "Principal Investigator"
+            "Owner_Role": "Group Leader"
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис",
+                "Family_Name": "Николаевич Ельцин"
+            },
+            "Affiliation": "University Džemal Bijedić of Mostar",
+            "Owner_Role": "Contact Person from External Institute"
         }
     ],
     "License": "Internal License Data Archive Geosciences 2021-01",
