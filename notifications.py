@@ -102,7 +102,7 @@ def api_notifications_load(ctx, sort_order="desc"):
                     deposit_title = '(no title)'
                     iter = genquery.row_iterator(
                         "META_COLL_ATTR_VALUE",
-                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(notification["target"]),
+                        "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = 'usr_0_s'".format(notification["target"]),
                         genquery.AS_LIST, ctx
                     )
                     for row in iter:

@@ -71,6 +71,13 @@ def api_vault_approve(ctx, coll):
 
     :returns: API status
     """
+    # Check for previous version.
+    previous_version = get_previous_version(ctx, coll)
+
+    # Add related data package metadata for previous version.
+    if previous_version:
+        add_related_data_pacckage(ctx, coll, previous_version)
+
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
     if ret[0] == '':
@@ -1197,6 +1204,76 @@ def get_doi(ctx, path):
     return None
 
 
+def get_previous_version(ctx, path):
+    """Get the previous version of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the previous version of
+
+    :return: Data package path or None
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'org_publication_previous_version'" % (coll),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return None
+
+
+def get_title(ctx, path):
+    """Get the title of a data package in the vault.
+
+    :param ctx:  Combined type of a callback and rei struct
+    :param path: Vault package to get the title of
+
+    :return: Data package title
+    """
+    iter = genquery.row_iterator(
+        "META_COLL_ATTR_VALUE",
+        "COLL_NAME = '%s' AND META_COLL_ATTR_NAME = 'Title' AND META_COLL_ATTR_UNITS = 'usr_0_s'" % (path),
+        genquery.AS_LIST, ctx
+    )
+
+    for row in iter:
+        return row[0]
+
+    return "(no title)"
+
+
+def add_related_data_pacckage(ctx, coll, previous_version):
+    """Add previous version of data package to related data package metadata of data package in a vault.
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param coll:             Vault package to add related data package metadata to
+    :param previous_version: Path to previous version of data package in the vault
+    """
+    form = meta_form.load(ctx, coll)
+    schema = form["schema"]
+    metadata = form["metadata"]
+
+    # Only add related data package if it is in the schema.
+    if "Related_Datapackage" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, previous_version))
+            },
+            "Relation_Type": "IsNewVersionOf: Current datapackage is new version of",
+            "Title": "{}".format(get_title(ctx, previous_version))
+        }
+
+        if "Related_Datapackage" in metadata:
+            metadata["Related_Datapackage"].append(data_package)
+        else:
+            metadata["Related_Datapackage"] = [data_package]
+
+        meta_form.save(ctx, coll, metadata)
+
+
 @api.make()
 def api_vault_get_published_packages(ctx, path):
     """Get the path and DOI of latest versions of published data package in a vault.
@@ -1236,15 +1313,6 @@ def api_vault_get_published_packages(ctx, path):
     # Retrieve title of data package.
     published_packages = {}
     for doi, path in data_packages.items():
-        iter = genquery.row_iterator(
-            "META_COLL_ATTR_VALUE",
-            "COLL_NAME = '{}' AND META_COLL_ATTR_NAME = 'Title'".format(path),
-            genquery.AS_LIST, ctx
-        )
-        title = "(no title)"
-        for row in iter:
-            title = row[0]
-
-        published_packages[doi] = {"path": path, "title": title}
+        published_packages[doi] = {"path": path, "title": get_title(ctx, path)}
 
     return published_packages
