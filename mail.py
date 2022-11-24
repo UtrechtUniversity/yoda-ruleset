@@ -83,7 +83,7 @@ def send(ctx, to, actor, subject, body, cc=None):
 
     fmt_addr = '{} <{}>'.format
 
-    msg = MIMEText(body)
+    msg = MIMEText(body, 'plain', 'UTF-8')
     msg['Reply-To'] = cfg['reply_to']
     msg['Date'] = email.utils.formatdate()
     msg['From'] = fmt_addr(cfg['from_name'], cfg['from'])
