@@ -19,7 +19,7 @@ def write(ctx, message):
     """
     stack = inspect.stack()[1]
     module = inspect.getmodule(stack[0])
-    _write(ctx, '[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
+    _write(ctx, u'[{}] {}'.format(module.__name__.replace("rules_uu.", ""), message))
 
 
 def _write(ctx, message):
@@ -29,7 +29,7 @@ def _write(ctx, message):
     :param message: Message to write to log
     """
     if type(ctx) is rule.Context:
-        ctx.writeLine('serverLog', '{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
+        ctx.writeLine('serverLog', u'{{{}#{}}} {}'.format(*list(user.user_and_zone(ctx)) + [message]))
     else:
         ctx.writeLine('serverLog', message)
 
