@@ -74,9 +74,10 @@ def api_vault_approve(ctx, coll):
     # Check for previous version.
     previous_version = get_previous_version(ctx, coll)
 
-    # Add related data package metadata for previous version.
+    # Add related data package metadata for new and previous version.
     if previous_version:
-        add_related_data_pacckage(ctx, coll, previous_version)
+        meta_add_new_version(ctx, coll, previous_version)
+        meta_add_previous_version(ctx, coll, previous_version)
 
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
@@ -1231,14 +1232,14 @@ def get_title(ctx, path):
     return "(no title)"
 
 
-def add_related_data_pacckage(ctx, coll, previous_version):
-    """Add previous version of data package to related data package metadata of data package in a vault.
+def meta_add_new_version(ctx, new_version, previous_version):
+    """Add new version related data package metadata to data package in a vault.
 
     :param ctx:              Combined type of a callback and rei struct
-    :param coll:             Vault package to add related data package metadata to
+    :param new_version:      Path to new version of data package in the vault
     :param previous_version: Path to previous version of data package in the vault
     """
-    form = meta_form.load(ctx, coll)
+    form = meta_form.load(ctx, new_version)
     schema = form["schema"]
     metadata = form["metadata"]
 
@@ -1258,7 +1259,37 @@ def add_related_data_pacckage(ctx, coll, previous_version):
         else:
             metadata["Related_Datapackage"] = [data_package]
 
-        meta_form.save(ctx, coll, metadata)
+        meta_form.save(ctx, new_version, metadata)
+
+
+def meta_add_previous_version(ctx, new_version, previous_version):
+    """Add previous version related data package metadata to data package in a vault.
+
+    :param ctx:              Combined type of a callback and rei struct
+    :param new_version:      Path to new version of data package in the vault
+    :param previous_version: Path to previous version of data package in the vault
+    """
+    form = meta_form.load(ctx, previous_version)
+    schema = form["schema"]
+    metadata = form["metadata"]
+
+    # Only add related data package if it is in the schema.
+    if "Related_Datapackage" in schema["properties"]:
+        data_package = {
+            "Persistent_Identifier": {
+                "Identifier_Scheme": "DOI",
+                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, new_version))
+            },
+            "Relation_Type": "IsPreviousVersionOf: Current datapackage is new version of",
+            "Title": "{}".format(get_title(ctx, new_version))
+        }
+
+        if "Related_Datapackage" in metadata:
+            metadata["Related_Datapackage"].append(data_package)
+        else:
+            metadata["Related_Datapackage"] = [data_package]
+
+        meta_form.save(ctx, previous_version, metadata)
 
 
 @api.make()
