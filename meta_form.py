@@ -99,8 +99,7 @@ def humanize_validation_error(e):
         return 'This field contains an error: ' + ' -> '.join(path_out)
 
 
-@api.make()
-def api_meta_form_load(ctx, coll):
+def load(ctx, coll):
     """Retrieve all information required to load a metadata form in either the research or vault space.
 
     This produces a JSON struct on stdout. If no transformation is required
@@ -271,8 +270,7 @@ def api_meta_form_load(ctx, coll):
             'is_locked': is_locked}
 
 
-@api.make()
-def api_meta_form_save(ctx, coll, metadata):
+def save(ctx, coll, metadata):
     """Validate and store JSON metadata for a given collection.
 
     :param ctx:      Combined type of a callback and rei struct
@@ -319,3 +317,10 @@ def api_meta_form_save(ctx, coll, metadata):
         jsonutil.write(ctx, json_path, metadata)
     except error.UUError:
         return api.Error('internal', 'Could not save yoda-metadata.json')
+
+
+"""API to retrieve all information required to load a metadata form in either the research or vault space."""
+api_meta_form_load = api.make()(load)
+
+"""API to validate and store JSON metadata for a given collection."""
+api_meta_form_save = api.make()(save)
