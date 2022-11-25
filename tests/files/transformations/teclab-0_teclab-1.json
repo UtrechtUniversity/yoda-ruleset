@@ -51,22 +51,46 @@
     "Creator": [
         {
             "Name": {
-                "Given_Name": "Jane",
-                "Family_Name": "Doe"
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
             },
             "Affiliation": [
                 "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис",
+                "Family_Name": "Николаевич Ельцин"
+            },
+            "Affiliation": [
+                "University Džemal Bijedić of Mostar"
+            ],
+            "Person_Identifier": [
+                {}
             ]
         }
     ],
     "Contributor": [
         {
             "Name": {
-                "Given_Name": "John",
-                "Family_Name": "Doe"
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
             },
             "Affiliation": [
-                "Utrecht University"
+                "University of Göttingen"
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
+            },
+            "Affiliation": [
+                "École des Beaux-Arts"
             ]
         }
     ],

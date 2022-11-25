@@ -60,6 +60,10 @@ LONG_METADATA = {
     ],
     "Creator": [
         {
+            "Name": {
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
+            },
             "Affiliation": [
                 "Utrecht University"
             ],
@@ -69,28 +73,45 @@ LONG_METADATA = {
                     "Name_Identifier": "Orchid_flower"
                 }
             ],
+        },
+        {
             "Name": {
-                "Given_Name": "Scientist",
-                "Family_Name": "Harry"
-            }
+                "Given_Name": "Борис",
+                "Family_Name": "Николаевич Ельцин"
+            },
+            "Affiliation": [
+                "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
         }
     ],
     "Contributor": [
         {
-            "Affiliation": [
-                "Utrecht University"
-            ],
+            "Name": {
+                "Given_Name": "Tấn Dũng",
+                "Family_Name": "Nguyễn"
+            },
+            "Contributor_Type": "ContactPerson",
             "Person_Identifier": [
                 {
                     "Name_Identifier_Scheme": "ORCID",
                     "Name_Identifier": "Orchid_2"
                 }
             ],
+            "Affiliation": [
+                "University of Göttingen"
+            ]
+        },
+        {
             "Name": {
-                "Given_Name": "Contact",
-                "Family_Name": "Corry"
+                "Given_Name": "Björk",
+                "Family_Name": "Guðmundsdóttir"
             },
-            "Contributor_Type": "ContactPerson"
+            "Affiliation": [
+                "École des Beaux-Arts"
+            ]
         }
     ],
     "Data_Access_Restriction": "Restricted - available upon request",
