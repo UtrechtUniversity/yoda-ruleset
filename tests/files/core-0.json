@@ -3,11 +3,23 @@
     "Creator": [
         {
             "Name": {
-                "Given_Name": "Jane",
-                "Family_Name": "Doe"
+                "Given_Name": "María José",
+                "Family_Name": "Carreño Quiñones"
             },
             "Affiliation": [
                 "Utrecht University"
+            ],
+            "Person_Identifier": [
+                {}
+            ]
+        },
+        {
+            "Name": {
+                "Given_Name": "Борис",
+                "Family_Name": "Николаевич Ельцин"
+            },
+            "Affiliation": [
+                "University Džemal Bijedić of Mostar"
             ],
             "Person_Identifier": [
                 {}
