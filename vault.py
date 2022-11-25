@@ -77,7 +77,6 @@ def api_vault_approve(ctx, coll):
     # Add related data package metadata for new and previous version.
     if previous_version:
         meta_add_new_version(ctx, coll, previous_version)
-        meta_add_previous_version(ctx, coll, previous_version)
 
     ret = vault_request_status_transitions(ctx, coll, constants.vault_package_state.APPROVED_FOR_PUBLICATION)
 
@@ -1262,36 +1261,6 @@ def meta_add_new_version(ctx, new_version, previous_version):
         meta_form.save(ctx, new_version, metadata)
 
 
-def meta_add_previous_version(ctx, new_version, previous_version):
-    """Add previous version related data package metadata to data package in a vault.
-
-    :param ctx:              Combined type of a callback and rei struct
-    :param new_version:      Path to new version of data package in the vault
-    :param previous_version: Path to previous version of data package in the vault
-    """
-    form = meta_form.load(ctx, previous_version)
-    schema = form["schema"]
-    metadata = form["metadata"]
-
-    # Only add related data package if it is in the schema.
-    if "Related_Datapackage" in schema["properties"]:
-        data_package = {
-            "Persistent_Identifier": {
-                "Identifier_Scheme": "DOI",
-                "Identifier": "https://www.doi.org/{}".format(get_doi(ctx, new_version))
-            },
-            "Relation_Type": "IsPreviousVersionOf: Current datapackage is new version of",
-            "Title": "{}".format(get_title(ctx, new_version))
-        }
-
-        if "Related_Datapackage" in metadata:
-            metadata["Related_Datapackage"].append(data_package)
-        else:
-            metadata["Related_Datapackage"] = [data_package]
-
-        meta_form.save(ctx, previous_version, metadata)
-
-
 @api.make()
 def api_vault_get_published_packages(ctx, path):
     """Get the path and DOI of latest versions of published data package in a vault.
@@ -1322,7 +1291,7 @@ def api_vault_get_published_packages(ctx, path):
 
             # Remove older versions of data packages.
             data_packages.pop(doi, None)
-            for v in range(version - 1, 1, -1):
+            for v in range(version - 1, 0, -1):
                 data_packages.pop("{}.v{}".format(doi, v), None)
 
     # Sort on path with timestamp.
